@@ -542,3 +542,16 @@ husky - pre-commit script failed (code 1)
 [2026-03-09 00:23:22] [INFO] Skrevet: src/app/(dashboard)/documents/page.tsx
 [2026-03-09 00:23:22] [INFO] Skrevet: src/hooks/use-document-upload.ts
 [2026-03-09 00:23:22] [INFO] Skrevet: .env.example
+[2026-03-09 00:23:23] [INFO] Git commit: feat: BA-05-dokumenter Feature-agent (Dokumenthåndtering) - Dokumenthåndtering — upload, preview, download, ti
+[2026-03-09 00:23:23] [INFO] === BA-05-dokumenter FÆRDIG (11 filer skrevet) ===
+[2026-03-09 00:23:25] [INFO] --- Agent 4/4: BA-07-sprint3 ---
+[2026-03-09 00:23:25] [INFO] === Starter BA-07-sprint3 (QA-agent (Sprint 3 review)) ===
+[2026-03-09 00:23:25] [INFO] Opgave: QA — Validér kontraktstyring, advisering og dokumentmodul mod spec
+[2026-03-09 00:23:25] [ADVARSEL] Fil ikke fundet: src/lib/advisering/deadlines.ts
+[2026-03-09 00:23:25] [ADVARSEL] Input-fil mangler: src/lib/advisering/deadlines.ts — fortsætter uden
+[2026-03-09 00:23:25] [INFO] Kalder Claude API (claude-opus-4-5) med streaming...
+[2026-03-09 00:24:25] [INFO]   ... 8000 tegn modtaget
+[2026-03-09 00:24:58] [INFO]   ... 12000 tegn modtaget
+[2026-03-09 00:27:34] [INFO]   ... 34000 tegn modtaget
+[2026-03-09 00:28:06] [INFO] API svar komplet på 281.9s (40002 tegn)
+[2026-03-09 00:28:07] [INFO] Skrevet: docs/status/DECISIONS.md

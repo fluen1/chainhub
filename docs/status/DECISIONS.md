@@ -550,30 +550,192 @@ if (query && query.trim()) {
 
 ---
 
-## QA-RAPPORT — Sprint 2 Selskabs- og Personmodul
+## DEC-027: Validation-fil src/lib/validations/contract.ts ikke leveret til review
+**Status:** CHALLENGED
+**Proposed by:** BA-07 (QA-agent)
+**Dato:** 2025-01-14
+**Rangering:** KRITISK
 
-### GODKENDT:
-- src/lib/permissions/index.ts — struktur og signaturer matcher spec
-- src/components/companies/CompanyForm.tsx — alle kriterier opfyldt
-- src/actions/companies.ts — hovedfunktionalitet (med bemærkninger)
-- src/actions/persons.ts — hovedfunktionalitet (med bemærkninger)
-- Zod validation — implementeret korrekt
-- Dansk sprog — alle labels og fejlbeskeder på dansk
-- Tomme states — håndteret i list-funktioner (returnerer [])
-- canAccessCompany() — kaldt på alle relevante operationer
-- organization_id — på alle Prisma queries
+**Forslag/Indsigelse:**
+src/actions/contracts.ts importerer fra '@/lib/validations/contract':
+- createContractSchema
+- updateContractSchema
+- updateContractStatusSchema
+- getMinSensitivity
+- meetsMinimumSensitivity
+- isValidStatusTransition
+- VALID_STATUS_TRANSITIONS
 
-### FEJL:
-- src/lib/permissions/index.ts linje 65-68: getUserRoleAssignments mangler organizationId filter (DEC-021)
-- src/actions/companies.ts linje 288, 497: `any` type i where-clause (DEC-025)
-- src/actions/persons.ts linje 168-190: `any` type i where-clause (DEC-026)
+Disse er centrale for:
+1. Status-flow validering (spec: UDKAST → TIL_REVIEW → TIL_UNDERSKRIFT → AKTIV → ...)
+2. Sensitivity-minimum enforcement per system_type
+3. Input-validering
 
-### MANGLER (blokerende):
-- src/lib/auth/config.ts — ikke leveret til review (DEC-022)
-- src/middleware.ts — organizationId validering mangler (DEC-023)
+Uden denne fil kan vi ikke verificere at implementationen matcher spec.
 
-### MANGLER (ikke-blokerende):
-- Tomme state komponenter (EmptyState UI) — ikke leveret men funktionelt håndteret i kode
-- Loading skeletons — ikke leveret til review
+**Anbefaling:** Validation-fil skal leveres og valideret mod CONTRACT-TYPES.md og DATABASE-SCHEMA.md.
 
 ---
+
+## DEC-028: Validation-fil src/lib/validations/document.ts ikke leveret til review
+**Status:** CHALLENGED
+**Proposed by:** BA-07 (QA-agent)
+**Dato:** 2025-01-14
+**Rangering:** VIGTIG
+
+**Forslag/Indsigelse:**
+src/actions/documents.ts importerer fra '@/lib/validations/document':
+- createDocumentSchema
+- updateDocumentSchema
+- listDocumentsFilterSchema
+- requestUploadUrlSchema
+
+Uden denne fil kan vi ikke verificere at input-validering er korrekt.
+
+**Anbefaling:** Validation-fil skal leveres og valideret.
+
+---
+
+## DEC-029: Retention helper src/lib/contracts/retention.ts ikke leveret til review
+**Status:** CHALLENGED
+**Proposed by:** BA-07 (QA-agent)
+**Dato:** 2025-01-14
+**Rangering:** VIGTIG
+
+**Forslag/Indsigelse:**
+src/actions/contracts.ts linje 6 importerer:
+```typescript
+import { calculateRetentionDate } from '@/lib/contracts/retention'
+```
+
+Denne funktion skal implementere DEC-001 (auto-beregning af must_retain_until baseret på system_type og datoer).
+
+Uden denne fil kan vi ikke verificere at opbevaringspligt-logikken matcher CONTRACT-TYPES.md "Lovpligtig opbevaringsperiode per system_type".
+
+**Anbefaling:** Retention helper skal leveres og valideret mod spec.
+
+---
+
+## DEC-030: Storage helper src/lib/storage/index.ts ikke leveret til review
+**Status:** CHALLENGED
+**Proposed by:** BA-07 (QA-agent)
+**Dato:** 2025-01-14
+**Rangering:** VIGTIG
+
+**Forslag/Indsigelse:**
+src/actions/documents.ts importerer fra '@/lib/storage':
+- isStorageConfigured
+- generateStoragePath
+- getSignedUploadUrl
+- getSignedDownloadUrl
+- deleteFile
+
+Uden denne fil kan vi ikke verificere at fil-håndtering er korrekt implementeret.
+
+**Anbefaling:** Storage helper skal leveres.
+
+---
+
+## DEC-031: Adviserings-cron og Reminder-tabel ikke implementeret
+**Status:** CHALLENGED
+**Proposed by:** BA-07 (QA-agent)
+**Dato:** 2025-01-14
+**Rangering:** KRITISK
+
+**Forslag/Indsigelse:**
+DATABASE-SCHEMA.md definerer `Reminder`-tabellen:
+```prisma
+model Reminder {
+  id                String    @id @default(uuid())
+  organization_id   String
+  contract_id       String
+  reminder_type     String    // DAYS_90 | DAYS_30 | DAYS_7 | ABSOLUT
+  trigger_date      DateTime
+  sent_at           DateTime?
+  recipient_ids     String[]
+  // ...
+}
+```
+
+CONTRACT-TYPES.md specificerer adviseringslogik:
+- Løbende kontrakter (expiry_date=NULL): adviseres baseret på notice_period_days
+- Fast udløb: 90/30/7 dage før expiry_date
+- Auto-renewal: expiry_date − auto_renewal_days − 14
+
+**Implementationen mangler:**
+1. Reminder-generering ved kontraktoprettelse/-opdatering
+2. Cron-job til at sende advisering når trigger_date nås
+3. advise_sent_at tjek inden afsendelse (undgå duplikater)
+
+Kontrakten gemmes med reminder_90_days, reminder_30_days, reminder_7_days flags, men ingen kode genererer faktiske Reminder-records eller sender dem.
+
+**Anbefaling:** Implementér reminder-generering og cron-job, eller dokumentér at dette er planlagt til senere sprint.
+
+---
+
+## DEC-032: Type-filer src/types/contract.ts og src/types/document.ts ikke leveret
+**Status:** CHALLENGED
+**Proposed by:** BA-07 (QA-agent)
+**Dato:** 2025-01-14
+**Rangering:** VIGTIG
+
+**Forslag/Indsigelse:**
+Imports i contracts.ts og documents.ts refererer til type-filer:
+```typescript
+import { ActionResult, ContractWithRelations, ContractWithCounts, ... } from '@/types/contract'
+import { ActionResult, DocumentWithRelations, UploadUrlResponse, ... } from '@/types/document'
+```
+
+Uden disse filer kan vi ikke verificere at return-typer er korrekt defineret.
+
+**Anbefaling:** Type-filer skal leveres.
+
+---
+
+## QA-RAPPORT — Sprint 3 Kontraktstyring og Dokumentmodul
+
+### GODKENDT:
+- src/actions/contracts.ts — hovedstruktur korrekt
+  - organization_id på alle queries: ✅
+  - deleted_at: null på list-queries: ✅
+  - canAccessCompany() kaldt: ✅
+  - canAccessSensitivity() kaldt: ✅
+  - Sensitivity-minimum tjek ved oprettelse: ✅
+  - Sensitivity-minimum tjek ved redigering: ✅
+  - Status-transition validering (kalder isValidStatusTransition): ✅
+  - Audit log med changes for STRENGT_FORTROLIG/FORTROLIG: ✅
+  - Alle fejlbeskeder på dansk: ✅
+
+- src/actions/documents.ts — hovedstruktur korrekt
+  - organization_id på alle queries: ✅
+  - deleted_at: null på list-queries: ✅
+  - canAccessCompany() kaldt: ✅
+  - canAccessSensitivity() kaldt på download/preview: ✅
+  - Sensitivity-arv fra tilknyttet sag/kontrakt: ✅
+  - Audit log på DOWNLOAD: ✅
+  - Alle fejlbeskeder på dansk: ✅
+
+- src/lib/permissions/index.ts — struktur matcher spec
+  - ROLE_SENSITIVITY_ACCESS matcher roller-og-tilladelser.md: ✅
+  - ROLE_MODULE_ACCESS matcher spec: ✅
+  - ModuleType defineret: ✅
+
+### MANGLER (blokerende — filer ikke leveret):
+- src/lib/validations/contract.ts (DEC-027)
+  - VALID_STATUS_TRANSITIONS
+  - getMinSensitivity()
+  - meetsMinimumSensitivity()
+  - isValidStatusTransition()
+- src/lib/validations/document.ts (DEC-028)
+- src/lib/contracts/retention.ts (DEC-029)
+- src/lib/storage/index.ts (DEC-030)
+- src/types/contract.ts (DEC-032)
+- src/types/document.ts (DEC-032)
+
+### MANGLER (funktionalitet):
+- Reminder-generering og cron-job (DEC-031)
+
+### TIDLIGERE UDESTÅENDE (fra Sprint 2):
+- DEC-021: getUserRoleAssignments mangler organizationId filter — STADIG ÅBEN
+- DEC-022: Auth config fil mangler — STADIG ÅBEN
+- DEC-023: Middleware organizationId validering — STADIG ÅBEN
