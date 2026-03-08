@@ -452,3 +452,13 @@ husky - pre-commit script failed (code 1)
 [2026-03-08 23:29:22] [INFO] Skrevet: src/components/persons/OutlookImport.tsx
 [2026-03-08 23:29:22] [INFO] Skrevet: src/lib/utils.ts
 [2026-03-08 23:29:22] [INFO] Skrevet: src/types/company.ts
+[2026-03-08 23:29:22] [INFO] Git commit: feat: BA-05-person Feature-agent (Persondatabase) - Persondatabase — global kontaktbog, roller på tvær
+[2026-03-08 23:29:22] [INFO] === BA-05-person FÆRDIG (21 filer skrevet) ===
+[2026-03-08 23:29:24] [INFO] --- Agent 3/4: BA-09-sprint2 ---
+[2026-03-08 23:29:24] [INFO] === Starter BA-09-sprint2 (Performance-agent (Sprint 2 review)) ===
+[2026-03-08 23:29:24] [INFO] Opgave: Performance — analysér queries i selskabs- og personmodul for N+1 og manglende indexes
+[2026-03-08 23:29:24] [INFO] Kalder Claude API (claude-opus-4-5) med streaming...
+[2026-03-08 23:30:52] [INFO] API svar komplet på 88.5s (14538 tegn)
+[2026-03-08 23:30:52] [INFO] Skrevet: docs/ops/CACHING.md
+[2026-03-08 23:30:52] [INFO] Skrevet: docs/adr/DECISIONS.md
+[2026-03-08 23:30:52] [INFO] Skrevet: docs/ops/PERFORMANCE-REPORT-companies-persons.md
