@@ -1,42 +1,57 @@
-import { Briefcase, Plus } from 'lucide-react'
+import { Suspense } from 'react'
+import { listCases } from '@/actions/cases'
+import { CaseListClient } from '@/components/cases/CaseListClient'
+import { CaseListSkeleton } from '@/components/cases/CaseListSkeleton'
+import { Button } from '@/components/ui/button'
+import { PlusIcon } from 'lucide-react'
+import Link from 'next/link'
 
-export default function CasesPage() {
+export const metadata = {
+  title: 'Sager — ChainHub',
+}
+
+export default async function CasesPage() {
   return (
-    <div>
-      <div className="mb-6 flex items-center justify-between">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Sager</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Alle sager og processer på tværs af dine selskaber
+            Administrér sager på tværs af selskaber og kontrakter
           </p>
         </div>
-        <a
-          href="/dashboard/cases/new"
-          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          <Plus className="h-4 w-4" />
-          Opret sag
-        </a>
+        <Link href="/cases/new">
+          <Button>
+            <PlusIcon className="mr-2 h-4 w-4" />
+            Opret sag
+          </Button>
+        </Link>
       </div>
 
-      <div className="rounded-lg border border-gray-200 bg-white">
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="rounded-full bg-gray-100 p-4">
-            <Briefcase className="h-8 w-8 text-gray-400" />
-          </div>
-          <h3 className="mt-4 text-lg font-medium text-gray-900">Ingen sager endnu</h3>
-          <p className="mt-2 max-w-sm text-sm text-gray-500">
-            Opret din første sag for at holde styr på processer og tvister
-          </p>
-          <a
-            href="/dashboard/cases/new"
-            className="mt-6 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            <Plus className="h-4 w-4" />
-            Opret sag
-          </a>
-        </div>
-      </div>
+      {/* Liste */}
+      <Suspense fallback={<CaseListSkeleton />}>
+        <CaseListServer />
+      </Suspense>
     </div>
   )
+}
+
+async function CaseListServer() {
+  const result = await listCases({
+    page: 1,
+    pageSize: 25,
+    sortBy: 'updatedAt',
+    sortDir: 'desc',
+  })
+
+  if (result.error) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+        <p className="text-sm text-red-700">{result.error}</p>
+      </div>
+    )
+  }
+
+  return <CaseListClient initialCases={result.data.cases} totalCount={result.data.total} />
 }
