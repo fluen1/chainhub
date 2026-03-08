@@ -656,3 +656,20 @@ husky - pre-commit script failed (code 1)
 [2026-03-09 00:44:38] [INFO] Skrevet: src/components/contracts/ContractDetail.tsx
 [2026-03-09 00:44:38] [INFO] Skrevet: src/lib/contracts/labels.ts
 [2026-03-09 00:44:38] [INFO] Skrevet: .env.example
+[2026-03-09 00:44:39] [INFO] Git commit: feat: BA-05-kontrakt Feature-agent (Kontraktstyring) - Kontraktstyring — opret kontrakt, status-flow, par
+[2026-03-09 00:44:39] [INFO] === BA-05-kontrakt FÆRDIG (15 filer skrevet) ===
+[2026-03-09 00:44:41] [INFO] --- Agent 2/4: BA-06-advisering ---
+[2026-03-09 00:44:41] [INFO] === Starter BA-06-advisering (Integration-agent (Advisering)) ===
+[2026-03-09 00:44:41] [INFO] Opgave: Adviseringslogik — 90/30/7 dage, løbende kontrakter, auto-renewal, email via Resend
+[2026-03-09 00:44:41] [INFO] Kalder Claude API (claude-sonnet-4-6) med streaming...
+[2026-03-09 00:44:54] [INFO]   ... 2000 tegn modtaget
+[2026-03-09 00:45:23] [INFO]   ... 10000 tegn modtaget
+[2026-03-09 00:45:34] [INFO]   ... 14000 tegn modtaget
+[2026-03-09 00:46:37] [INFO]   ... 28000 tegn modtaget
+[2026-03-09 00:47:29] [INFO]   ... 42000 tegn modtaget
+[2026-03-09 00:48:34] [INFO] API svar komplet på 232.9s (59630 tegn)
+[2026-03-09 00:48:34] [INFO] Skrevet: src/app/api/cron/check-deadlines/route.ts
+[2026-03-09 00:48:34] [INFO] Skrevet: src/lib/reminders/email.ts
+[2026-03-09 00:48:34] [INFO] Skrevet: src/lib/reminders/generate.ts
+[2026-03-09 00:48:34] [INFO] Skrevet: vercel.json
+[2026-03-09 00:48:34] [INFO] Skrevet: .env.example
