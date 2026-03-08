@@ -1,39 +1,8 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npm run validate-env -- --ci && npm run build",
-  "framework": "nextjs",
-  "regions": ["fra1"],
-  "functions": {
-    "src/app/api/**/*.ts": {
-      "maxDuration": 30
-    },
-    "src/app/api/webhooks/stripe/route.ts": {
-      "maxDuration": 60
-    }
-  },
-  "headers": [
+  "crons": [
     {
-      "source": "/api/(.*)",
-      "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "X-XSS-Protection",
-          "value": "1; mode=block"
-        }
-      ]
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/api/webhooks/stripe",
-      "destination": "/api/webhooks/stripe"
+      "path": "/api/cron/check-deadlines",
+      "schedule": "0 7 * * *"
     }
   ]
 }

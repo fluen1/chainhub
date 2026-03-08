@@ -1,106 +1,124 @@
 import { ContractSystemType } from '@prisma/client'
 
-// Opbevaringsperiode i måneder baseret på CONTRACT-TYPES.md DEC-001
-// -1 = permanent (så længe selskabet eksisterer)
-export const RETENTION_PERIODS: Record<ContractSystemType, number> = {
-  // Permanent
-  VEDTAEGTER: -1,
-  GF_REFERAT: -1,
+/**
+ * Opbevaringsperioder baseret på dansk lovgivning
+ * Se DEC-001 i DECISIONS.md
+ */
+
+interface RetentionRule {
+  years: number
+  basis: string
+  fromField: 'signed_date' | 'termination_date' | 'fiscal_year_end' | 'permanent'
+}
+
+const RETENTION_RULES: Partial<Record<ContractSystemType, RetentionRule>> = {
+  // Bogføringsloven § 10: 5 år fra regnskabsårets udløb
+  LEJEKONTRAKT_ERHVERV: { years: 5, basis: 'Bogføringsloven § 10', fromField: 'fiscal_year_end' },
+  LEVERANDOERKONTRAKT: { years: 5, basis: 'Bogføringsloven § 10', fromField: 'fiscal_year_end' },
+  LEASINGAFTALE: { years: 5, basis: 'Bogføringsloven § 10', fromField: 'fiscal_year_end' },
+  AKTIONERLAN: { years: 5, basis: 'Bogføringsloven § 10', fromField: 'fiscal_year_end' },
+  INTERCOMPANY_LAN: { years: 5, basis: 'Bogføringsloven § 10', fromField: 'fiscal_year_end' },
+  KASSEKREDIT: { years: 5, basis: 'Bogføringsloven § 10', fromField: 'fiscal_year_end' },
+  FORSIKRING: { years: 5, basis: 'Bogføringsloven § 10', fromField: 'fiscal_year_end' },
+  CASH_POOL: { years: 5, basis: 'Bogføringsloven § 10', fromField: 'fiscal_year_end' },
   
-  // 10 år (120 måneder)
-  EJERAFTALE: 120,
-  DIREKTOERKONTRAKT: 120,
-  OVERDRAGELSESAFTALE: 120,
-  OPTIONSAFTALE: 120,
-  VOA: 120,
-  TILTRAEDELSESDOKUMENT: 120,
+  // Selskabsloven §§ 50-53: permanent
+  VEDTAEGTER: { years: 999, basis: 'Selskabsloven §§ 50-53', fromField: 'permanent' },
+  GF_REFERAT: { years: 999, basis: 'Selskabsloven', fromField: 'permanent' },
   
-  // 5 år (60 måneder) - bogføringsloven
-  AKTIONERLAN: 60,
-  PANTSAETNING: 60,
-  LEJEKONTRAKT_ERHVERV: 60,
-  LEASINGAFTALE: 60,
-  LEVERANDOERKONTRAKT: 60,
-  IT_SYSTEMAFTALE: 60,
-  FORSIKRING: 60,
-  KASSEKREDIT: 60,
-  INTERCOMPANY_LAN: 60,
-  CASH_POOL: 60,
-  INTERN_SERVICEAFTALE: 60,
-  ROYALTY_LICENS: 60,
-  ANSAETTELSE_FUNKTIONAER: 60,
-  ANSAETTELSE_IKKE_FUNKTIONAER: 60,
-  VIKARAFTALE: 60,
-  UDDANNELSESAFTALE: 60,
-  FRATRAEDELSESAFTALE: 60,
-  KONKURRENCEKLAUSUL: 60,
-  PERSONALEHÅNDBOG: 60,
-  SELSKABSGARANTI: 60,
+  // Forældelsesloven § 3/§ 4: 10 år
+  EJERAFTALE: { years: 10, basis: 'Forældelsesloven § 3', fromField: 'signed_date' },
+  DIREKTOERKONTRAKT: { years: 10, basis: 'Forældelsesloven § 3', fromField: 'termination_date' },
+  OVERDRAGELSESAFTALE: { years: 10, basis: 'Forældelsesloven § 3', fromField: 'signed_date' },
+  OPTIONSAFTALE: { years: 10, basis: 'Forældelsesloven § 3', fromField: 'signed_date' },
   
-  // 3 år (36 måneder) - forældelsesloven
-  NDA: 36,
-  SAMARBEJDSAFTALE: 36,
-  DBA: 36,
+  // Ansættelsesret: 5 år efter fratrædelse
+  ANSAETTELSE_FUNKTIONAER: { years: 5, basis: 'Ligebehandlingsloven/Forskelsbehandlingsloven', fromField: 'termination_date' },
+  ANSAETTELSE_IKKE_FUNKTIONAER: { years: 5, basis: 'Ligebehandlingsloven/Forskelsbehandlingsloven', fromField: 'termination_date' },
+  FRATRAEDELSESAFTALE: { years: 5, basis: 'Ligebehandlingsloven/Forskelsbehandlingsloven', fromField: 'signed_date' },
+  VIKARAFTALE: { years: 5, basis: 'Ansættelsesretlig dokumentation', fromField: 'termination_date' },
+  UDDANNELSESAFTALE: { years: 5, basis: 'Ansættelsesretlig dokumentation', fromField: 'termination_date' },
   
-  // Anbefaling: 10 år
-  BESTYRELSESREFERAT: 120,
-  FORRETNINGSORDEN: 120,
-  DIREKTIONSINSTRUKS: 120,
+  // Andre typer: 5 år som standard
+  NDA: { years: 5, basis: 'Kontraktretlig dokumentation', fromField: 'termination_date' },
+  SAMARBEJDSAFTALE: { years: 5, basis: 'Kontraktretlig dokumentation', fromField: 'termination_date' },
+  IT_SYSTEMAFTALE: { years: 5, basis: 'Bogføringsloven § 10', fromField: 'fiscal_year_end' },
+  DBA: { years: 10, basis: 'GDPR dokumentationskrav', fromField: 'termination_date' },
+  BESTYRELSESREFERAT: { years: 10, basis: 'God selskabsskik', fromField: 'signed_date' },
+  FORRETNINGSORDEN: { years: 999, basis: 'Selskabsstyring', fromField: 'permanent' },
+  DIREKTIONSINSTRUKS: { years: 999, basis: 'Selskabsstyring', fromField: 'permanent' },
+  KONKURRENCEKLAUSUL: { years: 5, basis: 'Ansættelsesretlig dokumentation', fromField: 'termination_date' },
+  PERSONALEHÅNDBOG: { years: 5, basis: 'HR dokumentation', fromField: 'termination_date' },
+  PANTSAETNING: { years: 10, basis: 'Forældelsesloven', fromField: 'termination_date' },
+  VOA: { years: 5, basis: 'Skattemæssig dokumentation', fromField: 'fiscal_year_end' },
+  INTERN_SERVICEAFTALE: { years: 5, basis: 'Transfer pricing dokumentation', fromField: 'fiscal_year_end' },
+  ROYALTY_LICENS: { years: 5, basis: 'Transfer pricing dokumentation', fromField: 'fiscal_year_end' },
+  TILTRAEDELSESDOKUMENT: { years: 10, basis: 'Selskabsretlig dokumentation', fromField: 'signed_date' },
+  SELSKABSGARANTI: { years: 10, basis: 'Forældelsesloven', fromField: 'termination_date' },
+}
+
+const DEFAULT_RETENTION: RetentionRule = {
+  years: 5,
+  basis: 'Standard opbevaringsperiode',
+  fromField: 'signed_date',
 }
 
 /**
- * Beregner must_retain_until baseret på system_type og relevante datoer
- * Brugeren kan forlænge men aldrig forkorte
+ * Beregner must_retain_until baseret på kontrakttype og relevante datoer
+ * Brugeren kan forlænge men aldrig forkorte under lovkravet
  */
 export function calculateRetentionDate(
   systemType: ContractSystemType,
   signedDate: Date | null,
   terminationDate: Date | null,
-  existingRetainUntil: Date | null
+  userProvidedRetention: Date | null
 ): Date | null {
-  const periodMonths = RETENTION_PERIODS[systemType]
+  const rule = RETENTION_RULES[systemType] || DEFAULT_RETENTION
   
   // Permanent opbevaring
-  if (periodMonths === -1) {
-    return null // null = permanent
+  if (rule.fromField === 'permanent') {
+    // Sæt til 100 år fra nu som "permanent"
+    const permanent = new Date()
+    permanent.setFullYear(permanent.getFullYear() + 100)
+    return permanent
   }
   
-  // Beregn startdato for opbevaringsperiode
-  const baseDate = terminationDate || signedDate || new Date()
+  let baseDate: Date | null = null
   
-  // Tilføj opbevaringsperiode
-  const calculatedDate = new Date(baseDate)
-  calculatedDate.setMonth(calculatedDate.getMonth() + periodMonths)
-  
-  // Hvis bruger har sat en længere periode, behold den
-  if (existingRetainUntil && existingRetainUntil > calculatedDate) {
-    return existingRetainUntil
+  switch (rule.fromField) {
+    case 'signed_date':
+      baseDate = signedDate
+      break
+    case 'termination_date':
+      baseDate = terminationDate || signedDate
+      break
+    case 'fiscal_year_end':
+      // Beregn udgangen af regnskabsåret (antager kalenderår)
+      const referenceDate = terminationDate || signedDate || new Date()
+      baseDate = new Date(referenceDate.getFullYear(), 11, 31) // 31. december
+      break
   }
   
-  return calculatedDate
+  if (!baseDate) {
+    // Hvis ingen basisdato, brug nuværende dato
+    baseDate = new Date()
+  }
+  
+  // Beregn opbevaringsslutdato
+  const calculatedRetention = new Date(baseDate)
+  calculatedRetention.setFullYear(calculatedRetention.getFullYear() + rule.years)
+  
+  // Bruger kan forlænge men ikke forkorte
+  if (userProvidedRetention && userProvidedRetention > calculatedRetention) {
+    return userProvidedRetention
+  }
+  
+  return calculatedRetention
 }
 
 /**
- * Tjekker om en brugerdefineret retention-dato er gyldig
- * (må ikke være kortere end lovkravet)
+ * Henter opbevaringsregel for en kontrakttype
  */
-export function isValidRetentionDate(
-  systemType: ContractSystemType,
-  signedDate: Date | null,
-  terminationDate: Date | null,
-  proposedDate: Date
-): boolean {
-  const minimumDate = calculateRetentionDate(
-    systemType,
-    signedDate,
-    terminationDate,
-    null
-  )
-  
-  // Permanent opbevaring - alle datoer er gyldige (de ignoreres)
-  if (minimumDate === null) {
-    return true
-  }
-  
-  return proposedDate >= minimumDate
+export function getRetentionRule(systemType: ContractSystemType): RetentionRule {
+  return RETENTION_RULES[systemType] || DEFAULT_RETENTION
 }

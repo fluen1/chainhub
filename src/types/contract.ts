@@ -1,20 +1,19 @@
 import {
   Contract,
+  Company,
   ContractParty,
   ContractVersion,
   ContractAttachment,
   ContractRelation,
-  Company,
   Person,
-  ContractStatus,
-  ContractSystemType,
-  SensitivityLevel,
 } from '@prisma/client'
 
+// Action result type
 export type ActionResult<T> = 
   | { data: T; error?: never }
   | { error: string; data?: never }
 
+// Contract with all relations loaded
 export type ContractWithRelations = Contract & {
   company: Company
   parties: (ContractParty & { person: Person | null })[]
@@ -26,6 +25,7 @@ export type ContractWithRelations = Contract & {
   childContracts: Contract[]
 }
 
+// Contract with counts for list views
 export type ContractWithCounts = Contract & {
   company: Company
   _count: {
@@ -35,44 +35,7 @@ export type ContractWithCounts = Contract & {
   }
 }
 
+// Contract party with person relation
 export type ContractPartyWithPerson = ContractParty & {
   person: Person | null
-}
-
-export type ContractVersionWithDetails = ContractVersion & {
-  contract: Contract
-}
-
-export type ContractAttachmentWithDetails = ContractAttachment & {
-  contract: Contract
-}
-
-export type ContractRelationWithContracts = ContractRelation & {
-  fromContract: Contract
-  toContract: Contract
-}
-
-export interface ContractListItem {
-  id: string
-  displayName: string
-  systemType: ContractSystemType
-  status: ContractStatus
-  sensitivity: SensitivityLevel
-  companyId: string
-  companyName: string
-  effectiveDate: Date | null
-  expiryDate: Date | null
-  updatedAt: Date
-}
-
-export interface ContractStatusTransition {
-  from: ContractStatus
-  to: ContractStatus
-  isValid: boolean
-}
-
-export interface FileUploadResult {
-  fileUrl: string
-  fileName: string
-  fileSizeBytes: number
 }
