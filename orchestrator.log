@@ -673,3 +673,33 @@ husky - pre-commit script failed (code 1)
 [2026-03-09 00:48:34] [INFO] Skrevet: src/lib/reminders/generate.ts
 [2026-03-09 00:48:34] [INFO] Skrevet: vercel.json
 [2026-03-09 00:48:34] [INFO] Skrevet: .env.example
+[2026-03-09 00:48:34] [INFO] Git commit: feat: BA-06-advisering Integration-agent (Advisering) - Adviseringslogik — 90/30/7 dage, løbende kontrakte
+[2026-03-09 00:48:34] [INFO] === BA-06-advisering FÆRDIG (5 filer skrevet) ===
+[2026-03-09 00:48:36] [INFO] --- Agent 3/4: BA-05-dokumenter ---
+[2026-03-09 00:48:36] [INFO] === Starter BA-05-dokumenter (Feature-agent (Dokumenthåndtering)) ===
+[2026-03-09 00:48:36] [INFO] Opgave: Dokumenthåndtering — upload, preview, download, tilknytning til selskab og kontrakt
+[2026-03-09 00:48:36] [INFO] Kalder Claude API (claude-sonnet-4-6) med streaming...
+[2026-03-09 00:49:41] [INFO]   ... 18000 tegn modtaget
+[2026-03-09 00:50:05] [INFO]   ... 26000 tegn modtaget
+[2026-03-09 00:51:03] [INFO]   ... 46000 tegn modtaget
+[2026-03-09 00:52:10] [INFO]   ... 68000 tegn modtaget
+[2026-03-09 00:52:27] [INFO]   ... 74000 tegn modtaget
+[2026-03-09 00:52:45] [INFO]   ... 80000 tegn modtaget
+[2026-03-09 00:53:52] [INFO] API svar komplet på 316.3s (101664 tegn)
+[2026-03-09 00:53:52] [INFO] Skrevet: src/lib/storage/index.ts
+[2026-03-09 00:53:52] [INFO] Skrevet: src/lib/validations/document.ts
+[2026-03-09 00:53:52] [INFO] Skrevet: src/types/document.ts
+[2026-03-09 00:53:52] [INFO] Skrevet: src/actions/documents.ts
+[2026-03-09 00:53:52] [INFO] Skrevet: src/app/(dashboard)/documents/page.tsx
+[2026-03-09 00:53:52] [INFO] Skrevet: src/app/(dashboard)/documents/[id]/page.tsx
+[2026-03-09 00:53:52] [INFO] Skrevet: src/components/documents/StorageNotConfiguredBanner.tsx
+[2026-03-09 00:53:52] [INFO] Skrevet: src/components/documents/DocumentsPageSkeleton.tsx
+[2026-03-09 00:53:52] [INFO] Skrevet: src/components/documents/DocumentsClientPage.tsx
+[2026-03-09 00:53:52] [INFO] Skrevet: src/components/documents/DocumentList.tsx
+[2026-03-09 00:53:52] [INFO] Skrevet: src/components/documents/DocumentUploadModal.tsx
+[2026-03-09 00:53:52] [INFO] Skrevet: src/components/documents/DocumentDetailClient.tsx
+[2026-03-09 00:53:52] [INFO] Skrevet: src/components/documents/DocumentPreview.tsx
+[2026-03-09 00:53:52] [INFO] Skrevet: src/components/documents/DocumentEditModal.tsx
+[2026-03-09 00:53:52] [INFO] Skrevet: src/components/documents/CompanyDocuments.tsx
+[2026-03-09 00:53:52] [INFO] Skrevet: src/components/documents/CaseDocuments.tsx
+[2026-03-09 00:53:52] [INFO] Skrevet: .env.example

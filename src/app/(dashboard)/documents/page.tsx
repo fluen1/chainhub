@@ -1,37 +1,73 @@
 import { Suspense } from 'react'
-import { DocumentList } from '@/components/documents/document-list'
-import { DocumentCardSkeleton } from '@/components/documents/document-card'
+import { auth } from '@/lib/auth'
+import { redirect } from 'next/navigation'
+import { canAccessModule } from '@/lib/permissions'
+import { isStorageConfigured } from '@/lib/storage'
+import { DocumentsClientPage } from '@/components/documents/DocumentsClientPage'
+import { StorageNotConfiguredBanner } from '@/components/documents/StorageNotConfiguredBanner'
+import { DocumentsPageSkeleton } from '@/components/documents/DocumentsPageSkeleton'
+import { prisma } from '@/lib/db'
 
 export const metadata = {
-  title: 'Dokumenter | ChainHub',
+  title: 'Dokumenter — ChainHub',
 }
 
-function DocumentsLoading() {
+export default async function DocumentsPage() {
+  const session = await auth()
+  if (!session?.user) redirect('/login')
+
+  const hasAccess = await canAccessModule(session.user.id, 'documents')
+  if (!hasAccess) {
+    return (
+      <div className="p-6">
+        <div className="rounded-lg bg-red-50 p-4 text-red-700">
+          Du har ikke adgang til dokumentmodulet. Kontakt din administrator.
+        </div>
+      </div>
+    )
+  }
+
+  // Hent selskaber og sager til filtrering
+  const [companies, cases] = await Promise.all([
+    prisma.company.findMany({
+      where: {
+        organizationId: session.user.organizationId,
+        deletedAt: null,
+      },
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    }),
+    prisma.case.findMany({
+      where: {
+        organizationId: session.user.organizationId,
+        deletedAt: null,
+      },
+      select: { id: true, title: true },
+      orderBy: { title: 'asc' },
+    }),
+  ])
+
+  const storageConfigured = isStorageConfigured()
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
-        <div className="h-7 w-32 bg-gray-200 rounded animate-pulse" />
-        <div className="h-10 w-36 bg-gray-200 rounded animate-pulse" />
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Dokumenter</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Upload, søg og administrer dokumenter
+          </p>
+        </div>
       </div>
-      <div className="flex gap-3">
-        <div className="flex-1 h-10 bg-gray-200 rounded animate-pulse" />
-        <div className="h-10 w-44 bg-gray-200 rounded animate-pulse" />
-        <div className="h-10 w-36 bg-gray-200 rounded animate-pulse" />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <DocumentCardSkeleton key={i} />
-        ))}
-      </div>
-    </div>
-  )
-}
 
-export default function DocumentsPage() {
-  return (
-    <div className="container py-6">
-      <Suspense fallback={<DocumentsLoading />}>
-        <DocumentList />
+      {!storageConfigured && <StorageNotConfiguredBanner />}
+
+      <Suspense fallback={<DocumentsPageSkeleton />}>
+        <DocumentsClientPage
+          companies={companies}
+          cases={cases}
+          storageConfigured={storageConfigured}
+        />
       </Suspense>
     </div>
   )

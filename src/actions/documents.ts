@@ -2,235 +2,214 @@
 
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import {
-  canAccessCompany,
-  canAccessSensitivity,
-  canAccessModule,
-  canEdit,
-  getMaxSensitivityLevel,
-  getAccessibleCompanies,
-} from '@/lib/permissions'
+import { canAccessCompany, canAccessSensitivity, canAccessModule } from '@/lib/permissions'
 import { revalidatePath } from 'next/cache'
+import { z } from 'zod'
 import {
-  createDocumentSchema,
+  confirmDocumentUploadSchema,
+  listDocumentsSchema,
+  getDocumentSchema,
   updateDocumentSchema,
-  listDocumentsFilterSchema,
-  requestUploadUrlSchema,
-  CreateDocumentInput,
-  UpdateDocumentInput,
-  ListDocumentsFilter,
-  RequestUploadUrlInput,
+  deleteDocumentSchema,
+  requestDocumentUploadUrlSchema,
+  getDownloadUrlSchema,
 } from '@/lib/validations/document'
 import {
   isStorageConfigured,
+  getStorageConfigurationGuide,
   generateStoragePath,
   getSignedUploadUrl,
   getSignedDownloadUrl,
-  deleteFile,
 } from '@/lib/storage'
-import {
-  ActionResult,
-  DocumentWithRelations,
-  UploadUrlResponse,
-  DownloadUrlResponse,
-} from '@/types/document'
-import { Document, SensitivityLevel, Prisma } from '@prisma/client'
+import type { ActionResult, DocumentWithRelations, DocumentListResult, DocumentUploadUrlResponse } from '@/types/document'
+import type { Document, SensitivityLevel } from '@prisma/client'
 
-// ==================== UPLOAD URL ====================
+// ==================== REQUEST UPLOAD URL ====================
 
-export async function requestUploadUrl(
-  input: RequestUploadUrlInput
-): Promise<ActionResult<UploadUrlResponse>> {
+export async function requestDocumentUploadUrl(
+  input: z.infer<typeof requestDocumentUploadUrlSchema>
+): Promise<ActionResult<DocumentUploadUrlResponse>> {
   const session = await auth()
-  if (!session?.user?.id || !session?.user?.organizationId) {
-    return { error: 'Ikke autoriseret' }
-  }
-
-  // Tjek om storage er konfigureret
-  if (!isStorageConfigured) {
-    return { error: 'Filstorage er ikke konfigureret. Kontakt administrator.' }
-  }
-
-  // Validér input
-  const parsed = requestUploadUrlSchema.safeParse(input)
-  if (!parsed.success) {
-    return { error: parsed.error.errors[0]?.message || 'Ugyldigt input' }
-  }
+  if (!session?.user) return { error: 'Ikke autoriseret' }
 
   // Moduladgang
-  const canAccess = await canAccessModule(session.user.id, 'documents')
-  if (!canAccess) {
-    return { error: 'Du har ikke adgang til dokumentmodulet' }
+  const hasModuleAccess = await canAccessModule(session.user.id, 'documents')
+  if (!hasModuleAccess) return { error: 'Du har ikke adgang til dokumentmodulet' }
+
+  const parsed = requestDocumentUploadUrlSchema.safeParse(input)
+  if (!parsed.success) {
+    const firstError = parsed.error.errors[0]
+    return { error: firstError?.message ?? 'Ugyldigt input' }
   }
 
-  // Redigeringsrettighed
-  const canEditData = await canEdit(session.user.id)
-  if (!canEditData) {
-    return { error: 'Du har ikke rettigheder til at uploade dokumenter' }
+  const { fileName, fileType, fileSizeBytes, companyId, caseId } = parsed.data
+
+  // Mock-tilstand hvis R2 ikke er konfigureret
+  if (!isStorageConfigured()) {
+    return {
+      error: `Fil-upload er ikke tilgængeligt. ${getStorageConfigurationGuide()}`,
+    }
+  }
+
+  // Valider tilknytning — mindst et af companyId/caseId skal angives
+  if (!companyId && !caseId) {
+    return { error: 'Dokumentet skal tilknyttes et selskab eller en sag' }
+  }
+
+  // Tjek adgang til selskab
+  if (companyId) {
+    const hasAccess = await canAccessCompany(session.user.id, companyId)
+    if (!hasAccess) return { error: 'Du har ikke adgang til dette selskab' }
+  }
+
+  // Tjek at sag tilhører organisationen
+  if (caseId) {
+    const caseRecord = await prisma.case.findUnique({
+      where: {
+        id: caseId,
+        organizationId: session.user.organizationId,
+        deletedAt: null,
+      },
+    })
+    if (!caseRecord) return { error: 'Sagen blev ikke fundet' }
   }
 
   try {
-    // Generér unik sti
-    const entityId = parsed.data.entityId || crypto.randomUUID()
-    const storagePath = generateStoragePath(
+    const resourceId = companyId ?? caseId ?? 'general'
+    const fileKey = generateStoragePath(
       session.user.organizationId,
-      parsed.data.entityType,
-      entityId,
-      parsed.data.fileName
+      'documents',
+      resourceId,
+      fileName
     )
 
-    // Generér signeret upload URL
-    const uploadUrl = await getSignedUploadUrl(storagePath, parsed.data.fileType)
+    const { uploadUrl, fileUrl } = await getSignedUploadUrl(fileKey, fileType)
 
-    const expiresAt = new Date(Date.now() + 3600 * 1000) // 1 time
-
-    return {
-      data: {
-        uploadUrl,
-        storagePath,
-        expiresAt,
-      },
-    }
+    return { data: { uploadUrl, fileKey, fileUrl } }
   } catch (error) {
-    console.error('Fejl ved generering af upload URL:', error)
-    return { error: 'Upload URL kunne ikke genereres — prøv igen' }
+    console.error('requestDocumentUploadUrl error:', error)
+    if (error instanceof Error) {
+      return { error: error.message }
+    }
+    return { error: 'Upload-URL kunne ikke genereres — prøv igen' }
   }
 }
 
-// ==================== CREATE ====================
+// ==================== BEKRÆFT UPLOAD ====================
 
-export async function createDocument(
-  input: CreateDocumentInput
+export async function confirmDocumentUpload(
+  input: z.infer<typeof confirmDocumentUploadSchema>
 ): Promise<ActionResult<Document>> {
   const session = await auth()
-  if (!session?.user?.id || !session?.user?.organizationId) {
-    return { error: 'Ikke autoriseret' }
-  }
+  if (!session?.user) return { error: 'Ikke autoriseret' }
 
-  // Moduladgang
-  const canAccess = await canAccessModule(session.user.id, 'documents')
-  if (!canAccess) {
-    return { error: 'Du har ikke adgang til dokumentmodulet' }
-  }
+  const hasModuleAccess = await canAccessModule(session.user.id, 'documents')
+  if (!hasModuleAccess) return { error: 'Du har ikke adgang til dokumentmodulet' }
 
-  // Redigeringsrettighed
-  const canEditData = await canEdit(session.user.id)
-  if (!canEditData) {
-    return { error: 'Du har ikke rettigheder til at oprette dokumenter' }
-  }
-
-  // Validér input
-  const parsed = createDocumentSchema.safeParse(input)
+  const parsed = confirmDocumentUploadSchema.safeParse(input)
   if (!parsed.success) {
-    return { error: parsed.error.errors[0]?.message || 'Ugyldigt input' }
+    const firstError = parsed.error.errors[0]
+    return { error: firstError?.message ?? 'Ugyldigt input' }
   }
 
-  // Bestem sensitivity baseret på tilknytninger
-  let effectiveSensitivity: SensitivityLevel = parsed.data.sensitivity || 'STANDARD'
+  const {
+    title,
+    fileKey,
+    fileName,
+    fileType,
+    fileSizeBytes,
+    companyId,
+    caseId,
+    sensitivity,
+    folderPath,
+    description,
+  } = parsed.data
 
-  // Tjek selskab hvis angivet
-  if (parsed.data.companyId) {
-    const company = await prisma.company.findFirst({
+  if (!companyId && !caseId) {
+    return { error: 'Dokumentet skal tilknyttes et selskab eller en sag' }
+  }
+
+  // Sensitivity-adgangstjek
+  const hasSensitivityAccess = await canAccessSensitivity(session.user.id, sensitivity)
+  if (!hasSensitivityAccess) {
+    return { error: 'Du har ikke adgang til dette sensitivitetsniveau' }
+  }
+
+  // Tjek selskabsadgang
+  if (companyId) {
+    const hasAccess = await canAccessCompany(session.user.id, companyId)
+    if (!hasAccess) return { error: 'Du har ikke adgang til dette selskab' }
+  }
+
+  // Tjek sagsadgang
+  if (caseId) {
+    const caseRecord = await prisma.case.findUnique({
       where: {
-        id: parsed.data.companyId,
+        id: caseId,
         organizationId: session.user.organizationId,
         deletedAt: null,
       },
     })
-    if (!company) {
-      return { error: 'Selskabet blev ikke fundet' }
-    }
+    if (!caseRecord) return { error: 'Sagen blev ikke fundet' }
 
-    const hasCompanyAccess = await canAccessCompany(session.user.id, parsed.data.companyId)
-    if (!hasCompanyAccess) {
-      return { error: 'Du har ikke adgang til dette selskab' }
-    }
-  }
-
-  // Tjek sag hvis angivet (arv sensitivity)
-  if (parsed.data.caseId) {
-    const caseRecord = await prisma.case.findFirst({
-      where: {
-        id: parsed.data.caseId,
-        organizationId: session.user.organizationId,
-        deletedAt: null,
-      },
-    })
-    if (!caseRecord) {
-      return { error: 'Sagen blev ikke fundet' }
-    }
-
-    // Arv sensitivity fra sag hvis højere
-    const sensitivityOrder = ['PUBLIC', 'STANDARD', 'INTERN', 'FORTROLIG', 'STRENGT_FORTROLIG']
-    const caseSensitivityIndex = sensitivityOrder.indexOf(caseRecord.sensitivity)
-    const docSensitivityIndex = sensitivityOrder.indexOf(effectiveSensitivity)
-    if (caseSensitivityIndex > docSensitivityIndex) {
-      effectiveSensitivity = caseRecord.sensitivity
-    }
-
-    const hasSensitivityAccess = await canAccessSensitivity(session.user.id, caseRecord.sensitivity)
-    if (!hasSensitivityAccess) {
-      return { error: 'Du har ikke adgang til denne sag' }
-    }
-  }
-
-  // Tjek kontrakt hvis angivet (arv sensitivity)
-  if (parsed.data.contractId) {
-    const contract = await prisma.contract.findFirst({
-      where: {
-        id: parsed.data.contractId,
-        organizationId: session.user.organizationId,
-        deletedAt: null,
-      },
-    })
-    if (!contract) {
-      return { error: 'Kontrakten blev ikke fundet' }
-    }
-
-    // Arv sensitivity fra kontrakt hvis højere
-    const sensitivityOrder = ['PUBLIC', 'STANDARD', 'INTERN', 'FORTROLIG', 'STRENGT_FORTROLIG']
-    const contractSensitivityIndex = sensitivityOrder.indexOf(contract.sensitivity)
-    const docSensitivityIndex = sensitivityOrder.indexOf(effectiveSensitivity)
-    if (contractSensitivityIndex > docSensitivityIndex) {
-      effectiveSensitivity = contract.sensitivity
-    }
-
-    const hasSensitivityAccess = await canAccessSensitivity(session.user.id, contract.sensitivity)
-    if (!hasSensitivityAccess) {
-      return { error: 'Du har ikke adgang til denne kontrakt' }
-    }
-
-    const hasContractCompanyAccess = await canAccessCompany(session.user.id, contract.companyId)
-    if (!hasContractCompanyAccess) {
-      return { error: 'Du har ikke adgang til kontraktens selskab' }
-    }
-  }
-
-  // Tjek om bruger kan oprette med denne sensitivity
-  const canCreateWithSensitivity = await canAccessSensitivity(
-    session.user.id,
-    effectiveSensitivity
-  )
-  if (!canCreateWithSensitivity) {
-    return {
-      error: `Du har ikke rettigheder til at oprette dokumenter med sensitivitetsniveau ${effectiveSensitivity}`,
+    // Dokumentet arver sagens sensitivity hvis det er højere
+    const sensitivityHierarchy: SensitivityLevel[] = [
+      'PUBLIC',
+      'STANDARD',
+      'INTERN',
+      'FORTROLIG',
+      'STRENGT_FORTROLIG',
+    ]
+    const caseSensIdx = sensitivityHierarchy.indexOf(caseRecord.sensitivity)
+    const docSensIdx = sensitivityHierarchy.indexOf(sensitivity)
+    if (caseSensIdx > docSensIdx) {
+      // Dokumentet skal mindst have sagens sensitivity
+      const inheritedSensitivity = caseRecord.sensitivity
+      const canAccessInherited = await canAccessSensitivity(session.user.id, inheritedSensitivity)
+      if (!canAccessInherited) {
+        return {
+          error: `Du har ikke adgang til dette sensitivitetsniveau. Sagen er markeret som ${caseRecord.sensitivity}`,
+        }
+      }
     }
   }
 
   try {
+    // Afgør effektiv sensitivity (arv fra sag/selskab — højeste vinder)
+    let effectiveSensitivity = sensitivity
+
+    if (caseId) {
+      const caseRecord = await prisma.case.findUnique({
+        where: { id: caseId },
+        select: { sensitivity: true },
+      })
+      if (caseRecord) {
+        const sensitivityHierarchy: SensitivityLevel[] = [
+          'PUBLIC', 'STANDARD', 'INTERN', 'FORTROLIG', 'STRENGT_FORTROLIG',
+        ]
+        const caseIdx = sensitivityHierarchy.indexOf(caseRecord.sensitivity)
+        const docIdx = sensitivityHierarchy.indexOf(sensitivity)
+        if (caseIdx > docIdx) {
+          effectiveSensitivity = caseRecord.sensitivity
+        }
+      }
+    }
+
+    const fileUrl = fileKey.startsWith('http') ? fileKey : `r2://${fileKey}`
+
     const document = await prisma.document.create({
       data: {
         organizationId: session.user.organizationId,
-        title: parsed.data.title,
-        companyId: parsed.data.companyId,
-        caseId: parsed.data.caseId,
-        fileUrl: parsed.data.fileUrl,
-        fileName: parsed.data.fileName,
-        fileSizeBytes: parsed.data.fileSizeBytes,
-        fileType: parsed.data.fileType,
+        companyId: companyId ?? null,
+        caseId: caseId ?? null,
+        title,
+        fileUrl,
+        fileName,
+        fileSizeBytes,
+        fileType,
         sensitivity: effectiveSensitivity,
-        folderPath: parsed.data.folderPath,
-        description: parsed.data.description,
+        folderPath: folderPath ?? null,
+        description: description ?? null,
         uploadedBy: session.user.id,
       },
     })
@@ -243,211 +222,413 @@ export async function createDocument(
         action: 'CREATE',
         resourceType: 'document',
         resourceId: document.id,
-        sensitivity: document.sensitivity,
+        sensitivity: effectiveSensitivity,
       },
     })
 
+    if (companyId) revalidatePath(`/companies/${companyId}`)
+    if (caseId) revalidatePath(`/cases/${caseId}`)
     revalidatePath('/documents')
-    if (parsed.data.companyId) {
-      revalidatePath(`/companies/${parsed.data.companyId}`)
-    }
-    if (parsed.data.caseId) {
-      revalidatePath(`/cases/${parsed.data.caseId}`)
-    }
 
     return { data: document }
   } catch (error) {
-    console.error('Fejl ved oprettelse af dokument:', error)
-    return { error: 'Dokumentet kunne ikke oprettes — prøv igen' }
+    console.error('confirmDocumentUpload error:', error)
+    return { error: 'Dokumentet kunne ikke gemmes — prøv igen eller kontakt support' }
   }
 }
 
-// ==================== UPDATE ====================
+// ==================== LIST DOKUMENTER ====================
 
-export async function updateDocument(
-  input: UpdateDocumentInput
-): Promise<ActionResult<Document>> {
+export async function listDocuments(
+  input: z.infer<typeof listDocumentsSchema> = {}
+): Promise<ActionResult<DocumentListResult>> {
   const session = await auth()
-  if (!session?.user?.id || !session?.user?.organizationId) {
-    return { error: 'Ikke autoriseret' }
+  if (!session?.user) return { error: 'Ikke autoriseret' }
+
+  const hasModuleAccess = await canAccessModule(session.user.id, 'documents')
+  if (!hasModuleAccess) return { error: 'Du har ikke adgang til dokumentmodulet' }
+
+  const parsed = listDocumentsSchema.safeParse(input)
+  if (!parsed.success) return { error: 'Ugyldigt filter-input' }
+
+  const { companyId, caseId, sensitivity, fileType, search, folderPath, page, pageSize } =
+    parsed.data
+
+  // Tjek adgang til specifikt selskab
+  if (companyId) {
+    const hasAccess = await canAccessCompany(session.user.id, companyId)
+    if (!hasAccess) return { error: 'Du har ikke adgang til dette selskab' }
   }
 
-  const parsed = updateDocumentSchema.safeParse(input)
-  if (!parsed.success) {
-    return { error: parsed.error.errors[0]?.message || 'Ugyldigt input' }
+  // Bestem tilgængelige sensitivity-niveauer
+  const allLevels: SensitivityLevel[] = [
+    'PUBLIC', 'STANDARD', 'INTERN', 'FORTROLIG', 'STRENGT_FORTROLIG',
+  ]
+  const accessibleLevels: SensitivityLevel[] = []
+  for (const level of allLevels) {
+    const hasAccess = await canAccessSensitivity(session.user.id, level)
+    if (hasAccess) accessibleLevels.push(level)
   }
 
-  const { id, ...data } = parsed.data
-
-  // Hent eksisterende dokument
-  const existing = await prisma.document.findFirst({
-    where: {
-      id,
-      organizationId: session.user.organizationId,
-      deletedAt: null,
-    },
-  })
-
-  if (!existing) {
-    return { error: 'Dokumentet blev ikke fundet' }
+  // Byg where-clause
+  type WhereClause = {
+    organizationId: string
+    deletedAt: null
+    companyId?: string
+    caseId?: string
+    fileType?: string
+    folderPath?: string
+    sensitivity?: { in: SensitivityLevel[] } | SensitivityLevel
+    OR?: Array<{ title?: { contains: string; mode: 'insensitive' }; fileName?: { contains: string; mode: 'insensitive' }; description?: { contains: string; mode: 'insensitive' } }>
   }
 
-  // Sensitivity adgang
-  const hasSensitivityAccess = await canAccessSensitivity(
-    session.user.id,
-    existing.sensitivity
-  )
-  if (!hasSensitivityAccess) {
-    return { error: 'Du har ikke adgang til dette dokument' }
+  const where: WhereClause = {
+    organizationId: session.user.organizationId,
+    deletedAt: null,
+    ...(companyId && { companyId }),
+    ...(caseId && { caseId }),
+    ...(fileType && { fileType }),
+    ...(folderPath !== undefined && { folderPath }),
   }
 
-  // Selskabsadgang hvis tilknyttet
-  if (existing.companyId) {
-    const hasCompanyAccess = await canAccessCompany(session.user.id, existing.companyId)
-    if (!hasCompanyAccess) {
-      return { error: 'Du har ikke adgang til dette dokument' }
+  // Sensitivity filter
+  if (sensitivity) {
+    if (!accessibleLevels.includes(sensitivity)) {
+      return { error: 'Du har ikke adgang til dette sensitivitetsniveau' }
     }
+    where.sensitivity = sensitivity
+  } else {
+    where.sensitivity = { in: accessibleLevels }
   }
 
-  // Redigeringsrettighed
-  const canEditData = await canEdit(session.user.id)
-  if (!canEditData) {
-    return { error: 'Du har ikke rettigheder til at redigere dokumenter' }
+  // Søgning
+  if (search?.trim()) {
+    where.OR = [
+      { title: { contains: search.trim(), mode: 'insensitive' } },
+      { fileName: { contains: search.trim(), mode: 'insensitive' } },
+      { description: { contains: search.trim(), mode: 'insensitive' } },
+    ]
   }
 
-  // Tjek ny sensitivity hvis ændret
-  if (data.sensitivity && data.sensitivity !== existing.sensitivity) {
-    const canAccessNewSensitivity = await canAccessSensitivity(
-      session.user.id,
-      data.sensitivity
-    )
-    if (!canAccessNewSensitivity) {
-      return {
-        error: `Du har ikke rettigheder til at sætte sensitivitetsniveau ${data.sensitivity}`,
-      }
-    }
-  }
-
-  // Tjek nyt selskab hvis ændret
-  if (data.companyId && data.companyId !== existing.companyId) {
-    const newCompany = await prisma.company.findFirst({
-      where: {
-        id: data.companyId,
-        organizationId: session.user.organizationId,
-        deletedAt: null,
-      },
-    })
-    if (!newCompany) {
-      return { error: 'Det nye selskab blev ikke fundet' }
-    }
-
-    const hasNewCompanyAccess = await canAccessCompany(session.user.id, data.companyId)
-    if (!hasNewCompanyAccess) {
-      return { error: 'Du har ikke adgang til det nye selskab' }
-    }
-  }
-
-  // Tjek ny sag hvis ændret
-  if (data.caseId && data.caseId !== existing.caseId) {
-    const newCase = await prisma.case.findFirst({
-      where: {
-        id: data.caseId,
-        organizationId: session.user.organizationId,
-        deletedAt: null,
-      },
-    })
-    if (!newCase) {
-      return { error: 'Den nye sag blev ikke fundet' }
-    }
-
-    const hasCaseSensitivityAccess = await canAccessSensitivity(
-      session.user.id,
-      newCase.sensitivity
-    )
-    if (!hasCaseSensitivityAccess) {
-      return { error: 'Du har ikke adgang til den nye sag' }
-    }
-  }
+  const skip = (page - 1) * pageSize
 
   try {
-    const document = await prisma.document.update({
-      where: { id },
-      data,
+    const [documents, total] = await Promise.all([
+      prisma.document.findMany({
+        where,
+        include: {
+          company: { select: { id: true, name: true } },
+          case: { select: { id: true, title: true } },
+        },
+        orderBy: { uploadedAt: 'desc' },
+        take: pageSize,
+        skip,
+      }),
+      prisma.document.count({ where }),
+    ])
+
+    return {
+      data: {
+        documents: documents as DocumentWithRelations[],
+        total,
+        page,
+        pageSize,
+      },
+    }
+  } catch (error) {
+    console.error('listDocuments error:', error)
+    return { error: 'Dokumenter kunne ikke hentes — prøv igen' }
+  }
+}
+
+// ==================== HENT DOKUMENT ====================
+
+export async function getDocument(
+  input: z.infer<typeof getDocumentSchema>
+): Promise<ActionResult<DocumentWithRelations>> {
+  const session = await auth()
+  if (!session?.user) return { error: 'Ikke autoriseret' }
+
+  const hasModuleAccess = await canAccessModule(session.user.id, 'documents')
+  if (!hasModuleAccess) return { error: 'Du har ikke adgang til dokumentmodulet' }
+
+  const parsed = getDocumentSchema.safeParse(input)
+  if (!parsed.success) return { error: 'Ugyldigt dokument-ID' }
+
+  const { documentId } = parsed.data
+
+  try {
+    const doc = await prisma.document.findUnique({
+      where: {
+        id: documentId,
+        organizationId: session.user.organizationId,
+        deletedAt: null,
+      },
+      include: {
+        company: { select: { id: true, name: true } },
+        case: { select: { id: true, title: true } },
+      },
     })
 
-    // Audit log med ændringer for fortrolige dokumenter
-    const shouldLogChanges =
-      existing.sensitivity === 'STRENGT_FORTROLIG' ||
-      existing.sensitivity === 'FORTROLIG'
+    if (!doc) return { error: 'Dokumentet blev ikke fundet' }
 
+    // Sensitivity-tjek ALTID inden returnering
+    const hasSensitivityAccess = await canAccessSensitivity(session.user.id, doc.sensitivity)
+    if (!hasSensitivityAccess) {
+      return { error: 'Du har ikke adgang til dette dokument — sensitivitetsniveauet er for højt' }
+    }
+
+    // Selskabsadgang
+    if (doc.companyId) {
+      const hasAccess = await canAccessCompany(session.user.id, doc.companyId)
+      if (!hasAccess) return { error: 'Du har ikke adgang til dette dokument' }
+    }
+
+    // Opdater last_viewed_at
+    await prisma.document.update({
+      where: { id: documentId },
+      data: {
+        lastViewedAt: new Date(),
+        lastViewedBy: session.user.id,
+      },
+    })
+
+    // Audit log — VIEW for FORTROLIG og STRENGT_FORTROLIG
+    const auditLevels: SensitivityLevel[] = ['FORTROLIG', 'STRENGT_FORTROLIG']
+    if (auditLevels.includes(doc.sensitivity)) {
+      await prisma.auditLog.create({
+        data: {
+          organizationId: session.user.organizationId,
+          userId: session.user.id,
+          action: 'VIEW',
+          resourceType: 'document',
+          resourceId: doc.id,
+          sensitivity: doc.sensitivity,
+        },
+      })
+    }
+
+    return { data: doc as DocumentWithRelations }
+  } catch (error) {
+    console.error('getDocument error:', error)
+    return { error: 'Dokumentet kunne ikke hentes — prøv igen' }
+  }
+}
+
+// ==================== DOWNLOAD URL ====================
+
+export async function getDocumentDownloadUrl(
+  input: z.infer<typeof getDownloadUrlSchema>
+): Promise<ActionResult<{ url: string; fileName: string }>> {
+  const session = await auth()
+  if (!session?.user) return { error: 'Ikke autoriseret' }
+
+  const hasModuleAccess = await canAccessModule(session.user.id, 'documents')
+  if (!hasModuleAccess) return { error: 'Du har ikke adgang til dokumentmodulet' }
+
+  const parsed = getDownloadUrlSchema.safeParse(input)
+  if (!parsed.success) return { error: 'Ugyldigt dokument-ID' }
+
+  const { documentId } = parsed.data
+
+  try {
+    const doc = await prisma.document.findUnique({
+      where: {
+        id: documentId,
+        organizationId: session.user.organizationId,
+        deletedAt: null,
+      },
+    })
+
+    if (!doc) return { error: 'Dokumentet blev ikke fundet' }
+
+    // ALTID: canAccessSensitivity INDEN download returneres
+    const hasSensitivityAccess = await canAccessSensitivity(session.user.id, doc.sensitivity)
+    if (!hasSensitivityAccess) {
+      return { error: 'Du har ikke adgang til at downloade dette dokument' }
+    }
+
+    // Selskabsadgang
+    if (doc.companyId) {
+      const hasAccess = await canAccessCompany(session.user.id, doc.companyId)
+      if (!hasAccess) return { error: 'Du har ikke adgang til dette dokument' }
+    }
+
+    if (!isStorageConfigured()) {
+      return { error: 'Download er ikke tilgængeligt — storage er ikke konfigureret' }
+    }
+
+    // Generer signeret download-URL
+    const fileKey = doc.fileUrl.replace(/^r2:\/\//, '')
+    const url = await getSignedDownloadUrl(fileKey)
+
+    // Audit log — DOWNLOAD altid
     await prisma.auditLog.create({
       data: {
         organizationId: session.user.organizationId,
         userId: session.user.id,
-        action: 'UPDATE',
+        action: 'DOWNLOAD',
         resourceType: 'document',
-        resourceId: document.id,
-        sensitivity: document.sensitivity,
-        changes: shouldLogChanges ? (data as object) : null,
+        resourceId: doc.id,
+        sensitivity: doc.sensitivity,
       },
     })
 
-    revalidatePath(`/documents/${id}`)
+    return { data: { url, fileName: doc.fileName } }
+  } catch (error) {
+    console.error('getDocumentDownloadUrl error:', error)
+    if (error instanceof Error) {
+      return { error: error.message }
+    }
+    return { error: 'Download-URL kunne ikke genereres — prøv igen' }
+  }
+}
+
+// ==================== OPDATER DOKUMENT ====================
+
+export async function updateDocument(
+  input: z.infer<typeof updateDocumentSchema>
+): Promise<ActionResult<Document>> {
+  const session = await auth()
+  if (!session?.user) return { error: 'Ikke autoriseret' }
+
+  const hasModuleAccess = await canAccessModule(session.user.id, 'documents')
+  if (!hasModuleAccess) return { error: 'Du har ikke adgang til dokumentmodulet' }
+
+  const parsed = updateDocumentSchema.safeParse(input)
+  if (!parsed.success) {
+    const firstError = parsed.error.errors[0]
+    return { error: firstError?.message ?? 'Ugyldigt input' }
+  }
+
+  const { documentId, ...updateData } = parsed.data
+
+  try {
+    const existing = await prisma.document.findUnique({
+      where: {
+        id: documentId,
+        organizationId: session.user.organizationId,
+        deletedAt: null,
+      },
+    })
+
+    if (!existing) return { error: 'Dokumentet blev ikke fundet' }
+
+    // Sensitivity-tjek på eksisterende dokument
+    const hasSensitivityAccess = await canAccessSensitivity(session.user.id, existing.sensitivity)
+    if (!hasSensitivityAccess) {
+      return { error: 'Du har ikke adgang til dette dokument' }
+    }
+
+    // Selskabsadgang
+    if (existing.companyId) {
+      const hasAccess = await canAccessCompany(session.user.id, existing.companyId)
+      if (!hasAccess) return { error: 'Du har ikke adgang til dette dokument' }
+    }
+
+    // Tjek nyt sensitivity-niveau
+    if (updateData.sensitivity) {
+      const hasNewAccess = await canAccessSensitivity(session.user.id, updateData.sensitivity)
+      if (!hasNewAccess) {
+        return { error: 'Du har ikke adgang til det valgte sensitivitetsniveau' }
+      }
+    }
+
+    // Tjek ny selskabsadgang
+    if (updateData.companyId) {
+      const hasNewCompanyAccess = await canAccessCompany(session.user.id, updateData.companyId)
+      if (!hasNewCompanyAccess) {
+        return { error: 'Du har ikke adgang til det valgte selskab' }
+      }
+    }
+
+    const document = await prisma.document.update({
+      where: {
+        id: documentId,
+        organizationId: session.user.organizationId,
+      },
+      data: {
+        title: updateData.title ?? undefined,
+        description: updateData.description !== undefined ? updateData.description : undefined,
+        folderPath: updateData.folderPath !== undefined ? updateData.folderPath : undefined,
+        sensitivity: updateData.sensitivity ?? undefined,
+        companyId: updateData.companyId !== undefined ? updateData.companyId : undefined,
+        caseId: updateData.caseId !== undefined ? updateData.caseId : undefined,
+      },
+    })
+
+    // Audit log for sensitive dokumenter
+    const auditLevels: SensitivityLevel[] = ['FORTROLIG', 'STRENGT_FORTROLIG']
+    if (auditLevels.includes(existing.sensitivity)) {
+      await prisma.auditLog.create({
+        data: {
+          organizationId: session.user.organizationId,
+          userId: session.user.id,
+          action: 'UPDATE',
+          resourceType: 'document',
+          resourceId: document.id,
+          sensitivity: document.sensitivity,
+        },
+      })
+    }
+
+    if (existing.companyId) revalidatePath(`/companies/${existing.companyId}`)
+    if (existing.caseId) revalidatePath(`/cases/${existing.caseId}`)
     revalidatePath('/documents')
+    revalidatePath(`/documents/${documentId}`)
 
     return { data: document }
   } catch (error) {
-    console.error('Fejl ved opdatering af dokument:', error)
+    console.error('updateDocument error:', error)
     return { error: 'Dokumentet kunne ikke opdateres — prøv igen' }
   }
 }
 
-// ==================== DELETE ====================
+// ==================== SLET DOKUMENT ====================
 
 export async function deleteDocument(
-  documentId: string
-): Promise<ActionResult<{ success: true }>> {
+  input: z.infer<typeof deleteDocumentSchema>
+): Promise<ActionResult<{ id: string }>> {
   const session = await auth()
-  if (!session?.user?.id || !session?.user?.organizationId) {
-    return { error: 'Ikke autoriseret' }
-  }
+  if (!session?.user) return { error: 'Ikke autoriseret' }
 
-  const existing = await prisma.document.findFirst({
-    where: {
-      id: documentId,
-      organizationId: session.user.organizationId,
-      deletedAt: null,
-    },
-  })
+  const hasModuleAccess = await canAccessModule(session.user.id, 'documents')
+  if (!hasModuleAccess) return { error: 'Du har ikke adgang til dokumentmodulet' }
 
-  if (!existing) {
-    return { error: 'Dokumentet blev ikke fundet' }
-  }
+  const parsed = deleteDocumentSchema.safeParse(input)
+  if (!parsed.success) return { error: 'Ugyldigt dokument-ID' }
 
-  const hasSensitivityAccess = await canAccessSensitivity(
-    session.user.id,
-    existing.sensitivity
-  )
-  if (!hasSensitivityAccess) {
-    return { error: 'Du har ikke adgang til dette dokument' }
-  }
-
-  if (existing.companyId) {
-    const hasCompanyAccess = await canAccessCompany(session.user.id, existing.companyId)
-    if (!hasCompanyAccess) {
-      return { error: 'Du har ikke adgang til dette dokument' }
-    }
-  }
-
-  const canEditData = await canEdit(session.user.id)
-  if (!canEditData) {
-    return { error: 'Du har ikke rettigheder til at slette dokumenter' }
-  }
+  const { documentId } = parsed.data
 
   try {
+    const existing = await prisma.document.findUnique({
+      where: {
+        id: documentId,
+        organizationId: session.user.organizationId,
+        deletedAt: null,
+      },
+    })
+
+    if (!existing) return { error: 'Dokumentet blev ikke fundet' }
+
+    // Sensitivity-tjek inden sletning
+    const hasSensitivityAccess = await canAccessSensitivity(session.user.id, existing.sensitivity)
+    if (!hasSensitivityAccess) {
+      return { error: 'Du har ikke adgang til at slette dette dokument' }
+    }
+
+    // Selskabsadgang
+    if (existing.companyId) {
+      const hasAccess = await canAccessCompany(session.user.id, existing.companyId)
+      if (!hasAccess) return { error: 'Du har ikke adgang til dette dokument' }
+    }
+
     // Soft delete
     await prisma.document.update({
-      where: { id: documentId },
+      where: {
+        id: documentId,
+        organizationId: session.user.organizationId,
+      },
       data: { deletedAt: new Date() },
     })
 
@@ -462,349 +643,13 @@ export async function deleteDocument(
       },
     })
 
+    if (existing.companyId) revalidatePath(`/companies/${existing.companyId}`)
+    if (existing.caseId) revalidatePath(`/cases/${existing.caseId}`)
     revalidatePath('/documents')
 
-    return { data: { success: true } }
+    return { data: { id: documentId } }
   } catch (error) {
-    console.error('Fejl ved sletning af dokument:', error)
+    console.error('deleteDocument error:', error)
     return { error: 'Dokumentet kunne ikke slettes — prøv igen' }
-  }
-}
-
-// ==================== GET ====================
-
-export async function getDocument(
-  documentId: string
-): Promise<ActionResult<DocumentWithRelations>> {
-  const session = await auth()
-  if (!session?.user?.id || !session?.user?.organizationId) {
-    return { error: 'Ikke autoriseret' }
-  }
-
-  const document = await prisma.document.findFirst({
-    where: {
-      id: documentId,
-      organizationId: session.user.organizationId,
-      deletedAt: null,
-    },
-    include: {
-      company: true,
-      case: true,
-    },
-  })
-
-  if (!document) {
-    return { error: 'Dokumentet blev ikke fundet' }
-  }
-
-  // Sensitivity adgang
-  const hasSensitivityAccess = await canAccessSensitivity(
-    session.user.id,
-    document.sensitivity
-  )
-  if (!hasSensitivityAccess) {
-    return { error: 'Du har ikke adgang til dette dokument' }
-  }
-
-  // Selskabsadgang hvis tilknyttet
-  if (document.companyId) {
-    const hasCompanyAccess = await canAccessCompany(session.user.id, document.companyId)
-    if (!hasCompanyAccess) {
-      return { error: 'Du har ikke adgang til dette dokument' }
-    }
-  }
-
-  // Opdater last viewed
-  await prisma.document.update({
-    where: { id: documentId },
-    data: {
-      lastViewedAt: new Date(),
-      lastViewedBy: session.user.id,
-    },
-  })
-
-  // Audit log
-  await prisma.auditLog.create({
-    data: {
-      organizationId: session.user.organizationId,
-      userId: session.user.id,
-      action: 'VIEW',
-      resourceType: 'document',
-      resourceId: documentId,
-      sensitivity: document.sensitivity,
-    },
-  })
-
-  return { data: document }
-}
-
-// ==================== LIST ====================
-
-export async function listDocuments(
-  filter?: ListDocumentsFilter
-): Promise<ActionResult<DocumentWithRelations[]>> {
-  const session = await auth()
-  if (!session?.user?.id || !session?.user?.organizationId) {
-    return { error: 'Ikke autoriseret' }
-  }
-
-  const canAccess = await canAccessModule(session.user.id, 'documents')
-  if (!canAccess) {
-    return { error: 'Du har ikke adgang til dokumentmodulet' }
-  }
-
-  // Validér filter
-  const parsedFilter = listDocumentsFilterSchema.safeParse(filter || {})
-  if (!parsedFilter.success) {
-    return { error: 'Ugyldigt filter' }
-  }
-
-  const {
-    companyId,
-    caseId,
-    contractId,
-    sensitivity,
-    fileType,
-    folderPath,
-    search,
-    limit = 50,
-    offset = 0,
-  } = parsedFilter.data
-
-  // Hent tilgængelige selskaber
-  const accessibleCompanies = await getAccessibleCompanies(session.user.id)
-  const accessibleCompanyIds = accessibleCompanies.map((c) => c.id)
-
-  // Hent max sensitivity niveau
-  const maxSensitivity = await getMaxSensitivityLevel(session.user.id)
-  if (!maxSensitivity) {
-    return { data: [] }
-  }
-
-  // Filtrer på sensitivity
-  const sensitivityOrder = ['PUBLIC', 'STANDARD', 'INTERN', 'FORTROLIG', 'STRENGT_FORTROLIG']
-  const sensitivityIndex = sensitivityOrder.indexOf(maxSensitivity)
-  const allowedSensitivities = sensitivityOrder.slice(0, sensitivityIndex + 1) as SensitivityLevel[]
-
-  // Byg where clause
-  const where: Prisma.DocumentWhereInput = {
-    organizationId: session.user.organizationId,
-    deletedAt: null,
-    sensitivity: sensitivity
-      ? { in: allowedSensitivities.filter((s) => s === sensitivity) }
-      : { in: allowedSensitivities },
-  }
-
-  // Filtrer på selskab
-  if (companyId) {
-    if (!accessibleCompanyIds.includes(companyId)) {
-      return { data: [] }
-    }
-    where.companyId = companyId
-  } else {
-    // Vis kun dokumenter fra tilgængelige selskaber eller uden selskab
-    where.OR = [
-      { companyId: { in: accessibleCompanyIds } },
-      { companyId: null },
-    ]
-  }
-
-  if (caseId) {
-    where.caseId = caseId
-  }
-
-  if (fileType) {
-    where.fileType = fileType
-  }
-
-  if (folderPath) {
-    where.folderPath = folderPath
-  }
-
-  if (search && search.trim()) {
-    where.AND = [
-      {
-        OR: [
-          { title: { contains: search, mode: 'insensitive' } },
-          { fileName: { contains: search, mode: 'insensitive' } },
-          { description: { contains: search, mode: 'insensitive' } },
-        ],
-      },
-    ]
-  }
-
-  try {
-    const documents = await prisma.document.findMany({
-      where,
-      include: {
-        company: true,
-        case: true,
-      },
-      orderBy: { uploadedAt: 'desc' },
-      take: limit,
-      skip: offset,
-    })
-
-    return { data: documents }
-  } catch (error) {
-    console.error('Fejl ved hentning af dokumenter:', error)
-    return { error: 'Dokumenterne kunne ikke hentes — prøv igen' }
-  }
-}
-
-// ==================== DOWNLOAD URL ====================
-
-export async function getDocumentDownloadUrl(
-  documentId: string
-): Promise<ActionResult<DownloadUrlResponse>> {
-  const session = await auth()
-  if (!session?.user?.id || !session?.user?.organizationId) {
-    return { error: 'Ikke autoriseret' }
-  }
-
-  // Tjek om storage er konfigureret
-  if (!isStorageConfigured) {
-    return { error: 'Filstorage er ikke konfigureret. Kontakt administrator.' }
-  }
-
-  const document = await prisma.document.findFirst({
-    where: {
-      id: documentId,
-      organizationId: session.user.organizationId,
-      deletedAt: null,
-    },
-  })
-
-  if (!document) {
-    return { error: 'Dokumentet blev ikke fundet' }
-  }
-
-  // canAccessSensitivity SKAL kaldes inden download returneres
-  const hasSensitivityAccess = await canAccessSensitivity(
-    session.user.id,
-    document.sensitivity
-  )
-  if (!hasSensitivityAccess) {
-    return { error: 'Du har ikke adgang til dette dokument' }
-  }
-
-  // Selskabsadgang hvis tilknyttet
-  if (document.companyId) {
-    const hasCompanyAccess = await canAccessCompany(session.user.id, document.companyId)
-    if (!hasCompanyAccess) {
-      return { error: 'Du har ikke adgang til dette dokument' }
-    }
-  }
-
-  try {
-    const downloadUrl = await getSignedDownloadUrl(
-      document.fileUrl,
-      3600,
-      document.fileName
-    )
-
-    // Audit log for download
-    await prisma.auditLog.create({
-      data: {
-        organizationId: session.user.organizationId,
-        userId: session.user.id,
-        action: 'DOWNLOAD',
-        resourceType: 'document',
-        resourceId: documentId,
-        sensitivity: document.sensitivity,
-      },
-    })
-
-    const expiresAt = new Date(Date.now() + 3600 * 1000)
-
-    return {
-      data: {
-        downloadUrl,
-        expiresAt,
-      },
-    }
-  } catch (error) {
-    console.error('Fejl ved generering af download URL:', error)
-    return { error: 'Download URL kunne ikke genereres — prøv igen' }
-  }
-}
-
-// ==================== PREVIEW URL ====================
-
-export async function getDocumentPreviewUrl(
-  documentId: string
-): Promise<ActionResult<DownloadUrlResponse>> {
-  const session = await auth()
-  if (!session?.user?.id || !session?.user?.organizationId) {
-    return { error: 'Ikke autoriseret' }
-  }
-
-  // Tjek om storage er konfigureret
-  if (!isStorageConfigured) {
-    return { error: 'Filstorage er ikke konfigureret. Kontakt administrator.' }
-  }
-
-  const document = await prisma.document.findFirst({
-    where: {
-      id: documentId,
-      organizationId: session.user.organizationId,
-      deletedAt: null,
-    },
-  })
-
-  if (!document) {
-    return { error: 'Dokumentet blev ikke fundet' }
-  }
-
-  // canAccessSensitivity SKAL kaldes
-  const hasSensitivityAccess = await canAccessSensitivity(
-    session.user.id,
-    document.sensitivity
-  )
-  if (!hasSensitivityAccess) {
-    return { error: 'Du har ikke adgang til dette dokument' }
-  }
-
-  // Selskabsadgang hvis tilknyttet
-  if (document.companyId) {
-    const hasCompanyAccess = await canAccessCompany(session.user.id, document.companyId)
-    if (!hasCompanyAccess) {
-      return { error: 'Du har ikke adgang til dette dokument' }
-    }
-  }
-
-  // Tjek om filen kan forhåndsvises
-  const previewableTypes = ['application/pdf', 'image/png', 'image/jpeg']
-  if (!previewableTypes.includes(document.fileType)) {
-    return { error: 'Denne filtype kan ikke forhåndsvises' }
-  }
-
-  try {
-    // Ingen ResponseContentDisposition for inline preview
-    const previewUrl = await getSignedDownloadUrl(document.fileUrl, 3600)
-
-    // Audit log for view
-    await prisma.auditLog.create({
-      data: {
-        organizationId: session.user.organizationId,
-        userId: session.user.id,
-        action: 'VIEW',
-        resourceType: 'document',
-        resourceId: documentId,
-        sensitivity: document.sensitivity,
-      },
-    })
-
-    const expiresAt = new Date(Date.now() + 3600 * 1000)
-
-    return {
-      data: {
-        downloadUrl: previewUrl,
-        expiresAt,
-      },
-    }
-  } catch (error) {
-    console.error('Fejl ved generering af preview URL:', error)
-    return { error: 'Preview URL kunne ikke genereres — prøv igen' }
   }
 }

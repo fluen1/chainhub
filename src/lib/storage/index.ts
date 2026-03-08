@@ -1,194 +1,178 @@
-// Cloudflare R2 fil-upload placeholder
-// DEC-030: Storage helper til kontrakt-versioner og bilag
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+  DeleteObjectCommand,
+} from '@aws-sdk/client-s3'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { v4 as uuidv4 } from 'uuid'
 
-const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME
-const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID
-const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID
-const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY
-const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL
+// Accepterede filtyper
+export const ACCEPTED_FILE_TYPES = {
+  'application/pdf': 'pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'docx',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+} as const
+
+export type AcceptedMimeType = keyof typeof ACCEPTED_FILE_TYPES
+
+export const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024 // 50MB
+
+export const ACCEPTED_MIME_TYPES = Object.keys(ACCEPTED_FILE_TYPES) as AcceptedMimeType[]
 
 /**
- * Tjekker om R2 storage er konfigureret korrekt
+ * Tjekker om Cloudflare R2 er konfigureret
  */
 export function isStorageConfigured(): boolean {
   return !!(
-    R2_BUCKET_NAME &&
-    R2_ACCOUNT_ID &&
-    R2_ACCESS_KEY_ID &&
-    R2_SECRET_ACCESS_KEY
+    process.env.R2_BUCKET_NAME &&
+    process.env.R2_ACCOUNT_ID &&
+    process.env.R2_ACCESS_KEY_ID &&
+    process.env.R2_SECRET_ACCESS_KEY
   )
 }
 
 /**
- * Returnerer konfigurationsvejledning hvis R2 ikke er opsat
+ * Vejledning til konfiguration af R2
  */
 export function getStorageConfigurationGuide(): string {
-  const missing: string[] = []
-  if (!R2_BUCKET_NAME) missing.push('R2_BUCKET_NAME')
-  if (!R2_ACCOUNT_ID) missing.push('R2_ACCOUNT_ID')
-  if (!R2_ACCESS_KEY_ID) missing.push('R2_ACCESS_KEY_ID')
-  if (!R2_SECRET_ACCESS_KEY) missing.push('R2_SECRET_ACCESS_KEY')
-
-  return `
-Cloudflare R2 er ikke konfigureret. Manglende miljøvariabler: ${missing.join(', ')}
-
-Opsætning:
-1. Opret en R2 bucket i Cloudflare Dashboard
-2. Generer API-nøgler med R2-skriveadgang
-3. Tilføj følgende til din .env.local:
-
-   R2_BUCKET_NAME=din-bucket-navn
-   R2_ACCOUNT_ID=dit-cloudflare-account-id
-   R2_ACCESS_KEY_ID=din-r2-access-key
-   R2_SECRET_ACCESS_KEY=din-r2-secret-key
-   R2_PUBLIC_URL=https://pub-xxxxx.r2.dev (valgfri — til direkte adgang)
-
-Dokumentation: https://developers.cloudflare.com/r2/
-`.trim()
+  return `Cloudflare R2 er ikke konfigureret. Tilføj følgende miljøvariabler:
+  R2_BUCKET_NAME, R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY`
 }
 
 /**
- * Genererer en unik sti til filen i R2 bucketen
- * Format: {organizationId}/{resourceType}/{resourceId}/{timestamp}-{fileName}
+ * Opretter S3-kompatibel klient til Cloudflare R2
+ */
+function createR2Client(): S3Client {
+  const accountId = process.env.R2_ACCOUNT_ID!
+  return new S3Client({
+    region: 'auto',
+    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+    credentials: {
+      accessKeyId: process.env.R2_ACCESS_KEY_ID!,
+      secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+    },
+  })
+}
+
+/**
+ * Genererer en unik filsti i R2
+ * Format: {orgId}/{resourceType}/{resourceId}/{uuid}-{fileName}
  */
 export function generateStoragePath(
   organizationId: string,
-  resourceType: 'contracts' | 'attachments' | 'documents',
+  resourceType: string,
   resourceId: string,
   fileName: string
 ): string {
-  const timestamp = Date.now()
-  const sanitizedFileName = fileName.replace(/[^a-zA-Z0-9.\-_]/g, '_')
-  return `${organizationId}/${resourceType}/${resourceId}/${timestamp}-${sanitizedFileName}`
+  const safeFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_')
+  const uniqueId = uuidv4()
+  return `${organizationId}/${resourceType}/${resourceId}/${uniqueId}-${safeFileName}`
 }
 
 /**
- * Genererer en pre-signed upload URL til Cloudflare R2
- *
- * PLACEHOLDER: Kræver aws4 eller @aws-sdk/client-s3 pakke
- * R2 er S3-kompatibel og bruger samme pre-signed URL mekanisme
+ * Genererer en signeret upload-URL (PUT) — gyldig i 15 minutter
  */
 export async function getSignedUploadUrl(
   fileKey: string,
-  contentType: string,
-  expiresInSeconds: number = 3600
+  contentType: string
 ): Promise<{ uploadUrl: string; fileUrl: string }> {
   if (!isStorageConfigured()) {
-    throw new Error(
-      `Fil-upload er ikke tilgængeligt. ${getStorageConfigurationGuide()}`
-    )
+    throw new Error('Storage er ikke konfigureret')
   }
 
-  // PLACEHOLDER IMPLEMENTATION
-  // I produktion skal dette bruge @aws-sdk/client-s3 med R2-endpoint:
-  //
-  // import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
-  // import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
-  //
-  // const s3 = new S3Client({
-  //   region: 'auto',
-  //   endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-  //   credentials: {
-  //     accessKeyId: R2_ACCESS_KEY_ID!,
-  //     secretAccessKey: R2_SECRET_ACCESS_KEY!,
-  //   },
-  // })
-  //
-  // const command = new PutObjectCommand({
-  //   Bucket: R2_BUCKET_NAME,
-  //   Key: fileKey,
-  //   ContentType: contentType,
-  // })
-  //
-  // const uploadUrl = await getSignedUrl(s3, command, { expiresIn: expiresInSeconds })
-  // const fileUrl = R2_PUBLIC_URL
-  //   ? `${R2_PUBLIC_URL}/${fileKey}`
-  //   : `https://${R2_BUCKET_NAME}.${R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${fileKey}`
-  //
-  // return { uploadUrl, fileUrl }
+  const client = createR2Client()
+  const bucketName = process.env.R2_BUCKET_NAME!
 
-  throw new Error(
-    'Fil-upload er ikke fuldt implementeret endnu. Installer @aws-sdk/client-s3 og @aws-sdk/s3-request-presigner og uncomment koden ovenfor.'
-  )
+  const command = new PutObjectCommand({
+    Bucket: bucketName,
+    Key: fileKey,
+    ContentType: contentType,
+  })
+
+  const uploadUrl = await getSignedUrl(client, command, { expiresIn: 900 }) // 15 min
+  const fileUrl = `r2://${fileKey}`
+
+  return { uploadUrl, fileUrl }
 }
 
 /**
- * Genererer en pre-signed download URL til Cloudflare R2
+ * Genererer en signeret download-URL (GET) — gyldig i 1 time
  */
 export async function getSignedDownloadUrl(
   fileKey: string,
-  expiresInSeconds: number = 3600
+  expiresInSeconds = 3600
 ): Promise<string> {
   if (!isStorageConfigured()) {
-    throw new Error(
-      `Fil-download er ikke tilgængeligt. ${getStorageConfigurationGuide()}`
-    )
+    throw new Error('Storage er ikke konfigureret')
   }
 
-  // PLACEHOLDER IMPLEMENTATION
-  // import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3'
-  // import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
-  //
-  // const s3 = new S3Client({
-  //   region: 'auto',
-  //   endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-  //   credentials: {
-  //     accessKeyId: R2_ACCESS_KEY_ID!,
-  //     secretAccessKey: R2_SECRET_ACCESS_KEY!,
-  //   },
-  // })
-  //
-  // const command = new GetObjectCommand({
-  //   Bucket: R2_BUCKET_NAME,
-  //   Key: fileKey,
-  // })
-  //
-  // return getSignedUrl(s3, command, { expiresIn: expiresInSeconds })
+  const client = createR2Client()
+  const bucketName = process.env.R2_BUCKET_NAME!
 
-  // Hvis R2_PUBLIC_URL er sat, brug direkte URL (kun til offentlige filer)
-  if (R2_PUBLIC_URL) {
-    return `${R2_PUBLIC_URL}/${fileKey}`
-  }
+  // Fjern evt. r2:// prefix
+  const cleanKey = fileKey.replace(/^r2:\/\//, '')
 
-  throw new Error(
-    'Fil-download er ikke fuldt implementeret endnu. Installer @aws-sdk/client-s3 og @aws-sdk/s3-request-presigner og uncomment koden ovenfor.'
-  )
+  const command = new GetObjectCommand({
+    Bucket: bucketName,
+    Key: cleanKey,
+  })
+
+  return getSignedUrl(client, command, { expiresIn: expiresInSeconds })
 }
 
 /**
  * Sletter en fil fra R2
  */
-export async function deleteFile(fileKey: string): Promise<void> {
+export async function deleteStorageFile(fileKey: string): Promise<void> {
   if (!isStorageConfigured()) {
-    throw new Error(
-      `Fil-sletning er ikke tilgængeligt. ${getStorageConfigurationGuide()}`
-    )
+    throw new Error('Storage er ikke konfigureret')
   }
 
-  // PLACEHOLDER IMPLEMENTATION
-  // import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3'
-  //
-  // const s3 = new S3Client({
-  //   region: 'auto',
-  //   endpoint: `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-  //   credentials: {
-  //     accessKeyId: R2_ACCESS_KEY_ID!,
-  //     secretAccessKey: R2_SECRET_ACCESS_KEY!,
-  //   },
-  // })
-  //
-  // await s3.send(new DeleteObjectCommand({
-  //   Bucket: R2_BUCKET_NAME,
-  //   Key: fileKey,
-  // }))
+  const client = createR2Client()
+  const bucketName = process.env.R2_BUCKET_NAME!
 
-  console.warn(`deleteFile: ${fileKey} — storage ikke fuldt konfigureret`)
+  const cleanKey = fileKey.replace(/^r2:\/\//, '')
+
+  const command = new DeleteObjectCommand({
+    Bucket: bucketName,
+    Key: cleanKey,
+  })
+
+  await client.send(command)
 }
 
 /**
- * Udtrækker fileKey fra en fuld file URL
+ * Validerer filtype og størrelse
  */
-export function extractFileKey(fileUrl: string): string {
-  if (!R2_PUBLIC_URL) return fileUrl
-  return fileUrl.replace(`${R2_PUBLIC_URL}/`, '')
+export function validateFile(
+  fileName: string,
+  mimeType: string,
+  fileSizeBytes: number
+): { valid: boolean; error?: string } {
+  if (!ACCEPTED_MIME_TYPES.includes(mimeType as AcceptedMimeType)) {
+    return {
+      valid: false,
+      error: `Filtypen "${mimeType}" er ikke tilladt. Accepterede typer: PDF, DOCX, XLSX, PNG, JPG`,
+    }
+  }
+
+  if (fileSizeBytes > MAX_FILE_SIZE_BYTES) {
+    const sizeMB = Math.round(fileSizeBytes / 1024 / 1024)
+    return {
+      valid: false,
+      error: `Filen er for stor (${sizeMB}MB). Maksimum er 50MB`,
+    }
+  }
+
+  if (!fileName || fileName.trim().length === 0) {
+    return {
+      valid: false,
+      error: 'Filnavn mangler',
+    }
+  }
+
+  return { valid: true }
 }

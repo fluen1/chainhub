@@ -1,99 +1,82 @@
 import { z } from 'zod'
-import { SensitivityLevel } from '@prisma/client'
-import { ALLOWED_FILE_TYPES, MAX_FILE_SIZE_BYTES } from '@/lib/storage'
+import { ACCEPTED_MIME_TYPES, MAX_FILE_SIZE_BYTES } from '@/lib/storage'
 
-// ==================== CREATE ====================
-
-export const createDocumentSchema = z.object({
-  title: z.string().min(1, 'Titel er påkrævet').max(255, 'Titel må maks være 255 tegn'),
+export const uploadDocumentSchema = z.object({
+  title: z.string().min(1, 'Titel er påkrævet').max(255, 'Titel må maks. være 255 tegn'),
+  fileName: z.string().min(1, 'Filnavn er påkrævet'),
+  fileType: z.enum(
+    ACCEPTED_MIME_TYPES as [string, ...string[]],
+    { errorMap: () => ({ message: 'Filtypen er ikke tilladt. Accepter: PDF, DOCX, XLSX, PNG, JPG' }) }
+  ),
+  fileSizeBytes: z
+    .number()
+    .int()
+    .positive('Filstørrelse skal være positiv')
+    .max(MAX_FILE_SIZE_BYTES, `Filen må maks. være 50MB`),
   companyId: z.string().uuid('Ugyldigt selskabs-ID').optional().nullable(),
   caseId: z.string().uuid('Ugyldigt sags-ID').optional().nullable(),
-  contractId: z.string().uuid('Ugyldigt kontrakt-ID').optional().nullable(),
-  sensitivity: z.nativeEnum(SensitivityLevel).optional().default('STANDARD'),
+  sensitivity: z.enum(['PUBLIC', 'STANDARD', 'INTERN', 'FORTROLIG', 'STRENGT_FORTROLIG']),
   folderPath: z.string().max(500).optional().nullable(),
-  description: z.string().max(2000).optional().nullable(),
-  // Fil-metadata (sættes efter upload)
-  fileUrl: z.string().min(1, 'Fil-URL er påkrævet'),
-  fileName: z.string().min(1, 'Filnavn er påkrævet').max(255),
-  fileSizeBytes: z.number().min(1).max(MAX_FILE_SIZE_BYTES, 'Filen er for stor (maks 50MB)'),
-  fileType: z.string().refine(
-    (type) => (ALLOWED_FILE_TYPES as readonly string[]).includes(type),
-    'Filtypen er ikke tilladt'
-  ),
+  description: z.string().max(1000).optional().nullable(),
 })
 
-export type CreateDocumentInput = z.infer<typeof createDocumentSchema>
-
-// ==================== UPDATE ====================
-
-export const updateDocumentSchema = z.object({
-  id: z.string().uuid('Ugyldigt dokument-ID'),
-  title: z.string().min(1).max(255).optional(),
+export const confirmDocumentUploadSchema = z.object({
+  title: z.string().min(1, 'Titel er påkrævet').max(255),
+  fileKey: z.string().min(1, 'Filnøgle er påkrævet'),
+  fileName: z.string().min(1, 'Filnavn er påkrævet'),
+  fileType: z.string().min(1),
+  fileSizeBytes: z.number().int().positive().max(MAX_FILE_SIZE_BYTES),
   companyId: z.string().uuid().optional().nullable(),
   caseId: z.string().uuid().optional().nullable(),
-  sensitivity: z.nativeEnum(SensitivityLevel).optional(),
+  sensitivity: z.enum(['PUBLIC', 'STANDARD', 'INTERN', 'FORTROLIG', 'STRENGT_FORTROLIG']),
   folderPath: z.string().max(500).optional().nullable(),
-  description: z.string().max(2000).optional().nullable(),
+  description: z.string().max(1000).optional().nullable(),
 })
 
-export type UpdateDocumentInput = z.infer<typeof updateDocumentSchema>
-
-// ==================== LIST FILTER ====================
-
-export const listDocumentsFilterSchema = z.object({
+export const listDocumentsSchema = z.object({
   companyId: z.string().uuid().optional(),
   caseId: z.string().uuid().optional(),
-  contractId: z.string().uuid().optional(),
-  sensitivity: z.nativeEnum(SensitivityLevel).optional(),
+  sensitivity: z
+    .enum(['PUBLIC', 'STANDARD', 'INTERN', 'FORTROLIG', 'STRENGT_FORTROLIG'])
+    .optional(),
   fileType: z.string().optional(),
+  search: z.string().max(200).optional(),
   folderPath: z.string().optional(),
-  search: z.string().optional(),
-  limit: z.number().min(1).max(100).optional().default(50),
-  offset: z.number().min(0).optional().default(0),
+  page: z.number().int().positive().default(1),
+  pageSize: z.number().int().min(1).max(100).default(20),
 })
 
-export type ListDocumentsFilter = z.infer<typeof listDocumentsFilterSchema>
+export const getDocumentSchema = z.object({
+  documentId: z.string().uuid('Ugyldigt dokument-ID'),
+})
 
-// ==================== UPLOAD REQUEST ====================
+export const updateDocumentSchema = z.object({
+  documentId: z.string().uuid('Ugyldigt dokument-ID'),
+  title: z.string().min(1).max(255).optional(),
+  description: z.string().max(1000).optional().nullable(),
+  folderPath: z.string().max(500).optional().nullable(),
+  sensitivity: z
+    .enum(['PUBLIC', 'STANDARD', 'INTERN', 'FORTROLIG', 'STRENGT_FORTROLIG'])
+    .optional(),
+  companyId: z.string().uuid().optional().nullable(),
+  caseId: z.string().uuid().optional().nullable(),
+})
 
-export const requestUploadUrlSchema = z.object({
-  fileName: z.string().min(1, 'Filnavn er påkrævet').max(255),
-  fileType: z.string().refine(
-    (type) => (ALLOWED_FILE_TYPES as readonly string[]).includes(type),
-    'Filtypen er ikke tilladt. Tilladt: PDF, DOCX, XLSX, PNG, JPG'
+export const deleteDocumentSchema = z.object({
+  documentId: z.string().uuid('Ugyldigt dokument-ID'),
+})
+
+export const requestDocumentUploadUrlSchema = z.object({
+  fileName: z.string().min(1, 'Filnavn er påkrævet'),
+  fileType: z.enum(
+    ACCEPTED_MIME_TYPES as [string, ...string[]],
+    { errorMap: () => ({ message: 'Filtypen er ikke tilladt' }) }
   ),
-  fileSizeBytes: z.number()
-    .min(1, 'Filstørrelse skal være større end 0')
-    .max(MAX_FILE_SIZE_BYTES, 'Filen er for stor (maks 50MB)'),
-  entityType: z.enum(['document', 'contract-version', 'contract-attachment']),
-  entityId: z.string().uuid().optional(), // Kan være tom ved ny oprettelse
+  fileSizeBytes: z.number().int().positive().max(MAX_FILE_SIZE_BYTES, 'Filen er for stor (maks. 50MB)'),
+  companyId: z.string().uuid().optional().nullable(),
+  caseId: z.string().uuid().optional().nullable(),
 })
 
-export type RequestUploadUrlInput = z.infer<typeof requestUploadUrlSchema>
-
-// ==================== HELPERS ====================
-
-/**
- * Formatér filstørrelse til læsbar tekst
- */
-export function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`
-}
-
-/**
- * Hent læsbar filtype-navn
- */
-export function getFileTypeName(mimeType: string): string {
-  const names: Record<string, string> = {
-    'application/pdf': 'PDF',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'Word',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'Excel',
-    'image/png': 'PNG-billede',
-    'image/jpeg': 'JPG-billede',
-  }
-  return names[mimeType] || 'Ukendt'
-}
+export const getDownloadUrlSchema = z.object({
+  documentId: z.string().uuid('Ugyldigt dokument-ID'),
+})
