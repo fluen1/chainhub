@@ -8,7 +8,9 @@
       "Bash(npx husky:*)",
       "Bash(npx next:*)",
       "Bash(npx tsc:*)",
-      "Bash(npx prettier:*)"
+      "Bash(npx prettier:*)",
+      "Bash(npx prisma:*)",
+      "Bash(DATABASE_URL=\"postgresql://user:pass@localhost:5432/chainhub\" npx prisma:*)"
     ]
   }
 }

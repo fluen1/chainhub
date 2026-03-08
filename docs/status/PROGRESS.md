@@ -21,7 +21,7 @@
 ## Sprint 1 — Fundament
 
 [x] Projektopsætning
-[ ] Database (Prisma schema + migrations + seed)
+[x] Database (Prisma schema + migrations + seed)
 [ ] Auth (NextAuth + Microsoft OAuth)
 [ ] Permissions (helpers + unit tests)
 [ ] DevOps (Vercel + CI + .env.example)
@@ -59,9 +59,11 @@
 ## Seneste opdatering
 
 Dato: 2026-03-08
-Af: BA-08 (DevOps) via BA-01 (Orchestrator)
-Note: Projektopsætning færdig.
-Next.js 14 + TypeScript (strict) + Tailwind + shadcn/ui
-ESLint + Prettier + Husky pre-commit (lint-staged)
-Mappestruktur per CONVENTIONS.md v0.3
-build + lint + typecheck + format:check — alle grønne.
+Af: BA-02 (Schema) via BA-01 (Orchestrator)
+Note: Prisma schema v1 færdig — prisma validate OK.
+      20 modeller, 30 enums, alle DEC-beslutninger indarbejdet.
+      DEC-008: MetricType/PeriodType/MetricSource enums
+      DEC-016: organization_id på junction-tabeller
+      DEC-019: Organization-relationer på FinancialMetric/TimeEntry
+      Seed: DentGroup testorganisation med 3 selskaber, 5 kontrakter.
+      Migration afventer DATABASE_URL (PostgreSQL).

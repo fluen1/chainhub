@@ -365,3 +365,147 @@ DATABASE-SCHEMA.md: `FinancialMetric` og `TimeEntry` har `organization_id` som f
 Desuden: `Organization`-modellen mangler `created_by` felt (princip 3: "created_at, updated_at, created_by på alle tabeller").
 
 Forslag: Tilføj `organization Organization @relation(...)` på begge modeller. Tilføj `created_by` på Organization. Tilføj `financialMetrics FinancialMetric[]` og `timeEntries TimeEntry[]` til Organization-modellens relations.
+
+---
+
+## DEC-020: Prisma enum-værdier bruger ASCII-erstatninger — matcher ikke spec
+**Status:** CHALLENGED
+**Proposed by:** BA-07 (QA-agent)
+**Dato:** 2025-01-13
+**Rangering:** KRITISK
+
+**Forslag/Indsigelse:**
+prisma/schema.prisma bruger ASCII-erstatninger for danske tegn i enum-værdier:
+- `UDLOEBET` i stedet for `UDLØBET`
+- `DIREKTOERKONTRAKT` i stedet for `DIREKTØRKONTRAKT`
+- `AKTIONERLAN` i stedet for `AKTIONÆRLÅN`
+- `VEDTAEGTER` i stedet for `VEDTÆGTER`
+- `VIRKSOMHEDSKOEB` i stedet for `VIRKSOMHEDSKØB`
+- Og 20+ andre forekomster
+
+DATABASE-SCHEMA.md v0.4 bruger konsekvent danske tegn (Æ, Ø, Å).
+API-SPEC.md v0.3 bruger konsekvent danske tegn.
+CONTRACT-TYPES.md bruger konsekvent danske tegn.
+
+PostgreSQL og Prisma understøtter fuldt UTF-8 i enum-værdier. ASCII-erstatningerne:
+1. Bryder konsistens mellem spec og implementation
+2. Gør koden sværere at læse og vedligeholde
+3. Kræver konvertering i application-laget
+
+**Anbefaling:** Ret alle enum-værdier til at matche spec (brug danske tegn).
+
+---
+
+## DEC-021: getAccessibleCompanies mangler organization_id filter for ASSIGNED/OWN scope
+**Status:** CHALLENGED
+**Proposed by:** BA-07 (QA-agent)
+**Dato:** 2025-01-13
+**Rangering:** KRITISK
+
+**Forslag/Indsigelse:**
+src/lib/permissions/index.ts linje 148-152:
+
+```typescript
+return prisma.company.findMany({
+  where: {
+    id: { in: Array.from(accessibleCompanyIds) },
+    organizationId: user.organizationId,  // ← Denne linje er korrekt
+    deletedAt: null,
+  },
+  // ...
+})
+```
+
+Ved nærmere gennemlæsning er dette KORREKT for ASSIGNED/OWN path.
+
+MEN getUserRoleAssignments (linje 63-70) henter roller UDEN at validere at rollen tilhører brugerens organisation:
+
+```typescript
+async function getUserRoleAssignments(userId: string) {
+  return prisma.userRoleAssignment.findMany({
+    where: { userId },  // ← Mangler organizationId filter!
+  })
+}
+```
+
+Hvis en bruger på ukendt vis har rolle-tildelinger i en anden organisation (data-korruption, bug), vil disse blive inkluderet. Burde have `organizationId` filter baseret på brugerens organisation.
+
+**Anbefaling:** Tilføj organization-validering til getUserRoleAssignments.
+
+---
+
+## DEC-022: Auth config fil mangler — session-struktur kan ikke valideres
+**Status:** CHALLENGED
+**Proposed by:** BA-07 (QA-agent)
+**Dato:** 2025-01-13
+**Rangering:** KRITISK
+
+**Forslag/Indsigelse:**
+src/lib/auth/index.ts importerer `authOptions` fra './config', men src/lib/auth/config.ts er IKKE inkluderet i de leverede filer.
+
+CONVENTIONS.md §4 og API-SPEC.md kræver at session indeholder:
+- `session.user.id` (userId)
+- `session.user.organizationId`
+
+Uden auth config-filen kan vi ikke verificere at:
+1. NextAuth callbacks korrekt populerer organizationId på session
+2. JWT/session strategy er korrekt konfigureret
+3. Microsoft OAuth provider er korrekt sat op
+
+**Anbefaling:** Auth config-fil skal leveres og valideres.
+
+---
+
+## DEC-023: Middleware validerer ikke organizationId i token
+**Status:** CHALLENGED
+**Proposed by:** BA-07 (QA-agent)
+**Dato:** 2025-01-13
+**Rangering:** VIGTIG
+
+**Forslag/Indsigelse:**
+src/middleware.ts linje 20-32 tjekker kun om token eksisterer:
+
+```typescript
+authorized: ({ token, req }) => {
+  // ...
+  return !!token  // ← Tjekker kun eksistens, ikke indhold
+}
+```
+
+En bruger med et gyldigt token men uden organizationId (fx fejl i auth-flow) kunne potentielt tilgå beskyttede routes og forårsage null-reference fejl i downstream kode.
+
+**Anbefaling:** Tilføj validering: `return !!token && !!token.organizationId`
+
+---
+
+## DEC-024: Zod validation schemas mangler
+**Status:** CHALLENGED
+**Proposed by:** BA-07 (QA-agent)
+**Dato:** 2025-01-13
+**Rangering:** VIGTIG
+
+**Forslag/Indsigelse:**
+CONVENTIONS.md §3 og §5 kræver Zod validation på al brugerinput. API-SPEC.md definerer input-schemas for alle server actions.
+
+Ingen Zod schemas er inkluderet i de leverede filer. src/lib/validations/ mappe nævnes i CONVENTIONS.md projektstruktur men er ikke leveret.
+
+**Anbefaling:** Zod validation schemas skal implementeres før server actions kan bygges.
+
+---
+
+QA-GODKENDT: src/lib/permissions/index.ts struktur og signaturer 2025-01-13
+  - Alle påkrævede helpers eksisterer med korrekte signaturer
+  - ROLE_SENSITIVITY_ACCESS og ROLE_MODULE_ACCESS matricer matcher spec
+  - ModuleType matcher CONVENTIONS.md v0.3
+
+QA-GODKENDT: prisma/schema.prisma struktur 2025-01-13
+  - Alle tabeller har organizationId
+  - Junction-tabeller (DEC-016) har organization_id, created_at, created_by
+  - AuditLog har changes felt (DEC-017)
+  - FinancialMetric og TimeEntry har Organization-relation (DEC-019)
+  - ChangeType enum eksisterer (DEC-002/013)
+  - SELSKABSGARANTI er i ContractSystemType (DEC-003)
+
+QA-GODKENDT: src/middleware.ts grundstruktur 2025-01-13
+  - Korrekt brug af withAuth
+  - Korrekt matcher-konfiguration for beskyttede routes
