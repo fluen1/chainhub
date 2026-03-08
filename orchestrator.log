@@ -462,3 +462,17 @@ husky - pre-commit script failed (code 1)
 [2026-03-08 23:30:52] [INFO] Skrevet: docs/ops/CACHING.md
 [2026-03-08 23:30:52] [INFO] Skrevet: docs/adr/DECISIONS.md
 [2026-03-08 23:30:52] [INFO] Skrevet: docs/ops/PERFORMANCE-REPORT-companies-persons.md
+[2026-03-08 23:30:53] [INFO] Git commit: feat: BA-09-sprint2 Performance-agent (Sprint 2 review) - Performance — analysér queries i selskabs- og pers
+[2026-03-08 23:30:53] [INFO] === BA-09-sprint2 FÆRDIG (3 filer skrevet) ===
+[2026-03-08 23:30:55] [INFO] --- Agent 4/4: BA-07-sprint2 ---
+[2026-03-08 23:30:55] [INFO] === Starter BA-07-sprint2 (QA-agent (Sprint 2 review)) ===
+[2026-03-08 23:30:55] [INFO] Opgave: QA — Validér selskabs- og personmodul mod spec og permissions-model
+[2026-03-08 23:30:55] [ADVARSEL] Fil ikke fundet: src/components/companies/OwnershipTable.tsx
+[2026-03-08 23:30:55] [ADVARSEL] Input-fil mangler: src/components/companies/OwnershipTable.tsx — fortsætter uden
+[2026-03-08 23:30:55] [INFO] Kalder Claude API (claude-opus-4-5) med streaming...
+[2026-03-08 23:31:30] [INFO]   ... 4000 tegn modtaget
+[2026-03-08 23:33:04] [INFO]   ... 16000 tegn modtaget
+[2026-03-08 23:34:29] [INFO]   ... 28000 tegn modtaget
+[2026-03-08 23:34:41] [INFO]   ... 30000 tegn modtaget
+[2026-03-08 23:34:55] [INFO] API svar komplet på 240.3s (32555 tegn)
+[2026-03-08 23:34:55] [INFO] Skrevet: docs/status/DECISIONS.md

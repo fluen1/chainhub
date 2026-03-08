@@ -396,29 +396,14 @@ PostgreSQL og Prisma understøtter fuldt UTF-8 i enum-værdier. ASCII-erstatning
 
 ---
 
-## DEC-021: getAccessibleCompanies mangler organization_id filter for ASSIGNED/OWN scope
+## DEC-021: getUserRoleAssignments mangler organization_id filter
 **Status:** CHALLENGED
 **Proposed by:** BA-07 (QA-agent)
 **Dato:** 2025-01-13
 **Rangering:** KRITISK
 
 **Forslag/Indsigelse:**
-src/lib/permissions/index.ts linje 148-152:
-
-```typescript
-return prisma.company.findMany({
-  where: {
-    id: { in: Array.from(accessibleCompanyIds) },
-    organizationId: user.organizationId,  // ← Denne linje er korrekt
-    deletedAt: null,
-  },
-  // ...
-})
-```
-
-Ved nærmere gennemlæsning er dette KORREKT for ASSIGNED/OWN path.
-
-MEN getUserRoleAssignments (linje 63-70) henter roller UDEN at validere at rollen tilhører brugerens organisation:
+src/lib/permissions/index.ts linje 65-68:
 
 ```typescript
 async function getUserRoleAssignments(userId: string) {
@@ -428,9 +413,27 @@ async function getUserRoleAssignments(userId: string) {
 }
 ```
 
-Hvis en bruger på ukendt vis har rolle-tildelinger i en anden organisation (data-korruption, bug), vil disse blive inkluderet. Burde have `organizationId` filter baseret på brugerens organisation.
+Problemet: Hvis en bruger på ukendt vis har rolle-tildelinger i en anden organisation (data-korruption, bug, eller fremtidig multi-org feature), vil disse blive inkluderet i adgangstjek.
 
-**Anbefaling:** Tilføj organization-validering til getUserRoleAssignments.
+For defense-in-depth bør funktionen også validere at rolle-tildelingerne tilhører brugerens aktuelle organisation.
+
+**Anbefaling:** Ændr til:
+```typescript
+async function getUserRoleAssignments(userId: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { organizationId: true },
+  })
+  if (!user) return []
+  
+  return prisma.userRoleAssignment.findMany({
+    where: { 
+      userId,
+      organizationId: user.organizationId,
+    },
+  })
+}
+```
 
 ---
 
@@ -478,34 +481,99 @@ En bruger med et gyldigt token men uden organizationId (fx fejl i auth-flow) kun
 
 ---
 
-## DEC-024: Zod validation schemas mangler
+## DEC-024: Zod validation schemas leveret og valideret
+**Status:** ACCEPTED
+**Proposed by:** BA-07 (QA-agent)
+**Dato:** 2025-01-13
+**Rangering:** VIGTIG
+**QA-resultat:** Zod schemas findes i src/lib/validations/ og importeres korrekt i server actions.
+
+**Forslag/Indsigelse:**
+OPRINDELIGT CHALLENGED fordi schemas ikke var inkluderet i review.
+
+Efter gennemgang af imports i companies.ts og persons.ts:
+- src/lib/validations/company.ts importeres med alle påkrævede schemas
+- src/lib/validations/person.ts importeres med alle påkrævede schemas
+- Alle server actions bruger safeParse() korrekt
+- Fejlbeskeder på dansk
+
+**Status opdateret til ACCEPTED** — Zod validation er implementeret korrekt.
+
+---
+
+## DEC-025: companies.ts bruger `any` type i where-clauses
 **Status:** CHALLENGED
 **Proposed by:** BA-07 (QA-agent)
 **Dato:** 2025-01-13
 **Rangering:** VIGTIG
 
 **Forslag/Indsigelse:**
-CONVENTIONS.md §3 og §5 kræver Zod validation på al brugerinput. API-SPEC.md definerer input-schemas for alle server actions.
+src/actions/companies.ts linje 288 og 497:
 
-Ingen Zod schemas er inkluderet i de leverede filer. src/lib/validations/ mappe nævnes i CONVENTIONS.md projektstruktur men er ikke leveret.
+```typescript
+const where: any = {
+  companyId,
+  organizationId: session.user.organizationId,
+}
+```
 
-**Anbefaling:** Zod validation schemas skal implementeres før server actions kan bygges.
+`any` type underminerer TypeScript's typesikkerhed. Prisma genererer typede where-clauses der bør bruges.
+
+**Anbefaling:** Brug Prisma.CompanyPersonWhereInput eller lignende typed interface.
 
 ---
 
-QA-GODKENDT: src/lib/permissions/index.ts struktur og signaturer 2025-01-13
-  - Alle påkrævede helpers eksisterer med korrekte signaturer
-  - ROLE_SENSITIVITY_ACCESS og ROLE_MODULE_ACCESS matricer matcher spec
-  - ModuleType matcher CONVENTIONS.md v0.3
+## DEC-026: persons.ts bruger `any` type i where-clause
+**Status:** CHALLENGED
+**Proposed by:** BA-07 (QA-agent)
+**Dato:** 2025-01-13
+**Rangering:** VIGTIG
 
-QA-GODKENDT: prisma/schema.prisma struktur 2025-01-13
-  - Alle tabeller har organizationId
-  - Junction-tabeller (DEC-016) har organization_id, created_at, created_by
-  - AuditLog har changes felt (DEC-017)
-  - FinancialMetric og TimeEntry har Organization-relation (DEC-019)
-  - ChangeType enum eksisterer (DEC-002/013)
-  - SELSKABSGARANTI er i ContractSystemType (DEC-003)
+**Forslag/Indsigelse:**
+src/actions/persons.ts linje 168-190:
 
-QA-GODKENDT: src/middleware.ts grundstruktur 2025-01-13
-  - Korrekt brug af withAuth
-  - Korrekt matcher-konfiguration for beskyttede routes
+```typescript
+const where: any = {
+  organizationId: session.user.organizationId,
+  deletedAt: null,
+}
+
+if (query && query.trim()) {
+  // ...
+  where.OR = [...]
+}
+```
+
+`any` type underminerer TypeScript's typesikkerhed.
+
+**Anbefaling:** Brug Prisma.PersonWhereInput typed interface.
+
+---
+
+## QA-RAPPORT — Sprint 2 Selskabs- og Personmodul
+
+### GODKENDT:
+- src/lib/permissions/index.ts — struktur og signaturer matcher spec
+- src/components/companies/CompanyForm.tsx — alle kriterier opfyldt
+- src/actions/companies.ts — hovedfunktionalitet (med bemærkninger)
+- src/actions/persons.ts — hovedfunktionalitet (med bemærkninger)
+- Zod validation — implementeret korrekt
+- Dansk sprog — alle labels og fejlbeskeder på dansk
+- Tomme states — håndteret i list-funktioner (returnerer [])
+- canAccessCompany() — kaldt på alle relevante operationer
+- organization_id — på alle Prisma queries
+
+### FEJL:
+- src/lib/permissions/index.ts linje 65-68: getUserRoleAssignments mangler organizationId filter (DEC-021)
+- src/actions/companies.ts linje 288, 497: `any` type i where-clause (DEC-025)
+- src/actions/persons.ts linje 168-190: `any` type i where-clause (DEC-026)
+
+### MANGLER (blokerende):
+- src/lib/auth/config.ts — ikke leveret til review (DEC-022)
+- src/middleware.ts — organizationId validering mangler (DEC-023)
+
+### MANGLER (ikke-blokerende):
+- Tomme state komponenter (EmptyState UI) — ikke leveret men funktionelt håndteret i kode
+- Loading skeletons — ikke leveret til review
+
+---
