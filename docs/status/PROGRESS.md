@@ -1,4 +1,4 @@
-﻿# PROGRESS.md
+# PROGRESS.md
 # ChainHub — Byggestatus
 **Opdateres af:** BA-01 (Orchestrator) efter hver session
 **Format:** [ ] ikke startet  [~] i gang  [x] færdigt  [!] blokeret
@@ -6,13 +6,15 @@
 ## Fase 0 — Spec
 
 [x] kravspec-legalhub.md v2.1 — QA-rettet
-[x] CONTRACT-TYPES.md v0.4 — QA-rettet
-[x] DATABASE-SCHEMA.md v0.3 — QA-R2-rettet
+[x] CONTRACT-TYPES.md v0.5 — DEA-challenge-rettet
+[x] DATABASE-SCHEMA.md v0.4 — DEA-challenge-rettet
 [x] roller-og-tilladelser.md v0.2 — QA-rettet
 [x] UI-FLOWS.md v0.3 — QA-rettet
 [x] API-SPEC.md v0.3 — QA-rettet
 [x] CONVENTIONS.md v0.3 — QA-R2-rettet
-[!] DEA-challenge-runde — ikke gennemført (blokerer Sprint 1)
+[x] DEA-challenge-runde gennemført — ingen KRITISK uresolveret
+[x] CONTRACT-TYPES.md — godkendt efter DEA-challenge
+[x] DATABASE-SCHEMA.md — godkendt efter DEA-challenge
 
 ## Sprint 1 — Fundament
 [ ] Projektopsætning
@@ -42,9 +44,13 @@
 [ ] Testsuite komplet
 [ ] Security pentest
 [ ] Stripe Billing
+[ ] ChainHub DPA-template (DEC-018)
+[ ] Anonymiserings-cron (DEC-015)
 [ ] Produktion klar
 
 ## Seneste opdatering
-Dato: 2025-03-08
-Af: QA-runde 2
-Note: Spec-fase afsluttet. DEA-challenge-runde er næste gate.
+Dato: 2026-03-08
+Af: BA-01 (Orchestrator) — DEA-challenge-runde
+Note: Alle 7 DEA-agenter har kørt. 19 DEC-entries oprettet.
+      4 KRITISK — alle ACCEPTED og resolved.
+      Sprint 1-gaten er ÅBEN — build-agenter kan starte.

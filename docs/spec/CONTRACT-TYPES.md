@@ -1,7 +1,7 @@
 # CONTRACT-TYPES.md
 # ChainHub — Kontrakttyper og metadata
-**Version 0.4 — Generisk to-lags katalog**
-**Status: QA-RETTET**
+**Version 0.5 — DEA-challenge-rettet**
+**Status: ACCEPTED efter DEA-challenge-runde**
 
 ---
 
@@ -481,6 +481,9 @@ services_description    TEXT[]      liste af ydelser
 annual_fee              INTEGER
 fee_adjustment_basis    TEXT        CPI / fast % / forhandling
 transfer_pricing_doc    BOOLEAN     TP-dokumentation udarbejdet?
+tp_method               ENUM NULL   CUP | COST_PLUS | TNMM | PROFIT_SPLIT | ANDET
+tp_last_reviewed        DATE NULL   seneste TP-review dato
+tp_document_id          UUID NULL   reference til uploaded TP-dokumentation
 ```
 
 #### KT-28: Royalty- / Licensaftale
@@ -495,6 +498,9 @@ licensee_id             UUID
 licensed_asset          TEXT        brand / koncept / systemer / know-how
 royalty_rate_pct        DECIMAL
 royalty_basis           TEXT        omsætning / resultat / fast beløb
+tp_method               ENUM NULL   CUP | COST_PLUS | TNMM | PROFIT_SPLIT | ANDET
+tp_last_reviewed        DATE NULL   seneste TP-review dato
+tp_document_id          UUID NULL   reference til uploaded TP-dokumentation
 ```
 
 #### KT-29: Optionsaftale (andele)
@@ -580,7 +586,8 @@ STRENGT_FORTROLIG:
   EJERAFTALE, DIREKTØRKONTRAKT, OVERDRAGELSESAFTALE,
   AKTIONÆRLÅN, PANTSÆTNING, VOA,
   INTERN_SERVICEAFTALE, ROYALTY_LICENS, OPTIONSAFTALE,
-  TILTRÆDELSESDOKUMENT, CASH_POOL, INTERCOMPANY_LÅN
+  TILTRÆDELSESDOKUMENT, CASH_POOL, INTERCOMPANY_LÅN,
+  SELSKABSGARANTI
 
 FORTROLIG:
   ANSÆTTELSE_FUNKTIONÆR, ANSÆTTELSE_IKKE_FUNKTIONÆR,
@@ -654,30 +661,167 @@ INTERN_SERVICEAFTALE
 
 ---
 
-## Åbne spørgsmål til DEA-challenge-runde
+## DEA-challenge — besvarede spørgsmål
 
 ```
-[Q1] DEA-01: must_retain_until — præcise lovpligtige perioder?
-     Bogføringsloven = 5 år. Vedtægter = permanent?
-     Ansættelseskontrakter = ? GF-referater = ?
+[Q1] BESVARET (DEC-001 ACCEPTED): Opbevaringspligt auto-beregnes.
+     Se "Lovpligtig opbevaringsperiode" nedenfor.
 
-[Q2] DEA-02: Er Lag 2-typerne dækkende for alle kæde-/co-ownership
-     strukturer (optiker, fysio, franchise) — eller mangler der noget?
+[Q2] BESVARET: Lag 2-typerne er dækkende for co-ownership strukturer.
+     KT-34 (Selskabsgaranti) tilføjes (DEC-003).
 
-[Q3] DEA-03: Hvilke af de 33 typer udgør den optimale "starter pack"
-     til onboarding? (5-8 typer der oprettes i dag 1)
+[Q3] BESVARET (DEC-006 ACCEPTED): MVP starter pack = 8 MUST-typer.
+     Se "MVP-prioritering" nedenfor.
 
-[Q4] DEA-05: OA-logikken (version_source + collective_agreement) —
-     er den tilstrækkelig til at markere kontrakter på forældet
-     overenskomstversion ved branchefornyelse?
+[Q4] BESVARET: OA-logikken (version_source + collective_agreement)
+     er tilstrækkelig til MVP. Automatisk markering ved OA-fornyelse
+     er en v1.1-feature.
 
-[Q5] DEA-06: Løbende lejekontrakter uden udløbsdato (expiry_date=NULL)
-     — er adviserings-logikken baseret på notice_period_days korrekt?
-     Hvornår bør systemet advare på en løbende kontrakt?
+[Q5] BESVARET: Løbende kontrakter med expiry_date=NULL adviseres
+     baseret på notice_period_days. Systemet viser "løbende —
+     opsigelsesvarsel X dage". Logikken er korrekt.
 
-[Q6] DEA-07: Cash pool (KT-32) og intercompany-lån (KT-33) indeholder
-     finansielle mellemværender. Er der GDPR-implikationer eller
-     særlige audit-krav på disse typer?
+[Q6] BESVARET (DEC-017 ACCEPTED): Cash pool og intercompany-lån
+     kræver audit log ved alle adgange (STRENGT_FORTROLIG).
+     Ingen GDPR-særkrav udover standard anonymisering.
+```
+
+---
+
+## Lovpligtig opbevaringsperiode per system_type (DEC-001)
+
+*Auto-beregnet af systemet. Brugeren kan forlænge men aldrig forkorte.*
+
+```
+PERMANENT (så længe selskabet eksisterer):
+  VEDTÆGTER                   Selskabsloven §§ 50-53
+  GF_REFERAT                  Selskabsloven § 100
+
+10 ÅR (fra kontraktophør/underskrift):
+  EJERAFTALE                  Forældelsesloven § 4
+  DIREKTØRKONTRAKT            Forældelsesloven § 4
+  OVERDRAGELSESAFTALE         Forældelsesloven § 4
+  OPTIONSAFTALE               Forældelsesloven § 4
+  VOA                         Forældelsesloven § 4
+  TILTRÆDELSESDOKUMENT        Forældelsesloven § 4
+
+5 ÅR (fra regnskabsårets udløb / fratrædelse):
+  AKTIONÆRLÅN                 Bogføringsloven § 10
+  PANTSÆTNING                 Bogføringsloven § 10
+  LEJEKONTRAKT_ERHVERV        Bogføringsloven § 10
+  LEASINGAFTALE               Bogføringsloven § 10
+  LEVERANDØRKONTRAKT          Bogføringsloven § 10
+  IT_SYSTEMAFTALE             Bogføringsloven § 10
+  FORSIKRING                  Bogføringsloven § 10
+  KASSEKREDIT                 Bogføringsloven § 10
+  INTERCOMPANY_LÅN            Bogføringsloven § 10
+  CASH_POOL                   Bogføringsloven § 10
+  INTERN_SERVICEAFTALE        Bogføringsloven § 10
+  ROYALTY_LICENS              Bogføringsloven § 10
+  ANSÆTTELSE_FUNKTIONÆR       5 år efter fratrædelse
+  ANSÆTTELSE_IKKE_FUNKTIONÆR  5 år efter fratrædelse
+  VIKARAFTALE                 5 år efter ophør
+  UDDANNELSESAFTALE           5 år efter ophør
+  FRATRÆDELSESAFTALE          5 år efter indgåelse
+  KONKURRENCEKLAUSUL          5 år efter udløb
+  PERSONALEHÅNDBOG            5 år efter erstatning
+
+3 ÅR (fra ophør):
+  NDA                         Forældelsesloven § 3
+  SAMARBEJDSAFTALE            Forældelsesloven § 3
+  DBA                         Følger hovedaftalen
+
+INGEN LOVKRAV (bruger-defineret):
+  BESTYRELSESREFERAT          Anbefaling: permanent
+  FORRETNINGSORDEN            Anbefaling: permanent
+  DIREKTIONSINSTRUKS          Anbefaling: 10 år
+```
+
+---
+
+## MVP-prioritering (DEC-006)
+
+```
+MUST (MVP — dag 1-30, 8 typer):
+  EJERAFTALE, DIREKTØRKONTRAKT, ANSÆTTELSE_FUNKTIONÆR,
+  LEJEKONTRAKT_ERHVERV, LEVERANDØRKONTRAKT,
+  INTERN_SERVICEAFTALE, VEDTÆGTER, FORSIKRING
+
+SHOULD (v1.1 — måned 2-3, 10 typer):
+  OVERDRAGELSESAFTALE, AKTIONÆRLÅN, ANSÆTTELSE_IKKE_FUNKTIONÆR,
+  LEASINGAFTALE, NDA, GF_REFERAT, KONKURRENCEKLAUSUL,
+  PERSONALEHÅNDBOG, ROYALTY_LICENS, KASSEKREDIT
+
+COULD (fase 2, 16 typer):
+  PANTSÆTNING, VIKARAFTALE, UDDANNELSESAFTALE, FRATRÆDELSESAFTALE,
+  SAMARBEJDSAFTALE, IT_SYSTEMAFTALE, DBA, BESTYRELSESREFERAT,
+  FORRETNINGSORDEN, DIREKTIONSINSTRUKS, VOA, OPTIONSAFTALE,
+  TILTRÆDELSESDOKUMENT, CASH_POOL, INTERCOMPANY_LÅN,
+  SELSKABSGARANTI
+
+Note: Database-schema rummer alle 34 typer (JSONB type_data).
+      UI og onboarding viser kun MUST-typer i MVP.
+```
+
+---
+
+## Onboarding-rækkefølge for ny klinik (DEC-004)
+
+```
+Ved etablering af en ny klinik oprettes kontrakter i denne rækkefølge:
+
+1. VEDTÆGTER (KT-06)               Selskabet stiftes
+2. EJERAFTALE (KT-01)              Ejerskabsstruktur fastlægges
+3. TILTRÆDELSESDOKUMENT (KT-30)    Ny partner bindes (hvis co-owned)
+4. DIREKTØRKONTRAKT (KT-02)        + DIREKTIONSINSTRUKS (KT-25)
+5. INTERN_SERVICEAFTALE (KT-27)    Management fee fra dag 1
+6. LEJEKONTRAKT_ERHVERV (KT-14)    Lokale sikres
+7. FORSIKRING (KT-21)              Drift kan begynde
+8. ANSÆTTELSE_FUNKTIONÆR (KT-07)   Personale ansættes
+
+Systemet bør guide brugeren igennem denne rækkefølge ved
+oprettelse af et nyt selskab (starter pack, jf. DEC-007).
+```
+
+---
+
+## Anonymiseringsstrategi per system_type (DEC-015)
+
+```
+ANONYMISERING (personreferencer fjernes, beløb/vilkår bevares):
+  Alle ansættelseskontrakter, direktørkontrakter, fratrædelsesaftaler,
+  konkurrenceklausuler — indeholder persondata (navne, løn, CPR-ref)
+
+FULD_SLETNING (hele kontrakten slettes):
+  Ingen typer — alle kontrakter har et minimum af opbevaringsværdi
+
+INGEN (ingen persondata at anonymisere):
+  VEDTÆGTER, FORSIKRING, LEJEKONTRAKT_ERHVERV, LEASINGAFTALE,
+  LEVERANDØRKONTRAKT (uden personreferencer), IT_SYSTEMAFTALE
+
+Mekanisme: Cron-job kører dagligt.
+  Tjekker: must_retain_until < today() AND deleted_at IS NOT NULL
+  Handling: person-referencer erstattes med "Anonymiseret [hash]"
+  Beløb, vilkår og kontraktstruktur bevares til historisk reference.
+```
+
+---
+
+## KT-34: Selskabsgaranti / Kaution (DEC-003)
+
+**system_type:** `SELSKABSGARANTI`
+**Sensitivitet:** `STRENGT_FORTROLIG`
+**MVP-prioritering:** COULD
+**Display navn eksempel:** "Selvskyldnerkaution", "Selskabsgaranti", "Corporate Guarantee"
+**Note:** Juridisk adskilt fra pantsætning (KT-05). Personlig hæftelse, ikke tinglig sikkerhed.
+
+```
+guarantee_type          ENUM        SELVSKYLDNER | SIMPEL
+guarantor_company_id    UUID        selskabet der stiller garanti
+beneficiary_name        TEXT        modtager (typisk bank/udlejer)
+guaranteed_amount       INTEGER
+guaranteed_obligation   TEXT        beskrivelse af underliggende forpligtelse
+related_contract_id     UUID NULL   reference til den sikrede kontrakt
 ```
 
 ---
@@ -685,6 +829,18 @@ INTERN_SERVICEAFTALE
 ## Changelog
 
 ```
+v0.5 (DEA-challenge-rettet):
+  [K1] DEC-001: Lovpligtig opbevaringsperiode tilføjet per system_type
+       med lovhjemmel (bogføringsloven, selskabsloven, forældelsesloven)
+  [K2] DEC-006: MVP-prioritering tilføjet (MUST/SHOULD/COULD)
+       8 MUST-typer, 10 SHOULD-typer, 16 COULD-typer
+  [K3] DEC-015: Anonymiseringsstrategi tilføjet per system_type
+  [K4] DEC-003: KT-34 Selskabsgaranti tilføjet som ny kontrakttype
+  [K5] DEC-004: Onboarding-rækkefølge for ny klinik tilføjet
+  [K6] DEC-002/013: Allonge-mekanisme dokumenteret (spec for ContractVersion)
+  [K7] DEC-009: TP-felter tilføjes til KT-27/KT-28 type_data
+  [K8] Åbne spørgsmål besvaret (Q1-Q6)
+
 v0.4 (QA-rettet):
   [K1] Sensitivity enum-værdier oversat til dansk igennem hele dokumentet
        (alle 33 kontrakttyper + grundstruktur + minimum-sensitivitet-sektion):

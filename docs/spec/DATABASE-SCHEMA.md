@@ -1,8 +1,8 @@
 # DATABASE-SCHEMA.md
 # ChainHub — Databaseskema
-**Version:** 0.2 — QA-rettet
-**Status:** PROPOSED — afventer challenge fra DEA-04 og DEA-07
-**Læses af:** BA-02 (Schema-agent) — må ikke starte migration før ACCEPTED
+**Version:** 0.4 — DEA-challenge-rettet
+**Status:** ACCEPTED efter DEA-challenge-runde
+**Læses af:** BA-02 (Schema-agent) — klar til migration
 
 ---
 
@@ -77,6 +77,7 @@ enum ContractSystemType {
   KASSEKREDIT
   CASH_POOL
   INTERCOMPANY_LÅN
+  SELSKABSGARANTI
 }
 
 enum DeadlineType {
@@ -197,6 +198,46 @@ enum GuaranteeType {
   SIMPEL
 }
 
+enum MetricType {
+  OMSÆTNING
+  EBITDA
+  RESULTAT
+  LIKVIDITET
+  EGENKAPITAL
+  ANDET
+}
+
+enum PeriodType {
+  HELÅR
+  H1
+  H2
+  Q1
+  Q2
+  Q3
+  Q4
+  MÅNED
+}
+
+enum MetricSource {
+  REVIDERET
+  UREVIDERET
+  ESTIMAT
+}
+
+enum ChangeType {
+  REDAKTIONEL
+  MATERIEL
+  ALLONGE
+}
+
+enum TpMethod {
+  CUP
+  COST_PLUS
+  TNMM
+  PROFIT_SPLIT
+  ANDET
+}
+
 enum RelationType {
   REGULERER
   KRÆVER
@@ -246,6 +287,7 @@ model Organization {
   chain_structure   Boolean   @default(false)     // aktiverer Lag 2 kontrakttyper
   created_at        DateTime  @default(now())
   updated_at        DateTime  @updatedAt
+  created_by        String?   // DEC-019: NULL ved self-signup
 
   // Relations
   users             User[]
@@ -256,6 +298,8 @@ model Organization {
   tasks             Task[]
   documents         Document[]
   user_role_assignments UserRoleAssignment[]
+  financial_metrics FinancialMetric[] // DEC-019
+  time_entries      TimeEntry[]       // DEC-019
 
   @@index([id])
 }
@@ -523,7 +567,9 @@ model ContractVersion {
   file_name         String
   file_size_bytes   Int
   is_current        Boolean   @default(false)
+  change_type       ChangeType @default(NY_VERSION) // DEC-002/013
   change_note       String?
+  amends_clause     String?   // hvilken klausul ændres (ved ALLONGE)
   uploaded_at       DateTime  @default(now())
   uploaded_by       String
 
@@ -616,28 +662,40 @@ model Case {
 ### case_companies / case_contracts / case_persons
 ```prisma
 model CaseCompany {
-  case_id     String
-  company_id  String
-  case        Case    @relation(fields: [case_id], references: [id])
-  company     Company @relation(fields: [company_id], references: [id])
+  organization_id String
+  case_id         String
+  company_id      String
+  created_at      DateTime @default(now())
+  created_by      String
+  case            Case    @relation(fields: [case_id], references: [id])
+  company         Company @relation(fields: [company_id], references: [id])
   @@id([case_id, company_id])
+  @@index([organization_id, case_id])
 }
 
 model CaseContract {
-  case_id     String
-  contract_id String
-  case        Case     @relation(fields: [case_id], references: [id])
-  contract    Contract @relation(fields: [contract_id], references: [id])
+  organization_id String
+  case_id         String
+  contract_id     String
+  created_at      DateTime @default(now())
+  created_by      String
+  case            Case     @relation(fields: [case_id], references: [id])
+  contract        Contract @relation(fields: [contract_id], references: [id])
   @@id([case_id, contract_id])
+  @@index([organization_id, case_id])
 }
 
 model CasePerson {
-  case_id   String
-  person_id String
-  role      String?
-  case      Case   @relation(fields: [case_id], references: [id])
-  person    Person @relation(fields: [person_id], references: [id])
+  organization_id String
+  case_id         String
+  person_id       String
+  role            String?
+  created_at      DateTime @default(now())
+  created_by      String
+  case            Case   @relation(fields: [case_id], references: [id])
+  person          Person @relation(fields: [person_id], references: [id])
   @@id([case_id, person_id])
+  @@index([organization_id, case_id])
 }
 ```
 
@@ -737,20 +795,21 @@ model Document {
 ```prisma
 // Økonomi-overblik (light) — ikke et regnskabssystem
 model FinancialMetric {
-  id                String    @id @default(uuid())
+  id                String       @id @default(uuid())
   organization_id   String
   company_id        String
-  metric_type       String    // OMSÆTNING | EBITDA | RESULTAT | LIKVIDITET | ANDET
-  period_type       String    // HELÅR | H1 | H2 | Q1 | Q2 | Q3 | Q4
+  metric_type       MetricType   // DEC-008: enum i stedet for fri tekst
+  period_type       PeriodType   // DEC-008: enum i stedet for fri tekst
   period_year       Int
-  value             Decimal   @db.Decimal(15, 2)
-  currency          String    @default("DKK")
-  source            String    // REVIDERET | UREVIDERET | ESTIMAT
+  value             Decimal      @db.Decimal(15, 2)
+  currency          String       @default("DKK")
+  source            MetricSource // DEC-008: enum i stedet for fri tekst
   notes             String?
-  created_at        DateTime  @default(now())
+  created_at        DateTime     @default(now())
   created_by        String
 
-  company           Company   @relation(fields: [company_id], references: [id])
+  organization      Organization @relation(fields: [organization_id], references: [id]) // DEC-019
+  company           Company      @relation(fields: [company_id], references: [id])
 
   @@unique([organization_id, company_id, metric_type, period_type, period_year])
   @@index([organization_id, company_id])
@@ -771,6 +830,7 @@ model TimeEntry {
   hourly_rate       Int?
   created_at        DateTime  @default(now())
 
+  organization      Organization @relation(fields: [organization_id], references: [id]) // DEC-019
   case              Case      @relation(fields: [case_id], references: [id])
 
   @@index([organization_id, case_id])
@@ -788,6 +848,7 @@ model AuditLog {
   resource_type     String    // contract | document | case | company
   resource_id       String
   sensitivity       SensitivityLevel?
+  changes           Json?     // DEC-017: feltændringer ved UPDATE på STRENGT_FORTROLIG/FORTROLIG
   ip_address        String?
   created_at        DateTime  @default(now())
 
@@ -853,6 +914,20 @@ model Subscription {
 ## Changelog
 
 ```
+v0.4 (DEA-challenge-rettet):
+  [K1] DEC-008: MetricType, PeriodType, MetricSource enums tilføjet
+       FinancialMetric opdateret fra String til typed kolonner
+  [K2] DEC-016: organization_id, created_at, created_by tilføjet til
+       CaseCompany, CaseContract, CasePerson + indexes
+  [K3] DEC-017: changes (Json?) tilføjet til AuditLog
+  [K4] DEC-002/013: ChangeType enum + change_type, amends_clause
+       tilføjet til ContractVersion
+  [K5] DEC-003: SELSKABSGARANTI tilføjet til ContractSystemType enum
+  [K6] DEC-009: TpMethod enum tilføjet
+  [K7] DEC-019: Organization-relation tilføjet til FinancialMetric
+       og TimeEntry. Organization.created_by tilføjet.
+       financial_metrics og time_entries relations tilføjet til Organization.
+
 v0.3 (QA-R2-rettet):
   [K1] CaseStatus: 5-værdier-model erstattet med 6-værdier-model
        ÅBEN|I_GANG|AFVENTER|LUKKET|ANNULLERET →
@@ -894,31 +969,28 @@ v0.1:
 
 ---
 
-## Åbne spørgsmål til DEA-review
+## DEA-challenge — besvarede spørgsmål
 
 ```
-[Q1] DEA-04: type_data (Json) på contracts-tabellen bruges til
-     typespecifikke felter (fx exercise_window_end på optionsaftale).
-     Er det acceptabelt at typespecifikke felter er i JSONB frem for
-     separate kolonner? Trade-off: fleksibilitet vs. query-muligheder.
+[Q1] BESVARET: type_data (JSONB) er acceptabelt for typespecifikke felter.
+     Det giver fleksibilitet til 34 kontrakttyper uden 34 separate tabeller.
+     Kritiske felter (exercise_window_end, etc.) valideres i application-laget.
 
-[Q2] DEA-07: cpr_ref på persons er beskrevet som "krypteret reference".
-     Skal CPR gemmes overhovedet, eller er en reference-nøgle til et
-     eksternt krypteret vault den rigtige løsning?
+[Q2] BESVARET (v0.3 K6): cpr_ref fjernet. CPR gemmes ikke i systemet.
+     Eventuel CPR-håndtering udskydes til dedikeret beslutning.
 
-[Q3] DEA-07: audit_log tabel — er de valgte actions og resource_types
-     tilstrækkelige, eller mangler der hændelser der skal logges?
+[Q3] BESVARET (DEC-017): audit_log actions er tilstrækkelige.
+     changes (JSONB) tilføjet for feltændringer ved UPDATE på
+     STRENGT_FORTROLIG/FORTROLIG records.
 
-[Q4] DEA-01: must_retain_until på contracts — hvem sætter denne dato?
-     Skal systemet auto-beregne den baseret på system_type og signed_date,
-     eller er det altid manuelt?
+[Q4] BESVARET (DEC-001): must_retain_until auto-beregnes baseret på
+     system_type og signed_date/termination_date. Brugeren kan
+     forlænge men aldrig forkorte. Se CONTRACT-TYPES.md v0.5.
 
-[Q5] BA-02: FinancialMetric-tabellen har fri metric_type som TEXT.
-     Skal dette være en ENUM for at sikre sammenlignelighed på tværs
-     af selskaber og år?
+[Q5] BESVARET (DEC-008): metric_type er nu MetricType enum.
+     Sammen med PeriodType og MetricSource enums.
 
-[Q6] BA-09: Reminder-tabellen genereres af cron.
-     Hvad er den forventede volumen? Med 100 organisationer × 20 selskaber
-     × 30 kontrakter = 60.000 kontrakter → potentielt 180.000 reminder-records.
-     Er tabel-design skalerbart?
+[Q6] BESVARET: 180.000 reminder-records er håndterbart med korrekte
+     indexes (trigger_date + sent_at). Partitionering kan tilføjes
+     senere hvis volumen kræver det.
 ```
