@@ -1,59 +1,43 @@
-import { Prisma } from '@prisma/client'
+import { Company, Ownership, CompanyPerson, Contract, Person } from '@prisma/client'
 
-export type CompanyWithCounts = Prisma.CompanyGetPayload<{
-  include: {
-    _count: {
-      select: {
-        contracts: true
-        caseCompanies: true
-        ownerships: true
-        companyPersons: true
-      }
-    }
-  }
-}>
-
-export type CompanyWithRelations = Prisma.CompanyGetPayload<{
-  include: {
-    ownerships: {
-      include: {
-        ownerPerson: true
-        contract: true
-      }
-    }
-    companyPersons: {
-      include: {
-        person: true
-        contract: true
-      }
-    }
-    contracts: {
-      select: {
-        id: true
-        displayName: true
-        systemType: true
-        status: true
-      }
-    }
-  }
-}>
-
-export type OwnershipWithRelations = Prisma.OwnershipGetPayload<{
-  include: {
-    ownerPerson: true
-    contract: true
-    company: true
-  }
-}>
-
-export type CompanyPersonWithRelations = Prisma.CompanyPersonGetPayload<{
-  include: {
-    person: true
-    contract: true
-    company: true
-  }
-}>
-
-export type ActionResult<T> = 
+export type ActionResult<T> =
   | { data: T; error?: never }
   | { error: string; data?: never }
+
+export type CompanyWithCounts = Company & {
+  _count: {
+    contracts: number
+    caseCompanies: number
+    ownerships: number
+    companyPersons: number
+  }
+}
+
+export type CompanyWithRelations = Company & {
+  ownerships: (Ownership & {
+    ownerPerson: Person | null
+    contract: Contract | null
+  })[]
+  companyPersons: (CompanyPerson & {
+    person: Person
+    contract: Contract | null
+  })[]
+  contracts: {
+    id: string
+    displayName: string
+    systemType: string
+    status: string
+  }[]
+}
+
+export type OwnershipWithRelations = Ownership & {
+  ownerPerson: Person | null
+  contract: Contract | null
+  company: Company
+}
+
+export type CompanyPersonWithRelations = CompanyPerson & {
+  person: Person
+  company: Company
+  contract: Contract | null
+}
