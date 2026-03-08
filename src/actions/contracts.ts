@@ -2,172 +2,149 @@
 
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { 
-  canAccessCompany, 
-  canAccessSensitivity, 
-  canAccessModule, 
-  canEdit,
-  getMaxSensitivityLevel,
-} from '@/lib/permissions'
+import { canAccessCompany, canAccessSensitivity } from '@/lib/permissions'
 import { revalidatePath } from 'next/cache'
+import { z } from 'zod'
 import {
   createContractSchema,
   updateContractSchema,
   updateContractStatusSchema,
-  createContractPartySchema,
-  updateContractPartySchema,
-  createContractVersionSchema,
-  createContractAttachmentSchema,
-  createContractRelationSchema,
-  listContractsFilterSchema,
-  CreateContractInput,
-  UpdateContractInput,
-  UpdateContractStatusInput,
-  CreateContractPartyInput,
-  UpdateContractPartyInput,
-  CreateContractVersionInput,
-  CreateContractAttachmentInput,
-  CreateContractRelationInput,
-  ListContractsFilter,
+  addContractPartySchema,
+  removeContractPartySchema,
+  addContractRelationSchema,
+  removeContractRelationSchema,
+  listContractsSchema,
+  getContractSchema,
+  deleteContractSchema,
+  requestUploadUrlSchema,
+  confirmVersionUploadSchema,
+  confirmAttachmentUploadSchema,
+  deleteAttachmentSchema,
+  deleteVersionSchema,
   getMinSensitivity,
   meetsMinimumSensitivity,
   isValidStatusTransition,
-  VALID_STATUS_TRANSITIONS,
+  isLag2Type,
 } from '@/lib/validations/contract'
 import { calculateRetentionDate } from '@/lib/contracts/retention'
 import {
+  isStorageConfigured,
+  getStorageConfigurationGuide,
+  generateStoragePath,
+  getSignedUploadUrl,
+  getSignedDownloadUrl,
+} from '@/lib/storage'
+import type {
   ActionResult,
   ContractWithRelations,
   ContractWithCounts,
-  ContractPartyWithPerson,
+  UploadUrlResponse,
 } from '@/types/contract'
-import {
+import type {
   Contract,
   ContractParty,
   ContractVersion,
   ContractAttachment,
   ContractRelation,
-  ContractStatus,
   SensitivityLevel,
-  Prisma,
 } from '@prisma/client'
 
-// ==================== KONTRAKTER ====================
+// ==================== OPRET KONTRAKT ====================
 
 export async function createContract(
-  input: CreateContractInput
+  input: z.infer<typeof createContractSchema>
 ): Promise<ActionResult<Contract>> {
   const session = await auth()
-  if (!session?.user?.id || !session?.user?.organizationId) {
-    return { error: 'Ikke autoriseret' }
-  }
+  if (!session?.user) return { error: 'Ikke autoriseret' }
 
-  // Moduladgang
-  const canAccess = await canAccessModule(session.user.id, 'contracts')
-  if (!canAccess) {
-    return { error: 'Du har ikke adgang til kontraktmodulet' }
-  }
-
-  // Redigeringsrettighed
-  const canEditData = await canEdit(session.user.id)
-  if (!canEditData) {
-    return { error: 'Du har ikke rettigheder til at oprette kontrakter' }
-  }
-
-  // Validér input
   const parsed = createContractSchema.safeParse(input)
   if (!parsed.success) {
-    return { error: parsed.error.errors[0]?.message || 'Ugyldigt input' }
+    const firstError = parsed.error.errors[0]
+    return { error: firstError?.message ?? 'Ugyldigt input' }
   }
 
-  // Adgang til selskab
-  const hasCompanyAccess = await canAccessCompany(session.user.id, parsed.data.companyId)
-  if (!hasCompanyAccess) {
-    return { error: 'Du har ikke adgang til dette selskab' }
-  }
+  const data = parsed.data
 
-  // Verificer selskab eksisterer
-  const company = await prisma.company.findFirst({
-    where: {
-      id: parsed.data.companyId,
-      organizationId: session.user.organizationId,
-      deletedAt: null,
-    },
-  })
-  if (!company) {
-    return { error: 'Selskabet blev ikke fundet' }
-  }
+  // Adgangstjek til selskab
+  const hasCompanyAccess = await canAccessCompany(session.user.id, data.companyId)
+  if (!hasCompanyAccess) return { error: 'Du har ikke adgang til dette selskab' }
 
-  // Sensitivity-minimum check
-  const minSensitivity = getMinSensitivity(parsed.data.systemType)
-  const providedSensitivity = parsed.data.sensitivity || 'STANDARD'
-  
-  if (!meetsMinimumSensitivity(providedSensitivity, minSensitivity)) {
-    return { 
-      error: `Sensitivitet for ${parsed.data.systemType} skal minimum være ${minSensitivity}` 
+  // Sensitivity-minimum tjek
+  const minSensitivity = getMinSensitivity(data.systemType)
+  if (!meetsMinimumSensitivity(data.sensitivity, minSensitivity)) {
+    return {
+      error: `Sensitivitetsniveauet for ${data.systemType} skal minimum være ${minSensitivity}`,
     }
   }
 
-  // Tjek om bruger kan oprette med denne sensitivity
-  const canCreateWithSensitivity = await canAccessSensitivity(
-    session.user.id,
-    providedSensitivity
-  )
-  if (!canCreateWithSensitivity) {
-    return { 
-      error: `Du har ikke rettigheder til at oprette kontrakter med sensitivitetsniveau ${providedSensitivity}` 
+  // Sensitivity-adgangstjek
+  const hasSensitivityAccess = await canAccessSensitivity(session.user.id, data.sensitivity)
+  if (!hasSensitivityAccess) {
+    return { error: 'Du har ikke adgang til dette sensitivitetsniveau' }
+  }
+
+  // Lag 2-type tjek — kræver chain_structure
+  if (isLag2Type(data.systemType)) {
+    const organization = await prisma.organization.findUnique({
+      where: { id: session.user.organizationId },
+      select: { chainStructure: true },
+    })
+    if (!organization?.chainStructure) {
+      return {
+        error:
+          'Denne kontrakttype kræver kædestruktur. Aktivér kædestruktur i indstillinger for at bruge denne type.',
+      }
     }
   }
 
-  // Verificer parent contract hvis angivet
-  if (parsed.data.parentContractId) {
-    const parentContract = await prisma.contract.findFirst({
+  // Valider parent_contract_id tilhører organisationen
+  if (data.parentContractId) {
+    const parentContract = await prisma.contract.findUnique({
       where: {
-        id: parsed.data.parentContractId,
+        id: data.parentContractId,
         organizationId: session.user.organizationId,
         deletedAt: null,
       },
     })
     if (!parentContract) {
-      return { error: 'Den overordnede kontrakt blev ikke fundet' }
+      return { error: 'Overordnet kontrakt ikke fundet i din organisation' }
     }
   }
 
-  // Beregn retention date
-  const mustRetainUntil = calculateRetentionDate(
-    parsed.data.systemType,
-    parsed.data.signedDate || null,
-    parsed.data.terminationDate || null,
-    parsed.data.mustRetainUntil || null
-  )
+  // Beregn must_retain_until (DEC-001)
+  const mustRetainUntil = calculateRetentionDate(data.systemType, {
+    signedDate: data.signedDate ? new Date(data.signedDate) : null,
+    terminationDate: data.terminationDate ? new Date(data.terminationDate) : null,
+    expiryDate: data.expiryDate ? new Date(data.expiryDate) : null,
+  })
 
   try {
     const contract = await prisma.contract.create({
       data: {
         organizationId: session.user.organizationId,
-        companyId: parsed.data.companyId,
-        systemType: parsed.data.systemType,
-        displayName: parsed.data.displayName,
+        companyId: data.companyId,
+        systemType: data.systemType,
+        displayName: data.displayName,
         status: 'UDKAST',
-        sensitivity: providedSensitivity,
-        deadlineType: parsed.data.deadlineType || 'INGEN',
-        versionSource: parsed.data.versionSource || 'CUSTOM',
-        collectiveAgreement: parsed.data.collectiveAgreement,
-        parentContractId: parsed.data.parentContractId,
-        triggeredById: parsed.data.triggeredById,
-        effectiveDate: parsed.data.effectiveDate,
-        expiryDate: parsed.data.expiryDate,
-        signedDate: parsed.data.signedDate,
-        noticePeriodDays: parsed.data.noticePeriodDays,
-        terminationDate: parsed.data.terminationDate,
-        anciennityStart: parsed.data.anciennityStart,
-        reminder90Days: parsed.data.reminder90Days ?? true,
-        reminder30Days: parsed.data.reminder30Days ?? true,
-        reminder7Days: parsed.data.reminder7Days ?? true,
-        reminderRecipients: parsed.data.reminderRecipients || [],
-        mustRetainUntil,
-        typeData: parsed.data.typeData || {},
-        notes: parsed.data.notes,
+        sensitivity: data.sensitivity,
+        deadlineType: data.deadlineType,
+        versionSource: data.versionSource,
+        collectiveAgreement: data.collectiveAgreement ?? null,
+        parentContractId: data.parentContractId ?? null,
+        triggeredById: data.triggeredById ?? null,
+        effectiveDate: data.effectiveDate ? new Date(data.effectiveDate) : null,
+        expiryDate: data.expiryDate ? new Date(data.expiryDate) : null,
+        signedDate: data.signedDate ? new Date(data.signedDate) : null,
+        noticePeriodDays: data.noticePeriodDays ?? null,
+        terminationDate: data.terminationDate ? new Date(data.terminationDate) : null,
+        anciennityStart: data.anciennityStart ? new Date(data.anciennityStart) : null,
+        reminder90Days: data.reminder90Days,
+        reminder30Days: data.reminder30Days,
+        reminder7Days: data.reminder7Days,
+        reminderRecipients: data.reminderRecipients,
+        mustRetainUntil: mustRetainUntil,
+        typeData: data.typeData ?? null,
+        notes: data.notes ?? null,
         createdBy: session.user.id,
       },
     })
@@ -180,115 +157,394 @@ export async function createContract(
         action: 'CREATE',
         resourceType: 'contract',
         resourceId: contract.id,
-        sensitivity: contract.sensitivity,
+        sensitivity: data.sensitivity,
       },
     })
 
-    revalidatePath(`/companies/${parsed.data.companyId}`)
+    revalidatePath(`/companies/${data.companyId}`)
     revalidatePath('/contracts')
-    
     return { data: contract }
   } catch (error) {
-    console.error('Fejl ved oprettelse af kontrakt:', error)
-    return { error: 'Kontrakten kunne ikke oprettes — prøv igen' }
+    console.error('createContract error:', error)
+    return { error: 'Kontrakten kunne ikke oprettes — prøv igen eller kontakt support' }
   }
 }
 
+// ==================== HENT KONTRAKT ====================
+
+export async function getContract(
+  input: z.infer<typeof getContractSchema>
+): Promise<ActionResult<ContractWithRelations>> {
+  const session = await auth()
+  if (!session?.user) return { error: 'Ikke autoriseret' }
+
+  const parsed = getContractSchema.safeParse(input)
+  if (!parsed.success) return { error: 'Ugyldigt kontrakt-ID' }
+
+  const { contractId } = parsed.data
+
+  try {
+    // Hent kontrakt med basis-felter for adgangstjek
+    const contractBase = await prisma.contract.findUnique({
+      where: {
+        id: contractId,
+        organizationId: session.user.organizationId,
+        deletedAt: null,
+      },
+      select: {
+        id: true,
+        companyId: true,
+        sensitivity: true,
+      },
+    })
+
+    if (!contractBase) return { error: 'Kontrakten blev ikke fundet' }
+
+    // Selskabsadgang
+    const hasCompanyAccess = await canAccessCompany(session.user.id, contractBase.companyId)
+    if (!hasCompanyAccess) return { error: 'Du har ikke adgang til dette selskab' }
+
+    // Sensitivity-adgang
+    const hasSensitivityAccess = await canAccessSensitivity(
+      session.user.id,
+      contractBase.sensitivity
+    )
+    if (!hasSensitivityAccess) {
+      return { error: 'Du har ikke adgang til denne kontrakt — sensitivitetsniveauet er for højt' }
+    }
+
+    // Hent fuld kontrakt med relationer
+    const contract = await prisma.contract.findUnique({
+      where: {
+        id: contractId,
+        organizationId: session.user.organizationId,
+        deletedAt: null,
+      },
+      include: {
+        company: true,
+        parties: {
+          include: { person: true },
+          orderBy: { createdAt: 'asc' },
+        },
+        versions: {
+          orderBy: { versionNumber: 'desc' },
+        },
+        attachments: {
+          where: { deletedAt: null },
+          orderBy: { uploadedAt: 'desc' },
+        },
+        relationsFrom: {
+          include: { toContract: true },
+        },
+        relationsTo: {
+          include: { fromContract: true },
+        },
+        parentContract: true,
+        childContracts: {
+          where: { deletedAt: null },
+        },
+        _count: {
+          select: {
+            parties: true,
+            versions: true,
+            attachments: true,
+          },
+        },
+      },
+    })
+
+    if (!contract) return { error: 'Kontrakten blev ikke fundet' }
+
+    // Opdater last_viewed_at
+    await prisma.contract.update({
+      where: { id: contractId },
+      data: {
+        lastViewedAt: new Date(),
+        lastViewedBy: session.user.id,
+      },
+    })
+
+    // Audit log — VIEW (kun for FORTROLIG og STRENGT_FORTROLIG — DEC-017)
+    const sensitivityLevels: SensitivityLevel[] = ['FORTROLIG', 'STRENGT_FORTROLIG']
+    if (sensitivityLevels.includes(contract.sensitivity)) {
+      await prisma.auditLog.create({
+        data: {
+          organizationId: session.user.organizationId,
+          userId: session.user.id,
+          action: 'VIEW',
+          resourceType: 'contract',
+          resourceId: contract.id,
+          sensitivity: contract.sensitivity,
+        },
+      })
+    }
+
+    return { data: contract as ContractWithRelations }
+  } catch (error) {
+    console.error('getContract error:', error)
+    return { error: 'Kontrakten kunne ikke hentes — prøv igen' }
+  }
+}
+
+// ==================== LIST KONTRAKTER ====================
+
+export async function listContracts(
+  input: z.infer<typeof listContractsSchema> = {}
+): Promise<ActionResult<{ contracts: ContractWithCounts[]; total: number }>> {
+  const session = await auth()
+  if (!session?.user) return { error: 'Ikke autoriseret' }
+
+  const parsed = listContractsSchema.safeParse(input)
+  if (!parsed.success) return { error: 'Ugyldigt filter-input' }
+
+  const { companyId, status, systemType, sensitivity, search, page, pageSize } = parsed.data
+
+  // Adgangstjek til specifikt selskab
+  if (companyId) {
+    const hasAccess = await canAccessCompany(session.user.id, companyId)
+    if (!hasAccess) return { error: 'Du har ikke adgang til dette selskab' }
+  }
+
+  // Bestem hvilke sensitivity-niveauer brugeren kan se
+  const allLevels: SensitivityLevel[] = [
+    'PUBLIC',
+    'STANDARD',
+    'INTERN',
+    'FORTROLIG',
+    'STRENGT_FORTROLIG',
+  ]
+  const accessibleLevels: SensitivityLevel[] = []
+  for (const level of allLevels) {
+    const hasAccess = await canAccessSensitivity(session.user.id, level)
+    if (hasAccess) accessibleLevels.push(level)
+  }
+
+  // Byg where-clause
+  const where: {
+    organizationId: string
+    deletedAt: null
+    companyId?: string
+    status?: typeof status
+    systemType?: typeof systemType
+    sensitivity?: { in: SensitivityLevel[] } | SensitivityLevel
+    OR?: Array<{ displayName?: { contains: string; mode: 'insensitive' }; notes?: { contains: string; mode: 'insensitive' } }>
+  } = {
+    organizationId: session.user.organizationId,
+    deletedAt: null,
+    ...(companyId && { companyId }),
+    ...(status && { status }),
+    ...(systemType && { systemType }),
+  }
+
+  // Sensitivity filter — kun vis hvad brugeren har adgang til
+  if (sensitivity) {
+    // Tjek brugeren har adgang til det ønskede niveau
+    if (!accessibleLevels.includes(sensitivity)) {
+      return { error: 'Du har ikke adgang til dette sensitivitetsniveau' }
+    }
+    where.sensitivity = sensitivity
+  } else {
+    where.sensitivity = { in: accessibleLevels }
+  }
+
+  // Søgning
+  if (search && search.trim()) {
+    where.OR = [
+      { displayName: { contains: search.trim(), mode: 'insensitive' } },
+      { notes: { contains: search.trim(), mode: 'insensitive' } },
+    ]
+  }
+
+  const skip = (page - 1) * pageSize
+
+  try {
+    const [contracts, total] = await Promise.all([
+      prisma.contract.findMany({
+        where,
+        include: {
+          company: {
+            select: { id: true, name: true },
+          },
+          _count: {
+            select: {
+              parties: true,
+              versions: true,
+              attachments: true,
+            },
+          },
+        },
+        orderBy: { updatedAt: 'desc' },
+        take: pageSize,
+        skip,
+      }),
+      prisma.contract.count({ where }),
+    ])
+
+    return { data: { contracts: contracts as ContractWithCounts[], total } }
+  } catch (error) {
+    console.error('listContracts error:', error)
+    return { error: 'Kontrakter kunne ikke hentes — prøv igen' }
+  }
+}
+
+// ==================== OPDATER KONTRAKT ====================
+
 export async function updateContract(
-  input: UpdateContractInput
+  input: z.infer<typeof updateContractSchema>
 ): Promise<ActionResult<Contract>> {
   const session = await auth()
-  if (!session?.user?.id || !session?.user?.organizationId) {
-    return { error: 'Ikke autoriseret' }
-  }
+  if (!session?.user) return { error: 'Ikke autoriseret' }
 
   const parsed = updateContractSchema.safeParse(input)
   if (!parsed.success) {
-    return { error: parsed.error.errors[0]?.message || 'Ugyldigt input' }
+    const firstError = parsed.error.errors[0]
+    return { error: firstError?.message ?? 'Ugyldigt input' }
   }
 
-  const { id, ...data } = parsed.data
-
-  // Hent eksisterende kontrakt
-  const existing = await prisma.contract.findFirst({
-    where: {
-      id,
-      organizationId: session.user.organizationId,
-      deletedAt: null,
-    },
-  })
-
-  if (!existing) {
-    return { error: 'Kontrakten blev ikke fundet' }
-  }
-
-  // Adgang til selskab
-  const hasCompanyAccess = await canAccessCompany(session.user.id, existing.companyId)
-  if (!hasCompanyAccess) {
-    return { error: 'Du har ikke adgang til denne kontrakt' }
-  }
-
-  // Sensitivity adgang
-  const hasSensitivityAccess = await canAccessSensitivity(
-    session.user.id,
-    existing.sensitivity
-  )
-  if (!hasSensitivityAccess) {
-    return { error: 'Du har ikke adgang til denne kontrakt' }
-  }
-
-  // Redigeringsrettighed
-  const canEditData = await canEdit(session.user.id)
-  if (!canEditData) {
-    return { error: 'Du har ikke rettigheder til at redigere kontrakter' }
-  }
-
-  // Hvis sensitivity ændres, tjek at det stadig opfylder minimum
-  if (data.sensitivity) {
-    const minSensitivity = getMinSensitivity(existing.systemType)
-    if (!meetsMinimumSensitivity(data.sensitivity, minSensitivity)) {
-      return { 
-        error: `Sensitivitet for ${existing.systemType} skal minimum være ${minSensitivity}` 
-      }
-    }
-
-    // Tjek at bruger har adgang til den nye sensitivity
-    const canAccessNewSensitivity = await canAccessSensitivity(
-      session.user.id,
-      data.sensitivity
-    )
-    if (!canAccessNewSensitivity) {
-      return { 
-        error: `Du har ikke rettigheder til at sætte sensitivitetsniveau ${data.sensitivity}` 
-      }
-    }
-  }
-
-  // Genberegn retention hvis relevante datoer ændres
-  let mustRetainUntil = existing.mustRetainUntil
-  if (data.signedDate !== undefined || data.terminationDate !== undefined) {
-    mustRetainUntil = calculateRetentionDate(
-      existing.systemType,
-      data.signedDate ?? existing.signedDate,
-      data.terminationDate ?? existing.terminationDate,
-      data.mustRetainUntil ?? existing.mustRetainUntil
-    )
-  }
+  const { contractId, ...updateData } = parsed.data
 
   try {
+    // Hent eksisterende kontrakt
+    const existing = await prisma.contract.findUnique({
+      where: {
+        id: contractId,
+        organizationId: session.user.organizationId,
+        deletedAt: null,
+      },
+    })
+
+    if (!existing) return { error: 'Kontrakten blev ikke fundet' }
+
+    // Adgangstjek
+    const hasCompanyAccess = await canAccessCompany(session.user.id, existing.companyId)
+    if (!hasCompanyAccess) return { error: 'Du har ikke adgang til dette selskab' }
+
+    const hasSensitivityAccess = await canAccessSensitivity(
+      session.user.id,
+      existing.sensitivity
+    )
+    if (!hasSensitivityAccess) {
+      return { error: 'Du har ikke adgang til denne kontrakt' }
+    }
+
+    // Sensitivity-minimum tjek ved ændring
+    if (updateData.sensitivity !== undefined && updateData.sensitivity !== null) {
+      const minSensitivity = getMinSensitivity(existing.systemType)
+      if (!meetsMinimumSensitivity(updateData.sensitivity, minSensitivity)) {
+        return {
+          error: `Sensitivitetsniveauet for ${existing.systemType} skal minimum være ${minSensitivity}`,
+        }
+      }
+      // Tjek at bruger har adgang til det nye niveau
+      const hasNewSensAccess = await canAccessSensitivity(
+        session.user.id,
+        updateData.sensitivity
+      )
+      if (!hasNewSensAccess) {
+        return { error: 'Du har ikke adgang til det valgte sensitivitetsniveau' }
+      }
+    }
+
+    // Beregn ny must_retain_until ved dato-ændringer (DEC-001)
+    const newSignedDate = updateData.signedDate !== undefined
+      ? (updateData.signedDate ? new Date(updateData.signedDate) : null)
+      : existing.signedDate
+    const newTerminationDate = updateData.terminationDate !== undefined
+      ? (updateData.terminationDate ? new Date(updateData.terminationDate) : null)
+      : existing.terminationDate
+    const newExpiryDate = updateData.expiryDate !== undefined
+      ? (updateData.expiryDate ? new Date(updateData.expiryDate) : null)
+      : existing.expiryDate
+
+    const newRetentionDate = calculateRetentionDate(existing.systemType, {
+      signedDate: newSignedDate,
+      terminationDate: newTerminationDate,
+      expiryDate: newExpiryDate,
+    })
+
+    // Brugeren kan forlænge men aldrig forkorte opbevaringspligten
+    let mustRetainUntil = existing.mustRetainUntil
+    if (newRetentionDate) {
+      if (!mustRetainUntil || newRetentionDate > mustRetainUntil) {
+        mustRetainUntil = newRetentionDate
+      }
+    }
+
+    // Byg changes til audit log (DEC-017)
+    const changes: Record<string, { old: unknown; new: unknown }> = {}
+    for (const [key, value] of Object.entries(updateData)) {
+      const existingValue = (existing as Record<string, unknown>)[key]
+      if (value !== undefined && value !== existingValue) {
+        changes[key] = { old: existingValue, new: value }
+      }
+    }
+
     const contract = await prisma.contract.update({
-      where: { id },
+      where: {
+        id: contractId,
+        organizationId: session.user.organizationId,
+      },
       data: {
-        ...data,
+        displayName: updateData.displayName,
+        sensitivity: updateData.sensitivity ?? undefined,
+        deadlineType: updateData.deadlineType ?? undefined,
+        versionSource: updateData.versionSource ?? undefined,
+        collectiveAgreement:
+          updateData.collectiveAgreement !== undefined
+            ? updateData.collectiveAgreement || null
+            : undefined,
+        parentContractId:
+          updateData.parentContractId !== undefined
+            ? updateData.parentContractId
+            : undefined,
+        triggeredById:
+          updateData.triggeredById !== undefined ? updateData.triggeredById : undefined,
+        effectiveDate:
+          updateData.effectiveDate !== undefined
+            ? updateData.effectiveDate
+              ? new Date(updateData.effectiveDate)
+              : null
+            : undefined,
+        expiryDate:
+          updateData.expiryDate !== undefined
+            ? updateData.expiryDate
+              ? new Date(updateData.expiryDate)
+              : null
+            : undefined,
+        signedDate:
+          updateData.signedDate !== undefined
+            ? updateData.signedDate
+              ? new Date(updateData.signedDate)
+              : null
+            : undefined,
+        noticePeriodDays:
+          updateData.noticePeriodDays !== undefined ? updateData.noticePeriodDays : undefined,
+        terminationDate:
+          updateData.terminationDate !== undefined
+            ? updateData.terminationDate
+              ? new Date(updateData.terminationDate)
+              : null
+            : undefined,
+        anciennityStart:
+          updateData.anciennityStart !== undefined
+            ? updateData.anciennityStart
+              ? new Date(updateData.anciennityStart)
+              : null
+            : undefined,
+        reminder90Days: updateData.reminder90Days ?? undefined,
+        reminder30Days: updateData.reminder30Days ?? undefined,
+        reminder7Days: updateData.reminder7Days ?? undefined,
+        reminderRecipients: updateData.reminderRecipients ?? undefined,
+        typeData:
+          updateData.typeData !== undefined ? (updateData.typeData as object | null) : undefined,
+        notes:
+          updateData.notes !== undefined ? updateData.notes || null : undefined,
         mustRetainUntil,
       },
     })
 
-    // Audit log med ændringer for fortrolige kontrakter
-    const shouldLogChanges = 
-      existing.sensitivity === 'STRENGT_FORTROLIG' || 
-      existing.sensitivity === 'FORTROLIG'
-
+    // Audit log — med changes for FORTROLIG/STRENGT_FORTROLIG (DEC-017)
+    const sensitivityLevels: SensitivityLevel[] = ['FORTROLIG', 'STRENGT_FORTROLIG']
     await prisma.auditLog.create({
       data: {
         organizationId: session.user.organizationId,
@@ -297,85 +553,87 @@ export async function updateContract(
         resourceType: 'contract',
         resourceId: contract.id,
         sensitivity: contract.sensitivity,
-        changes: shouldLogChanges ? (data as object) : null,
+        changes:
+          sensitivityLevels.includes(existing.sensitivity) &&
+          Object.keys(changes).length > 0
+            ? changes
+            : null,
       },
     })
 
-    revalidatePath(`/contracts/${id}`)
+    revalidatePath(`/contracts/${contractId}`)
     revalidatePath(`/companies/${existing.companyId}`)
-    revalidatePath('/contracts')
-
     return { data: contract }
   } catch (error) {
-    console.error('Fejl ved opdatering af kontrakt:', error)
-    return { error: 'Kontrakten kunne ikke opdateres — prøv igen' }
+    console.error('updateContract error:', error)
+    return { error: 'Kontrakten kunne ikke opdateres — prøv igen eller kontakt support' }
   }
 }
 
+// ==================== STATUS-FLOW ====================
+
 export async function updateContractStatus(
-  input: UpdateContractStatusInput
+  input: z.infer<typeof updateContractStatusSchema>
 ): Promise<ActionResult<Contract>> {
   const session = await auth()
-  if (!session?.user?.id || !session?.user?.organizationId) {
-    return { error: 'Ikke autoriseret' }
-  }
+  if (!session?.user) return { error: 'Ikke autoriseret' }
 
   const parsed = updateContractStatusSchema.safeParse(input)
   if (!parsed.success) {
-    return { error: parsed.error.errors[0]?.message || 'Ugyldigt input' }
+    const firstError = parsed.error.errors[0]
+    return { error: firstError?.message ?? 'Ugyldigt input' }
   }
 
-  const { id, status: newStatus } = parsed.data
-
-  // Hent eksisterende kontrakt
-  const existing = await prisma.contract.findFirst({
-    where: {
-      id,
-      organizationId: session.user.organizationId,
-      deletedAt: null,
-    },
-  })
-
-  if (!existing) {
-    return { error: 'Kontrakten blev ikke fundet' }
-  }
-
-  // Adgang til selskab
-  const hasCompanyAccess = await canAccessCompany(session.user.id, existing.companyId)
-  if (!hasCompanyAccess) {
-    return { error: 'Du har ikke adgang til denne kontrakt' }
-  }
-
-  // Sensitivity adgang
-  const hasSensitivityAccess = await canAccessSensitivity(
-    session.user.id,
-    existing.sensitivity
-  )
-  if (!hasSensitivityAccess) {
-    return { error: 'Du har ikke adgang til denne kontrakt' }
-  }
-
-  // Redigeringsrettighed
-  const canEditData = await canEdit(session.user.id)
-  if (!canEditData) {
-    return { error: 'Du har ikke rettigheder til at ændre kontraktstatus' }
-  }
-
-  // Validér status-transition
-  if (!isValidStatusTransition(existing.status, newStatus)) {
-    const validTransitions = VALID_STATUS_TRANSITIONS[existing.status]
-    return { 
-      error: `Ugyldig statusændring. Fra ${existing.status} kan du skifte til: ${validTransitions.join(', ') || 'ingen'}` 
-    }
-  }
+  const { contractId, newStatus, note } = parsed.data
 
   try {
-    const contract = await prisma.contract.update({
-      where: { id },
-      data: { status: newStatus },
+    const existing = await prisma.contract.findUnique({
+      where: {
+        id: contractId,
+        organizationId: session.user.organizationId,
+        deletedAt: null,
+      },
     })
 
-    // Audit log
+    if (!existing) return { error: 'Kontrakten blev ikke fundet' }
+
+    // Adgangstjek
+    const hasCompanyAccess = await canAccessCompany(session.user.id, existing.companyId)
+    if (!hasCompanyAccess) return { error: 'Du har ikke adgang til dette selskab' }
+
+    const hasSensitivityAccess = await canAccessSensitivity(
+      session.user.id,
+      existing.sensitivity
+    )
+    if (!hasSensitivityAccess) {
+      return { error: 'Du har ikke adgang til denne kontrakt' }
+    }
+
+    // Validér status-transition jf. spec
+    if (!isValidStatusTransition(existing.status, newStatus)) {
+      return {
+        error: `Ugyldig statusændring: ${existing.status} → ${newStatus} er ikke tilladt. Gyldige næste statusser: ${([] as string[]).concat(
+          existing.status === 'UDKAST' ? ['TIL_REVIEW'] :
+          existing.status === 'TIL_REVIEW' ? ['TIL_UNDERSKRIFT', 'UDKAST'] :
+          existing.status === 'TIL_UNDERSKRIFT' ? ['AKTIV', 'TIL_REVIEW'] :
+          existing.status === 'AKTIV' ? ['UDLOEBET', 'OPSAGT', 'FORNYET', 'ARKIVERET'] :
+          []
+        ).join(', ')}`,
+      }
+    }
+
+    const contract = await prisma.contract.update({
+      where: {
+        id: contractId,
+        organizationId: session.user.organizationId,
+      },
+      data: {
+        status: newStatus,
+        ...(note && { notes: note }),
+      },
+    })
+
+    // Audit log — altid ved statusændring
     await prisma.auditLog.create({
       data: {
         organizationId: session.user.organizationId,
@@ -384,63 +642,63 @@ export async function updateContractStatus(
         resourceType: 'contract',
         resourceId: contract.id,
         sensitivity: contract.sensitivity,
-        changes: { status: { from: existing.status, to: newStatus } },
+        changes: {
+          status: { old: existing.status, new: newStatus },
+          ...(note && { note: { old: null, new: note } }),
+        },
       },
     })
 
-    revalidatePath(`/contracts/${id}`)
+    revalidatePath(`/contracts/${contractId}`)
     revalidatePath(`/companies/${existing.companyId}`)
-    revalidatePath('/contracts')
-
     return { data: contract }
   } catch (error) {
-    console.error('Fejl ved statusændring:', error)
-    return { error: 'Status kunne ikke ændres — prøv igen' }
+    console.error('updateContractStatus error:', error)
+    return { error: 'Status kunne ikke opdateres — prøv igen eller kontakt support' }
   }
 }
 
+// ==================== SLET KONTRAKT ====================
+
 export async function deleteContract(
-  contractId: string
-): Promise<ActionResult<{ success: true }>> {
+  input: z.infer<typeof deleteContractSchema>
+): Promise<ActionResult<{ id: string }>> {
   const session = await auth()
-  if (!session?.user?.id || !session?.user?.organizationId) {
-    return { error: 'Ikke autoriseret' }
-  }
+  if (!session?.user) return { error: 'Ikke autoriseret' }
 
-  const existing = await prisma.contract.findFirst({
-    where: {
-      id: contractId,
-      organizationId: session.user.organizationId,
-      deletedAt: null,
-    },
-  })
+  const parsed = deleteContractSchema.safeParse(input)
+  if (!parsed.success) return { error: 'Ugyldigt kontrakt-ID' }
 
-  if (!existing) {
-    return { error: 'Kontrakten blev ikke fundet' }
-  }
-
-  const hasCompanyAccess = await canAccessCompany(session.user.id, existing.companyId)
-  if (!hasCompanyAccess) {
-    return { error: 'Du har ikke adgang til denne kontrakt' }
-  }
-
-  const hasSensitivityAccess = await canAccessSensitivity(
-    session.user.id,
-    existing.sensitivity
-  )
-  if (!hasSensitivityAccess) {
-    return { error: 'Du har ikke adgang til denne kontrakt' }
-  }
-
-  const canEditData = await canEdit(session.user.id)
-  if (!canEditData) {
-    return { error: 'Du har ikke rettigheder til at slette kontrakter' }
-  }
+  const { contractId } = parsed.data
 
   try {
+    const existing = await prisma.contract.findUnique({
+      where: {
+        id: contractId,
+        organizationId: session.user.organizationId,
+        deletedAt: null,
+      },
+    })
+
+    if (!existing) return { error: 'Kontrakten blev ikke fundet' }
+
+    const hasCompanyAccess = await canAccessCompany(session.user.id, existing.companyId)
+    if (!hasCompanyAccess) return { error: 'Du har ikke adgang til dette selskab' }
+
+    const hasSensitivityAccess = await canAccessSensitivity(
+      session.user.id,
+      existing.sensitivity
+    )
+    if (!hasSensitivityAccess) {
+      return { error: 'Du har ikke adgang til denne kontrakt' }
+    }
+
     // Soft delete
     await prisma.contract.update({
-      where: { id: contractId },
+      where: {
+        id: contractId,
+        organizationId: session.user.organizationId,
+      },
       data: { deletedAt: new Date() },
     })
 
@@ -455,554 +713,404 @@ export async function deleteContract(
       },
     })
 
-    revalidatePath(`/companies/${existing.companyId}`)
     revalidatePath('/contracts')
-
-    return { data: { success: true } }
+    revalidatePath(`/companies/${existing.companyId}`)
+    return { data: { id: contractId } }
   } catch (error) {
-    console.error('Fejl ved sletning af kontrakt:', error)
-    return { error: 'Kontrakten kunne ikke slettes — prøv igen' }
-  }
-}
-
-export async function getContract(
-  contractId: string
-): Promise<ActionResult<ContractWithRelations>> {
-  const session = await auth()
-  if (!session?.user?.id || !session?.user?.organizationId) {
-    return { error: 'Ikke autoriseret' }
-  }
-
-  const contract = await prisma.contract.findFirst({
-    where: {
-      id: contractId,
-      organizationId: session.user.organizationId,
-      deletedAt: null,
-    },
-    include: {
-      company: true,
-      parties: {
-        include: { person: true },
-        orderBy: { createdAt: 'asc' },
-      },
-      versions: {
-        orderBy: { versionNumber: 'desc' },
-      },
-      attachments: {
-        where: { deletedAt: null },
-        orderBy: { uploadedAt: 'desc' },
-      },
-      relationsFrom: {
-        include: { toContract: true },
-      },
-      relationsTo: {
-        include: { fromContract: true },
-      },
-      parentContract: true,
-      childContracts: {
-        where: { deletedAt: null },
-      },
-    },
-  })
-
-  if (!contract) {
-    return { error: 'Kontrakten blev ikke fundet' }
-  }
-
-  // Adgang til selskab
-  const hasCompanyAccess = await canAccessCompany(session.user.id, contract.companyId)
-  if (!hasCompanyAccess) {
-    return { error: 'Du har ikke adgang til denne kontrakt' }
-  }
-
-  // Sensitivity adgang
-  const hasSensitivityAccess = await canAccessSensitivity(
-    session.user.id,
-    contract.sensitivity
-  )
-  if (!hasSensitivityAccess) {
-    return { error: 'Du har ikke adgang til denne kontrakt' }
-  }
-
-  // Opdater last viewed
-  await prisma.contract.update({
-    where: { id: contractId },
-    data: {
-      lastViewedAt: new Date(),
-      lastViewedBy: session.user.id,
-    },
-  })
-
-  // Audit log
-  await prisma.auditLog.create({
-    data: {
-      organizationId: session.user.organizationId,
-      userId: session.user.id,
-      action: 'VIEW',
-      resourceType: 'contract',
-      resourceId: contractId,
-      sensitivity: contract.sensitivity,
-    },
-  })
-
-  return { data: contract }
-}
-
-export async function listContracts(
-  filter?: ListContractsFilter
-): Promise<ActionResult<ContractWithCounts[]>> {
-  const session = await auth()
-  if (!session?.user?.id || !session?.user?.organizationId) {
-    return { error: 'Ikke autoriseret' }
-  }
-
-  const canAccess = await canAccessModule(session.user.id, 'contracts')
-  if (!canAccess) {
-    return { error: 'Du har ikke adgang til kontraktmodulet' }
-  }
-
-  // Validér filter
-  const parsedFilter = listContractsFilterSchema.safeParse(filter || {})
-  if (!parsedFilter.success) {
-    return { error: 'Ugyldigt filter' }
-  }
-
-  const { companyId, systemType, status, sensitivity, search, limit = 50, offset = 0 } = parsedFilter.data
-
-  // Hent tilgængelige selskaber
-  const { getAccessibleCompanies } = await import('@/lib/permissions')
-  const accessibleCompanies = await getAccessibleCompanies(session.user.id)
-  
-  if (accessibleCompanies.length === 0) {
-    return { data: [] }
-  }
-
-  const accessibleCompanyIds = accessibleCompanies.map((c) => c.id)
-
-  // Hent max sensitivity niveau for brugeren
-  const maxSensitivity = await getMaxSensitivityLevel(session.user.id)
-  if (!maxSensitivity) {
-    return { data: [] }
-  }
-
-  // Byg where clause
-  const where: Prisma.ContractWhereInput = {
-    organizationId: session.user.organizationId,
-    deletedAt: null,
-    companyId: companyId 
-      ? { in: accessibleCompanyIds.filter(id => id === companyId) }
-      : { in: accessibleCompanyIds },
-  }
-
-  // Filtrer på sensitivity baseret på brugerens max niveau
-  const sensitivityIndex = ['PUBLIC', 'STANDARD', 'INTERN', 'FORTROLIG', 'STRENGT_FORTROLIG'].indexOf(maxSensitivity)
-  const allowedSensitivities = ['PUBLIC', 'STANDARD', 'INTERN', 'FORTROLIG', 'STRENGT_FORTROLIG'].slice(0, sensitivityIndex + 1) as SensitivityLevel[]
-  
-  where.sensitivity = sensitivity 
-    ? { in: allowedSensitivities.filter(s => s === sensitivity) }
-    : { in: allowedSensitivities }
-
-  if (systemType) {
-    where.systemType = systemType
-  }
-
-  if (status) {
-    where.status = status
-  }
-
-  if (search && search.trim()) {
-    where.OR = [
-      { displayName: { contains: search, mode: 'insensitive' } },
-      { notes: { contains: search, mode: 'insensitive' } },
-    ]
-  }
-
-  try {
-    const contracts = await prisma.contract.findMany({
-      where,
-      include: {
-        company: true,
-        _count: {
-          select: {
-            parties: true,
-            versions: true,
-            attachments: { where: { deletedAt: null } },
-          },
-        },
-      },
-      orderBy: { updatedAt: 'desc' },
-      take: limit,
-      skip: offset,
-    })
-
-    return { data: contracts }
-  } catch (error) {
-    console.error('Fejl ved hentning af kontrakter:', error)
-    return { error: 'Kontrakterne kunne ikke hentes — prøv igen' }
+    console.error('deleteContract error:', error)
+    return { error: 'Kontrakten kunne ikke slettes — prøv igen eller kontakt support' }
   }
 }
 
 // ==================== PARTER ====================
 
 export async function addContractParty(
-  input: CreateContractPartyInput
+  input: z.infer<typeof addContractPartySchema>
 ): Promise<ActionResult<ContractParty>> {
   const session = await auth()
-  if (!session?.user?.id || !session?.user?.organizationId) {
-    return { error: 'Ikke autoriseret' }
-  }
+  if (!session?.user) return { error: 'Ikke autoriseret' }
 
-  const parsed = createContractPartySchema.safeParse(input)
+  const parsed = addContractPartySchema.safeParse(input)
   if (!parsed.success) {
-    return { error: parsed.error.errors[0]?.message || 'Ugyldigt input' }
+    const firstError = parsed.error.errors[0]
+    return { error: firstError?.message ?? 'Ugyldigt input' }
   }
 
-  // Hent kontrakt
-  const contract = await prisma.contract.findFirst({
-    where: {
-      id: parsed.data.contractId,
-      organizationId: session.user.organizationId,
-      deletedAt: null,
-    },
-  })
+  const { contractId, personId, isSigner, counterpartyName, roleInContract } = parsed.data
 
-  if (!contract) {
-    return { error: 'Kontrakten blev ikke fundet' }
-  }
-
-  const hasCompanyAccess = await canAccessCompany(session.user.id, contract.companyId)
-  if (!hasCompanyAccess) {
-    return { error: 'Du har ikke adgang til denne kontrakt' }
-  }
-
-  const hasSensitivityAccess = await canAccessSensitivity(
-    session.user.id,
-    contract.sensitivity
-  )
-  if (!hasSensitivityAccess) {
-    return { error: 'Du har ikke adgang til denne kontrakt' }
-  }
-
-  const canEditData = await canEdit(session.user.id)
-  if (!canEditData) {
-    return { error: 'Du har ikke rettigheder til at tilføje parter' }
-  }
-
-  // Verificer person hvis angivet
-  if (parsed.data.personId) {
-    const person = await prisma.person.findFirst({
+  try {
+    const contract = await prisma.contract.findUnique({
       where: {
-        id: parsed.data.personId,
+        id: contractId,
         organizationId: session.user.organizationId,
         deletedAt: null,
       },
     })
-    if (!person) {
-      return { error: 'Personen blev ikke fundet' }
-    }
-  }
 
-  try {
+    if (!contract) return { error: 'Kontrakten blev ikke fundet' }
+
+    const hasCompanyAccess = await canAccessCompany(session.user.id, contract.companyId)
+    if (!hasCompanyAccess) return { error: 'Du har ikke adgang til dette selskab' }
+
+    const hasSensitivityAccess = await canAccessSensitivity(
+      session.user.id,
+      contract.sensitivity
+    )
+    if (!hasSensitivityAccess) {
+      return { error: 'Du har ikke adgang til denne kontrakt' }
+    }
+
+    // Valider at person tilhører organisationen
+    if (personId) {
+      const person = await prisma.person.findUnique({
+        where: {
+          id: personId,
+          organizationId: session.user.organizationId,
+          deletedAt: null,
+        },
+      })
+      if (!person) return { error: 'Person ikke fundet i din organisation' }
+    }
+
     const party = await prisma.contractParty.create({
       data: {
         organizationId: session.user.organizationId,
-        contractId: parsed.data.contractId,
-        personId: parsed.data.personId,
-        isSigner: parsed.data.isSigner || false,
-        counterpartyName: parsed.data.counterpartyName,
-        roleInContract: parsed.data.roleInContract,
+        contractId,
+        personId: personId ?? null,
+        isSigner: isSigner ?? false,
+        counterpartyName: counterpartyName ?? null,
+        roleInContract: roleInContract ?? null,
       },
     })
 
-    await prisma.auditLog.create({
-      data: {
-        organizationId: session.user.organizationId,
-        userId: session.user.id,
-        action: 'CREATE',
-        resourceType: 'contract_party',
-        resourceId: party.id,
-      },
-    })
-
-    revalidatePath(`/contracts/${parsed.data.contractId}`)
+    revalidatePath(`/contracts/${contractId}`)
     return { data: party }
   } catch (error) {
-    console.error('Fejl ved tilføjelse af part:', error)
-    return { error: 'Parten kunne ikke tilføjes — prøv igen' }
-  }
-}
-
-export async function updateContractParty(
-  input: UpdateContractPartyInput
-): Promise<ActionResult<ContractParty>> {
-  const session = await auth()
-  if (!session?.user?.id || !session?.user?.organizationId) {
-    return { error: 'Ikke autoriseret' }
-  }
-
-  const parsed = updateContractPartySchema.safeParse(input)
-  if (!parsed.success) {
-    return { error: parsed.error.errors[0]?.message || 'Ugyldigt input' }
-  }
-
-  const { id, ...data } = parsed.data
-
-  // Hent eksisterende part med kontrakt
-  const existing = await prisma.contractParty.findFirst({
-    where: {
-      id,
-      organizationId: session.user.organizationId,
-    },
-    include: { contract: true },
-  })
-
-  if (!existing) {
-    return { error: 'Parten blev ikke fundet' }
-  }
-
-  const hasCompanyAccess = await canAccessCompany(session.user.id, existing.contract.companyId)
-  if (!hasCompanyAccess) {
-    return { error: 'Du har ikke adgang til denne kontrakt' }
-  }
-
-  const hasSensitivityAccess = await canAccessSensitivity(
-    session.user.id,
-    existing.contract.sensitivity
-  )
-  if (!hasSensitivityAccess) {
-    return { error: 'Du har ikke adgang til denne kontrakt' }
-  }
-
-  const canEditData = await canEdit(session.user.id)
-  if (!canEditData) {
-    return { error: 'Du har ikke rettigheder til at redigere parter' }
-  }
-
-  try {
-    const party = await prisma.contractParty.update({
-      where: { id },
-      data,
-    })
-
-    await prisma.auditLog.create({
-      data: {
-        organizationId: session.user.organizationId,
-        userId: session.user.id,
-        action: 'UPDATE',
-        resourceType: 'contract_party',
-        resourceId: party.id,
-        changes: data as object,
-      },
-    })
-
-    revalidatePath(`/contracts/${existing.contractId}`)
-    return { data: party }
-  } catch (error) {
-    console.error('Fejl ved opdatering af part:', error)
-    return { error: 'Parten kunne ikke opdateres — prøv igen' }
+    console.error('addContractParty error:', error)
+    return { error: 'Part kunne ikke tilføjes — prøv igen' }
   }
 }
 
 export async function removeContractParty(
-  partyId: string
-): Promise<ActionResult<{ success: true }>> {
+  input: z.infer<typeof removeContractPartySchema>
+): Promise<ActionResult<{ id: string }>> {
   const session = await auth()
-  if (!session?.user?.id || !session?.user?.organizationId) {
-    return { error: 'Ikke autoriseret' }
-  }
+  if (!session?.user) return { error: 'Ikke autoriseret' }
 
-  const existing = await prisma.contractParty.findFirst({
-    where: {
-      id: partyId,
-      organizationId: session.user.organizationId,
-    },
-    include: { contract: true },
-  })
+  const parsed = removeContractPartySchema.safeParse(input)
+  if (!parsed.success) return { error: 'Ugyldigt input' }
 
-  if (!existing) {
-    return { error: 'Parten blev ikke fundet' }
-  }
-
-  const hasCompanyAccess = await canAccessCompany(session.user.id, existing.contract.companyId)
-  if (!hasCompanyAccess) {
-    return { error: 'Du har ikke adgang til denne kontrakt' }
-  }
-
-  const hasSensitivityAccess = await canAccessSensitivity(
-    session.user.id,
-    existing.contract.sensitivity
-  )
-  if (!hasSensitivityAccess) {
-    return { error: 'Du har ikke adgang til denne kontrakt' }
-  }
-
-  const canEditData = await canEdit(session.user.id)
-  if (!canEditData) {
-    return { error: 'Du har ikke rettigheder til at fjerne parter' }
-  }
+  const { contractId, partyId } = parsed.data
 
   try {
-    await prisma.contractParty.delete({
-      where: { id: partyId },
-    })
-
-    await prisma.auditLog.create({
-      data: {
+    const contract = await prisma.contract.findUnique({
+      where: {
+        id: contractId,
         organizationId: session.user.organizationId,
-        userId: session.user.id,
-        action: 'DELETE',
-        resourceType: 'contract_party',
-        resourceId: partyId,
+        deletedAt: null,
       },
     })
 
-    revalidatePath(`/contracts/${existing.contractId}`)
-    return { data: { success: true } }
-  } catch (error) {
-    console.error('Fejl ved fjernelse af part:', error)
-    return { error: 'Parten kunne ikke fjernes — prøv igen' }
-  }
-}
+    if (!contract) return { error: 'Kontrakten blev ikke fundet' }
 
-export async function listContractParties(
-  contractId: string
-): Promise<ActionResult<ContractPartyWithPerson[]>> {
-  const session = await auth()
-  if (!session?.user?.id || !session?.user?.organizationId) {
-    return { error: 'Ikke autoriseret' }
-  }
+    const hasCompanyAccess = await canAccessCompany(session.user.id, contract.companyId)
+    if (!hasCompanyAccess) return { error: 'Du har ikke adgang til dette selskab' }
 
-  const contract = await prisma.contract.findFirst({
-    where: {
-      id: contractId,
-      organizationId: session.user.organizationId,
-      deletedAt: null,
-    },
-  })
-
-  if (!contract) {
-    return { error: 'Kontrakten blev ikke fundet' }
-  }
-
-  const hasCompanyAccess = await canAccessCompany(session.user.id, contract.companyId)
-  if (!hasCompanyAccess) {
-    return { error: 'Du har ikke adgang til denne kontrakt' }
-  }
-
-  const hasSensitivityAccess = await canAccessSensitivity(
-    session.user.id,
-    contract.sensitivity
-  )
-  if (!hasSensitivityAccess) {
-    return { error: 'Du har ikke adgang til denne kontrakt' }
-  }
-
-  try {
-    const parties = await prisma.contractParty.findMany({
+    // Verificer at parten tilhører kontrakten og organisationen
+    const party = await prisma.contractParty.findFirst({
       where: {
+        id: partyId,
         contractId,
         organizationId: session.user.organizationId,
       },
-      include: { person: true },
-      orderBy: { createdAt: 'asc' },
     })
 
-    return { data: parties }
+    if (!party) return { error: 'Part ikke fundet' }
+
+    await prisma.contractParty.delete({ where: { id: partyId } })
+
+    revalidatePath(`/contracts/${contractId}`)
+    return { data: { id: partyId } }
   } catch (error) {
-    console.error('Fejl ved hentning af parter:', error)
-    return { error: 'Parter kunne ikke hentes — prøv igen' }
+    console.error('removeContractParty error:', error)
+    return { error: 'Part kunne ikke fjernes — prøv igen' }
   }
 }
 
-// ==================== VERSIONER ====================
+// ==================== RELATIONER ====================
 
-export async function addContractVersion(
-  input: CreateContractVersionInput
-): Promise<ActionResult<ContractVersion>> {
+export async function addContractRelation(
+  input: z.infer<typeof addContractRelationSchema>
+): Promise<ActionResult<ContractRelation>> {
   const session = await auth()
-  if (!session?.user?.id || !session?.user?.organizationId) {
-    return { error: 'Ikke autoriseret' }
-  }
+  if (!session?.user) return { error: 'Ikke autoriseret' }
 
-  const parsed = createContractVersionSchema.safeParse(input)
+  const parsed = addContractRelationSchema.safeParse(input)
   if (!parsed.success) {
-    return { error: parsed.error.errors[0]?.message || 'Ugyldigt input' }
+    const firstError = parsed.error.errors[0]
+    return { error: firstError?.message ?? 'Ugyldigt input' }
   }
 
-  const contract = await prisma.contract.findFirst({
-    where: {
-      id: parsed.data.contractId,
-      organizationId: session.user.organizationId,
-      deletedAt: null,
-    },
-  })
+  const { fromContractId, toContractId, relationType } = parsed.data
 
-  if (!contract) {
-    return { error: 'Kontrakten blev ikke fundet' }
-  }
-
-  const hasCompanyAccess = await canAccessCompany(session.user.id, contract.companyId)
-  if (!hasCompanyAccess) {
-    return { error: 'Du har ikke adgang til denne kontrakt' }
-  }
-
-  const hasSensitivityAccess = await canAccessSensitivity(
-    session.user.id,
-    contract.sensitivity
-  )
-  if (!hasSensitivityAccess) {
-    return { error: 'Du har ikke adgang til denne kontrakt' }
-  }
-
-  const canEditData = await canEdit(session.user.id)
-  if (!canEditData) {
-    return { error: 'Du har ikke rettigheder til at uploade versioner' }
+  if (fromContractId === toContractId) {
+    return { error: 'En kontrakt kan ikke relatere til sig selv' }
   }
 
   try {
-    // Hent næste versionsnummer
-    const lastVersion = await prisma.contractVersion.findFirst({
+    // Tjek at begge kontrakter tilhører organisationen
+    const [fromContract, toContract] = await Promise.all([
+      prisma.contract.findUnique({
+        where: {
+          id: fromContractId,
+          organizationId: session.user.organizationId,
+          deletedAt: null,
+        },
+      }),
+      prisma.contract.findUnique({
+        where: {
+          id: toContractId,
+          organizationId: session.user.organizationId,
+          deletedAt: null,
+        },
+      }),
+    ])
+
+    if (!fromContract) return { error: 'Kildekontrakt ikke fundet' }
+    if (!toContract) return { error: 'Målkontrakt ikke fundet' }
+
+    // Adgangstjek til begge kontrakter
+    const [hasFromAccess, hasToAccess] = await Promise.all([
+      canAccessCompany(session.user.id, fromContract.companyId),
+      canAccessCompany(session.user.id, toContract.companyId),
+    ])
+
+    if (!hasFromAccess || !hasToAccess) {
+      return { error: 'Du har ikke adgang til begge kontrakter' }
+    }
+
+    const relation = await prisma.contractRelation.create({
+      data: {
+        organizationId: session.user.organizationId,
+        fromContractId,
+        toContractId,
+        relationType,
+        createdBy: session.user.id,
+      },
+    })
+
+    revalidatePath(`/contracts/${fromContractId}`)
+    revalidatePath(`/contracts/${toContractId}`)
+    return { data: relation }
+  } catch (error) {
+    // Unik constraint violation — relation eksisterer allerede
+    if (error instanceof Error && error.message.includes('Unique constraint')) {
+      return { error: 'Denne relation eksisterer allerede' }
+    }
+    console.error('addContractRelation error:', error)
+    return { error: 'Relation kunne ikke oprettes — prøv igen' }
+  }
+}
+
+export async function removeContractRelation(
+  input: z.infer<typeof removeContractRelationSchema>
+): Promise<ActionResult<{ id: string }>> {
+  const session = await auth()
+  if (!session?.user) return { error: 'Ikke autoriseret' }
+
+  const parsed = removeContractRelationSchema.safeParse(input)
+  if (!parsed.success) return { error: 'Ugyldigt input' }
+
+  const { relationId } = parsed.data
+
+  try {
+    const relation = await prisma.contractRelation.findFirst({
       where: {
-        contractId: parsed.data.contractId,
+        id: relationId,
+        organizationId: session.user.organizationId,
+      },
+    })
+
+    if (!relation) return { error: 'Relation ikke fundet' }
+
+    await prisma.contractRelation.delete({ where: { id: relationId } })
+
+    revalidatePath(`/contracts/${relation.fromContractId}`)
+    revalidatePath(`/contracts/${relation.toContractId}`)
+    return { data: { id: relationId } }
+  } catch (error) {
+    console.error('removeContractRelation error:', error)
+    return { error: 'Relation kunne ikke fjernes — prøv igen' }
+  }
+}
+
+// ==================== FIL-UPLOAD (Cloudflare R2) ====================
+
+export async function requestUploadUrl(
+  input: z.infer<typeof requestUploadUrlSchema>
+): Promise<ActionResult<UploadUrlResponse>> {
+  const session = await auth()
+  if (!session?.user) return { error: 'Ikke autoriseret' }
+
+  const parsed = requestUploadUrlSchema.safeParse(input)
+  if (!parsed.success) {
+    const firstError = parsed.error.errors[0]
+    return { error: firstError?.message ?? 'Ugyldigt input' }
+  }
+
+  const { contractId, fileName, fileType, fileSizeBytes, uploadPurpose } = parsed.data
+
+  // Tjek at R2 er konfigureret
+  if (!isStorageConfigured()) {
+    return {
+      error: `Fil-upload er ikke tilgængeligt. ${getStorageConfigurationGuide()}`,
+    }
+  }
+
+  try {
+    const contract = await prisma.contract.findUnique({
+      where: {
+        id: contractId,
+        organizationId: session.user.organizationId,
+        deletedAt: null,
+      },
+    })
+
+    if (!contract) return { error: 'Kontrakten blev ikke fundet' }
+
+    const hasCompanyAccess = await canAccessCompany(session.user.id, contract.companyId)
+    if (!hasCompanyAccess) return { error: 'Du har ikke adgang til dette selskab' }
+
+    const hasSensitivityAccess = await canAccessSensitivity(
+      session.user.id,
+      contract.sensitivity
+    )
+    if (!hasSensitivityAccess) {
+      return { error: 'Du har ikke adgang til denne kontrakt' }
+    }
+
+    // Generer unik fil-sti
+    const resourceType = uploadPurpose === 'version' ? 'contracts' : 'attachments'
+    const fileKey = generateStoragePath(
+      session.user.organizationId,
+      resourceType,
+      contractId,
+      fileName
+    )
+
+    const { uploadUrl, fileUrl } = await getSignedUploadUrl(fileKey, fileType)
+
+    return { data: { uploadUrl, fileKey, fileUrl } }
+  } catch (error) {
+    console.error('requestUploadUrl error:', error)
+    if (error instanceof Error) {
+      return { error: error.message }
+    }
+    return { error: 'Upload-URL kunne ikke genereres — prøv igen' }
+  }
+}
+
+// ==================== VERSIONSSTYRING ====================
+
+export async function confirmVersionUpload(
+  input: z.infer<typeof confirmVersionUploadSchema>
+): Promise<ActionResult<ContractVersion>> {
+  const session = await auth()
+  if (!session?.user) return { error: 'Ikke autoriseret' }
+
+  const parsed = confirmVersionUploadSchema.safeParse(input)
+  if (!parsed.success) {
+    const firstError = parsed.error.errors[0]
+    return { error: firstError?.message ?? 'Ugyldigt input' }
+  }
+
+  const { contractId, fileKey, fileName, fileSizeBytes, changeType, changeNote, amendsClause } =
+    parsed.data
+
+  try {
+    const contract = await prisma.contract.findUnique({
+      where: {
+        id: contractId,
+        organizationId: session.user.organizationId,
+        deletedAt: null,
+      },
+    })
+
+    if (!contract) return { error: 'Kontrakten blev ikke fundet' }
+
+    const hasCompanyAccess = await canAccessCompany(session.user.id, contract.companyId)
+    if (!hasCompanyAccess) return { error: 'Du har ikke adgang til dette selskab' }
+
+    const hasSensitivityAccess = await canAccessSensitivity(
+      session.user.id,
+      contract.sensitivity
+    )
+    if (!hasSensitivityAccess) {
+      return { error: 'Du har ikke adgang til denne kontrakt' }
+    }
+
+    // Find næste version-nummer
+    const latestVersion = await prisma.contractVersion.findFirst({
+      where: {
+        contractId,
         organizationId: session.user.organizationId,
       },
       orderBy: { versionNumber: 'desc' },
     })
 
-    const versionNumber = (lastVersion?.versionNumber || 0) + 1
+    const nextVersionNumber = (latestVersion?.versionNumber ?? 0) + 1
 
-    // Sæt alle andre versioner til ikke-current
-    if (parsed.data.isCurrent !== false) {
-      await prisma.contractVersion.updateMany({
+    // Konstruér fil-URL (fileKey er den R2-sti der allerede er uploadet til)
+    const fileUrl = fileKey.startsWith('http') ? fileKey : `r2://${fileKey}`
+
+    // Brug transaktion til at opdatere isCurrent
+    const [, newVersion] = await prisma.$transaction([
+      // Sæt alle eksisterende versioner til ikke-current
+      prisma.contractVersion.updateMany({
         where: {
-          contractId: parsed.data.contractId,
+          contractId,
           organizationId: session.user.organizationId,
         },
         data: { isCurrent: false },
-      })
-    }
+      }),
+      // Opret ny version
+      prisma.contractVersion.create({
+        data: {
+          organizationId: session.user.organizationId,
+          contractId,
+          versionNumber: nextVersionNumber,
+          fileUrl,
+          fileName,
+          fileSizeBytes,
+          isCurrent: true,
+          changeType,
+          changeNote: changeNote ?? null,
+          amendsClause: amendsClause ?? null,
+          uploadedBy: session.user.id,
+        },
+      }),
+    ])
 
-    const version = await prisma.contractVersion.create({
-      data: {
-        organizationId: session.user.organizationId,
-        contractId: parsed.data.contractId,
-        versionNumber,
-        fileUrl: parsed.data.fileUrl,
-        fileName: parsed.data.fileName,
-        fileSizeBytes: parsed.data.fileSizeBytes,
-        isCurrent: parsed.data.isCurrent !== false,
-        changeType: parsed.data.changeType || 'REDAKTIONEL',
-        changeNote: parsed.data.changeNote,
-        amendsClause: parsed.data.amendsClause,
-        uploadedBy: session.user.id,
-      },
-    })
-
-    // Hvis det er en materiel ændring, resæt status til TIL_REVIEW (hvis aktiv)
-    if (parsed.data.changeType === 'MATERIEL' && contract.status === 'AKTIV') {
+    // DEC-013: Materiel ændring → automatisk status-reset til TIL_REVIEW
+    if (changeType === 'MATERIEL' && contract.status === 'AKTIV') {
       await prisma.contract.update({
-        where: { id: parsed.data.contractId },
+        where: { id: contractId },
         data: { status: 'TIL_REVIEW' },
+      })
+
+      await prisma.auditLog.create({
+        data: {
+          organizationId: session.user.organizationId,
+          userId: session.user.id,
+          action: 'UPDATE',
+          resourceType: 'contract',
+          resourceId: contractId,
+          sensitivity: contract.sensitivity,
+          changes: {
+            status: { old: contract.status, new: 'TIL_REVIEW' },
+            reason: { old: null, new: 'Materiel ændring kræver ny gennemgang' },
+          },
+        },
       })
     }
 
@@ -1012,478 +1120,230 @@ export async function addContractVersion(
         userId: session.user.id,
         action: 'CREATE',
         resourceType: 'contract_version',
-        resourceId: version.id,
+        resourceId: newVersion.id,
         sensitivity: contract.sensitivity,
       },
     })
 
-    revalidatePath(`/contracts/${parsed.data.contractId}`)
-    return { data: version }
+    revalidatePath(`/contracts/${contractId}`)
+    return { data: newVersion }
   } catch (error) {
-    console.error('Fejl ved upload af version:', error)
-    return { error: 'Versionen kunne ikke uploades — prøv igen' }
+    console.error('confirmVersionUpload error:', error)
+    return { error: 'Versionen kunne ikke gemmes — prøv igen' }
   }
 }
 
-export async function listContractVersions(
-  contractId: string
-): Promise<ActionResult<ContractVersion[]>> {
+export async function deleteContractVersion(
+  input: z.infer<typeof deleteVersionSchema>
+): Promise<ActionResult<{ id: string }>> {
   const session = await auth()
-  if (!session?.user?.id || !session?.user?.organizationId) {
-    return { error: 'Ikke autoriseret' }
-  }
+  if (!session?.user) return { error: 'Ikke autoriseret' }
 
-  const contract = await prisma.contract.findFirst({
-    where: {
-      id: contractId,
-      organizationId: session.user.organizationId,
-      deletedAt: null,
-    },
-  })
+  const parsed = deleteVersionSchema.safeParse(input)
+  if (!parsed.success) return { error: 'Ugyldigt input' }
 
-  if (!contract) {
-    return { error: 'Kontrakten blev ikke fundet' }
-  }
-
-  const hasCompanyAccess = await canAccessCompany(session.user.id, contract.companyId)
-  if (!hasCompanyAccess) {
-    return { error: 'Du har ikke adgang til denne kontrakt' }
-  }
-
-  const hasSensitivityAccess = await canAccessSensitivity(
-    session.user.id,
-    contract.sensitivity
-  )
-  if (!hasSensitivityAccess) {
-    return { error: 'Du har ikke adgang til denne kontrakt' }
-  }
+  const { contractId, versionId } = parsed.data
 
   try {
-    const versions = await prisma.contractVersion.findMany({
+    const version = await prisma.contractVersion.findFirst({
       where: {
+        id: versionId,
         contractId,
         organizationId: session.user.organizationId,
       },
-      orderBy: { versionNumber: 'desc' },
+      include: {
+        contract: true,
+      },
     })
 
-    return { data: versions }
+    if (!version) return { error: 'Version ikke fundet' }
+
+    // Man kan ikke slette den eneste eller nuværende version
+    if (version.isCurrent) {
+      return { error: 'Den aktuelle version kan ikke slettes. Upload en ny version først.' }
+    }
+
+    const hasCompanyAccess = await canAccessCompany(
+      session.user.id,
+      version.contract.companyId
+    )
+    if (!hasCompanyAccess) return { error: 'Du har ikke adgang til dette selskab' }
+
+    await prisma.contractVersion.delete({ where: { id: versionId } })
+
+    revalidatePath(`/contracts/${contractId}`)
+    return { data: { id: versionId } }
   } catch (error) {
-    console.error('Fejl ved hentning af versioner:', error)
-    return { error: 'Versioner kunne ikke hentes — prøv igen' }
+    console.error('deleteContractVersion error:', error)
+    return { error: 'Versionen kunne ikke slettes — prøv igen' }
   }
 }
 
 // ==================== BILAG ====================
 
-export async function addContractAttachment(
-  input: CreateContractAttachmentInput
+export async function confirmAttachmentUpload(
+  input: z.infer<typeof confirmAttachmentUploadSchema>
 ): Promise<ActionResult<ContractAttachment>> {
   const session = await auth()
-  if (!session?.user?.id || !session?.user?.organizationId) {
-    return { error: 'Ikke autoriseret' }
-  }
+  if (!session?.user) return { error: 'Ikke autoriseret' }
 
-  const parsed = createContractAttachmentSchema.safeParse(input)
+  const parsed = confirmAttachmentUploadSchema.safeParse(input)
   if (!parsed.success) {
-    return { error: parsed.error.errors[0]?.message || 'Ugyldigt input' }
+    const firstError = parsed.error.errors[0]
+    return { error: firstError?.message ?? 'Ugyldigt input' }
   }
 
-  const contract = await prisma.contract.findFirst({
-    where: {
-      id: parsed.data.contractId,
-      organizationId: session.user.organizationId,
-      deletedAt: null,
-    },
-  })
-
-  if (!contract) {
-    return { error: 'Kontrakten blev ikke fundet' }
-  }
-
-  const hasCompanyAccess = await canAccessCompany(session.user.id, contract.companyId)
-  if (!hasCompanyAccess) {
-    return { error: 'Du har ikke adgang til denne kontrakt' }
-  }
-
-  const hasSensitivityAccess = await canAccessSensitivity(
-    session.user.id,
-    contract.sensitivity
-  )
-  if (!hasSensitivityAccess) {
-    return { error: 'Du har ikke adgang til denne kontrakt' }
-  }
-
-  const canEditData = await canEdit(session.user.id)
-  if (!canEditData) {
-    return { error: 'Du har ikke rettigheder til at uploade bilag' }
-  }
+  const { contractId, fileKey, fileName, fileSizeBytes, description } = parsed.data
 
   try {
+    const contract = await prisma.contract.findUnique({
+      where: {
+        id: contractId,
+        organizationId: session.user.organizationId,
+        deletedAt: null,
+      },
+    })
+
+    if (!contract) return { error: 'Kontrakten blev ikke fundet' }
+
+    const hasCompanyAccess = await canAccessCompany(session.user.id, contract.companyId)
+    if (!hasCompanyAccess) return { error: 'Du har ikke adgang til dette selskab' }
+
+    const hasSensitivityAccess = await canAccessSensitivity(
+      session.user.id,
+      contract.sensitivity
+    )
+    if (!hasSensitivityAccess) {
+      return { error: 'Du har ikke adgang til denne kontrakt' }
+    }
+
+    const fileUrl = fileKey.startsWith('http') ? fileKey : `r2://${fileKey}`
+
     const attachment = await prisma.contractAttachment.create({
       data: {
         organizationId: session.user.organizationId,
-        contractId: parsed.data.contractId,
-        fileUrl: parsed.data.fileUrl,
-        fileName: parsed.data.fileName,
-        fileSizeBytes: parsed.data.fileSizeBytes,
-        description: parsed.data.description,
+        contractId,
+        fileUrl,
+        fileName,
+        fileSizeBytes,
+        description: description ?? null,
         uploadedBy: session.user.id,
       },
     })
 
-    await prisma.auditLog.create({
-      data: {
-        organizationId: session.user.organizationId,
-        userId: session.user.id,
-        action: 'CREATE',
-        resourceType: 'contract_attachment',
-        resourceId: attachment.id,
-        sensitivity: contract.sensitivity,
-      },
-    })
-
-    revalidatePath(`/contracts/${parsed.data.contractId}`)
+    revalidatePath(`/contracts/${contractId}`)
     return { data: attachment }
   } catch (error) {
-    console.error('Fejl ved upload af bilag:', error)
-    return { error: 'Bilaget kunne ikke uploades — prøv igen' }
+    console.error('confirmAttachmentUpload error:', error)
+    return { error: 'Bilaget kunne ikke gemmes — prøv igen' }
   }
 }
 
 export async function deleteContractAttachment(
-  attachmentId: string
-): Promise<ActionResult<{ success: true }>> {
+  input: z.infer<typeof deleteAttachmentSchema>
+): Promise<ActionResult<{ id: string }>> {
   const session = await auth()
-  if (!session?.user?.id || !session?.user?.organizationId) {
-    return { error: 'Ikke autoriseret' }
-  }
+  if (!session?.user) return { error: 'Ikke autoriseret' }
 
-  const existing = await prisma.contractAttachment.findFirst({
-    where: {
-      id: attachmentId,
-      organizationId: session.user.organizationId,
-      deletedAt: null,
-    },
-    include: { contract: true },
-  })
+  const parsed = deleteAttachmentSchema.safeParse(input)
+  if (!parsed.success) return { error: 'Ugyldigt input' }
 
-  if (!existing) {
-    return { error: 'Bilaget blev ikke fundet' }
-  }
-
-  const hasCompanyAccess = await canAccessCompany(session.user.id, existing.contract.companyId)
-  if (!hasCompanyAccess) {
-    return { error: 'Du har ikke adgang til denne kontrakt' }
-  }
-
-  const hasSensitivityAccess = await canAccessSensitivity(
-    session.user.id,
-    existing.contract.sensitivity
-  )
-  if (!hasSensitivityAccess) {
-    return { error: 'Du har ikke adgang til denne kontrakt' }
-  }
-
-  const canEditData = await canEdit(session.user.id)
-  if (!canEditData) {
-    return { error: 'Du har ikke rettigheder til at slette bilag' }
-  }
+  const { contractId, attachmentId } = parsed.data
 
   try {
-    // Soft delete
+    const attachment = await prisma.contractAttachment.findFirst({
+      where: {
+        id: attachmentId,
+        contractId,
+        organizationId: session.user.organizationId,
+        deletedAt: null,
+      },
+      include: {
+        contract: true,
+      },
+    })
+
+    if (!attachment) return { error: 'Bilag ikke fundet' }
+
+    const hasCompanyAccess = await canAccessCompany(
+      session.user.id,
+      attachment.contract.companyId
+    )
+    if (!hasCompanyAccess) return { error: 'Du har ikke adgang til dette selskab' }
+
+    // Soft delete af bilag
     await prisma.contractAttachment.update({
       where: { id: attachmentId },
       data: { deletedAt: new Date() },
     })
 
-    await prisma.auditLog.create({
-      data: {
-        organizationId: session.user.organizationId,
-        userId: session.user.id,
-        action: 'DELETE',
-        resourceType: 'contract_attachment',
-        resourceId: attachmentId,
-        sensitivity: existing.contract.sensitivity,
-      },
-    })
-
-    revalidatePath(`/contracts/${existing.contractId}`)
-    return { data: { success: true } }
+    revalidatePath(`/contracts/${contractId}`)
+    return { data: { id: attachmentId } }
   } catch (error) {
-    console.error('Fejl ved sletning af bilag:', error)
+    console.error('deleteContractAttachment error:', error)
     return { error: 'Bilaget kunne ikke slettes — prøv igen' }
   }
 }
 
-export async function listContractAttachments(
-  contractId: string
-): Promise<ActionResult<ContractAttachment[]>> {
+// ==================== DOWNLOAD ====================
+
+export async function getContractFileUrl(
+  contractId: string,
+  versionId: string
+): Promise<ActionResult<{ url: string }>> {
   const session = await auth()
-  if (!session?.user?.id || !session?.user?.organizationId) {
-    return { error: 'Ikke autoriseret' }
-  }
-
-  const contract = await prisma.contract.findFirst({
-    where: {
-      id: contractId,
-      organizationId: session.user.organizationId,
-      deletedAt: null,
-    },
-  })
-
-  if (!contract) {
-    return { error: 'Kontrakten blev ikke fundet' }
-  }
-
-  const hasCompanyAccess = await canAccessCompany(session.user.id, contract.companyId)
-  if (!hasCompanyAccess) {
-    return { error: 'Du har ikke adgang til denne kontrakt' }
-  }
-
-  const hasSensitivityAccess = await canAccessSensitivity(
-    session.user.id,
-    contract.sensitivity
-  )
-  if (!hasSensitivityAccess) {
-    return { error: 'Du har ikke adgang til denne kontrakt' }
-  }
+  if (!session?.user) return { error: 'Ikke autoriseret' }
 
   try {
-    const attachments = await prisma.contractAttachment.findMany({
+    const version = await prisma.contractVersion.findFirst({
       where: {
+        id: versionId,
         contractId,
         organizationId: session.user.organizationId,
-        deletedAt: null,
       },
-      orderBy: { uploadedAt: 'desc' },
-    })
-
-    return { data: attachments }
-  } catch (error) {
-    console.error('Fejl ved hentning af bilag:', error)
-    return { error: 'Bilag kunne ikke hentes — prøv igen' }
-  }
-}
-
-// ==================== RELATIONER ====================
-
-export async function addContractRelation(
-  input: CreateContractRelationInput
-): Promise<ActionResult<ContractRelation>> {
-  const session = await auth()
-  if (!session?.user?.id || !session?.user?.organizationId) {
-    return { error: 'Ikke autoriseret' }
-  }
-
-  const parsed = createContractRelationSchema.safeParse(input)
-  if (!parsed.success) {
-    return { error: parsed.error.errors[0]?.message || 'Ugyldigt input' }
-  }
-
-  // Hent begge kontrakter
-  const [fromContract, toContract] = await Promise.all([
-    prisma.contract.findFirst({
-      where: {
-        id: parsed.data.fromContractId,
-        organizationId: session.user.organizationId,
-        deletedAt: null,
-      },
-    }),
-    prisma.contract.findFirst({
-      where: {
-        id: parsed.data.toContractId,
-        organizationId: session.user.organizationId,
-        deletedAt: null,
-      },
-    }),
-  ])
-
-  if (!fromContract) {
-    return { error: 'Fra-kontrakten blev ikke fundet' }
-  }
-
-  if (!toContract) {
-    return { error: 'Til-kontrakten blev ikke fundet' }
-  }
-
-  // Tjek adgang til begge
-  const [hasFromAccess, hasToAccess] = await Promise.all([
-    canAccessCompany(session.user.id, fromContract.companyId),
-    canAccessCompany(session.user.id, toContract.companyId),
-  ])
-
-  if (!hasFromAccess || !hasToAccess) {
-    return { error: 'Du har ikke adgang til begge kontrakter' }
-  }
-
-  const [hasFromSensitivity, hasToSensitivity] = await Promise.all([
-    canAccessSensitivity(session.user.id, fromContract.sensitivity),
-    canAccessSensitivity(session.user.id, toContract.sensitivity),
-  ])
-
-  if (!hasFromSensitivity || !hasToSensitivity) {
-    return { error: 'Du har ikke adgang til begge kontrakter' }
-  }
-
-  const canEditData = await canEdit(session.user.id)
-  if (!canEditData) {
-    return { error: 'Du har ikke rettigheder til at oprette relationer' }
-  }
-
-  // Tjek at relationen ikke allerede eksisterer
-  const existingRelation = await prisma.contractRelation.findFirst({
-    where: {
-      fromContractId: parsed.data.fromContractId,
-      toContractId: parsed.data.toContractId,
-      relationType: parsed.data.relationType,
-      organizationId: session.user.organizationId,
-    },
-  })
-
-  if (existingRelation) {
-    return { error: 'Denne relation eksisterer allerede' }
-  }
-
-  try {
-    const relation = await prisma.contractRelation.create({
-      data: {
-        organizationId: session.user.organizationId,
-        fromContractId: parsed.data.fromContractId,
-        toContractId: parsed.data.toContractId,
-        relationType: parsed.data.relationType,
-        createdBy: session.user.id,
+      include: {
+        contract: true,
       },
     })
 
+    if (!version) return { error: 'Version ikke fundet' }
+
+    const hasCompanyAccess = await canAccessCompany(
+      session.user.id,
+      version.contract.companyId
+    )
+    if (!hasCompanyAccess) return { error: 'Du har ikke adgang til dette selskab' }
+
+    const hasSensitivityAccess = await canAccessSensitivity(
+      session.user.id,
+      version.contract.sensitivity
+    )
+    if (!hasSensitivityAccess) {
+      return { error: 'Du har ikke adgang til denne fil' }
+    }
+
+    // Audit log — DOWNLOAD (DEC-017)
     await prisma.auditLog.create({
       data: {
         organizationId: session.user.organizationId,
         userId: session.user.id,
-        action: 'CREATE',
-        resourceType: 'contract_relation',
-        resourceId: relation.id,
+        action: 'DOWNLOAD',
+        resourceType: 'contract_version',
+        resourceId: version.id,
+        sensitivity: version.contract.sensitivity,
       },
     })
 
-    revalidatePath(`/contracts/${parsed.data.fromContractId}`)
-    revalidatePath(`/contracts/${parsed.data.toContractId}`)
-    return { data: relation }
+    // Generer signed download URL
+    const fileKey = version.fileUrl.replace('r2://', '')
+    const url = await getSignedDownloadUrl(fileKey)
+
+    return { data: { url } }
   } catch (error) {
-    console.error('Fejl ved oprettelse af relation:', error)
-    return { error: 'Relationen kunne ikke oprettes — prøv igen' }
-  }
-}
-
-export async function deleteContractRelation(
-  relationId: string
-): Promise<ActionResult<{ success: true }>> {
-  const session = await auth()
-  if (!session?.user?.id || !session?.user?.organizationId) {
-    return { error: 'Ikke autoriseret' }
-  }
-
-  const existing = await prisma.contractRelation.findFirst({
-    where: {
-      id: relationId,
-      organizationId: session.user.organizationId,
-    },
-    include: {
-      fromContract: true,
-      toContract: true,
-    },
-  })
-
-  if (!existing) {
-    return { error: 'Relationen blev ikke fundet' }
-  }
-
-  const hasFromAccess = await canAccessCompany(session.user.id, existing.fromContract.companyId)
-  if (!hasFromAccess) {
-    return { error: 'Du har ikke adgang til denne relation' }
-  }
-
-  const canEditData = await canEdit(session.user.id)
-  if (!canEditData) {
-    return { error: 'Du har ikke rettigheder til at slette relationer' }
-  }
-
-  try {
-    await prisma.contractRelation.delete({
-      where: { id: relationId },
-    })
-
-    await prisma.auditLog.create({
-      data: {
-        organizationId: session.user.organizationId,
-        userId: session.user.id,
-        action: 'DELETE',
-        resourceType: 'contract_relation',
-        resourceId: relationId,
-      },
-    })
-
-    revalidatePath(`/contracts/${existing.fromContractId}`)
-    revalidatePath(`/contracts/${existing.toContractId}`)
-    return { data: { success: true } }
-  } catch (error) {
-    console.error('Fejl ved sletning af relation:', error)
-    return { error: 'Relationen kunne ikke slettes — prøv igen' }
-  }
-}
-
-// ==================== AKTIVITETSLOG ====================
-
-export async function getContractActivityLog(
-  contractId: string,
-  limit: number = 50
-): Promise<ActionResult<any[]>> {
-  const session = await auth()
-  if (!session?.user?.id || !session?.user?.organizationId) {
-    return { error: 'Ikke autoriseret' }
-  }
-
-  const contract = await prisma.contract.findFirst({
-    where: {
-      id: contractId,
-      organizationId: session.user.organizationId,
-      deletedAt: null,
-    },
-  })
-
-  if (!contract) {
-    return { error: 'Kontrakten blev ikke fundet' }
-  }
-
-  const hasCompanyAccess = await canAccessCompany(session.user.id, contract.companyId)
-  if (!hasCompanyAccess) {
-    return { error: 'Du har ikke adgang til denne kontrakt' }
-  }
-
-  const hasSensitivityAccess = await canAccessSensitivity(
-    session.user.id,
-    contract.sensitivity
-  )
-  if (!hasSensitivityAccess) {
-    return { error: 'Du har ikke adgang til denne kontrakt' }
-  }
-
-  try {
-    const activities = await prisma.auditLog.findMany({
-      where: {
-        organizationId: session.user.organizationId,
-        OR: [
-          { resourceId: contractId, resourceType: 'contract' },
-          { resourceType: { in: ['contract_party', 'contract_version', 'contract_attachment', 'contract_relation'] } },
-        ],
-      },
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-    })
-
-    return { data: activities }
-  } catch (error) {
-    console.error('Fejl ved hentning af aktivitetslog:', error)
-    return { error: 'Aktivitetslog kunne ikke hentes — prøv igen' }
+    console.error('getContractFileUrl error:', error)
+    if (error instanceof Error) {
+      return { error: error.message }
+    }
+    return { error: 'Download-URL kunne ikke genereres — prøv igen' }
   }
 }

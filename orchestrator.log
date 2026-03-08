@@ -626,3 +626,33 @@ husky - pre-commit script failed (code 1)
 [2026-03-09 00:38:58] [INFO] Skrevet: src/app/api/companies/accessible/route.ts
 [2026-03-09 00:38:58] [INFO] Skrevet: src/app/api/persons/[personId]/companies/route.ts
 [2026-03-09 00:38:58] [INFO] Skrevet: .env.example
+[2026-03-09 00:38:59] [INFO] Git commit: feat: BA-05-person Feature-agent (Persondatabase) - Persondatabase — global kontaktbog, roller på tvær
+[2026-03-09 00:38:59] [INFO] === BA-05-person FÆRDIG (15 filer skrevet) ===
+[2026-03-09 00:39:01] [INFO] --- Agent 3/4: BA-09-sprint2 ---
+[2026-03-09 00:39:01] [INFO] === BA-09-sprint2 SPRINGER OVER — output-filer eksisterer allerede ===
+[2026-03-09 00:39:03] [INFO] --- Agent 4/4: BA-07-sprint2 ---
+[2026-03-09 00:39:03] [INFO] === BA-07-sprint2 SPRINGER OVER — output-filer eksisterer allerede ===
+[2026-03-09 00:39:03] [INFO] === SPRINT 2 AFSLUTTET på 600.1s ===
+[2026-03-09 00:39:03] [INFO] === STARTER SPRINT 3 (4 agenter) ===
+[2026-03-09 00:39:03] [INFO] --- Agent 1/4: BA-05-kontrakt ---
+[2026-03-09 00:39:03] [INFO] === Starter BA-05-kontrakt (Feature-agent (Kontraktstyring)) ===
+[2026-03-09 00:39:03] [INFO] Opgave: Kontraktstyring — opret kontrakt, status-flow, parter, fil-upload, versionsstyring, relationer
+[2026-03-09 00:39:03] [INFO] Kalder Claude API (claude-sonnet-4-6) med streaming...
+[2026-03-09 00:43:44] [INFO]   ... 82000 tegn modtaget
+[2026-03-09 00:44:01] [INFO]   ... 88000 tegn modtaget
+[2026-03-09 00:44:38] [INFO] API svar komplet på 335.5s (96054 tegn)
+[2026-03-09 00:44:38] [INFO] Skrevet: src/types/contract.ts
+[2026-03-09 00:44:38] [INFO] Skrevet: src/lib/validations/contract.ts
+[2026-03-09 00:44:38] [INFO] Skrevet: src/lib/contracts/retention.ts
+[2026-03-09 00:44:38] [INFO] Skrevet: src/lib/storage/index.ts
+[2026-03-09 00:44:38] [INFO] Skrevet: src/actions/contracts.ts
+[2026-03-09 00:44:38] [INFO] Skrevet: src/app/api/contracts/upload-url/route.ts
+[2026-03-09 00:44:38] [INFO] Skrevet: src/app/(dashboard)/contracts/page.tsx
+[2026-03-09 00:44:38] [INFO] Skrevet: src/app/(dashboard)/contracts/[contractId]/page.tsx
+[2026-03-09 00:44:38] [INFO] Skrevet: src/components/contracts/ContractList.tsx
+[2026-03-09 00:44:38] [INFO] Skrevet: src/components/contracts/ContractListSkeleton.tsx
+[2026-03-09 00:44:38] [INFO] Skrevet: src/components/contracts/ContractStatusBadge.tsx
+[2026-03-09 00:44:38] [INFO] Skrevet: src/components/contracts/SensitivityBadge.tsx
+[2026-03-09 00:44:38] [INFO] Skrevet: src/components/contracts/ContractDetail.tsx
+[2026-03-09 00:44:38] [INFO] Skrevet: src/lib/contracts/labels.ts
+[2026-03-09 00:44:38] [INFO] Skrevet: .env.example

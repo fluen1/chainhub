@@ -1,42 +1,43 @@
-import { FileText, Plus } from 'lucide-react'
+import { Suspense } from 'react'
+import { listContracts } from '@/actions/contracts'
+import { ContractList } from '@/components/contracts/ContractList'
+import { ContractListSkeleton } from '@/components/contracts/ContractListSkeleton'
 
-export default function ContractsPage() {
+export const metadata = {
+  title: 'Kontrakter — ChainHub',
+}
+
+export default async function ContractsPage() {
   return (
-    <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Kontrakter</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Alle kontrakter på tværs af dine selskaber
-          </p>
-        </div>
-        <a
-          href="/dashboard/contracts/new"
-          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          <Plus className="h-4 w-4" />
-          Opret kontrakt
-        </a>
+    <div className="container mx-auto py-6 px-4">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Kontrakter</h1>
+        <p className="text-sm text-gray-500 mt-1">
+          Oversigt over alle kontrakter på tværs af dine selskaber
+        </p>
       </div>
-
-      <div className="rounded-lg border border-gray-200 bg-white">
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="rounded-full bg-gray-100 p-4">
-            <FileText className="h-8 w-8 text-gray-400" />
-          </div>
-          <h3 className="mt-4 text-lg font-medium text-gray-900">Ingen kontrakter endnu</h3>
-          <p className="mt-2 max-w-sm text-sm text-gray-500">
-            Opret din første kontrakt for at starte kontraktstyring
-          </p>
-          <a
-            href="/dashboard/contracts/new"
-            className="mt-6 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            <Plus className="h-4 w-4" />
-            Opret kontrakt
-          </a>
-        </div>
-      </div>
+      <Suspense fallback={<ContractListSkeleton />}>
+        <ContractListWrapper />
+      </Suspense>
     </div>
+  )
+}
+
+async function ContractListWrapper() {
+  const result = await listContracts({ page: 1, pageSize: 20 })
+
+  if (result.error) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
+        {result.error}
+      </div>
+    )
+  }
+
+  return (
+    <ContractList
+      contracts={result.data.contracts}
+      total={result.data.total}
+    />
   )
 }
