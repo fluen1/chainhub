@@ -479,3 +479,28 @@ husky - pre-commit script failed (code 1)
 [2026-03-08 23:34:56] [INFO] Git commit: feat: BA-07-sprint2 QA-agent (Sprint 2 review) - QA — Validér selskabs- og personmodul mod spec og 
 [2026-03-08 23:34:56] [INFO] === BA-07-sprint2 FÆRDIG (1 filer skrevet) ===
 [2026-03-08 23:34:56] [INFO] === SPRINT 2 AFSLUTTET på 844.6s ===
+[2026-03-09 00:11:40] [INFO] === STARTER SPRINT 3 (4 agenter) ===
+[2026-03-09 00:11:40] [INFO] --- Agent 1/4: BA-05-kontrakt ---
+[2026-03-09 00:11:40] [INFO] === Starter BA-05-kontrakt (Feature-agent (Kontraktstyring)) ===
+[2026-03-09 00:11:40] [INFO] Opgave: Kontraktstyring — opret kontrakt, status-flow, parter, fil-upload, versionsstyring, relationer
+[2026-03-09 00:11:40] [INFO] Kalder Claude API (claude-opus-4-5) med streaming...
+[2026-03-09 00:12:16] [INFO]   ... 8000 tegn modtaget
+[2026-03-09 00:13:04] [INFO]   ... 20000 tegn modtaget
+[2026-03-09 00:13:45] [INFO]   ... 34000 tegn modtaget
+[2026-03-09 00:15:32] [INFO]   ... 70000 tegn modtaget
+[2026-03-09 00:15:38] [INFO]   ... 72000 tegn modtaget
+[2026-03-09 00:16:36] [INFO]   ... 92000 tegn modtaget
+[2026-03-09 00:16:47] [INFO] API svar komplet på 306.0s (94358 tegn)
+[2026-03-09 00:16:47] [INFO] Skrevet: src/lib/validations/contract.ts
+[2026-03-09 00:16:47] [INFO] Skrevet: src/types/contract.ts
+[2026-03-09 00:16:47] [INFO] Skrevet: src/lib/contracts/retention.ts
+[2026-03-09 00:16:47] [INFO] Skrevet: src/lib/contracts/upload.ts
+[2026-03-09 00:16:47] [INFO] Skrevet: src/actions/contracts.ts
+[2026-03-09 00:16:47] [INFO] Skrevet: src/app/api/contracts/upload/route.ts
+[2026-03-09 00:16:47] [INFO] Skrevet: src/components/contracts/ContractStatusBadge.tsx
+[2026-03-09 00:16:47] [INFO] Skrevet: src/components/contracts/ContractSensitivityBadge.tsx
+[2026-03-09 00:16:47] [INFO] Skrevet: src/components/contracts/ContractTypeBadge.tsx
+[2026-03-09 00:16:47] [INFO] Skrevet: src/components/contracts/ContractForm.tsx
+[2026-03-09 00:16:47] [INFO] Skrevet: src/components/contracts/ContractCard.tsx
+[2026-03-09 00:16:47] [INFO] Skrevet: src/components/contracts/ContractListEmpty.tsx
+[2026-03-09 00:16:47] [INFO] Skrevet: src/components/contracts/ContractStatusSelect.tsx

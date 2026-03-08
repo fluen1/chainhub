@@ -466,6 +466,562 @@ Afslut med QA-rapport:
   MANGLER: [liste]
 """,
     },
+
+    "BA-05-kontrakt": {
+        "navn": "Feature-agent (Kontraktstyring)",
+        "sprint": 3,
+        "opgave": "Kontraktstyring — opret kontrakt, status-flow, parter, fil-upload, versionsstyring, relationer",
+        "input_filer": [
+            "docs/spec/DATABASE-SCHEMA.md",
+            "docs/spec/CONTRACT-TYPES.md",
+            "docs/build/CONVENTIONS.md",
+            "docs/spec/roller-og-tilladelser.md",
+            "docs/status/DECISIONS.md",
+            "prisma/schema.prisma",
+            "src/lib/auth/index.ts",
+            "src/lib/permissions/index.ts",
+            "src/actions/companies.ts",
+        ],
+        "output_filer": [
+            "src/lib/validations/contract.ts",
+            "src/types/contract.ts",
+            "src/actions/contracts.ts",
+            "src/app/(dashboard)/contracts/page.tsx",
+            "src/app/(dashboard)/contracts/new/page.tsx",
+            "src/app/(dashboard)/contracts/[id]/page.tsx",
+            "src/components/contracts/ContractForm.tsx",
+            "src/components/contracts/ContractStatusBadge.tsx",
+            "src/components/contracts/ContractPartiesSection.tsx",
+            "src/components/contracts/ContractVersionHistory.tsx",
+            "src/components/contracts/DeadlineAlert.tsx",
+        ],
+        "succeskriterier": [
+            "Kontrakt kan oprettes med alle 34 system_types fra CONTRACT-TYPES.md",
+            "Status-flow UDKAST → TIL_REVIEW → TIL_UNDERSKRIFT → AKTIV → UDLØBET/OPSAGT/FORNYET/ARKIVERET",
+            "Sensitivity-minimum håndhæves pr. kontrakttype",
+            "Parter og underskrivere kan tilknyttes",
+            "Fil-upload placeholder (Cloudflare R2)",
+            "Versionsstyring med ContractVersion-model",
+            "canAccessCompany() og canAccessSensitivity() på alle queries",
+            "organization_id filtrering overalt",
+        ],
+        "system_prompt": """Du er BA-05 (Feature-agent) for ChainHub-projektet. Du bygger Kontraktstyring-modulet.
+
+KRITISK: Kontraktstyring er kernen i ChainHub. Disse regler er ufravigelige:
+
+Status-flow (nøjagtigt som spec):
+  UDKAST → TIL_REVIEW → TIL_UNDERSKRIFT → AKTIV
+  AKTIV → UDLØBET | OPSAGT | FORNYET | ARKIVERET
+  Ingen andre transitioner er gyldige.
+
+Sensitivity-minimum pr. kontrakttype:
+  EJERAFTALE, DIREKTØRKONTRAKT → minimum FORTROLIG
+  Alle andre → minimum INTERN
+
+Kontrakttyper: Brug system_type enum — aldrig fri tekst.
+Lag 2-typer (LEASE_AGREEMENT, SUBLEASE osv.) aktiveres KUN ved kæde-struktur.
+
+Permissions:
+- canAccessCompany() på alle queries
+- canAccessSensitivity(userId, contract.sensitivity) inden data returneres
+- organization_id på alle Prisma queries
+- deleted_at: null på alle list-queries
+
+Fil-upload: Opret placeholder med R2_BUCKET_NAME env var check.
+Vis vejledning hvis ikke konfigureret.
+
+OUTPUT-FORMAT:
+--- FIL: [sti/til/fil] ---
+[filindhold]
+--- SLUT ---
+""",
+    },
+
+    "BA-06-advisering": {
+        "navn": "Integration-agent (Advisering)",
+        "sprint": 3,
+        "opgave": "Adviseringslogik — 90/30/7 dage, løbende kontrakter, auto-renewal, email via Resend",
+        "input_filer": [
+            "docs/spec/DATABASE-SCHEMA.md",
+            "docs/build/CONVENTIONS.md",
+            "docs/status/DECISIONS.md",
+            "prisma/schema.prisma",
+            "src/actions/contracts.ts",
+            "src/lib/auth/index.ts",
+        ],
+        "output_filer": [
+            "src/lib/advisering/deadlines.ts",
+            "src/lib/advisering/notifications.ts",
+            "src/lib/advisering/email-templates.tsx",
+            "src/app/api/cron/check-deadlines/route.ts",
+            "src/actions/deadlines.ts",
+        ],
+        "succeskriterier": [
+            "Cron job tjekker deadlines dagligt",
+            "Advis sendes 90, 30 og 7 dage før udløb",
+            "Løbende kontrakter: advis baseret på notice_period_days",
+            "Auto-renewal logik for leverandørkontrakter",
+            "Email-skabelon på dansk via Resend",
+            "advise_sent_at opdateres så der ikke sendes dobbelt",
+        ],
+        "system_prompt": """Du er BA-06 (Integration-agent) for ChainHub-projektet. Du bygger adviseringslogikken.
+
+Dit ansvar: Deadline-beregning, email-notifikationer, cron jobs.
+
+Adviseringslogik (nøjagtigt):
+  - Faste kontrakter: advis 90, 30, 7 dage før end_date
+  - Løbende kontrakter: advis notice_period_days + 30 dage før seneste opsigelsesdato
+  - Auto-renewal: leverandørkontrakter fornyes automatisk medmindre OPSAGT inden notice_period
+  - advise_sent_at sættes efter afsendelse — tjek altid at den er null inden afsendelse
+
+Cron endpoint: /api/cron/check-deadlines
+  - Beskyttet med CRON_SECRET header
+  - Kører dagligt via Vercel Cron
+  - Opdater vercel.json med cron schedule
+
+Email: Brug Resend SDK. Dansk sprog. Inkludér:
+  - Kontraktnavn og type
+  - Dage til udløb
+  - Link til kontrakt i ChainHub
+  - Klar handlingsopfordring
+
+organization_id på alle queries — multi-tenancy er kritisk.
+
+OUTPUT-FORMAT:
+--- FIL: [sti/til/fil] ---
+[filindhold]
+--- SLUT ---
+""",
+    },
+
+    "BA-05-dokumenter": {
+        "navn": "Feature-agent (Dokumenthåndtering)",
+        "sprint": 3,
+        "opgave": "Dokumenthåndtering — upload, preview, download, tilknytning til selskab og kontrakt",
+        "input_filer": [
+            "docs/spec/DATABASE-SCHEMA.md",
+            "docs/build/CONVENTIONS.md",
+            "prisma/schema.prisma",
+            "src/lib/auth/index.ts",
+            "src/lib/permissions/index.ts",
+            "src/actions/contracts.ts",
+        ],
+        "output_filer": [
+            "src/lib/validations/document.ts",
+            "src/actions/documents.ts",
+            "src/app/(dashboard)/documents/page.tsx",
+            "src/components/documents/DocumentUpload.tsx",
+            "src/components/documents/DocumentList.tsx",
+            "src/components/documents/DocumentPreview.tsx",
+            "src/lib/storage/r2.ts",
+        ],
+        "succeskriterier": [
+            "Fil-upload til Cloudflare R2 (eller mock hvis ikke konfigureret)",
+            "Preview af PDF og billeder",
+            "Download med signeret URL",
+            "Tilknytning til selskab og/eller kontrakt",
+            "canAccessSensitivity() på alle dokumenter",
+            "organization_id på alle queries",
+        ],
+        "system_prompt": """Du er BA-05 (Feature-agent) for ChainHub-projektet. Du bygger Dokumenthåndtering.
+
+Storage: Cloudflare R2 via AWS S3-kompatibel SDK (@aws-sdk/client-s3).
+Brug signerede URLs til upload og download — aldrig direkte public URLs.
+Hvis R2_BUCKET_NAME ikke er sat: vis mock-UI med vejledning.
+
+Sensitivity: Dokumenter arver sensitivity fra tilknyttet kontrakt/sag.
+canAccessSensitivity() SKAL kaldes inden download returneres.
+
+Filtyper: Acceptér PDF, DOCX, XLSX, PNG, JPG. Max 50MB.
+Gem original filnavn + MIME type + størrelse i Document-modellen.
+
+OUTPUT-FORMAT:
+--- FIL: [sti/til/fil] ---
+[filindhold]
+--- SLUT ---
+""",
+    },
+
+    "BA-07-sprint3": {
+        "navn": "QA-agent (Sprint 3 review)",
+        "sprint": 3,
+        "opgave": "QA — Validér kontraktstyring, advisering og dokumentmodul mod spec",
+        "input_filer": [
+            "docs/spec/DATABASE-SCHEMA.md",
+            "docs/spec/CONTRACT-TYPES.md",
+            "docs/build/CONVENTIONS.md",
+            "docs/spec/roller-og-tilladelser.md",
+            "docs/status/DECISIONS.md",
+            "src/actions/contracts.ts",
+            "src/actions/documents.ts",
+            "src/lib/advisering/deadlines.ts",
+            "src/lib/permissions/index.ts",
+        ],
+        "output_filer": ["docs/status/DECISIONS.md"],
+        "succeskriterier": [
+            "Status-flow transitions er korrekte og komplette",
+            "Sensitivity-minimum håndhæves pr. kontrakttype",
+            "Adviseringslogik dækker alle scenarier (fast, løbende, auto-renewal)",
+            "canAccessSensitivity() kaldt på alle dokument-downloads",
+            "organization_id på alle queries",
+        ],
+        "system_prompt": """Du er BA-07 (QA-agent) for ChainHub-projektet. Du reviewer Sprint 3.
+
+Fokusér særligt på:
+  □ Kontraktstatus-transitions — er alle gyldige flows implementeret?
+  □ Sensitivity-minimum pr. kontrakttype — håndhæves det ved oprettelse OG redigering?
+  □ Adviseringslogik — dækkes faste, løbende og auto-renewal kontrakter?
+  □ advise_sent_at — tjekkes den inden afsendelse?
+  □ Dokument-download — canAccessSensitivity() kaldt?
+  □ organization_id på alle Prisma queries
+  □ deleted_at: null på alle list-queries
+  □ Zod validation på al input
+  □ Dansk sprog i alle labels og fejl
+
+For hvert fund: opret DEC-entry i DECISIONS.md med status CHALLENGED.
+
+OUTPUT-FORMAT:
+--- FIL: docs/status/DECISIONS.md ---
+[komplet opdateret DECISIONS.md indhold]
+--- SLUT ---
+""",
+    },
+
+    "BA-05-sager": {
+        "navn": "Feature-agent (Sagsstyring)",
+        "sprint": 4,
+        "opgave": "Sagsstyring — sagstyper, tilknytning til selskaber/kontrakter/personer, frister, email-sync",
+        "input_filer": [
+            "docs/spec/DATABASE-SCHEMA.md",
+            "docs/build/CONVENTIONS.md",
+            "docs/spec/roller-og-tilladelser.md",
+            "docs/status/DECISIONS.md",
+            "prisma/schema.prisma",
+            "src/lib/auth/index.ts",
+            "src/lib/permissions/index.ts",
+            "src/actions/companies.ts",
+            "src/actions/contracts.ts",
+        ],
+        "output_filer": [
+            "src/lib/validations/case.ts",
+            "src/types/case.ts",
+            "src/actions/cases.ts",
+            "src/app/(dashboard)/cases/page.tsx",
+            "src/app/(dashboard)/cases/new/page.tsx",
+            "src/app/(dashboard)/cases/[id]/page.tsx",
+            "src/components/cases/CaseForm.tsx",
+            "src/components/cases/CaseStatusBadge.tsx",
+            "src/components/cases/CaseLinkedObjects.tsx",
+            "src/components/cases/CaseTaskList.tsx",
+        ],
+        "succeskriterier": [
+            "Sag kan oprettes med alle CaseType-værdier",
+            "Status-flow NY → AKTIV → AFVENTER_EKSTERN/KLIENT → LUKKET/ARKIVERET",
+            "Tilknytning til selskaber, kontrakter og personer",
+            "Opgaveliste pr. sag",
+            "Frister og ansvarlige",
+            "canAccessCompany() og canAccessSensitivity() på alle queries",
+        ],
+        "system_prompt": """Du er BA-05 (Feature-agent) for ChainHub-projektet. Du bygger Sagsstyring.
+
+CaseStatus flow (nøjagtigt):
+  NY → AKTIV → AFVENTER_EKSTERN | AFVENTER_KLIENT
+  AKTIV | AFVENTER_* → LUKKET | ARKIVERET
+
+Sagstyper fra DATABASE-SCHEMA: Brug CaseType enum.
+En sag kan tilknyttes: mange selskaber, mange kontrakter, mange personer.
+Brug junction-tabellerne CaseCompany, CaseContract, CasePerson.
+
+Permissions:
+- canAccessCompany() på alle sag-queries
+- canAccessSensitivity() hvis sag har sensitivity > INTERN
+- organization_id på alle queries
+
+Email-sync: Opret placeholder for Microsoft Graph BCC-integration.
+Vis konfigurationsvejledning hvis MICROSOFT_CLIENT_ID mangler.
+
+OUTPUT-FORMAT:
+--- FIL: [sti/til/fil] ---
+[filindhold]
+--- SLUT ---
+""",
+    },
+
+    "BA-05-opgaver": {
+        "navn": "Feature-agent (Opgavestyring)",
+        "sprint": 4,
+        "opgave": "Opgavestyring — kanban/liste/kalender, daglig digest, Outlook Calendar push",
+        "input_filer": [
+            "docs/spec/DATABASE-SCHEMA.md",
+            "docs/build/CONVENTIONS.md",
+            "prisma/schema.prisma",
+            "src/lib/auth/index.ts",
+            "src/lib/permissions/index.ts",
+            "src/actions/cases.ts",
+            "src/lib/advisering/notifications.ts",
+        ],
+        "output_filer": [
+            "src/lib/validations/task.ts",
+            "src/types/task.ts",
+            "src/actions/tasks.ts",
+            "src/app/(dashboard)/tasks/page.tsx",
+            "src/components/tasks/TaskKanban.tsx",
+            "src/components/tasks/TaskList.tsx",
+            "src/components/tasks/TaskForm.tsx",
+            "src/components/tasks/TaskCard.tsx",
+            "src/app/api/cron/task-digest/route.ts",
+        ],
+        "succeskriterier": [
+            "Opgaver kan oprettes og tilknyttes sager",
+            "Kanban-visning med drag-and-drop (eller statisk)",
+            "Liste-visning med filtrering på prioritet og status",
+            "Daglig email-digest cron job",
+            "Outlook Calendar push placeholder",
+            "organization_id på alle queries",
+        ],
+        "system_prompt": """Du er BA-05 (Feature-agent) for ChainHub-projektet. Du bygger Opgavestyring.
+
+Visninger: Implementér liste-visning som primær. Kanban som sekundær (statisk accepteres).
+Drag-and-drop: Brug @dnd-kit/core hvis tilgængeligt, ellers statisk kanban.
+
+Prioriteter: LAV | MEDIUM | HØJ | KRITISK (fra Prioritet enum)
+Status: ÅBEN | I_GANG | AFVENTER | LUKKET
+
+Daglig digest: /api/cron/task-digest
+- Kører kl. 07:00 dansk tid
+- Gruppér opgaver pr. ansvarlig bruger
+- Sendes kun hvis der er opgaver der udløber inden for 7 dage
+- Brug Resend SDK, dansk sprog
+
+Outlook Calendar push: Placeholder med MICROSOFT_CLIENT_ID check.
+
+organization_id på alle queries — kritisk.
+
+OUTPUT-FORMAT:
+--- FIL: [sti/til/fil] ---
+[filindhold]
+--- SLUT ---
+""",
+    },
+
+    "BA-07-sprint4": {
+        "navn": "QA-agent (Sprint 4 review)",
+        "sprint": 4,
+        "opgave": "QA — Validér sags- og opgavemodul mod spec og permissions-model",
+        "input_filer": [
+            "docs/spec/DATABASE-SCHEMA.md",
+            "docs/build/CONVENTIONS.md",
+            "docs/status/DECISIONS.md",
+            "src/actions/cases.ts",
+            "src/actions/tasks.ts",
+            "src/lib/permissions/index.ts",
+        ],
+        "output_filer": ["docs/status/DECISIONS.md"],
+        "succeskriterier": [
+            "CaseStatus-flow er komplet og korrekt",
+            "Junction-tabeller bruges korrekt (CaseCompany, CaseContract, CasePerson)",
+            "organization_id på alle queries",
+            "Daglig digest tjekker advise_sent_at",
+        ],
+        "system_prompt": """Du er BA-07 (QA-agent) for ChainHub-projektet. Du reviewer Sprint 4.
+
+Fokusér på:
+  □ CaseStatus-transitions — alle gyldige flows?
+  □ Junction-tabeller — organization_id på CaseCompany, CaseContract, CasePerson?
+  □ Opgave-prioriteter og status — korrekte enum-værdier?
+  □ Daglig digest — sendes kun til rette brugere i rette organisation?
+  □ organization_id på alle Prisma queries
+  □ canAccessCompany() kaldt inden data returneres
+  □ Zod validation på al input
+
+OUTPUT-FORMAT:
+--- FIL: docs/status/DECISIONS.md ---
+[komplet opdateret DECISIONS.md indhold]
+--- SLUT ---
+""",
+    },
+
+    "BA-05-dashboard": {
+        "navn": "Feature-agent (Portfolio-dashboard)",
+        "sprint": 5,
+        "opgave": "Portfolio-dashboard — overblik over alle selskaber, status, ejerandel, aktive sager, udløbende kontrakter",
+        "input_filer": [
+            "docs/spec/DATABASE-SCHEMA.md",
+            "docs/build/CONVENTIONS.md",
+            "docs/status/DECISIONS.md",
+            "docs/ops/CACHING.md",
+            "prisma/schema.prisma",
+            "src/lib/auth/index.ts",
+            "src/lib/permissions/index.ts",
+            "src/actions/companies.ts",
+            "src/actions/contracts.ts",
+            "src/actions/cases.ts",
+        ],
+        "output_filer": [
+            "src/actions/dashboard.ts",
+            "src/app/(dashboard)/page.tsx",
+            "src/components/dashboard/PortfolioOverview.tsx",
+            "src/components/dashboard/CompanySummaryCard.tsx",
+            "src/components/dashboard/ExpiringContractsList.tsx",
+            "src/components/dashboard/ActiveCasesList.tsx",
+            "src/components/dashboard/DashboardFilters.tsx",
+        ],
+        "succeskriterier": [
+            "Dashboard loader data via aggregerede counts — ikke N+1",
+            "Viser alle selskaber med status, ejerandel, aktive sager, udløbende kontrakter",
+            "Filtrering på status, ejerandel og sagstype",
+            "Loading under 2 sekunder for 10 selskaber",
+            "Skeleton loading states",
+            "organization_id på alle queries",
+        ],
+        "system_prompt": """Du er BA-05 (Feature-agent) for ChainHub-projektet. Du bygger Portfolio-dashboard.
+
+PERFORMANCE er kritisk her. Regler:
+- Brug aggregerede counts i én query — ALDRIG findMany med include i loops
+- Eksempel på korrekt mønster:
+    SELECT c.id, c.name,
+      COUNT(DISTINCT cases.id) as active_cases,
+      COUNT(DISTINCT contracts.id) as expiring_contracts
+    FROM companies c
+    LEFT JOIN cases ON cases.company_id = c.id AND cases.status = 'AKTIV'
+    LEFT JOIN contracts ON contracts.company_id = c.id AND contracts.end_date < NOW() + INTERVAL '90 days'
+    WHERE c.organization_id = $1 AND c.deleted_at IS NULL
+    GROUP BY c.id
+- Brug Prisma $queryRaw til komplekse aggregeringer
+- Pagination: max 25 selskaber pr. side
+
+Filtrering: status, min/max ejerandel, har aktive sager, har udløbende kontrakter.
+Implementér som URL search params (Next.js searchParams).
+
+organization_id på ALLE queries — kritisk for multi-tenancy.
+
+OUTPUT-FORMAT:
+--- FIL: [sti/til/fil] ---
+[filindhold]
+--- SLUT ---
+""",
+    },
+
+    "BA-05-oekonomi": {
+        "navn": "Feature-agent (Økonomi-overblik)",
+        "sprint": 5,
+        "opgave": "Økonomi-overblik — nøgletal, tidsregistrering, fakturaoversigt, udbyttenotering",
+        "input_filer": [
+            "docs/spec/DATABASE-SCHEMA.md",
+            "docs/build/CONVENTIONS.md",
+            "prisma/schema.prisma",
+            "src/lib/auth/index.ts",
+            "src/lib/permissions/index.ts",
+            "src/actions/companies.ts",
+        ],
+        "output_filer": [
+            "src/lib/validations/finance.ts",
+            "src/types/finance.ts",
+            "src/actions/finance.ts",
+            "src/app/(dashboard)/finance/page.tsx",
+            "src/app/(dashboard)/finance/[companyId]/page.tsx",
+            "src/components/finance/FinancialMetricsTable.tsx",
+            "src/components/finance/TimeEntryList.tsx",
+            "src/components/finance/DividendSection.tsx",
+        ],
+        "succeskriterier": [
+            "Nøgletal kan indtastes og vises pr. selskab pr. periode",
+            "Tidsregistrering tilknyttet sager",
+            "Fakturaoversigt (intern)",
+            "Udbyttenotering med dato og beløb",
+            "MetricType og PeriodType enums brugt korrekt (DEC-008)",
+            "organization_id på alle queries",
+        ],
+        "system_prompt": """Du er BA-05 (Feature-agent) for ChainHub-projektet. Du bygger Økonomi-overblik.
+
+FinancialMetric model (fra DEC-008):
+  MetricType enum: OMSAETNING | EBITDA | RESULTAT | EGENKAPITAL | GAELD | ANTAL_ANSATTE | CUSTOM
+  PeriodType enum: MAANED | KVARTAL | HALVAAR | AAR
+  MetricSource enum: MANUEL | IMPORTERET | BEREGNET
+
+Tidsregistrering: Tilknyt TimeEntry til Case og User.
+Fakturaoversigt: Simpel liste — ingen faktureringssystem integration i dette sprint.
+Udbytteotering: Beløb + dato + selskab — gem som FinancialMetric med type CUSTOM.
+
+Sensitivity: Økonomidata er FORTROLIG minimum.
+canAccessSensitivity(userId, "FORTROLIG") SKAL kaldes på alle finance-queries.
+
+OUTPUT-FORMAT:
+--- FIL: [sti/til/fil] ---
+[filindhold]
+--- SLUT ---
+""",
+    },
+
+    "BA-09-sprint5": {
+        "navn": "Performance-agent (Sprint 5 review)",
+        "sprint": 5,
+        "opgave": "Performance — validér dashboard query-tid under 2 sekunder, N+1 analyse",
+        "input_filer": [
+            "prisma/schema.prisma",
+            "src/actions/dashboard.ts",
+            "src/actions/finance.ts",
+            "docs/ops/CACHING.md",
+            "docs/status/DECISIONS.md",
+        ],
+        "output_filer": ["docs/status/DECISIONS.md", "docs/ops/CACHING.md"],
+        "succeskriterier": [
+            "Dashboard bruger aggregerede queries — ingen N+1",
+            "Økonomidata caches korrekt",
+            "Alle liste-views har pagination",
+        ],
+        "system_prompt": """Du er BA-09 (Performance-agent) for ChainHub-projektet. Du reviewer Sprint 5.
+
+Succeskriterium: Dashboard med 10 selskaber loader under 2 sekunder.
+
+Tjek:
+  □ Dashboard-query: aggregerede counts eller N+1?
+  □ Finance-queries: caches nøgletal der ikke ændrer sig ofte?
+  □ Pagination på alle liste-views?
+  □ Prisma $queryRaw brugt korrekt med parameterisering?
+  □ Mangler der indexes på organization_id + deleted_at?
+
+OUTPUT-FORMAT:
+--- FIL: [sti/til/fil] ---
+[filindhold]
+--- SLUT ---
+""",
+    },
+
+    "BA-07-sprint5": {
+        "navn": "QA-agent (Sprint 5 review)",
+        "sprint": 5,
+        "opgave": "QA — Validér dashboard og økonomimodul mod spec",
+        "input_filer": [
+            "docs/spec/DATABASE-SCHEMA.md",
+            "docs/build/CONVENTIONS.md",
+            "docs/status/DECISIONS.md",
+            "src/actions/dashboard.ts",
+            "src/actions/finance.ts",
+            "src/lib/permissions/index.ts",
+        ],
+        "output_filer": ["docs/status/DECISIONS.md"],
+        "succeskriterier": [
+            "MetricType/PeriodType/MetricSource enums brugt korrekt",
+            "canAccessSensitivity(FORTROLIG) på alle finance-queries",
+            "organization_id på alle queries",
+            "Pagination implementeret",
+        ],
+        "system_prompt": """Du er BA-07 (QA-agent) for ChainHub-projektet. Du reviewer Sprint 5.
+
+Fokusér på:
+  □ FinancialMetric enums — MetricType, PeriodType, MetricSource korrekte?
+  □ canAccessSensitivity("FORTROLIG") kaldt på finance-data?
+  □ Dashboard — ingen N+1 queries?
+  □ organization_id på alle Prisma queries
+  □ Pagination på alle lister
+
+OUTPUT-FORMAT:
+--- FIL: docs/status/DECISIONS.md ---
+[komplet opdateret DECISIONS.md indhold]
+--- SLUT ---
+""",
+    },
     "BA-07-sprint1": {
         "navn": "QA-agent (Sprint 1 review)",
         "sprint": 1,
@@ -737,6 +1293,9 @@ Afslut med en kort status: FÆRDIG / BLOKERET [årsag]
 SPRINT_RÆKKEFØLGE = {
     1: ["BA-02", "BA-03", "BA-04", "BA-08-devops", "BA-07-sprint1"],
     2: ["BA-05-selskab", "BA-05-person", "BA-09-sprint2", "BA-07-sprint2"],
+    3: ["BA-05-kontrakt", "BA-06-advisering", "BA-05-dokumenter", "BA-07-sprint3"],
+    4: ["BA-05-sager", "BA-05-opgaver", "BA-07-sprint4"],
+    5: ["BA-05-dashboard", "BA-05-oekonomi", "BA-09-sprint5", "BA-07-sprint5"],
 }
 
 
