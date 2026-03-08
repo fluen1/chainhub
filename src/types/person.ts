@@ -1,21 +1,10 @@
-import { Person, CompanyPerson, Company, Contract } from '@prisma/client'
-
-// ==================== ACTION RESULT ====================
-
-export type ActionResult<T> =
-  | { data: T; error?: never }
-  | { error: string; data?: never }
-
-// ==================== PERSON TYPES ====================
+import type { Person, CompanyPerson, Company, ContractParty, Contract } from '@prisma/client'
 
 export type PersonWithCompanies = Person & {
   companyPersons: (CompanyPerson & {
     company: Company
     contract: Contract | null
   })[]
-}
-
-export type PersonWithCounts = Person & {
   _count: {
     companyPersons: number
     contractParties: number
@@ -23,18 +12,14 @@ export type PersonWithCounts = Person & {
   }
 }
 
-export type PersonListItem = Person & {
-  companyPersons: {
-    id: string
-    role: string
-    company: {
-      id: string
-      name: string
-    }
-  }[]
-  _count: {
-    companyPersons: number
-  }
+export type PersonSummary = {
+  id: string
+  firstName: string
+  lastName: string
+  email: string | null
+  phone: string | null
+  companyCount: number
+  roles: string[]
 }
 
 export type CompanyPersonWithDetails = CompanyPerson & {
@@ -43,22 +28,21 @@ export type CompanyPersonWithDetails = CompanyPerson & {
   contract: Contract | null
 }
 
-// ==================== OUTLOOK TYPES ====================
+export type ActionResult<T> =
+  | { data: T; error?: never }
+  | { error: string; data?: never }
 
-export interface OutlookContactResponse {
+export type OutlookContact = {
   id: string
-  displayName?: string
-  givenName?: string
-  surname?: string
-  emailAddresses?: {
-    address?: string
-    name?: string
-  }[]
-  mobilePhone?: string | null
-  businessPhones?: string[]
+  givenName: string
+  surname: string
+  emailAddresses: { address: string; name: string }[]
+  mobilePhone: string | null
+  businessPhones: string[]
+  displayName: string
 }
 
-export interface OutlookImportResult {
+export type OutlookImportResult = {
   imported: number
   skipped: number
   errors: string[]

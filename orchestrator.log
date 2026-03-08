@@ -602,3 +602,27 @@ husky - pre-commit script failed (code 1)
 [2026-03-09 00:33:49] [INFO] Skrevet: src/components/companies/EditCompanyDialog.tsx
 [2026-03-09 00:33:49] [INFO] Skrevet: src/components/companies/DeleteCompanyDialog.tsx
 [2026-03-09 00:33:49] [INFO] Skrevet: src/components/companies/AddOwnershipDialog.tsx
+[2026-03-09 00:33:49] [INFO] Git commit: feat: BA-05-selskab Feature-agent (Selskabsprofil) - Selskabsprofil — stamdata, ejerskab, governance, a
+[2026-03-09 00:33:49] [INFO] === BA-05-selskab FÆRDIG (23 filer skrevet) ===
+[2026-03-09 00:33:51] [INFO] --- Agent 2/4: BA-05-person ---
+[2026-03-09 00:33:51] [INFO] === Starter BA-05-person (Feature-agent (Persondatabase)) ===
+[2026-03-09 00:33:51] [INFO] Opgave: Persondatabase — global kontaktbog, roller på tværs af selskaber, Outlook-import
+[2026-03-09 00:33:51] [INFO] Kalder Claude API (claude-sonnet-4-6) med streaming...
+[2026-03-09 00:34:01] [INFO]   ... 2000 tegn modtaget
+[2026-03-09 00:38:39] [INFO]   ... 100000 tegn modtaget
+[2026-03-09 00:38:58] [INFO] API svar komplet på 306.6s (106068 tegn)
+[2026-03-09 00:38:58] [INFO] Skrevet: src/lib/validations/person.ts
+[2026-03-09 00:38:58] [INFO] Skrevet: src/types/person.ts
+[2026-03-09 00:38:58] [INFO] Skrevet: src/actions/persons.ts
+[2026-03-09 00:38:58] [INFO] Skrevet: src/app/(dashboard)/persons/page.tsx
+[2026-03-09 00:38:58] [INFO] Skrevet: src/app/(dashboard)/persons/[personId]/page.tsx
+[2026-03-09 00:38:58] [INFO] Skrevet: src/components/persons/PersonList.tsx
+[2026-03-09 00:38:58] [INFO] Skrevet: src/components/persons/PersonListSkeleton.tsx
+[2026-03-09 00:38:58] [INFO] Skrevet: src/components/persons/CreatePersonButton.tsx
+[2026-03-09 00:38:58] [INFO] Skrevet: src/components/persons/PersonProfile.tsx
+[2026-03-09 00:38:58] [INFO] Skrevet: src/components/persons/PersonCompanyList.tsx
+[2026-03-09 00:38:58] [INFO] Skrevet: src/components/persons/AddPersonToCompanyForm.tsx
+[2026-03-09 00:38:58] [INFO] Skrevet: src/components/persons/OutlookImport.tsx
+[2026-03-09 00:38:58] [INFO] Skrevet: src/app/api/companies/accessible/route.ts
+[2026-03-09 00:38:58] [INFO] Skrevet: src/app/api/persons/[personId]/companies/route.ts
+[2026-03-09 00:38:58] [INFO] Skrevet: .env.example
