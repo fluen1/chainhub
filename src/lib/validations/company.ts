@@ -1,127 +1,171 @@
 import { z } from 'zod'
 
-export const companyStatusSchema = z.enum([
-  'aktiv',
-  'inaktiv',
-  'under_stiftelse',
-  'opløst',
-])
-
-export const companyTypeSchema = z.enum([
-  'ApS',
-  'A/S',
-  'I/S',
-  'K/S',
-  'P/S',
-  'Enkeltmandsvirksomhed',
-  'Holding',
-  'Andet',
-])
-
 export const createCompanySchema = z.object({
-  name: z.string().min(1, 'Navn er påkrævet').max(255, 'Navn må højst være 255 tegn'),
+  name: z
+    .string()
+    .min(1, 'Navn er påkrævet')
+    .max(255, 'Navn må højst være 255 tegn'),
   cvr: z
     .string()
-    .regex(/^\d{8}$/, 'CVR skal være 8 cifre')
+    .regex(/^\d{8}$/, 'CVR-nummer skal bestå af 8 cifre')
     .optional()
-    .nullable(),
-  companyType: companyTypeSchema.optional().nullable(),
-  address: z.string().max(500, 'Adresse må højst være 500 tegn').optional().nullable(),
-  city: z.string().max(100, 'By må højst være 100 tegn').optional().nullable(),
+    .or(z.literal('')),
+  companyType: z
+    .enum(['ApS', 'A/S', 'I/S', 'enkeltmandsvirksomhed', 'P/S', 'K/S', 'Andet'])
+    .optional(),
+  address: z.string().max(500).optional().or(z.literal('')),
+  city: z.string().max(100).optional().or(z.literal('')),
   postalCode: z
     .string()
-    .regex(/^\d{4}$/, 'Postnummer skal være 4 cifre')
+    .regex(/^\d{4}$/, 'Postnummer skal bestå af 4 cifre')
     .optional()
-    .nullable(),
-  foundedDate: z.coerce.date().optional().nullable(),
-  status: companyStatusSchema.default('aktiv'),
-  notes: z.string().max(5000, 'Noter må højst være 5000 tegn').optional().nullable(),
+    .or(z.literal('')),
+  foundedDate: z.string().optional().or(z.literal('')),
+  status: z.enum(['aktiv', 'inaktiv', 'under_stiftelse', 'opløst']).default('aktiv'),
+  notes: z.string().max(5000).optional().or(z.literal('')),
 })
 
-export const updateCompanySchema = createCompanySchema.partial().extend({
-  id: z.string().uuid('Ugyldigt selskabs-ID'),
+export const updateCompanySchema = z.object({
+  companyId: z.string().uuid('Ugyldigt selskabs-ID'),
+  name: z
+    .string()
+    .min(1, 'Navn er påkrævet')
+    .max(255, 'Navn må højst være 255 tegn')
+    .optional(),
+  cvr: z
+    .string()
+    .regex(/^\d{8}$/, 'CVR-nummer skal bestå af 8 cifre')
+    .optional()
+    .or(z.literal('')),
+  companyType: z
+    .enum(['ApS', 'A/S', 'I/S', 'enkeltmandsvirksomhed', 'P/S', 'K/S', 'Andet'])
+    .optional(),
+  address: z.string().max(500).optional().or(z.literal('')),
+  city: z.string().max(100).optional().or(z.literal('')),
+  postalCode: z
+    .string()
+    .regex(/^\d{4}$/, 'Postnummer skal bestå af 4 cifre')
+    .optional()
+    .or(z.literal('')),
+  foundedDate: z.string().optional().or(z.literal('')),
+  status: z.enum(['aktiv', 'inaktiv', 'under_stiftelse', 'opløst']).optional(),
+  notes: z.string().max(5000).optional().or(z.literal('')),
 })
 
-export const ownerTypeSchema = z.enum(['person', 'company'])
+export const deleteCompanySchema = z.object({
+  companyId: z.string().uuid('Ugyldigt selskabs-ID'),
+})
 
+// Ejerskab
 export const createOwnershipSchema = z.object({
   companyId: z.string().uuid('Ugyldigt selskabs-ID'),
-  ownerType: ownerTypeSchema,
-  ownerPersonId: z.string().uuid('Ugyldigt person-ID').optional().nullable(),
-  ownerCompanyId: z.string().uuid('Ugyldigt ejerselskabs-ID').optional().nullable(),
+  ownerType: z.enum(['person', 'company'], {
+    required_error: 'Ejertype er påkrævet',
+  }),
+  ownerPersonId: z.string().uuid().optional(),
+  ownerCompanyId: z.string().uuid().optional(),
   ownershipPct: z
     .number()
-    .min(0.01, 'Ejerskab skal være mindst 0,01%')
-    .max(100, 'Ejerskab kan højst være 100%'),
-  shareClass: z.string().max(50, 'Anpartsklasse må højst være 50 tegn').optional().nullable(),
-  effectiveDate: z.coerce.date().optional().nullable(),
-  contractId: z.string().uuid('Ugyldigt kontrakt-ID').optional().nullable(),
+    .min(0.01, 'Ejerandel skal være større end 0')
+    .max(100, 'Ejerandel kan ikke overstige 100%'),
+  shareClass: z.string().max(100).optional().or(z.literal('')),
+  effectiveDate: z.string().optional().or(z.literal('')),
+  contractId: z.string().uuid().optional(),
 }).refine(
   (data) => {
-    if (data.ownerType === 'person') {
-      return !!data.ownerPersonId
-    }
-    if (data.ownerType === 'company') {
-      return !!data.ownerCompanyId
-    }
+    if (data.ownerType === 'person') return !!data.ownerPersonId
+    if (data.ownerType === 'company') return !!data.ownerCompanyId
     return false
   },
   {
-    message: 'Vælg enten en person eller et selskab som ejer',
-    path: ['ownerType'],
+    message: 'Ejer-ID er påkrævet',
+    path: ['ownerPersonId'],
   }
 )
 
 export const updateOwnershipSchema = z.object({
-  id: z.string().uuid('Ugyldigt ejerskabs-ID'),
+  ownershipId: z.string().uuid('Ugyldigt ejerskabs-ID'),
+  companyId: z.string().uuid('Ugyldigt selskabs-ID'),
   ownershipPct: z
     .number()
-    .min(0.01, 'Ejerskab skal være mindst 0,01%')
-    .max(100, 'Ejerskab kan højst være 100%')
+    .min(0.01, 'Ejerandel skal være større end 0')
+    .max(100, 'Ejerandel kan ikke overstige 100%')
     .optional(),
-  shareClass: z.string().max(50).optional().nullable(),
-  effectiveDate: z.coerce.date().optional().nullable(),
-  contractId: z.string().uuid().optional().nullable(),
+  shareClass: z.string().max(100).optional().or(z.literal('')),
+  effectiveDate: z.string().optional().or(z.literal('')),
+  contractId: z.string().uuid().optional(),
 })
 
-export const governanceRoleSchema = z.enum([
-  'direktør',
-  'bestyrelsesformand',
-  'bestyrelsesmedlem',
-  'revisor',
-])
+export const deleteOwnershipSchema = z.object({
+  ownershipId: z.string().uuid('Ugyldigt ejerskabs-ID'),
+  companyId: z.string().uuid('Ugyldigt selskabs-ID'),
+})
 
-export const employmentTypeSchema = z.enum([
-  'funktionær',
-  'ikke-funktionær',
-  'vikar',
-  'elev',
-])
-
+// Governance / CompanyPerson
 export const createCompanyPersonSchema = z.object({
   companyId: z.string().uuid('Ugyldigt selskabs-ID'),
   personId: z.string().uuid('Ugyldigt person-ID'),
-  role: z.string().min(1, 'Rolle er påkrævet').max(50, 'Rolle må højst være 50 tegn'),
-  employmentType: employmentTypeSchema.optional().nullable(),
-  startDate: z.coerce.date().optional().nullable(),
-  endDate: z.coerce.date().optional().nullable(),
-  anciennityStart: z.coerce.date().optional().nullable(),
-  contractId: z.string().uuid('Ugyldigt kontrakt-ID').optional().nullable(),
+  role: z.enum([
+    'direktør',
+    'bestyrelsesformand',
+    'bestyrelsesmedlem',
+    'ansat',
+    'revisor',
+    'advokat',
+    'suppleant',
+  ], { required_error: 'Rolle er påkrævet' }),
+  employmentType: z
+    .enum(['funktionær', 'ikke-funktionær', 'vikar', 'elev'])
+    .optional(),
+  startDate: z.string().optional().or(z.literal('')),
+  endDate: z.string().optional().or(z.literal('')),
+  anciennityStart: z.string().optional().or(z.literal('')),
+  contractId: z.string().uuid().optional(),
 })
 
 export const updateCompanyPersonSchema = z.object({
-  id: z.string().uuid('Ugyldigt ID'),
-  role: z.string().min(1).max(50).optional(),
-  employmentType: employmentTypeSchema.optional().nullable(),
-  startDate: z.coerce.date().optional().nullable(),
-  endDate: z.coerce.date().optional().nullable(),
-  anciennityStart: z.coerce.date().optional().nullable(),
-  contractId: z.string().uuid().optional().nullable(),
+  companyPersonId: z.string().uuid('Ugyldigt ID'),
+  companyId: z.string().uuid('Ugyldigt selskabs-ID'),
+  role: z
+    .enum([
+      'direktør',
+      'bestyrelsesformand',
+      'bestyrelsesmedlem',
+      'ansat',
+      'revisor',
+      'advokat',
+      'suppleant',
+    ])
+    .optional(),
+  employmentType: z
+    .enum(['funktionær', 'ikke-funktionær', 'vikar', 'elev'])
+    .optional(),
+  startDate: z.string().optional().or(z.literal('')),
+  endDate: z.string().optional().or(z.literal('')),
+  anciennityStart: z.string().optional().or(z.literal('')),
+  contractId: z.string().uuid().optional(),
 })
 
-export type CreateCompanyInput = z.infer<typeof createCompanySchema>
-export type UpdateCompanyInput = z.infer<typeof updateCompanySchema>
-export type CreateOwnershipInput = z.infer<typeof createOwnershipSchema>
-export type UpdateOwnershipInput = z.infer<typeof updateOwnershipSchema>
-export type CreateCompanyPersonInput = z.infer<typeof createCompanyPersonSchema>
-export type UpdateCompanyPersonInput = z.infer<typeof updateCompanyPersonSchema>
+export const deleteCompanyPersonSchema = z.object({
+  companyPersonId: z.string().uuid('Ugyldigt ID'),
+  companyId: z.string().uuid('Ugyldigt selskabs-ID'),
+})
+
+export const getCompanySchema = z.object({
+  companyId: z.string().uuid('Ugyldigt selskabs-ID'),
+})
+
+export const listCompanyPersonsSchema = z.object({
+  companyId: z.string().uuid('Ugyldigt selskabs-ID'),
+  role: z.string().optional(),
+})
+
+export const listOwnershipsSchema = z.object({
+  companyId: z.string().uuid('Ugyldigt selskabs-ID'),
+})
+
+export const getActivityLogSchema = z.object({
+  companyId: z.string().uuid('Ugyldigt selskabs-ID'),
+  limit: z.number().min(1).max(100).default(20),
+  offset: z.number().min(0).default(0),
+})

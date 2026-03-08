@@ -1,43 +1,68 @@
-import { Company, Ownership, CompanyPerson, Contract, Person } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 
 export type ActionResult<T> =
   | { data: T; error?: never }
   | { error: string; data?: never }
 
-export type CompanyWithCounts = Company & {
-  _count: {
-    contracts: number
-    caseCompanies: number
-    ownerships: number
-    companyPersons: number
+export type CompanyWithCounts = Prisma.CompanyGetPayload<{
+  include: {
+    _count: {
+      select: {
+        contracts: true
+        cases: true
+        companyPersons: true
+        ownerships: true
+      }
+    }
   }
+}>
+
+export type CompanyWithRelations = Prisma.CompanyGetPayload<{
+  include: {
+    ownerships: {
+      include: {
+        ownerPerson: true
+      }
+    }
+    companyPersons: {
+      include: {
+        person: true
+        contract: true
+      }
+    }
+    _count: {
+      select: {
+        contracts: true
+        cases: true
+      }
+    }
+  }
+}>
+
+export type OwnershipWithPerson = Prisma.OwnershipGetPayload<{
+  include: {
+    ownerPerson: true
+  }
+}>
+
+export type CompanyPersonWithPerson = Prisma.CompanyPersonGetPayload<{
+  include: {
+    person: true
+    contract: true
+  }
+}>
+
+export type ActivityLogEntry = {
+  id: string
+  action: string
+  resourceType: string
+  resourceId: string
+  userId: string
+  createdAt: Date
+  sensitivity?: string | null
+  changes?: Prisma.JsonValue | null
 }
 
-export type CompanyWithRelations = Company & {
-  ownerships: (Ownership & {
-    ownerPerson: Person | null
-    contract: Contract | null
-  })[]
-  companyPersons: (CompanyPerson & {
-    person: Person
-    contract: Contract | null
-  })[]
-  contracts: {
-    id: string
-    displayName: string
-    systemType: string
-    status: string
-  }[]
-}
+export type CompanyStatus = 'aktiv' | 'inaktiv' | 'under_stiftelse' | 'opløst'
 
-export type OwnershipWithRelations = Ownership & {
-  ownerPerson: Person | null
-  contract: Contract | null
-  company: Company
-}
-
-export type CompanyPersonWithRelations = CompanyPerson & {
-  person: Person
-  company: Company
-  contract: Contract | null
-}
+export type OwnerType = 'person' | 'company'

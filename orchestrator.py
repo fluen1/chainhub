@@ -49,7 +49,7 @@ PROGRESS_FILE    = DOCS_STATUS / "PROGRESS.md"
 DECISIONS_FILE   = DOCS_STATUS / "DECISIONS.md"
 BLOCKERS_FILE    = DOCS_STATUS / "BLOCKERS.md"
 
-MODEL            = "claude-opus-4-5"
+MODEL            = "claude-sonnet-4-6"
 MAX_TOKENS       = 32000
 LOG_FILE         = REPO_ROOT / "orchestrator.log"
 
@@ -1201,6 +1201,12 @@ def kør_agent(agent_id: str, klient: anthropic.Anthropic, dry_run: bool = False
         log(f"Ukendt agent: {agent_id}", "FEJL")
         return False
 
+    # Tjek om output-filer allerede eksisterer — skip hvis alt er på plads
+    output_filer = agent.get("output_filer", [])
+    if output_filer and all((REPO_ROOT / f).exists() for f in output_filer):
+        log(f"=== {agent_id} SPRINGER OVER — output-filer eksisterer allerede ===")
+        return True
+
     log(f"=== Starter {agent_id} ({agent['navn']}) ===")
     log(f"Opgave: {agent['opgave']}")
 
@@ -1334,6 +1340,7 @@ def main():
     parser.add_argument("--agent", type=str, help="Kør specifik agent (fx --agent BA-03)")
     parser.add_argument("--dry-run", action="store_true", help="Vis plan uden at køre")
     parser.add_argument("--list", action="store_true", help="List alle agenter")
+    parser.add_argument("--all", action="store_true", help="Kør alle sprints sekventielt (1 → 5)")
     args = parser.parse_args()
 
     if args.list:
@@ -1357,14 +1364,18 @@ def main():
     if args.dry_run:
         log("=== DRY RUN — ingen filer skrives, ingen API-kald ===")
 
-    if args.agent:
+    if args.all:
+        alle_sprints = sorted(SPRINT_RÆKKEFØLGE.keys())
+        log(f"=== KØRER ALLE SPRINTS: {alle_sprints} ===")
+        for sprint_nr in alle_sprints:
+            kør_sprint(sprint_nr, klient, args.dry_run)
+    elif args.agent:
         kør_agent(args.agent, klient, args.dry_run)
     elif args.sprint:
         kør_sprint(args.sprint, klient, args.dry_run)
     else:
-        # Default: vis status og næste opgave
-        log("Ingen handling angivet. Brug --sprint 1, --agent BA-03 eller --list")
-        log("Eksempel: python orchestrator.py --sprint 1")
+        log("Ingen handling angivet. Brug --sprint 1, --agent BA-03, --all eller --list")
+        log("Eksempel: python orchestrator.py --all")
 
 
 if __name__ == "__main__":
