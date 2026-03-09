@@ -49,7 +49,7 @@ export function EmployeesSection({
   )
 
   async function handleDelete(id: string) {
-    const result = await deleteCompanyPerson(id)
+    const result = await deleteCompanyPerson({ id })
     if (result.error) {
       toast.error(result.error)
     } else {
@@ -92,31 +92,30 @@ export function EmployeesSection({
                   className="flex items-center justify-between p-3 border rounded-lg"
                 >
                   <div className="flex items-center gap-3">
-                    <Users className="h-5 w-5 text-blue-500" />
+                    <Users className="h-5 w-5 text-gray-400" />
                     <div>
-                      <p className="font-medium">
-                        {cp.person.firstName} {cp.person.lastName}
+                      <p className="font-medium text-sm">
+                        {cp.person
+                          ? `${cp.person.firstName} ${cp.person.lastName}`
+                          : 'Ukendt person'}
                       </p>
-                      <div className="flex gap-2 text-sm text-gray-500">
-                        <span>{cp.role}</span>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="text-xs">
+                          {cp.role}
+                        </Badge>
                         {cp.employmentType && (
-                          <Badge variant="outline">
-                            {employmentTypeLabels[cp.employmentType] || cp.employmentType}
-                          </Badge>
-                        )}
-                        {cp.startDate && (
-                          <span>
-                            fra {new Date(cp.startDate).toLocaleDateString('da-DK')}
+                          <span className="text-xs text-gray-500">
+                            {employmentTypeLabels[cp.employmentType] ?? cp.employmentType}
                           </span>
                         )}
                       </div>
                     </div>
                   </div>
                   {canEdit && (
-                    <div className="flex gap-1">
+                    <div className="flex items-center gap-1">
                       <Button
-                        size="icon"
                         variant="ghost"
+                        size="sm"
                         onClick={() => {
                           setEditingPerson(cp)
                           setIsDialogOpen(true)
@@ -125,8 +124,8 @@ export function EmployeesSection({
                         <Pencil className="h-4 w-4" />
                       </Button>
                       <Button
-                        size="icon"
                         variant="ghost"
+                        size="sm"
                         onClick={() => setDeletingId(cp.id)}
                       >
                         <Trash2 className="h-4 w-4 text-red-500" />
@@ -156,37 +155,17 @@ export function EmployeesSection({
           <AlertDialogHeader>
             <AlertDialogTitle>Fjern medarbejder</AlertDialogTitle>
             <AlertDialogDescription>
-              Er du sikker på, at du vil fjerne denne medarbejder?
+              Er du sikker på, at du vil fjerne denne medarbejder fra selskabet?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Annuller</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => deletingId && handleDelete(deletingId)}
-              className="bg-red-600 hover:bg-red-700"
-            >
+            <AlertDialogAction onClick={() => deletingId && handleDelete(deletingId)}>
               Fjern
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </>
-  )
-}
-
-export function EmployeesSectionSkeleton() {
-  return (
-    <Card>
-      <CardHeader>
-        <div className="h-6 w-24 bg-gray-200 rounded animate-pulse" />
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-16 bg-gray-100 rounded animate-pulse" />
-          ))}
-        </div>
-      </CardContent>
-    </Card>
   )
 }

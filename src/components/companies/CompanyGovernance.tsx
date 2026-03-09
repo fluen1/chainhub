@@ -28,11 +28,11 @@ export function CompanyGovernance({ companyId, companyPersons }: CompanyGovernan
   const [editingPerson, setEditingPerson] = useState<CompanyPersonWithPerson | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  const handleDelete = async (companyPersonId: string) => {
+  const handleDelete = async (id: string) => {
     if (!confirm('Er du sikker på, at du vil fjerne denne person fra governance?')) return
 
-    setDeletingId(companyPersonId)
-    const result = await deleteCompanyPerson({ companyPersonId, companyId })
+    setDeletingId(id)
+    const result = await deleteCompanyPerson({ id })
     setDeletingId(null)
 
     if (result.error) {
@@ -92,25 +92,6 @@ export function CompanyGovernance({ companyId, companyPersons }: CompanyGovernan
   )
 }
 
-function GovernanceEmpty({ onAdd }: { onAdd: () => void }) {
-  return (
-    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 py-10 text-center">
-      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
-        <UserCircle className="h-6 w-6 text-gray-400" />
-      </div>
-      <h3 className="mb-1 text-sm font-semibold text-gray-900">
-        Ingen governance registreret
-      </h3>
-      <p className="mb-4 text-sm text-gray-500">
-        Tilføj direktører og bestyrelsesmedlemmer
-      </p>
-      <button onClick={onAdd} className="text-sm font-medium text-blue-600 hover:text-blue-700">
-        Tilføj første person
-      </button>
-    </div>
-  )
-}
-
 interface PersonRoleCardProps {
   companyPerson: CompanyPersonWithPerson
   roleLabel: string
@@ -119,55 +100,55 @@ interface PersonRoleCardProps {
   isDeleting: boolean
 }
 
-function PersonRoleCard({
-  companyPerson,
-  roleLabel,
-  onEdit,
-  onDelete,
-  isDeleting,
-}: PersonRoleCardProps) {
-  const fullName = `${companyPerson.person.firstName} ${companyPerson.person.lastName}`
-
+function PersonRoleCard({ companyPerson: cp, roleLabel, onEdit, onDelete, isDeleting }: PersonRoleCardProps) {
+  const fullName = `${cp.person.firstName} ${cp.person.lastName}`
   return (
     <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4">
       <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-50">
-          <UserCircle className="h-5 w-5 text-blue-500" />
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100">
+          <UserCircle className="h-5 w-5 text-gray-500" />
         </div>
         <div>
           <p className="font-medium text-gray-900">{fullName}</p>
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <span className="font-medium text-gray-700">{roleLabel}</span>
-            {companyPerson.startDate && (
-              <span>· Fra {formatDate(companyPerson.startDate)}</span>
-            )}
-            {companyPerson.endDate && (
-              <span>· Til {formatDate(companyPerson.endDate)}</span>
-            )}
-          </div>
-          {companyPerson.person.email && (
-            <p className="text-xs text-gray-400">{companyPerson.person.email}</p>
+          <p className="text-sm text-gray-500">{roleLabel}</p>
+          {cp.startDate && (
+            <p className="text-xs text-gray-400">
+              Fra {formatDate(cp.startDate)}
+              {cp.endDate ? ` til ${formatDate(cp.endDate)}` : ''}
+            </p>
           )}
         </div>
       </div>
-
       <div className="flex items-center gap-2">
         <button
           onClick={onEdit}
-          className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-          title="Rediger"
+          className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
         >
           <Pencil className="h-4 w-4" />
         </button>
         <button
           onClick={onDelete}
           disabled={isDeleting}
-          className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
-          title="Fjern"
+          className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
         >
           <Trash2 className="h-4 w-4" />
         </button>
       </div>
+    </div>
+  )
+}
+
+function GovernanceEmpty({ onAdd }: { onAdd: () => void }) {
+  return (
+    <div className="rounded-lg border-2 border-dashed border-gray-200 p-8 text-center">
+      <UserCircle className="mx-auto h-10 w-10 text-gray-300" />
+      <p className="mt-2 text-sm text-gray-500">Ingen governance-roller registreret endnu</p>
+      <button
+        onClick={onAdd}
+        className="mt-3 text-sm font-medium text-blue-600 hover:text-blue-700"
+      >
+        Tilføj den første
+      </button>
     </div>
   )
 }

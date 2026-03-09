@@ -41,7 +41,7 @@ export function OwnershipSection({
   )
 
   async function handleDelete(id: string) {
-    const result = await deleteOwnership(id)
+    const result = await deleteOwnership({ id })
     if (result.error) {
       toast.error(result.error)
     } else {
@@ -92,32 +92,33 @@ export function OwnershipSection({
                     {ownership.ownerPersonId ? (
                       <Users className="h-5 w-5 text-blue-500" />
                     ) : (
-                      <Building2 className="h-5 w-5 text-purple-500" />
+                      <Building2 className="h-5 w-5 text-gray-500" />
                     )}
                     <div>
-                      <p className="font-medium">
+                      <p className="font-medium text-sm">
                         {ownership.ownerPerson
                           ? `${ownership.ownerPerson.firstName} ${ownership.ownerPerson.lastName}`
-                          : ownership.ownerCompanyId || 'Ukendt ejer'}
+                          : ownership.ownerCompany
+                          ? ownership.ownerCompany.name
+                          : 'Ukendt ejer'}
                       </p>
-                      <div className="flex gap-2 text-sm text-gray-500">
-                        <span>{Number(ownership.ownershipPct).toFixed(2)}%</span>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="text-xs">
+                          {Number(ownership.ownershipPct).toFixed(2)}%
+                        </Badge>
                         {ownership.shareClass && (
-                          <Badge variant="outline">{ownership.shareClass}</Badge>
-                        )}
-                        {ownership.effectiveDate && (
-                          <span>
-                            fra {new Date(ownership.effectiveDate).toLocaleDateString('da-DK')}
+                          <span className="text-xs text-gray-500">
+                            {ownership.shareClass}
                           </span>
                         )}
                       </div>
                     </div>
                   </div>
                   {canEdit && (
-                    <div className="flex gap-1">
+                    <div className="flex items-center gap-1">
                       <Button
-                        size="icon"
                         variant="ghost"
+                        size="sm"
                         onClick={() => {
                           setEditingOwnership(ownership)
                           setIsDialogOpen(true)
@@ -126,8 +127,8 @@ export function OwnershipSection({
                         <Pencil className="h-4 w-4" />
                       </Button>
                       <Button
-                        size="icon"
                         variant="ghost"
+                        size="sm"
                         onClick={() => setDeletingId(ownership.id)}
                       >
                         <Trash2 className="h-4 w-4 text-red-500" />
@@ -156,38 +157,17 @@ export function OwnershipSection({
           <AlertDialogHeader>
             <AlertDialogTitle>Slet ejerskab</AlertDialogTitle>
             <AlertDialogDescription>
-              Er du sikker på, at du vil slette dette ejerskab? Handlingen kan
-              ikke fortrydes.
+              Er du sikker på, at du vil slette dette ejerskab?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Annuller</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => deletingId && handleDelete(deletingId)}
-              className="bg-red-600 hover:bg-red-700"
-            >
+            <AlertDialogAction onClick={() => deletingId && handleDelete(deletingId)}>
               Slet
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </>
-  )
-}
-
-export function OwnershipSectionSkeleton() {
-  return (
-    <Card>
-      <CardHeader>
-        <div className="h-6 w-32 bg-gray-200 rounded animate-pulse" />
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-16 bg-gray-100 rounded animate-pulse" />
-          ))}
-        </div>
-      </CardContent>
-    </Card>
   )
 }

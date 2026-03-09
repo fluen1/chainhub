@@ -1,7 +1,7 @@
 'use client'
 
 import { CompanyWithCounts } from '@/types/company'
-import { CompanyCard, CompanyCardSkeleton } from './CompanyCard'
+import { CompanyCard } from './CompanyCard'
 import { Building2, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
@@ -9,6 +9,16 @@ import Link from 'next/link'
 interface CompanyListProps {
   companies: CompanyWithCounts[]
   isLoading?: boolean
+}
+
+function CompanyCardSkeleton() {
+  return (
+    <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm animate-pulse">
+      <div className="h-5 w-3/4 rounded bg-gray-200 mb-3" />
+      <div className="h-4 w-1/2 rounded bg-gray-100 mb-2" />
+      <div className="h-4 w-1/3 rounded bg-gray-100" />
+    </div>
+  )
 }
 
 export function CompanyList({ companies, isLoading }: CompanyListProps) {

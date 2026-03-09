@@ -34,11 +34,11 @@ export function CompanyEmployees({ companyId, companyPersons }: CompanyEmployees
   const [editingPerson, setEditingPerson] = useState<CompanyPersonWithPerson | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  const handleDelete = async (companyPersonId: string) => {
+  const handleDelete = async (id: string) => {
     if (!confirm('Er du sikker på, at du vil fjerne denne person?')) return
 
-    setDeletingId(companyPersonId)
-    const result = await deleteCompanyPerson({ companyPersonId, companyId })
+    setDeletingId(id)
+    const result = await deleteCompanyPerson({ id })
     setDeletingId(null)
 
     if (result.error) {
@@ -81,31 +81,31 @@ export function CompanyEmployees({ companyId, companyPersons }: CompanyEmployees
                     <div className="flex items-center gap-2 text-sm text-gray-500">
                       <span>{ROLE_LABELS[cp.role] ?? cp.role}</span>
                       {cp.employmentType && (
-                        <span>· {EMPLOYMENT_TYPE_LABELS[cp.employmentType] ?? cp.employmentType}</span>
-                      )}
-                      {cp.startDate && (
-                        <span>· Fra {formatDate(cp.startDate)}</span>
+                        <>
+                          <span>·</span>
+                          <span>{EMPLOYMENT_TYPE_LABELS[cp.employmentType] ?? cp.employmentType}</span>
+                        </>
                       )}
                     </div>
-                    {cp.person.email && (
-                      <p className="text-xs text-gray-400">{cp.person.email}</p>
+                    {cp.startDate && (
+                      <p className="text-xs text-gray-400">
+                        Fra {formatDate(cp.startDate)}
+                        {cp.endDate ? ` til ${formatDate(cp.endDate)}` : ''}
+                      </p>
                     )}
                   </div>
                 </div>
-
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setEditingPerson(cp)}
-                    className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                    title="Rediger"
+                    className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
                   >
                     <Pencil className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => handleDelete(cp.id)}
                     disabled={deletingId === cp.id}
-                    className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
-                    title="Fjern"
+                    className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -121,7 +121,6 @@ export function CompanyEmployees({ companyId, companyPersons }: CompanyEmployees
           companyId={companyId}
           allowedRoles={EMPLOYEE_ROLES}
           title="Tilføj ansat"
-          showEmploymentType
           onClose={() => setShowAddDialog(false)}
         />
       )}
@@ -130,7 +129,6 @@ export function CompanyEmployees({ companyId, companyPersons }: CompanyEmployees
           companyPerson={editingPerson}
           companyId={companyId}
           allowedRoles={EMPLOYEE_ROLES}
-          showEmploymentType
           onClose={() => setEditingPerson(null)}
         />
       )}
@@ -140,16 +138,14 @@ export function CompanyEmployees({ companyId, companyPersons }: CompanyEmployees
 
 function EmployeesEmpty({ onAdd }: { onAdd: () => void }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 py-10 text-center">
-      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
-        <UserCircle className="h-6 w-6 text-gray-400" />
-      </div>
-      <h3 className="mb-1 text-sm font-semibold text-gray-900">Ingen ansatte registreret</h3>
-      <p className="mb-4 text-sm text-gray-500">
-        Tilføj ansatte, revisorer og andre tilknyttede
-      </p>
-      <button onClick={onAdd} className="text-sm font-medium text-blue-600 hover:text-blue-700">
-        Tilføj første person
+    <div className="rounded-lg border-2 border-dashed border-gray-200 p-8 text-center">
+      <UserCircle className="mx-auto h-10 w-10 text-gray-300" />
+      <p className="mt-2 text-sm text-gray-500">Ingen ansatte eller tilknyttede endnu</p>
+      <button
+        onClick={onAdd}
+        className="mt-3 text-sm font-medium text-blue-600 hover:text-blue-700"
+      >
+        Tilføj den første
       </button>
     </div>
   )

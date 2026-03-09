@@ -21,11 +21,11 @@ export function CompanyOwnership({ companyId, ownerships }: CompanyOwnershipProp
 
   const totalPct = ownerships.reduce((sum, o) => sum + Number(o.ownershipPct), 0)
 
-  const handleDelete = async (ownershipId: string) => {
+  const handleDelete = async (id: string) => {
     if (!confirm('Er du sikker på, at du vil slette dette ejerskab?')) return
 
-    setDeletingId(ownershipId)
-    const result = await deleteOwnership({ ownershipId, companyId })
+    setDeletingId(id)
+    const result = await deleteOwnership({ id })
     setDeletingId(null)
 
     if (result.error) {
@@ -75,36 +75,23 @@ export function CompanyOwnership({ companyId, ownerships }: CompanyOwnershipProp
                   </div>
                   <div>
                     <p className="font-medium text-gray-900">{ownerName}</p>
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <span className="font-semibold text-blue-600">
-                        {Number(ownership.ownershipPct).toFixed(2)}%
-                      </span>
-                      {ownership.shareClass && (
-                        <span>· {ownership.shareClass}</span>
-                      )}
-                      {ownership.effectiveDate && (
-                        <span>
-                          · Fra{' '}
-                          {new Date(ownership.effectiveDate).toLocaleDateString('da-DK')}
-                        </span>
-                      )}
-                    </div>
+                    <p className="text-sm text-gray-500">
+                      {Number(ownership.ownershipPct).toFixed(2)}%
+                      {ownership.shareClass ? ` · ${ownership.shareClass}` : ''}
+                    </p>
                   </div>
                 </div>
-
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setEditingOwnership(ownership)}
-                    className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                    title="Rediger ejerskab"
+                    className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
                   >
                     <Pencil className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => handleDelete(ownership.id)}
                     disabled={deletingId === ownership.id}
-                    className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
-                    title="Slet ejerskab"
+                    className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -112,27 +99,6 @@ export function CompanyOwnership({ companyId, ownerships }: CompanyOwnershipProp
               </div>
             )
           })}
-        </div>
-      )}
-
-      {/* Ownership bar */}
-      {ownerships.length > 0 && (
-        <div className="rounded-lg border border-gray-100 bg-gray-50 p-4">
-          <div className="mb-2 flex justify-between text-xs text-gray-500">
-            <span>Ejerandelsoversigt</span>
-            <span>{totalPct.toFixed(2)}% / 100%</span>
-          </div>
-          <div className="h-3 w-full overflow-hidden rounded-full bg-gray-200">
-            <div
-              className="h-full rounded-full bg-blue-500 transition-all"
-              style={{ width: `${Math.min(totalPct, 100)}%` }}
-            />
-          </div>
-          {totalPct < 100 && (
-            <p className="mt-1.5 text-xs text-amber-600">
-              {(100 - totalPct).toFixed(2)}% af selskabet er ikke registreret
-            </p>
-          )}
         </div>
       )}
 

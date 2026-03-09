@@ -56,7 +56,7 @@ export function GovernanceSection({
   )
 
   async function handleDelete(id: string) {
-    const result = await deleteCompanyPerson(id)
+    const result = await deleteCompanyPerson({ id })
     if (result.error) {
       toast.error(result.error)
     } else {
@@ -96,33 +96,23 @@ export function GovernanceSection({
                     className="flex items-center justify-between p-3 border rounded-lg"
                   >
                     <div className="flex items-center gap-3">
-                      <Icon className="h-5 w-5 text-amber-500" />
+                      <Icon className="h-5 w-5 text-gray-400" />
                       <div>
-                        <p className="font-medium">
-                          {cp.person.firstName} {cp.person.lastName}
+                        <p className="font-medium text-sm">
+                          {cp.person
+                            ? `${cp.person.firstName} ${cp.person.lastName}`
+                            : 'Ukendt person'}
                         </p>
-                        <div className="flex gap-2 text-sm text-gray-500">
-                          <Badge variant="secondary">
-                            {roleLabels[cp.role.toLowerCase()] || cp.role}
-                          </Badge>
-                          {cp.startDate && (
-                            <span>
-                              fra {new Date(cp.startDate).toLocaleDateString('da-DK')}
-                            </span>
-                          )}
-                          {cp.endDate && (
-                            <span>
-                              til {new Date(cp.endDate).toLocaleDateString('da-DK')}
-                            </span>
-                          )}
-                        </div>
+                        <Badge variant="secondary" className="text-xs">
+                          {roleLabels[cp.role.toLowerCase()] ?? cp.role}
+                        </Badge>
                       </div>
                     </div>
                     {canEdit && (
-                      <div className="flex gap-1">
+                      <div className="flex items-center gap-1">
                         <Button
-                          size="icon"
                           variant="ghost"
+                          size="sm"
                           onClick={() => {
                             setEditingPerson(cp)
                             setIsDialogOpen(true)
@@ -131,8 +121,8 @@ export function GovernanceSection({
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button
-                          size="icon"
                           variant="ghost"
+                          size="sm"
                           onClick={() => setDeletingId(cp.id)}
                         >
                           <Trash2 className="h-4 w-4 text-red-500" />
@@ -161,39 +151,19 @@ export function GovernanceSection({
       <AlertDialog open={!!deletingId} onOpenChange={() => setDeletingId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Fjern person</AlertDialogTitle>
+            <AlertDialogTitle>Fjern fra governance</AlertDialogTitle>
             <AlertDialogDescription>
-              Er du sikker på, at du vil fjerne denne person fra ledelsen?
+              Er du sikker på, at du vil fjerne denne person fra governance?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Annuller</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => deletingId && handleDelete(deletingId)}
-              className="bg-red-600 hover:bg-red-700"
-            >
+            <AlertDialogAction onClick={() => deletingId && handleDelete(deletingId)}>
               Fjern
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </>
-  )
-}
-
-export function GovernanceSectionSkeleton() {
-  return (
-    <Card>
-      <CardHeader>
-        <div className="h-6 w-48 bg-gray-200 rounded animate-pulse" />
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          {Array.from({ length: 2 }).map((_, i) => (
-            <div key={i} className="h-16 bg-gray-100 rounded animate-pulse" />
-          ))}
-        </div>
-      </CardContent>
-    </Card>
   )
 }
