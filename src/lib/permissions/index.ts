@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db'
-import { SensitivityLevel, UserRole, UserScope } from '@prisma/client'
+import { SensitivityLevel, UserRole } from '@prisma/client'
 
 export type ModuleType =
   | 'companies'
@@ -12,6 +12,8 @@ export type ModuleType =
   | 'settings'
   | 'user_management'
   | 'dashboard'
+
+export type { SensitivityLevel }
 
 // Sensitivitets-hierarki (lavest til højest)
 const SENSITIVITY_HIERARCHY: SensitivityLevel[] = [
@@ -139,168 +141,115 @@ async function getUserRoleAssignments(userId: string) {
   return prisma.userRoleAssignment.findMany({
     where: {
       userId,
-      organizationId: user.organizationId, // ← KRITISK: DEC-021 fix
+      organizationId: user.organizationId,
     },
   })
 }
 
 /**
- * Tjekker om en bruger har adgang til et specifikt selskab.
- * Validerer scope (ALL / ASSIGNED / OWN) og companyIds.
+ * Tjekker om en bruger har adgang til et bestemt selskab.
  */
-export async function canAccessCompany(
-  userId: string,
-  companyId: string
-): Promise<boolean> {
-  const roles = await getUserRoleAssignments(userId)
-
-  if (roles.length === 0) {
-    return false
-  }
-
-  for (const roleAssignment of roles) {
-    // GROUP_* roller med scope ALL har adgang til alle selskaber
-    if (
-      roleAssignment.scope === 'ALL' &&
-      roleAssignment.role.startsWith('GROUP_')
-    ) {
-      return true
-    }
-
-    // ASSIGNED scope - tjek om companyId er i listen
-    if (roleAssignment.scope === 'ASSIGNED') {
-      if (roleAssignment.companyIds.includes(companyId)) {
-        return true
-      }
-    }
-
-    // OWN scope - tjek om companyId matcher (kun ét selskab)
-    if (roleAssignment.scope === 'OWN') {
-      if (
-        roleAssignment.companyIds.length === 1 &&
-        roleAssignment.companyIds[0] === companyId
-      ) {
-        return true
-      }
-    }
-  }
-
-  return false
-}
-
-/**
- * Tjekker om en bruger har adgang til et specifikt sensitivitetsniveau.
- * Tjekker ALLE niveauer — ingen shortcuts for PUBLIC/STANDARD/INTERN,
- * da dette fremtidssikrer mod fase 2-roller med mere restriktiv adgang.
- */
-export async function canAccessSensitivity(
-  userId: string,
-  level: SensitivityLevel
-): Promise<boolean> {
-  const roles = await getUserRoleAssignments(userId)
-
-  if (roles.length === 0) {
-    return false
-  }
-
-  // Tjek om mindst én af brugerens roller giver adgang til dette niveau
-  for (const roleAssignment of roles) {
-    const allowedLevels = ROLE_SENSITIVITY_ACCESS[roleAssignment.role]
-    if (allowedLevels.includes(level)) {
-      return true
-    }
-  }
-
-  return false
-}
-
-/**
- * Tjekker om en bruger har adgang til et specifikt modul.
- */
-export async function canAccessModule(
-  userId: string,
-  module: ModuleType
-): Promise<boolean> {
-  const roles = await getUserRoleAssignments(userId)
-
-  if (roles.length === 0) {
-    return false
-  }
-
-  // Tjek om mindst én af brugerens roller giver adgang til dette modul
-  for (const roleAssignment of roles) {
-    const allowedModules = ROLE_MODULE_ACCESS[roleAssignment.role]
-    if (allowedModules.includes(module)) {
-      return true
-    }
-  }
-
-  return false
-}
-
-/**
- * Tjekker om brugeren har skriveadgang (ikke readonly).
- *
- * SIKKERHED (PENTEST-001 / DEC-047):
- * COMPANY_READONLY og GROUP_READONLY må KUN læse — aldrig skrive, opdatere eller slette.
- * Denne funktion SKAL kaldes som første tjek i ALLE muterende server actions.
- *
- * En bruger har skriveadgang hvis de har MINDST ÉN ikke-readonly rolle.
- * Dette tillader kombinationer som GROUP_LEGAL + COMPANY_READONLY
- * (har skriveadgang via GROUP_LEGAL).
- */
-export async function canWrite(userId: string): Promise<boolean> {
-  const roles = await getUserRoleAssignments(userId)
-
-  if (roles.length === 0) {
-    return false
-  }
-
-  // Brugeren kan skrive hvis de har mindst én ikke-readonly rolle
-  return roles.some((r) => !READONLY_ROLES.includes(r.role))
-}
-
-/**
- * Returnerer alle selskaber som brugeren har adgang til.
- * Respekterer scope (ALL / ASSIGNED / OWN).
- */
-export async function getAccessibleCompanies(userId: string) {
-  const roles = await getUserRoleAssignments(userId)
-
-  if (roles.length === 0) {
-    return []
-  }
-
-  // Hent brugerens organization ID
+export async function canAccessCompany(userId: string, companyId: string): Promise<boolean> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { organizationId: true },
   })
 
-  if (!user) {
-    return []
+  if (!user) return false
+
+  // Tjek at selskabet tilhører brugerens organisation
+  const company = await prisma.company.findFirst({
+    where: {
+      id: companyId,
+      organizationId: user.organizationId,
+      deletedAt: null,
+    },
+    select: { id: true },
+  })
+
+  if (!company) return false
+
+  const roleAssignments = await getUserRoleAssignments(userId)
+
+  if (roleAssignments.length === 0) return false
+
+  for (const assignment of roleAssignments) {
+    // ALL scope: adgang til alle selskaber i organisationen
+    if (assignment.scope === 'ALL') return true
+
+    // ASSIGNED scope: tjek om brugeren er tildelt dette selskab
+    if (assignment.scope === 'ASSIGNED' || assignment.scope === 'OWN') {
+      const companyAssignment = await prisma.userCompanyAssignment.findFirst({
+        where: {
+          userId,
+          companyId,
+        },
+      })
+      if (companyAssignment) return true
+    }
   }
 
-  // Saml alle tilgængelige company IDs
-  const accessibleCompanyIds = new Set<string>()
-  let hasAllAccess = false
+  return false
+}
 
-  for (const roleAssignment of roles) {
-    if (
-      roleAssignment.scope === 'ALL' &&
-      roleAssignment.role.startsWith('GROUP_')
-    ) {
-      hasAllAccess = true
-      break
-    }
+/**
+ * Tjekker om en bruger har adgang til et bestemt sensitivitetsniveau.
+ */
+export async function canAccessSensitivity(
+  userId: string,
+  level: SensitivityLevel
+): Promise<boolean> {
+  const roleAssignments = await getUserRoleAssignments(userId)
 
-    if (roleAssignment.scope === 'ASSIGNED' || roleAssignment.scope === 'OWN') {
-      roleAssignment.companyIds.forEach((id) => accessibleCompanyIds.add(id))
+  if (roleAssignments.length === 0) return false
+
+  for (const assignment of roleAssignments) {
+    const allowedLevels = ROLE_SENSITIVITY_ACCESS[assignment.role]
+    if (allowedLevels && allowedLevels.includes(level)) {
+      return true
     }
   }
 
-  // Hvis brugeren har adgang til alle, hent alle selskaber i organisationen
-  if (hasAllAccess) {
+  return false
+}
+
+/**
+ * Tjekker om en bruger har adgang til et bestemt modul.
+ */
+export async function canAccessModule(userId: string, module: ModuleType): Promise<boolean> {
+  const roleAssignments = await getUserRoleAssignments(userId)
+
+  if (roleAssignments.length === 0) return false
+
+  for (const assignment of roleAssignments) {
+    const allowedModules = ROLE_MODULE_ACCESS[assignment.role]
+    if (allowedModules && allowedModules.includes(module)) {
+      return true
+    }
+  }
+
+  return false
+}
+
+/**
+ * Returnerer alle selskaber som brugeren har adgang til.
+ */
+export async function getAccessibleCompanies(userId: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { organizationId: true },
+  })
+
+  if (!user) return []
+
+  const roleAssignments = await getUserRoleAssignments(userId)
+
+  if (roleAssignments.length === 0) return []
+
+  // Tjek om brugeren har ALL scope
+  const hasAllScope = roleAssignments.some((a) => a.scope === 'ALL')
+
+  if (hasAllScope) {
     return prisma.company.findMany({
       where: {
         organizationId: user.organizationId,
@@ -310,15 +259,18 @@ export async function getAccessibleCompanies(userId: string) {
     })
   }
 
-  // Ellers hent kun de specifikke selskaber — verificer organizationId
-  if (accessibleCompanyIds.size === 0) {
-    return []
-  }
+  // ASSIGNED eller OWN scope: hent kun tildelte selskaber
+  const companyAssignments = await prisma.userCompanyAssignment.findMany({
+    where: { userId },
+    select: { companyId: true },
+  })
+
+  const companyIds = companyAssignments.map((a) => a.companyId)
 
   return prisma.company.findMany({
     where: {
-      id: { in: Array.from(accessibleCompanyIds) },
-      organizationId: user.organizationId, // ← Tenant isolation
+      id: { in: companyIds },
+      organizationId: user.organizationId,
       deletedAt: null,
     },
     orderBy: { name: 'asc' },
@@ -326,78 +278,26 @@ export async function getAccessibleCompanies(userId: string) {
 }
 
 /**
- * Tjekker om en bruger har en specifik rolle.
+ * Tjekker om en bruger har en readonly-rolle (og dermed ikke må mutere data).
  */
-export async function hasRole(
-  userId: string,
-  role: UserRole
-): Promise<boolean> {
-  const roles = await getUserRoleAssignments(userId)
-  return roles.some((r) => r.role === role)
+export async function isReadonlyUser(userId: string): Promise<boolean> {
+  const roleAssignments = await getUserRoleAssignments(userId)
+
+  if (roleAssignments.length === 0) return true
+
+  const hasWriteRole = roleAssignments.some((a) => !READONLY_ROLES.includes(a.role))
+  return !hasWriteRole
 }
 
 /**
- * Tjekker om en bruger har en af de angivne roller.
+ * Kaster en fejl hvis brugeren er en readonly-bruger.
  */
-export async function hasAnyRole(
-  userId: string,
-  roles: UserRole[]
-): Promise<boolean> {
-  const userRoles = await getUserRoleAssignments(userId)
-  return userRoles.some((r) => roles.includes(r.role))
-}
-
-/**
- * Tjekker om brugeren kan redigere (ikke readonly).
- * @deprecated Brug canWrite() i stedet — samme semantik, mere præcist navn.
- */
-export async function canEdit(userId: string): Promise<boolean> {
-  return canWrite(userId)
-}
-
-/**
- * Tjekker om brugeren kan administrere brugere.
- * Kun GROUP_OWNER og GROUP_ADMIN.
- */
-export async function canManageUsers(userId: string): Promise<boolean> {
-  const roles = await getUserRoleAssignments(userId)
-  const adminRoles: UserRole[] = ['GROUP_OWNER', 'GROUP_ADMIN']
-  return roles.some((r) => adminRoles.includes(r.role))
-}
-
-/**
- * Tjekker om brugeren kan tilgå fakturering.
- * Kun GROUP_OWNER.
- */
-export async function canAccessBilling(userId: string): Promise<boolean> {
-  return hasRole(userId, 'GROUP_OWNER')
-}
-
-/**
- * Returnerer det højeste sensitivitetsniveau brugeren har adgang til.
- */
-export async function getMaxSensitivityLevel(
-  userId: string
-): Promise<SensitivityLevel | null> {
-  const roles = await getUserRoleAssignments(userId)
-
-  if (roles.length === 0) {
-    return null
+export async function requireWriteAccess(userId: string): Promise<void> {
+  const readonly = await isReadonlyUser(userId)
+  if (readonly) {
+    throw new Error('Denne handling kræver skriveadgang')
   }
-
-  let maxLevel: SensitivityLevel = 'PUBLIC'
-  let maxIndex = 0
-
-  for (const roleAssignment of roles) {
-    const allowedLevels = ROLE_SENSITIVITY_ACCESS[roleAssignment.role]
-    for (const level of allowedLevels) {
-      const index = SENSITIVITY_HIERARCHY.indexOf(level)
-      if (index > maxIndex) {
-        maxIndex = index
-        maxLevel = level
-      }
-    }
-  }
-
-  return maxLevel
 }
+
+// Re-export sensitivity hierarchy for external use
+export { SENSITIVITY_HIERARCHY, READONLY_ROLES }

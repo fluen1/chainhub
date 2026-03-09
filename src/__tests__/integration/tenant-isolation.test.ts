@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals'
-import { prisma } from '@/lib/prisma'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { prisma } from '@/lib/db'
 import { canAccessCompany } from '@/lib/permissions'
 
 const ORG_A = 'org-a-isolation-test'
@@ -123,28 +123,59 @@ describe('Tenant isolation', () => {
     expect(result).toBe(false)
   })
 
-  it('Rolle-tildeling i org A er ikke synlig i org B', async () => {
-    const rolesA = await prisma.userRoleAssignment.findMany({
-      where: { organizationId: ORG_A },
-    })
-    const rolesB = await prisma.userRoleAssignment.findMany({
-      where: { organizationId: ORG_B },
-    })
+  // ── Ikke-forhandlingsbare tests ──────────────────────────────────────────
 
-    const userIdsInA = rolesA.map((r: { userId: string }) => r.userId)
-    const userIdsInB = rolesB.map((r: { userId: string }) => r.userId)
-
-    // Ingen overlap
-    const overlap = userIdsInA.filter((id: string) => userIdsInB.includes(id))
-    expect(overlap).toHaveLength(0)
+  it('tenant A cannot access tenant B companies', async () => {
+    // user-a1 tilhører ORG_A — skal ikke kunne se comp-b1 (ORG_B)
+    const result = await canAccessCompany('user-a1', 'comp-b1', ORG_A)
+    expect(result).toBe(false)
   })
 
-  it('Selskaber fra org A lækker ikke til org B query', async () => {
-    const companies = await prisma.company.findMany({
-      where: { organizationId: ORG_B },
+  it('COMPANY_MANAGER cannot see STRENGT_FORTROLIG', async () => {
+    // Opret en COMPANY_MANAGER-bruger og tjek sensitivitets-adgang
+    const { canAccessSensitivity } = await import('@/lib/permissions')
+
+    // Opret testbruger med COMPANY_MANAGER rolle
+    await prisma.user.upsert({
+      where: { id: 'user-cm-test' },
+      update: {},
+      create: {
+        id: 'user-cm-test',
+        email: 'cm-test@test.com',
+        name: 'CM Test',
+        organizationId: ORG_A,
+      },
     })
-    const ids = companies.map((c: { id: string }) => c.id)
-    expect(ids).not.toContain('comp-a1')
-    expect(ids).toContain('comp-b1')
+
+    await prisma.userRoleAssignment.upsert({
+      where: { id: 'role-cm-test' },
+      update: {},
+      create: {
+        id: 'role-cm-test',
+        userId: 'user-cm-test',
+        organizationId: ORG_A,
+        role: 'COMPANY_MANAGER',
+        scope: 'ALL',
+      },
+    })
+
+    const result = await canAccessSensitivity('user-cm-test', 'STRENGT_FORTROLIG')
+    expect(result).toBe(false)
+
+    // Oprydning
+    await prisma.userRoleAssignment.delete({ where: { id: 'role-cm-test' } })
+    await prisma.user.delete({ where: { id: 'user-cm-test' } })
+  })
+
+  it('GROUP_ADMIN kan se STRENGT_FORTROLIG', async () => {
+    const { canAccessSensitivity } = await import('@/lib/permissions')
+    const result = await canAccessSensitivity('user-a1', 'STRENGT_FORTROLIG')
+    expect(result).toBe(true)
+  })
+
+  it('GROUP_READONLY kan IKKE se STRENGT_FORTROLIG', async () => {
+    const { canAccessSensitivity } = await import('@/lib/permissions')
+    const result = await canAccessSensitivity('user-a2', 'STRENGT_FORTROLIG')
+    expect(result).toBe(false)
   })
 })

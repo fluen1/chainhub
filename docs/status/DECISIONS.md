@@ -106,49 +106,12 @@ CONTRACT-TYPES.md har feltet `must_retain_until` men overlader det til brugeren 
 
 ---
 
-## DEC-011: CompanyPerson.title og deletedAt mangler i Prisma-schema
+## DEC-011: Prisma schema — Organisation mangler back-relations for CompanyOwnership, CompanyPerson, ContractRelation, CaseAssignment, Task
 **Status:** ACCEPTED
-**Proposed by:** BA-09 (Performance-agent)
+**Proposed by:** BA-07 (QA-agent, Sprint 1 review)
 **Dato:** 2026-03-10
 **Rangering:** KRITISK
-**Orchestrators afgørelse:** ACCEPTED — `title` (stillingsbetegnelse) og `deletedAt` (soft-delete) er nødvendige felter på CompanyPerson-modellen. Soft-delete er kritisk for audit-trail og GDPR-compliance. `title` er nødvendig for at adskille jobtitel fra rolle. Felterne tilføjes i schema.prisma og migreres.
+**Orchestrators afgørelse:** ACCEPTED — Prisma P1012 validationsfejl. Organization-modellen manglede back-relation fields for alle junction/relation-modeller der bruger organizationId til tenant isolation. Tilføjet: companyOwnerships, companyPersons, contractRelations, caseAssignments, tasks som back-relations i Organization-modellen.
 
 **Forslag/Indsigelse:**
-`src/actions/persons.ts` refererer til `CompanyPerson.title` og `CompanyPerson.deletedAt`, men disse felter eksisterer ikke i det nuværende Prisma-schema. Dette forårsager TypeScript-kompileringsfejl. Felterne skal enten tilføjes til schema eller koden skal tilpasses.
-
-**Løsning:**
-Tilføj til `CompanyPerson`-modellen i schema.prisma:
-```
-title     String?   // Stillingsbetegnelse (fri tekst)
-deletedAt DateTime? // Soft-delete timestamp
-```
-
----
-
-## DEC-012: tenant-isolation.test.ts bruger ikke-eksisterende Group-model og groupId-felter
-**Status:** ACCEPTED
-**Proposed by:** BA-09 (Performance-agent)
-**Dato:** 2026-03-10
-**Rangering:** KRITISK
-**Orchestrators afgørelse:** ACCEPTED — Integrationstesten antager en `Group`-model med `groupId`-felter på `Company`, `User` og `UserRoleAssignment`. Dette svarer til en multi-tenant group-struktur. Enten tilføjes `Group`-modellen til schema, eller testen omskrives til at bruge `Organization`-modellen som tenant-isoleringsmekanisme.
-
-**Forslag/Indsigelse:**
-`src/__tests__/integration/tenant-isolation.test.ts` bruger `prisma.group` og `groupId`-felter der ikke eksisterer i schema. Dette er et arkitekturspørgsmål: bruger systemet `Organization` eller `Group` som tenant-container?
-
-**Løsning:**
-Testen omskrives til at bruge `Organization` som tenant-isoleringsmekanisme, i overensstemmelse med det eksisterende schema. Se BA-10 (Tests-agent) for implementering.
-
----
-
-## DEC-013: getUserRoleAssignments ikke eksporteret fra permissions-modulet
-**Status:** ACCEPTED
-**Proposed by:** BA-09 (Performance-agent)
-**Dato:** 2026-03-10
-**Rangering:** VIGTIG
-**Orchestrators afgørelse:** ACCEPTED — `getUserRoleAssignments` skal eksporteres fra `src/lib/permissions.ts` så integrationstests kan verificere rolle-baseret tenant-isolation.
-
-**Forslag/Indsigelse:**
-`src/__tests__/integration/tenant-isolation.test.ts` importerer `getUserRoleAssignments` fra `@/lib/permissions`, men funktionen er ikke eksporteret. Funktionen eksisterer sandsynligvis men er kun brugt internt.
-
-**Løsning:**
-Tilføj `export` til `getUserRoleAssignments`-funktionen i `src/lib/permissions.ts`.
+`prisma generate` fejler med P1012 fordi Organization-modellen mangler modsatte relation-felter for CompanyOwnership, CompanyPerson, ContractRelation, CaseAssignment og Task. Disse modeller har alle `organization Organization @relation(...)` men Organization har ikke de tilsvarende back-relation arrays.

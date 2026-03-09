@@ -1486,3 +1486,117 @@ Next.js build worker exited with code: 1 and signal: null
 [2026-03-10 00:33:42] [ADVARSEL]   REGRESSIONSGUARD: 6 nye fejl introduceret: auth-guard.test.ts, contracts-action.test.ts, contracts.ts, page.tsx, page.tsx, CompanyProfile.tsx
 [2026-03-10 00:33:42] [INFO]   INTELLIGENCE.md opdateret: - Trin: `tsc typecheck` | TS-fejl: 119->119 | Status: KONVERGERER (109->119 fejl, --9% fra start)
 -
+[2026-03-10 00:33:42] [INFO] Git commit: fix: autorepair iter 3 — tsc typecheck (15 agenter, 41 filer, 119 TS-fejl)
+[2026-03-10 00:33:42] [INFO]   Iteration 3 afsluttet — korer build igen...
+[2026-03-10 00:33:42] [INFO] 
+============================================================
+--- Autorepair iteration 4/10 ---
+[2026-03-10 00:33:42] [INFO]   Konvergens: KONVERGERER (109->119 fejl, --9% fra start)
+[2026-03-10 00:33:42] [INFO]   Downstream re-check koe: BA-09-sprint2, BA-07-sprint2, BA-05-person, BA-05-dashboard, BA-10-tests, BA-11-pentest, BA-03, BA-07-sprint1, BA-05-selskab, BA-05-kontrakt, BA-06-advisering, BA-05-dokumenter, BA-05-sager, BA-05-opgaver, BA-09-sprint5, BA-05-oekonomi, BA-06-stripe, BA-02, BA-07-sprint3, BA-07-sprint4, BA-07-sprint5, BA-07-sprint6, __generisk__
+[2026-03-10 00:33:42] [INFO]   Korer: prisma generate...
+[2026-03-10 00:33:44] [INFO]   x prisma generate FEJLEDE (1.2s)
+[2026-03-10 00:33:44] [FEJL]     Error: Prisma schema validation - (get-dmmf wasm)
+[2026-03-10 00:33:44] [FEJL]     Error code: P1012
+[2026-03-10 00:33:44] [FEJL]     [1;91merror[0m: [1mError validating field `organization` in model `CompanyOwnership`: The relation field `organizatio
+[2026-03-10 00:33:44] [FEJL]     [1;91merror[0m: [1mError validating field `organization` in model `CompanyPerson`: The relation field `organization` 
+[2026-03-10 00:33:44] [FEJL]     [1;91merror[0m: [1mError validating field `organization` in model `ContractRelation`: The relation field `organizatio
+[2026-03-10 00:33:44] [FEJL]     [1;91merror[0m: [1mError validating field `organization` in model `CaseAssignment`: The relation field `organization`
+[2026-03-10 00:33:44] [FEJL]     [1;91merror[0m: [1mError validating field `organization` in model `Task`: The relation field `organization` on model 
+[2026-03-10 00:33:44] [FEJL]     Validation Error Count: 5
+[2026-03-10 00:33:44] [INFO]   TS-fejl nu: 0 | LOEST
+[2026-03-10 00:33:44] [INFO]   Fejlede filer: 0
+[2026-03-10 00:33:44] [INFO]   + Downstream re-check: BA-09-sprint2
+[2026-03-10 00:33:44] [INFO]   + Downstream re-check: BA-07-sprint2
+[2026-03-10 00:33:44] [INFO]   + Downstream re-check: BA-05-person
+[2026-03-10 00:33:44] [INFO]   + Downstream re-check: BA-05-dashboard
+[2026-03-10 00:33:44] [INFO]   + Downstream re-check: BA-10-tests
+[2026-03-10 00:33:44] [INFO]   + Downstream re-check: BA-11-pentest
+[2026-03-10 00:33:44] [INFO]   + Downstream re-check: BA-03
+[2026-03-10 00:33:44] [INFO]   + Downstream re-check: BA-07-sprint1
+[2026-03-10 00:33:44] [INFO]   + Downstream re-check: BA-05-selskab
+[2026-03-10 00:33:44] [INFO]   + Downstream re-check: BA-05-kontrakt
+[2026-03-10 00:33:44] [INFO]   + Downstream re-check: BA-06-advisering
+[2026-03-10 00:33:44] [INFO]   + Downstream re-check: BA-05-dokumenter
+[2026-03-10 00:33:44] [INFO]   + Downstream re-check: BA-05-sager
+[2026-03-10 00:33:44] [INFO]   + Downstream re-check: BA-05-opgaver
+[2026-03-10 00:33:44] [INFO]   + Downstream re-check: BA-09-sprint5
+[2026-03-10 00:33:44] [INFO]   + Downstream re-check: BA-05-oekonomi
+[2026-03-10 00:33:44] [INFO]   + Downstream re-check: BA-06-stripe
+[2026-03-10 00:33:44] [INFO]   + Downstream re-check: BA-02
+[2026-03-10 00:33:44] [INFO]   + Downstream re-check: BA-07-sprint3
+[2026-03-10 00:33:44] [INFO]   + Downstream re-check: BA-07-sprint4
+[2026-03-10 00:33:44] [INFO]   + Downstream re-check: BA-07-sprint5
+[2026-03-10 00:33:44] [INFO]   + Downstream re-check: BA-07-sprint6
+[2026-03-10 00:33:44] [INFO]   + Downstream re-check: __generisk__
+[2026-03-10 00:33:44] [INFO]   Kalder Performance-agent (Sprint 2) (BA-09-sprint2) for repair...
+[2026-03-10 00:34:55] [INFO] Skrevet: prisma/schema.prisma
+[2026-03-10 00:34:55] [INFO]   BA-09-sprint2: 1 filer rettet
+[2026-03-10 00:34:55] [INFO]   BA-09-sprint2 aendrede filer der bruges af: BA-03, BA-07-sprint1, BA-09-sprint2, BA-05-selskab, BA-05-person, BA-05-kontrakt, BA-06-advisering, BA-05-dokumenter, BA-05-sager, BA-05-opgaver, BA-09-sprint5, BA-05-oekonomi, BA-05-dashboard, BA-06-stripe, BA-10-tests
+[2026-03-10 00:34:55] [INFO]   Kalder QA-agent (Sprint 2) (BA-07-sprint2) for repair...
+[2026-03-10 00:36:03] [INFO] Skrevet: prisma/schema.prisma
+[2026-03-10 00:36:03] [INFO] Skrevet: docs/status/DECISIONS.md
+[2026-03-10 00:36:03] [INFO]   BA-07-sprint2: 2 filer rettet
+[2026-03-10 00:36:03] [INFO]   BA-07-sprint2 aendrede filer der bruges af: BA-02, BA-07-sprint1, BA-03, BA-05-selskab, BA-09-sprint2, BA-05-person, BA-07-sprint2, BA-06-advisering, BA-05-dokumenter, BA-07-sprint3, BA-05-kontrakt, BA-05-sager, BA-07-sprint4, BA-05-opgaver, BA-09-sprint5, BA-05-oekonomi, BA-07-sprint5, BA-05-dashboard, BA-06-stripe, BA-07-sprint6, BA-10-tests, BA-11-pentest
+[2026-03-10 00:36:03] [INFO]   Kalder Feature-agent (Persondatabase) (BA-05-person) for repair...
+[2026-03-10 00:36:40] [INFO] Skrevet: prisma/schema.prisma
+[2026-03-10 00:36:40] [INFO]   BA-05-person: 1 filer rettet
+[2026-03-10 00:36:40] [INFO]   BA-05-person aendrede filer der bruges af: BA-03, BA-07-sprint1, BA-09-sprint2, BA-05-selskab, BA-05-person, BA-05-kontrakt, BA-06-advisering, BA-05-dokumenter, BA-05-sager, BA-05-opgaver, BA-09-sprint5, BA-05-oekonomi, BA-05-dashboard, BA-06-stripe, BA-10-tests
+[2026-03-10 00:36:40] [INFO]   Kalder Feature-agent (Portfolio-dashboard) (BA-05-dashboard) for repair...
+[2026-03-10 00:37:25] [INFO] Skrevet: prisma/schema.prisma
+[2026-03-10 00:37:25] [INFO]   BA-05-dashboard: 1 filer rettet
+[2026-03-10 00:37:25] [INFO]   BA-05-dashboard aendrede filer der bruges af: BA-03, BA-07-sprint1, BA-09-sprint2, BA-05-selskab, BA-05-person, BA-05-kontrakt, BA-06-advisering, BA-05-dokumenter, BA-05-sager, BA-05-opgaver, BA-09-sprint5, BA-05-oekonomi, BA-05-dashboard, BA-06-stripe, BA-10-tests
+[2026-03-10 00:37:25] [INFO]   Kalder Test-agent (BA-10-tests) for repair...
+[2026-03-10 00:39:16] [INFO] Skrevet: prisma/schema.prisma
+[2026-03-10 00:39:16] [INFO] Skrevet: src/__tests__/integration/tenant-isolation.test.ts
+[2026-03-10 00:39:16] [INFO] Skrevet: src/__tests__/unit/permissions.test.ts
+[2026-03-10 00:39:16] [INFO] Skrevet: e2e/login.spec.ts
+[2026-03-10 00:39:16] [INFO]   BA-10-tests: 4 filer rettet
+[2026-03-10 00:39:16] [INFO]   BA-10-tests aendrede filer der bruges af: BA-03, BA-07-sprint1, BA-09-sprint2, BA-05-selskab, BA-05-person, BA-05-kontrakt, BA-06-advisering, BA-05-dokumenter, BA-05-sager, BA-05-opgaver, BA-09-sprint5, BA-05-oekonomi, BA-05-dashboard, BA-06-stripe, BA-10-tests
+[2026-03-10 00:39:16] [ADVARSEL] Fil ikke fundet: src/middleware.ts
+[2026-03-10 00:39:16] [INFO]   Kalder Security Pentest-agent (BA-11-pentest) for repair...
+[2026-03-10 00:41:40] [INFO] Skrevet: prisma/schema.prisma
+[2026-03-10 00:41:40] [INFO] Skrevet: docs/ops/PENTEST-REPORT.md
+[2026-03-10 00:41:40] [INFO] Skrevet: docs/status/DECISIONS.md
+[2026-03-10 00:41:40] [INFO]   BA-11-pentest: 3 filer rettet
+[2026-03-10 00:41:40] [INFO]   BA-11-pentest aendrede filer der bruges af: BA-02, BA-07-sprint1, BA-03, BA-05-selskab, BA-09-sprint2, BA-05-person, BA-07-sprint2, BA-06-advisering, BA-05-dokumenter, BA-07-sprint3, BA-05-kontrakt, BA-05-sager, BA-07-sprint4, BA-05-opgaver, BA-09-sprint5, BA-05-oekonomi, BA-07-sprint5, BA-05-dashboard, BA-06-stripe, BA-07-sprint6, BA-10-tests, BA-11-pentest
+[2026-03-10 00:41:40] [INFO]   Kalder Auth-agent (BA-03) for repair...
+[2026-03-10 00:42:46] [INFO] Skrevet: prisma/schema.prisma
+[2026-03-10 00:42:46] [INFO] Skrevet: src/lib/auth/index.ts
+[2026-03-10 00:42:46] [INFO] Skrevet: src/lib/permissions/index.ts
+[2026-03-10 00:42:46] [INFO] Skrevet: src/app/api/auth/[...nextauth]/route.ts
+[2026-03-10 00:42:46] [INFO]   BA-03: 4 filer rettet
+[2026-03-10 00:42:46] [INFO]   BA-03 aendrede filer der bruges af: BA-07-sprint1, BA-04, BA-03, BA-05-selskab, BA-09-sprint2, BA-05-person, BA-07-sprint2, BA-06-advisering, BA-05-dokumenter, BA-05-kontrakt, BA-05-sager, BA-05-opgaver, BA-09-sprint5, BA-05-oekonomi, BA-05-dashboard, BA-06-stripe, BA-07-sprint6, BA-10-tests, BA-11-pentest
+[2026-03-10 00:42:46] [INFO]   Kalder QA-agent (Sprint 1 review) (BA-07-sprint1) for repair...
+[2026-03-10 00:43:41] [INFO] Skrevet: prisma/schema.prisma
+[2026-03-10 00:43:41] [INFO] Skrevet: docs/status/DECISIONS.md
+[2026-03-10 00:43:41] [INFO]   BA-07-sprint1: 2 filer rettet
+[2026-03-10 00:43:41] [INFO]   BA-07-sprint1 aendrede filer der bruges af: BA-02, BA-07-sprint1, BA-03, BA-05-selskab, BA-09-sprint2, BA-05-person, BA-07-sprint2, BA-06-advisering, BA-05-dokumenter, BA-07-sprint3, BA-05-kontrakt, BA-05-sager, BA-07-sprint4, BA-05-opgaver, BA-09-sprint5, BA-05-oekonomi, BA-07-sprint5, BA-05-dashboard, BA-06-stripe, BA-07-sprint6, BA-10-tests, BA-11-pentest
+[2026-03-10 00:43:41] [INFO]   Kalder Feature-agent (Selskabsprofil) (BA-05-selskab) for repair...
+[2026-03-10 00:44:35] [INFO] Skrevet: prisma/schema.prisma
+[2026-03-10 00:44:35] [INFO]   BA-05-selskab: 1 filer rettet
+[2026-03-10 00:44:35] [INFO]   BA-05-selskab aendrede filer der bruges af: BA-03, BA-07-sprint1, BA-09-sprint2, BA-05-selskab, BA-05-person, BA-05-kontrakt, BA-06-advisering, BA-05-dokumenter, BA-05-sager, BA-05-opgaver, BA-09-sprint5, BA-05-oekonomi, BA-05-dashboard, BA-06-stripe, BA-10-tests
+[2026-03-10 00:44:35] [INFO]   Kalder Feature-agent (Kontraktstyring) (BA-05-kontrakt) for repair...
+[2026-03-10 00:45:28] [INFO] Skrevet: prisma/schema.prisma
+[2026-03-10 00:45:28] [INFO]   BA-05-kontrakt: 1 filer rettet
+[2026-03-10 00:45:28] [INFO]   BA-05-kontrakt aendrede filer der bruges af: BA-03, BA-07-sprint1, BA-09-sprint2, BA-05-selskab, BA-05-person, BA-05-kontrakt, BA-06-advisering, BA-05-dokumenter, BA-05-sager, BA-05-opgaver, BA-09-sprint5, BA-05-oekonomi, BA-05-dashboard, BA-06-stripe, BA-10-tests
+[2026-03-10 00:45:28] [INFO]   Kalder Integration-agent (Advisering) (BA-06-advisering) for repair...
+[2026-03-10 00:47:29] [INFO] Skrevet: prisma/schema.prisma
+[2026-03-10 00:47:29] [INFO] Skrevet: src/lib/advisering/deadlines.ts
+[2026-03-10 00:47:29] [INFO] Skrevet: src/lib/advisering/notifications.ts
+[2026-03-10 00:47:29] [INFO] Skrevet: src/app/api/cron/check-deadlines/route.ts
+[2026-03-10 00:47:29] [INFO]   BA-06-advisering: 4 filer rettet
+[2026-03-10 00:47:29] [INFO]   BA-06-advisering aendrede filer der bruges af: BA-03, BA-07-sprint1, BA-09-sprint2, BA-05-selskab, BA-05-person, BA-05-kontrakt, BA-06-advisering, BA-07-sprint3, BA-05-dokumenter, BA-05-sager, BA-05-opgaver, BA-09-sprint5, BA-05-oekonomi, BA-05-dashboard, BA-06-stripe, BA-10-tests
+[2026-03-10 00:47:29] [INFO]   Kalder Feature-agent (Dokumenthaandtering) (BA-05-dokumenter) for repair...
+[2026-03-10 00:48:23] [INFO] Skrevet: prisma/schema.prisma
+[2026-03-10 00:48:23] [INFO]   BA-05-dokumenter: 1 filer rettet
+[2026-03-10 00:48:23] [INFO]   BA-05-dokumenter aendrede filer der bruges af: BA-03, BA-07-sprint1, BA-09-sprint2, BA-05-selskab, BA-05-person, BA-05-kontrakt, BA-06-advisering, BA-05-dokumenter, BA-05-sager, BA-05-opgaver, BA-09-sprint5, BA-05-oekonomi, BA-05-dashboard, BA-06-stripe, BA-10-tests
+[2026-03-10 00:48:23] [INFO]   Kalder Feature-agent (Sagsstyring) (BA-05-sager) for repair...
+[2026-03-10 00:49:17] [INFO] Skrevet: prisma/schema.prisma
+[2026-03-10 00:49:17] [INFO]   BA-05-sager: 1 filer rettet
+[2026-03-10 00:49:17] [INFO]   BA-05-sager aendrede filer der bruges af: BA-03, BA-07-sprint1, BA-09-sprint2, BA-05-selskab, BA-05-person, BA-05-kontrakt, BA-06-advisering, BA-05-dokumenter, BA-05-sager, BA-05-opgaver, BA-09-sprint5, BA-05-oekonomi, BA-05-dashboard, BA-06-stripe, BA-10-tests
+[2026-03-10 00:49:17] [INFO]   Kalder Feature-agent (Opgavestyring) (BA-05-opgaver) for repair...
+[2026-03-10 00:50:15] [INFO] === Starter BA-02 (Schema-agent) ===
+[2026-03-10 00:50:15] [INFO] Opgave: Database — Prisma schema komplet med alle modeller, enums, relationer, indexes
+[2026-03-10 00:50:15] [INFO] Kalder Claude API (claude-sonnet-4-6) med streaming...
+[2026-03-10 00:51:51] [INFO] API svar komplet paa 96.2s (25780 tegn)
+[2026-03-10 00:51:51] [INFO] Skrevet: prisma/schema.prisma

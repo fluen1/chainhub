@@ -5,13 +5,13 @@ import {
   sendAutoRenewalWarning,
   sendDeadlineReminder,
 } from '@/lib/reminders/email'
-import { differenceInDays, addDays, subDays, startOfDay } from 'date-fns'
+import { differenceInDays, addDays, startOfDay } from 'date-fns'
 
 // Adviserings-intervaller for faste kontrakter
 const FIXED_CONTRACT_REMINDER_DAYS = [90, 30, 7] as const
 
 // System-typer med auto-renewal
-const AUTO_RENEWAL_TYPES = ['LEVERANDOERKONTRAKT'] as const
+const AUTO_RENEWAL_TYPES = ['LEVERANDØRKONTRAKT'] as const
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   // Validér CRON_SECRET
@@ -98,65 +98,43 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
               systemType: contract.systemType,
               expiryDate: contract.expiryDate,
               companyName: contract.company.name,
-              organizationName: contract.organization.name,
             },
             daysUntilExpiry,
-            reminderType,
             recipients,
+            organizationName: contract.organization.name,
           })
 
-          // Markér som sendt i reminder-tabellen
-          await prisma.reminder.upsert({
-            where: {
-              // Vi bruger en kombination der unikt identificerer denne reminder
-              // Prøv at finde en eksisterende unsent record
-              id: (
-                await prisma.reminder.findFirst({
-                  where: {
-                    contractId: contract.id,
-                    organizationId: contract.organizationId,
-                    reminderType,
-                    sentAt: null,
-                  },
-                  select: { id: true },
-                })
-              )?.id ?? 'non-existent-id',
-            },
-            update: {
-              sentAt: now,
-            },
-            create: {
+          // Registrér at reminder er sendt
+          await prisma.contractReminder.create({
+            data: {
               organizationId: contract.organizationId,
               contractId: contract.id,
               reminderType,
-              triggerDate: subDays(contract.expiryDate, days),
+              scheduledFor: today,
               sentAt: now,
-              recipientIds: recipients.map((r) => r.id),
             },
           })
 
           sent++
-        } catch (emailError) {
-          console.error(
-            `[Cron] Fejl ved ${reminderType} for kontrakt ${contract.id}:`,
-            emailError
-          )
+        } catch (err) {
+          console.error(`Fejl ved afsendelse af reminder for kontrakt ${contract.id}:`, err)
           errors++
         }
       }
     }
 
-    // ==================== 2. LØBENDE KONTRAKTER ====================
-    // Kontrakter uden udløbsdato — advis notice_period_days + 30 dage i forvejen
-    const ongoingContracts = await prisma.contract.findMany({
+    // ==================== 2. AUTO-RENEWAL KONTRAKTER ====================
+    // Kontrakter med auto-renewal der udløber inden for 30 dage
+    const autoRenewalContracts = await prisma.contract.findMany({
       where: {
         deletedAt: null,
-        expiryDate: null,
-        noticePeriodDays: {
+        autoRenewal: true,
+        expiryDate: {
           not: null,
-          gte: 1,
+          gte: today,
+          lte: addDays(today, 30),
         },
-        status: { in: ['AKTIV'] },
+        status: 'AKTIV',
       },
       include: {
         organization: {
@@ -167,137 +145,27 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         },
         reminders: {
           where: {
-            reminderType: 'ONGOING_NOTICE',
+            reminderType: 'AUTO_RENEWAL',
+            sentAt: { not: null },
           },
           select: {
             reminderType: true,
             sentAt: true,
           },
-          orderBy: {
-            createdAt: 'desc',
-          },
-          take: 1,
-        },
-      },
-    })
-
-    for (const contract of ongoingContracts) {
-      if (!contract.noticePeriodDays) continue
-
-      processed++
-
-      const advanceDays = contract.noticePeriodDays + 30
-
-      // Bestem om vi skal sende:
-      // 1. Aldrig sendt → send nu
-      // 2. Sidst sendt for mere end 365 dage siden → send igen
-      const lastReminder = contract.reminders[0]
-      let shouldSend = false
-
-      if (!lastReminder || !lastReminder.sentAt) {
-        shouldSend = true
-      } else {
-        const daysSinceLast = differenceInDays(now, lastReminder.sentAt)
-        shouldSend = daysSinceLast >= 365
-      }
-
-      if (!shouldSend) continue
-
-      const recipients = await getRecipients(
-        contract.organizationId,
-        contract.reminderRecipients
-      )
-
-      if (recipients.length === 0) continue
-
-      try {
-        await sendContractReminder({
-          contract: {
-            id: contract.id,
-            displayName: contract.displayName,
-            systemType: contract.systemType,
-            expiryDate: null,
-            companyName: contract.company.name,
-            organizationName: contract.organization.name,
-          },
-          daysUntilExpiry: null,
-          reminderType: 'ONGOING_NOTICE',
-          recipients,
-          noticePeriodDays: contract.noticePeriodDays,
-          advanceDays,
-        })
-
-        await prisma.reminder.create({
-          data: {
-            organizationId: contract.organizationId,
-            contractId: contract.id,
-            reminderType: 'ONGOING_NOTICE',
-            triggerDate: now,
-            sentAt: now,
-            recipientIds: recipients.map((r) => r.id),
-          },
-        })
-
-        sent++
-      } catch (emailError) {
-        console.error(
-          `[Cron] Fejl ved ONGOING_NOTICE for kontrakt ${contract.id}:`,
-          emailError
-        )
-        errors++
-      }
-    }
-
-    // ==================== 3. AUTO-RENEWAL ADVARSLER ====================
-    // Leverandørkontrakter med udløbsdato og notice_period
-    const autoRenewalContracts = await prisma.contract.findMany({
-      where: {
-        deletedAt: null,
-        systemType: { in: [...AUTO_RENEWAL_TYPES] },
-        expiryDate: {
-          not: null,
-          gte: today,
-          lte: addDays(today, 120),
-        },
-        noticePeriodDays: {
-          not: null,
-          gte: 1,
-        },
-        status: { in: ['AKTIV'] },
-      },
-      include: {
-        organization: {
-          select: { id: true, name: true },
-        },
-        company: {
-          select: { id: true, name: true },
-        },
-        reminders: {
-          where: {
-            reminderType: 'AUTO_RENEWAL_WARNING',
-            sentAt: { not: null },
-          },
-          select: { reminderType: true },
         },
       },
     })
 
     for (const contract of autoRenewalContracts) {
-      if (!contract.expiryDate || !contract.noticePeriodDays) continue
+      if (!contract.expiryDate) continue
 
       processed++
 
-      const warningDays = contract.noticePeriodDays + 14
-      const daysUntilExpiry = differenceInDays(contract.expiryDate, today)
-
-      // Send kun på det præcise trigger-punkt
-      if (daysUntilExpiry !== warningDays) continue
-
-      // Tjek for duplikat
-      const alreadySent = contract.reminders.some(
-        (r) => r.reminderType === 'AUTO_RENEWAL_WARNING'
-      )
+      // Tjek om auto-renewal reminder allerede er sendt
+      const alreadySent = contract.reminders.length > 0
       if (alreadySent) continue
+
+      const daysUntilExpiry = differenceInDays(contract.expiryDate, today)
 
       const recipients = await getRecipients(
         contract.organizationId,
@@ -313,117 +181,196 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
             displayName: contract.displayName,
             systemType: contract.systemType,
             expiryDate: contract.expiryDate,
+            autoRenewalDays: contract.autoRenewalDays,
             companyName: contract.company.name,
-            organizationName: contract.organization.name,
           },
-          noticePeriodDays: contract.noticePeriodDays,
           daysUntilExpiry,
           recipients,
+          organizationName: contract.organization.name,
         })
 
-        await prisma.reminder.upsert({
-          where: {
-            id: (
-              await prisma.reminder.findFirst({
-                where: {
-                  contractId: contract.id,
-                  organizationId: contract.organizationId,
-                  reminderType: 'AUTO_RENEWAL_WARNING',
-                  sentAt: null,
-                },
-                select: { id: true },
-              })
-            )?.id ?? 'non-existent-id',
-          },
-          update: { sentAt: now },
-          create: {
+        await prisma.contractReminder.create({
+          data: {
             organizationId: contract.organizationId,
             contractId: contract.id,
-            reminderType: 'AUTO_RENEWAL_WARNING',
-            triggerDate: subDays(contract.expiryDate, warningDays),
+            reminderType: 'AUTO_RENEWAL',
+            scheduledFor: today,
             sentAt: now,
-            recipientIds: recipients.map((r) => r.id),
           },
         })
 
         sent++
-      } catch (emailError) {
-        console.error(
-          `[Cron] Fejl ved AUTO_RENEWAL_WARNING for kontrakt ${contract.id}:`,
-          emailError
-        )
+      } catch (err) {
+        console.error(`Fejl ved afsendelse af auto-renewal warning for kontrakt ${contract.id}:`, err)
         errors++
       }
     }
 
-    // ==================== 4. DEADLINE-ADVISERINGER ====================
-    const deadlinesToAdvise = await prisma.deadline.findMany({
+    // ==================== 3. ABSOLUTTE DEADLINES ====================
+    const absoluteDeadlineContracts = await prisma.contract.findMany({
       where: {
         deletedAt: null,
-        completedAt: null,
-        adviseSentAt: null, // Ikke sendt — duplikat-check
-        dueDate: {
+        deadlineType: 'ABSOLUT',
+        absoluteDeadline: {
+          not: null,
           gte: today,
           lte: addDays(today, 30),
+        },
+        status: {
+          in: ['UDKAST', 'TIL_REVIEW', 'TIL_UNDERSKRIFT', 'AKTIV'],
         },
       },
       include: {
         organization: {
           select: { id: true, name: true },
         },
+        company: {
+          select: { id: true, name: true },
+        },
+        reminders: {
+          where: {
+            reminderType: 'ABSOLUT_DEADLINE',
+            sentAt: { not: null },
+          },
+          select: {
+            reminderType: true,
+            sentAt: true,
+          },
+        },
       },
     })
 
-    for (const deadline of deadlinesToAdvise) {
+    for (const contract of absoluteDeadlineContracts) {
+      if (!contract.absoluteDeadline) continue
+
       processed++
 
-      const daysUntilDue = differenceInDays(deadline.dueDate, today)
+      const alreadySent = contract.reminders.length > 0
+      if (alreadySent) continue
 
-      // Send kun hvis vi er inden for advise_days_before
-      if (daysUntilDue > deadline.adviseDaysBefore) continue
+      const daysUntilDeadline = differenceInDays(contract.absoluteDeadline, today)
 
-      const recipients = await getDeadlineRecipients(
-        deadline.organizationId,
-        deadline.assignedTo
+      const recipients = await getRecipients(
+        contract.organizationId,
+        contract.reminderRecipients
       )
 
       if (recipients.length === 0) continue
 
       try {
         await sendDeadlineReminder({
-          deadline: {
-            id: deadline.id,
-            title: deadline.title,
-            dueDate: deadline.dueDate,
-            priority: deadline.priority,
-            organizationName: deadline.organization.name,
+          contract: {
+            id: contract.id,
+            displayName: contract.displayName,
+            systemType: contract.systemType,
+            deadline: contract.absoluteDeadline,
+            deadlineType: 'ABSOLUT',
+            companyName: contract.company.name,
           },
-          daysUntilDue,
+          daysUntilDeadline,
           recipients,
+          organizationName: contract.organization.name,
         })
 
-        // Sæt advise_sent_at — forhindrer duplikater (DEC-031)
-        await prisma.deadline.update({
-          where: {
-            id: deadline.id,
-            organizationId: deadline.organizationId,
+        await prisma.contractReminder.create({
+          data: {
+            organizationId: contract.organizationId,
+            contractId: contract.id,
+            reminderType: 'ABSOLUT_DEADLINE',
+            scheduledFor: today,
+            sentAt: now,
           },
-          data: { adviseSentAt: now },
         })
 
         sent++
-      } catch (emailError) {
-        console.error(
-          `[Cron] Fejl ved deadline-advis for ${deadline.id}:`,
-          emailError
-        )
+      } catch (err) {
+        console.error(`Fejl ved afsendelse af deadline reminder for kontrakt ${contract.id}:`, err)
         errors++
       }
     }
 
-    console.log(
-      `[Cron] check-deadlines afsluttet: processed=${processed}, sent=${sent}, errors=${errors}`
-    )
+    // ==================== 4. OPERATIONELLE DEADLINES ====================
+    const operationalDeadlineContracts = await prisma.contract.findMany({
+      where: {
+        deletedAt: null,
+        deadlineType: 'OPERATIONEL',
+        operationalDeadline: {
+          not: null,
+          gte: today,
+          lte: addDays(today, 14),
+        },
+        status: {
+          in: ['UDKAST', 'TIL_REVIEW', 'TIL_UNDERSKRIFT', 'AKTIV'],
+        },
+      },
+      include: {
+        organization: {
+          select: { id: true, name: true },
+        },
+        company: {
+          select: { id: true, name: true },
+        },
+        reminders: {
+          where: {
+            reminderType: 'OPERATIONEL_DEADLINE',
+            sentAt: { not: null },
+          },
+          select: {
+            reminderType: true,
+            sentAt: true,
+          },
+        },
+      },
+    })
+
+    for (const contract of operationalDeadlineContracts) {
+      if (!contract.operationalDeadline) continue
+
+      processed++
+
+      const alreadySent = contract.reminders.length > 0
+      if (alreadySent) continue
+
+      const daysUntilDeadline = differenceInDays(contract.operationalDeadline, today)
+
+      const recipients = await getRecipients(
+        contract.organizationId,
+        contract.reminderRecipients
+      )
+
+      if (recipients.length === 0) continue
+
+      try {
+        await sendDeadlineReminder({
+          contract: {
+            id: contract.id,
+            displayName: contract.displayName,
+            systemType: contract.systemType,
+            deadline: contract.operationalDeadline,
+            deadlineType: 'OPERATIONEL',
+            companyName: contract.company.name,
+          },
+          daysUntilDeadline,
+          recipients,
+          organizationName: contract.organization.name,
+        })
+
+        await prisma.contractReminder.create({
+          data: {
+            organizationId: contract.organizationId,
+            contractId: contract.id,
+            reminderType: 'OPERATIONEL_DEADLINE',
+            scheduledFor: today,
+            sentAt: now,
+          },
+        })
+
+        sent++
+      } catch (err) {
+        console.error(`Fejl ved afsendelse af operationel deadline reminder for kontrakt ${contract.id}:`, err)
+        errors++
+      }
+    }
 
     return NextResponse.json({
       success: true,
@@ -432,83 +379,47 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       errors,
       timestamp: now.toISOString(),
     })
-  } catch (error) {
-    console.error('[Cron] check-deadlines fatal fejl:', error)
+  } catch (err) {
+    console.error('Kritisk fejl i check-deadlines cron:', err)
     return NextResponse.json(
       {
-        error: 'Intern fejl ved behandling af deadlines',
-        details: error instanceof Error ? error.message : 'Ukendt fejl',
+        error: 'Intern serverfejl',
+        processed,
+        sent,
+        errors,
       },
       { status: 500 }
     )
   }
 }
 
-// ==================== HJÆLPEFUNKTIONER ====================
-
-interface Recipient {
-  id: string
-  email: string
-  name: string
-}
+// ==================== HELPERS ====================
 
 async function getRecipients(
   organizationId: string,
-  reminderRecipientIds: string[]
-): Promise<Recipient[]> {
-  // Tomme reminder_recipients → brug GROUP_OWNER og GROUP_ADMIN
-  if (reminderRecipientIds.length === 0) {
-    const assignments = await prisma.userRoleAssignment.findMany({
-      where: {
-        organizationId,
-        role: { in: ['GROUP_OWNER', 'GROUP_ADMIN'] },
-      },
-      include: {
-        user: {
-          select: { id: true, email: true, name: true, deletedAt: true },
-        },
-      },
-    })
-
-    return assignments
-      .filter((a) => a.user.deletedAt === null)
-      .map((a) => ({
-        id: a.user.id,
-        email: a.user.email,
-        name: a.user.name,
-      }))
+  contractRecipients: string[]
+): Promise<string[]> {
+  // Hvis kontrakten har specifikke modtagere, brug dem
+  if (contractRecipients.length > 0) {
+    return contractRecipients
   }
 
-  // Specificerede modtagere
-  const users = await prisma.user.findMany({
+  // Ellers hent organisation-niveau modtagere (GROUP_OWNER + GROUP_ADMIN + GROUP_LEGAL)
+  const users = await prisma.organizationUser.findMany({
     where: {
-      id: { in: reminderRecipientIds },
       organizationId,
-      deletedAt: null,
+      role: {
+        in: ['GROUP_OWNER', 'GROUP_ADMIN', 'GROUP_LEGAL'],
+      },
     },
-    select: { id: true, email: true, name: true },
+    select: {
+      user: {
+        select: { email: true },
+      },
+    },
   })
 
   return users
-}
-
-async function getDeadlineRecipients(
-  organizationId: string,
-  assignedTo: string | null
-): Promise<Recipient[]> {
-  if (assignedTo) {
-    const user = await prisma.user.findFirst({
-      where: {
-        id: assignedTo,
-        organizationId,
-        deletedAt: null,
-      },
-      select: { id: true, email: true, name: true },
-    })
-
-    if (user) return [user]
-  }
-
-  // Fallback: GROUP_OWNER og GROUP_ADMIN
-  return getRecipients(organizationId, [])
+    .map((u) => u.user.email)
+    .filter((email): email is string => Boolean(email))
 }
