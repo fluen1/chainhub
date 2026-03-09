@@ -45,7 +45,7 @@ describe('unauthenticated user cannot access dashboard', () => {
   })
 
   it('createCompany afviser uautoriseret bruger', async () => {
-    const result = await createCompany({ name: 'Test ApS' })
+    const result = await createCompany({ name: 'Test ApS', status: 'aktiv' })
     expect(result.error).toBe('Ikke autoriseret')
     expect(mockPrisma.company.create).not.toHaveBeenCalled()
   })
@@ -76,7 +76,7 @@ describe('Prisma aldrig kaldt ved uautoriseret adgang', () => {
   it('ingen DB-kald ved manglende session', async () => {
     await listCompanies()
     await getCompany({ companyId: 'test' })
-    await createCompany({ name: 'Test' })
+    await createCompany({ name: 'Test', status: 'aktiv' })
     await listContracts({})
 
     expect(mockPrisma.company.findMany).not.toHaveBeenCalled()
