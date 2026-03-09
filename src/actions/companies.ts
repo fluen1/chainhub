@@ -2,7 +2,7 @@
 
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { canAccessCompany } from '@/lib/permissions'
+import { canAccessCompany, canWrite } from '@/lib/permissions'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import {
@@ -38,6 +38,10 @@ export async function createCompany(
   const session = await auth()
   if (!session?.user) return { error: 'Ikke autoriseret' }
 
+  // SIKKERHED (PENTEST-001 / DEC-047): Readonly-brugere må ikke oprette
+  const hasWriteAccess = await canWrite(session.user.id)
+  if (!hasWriteAccess) return { error: 'Du har ikke skriveadgang' }
+
   const parsed = createCompanySchema.safeParse(input)
   if (!parsed.success) {
     const firstError = parsed.error.errors[0]
@@ -64,7 +68,6 @@ export async function createCompany(
       },
     })
 
-    // Audit log
     await prisma.auditLog.create({
       data: {
         organizationId: session.user.organizationId,
@@ -129,7 +132,6 @@ export async function getCompany(
 
     if (!company) return { error: 'Selskabet blev ikke fundet' }
 
-    // Audit log — VIEW
     await prisma.auditLog.create({
       data: {
         organizationId: session.user.organizationId,
@@ -183,6 +185,10 @@ export async function updateCompany(
   const session = await auth()
   if (!session?.user) return { error: 'Ikke autoriseret' }
 
+  // SIKKERHED (PENTEST-001 / DEC-047): Readonly-brugere må ikke opdatere
+  const hasWriteAccess = await canWrite(session.user.id)
+  if (!hasWriteAccess) return { error: 'Du har ikke skriveadgang' }
+
   const parsed = updateCompanySchema.safeParse(input)
   if (!parsed.success) {
     const firstError = parsed.error.errors[0]
@@ -195,7 +201,6 @@ export async function updateCompany(
   if (!hasAccess) return { error: 'Du har ikke adgang til dette selskab' }
 
   try {
-    // Hent eksisterende data til audit
     const existing = await prisma.company.findUnique({
       where: {
         id: companyId,
@@ -208,7 +213,7 @@ export async function updateCompany(
     const company = await prisma.company.update({
       where: {
         id: companyId,
-        organizationId: session.user.organizationId,
+        organizationId: session.user.organizationId, // ← SIKKERHED: DEC-048
       },
       data: {
         ...updateData,
@@ -252,6 +257,10 @@ export async function deleteCompany(
   const session = await auth()
   if (!session?.user) return { error: 'Ikke autoriseret' }
 
+  // SIKKERHED (PENTEST-001 / DEC-047): Readonly-brugere må ikke slette
+  const hasWriteAccess = await canWrite(session.user.id)
+  if (!hasWriteAccess) return { error: 'Du har ikke skriveadgang' }
+
   const parsed = deleteCompanySchema.safeParse(input)
   if (!parsed.success) return { error: 'Ugyldigt selskabs-ID' }
 
@@ -264,7 +273,7 @@ export async function deleteCompany(
     await prisma.company.update({
       where: {
         id: companyId,
-        organizationId: session.user.organizationId,
+        organizationId: session.user.organizationId, // ← SIKKERHED: DEC-048
       },
       data: { deletedAt: new Date() },
     })
@@ -295,6 +304,10 @@ export async function createOwnership(
   const session = await auth()
   if (!session?.user) return { error: 'Ikke autoriseret' }
 
+  // SIKKERHED (PENTEST-001 / DEC-047)
+  const hasWriteAccess = await canWrite(session.user.id)
+  if (!hasWriteAccess) return { error: 'Du har ikke skriveadgang' }
+
   const parsed = createOwnershipSchema.safeParse(input)
   if (!parsed.success) {
     const firstError = parsed.error.errors[0]
@@ -319,7 +332,6 @@ export async function createOwnership(
     if (!person) return { error: 'Person ikke fundet i din organisation' }
   }
 
-  // Tjek at total ejerandel ikke overstiger 100%
   try {
     const existingOwnerships = await prisma.ownership.findMany({
       where: {
@@ -365,6 +377,10 @@ export async function updateOwnership(
   const session = await auth()
   if (!session?.user) return { error: 'Ikke autoriseret' }
 
+  // SIKKERHED (PENTEST-001 / DEC-047)
+  const hasWriteAccess = await canWrite(session.user.id)
+  if (!hasWriteAccess) return { error: 'Du har ikke skriveadgang' }
+
   const parsed = updateOwnershipSchema.safeParse(input)
   if (!parsed.success) {
     const firstError = parsed.error.errors[0]
@@ -386,7 +402,6 @@ export async function updateOwnership(
     })
     if (!existing) return { error: 'Ejerskab ikke fundet' }
 
-    // Tjek total ejerandel ved opdatering
     if (ownershipPct !== undefined) {
       const otherOwnerships = await prisma.ownership.findMany({
         where: {
@@ -404,7 +419,10 @@ export async function updateOwnership(
     }
 
     const updated = await prisma.ownership.update({
-      where: { id: ownershipId },
+      where: {
+        id: ownershipId,
+        organizationId: session.user.organizationId, // ← SIKKERHED: DEC-048 / PENTEST-006
+      },
       data: {
         ownershipPct: ownershipPct ?? undefined,
         shareClass: shareClass !== undefined ? shareClass || null : undefined,
@@ -431,6 +449,10 @@ export async function deleteOwnership(
   const session = await auth()
   if (!session?.user) return { error: 'Ikke autoriseret' }
 
+  // SIKKERHED (PENTEST-001 / DEC-047)
+  const hasWriteAccess = await canWrite(session.user.id)
+  if (!hasWriteAccess) return { error: 'Du har ikke skriveadgang' }
+
   const parsed = deleteOwnershipSchema.safeParse(input)
   if (!parsed.success) return { error: 'Ugyldigt input' }
 
@@ -450,7 +472,10 @@ export async function deleteOwnership(
     if (!existing) return { error: 'Ejerskab ikke fundet' }
 
     await prisma.ownership.delete({
-      where: { id: ownershipId },
+      where: {
+        id: ownershipId,
+        organizationId: session.user.organizationId, // ← SIKKERHED: DEC-048 / PENTEST-006
+      },
     })
 
     revalidatePath(`/companies/${companyId}`)
@@ -502,6 +527,10 @@ export async function createCompanyPerson(
   const session = await auth()
   if (!session?.user) return { error: 'Ikke autoriseret' }
 
+  // SIKKERHED (PENTEST-001 / DEC-047)
+  const hasWriteAccess = await canWrite(session.user.id)
+  if (!hasWriteAccess) return { error: 'Du har ikke skriveadgang' }
+
   const parsed = createCompanyPersonSchema.safeParse(input)
   if (!parsed.success) {
     const firstError = parsed.error.errors[0]
@@ -514,7 +543,6 @@ export async function createCompanyPerson(
   const hasAccess = await canAccessCompany(session.user.id, companyId)
   if (!hasAccess) return { error: 'Du har ikke adgang til dette selskab' }
 
-  // Validér at person tilhører organisationen
   const person = await prisma.person.findUnique({
     where: {
       id: personId,
@@ -554,6 +582,10 @@ export async function updateCompanyPerson(
   const session = await auth()
   if (!session?.user) return { error: 'Ikke autoriseret' }
 
+  // SIKKERHED (PENTEST-001 / DEC-047)
+  const hasWriteAccess = await canWrite(session.user.id)
+  if (!hasWriteAccess) return { error: 'Du har ikke skriveadgang' }
+
   const parsed = updateCompanyPersonSchema.safeParse(input)
   if (!parsed.success) {
     const firstError = parsed.error.errors[0]
@@ -577,7 +609,10 @@ export async function updateCompanyPerson(
     if (!existing) return { error: 'Tilknytning ikke fundet' }
 
     const updated = await prisma.companyPerson.update({
-      where: { id: companyPersonId },
+      where: {
+        id: companyPersonId,
+        organizationId: session.user.organizationId, // ← SIKKERHED: DEC-048 / PENTEST-006
+      },
       data: {
         role: role ?? undefined,
         employmentType: employmentType !== undefined ? employmentType || null : undefined,
@@ -608,6 +643,10 @@ export async function deleteCompanyPerson(
   const session = await auth()
   if (!session?.user) return { error: 'Ikke autoriseret' }
 
+  // SIKKERHED (PENTEST-001 / DEC-047)
+  const hasWriteAccess = await canWrite(session.user.id)
+  if (!hasWriteAccess) return { error: 'Du har ikke skriveadgang' }
+
   const parsed = deleteCompanyPersonSchema.safeParse(input)
   if (!parsed.success) return { error: 'Ugyldigt input' }
 
@@ -627,7 +666,10 @@ export async function deleteCompanyPerson(
     if (!existing) return { error: 'Tilknytning ikke fundet' }
 
     await prisma.companyPerson.delete({
-      where: { id: companyPersonId },
+      where: {
+        id: companyPersonId,
+        organizationId: session.user.organizationId, // ← SIKKERHED: DEC-048 / PENTEST-006
+      },
     })
 
     revalidatePath(`/companies/${companyId}`)
