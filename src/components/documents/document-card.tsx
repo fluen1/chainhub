@@ -86,7 +86,7 @@ export function DocumentCard({ document, onDeleted }: DocumentCardProps) {
       toast.error(result.error)
       return
     }
-    window.open(result.data.downloadUrl, '_blank')
+    window.open(result.data!.downloadUrl, '_blank')
   }
 
   const handleDelete = async () => {

@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import { OutlookImport } from '@/components/persons/OutlookImport'
+import OutlookImport from '@/components/persons/OutlookImport'
 
 export const metadata: Metadata = {
   title: 'Importér fra Outlook | ChainHub',

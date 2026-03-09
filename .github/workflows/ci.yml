@@ -39,6 +39,13 @@ jobs:
       MICROSOFT_TENANT_ID: "ci-mock-tenant-id"
       STRIPE_SECRET_KEY: "sk_test_mock"
       STRIPE_WEBHOOK_SECRET: "whsec_mock_webhook_secret_for_ci_testing"
+      CRON_SECRET: "ci-mock-cron-secret-for-testing-only"
+      # Sentry deaktiveret i CI (source maps kræver release-build)
+      SENTRY_DSN: ""
+      NEXT_PUBLIC_SENTRY_DSN: ""
+      # Rate limiting deaktiveret i CI
+      UPSTASH_REDIS_REST_URL: ""
+      UPSTASH_REDIS_REST_TOKEN: ""
 
     steps:
       - name: Checkout repository
@@ -73,8 +80,8 @@ jobs:
         env:
           CI: true
 
-      - name: Run unit tests
-        run: npm run test -- --reporter=verbose
+      - name: Run unit tests with coverage
+        run: npm run test -- --reporter=verbose --coverage
         env:
           CI: true
 
@@ -119,9 +126,11 @@ jobs:
           MICROSOFT_CLIENT_ID: "build-mock-client-id"
           MICROSOFT_CLIENT_SECRET: "build-mock-client-secret"
           MICROSOFT_TENANT_ID: "build-mock-tenant-id"
-          # Sentry source maps (valgfrit i CI — brug kun ved release-builds)
+          CRON_SECRET: "build-mock-cron-secret"
+          # Sentry source maps uploades kun ved release-builds (ikke PR builds)
           SENTRY_DSN: ""
           NEXT_PUBLIC_SENTRY_DSN: ""
+          SENTRY_AUTH_TOKEN: ""
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -148,11 +157,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run npm audit
+      - name: Run npm audit (high + critical)
         run: npm audit --audit-level=high
+        # continue-on-error tillader CI at rapportere men ikke blokere
+        # Skift til false når alle audit-issues er løst
         continue-on-error: true
 
-      - name: Check for secrets in code
+      - name: Check for secrets in code (TruffleHog)
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
@@ -160,3 +171,17 @@ jobs:
           head: HEAD
           extra_args: --only-verified
         continue-on-error: true
+
+      - name: Check .env.example har ingen rigtige secrets
+        run: |
+          # Fejl hvis .env.example indeholder noget der ligner en rigtig Stripe key
+          if grep -E "sk_live_[a-zA-Z0-9]+" .env.example; then
+            echo "❌ FEJL: .env.example indeholder hvad der ligner en rigtig Stripe secret key!"
+            exit 1
+          fi
+          # Tjek for rigtige Sentry DSN patterns
+          if grep -E "https://[a-f0-9]+@o[0-9]+\.ingest\.sentry\.io/[0-9]+" .env.example; then
+            echo "❌ FEJL: .env.example indeholder hvad der ligner en rigtig Sentry DSN!"
+            exit 1
+          fi
+          echo "✅ .env.example ser ren ud for produktions-secrets"

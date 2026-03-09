@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import { History, FileText, Users, Pencil, Plus, Trash2, Eye } from 'lucide-react'
-import { getCompanyActivityLog } from '@/actions/companies'
+import { getActivityLog as getCompanyActivityLog } from '@/actions/companies'
 import { formatDistanceToNow } from 'date-fns'
 import { da } from 'date-fns/locale'
 
@@ -40,9 +40,9 @@ export function ActivityLog({ companyId }: ActivityLogProps) {
 
   useEffect(() => {
     async function loadActivities() {
-      const result = await getCompanyActivityLog(companyId, 20)
+      const result = await getCompanyActivityLog({ companyId, limit: 20, offset: 0 })
       if (result.data) {
-        setActivities(result.data)
+        setActivities(result.data.entries)
       }
       setIsLoading(false)
     }

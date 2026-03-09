@@ -35,5 +35,5 @@ async function CasePageServer({ caseId }: { caseId: string }) {
     )
   }
 
-  return <CaseDetailClient caseData={result.data} />
+  return <CaseDetailClient caseData={result.data!} />
 }

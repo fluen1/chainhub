@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server'
 
 export async function GET(
   _request: Request,
-  { params }: { params: { personId: string } }
+  { params }: { params: { id: string } }
 ) {
   const session = await auth()
   if (!session?.user) {
@@ -16,7 +16,7 @@ export async function GET(
     // Bekræft at person tilhører organisationen
     const person = await prisma.person.findUnique({
       where: {
-        id: params.personId,
+        id: params.id,
         organizationId: session.user.organizationId,
         deletedAt: null,
       },
@@ -32,7 +32,7 @@ export async function GET(
     // Hent alle selskaber personen er tilknyttet
     const companyPersons = await prisma.companyPerson.findMany({
       where: {
-        personId: params.personId,
+        id: params.id,
         organizationId: session.user.organizationId,
       },
       include: {
@@ -59,7 +59,7 @@ export async function GET(
     const accessible = accessChecks
       .filter(({ hasAccess }) => hasAccess)
       .map(({ cp }) => ({
-        companyPersonId: cp.id,
+        companyid: cp.id,
         companyId: cp.companyId,
         companyName: cp.company.name,
         companyCvr: cp.company.cvr,
@@ -72,7 +72,7 @@ export async function GET(
 
     return NextResponse.json({ companies: accessible })
   } catch (error) {
-    console.error('GET /api/persons/[personId]/companies error:', error)
+    console.error('GET /api/persons/[id]/companies error:', error)
     return NextResponse.json(
       { error: 'Selskaberne kunne ikke hentes' },
       { status: 500 }

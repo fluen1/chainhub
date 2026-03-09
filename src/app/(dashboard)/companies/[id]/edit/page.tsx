@@ -7,15 +7,15 @@ interface PageProps {
 }
 
 export async function generateMetadata({ params }: PageProps) {
-  const result = await getCompany(params.id)
+  const result = await getCompany({ companyId: params.id })
   if (result.error) {
     return { title: 'Selskab ikke fundet | ChainHub' }
   }
-  return { title: `Rediger ${result.data.name} | ChainHub` }
+  return { title: `Rediger ${result.data!.name} | ChainHub` }
 }
 
 export default async function EditCompanyPage({ params }: PageProps) {
-  const result = await getCompany(params.id)
+  const result = await getCompany({ companyId: params.id })
 
   if (result.error) {
     return notFound()
@@ -23,7 +23,7 @@ export default async function EditCompanyPage({ params }: PageProps) {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <CompanyForm company={result.data} mode="edit" />
+      <CompanyForm company={result.data!} mode="edit" />
     </div>
   )
 }

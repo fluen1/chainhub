@@ -44,7 +44,7 @@ export default function CreatePersonButton() {
         toast.error(result.error)
       } else {
         toast.success(
-          `${result.data.firstName} ${result.data.lastName} er oprettet`
+          `${result.data!.firstName} ${result.data!.lastName} er oprettet`
         )
         setIsOpen(false)
         setForm({ firstName: '', lastName: '', email: '', phone: '', notes: '' })

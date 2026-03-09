@@ -671,3 +671,5 @@ export async function getPersonsForCompany(
     return { error: 'Personerne kunne ikke hentes — prøv igen' }
   }
 }
+
+export const linkPersonToCompany = addPersonToCompany

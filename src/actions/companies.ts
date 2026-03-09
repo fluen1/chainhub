@@ -132,6 +132,8 @@ export async function getCompany(
 
     if (!company) return { error: 'Selskabet blev ikke fundet' }
 
+    // Cast: the query returns caseCompanies count which matches CompanyWithRelations
+
     await prisma.auditLog.create({
       data: {
         organizationId: session.user.organizationId,

@@ -168,7 +168,7 @@ export function ContractForm({ companies, initialData, isEdit = false }: Contrac
         }
 
         toast.success('Kontrakten blev oprettet')
-        router.push(`/contracts/${result.data.id}`)
+        router.push(`/contracts/${result.data!.id}`)
       }
     } catch (error) {
       toast.error('Noget gik galt — prøv igen')

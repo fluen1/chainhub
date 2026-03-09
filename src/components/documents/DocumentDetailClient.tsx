@@ -76,8 +76,8 @@ export function DocumentDetailClient({ document: initialDoc }: DocumentDetailCli
       }
       // Åbn download i ny fane
       const a = window.document.createElement('a')
-      a.href = result.data.url
-      a.download = result.data.fileName
+      a.href = result.data!.url
+      a.download = result.data!.fileName
       a.target = '_blank'
       a.rel = 'noopener noreferrer'
       a.click()
@@ -99,7 +99,7 @@ export function DocumentDetailClient({ document: initialDoc }: DocumentDetailCli
         toast.error(result.error)
         return
       }
-      setPreviewUrl(result.data.url)
+      setPreviewUrl(result.data!.url)
     } finally {
       setIsLoadingPreview(false)
     }

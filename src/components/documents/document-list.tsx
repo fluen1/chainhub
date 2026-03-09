@@ -79,7 +79,7 @@ export function DocumentList({ companyId, caseId, contractId }: DocumentListProp
     if (result.error) {
       setError(result.error)
     } else {
-      setDocuments(result.data)
+      setDocuments(result.data!)
     }
     setLoading(false)
   }

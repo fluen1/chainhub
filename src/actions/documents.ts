@@ -240,7 +240,7 @@ export async function confirmDocumentUpload(
 // ==================== LIST DOKUMENTER ====================
 
 export async function listDocuments(
-  input: z.infer<typeof listDocumentsSchema> = {}
+  input: z.input<typeof listDocumentsSchema> = {}
 ): Promise<ActionResult<DocumentListResult>> {
   const session = await auth()
   if (!session?.user) return { error: 'Ikke autoriseret' }

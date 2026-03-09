@@ -577,8 +577,8 @@ export async function updateCase(
         sensitivity: updated.sensitivity,
         changes:
           sensitiveLevels.includes(existing.sensitivity) && Object.keys(changes).length > 0
-            ? changes
-            : null,
+            ? (JSON.parse(JSON.stringify(changes)) as any)
+            : undefined,
       },
     })
 

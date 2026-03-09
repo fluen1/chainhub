@@ -543,7 +543,7 @@ async function main() {
       resourceType: 'contract',
       resourceId: contractEjeraftale.id,
       sensitivity: SensitivityLevel.STRENGT_FORTROLIG,
-      changes: null,
+      changes: undefined,
       ipAddress: '192.168.1.1',
     },
   });

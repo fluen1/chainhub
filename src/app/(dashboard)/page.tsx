@@ -67,5 +67,5 @@ async function PortfolioDashboardLoader({
     )
   }
 
-  return <PortfolioDashboard data={result.data} filters={filters} />
+  return <PortfolioDashboard data={result.data!} filters={filters} />
 }

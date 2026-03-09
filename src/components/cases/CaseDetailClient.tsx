@@ -213,7 +213,7 @@ export function CaseDetailClient({ caseData }: CaseDetailClientProps) {
         </TabsContent>
 
         <TabsContent value="opgaver" className="mt-4">
-          <CaseTaskList caseId={caseData.id} initialTasks={caseData.tasks} />
+          <CaseTaskList caseId={caseData.id} initialTasks={caseData.tasks as any} />
         </TabsContent>
 
         <TabsContent value="frister" className="mt-4">

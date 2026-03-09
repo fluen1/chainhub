@@ -11,6 +11,7 @@ export type ModuleType =
   | 'finance'
   | 'settings'
   | 'user_management'
+  | 'dashboard'
 
 // Sensitivitets-hierarki (lavest til højest)
 const SENSITIVITY_HIERARCHY: SensitivityLevel[] = [
@@ -45,6 +46,7 @@ const ROLE_MODULE_ACCESS: Record<UserRole, ModuleType[]> = {
     'finance',
     'settings',
     'user_management',
+    'dashboard',
   ],
   GROUP_ADMIN: [
     'companies',
@@ -56,6 +58,7 @@ const ROLE_MODULE_ACCESS: Record<UserRole, ModuleType[]> = {
     'finance',
     'settings',
     'user_management',
+    'dashboard',
   ],
   GROUP_LEGAL: [
     'companies',
@@ -65,6 +68,7 @@ const ROLE_MODULE_ACCESS: Record<UserRole, ModuleType[]> = {
     'persons',
     'documents',
     'settings',
+    'dashboard',
   ],
   GROUP_FINANCE: [
     'companies',
@@ -73,6 +77,7 @@ const ROLE_MODULE_ACCESS: Record<UserRole, ModuleType[]> = {
     'documents',
     'finance',
     'settings',
+    'dashboard',
   ],
   GROUP_READONLY: [
     'companies',
@@ -82,6 +87,7 @@ const ROLE_MODULE_ACCESS: Record<UserRole, ModuleType[]> = {
     'persons',
     'documents',
     'finance',
+    'dashboard',
   ],
   COMPANY_MANAGER: [
     'companies',
@@ -91,6 +97,7 @@ const ROLE_MODULE_ACCESS: Record<UserRole, ModuleType[]> = {
     'persons',
     'documents',
     'finance',
+    'dashboard',
   ],
   COMPANY_LEGAL: [
     'companies',
@@ -99,6 +106,7 @@ const ROLE_MODULE_ACCESS: Record<UserRole, ModuleType[]> = {
     'tasks',
     'persons',
     'documents',
+    'dashboard',
   ],
   COMPANY_READONLY: [
     'companies',
@@ -107,6 +115,7 @@ const ROLE_MODULE_ACCESS: Record<UserRole, ModuleType[]> = {
     'tasks',
     'persons',
     'documents',
+    'dashboard',
   ],
 }
 

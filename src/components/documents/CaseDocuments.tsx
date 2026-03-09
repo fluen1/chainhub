@@ -48,8 +48,8 @@ export function CaseDocuments({
         toast.error(result.error)
         return
       }
-      setDocuments(result.data.documents)
-      setTotal(result.data.total)
+      setDocuments(result.data!.documents)
+      setTotal(result.data!.total)
       setPage(currentPage)
     } finally {
       setIsLoading(false)

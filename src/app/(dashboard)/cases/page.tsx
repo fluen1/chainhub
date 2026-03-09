@@ -53,5 +53,5 @@ async function CaseListServer() {
     )
   }
 
-  return <CaseListClient initialCases={result.data.cases} totalCount={result.data.total} />
+  return <CaseListClient initialCases={result.data!.cases} totalCount={result.data!.total} />
 }

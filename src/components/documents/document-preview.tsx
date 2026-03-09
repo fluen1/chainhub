@@ -46,7 +46,7 @@ export function DocumentPreview({
       if (result.error) {
         setError(result.error)
       } else {
-        setPreviewUrl(result.data.downloadUrl)
+        setPreviewUrl(result.data!.downloadUrl)
       }
       setLoading(false)
     })
@@ -60,7 +60,7 @@ export function DocumentPreview({
     }
 
     // Åbn download i nyt vindue
-    window.open(result.data.downloadUrl, '_blank')
+    window.open(result.data!.downloadUrl, '_blank')
   }
 
   const handleOpenInNewTab = () => {

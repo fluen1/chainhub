@@ -110,6 +110,9 @@ export const updatePersonCompanyRoleSchema = z.object({
   anciennityStart: z.string().optional().or(z.literal('')).nullable(),
 })
 
+export const linkPersonToCompanySchema = addPersonToCompanySchema
+export type LinkPersonToCompanyInput = z.infer<typeof linkPersonToCompanySchema>
+
 export const importOutlookContactSchema = z.object({
   microsoftContactId: z.string().min(1, 'Microsoft kontakt-ID er påkrævet'),
   firstName: z.string().min(1, 'Fornavn er påkrævet').max(100),

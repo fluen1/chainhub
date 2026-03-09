@@ -36,8 +36,8 @@ async function ContractListWrapper() {
 
   return (
     <ContractList
-      contracts={result.data.contracts}
-      total={result.data.total}
+      contracts={result.data!.contracts}
+      total={result.data!.total}
     />
   )
 }

@@ -20,7 +20,7 @@ export default async function TaskPage({ params }: TaskPageProps) {
   const result = await getTask({ taskId: params.taskId })
   if (result.error) notFound()
 
-  const task = result.data
+  const task = result.data!
 
   const users = await prisma.user.findMany({
     where: {

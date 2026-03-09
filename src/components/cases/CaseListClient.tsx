@@ -55,8 +55,8 @@ export function CaseListClient({ initialCases, totalCount }: CaseListClientProps
         toast.error(result.error)
         return
       }
-      setCases(result.data.cases)
-      setTotal(result.data.total)
+      setCases(result.data!.cases)
+      setTotal(result.data!.total)
     })
   }
 
@@ -78,8 +78,8 @@ export function CaseListClient({ initialCases, totalCount }: CaseListClientProps
         toast.error(result.error)
         return
       }
-      setCases(result.data.cases)
-      setTotal(result.data.total)
+      setCases(result.data!.cases)
+      setTotal(result.data!.total)
     })
   }
 
@@ -101,8 +101,8 @@ export function CaseListClient({ initialCases, totalCount }: CaseListClientProps
         toast.error(result.error)
         return
       }
-      setCases(result.data.cases)
-      setTotal(result.data.total)
+      setCases(result.data!.cases)
+      setTotal(result.data!.total)
     })
   }
 

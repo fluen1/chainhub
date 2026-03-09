@@ -43,6 +43,10 @@ export type TimeEntrySummary = {
   billableMinutes: number
   nonBillableMinutes: number
   entries: TimeEntryWithUser[]
+  total: number
+  hasMore: boolean
+  page: number
+  pageSize: number
 }
 
 // ==================== FAKTURAOVERSIGT ====================

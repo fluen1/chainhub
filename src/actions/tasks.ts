@@ -135,7 +135,6 @@ export async function createTask(
         title: data.title,
         description: data.description ?? null,
         status: data.status,
-        priority: data.priority,
         dueDate: data.dueDate ? new Date(data.dueDate) : null,
         assignedTo: data.assignedTo ?? null,
         caseId: data.caseId ?? null,
@@ -225,7 +224,6 @@ export async function listTasks(
 
   const {
     status,
-    priority,
     assignedTo,
     caseId,
     companyId,
@@ -250,7 +248,6 @@ export async function listTasks(
     organizationId: session.user.organizationId,
     deletedAt: null,
     ...(status && { status }),
-    ...(priority && { priority }),
     ...(assignedTo && { assignedTo }),
     ...(caseId && { caseId }),
     ...(companyId && { companyId }),
@@ -371,7 +368,6 @@ export async function updateTask(
           description: updateData.description ?? null,
         }),
         ...(updateData.status !== undefined && { status: updateData.status }),
-        ...(updateData.priority !== undefined && { priority: updateData.priority }),
         ...(updateData.dueDate !== undefined && {
           dueDate: updateData.dueDate ? new Date(updateData.dueDate) : null,
         }),

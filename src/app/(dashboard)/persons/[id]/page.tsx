@@ -12,7 +12,7 @@ interface PersonPageProps {
 }
 
 export async function generateMetadata({ params }: PersonPageProps): Promise<Metadata> {
-  const result = await getPerson(params.id)
+  const result = await getPerson({ personId: params.id })
   
   if (result.error || !result.data) {
     return {
@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: PersonPageProps): Promise<Met
     }
   }
 
-  const person = result.data
+  const person = result.data!
   return {
     title: `${person.firstName} ${person.lastName} | ChainHub`,
     description: `Personprofil for ${person.firstName} ${person.lastName}`,
@@ -30,17 +30,17 @@ export async function generateMetadata({ params }: PersonPageProps): Promise<Met
 export default function PersonPage({ params }: PersonPageProps) {
   return (
     <Suspense fallback={<PersonDetailSkeleton />}>
-      <PersonDetailWrapper personId={params.id} />
+      <PersonDetailWrapper id={params.id} />
     </Suspense>
   )
 }
 
-async function PersonDetailWrapper({ personId }: { personId: string }) {
-  const result = await getPerson(personId)
+async function PersonDetailWrapper({ id }: { id: string }) {
+  const result = await getPerson({ personId: id })
 
   if (result.error || !result.data) {
     notFound()
   }
 
-  return <PersonDetail person={result.data} />
+  return <PersonDetail person={result.data!} />
 }

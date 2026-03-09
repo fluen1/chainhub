@@ -46,7 +46,7 @@ export function PersonForm() {
         return
       }
       toast.success('Personen blev oprettet')
-      router.push(`/persons/${result.data.id}`)
+      router.push(`/persons/${result.data!.id}`)
     } catch {
       toast.error('Der opstod en fejl — prøv igen')
     } finally {

@@ -26,7 +26,7 @@ async function CompanyProfileLoader({ id }: { id: string }) {
     )
   }
 
-  return <CompanyProfile company={result.data} />
+  return <CompanyProfile company={result.data!} />
 }
 
 export default async function CompanyProfilePage({

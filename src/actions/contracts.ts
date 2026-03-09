@@ -1,5 +1,6 @@
 'use server'
 
+import { Prisma } from '@prisma/client'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { canAccessCompany, canAccessSensitivity } from '@/lib/permissions'
@@ -143,7 +144,7 @@ export async function createContract(
         reminder7Days: data.reminder7Days,
         reminderRecipients: data.reminderRecipients,
         mustRetainUntil: mustRetainUntil,
-        typeData: data.typeData ?? null,
+        typeData: data.typeData ? (data.typeData as Prisma.InputJsonValue) : Prisma.JsonNull,
         notes: data.notes ?? null,
         createdBy: session.user.id,
       },
@@ -289,7 +290,7 @@ export async function getContract(
 // ==================== LIST KONTRAKTER ====================
 
 export async function listContracts(
-  input: z.infer<typeof listContractsSchema> = {}
+  input: z.input<typeof listContractsSchema> = {}
 ): Promise<ActionResult<{ contracts: ContractWithCounts[]; total: number }>> {
   const session = await auth()
   if (!session?.user) return { error: 'Ikke autoriseret' }
@@ -536,7 +537,9 @@ export async function updateContract(
         reminder7Days: updateData.reminder7Days ?? undefined,
         reminderRecipients: updateData.reminderRecipients ?? undefined,
         typeData:
-          updateData.typeData !== undefined ? (updateData.typeData as object | null) : undefined,
+          updateData.typeData !== undefined
+            ? (updateData.typeData ? (updateData.typeData as Prisma.InputJsonValue) : Prisma.JsonNull)
+            : undefined,
         notes:
           updateData.notes !== undefined ? updateData.notes || null : undefined,
         mustRetainUntil,
@@ -556,8 +559,8 @@ export async function updateContract(
         changes:
           sensitivityLevels.includes(existing.sensitivity) &&
           Object.keys(changes).length > 0
-            ? changes
-            : null,
+            ? (JSON.parse(JSON.stringify(changes)) as Prisma.InputJsonValue)
+            : undefined,
       },
     })
 
@@ -645,7 +648,7 @@ export async function updateContractStatus(
         changes: {
           status: { old: existing.status, new: newStatus },
           ...(note && { note: { old: null, new: note } }),
-        },
+        } as unknown as Prisma.InputJsonValue,
       },
     })
 
@@ -1109,7 +1112,7 @@ export async function confirmVersionUpload(
           changes: {
             status: { old: contract.status, new: 'TIL_REVIEW' },
             reason: { old: null, new: 'Materiel ændring kræver ny gennemgang' },
-          },
+          } as unknown as Prisma.InputJsonValue,
         },
       })
     }

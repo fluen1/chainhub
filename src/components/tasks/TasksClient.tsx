@@ -96,8 +96,8 @@ export function TasksClient({
       if (result.error) {
         toast.error(result.error)
       } else {
-        setTasks(result.data.tasks)
-        setTotal(result.data.total)
+        setTasks(result.data!.tasks)
+        setTotal(result.data!.total)
       }
     } finally {
       setLoading(false)

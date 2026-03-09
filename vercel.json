@@ -22,6 +22,29 @@
           "value": "no-store"
         }
       ]
+    },
+    {
+      "source": "/api/health",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, no-cache, must-revalidate"
+        }
+      ]
+    }
+  ],
+  "rewrites": [],
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "chainhub.dk"
+        }
+      ],
+      "destination": "https://www.chainhub.dk/:path*",
+      "permanent": true
     }
   ]
 }

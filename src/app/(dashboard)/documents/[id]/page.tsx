@@ -34,5 +34,5 @@ export default async function DocumentDetailPage({ params }: DocumentDetailPageP
     )
   }
 
-  return <DocumentDetailClient document={result.data} />
+  return <DocumentDetailClient document={result.data!} />
 }

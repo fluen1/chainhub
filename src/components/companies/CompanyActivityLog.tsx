@@ -32,8 +32,8 @@ export function CompanyActivityLog({ companyId }: CompanyActivityLogProps) {
       if (result.error) {
         setError(result.error)
       } else {
-        setEntries(result.data.entries)
-        setTotal(result.data.total)
+        setEntries(result.data!.entries)
+        setTotal(result.data!.total)
       }
     }
     load()

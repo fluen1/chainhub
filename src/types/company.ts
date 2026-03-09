@@ -9,7 +9,7 @@ export type CompanyWithCounts = Prisma.CompanyGetPayload<{
     _count: {
       select: {
         contracts: true
-        cases: true
+        caseCompanies: true
         companyPersons: true
         ownerships: true
       }
@@ -33,7 +33,7 @@ export type CompanyWithRelations = Prisma.CompanyGetPayload<{
     _count: {
       select: {
         contracts: true
-        cases: true
+        caseCompanies: true
       }
     }
   }

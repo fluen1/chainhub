@@ -15,7 +15,7 @@ export const CONTRACT_TYPE_LABELS: Record<ContractSystemType, string> = {
   UDDANNELSESAFTALE: 'Uddannelsesaftale',
   FRATRAEDELSESAFTALE: 'Fratrædelsesaftale',
   KONKURRENCEKLAUSUL: 'Konkurrenceklausulaftale',
-  PERSONALEHÅNDBOG: 'Personalehåndbog',
+  PERSONALEHAANDBOG: 'Personalehåndbog',
   LEJEKONTRAKT_ERHVERV: 'Erhvervslejekontrakt',
   LEASINGAFTALE: 'Leasingaftale',
   LEVERANDOERKONTRAKT: 'Leverandørkontrakt',
@@ -57,7 +57,7 @@ export const CONTRACT_TYPE_CATEGORIES = {
     'UDDANNELSESAFTALE',
     'FRATRAEDELSESAFTALE',
     'KONKURRENCEKLAUSUL',
-    'PERSONALEHÅNDBOG',
+    'PERSONALEHAANDBOG',
   ] as ContractSystemType[],
   'Lokaler og udstyr': [
     'LEJEKONTRAKT_ERHVERV',

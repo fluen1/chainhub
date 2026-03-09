@@ -27,7 +27,7 @@ export default async function ContractPage({ params }: Props) {
 
   return (
     <div className="container mx-auto py-6 px-4">
-      <ContractDetail contract={result.data} />
+      <ContractDetail contract={result.data!} />
     </div>
   )
 }

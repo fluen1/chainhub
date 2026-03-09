@@ -66,8 +66,8 @@ async function PersonListWrapper({
 
   return (
     <PersonList
-      persons={result.data.persons}
-      total={result.data.total}
+      persons={result.data!.persons}
+      total={result.data!.total}
       currentPage={page}
       pageSize={25}
       search={search}

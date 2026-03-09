@@ -57,7 +57,7 @@ const RETENTION_RULES: Record<ContractSystemType, RetentionRule> = {
   UDDANNELSESAFTALE: { years: 5, basis: 'termination_date', law: '5 år efter ophør' },
   FRATRAEDELSESAFTALE: { years: 5, basis: 'signed_date', law: '5 år efter indgåelse' },
   KONKURRENCEKLAUSUL: { years: 5, basis: 'expiry_date', law: '5 år efter udløb' },
-  PERSONALEHÅNDBOG: { years: 5, basis: 'termination_date', law: '5 år efter erstatning' },
+  PERSONALEHAANDBOG: { years: 5, basis: 'termination_date', law: '5 år efter erstatning' },
   SELSKABSGARANTI: { years: 5, basis: 'termination_date', law: 'Bogføringsloven § 10' },
 
   // 3 ÅR (fra ophør)

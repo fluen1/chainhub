@@ -25,6 +25,8 @@ export const createCompanySchema = z.object({
   notes: z.string().max(5000).optional().or(z.literal('')),
 })
 
+export type CreateCompanyInput = z.input<typeof createCompanySchema>
+
 export const updateCompanySchema = z.object({
   companyId: z.string().uuid('Ugyldigt selskabs-ID'),
   name: z

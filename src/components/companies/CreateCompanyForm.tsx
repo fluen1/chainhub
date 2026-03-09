@@ -60,7 +60,7 @@ export function CreateCompanyForm() {
     }
 
     toast.success('Selskab oprettet')
-    router.push(`/companies/${result.data.id}`)
+    router.push(`/companies/${result.data!.id}`)
   }
 
   return (

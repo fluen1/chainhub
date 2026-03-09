@@ -68,7 +68,7 @@ function formatContractType(systemType: string): string {
     UDDANNELSESAFTALE: 'Uddannelsesaftale',
     FRATRAEDELSESAFTALE: 'Fratrædelsesaftale',
     KONKURRENCEKLAUSUL: 'Konkurrenceklausul',
-    PERSONALEHÅNDBOG: 'Personalehåndbog',
+    PERSONALEHAANDBOG: 'Personalehåndbog',
     LEJEKONTRAKT_ERHVERV: 'Erhvervslejekontrakt',
     LEASINGAFTALE: 'Leasingaftale',
     LEVERANDOERKONTRAKT: 'Leverandørkontrakt',

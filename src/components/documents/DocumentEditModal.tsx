@@ -66,10 +66,10 @@ export function DocumentEditModal({
       // Sammensæt opdateret dokument
       const updated: DocumentWithRelations = {
         ...document,
-        title: result.data.title,
-        description: result.data.description,
-        folderPath: result.data.folderPath,
-        sensitivity: result.data.sensitivity,
+        title: result.data!.title,
+        description: result.data!.description,
+        folderPath: result.data!.folderPath,
+        sensitivity: result.data!.sensitivity,
       }
 
       onComplete(updated)

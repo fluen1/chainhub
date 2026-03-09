@@ -132,7 +132,7 @@ export default function OutlookImport() {
         toast.error(result.error)
         setStep('selecting')
       } else {
-        setResult(result.data)
+        setResult(result.data!)
         setStep('done')
         router.refresh()
       }

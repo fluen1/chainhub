@@ -34,7 +34,7 @@ export default async function PersonDetailPage({ params }: PageProps) {
     )
   }
 
-  const person = result.data
+  const person = result.data!
 
   return (
     <div className="space-y-6">

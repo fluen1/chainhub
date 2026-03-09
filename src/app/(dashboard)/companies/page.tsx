@@ -23,7 +23,7 @@ async function CompanyList() {
     )
   }
 
-  const companies = result.data
+  const companies = result.data!
 
   if (companies.length === 0) {
     return <CompanyListEmpty />

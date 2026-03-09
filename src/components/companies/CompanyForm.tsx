@@ -58,7 +58,7 @@ export function CompanyForm({ company, mode }: CompanyFormProps) {
       address: company?.address || '',
       city: company?.city || '',
       postalCode: company?.postalCode || '',
-      foundedDate: company?.foundedDate || undefined,
+      foundedDate: company?.foundedDate ? company.foundedDate.toISOString().split('T')[0] : undefined,
       status: (company?.status as any) || 'aktiv',
       notes: company?.notes || '',
     },
@@ -74,7 +74,7 @@ export function CompanyForm({ company, mode }: CompanyFormProps) {
           return
         }
         toast.success('Selskab oprettet')
-        router.push(`/companies/${result.data.id}`)
+        router.push(`/companies/${result.data!.id}`)
       } else if (company) {
         const result = await updateCompany({ id: company.id, ...data })
         if (result.error) {

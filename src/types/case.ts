@@ -183,6 +183,13 @@ export const VALID_SUBTYPES_FOR_TYPE: Record<SagsType, string[]> = {
 
 // ==================== EMAIL SYNC ====================
 
+export interface EmailSyncStatus {
+  connected: boolean
+  lastSyncAt: Date | null
+  totalEmails: number
+  error: string | null
+}
+
 export interface EmailSyncConfig {
   enabled: boolean
   bccAddress: string | null
