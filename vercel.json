@@ -3,6 +3,25 @@
     {
       "path": "/api/cron/task-digest",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/contract-expiry",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/subscription-sync",
+      "schedule": "0 */6 * * *"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/webhooks/stripe",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
     }
   ]
 }
