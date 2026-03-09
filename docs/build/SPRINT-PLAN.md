@@ -83,6 +83,12 @@ Blokerer: alt i Sprint 1+
 
 Succeskriterium: Bruger kan registrere sig, logge ind med
 Microsoft og se et tomt dashboard.
+
+Sprint-gate (MABS-regel — ikke-forhandlingsbart):
+  □ npx next build gennemføres uden fejl
+  □ npx next dev starter uden fejl
+  □ /dashboard loader uden runtime-fejl
+  □ Alle imports i genererede filer er installeret i node_modules
 ```
 
 ---
@@ -114,6 +120,8 @@ Microsoft og se et tomt dashboard.
 
 Succeskriterium: Bruger kan oprette selskab, tilføje ejere
 og medarbejdere, og se personen gå igen på tværs af selskaber.
+
+Sprint-gate: npx next build uden fejl + /companies og /persons loader.
 ```
 
 ---
@@ -148,6 +156,8 @@ og medarbejdere, og se personen gå igen på tværs af selskaber.
 
 Succeskriterium: Bruger kan oprette en ejeraftale, uploade PDF,
 tilknytte parter — og modtager email-advis 90 dage før udløb.
+
+Sprint-gate: npx next build uden fejl + /contracts loader.
 ```
 
 ---
@@ -172,6 +182,8 @@ tilknytte parter — og modtager email-advis 90 dage før udløb.
 
 Succeskriterium: Bruger kan oprette en M&A-sag, tilknytte
 relevante kontrakter og modtage daglig opgave-digest på email.
+
+Sprint-gate: npx next build uden fejl + /cases og /tasks loader.
 ```
 
 ---
@@ -196,6 +208,8 @@ relevante kontrakter og modtage daglig opgave-digest på email.
 
 Succeskriterium: Bruger med 10 selskaber ser komplet overblik
 på under 2 sekunder (BA-09 validerer query-tid).
+
+Sprint-gate: npx next build uden fejl + /dashboard loader under 2s.
 ```
 
 ---
@@ -229,6 +243,9 @@ på under 2 sekunder (BA-09 validerer query-tid).
 
 Succeskriterium: BA-11 finder ingen KRITISKE sikkerhedshuller.
 Alle ikke-forhandlingsbare tests er grønne.
+
+Sprint-gate: npx next build + alle E2E tests grønne + alle routes
+loader uden fejl i både dev og production build.
 ```
 
 ---
@@ -262,6 +279,11 @@ v0.2 (QA-rettet):
        (matcher API-SPEC.md v0.3 updateContractStatus-transitioner)
   [M1] Filnavn rettet (linje 37):
        ROLLER-OG-TILLADELSER.md → roller-og-tilladelser.md
+
+v0.3 (MABS-læringer):
+  + Sprint-gate tilføjet til alle 6 sprints:
+    npx next build + navngivne routes skal loade uden fejl
+  + Sprint 1 gate uddybet med fire konkrete tjekpunkter
 
 v0.1:
   Første udkast

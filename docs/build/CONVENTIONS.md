@@ -1,6 +1,6 @@
 # CONVENTIONS.md
 # ChainHub — Kodekonventioner
-**Version:** v0.2 — QA-rettet
+**Version:** v0.3 — MABS-læringer
 **Gælder for:** Alle build-agenter (BA-01 til BA-11)
 **Regel:** Ingen agent skriver kode der bryder med dette dokument.
 **Opdateres af:** Orchestrator (BA-01) — aldrig af specialist-agenter unilateralt.
@@ -389,18 +389,6 @@ canAccessSensitivity(userId, level): Promise<boolean>
 canAccessModule(userId, module): Promise<boolean>
 getAccessibleCompanies(userId): Promise<Company[]>
 
-// Gyldige modul-strenge — brug ALTID disse konstanter
-type ModuleType =
-  | 'companies'
-  | 'contracts'
-  | 'cases'
-  | 'tasks'
-  | 'persons'
-  | 'documents'
-  | 'finance'
-  | 'settings'
-  | 'user_management'
-
 // REGEL: Enhver server action og API route der returnerer data
 // SKAL kalde mindst canAccessCompany() eller canAccessSensitivity()
 // FØR data returneres — uden undtagelse.
@@ -476,6 +464,46 @@ chore/prisma-migration
 
 ---
 
+## 14. Dependency-regel — ikke-forhandlingsbart
+
+```
+Enhver agent der introducerer en ny import SKAL tilføje pakken til package.json
+i samme commit. Det er ikke tilladt at generere kode med imports til pakker
+der ikke er installeret.
+
+Regel gælder for:
+- npm-pakker (import fra node_modules)
+- shadcn/ui-komponenter (src/components/ui/)
+- Alle @radix-ui/*, lucide-react, zod, date-fns og lignende
+
+Ved sprint-afslutning kører BA-08-devops altid:
+  1. npm install --legacy-peer-deps
+  2. npx prisma generate
+  3. npx tsc --noEmit    (ingen TypeScript-fejl)
+  4. npx next build      (ingen build-fejl)
+
+Sprint markeres IKKE som færdigt hvis build fejler.
+```
+
+---
+
+## 15. Applikationsstart — succeskriterium
+
+```
+Et sprint er kun produktionsklart når:
+  □ npx next dev starter uden fejl
+  □ /companies loader uden runtime-fejl
+  □ /contracts loader uden runtime-fejl
+  □ /cases loader uden runtime-fejl
+  □ /dashboard loader uden runtime-fejl
+  □ npx next build gennemføres uden fejl
+
+Agenter SKAL verificere dette inden commit.
+Middleware skal deaktiveres midlertidigt hvis nødvendigt for verifikation.
+```
+
+---
+
 ## Hurtigtjekliste til alle agenter
 
 Inden kode markeres som færdig — tjek:
@@ -492,6 +520,8 @@ Inden kode markeres som færdig — tjek:
 □ Ingen inline styles — kun Tailwind
 □ Ingen console.log i produktion-kode
 □ .env.example opdateret ved nye env vars
+□ Alle nye imports har matchende pakke i package.json
+□ npx next build gennemføres uden fejl
 ```
 
 ---
@@ -499,12 +529,13 @@ Inden kode markeres som færdig — tjek:
 ## Changelog
 
 ```
-v0.3 (QA-R2-rettet):
-  [K1] ModuleType tilføjet i §10 Permissions:
-       companies|contracts|cases|tasks|persons|documents|finance|
-       settings|user_management
-       Løser gap: canAccessModule() brugte udefinerede strings i 20+
-       guards på tværs af API-SPEC.md
+v0.3 (MABS-læringer):
+  + Sektion 14: Dependency-regel — alle imports kræver pakke i package.json
+  + Sektion 14: Build-gate — npm install, prisma generate, tsc, next build
+    skal gennemføres uden fejl inden sprint markeres færdigt
+  + Sektion 15: Applikationsstart-succeskriterium — navngivne routes
+    skal loade uden fejl
+  + Hurtigtjekliste: To nye punkter tilføjet (imports + build)
 
 v0.2 (QA-rettet):
   + Linje 91: STRICTLY_CONFIDENTIAL → STRENGT_FORTROLIG (dansk enum-eksempel)
@@ -517,4 +548,4 @@ v0.1:
   Første udkast
 ```
 
-*CONVENTIONS.md v0.2 — QA-rettet.*
+*CONVENTIONS.md v0.3 — MABS-læringer tilføjet.*

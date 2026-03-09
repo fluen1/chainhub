@@ -323,6 +323,7 @@ systemet virker i produktion.
 - Trailing newlines i secrets giver stille fejl (Retsklar-læring)
 - Vercel kræver manuel redeploy ved env var-ændringer (Retsklar-læring)
 - Multi-tenant SaaS kræver miljø-isolation (dev/staging/prod)
+- BA-agenter genererede kode med imports til pakker der ikke var installeret (ChainHub-læring)
 
 **Output:**
 - `vercel.json` — maxDuration, cron jobs, headers, rewrites
@@ -332,12 +333,28 @@ systemet virker i produktion.
 - Staging-miljø konfiguration (separat Supabase-instans, Stripe test-mode)
 - Runbook i `/docs/ops/RUNBOOK.md` — hvad gør man når X fejler
 
+**Obligatorisk trin ved sprint-afslutning (MABS-regel):**
+```bash
+# Køres i denne rækkefølge inden commit
+npm install --legacy-peer-deps
+npx prisma generate
+npx tsc --noEmit
+npx next build
+
+# Bekræft applikationsstart:
+# 1. Start dev-server: npx next dev
+# 2. Verificér at disse routes loader uden fejl:
+#    /companies, /contracts, /cases, /dashboard
+# Sprint markeres IKKE færdigt hvis build eller routes fejler
+```
+
 **Udfordrer specifikt:**
 - Er alle secrets dokumenteret og rotationsplan beskrevet?
 - Er der en strategi for database-backup og point-in-time recovery?
 - Er Stripe webhook-endpointet korrekt konfigureret med www-prefix?
 - Er der rate limiting på API-endpoints?
 - Er der en plan for når Vercel function timeout rammes?
+- Er alle imports i genererede filer matchet med en pakke i package.json?
 
 ---
 
