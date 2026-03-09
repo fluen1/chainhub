@@ -1045,3 +1045,26 @@ Next.js build worker exited with code: 1 and signal: null
 [2026-03-09 23:41:05] [INFO] Skrevet: src/__tests__/integration/contracts-action.test.ts
 [2026-03-09 23:41:05] [INFO] Skrevet: src/__tests__/integration/tenant-isolation.test.ts
 [2026-03-09 23:41:05] [INFO] Skrevet: src/__tests__/unit/companies-action.test.ts
+[2026-03-09 23:41:05] [INFO] Git commit: fix: autorepair iter 2 — tsc typecheck
+[2026-03-09 23:41:05] [INFO]   Iteration 2 fix anvendt — korer igen...
+[2026-03-09 23:41:05] [INFO] 
+--- Autorepair iteration 3/10 ---
+[2026-03-09 23:41:05] [INFO]   Korer: prisma generate...
+[2026-03-09 23:41:07] [INFO]   v prisma generate OK (1.6s)
+[2026-03-09 23:41:07] [INFO]   Korer: tsc typecheck...
+[2026-03-09 23:41:11] [INFO]   x tsc typecheck FEJLEDE (4.6s)
+[2026-03-09 23:41:11] [FEJL]     src/__tests__/unit/companies-action.test.ts(141,22): error TS7053: Element implicitly has an 'any' type because expressi
+[2026-03-09 23:41:11] [FEJL]     src/actions/companies.ts(14,3): error TS2724: '"@/lib/validations/company"' has no exported member named 'deleteOwnershi
+[2026-03-09 23:41:11] [FEJL]     src/actions/companies.ts(17,3): error TS2724: '"@/lib/validations/company"' has no exported member named 'deleteCompanyP
+[2026-03-09 23:41:11] [FEJL]     src/actions/companies.ts(19,3): error TS2305: Module '"@/lib/validations/company"' has no exported member 'listOwnership
+[2026-03-09 23:41:11] [FEJL]     src/actions/companies.ts(20,3): error TS2724: '"@/lib/validations/company"' has no exported member named 'listCompanyPer
+[2026-03-09 23:41:11] [FEJL]     src/actions/companies.ts(21,3): error TS2305: Module '"@/lib/validations/company"' has no exported member 'getActivityLo
+[2026-03-09 23:41:11] [FEJL]     src/actions/companies.ts(392,11): error TS2339: Property 'ownershipId' does not exist on type '{ id: string; contractId?
+[2026-03-09 23:41:11] [FEJL]     src/actions/companies.ts(392,24): error TS2339: Property 'companyId' does not exist on type '{ id: string; contractId?: 
+[2026-03-09 23:41:11] [INFO]   Fejlfiler fundet: 20 (src/__tests__/unit/companies-action.test.ts, src/actions/companies.ts, src/components/companies/CompanyForm.tsx, src/components/companies/CompanyList.tsx, src/components/companies/CompanyPersonDialog.tsx...)
+[2026-03-09 23:41:12] [INFO]   Sender fejl til Claude (iter 3)...
+[2026-03-09 23:43:11] [INFO]   Anvender 4 filer fra Claude...
+[2026-03-09 23:43:11] [INFO] Skrevet: src/lib/validations/company.ts
+[2026-03-09 23:43:11] [INFO] Skrevet: src/actions/companies.ts
+[2026-03-09 23:43:11] [INFO] Skrevet: src/components/companies/CompanyForm.tsx
+[2026-03-09 23:43:11] [INFO] Skrevet: src/__tests__/unit/companies-action.test.ts

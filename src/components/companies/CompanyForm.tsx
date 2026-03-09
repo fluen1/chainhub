@@ -50,7 +50,7 @@ export function CompanyForm({ company, mode }: CompanyFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const form = useForm<CreateCompanyInput>({
-    resolver: zodResolver(createCompanySchema),
+    resolver: zodResolver(createCompanySchema) as any,
     defaultValues: {
       name: company?.name || '',
       cvr: company?.cvr || '',
@@ -76,7 +76,7 @@ export function CompanyForm({ company, mode }: CompanyFormProps) {
         toast.success('Selskab oprettet')
         router.push(`/companies/${result.data!.id}`)
       } else if (company) {
-        const result = await updateCompany({ id: company.id, ...data })
+        const result = await updateCompany({ companyId: company.id, ...data })
         if (result.error) {
           toast.error(result.error)
           return
@@ -97,80 +97,64 @@ export function CompanyForm({ company, mode }: CompanyFormProps) {
             {mode === 'create' ? 'Opret nyt selskab' : 'Rediger selskab'}
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="name">Navn *</Label>
-              <Input
-                id="name"
-                {...form.register('name')}
-                placeholder="Selskabsnavn"
-              />
-              {form.formState.errors.name && (
-                <p className="text-sm text-red-600">
-                  {form.formState.errors.name.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="cvr">CVR-nummer</Label>
-              <Input
-                id="cvr"
-                {...form.register('cvr')}
-                placeholder="12345678"
-                maxLength={8}
-              />
-              {form.formState.errors.cvr && (
-                <p className="text-sm text-red-600">
-                  {form.formState.errors.cvr.message}
-                </p>
-              )}
-            </div>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Selskabsnavn *</Label>
+            <Input
+              id="name"
+              {...form.register('name')}
+              placeholder="Fx Hansen ApS"
+            />
+            {form.formState.errors.name && (
+              <p className="text-sm text-red-500">{form.formState.errors.name.message}</p>
+            )}
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="companyType">Selskabsform</Label>
-              <Select
-                value={form.watch('companyType') || ''}
-                onValueChange={(value) =>
-                  form.setValue('companyType', value as any)
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Vælg selskabsform" />
-                </SelectTrigger>
-                <SelectContent>
-                  {companyTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="cvr">CVR-nummer</Label>
+            <Input
+              id="cvr"
+              {...form.register('cvr')}
+              placeholder="12345678"
+            />
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select
-                value={form.watch('status')}
-                onValueChange={(value) =>
-                  form.setValue('status', value as any)
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {statusOptions.map((status) => (
-                    <SelectItem key={status.value} value={status.value}>
-                      {status.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="companyType">Selskabstype</Label>
+            <Select
+              onValueChange={(value) => form.setValue('companyType', value as any)}
+              defaultValue={company?.companyType || undefined}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Vælg type" />
+              </SelectTrigger>
+              <SelectContent>
+                {companyTypes.map((type) => (
+                  <SelectItem key={type.value} value={type.value}>
+                    {type.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="status">Status</Label>
+            <Select
+              onValueChange={(value) => form.setValue('status', value as any)}
+              defaultValue={company?.status || 'aktiv'}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Vælg status" />
+              </SelectTrigger>
+              <SelectContent>
+                {statusOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
@@ -178,26 +162,19 @@ export function CompanyForm({ company, mode }: CompanyFormProps) {
             <Input
               id="address"
               {...form.register('address')}
-              placeholder="Gadenavn og nummer"
+              placeholder="Vejnavn 1"
             />
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="postalCode">Postnummer</Label>
               <Input
                 id="postalCode"
                 {...form.register('postalCode')}
                 placeholder="1234"
-                maxLength={4}
               />
-              {form.formState.errors.postalCode && (
-                <p className="text-sm text-red-600">
-                  {form.formState.errors.postalCode.message}
-                </p>
-              )}
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="city">By</Label>
               <Input
@@ -223,13 +200,13 @@ export function CompanyForm({ company, mode }: CompanyFormProps) {
               id="notes"
               {...form.register('notes')}
               placeholder="Interne noter om selskabet..."
-              rows={4}
+              rows={3}
             />
           </div>
 
-          <div className="flex gap-4 pt-4">
+          <div className="flex gap-3 pt-2">
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {mode === 'create' ? 'Opret selskab' : 'Gem ændringer'}
             </Button>
             <Button

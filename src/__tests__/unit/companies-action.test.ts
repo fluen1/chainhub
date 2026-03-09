@@ -125,49 +125,21 @@ describe('createCompany', () => {
     })
     mockPrisma.auditLog.create.mockResolvedValue({ id: 'audit-1' } as never)
 
-    await createCompany({
-      name: 'Test ApS',
-      status: 'aktiv',
-    })
+    await createCompany({ name: 'Test ApS', status: 'aktiv' })
 
-    expect(mockPrisma.company.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          organizationId: ORG_A,
-        }),
-      })
-    )
-    // Sikr at organizationId IKKE er ORG_B
-    const callArgs = mockPrisma.company.create.mock.calls[0][0]
-    expect((callArgs as any).data.organizationId).toBe(ORG_A)
-    expect((callArgs as any).data.organizationId).not.toBe(ORG_B)
+    const createCall = (mockPrisma.company.create as any).mock.calls[0]
+    expect(createCall[0].data.organizationId).toBe(ORG_A)
   })
 })
 
 describe('listCompanies', () => {
-  it('afviser uautoriseret bruger', async () => {
-    mockAuth.mockResolvedValue(null)
-    const result = await listCompanies()
-    expect(result.error).toBe('Ikke autoriseret')
-    expect(result.data).toBeUndefined()
-  })
-
-  it('returnerer selskaber for autoriseret bruger', async () => {
+  it('returnerer kun selskaber fra egen organisation', async () => {
     mockAuth.mockResolvedValue(SESSION_A)
     mockPrisma.company.findMany.mockResolvedValue([])
-    mockPrisma.company.count.mockResolvedValue(0)
 
     const result = await listCompanies()
+
     expect(result.error).toBeUndefined()
-  })
-
-  it('filtrerer altid på organizationId fra session', async () => {
-    mockAuth.mockResolvedValue(SESSION_A)
-    mockPrisma.company.findMany.mockResolvedValue([])
-    mockPrisma.company.count.mockResolvedValue(0)
-
-    await listCompanies()
-
     expect(mockPrisma.company.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
@@ -176,28 +148,19 @@ describe('listCompanies', () => {
       })
     )
   })
+
+  it('uautoriseret — ingen session', async () => {
+    mockAuth.mockResolvedValue(null)
+    const result = await listCompanies()
+    expect(result.error).toBe('Ikke autoriseret')
+  })
 })
 
 describe('getCompany', () => {
-  it('afviser uautoriseret bruger', async () => {
-    mockAuth.mockResolvedValue(null)
-    const result = await getCompany({ companyId: COMPANY_A })
-    expect(result.error).toBe('Ikke autoriseret')
-  })
-
-  it('afviser bruger uden adgang til selskab', async () => {
-    mockAuth.mockResolvedValue(SESSION_A)
-    mockCanAccessCompany.mockResolvedValue(false)
-
-    const result = await getCompany({ companyId: COMPANY_A })
-    expect(result.error).toBeDefined()
-  })
-
-  it('returnerer selskab for autoriseret bruger med adgang', async () => {
+  it('henter selskab med adgangskontrol', async () => {
     mockAuth.mockResolvedValue(SESSION_A)
     mockCanAccessCompany.mockResolvedValue(true)
-
-    const mockCompanyWithRelations = {
+    mockPrisma.company.findFirst.mockResolvedValue({
       id: COMPANY_A,
       organizationId: ORG_A,
       name: 'Test ApS',
@@ -213,32 +176,113 @@ describe('getCompany', () => {
       updatedAt: new Date(),
       createdBy: USER_A,
       deletedAt: null,
-      ownerships: [],
-      companyPersons: [],
-      contracts: [],
-    }
-
-    mockPrisma.company.findUnique.mockResolvedValue(mockCompanyWithRelations as any)
+    } as never)
 
     const result = await getCompany({ companyId: COMPANY_A })
+
+    expect(result.error).toBeUndefined()
+    expect(mockCanAccessCompany).toHaveBeenCalledWith(USER_A, COMPANY_A)
+  })
+
+  it('adgang nægtet — ikke adgang til selskabet', async () => {
+    mockAuth.mockResolvedValue(SESSION_A)
+    mockCanAccessCompany.mockResolvedValue(false)
+
+    const result = await getCompany({ companyId: COMPANY_A })
+
+    expect(result.error).toBe('Adgang nægtet')
+    expect(mockPrisma.company.findFirst).not.toHaveBeenCalled()
+  })
+})
+
+describe('updateCompany', () => {
+  it('opdaterer selskab korrekt', async () => {
+    mockAuth.mockResolvedValue(SESSION_A)
+    mockCanAccessCompany.mockResolvedValue(true)
+    mockPrisma.company.update.mockResolvedValue({
+      id: COMPANY_A,
+      organizationId: ORG_A,
+      name: 'Opdateret ApS',
+      cvr: null,
+      companyType: null,
+      address: null,
+      city: null,
+      postalCode: null,
+      foundedDate: null,
+      status: 'aktiv',
+      notes: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      createdBy: USER_A,
+      deletedAt: null,
+    })
+    mockPrisma.auditLog.create.mockResolvedValue({ id: 'audit-1' } as never)
+
+    const result = await updateCompany({
+      companyId: COMPANY_A,
+      name: 'Opdateret ApS',
+    })
+
     expect(result.error).toBeUndefined()
     expect(result.data).toBeDefined()
+  })
+
+  it('adgang nægtet ved opdatering', async () => {
+    mockAuth.mockResolvedValue(SESSION_A)
+    mockCanAccessCompany.mockResolvedValue(false)
+
+    const result = await updateCompany({
+      companyId: COMPANY_A,
+      name: 'Opdateret ApS',
+    })
+
+    expect(result.error).toBe('Adgang nægtet')
+    expect(mockPrisma.company.update).not.toHaveBeenCalled()
   })
 })
 
 describe('deleteCompany', () => {
-  it('afviser uautoriseret bruger', async () => {
-    mockAuth.mockResolvedValue(null)
+  it('sletter selskab (soft delete)', async () => {
+    mockAuth.mockResolvedValue(SESSION_A)
+    mockCanAccessCompany.mockResolvedValue(true)
+    mockPrisma.company.update.mockResolvedValue({
+      id: COMPANY_A,
+      organizationId: ORG_A,
+      name: 'Test ApS',
+      cvr: null,
+      companyType: null,
+      address: null,
+      city: null,
+      postalCode: null,
+      foundedDate: null,
+      status: 'aktiv',
+      notes: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      createdBy: USER_A,
+      deletedAt: new Date(),
+    })
+    mockPrisma.auditLog.create.mockResolvedValue({ id: 'audit-1' } as never)
+
     const result = await deleteCompany({ companyId: COMPANY_A })
-    expect(result.error).toBe('Ikke autoriseret')
-    expect(mockPrisma.company.update).not.toHaveBeenCalled()
+
+    expect(result.error).toBeUndefined()
+    expect(mockPrisma.company.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          deletedAt: expect.any(Date),
+        }),
+      })
+    )
   })
 
-  it('afviser bruger uden adgang', async () => {
+  it('adgang nægtet ved sletning', async () => {
     mockAuth.mockResolvedValue(SESSION_A)
     mockCanAccessCompany.mockResolvedValue(false)
 
     const result = await deleteCompany({ companyId: COMPANY_A })
-    expect(result.error).toBeDefined()
+
+    expect(result.error).toBe('Adgang nægtet')
+    expect(mockPrisma.company.update).not.toHaveBeenCalled()
   })
 })

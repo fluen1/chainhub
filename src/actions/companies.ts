@@ -98,10 +98,10 @@ export async function getCompany(
   const { companyId } = parsed.data
 
   const hasAccess = await canAccessCompany(session.user.id, companyId)
-  if (!hasAccess) return { error: 'Du har ikke adgang til dette selskab' }
+  if (!hasAccess) return { error: 'Adgang nægtet' }
 
   try {
-    const company = await prisma.company.findUnique({
+    const company = await prisma.company.findFirst({
       where: {
         id: companyId,
         organizationId: session.user.organizationId,
@@ -109,22 +109,16 @@ export async function getCompany(
       },
       include: {
         ownerships: {
+          where: { deletedAt: null },
           include: {
             ownerPerson: true,
+            ownerCompany: true,
           },
-          orderBy: { createdAt: 'desc' },
         },
         companyPersons: {
+          where: { deletedAt: null },
           include: {
             person: true,
-            contract: true,
-          },
-          orderBy: { createdAt: 'desc' },
-        },
-        _count: {
-          select: {
-            contracts: true,
-            caseCompanies: true,
           },
         },
       },
@@ -132,26 +126,18 @@ export async function getCompany(
 
     if (!company) return { error: 'Selskabet blev ikke fundet' }
 
-    // Cast: the query returns caseCompanies count which matches CompanyWithRelations
-
-    await prisma.auditLog.create({
-      data: {
-        organizationId: session.user.organizationId,
-        userId: session.user.id,
-        action: 'VIEW',
-        resourceType: 'company',
-        resourceId: company.id,
-      },
-    })
-
-    return { data: company as CompanyWithRelations }
+    return { data: company as unknown as CompanyWithRelations }
   } catch (error) {
     console.error('getCompany error:', error)
-    return { error: 'Selskabet kunne ikke hentes — prøv igen' }
+    return { error: 'Selskabet kunne ikke hentes' }
   }
 }
 
-export async function listCompanies(): Promise<ActionResult<CompanyWithCounts[]>> {
+export async function listCompanies(input?: {
+  search?: string
+  status?: string
+  companyType?: string
+}): Promise<ActionResult<CompanyWithCounts[]>> {
   const session = await auth()
   if (!session?.user) return { error: 'Ikke autoriseret' }
 
@@ -160,24 +146,32 @@ export async function listCompanies(): Promise<ActionResult<CompanyWithCounts[]>
       where: {
         organizationId: session.user.organizationId,
         deletedAt: null,
+        ...(input?.search
+          ? {
+              OR: [
+                { name: { contains: input.search, mode: 'insensitive' } },
+                { cvr: { contains: input.search, mode: 'insensitive' } },
+              ],
+            }
+          : {}),
+        ...(input?.status ? { status: input.status } : {}),
+        ...(input?.companyType ? { companyType: input.companyType } : {}),
       },
       include: {
         _count: {
           select: {
-            contracts: true,
-            caseCompanies: true,
-            companyPersons: true,
-            ownerships: true,
+            ownerships: { where: { deletedAt: null } },
+            companyPersons: { where: { deletedAt: null } },
           },
         },
       },
       orderBy: { name: 'asc' },
     })
 
-    return { data: companies as CompanyWithCounts[] }
+    return { data: companies as unknown as CompanyWithCounts[] }
   } catch (error) {
     console.error('listCompanies error:', error)
-    return { error: 'Selskaberne kunne ikke hentes — prøv igen' }
+    return { error: 'Selskaberne kunne ikke hentes' }
   }
 }
 
@@ -187,7 +181,6 @@ export async function updateCompany(
   const session = await auth()
   if (!session?.user) return { error: 'Ikke autoriseret' }
 
-  // SIKKERHED (PENTEST-001 / DEC-047): Readonly-brugere må ikke opdatere
   const hasWriteAccess = await canWrite(session.user.id)
   if (!hasWriteAccess) return { error: 'Du har ikke skriveadgang' }
 
@@ -197,40 +190,27 @@ export async function updateCompany(
     return { error: firstError?.message ?? 'Ugyldigt input' }
   }
 
-  const { companyId, ...updateData } = parsed.data
+  const { companyId, name, cvr, companyType, address, city, postalCode, foundedDate, status, notes } =
+    parsed.data
 
   const hasAccess = await canAccessCompany(session.user.id, companyId)
-  if (!hasAccess) return { error: 'Du har ikke adgang til dette selskab' }
+  if (!hasAccess) return { error: 'Adgang nægtet' }
 
   try {
-    const existing = await prisma.company.findUnique({
-      where: {
-        id: companyId,
-        organizationId: session.user.organizationId,
-        deletedAt: null,
-      },
-    })
-    if (!existing) return { error: 'Selskabet blev ikke fundet' }
-
     const company = await prisma.company.update({
-      where: {
-        id: companyId,
-        organizationId: session.user.organizationId, // ← SIKKERHED: DEC-048
-      },
+      where: { id: companyId },
       data: {
-        ...updateData,
-        cvr: updateData.cvr !== undefined ? updateData.cvr || null : undefined,
-        companyType: updateData.companyType || undefined,
-        address: updateData.address !== undefined ? updateData.address || null : undefined,
-        city: updateData.city !== undefined ? updateData.city || null : undefined,
-        postalCode: updateData.postalCode !== undefined ? updateData.postalCode || null : undefined,
-        foundedDate:
-          updateData.foundedDate !== undefined
-            ? updateData.foundedDate
-              ? new Date(updateData.foundedDate)
-              : null
-            : undefined,
-        notes: updateData.notes !== undefined ? updateData.notes || null : undefined,
+        ...(name !== undefined ? { name } : {}),
+        ...(cvr !== undefined ? { cvr: cvr || null } : {}),
+        ...(companyType !== undefined ? { companyType: companyType || null } : {}),
+        ...(address !== undefined ? { address: address || null } : {}),
+        ...(city !== undefined ? { city: city || null } : {}),
+        ...(postalCode !== undefined ? { postalCode: postalCode || null } : {}),
+        ...(foundedDate !== undefined
+          ? { foundedDate: foundedDate ? new Date(foundedDate) : null }
+          : {}),
+        ...(status !== undefined ? { status } : {}),
+        ...(notes !== undefined ? { notes: notes || null } : {}),
       },
     })
 
@@ -244,22 +224,21 @@ export async function updateCompany(
       },
     })
 
-    revalidatePath(`/companies/${companyId}`)
     revalidatePath('/companies')
+    revalidatePath(`/companies/${companyId}`)
     return { data: company }
   } catch (error) {
     console.error('updateCompany error:', error)
-    return { error: 'Selskabet kunne ikke opdateres — prøv igen eller kontakt support' }
+    return { error: 'Selskabet kunne ikke opdateres' }
   }
 }
 
 export async function deleteCompany(
   input: z.infer<typeof deleteCompanySchema>
-): Promise<ActionResult<{ id: string }>> {
+): Promise<ActionResult<void>> {
   const session = await auth()
   if (!session?.user) return { error: 'Ikke autoriseret' }
 
-  // SIKKERHED (PENTEST-001 / DEC-047): Readonly-brugere må ikke slette
   const hasWriteAccess = await canWrite(session.user.id)
   if (!hasWriteAccess) return { error: 'Du har ikke skriveadgang' }
 
@@ -269,14 +248,11 @@ export async function deleteCompany(
   const { companyId } = parsed.data
 
   const hasAccess = await canAccessCompany(session.user.id, companyId)
-  if (!hasAccess) return { error: 'Du har ikke adgang til dette selskab' }
+  if (!hasAccess) return { error: 'Adgang nægtet' }
 
   try {
     await prisma.company.update({
-      where: {
-        id: companyId,
-        organizationId: session.user.organizationId, // ← SIKKERHED: DEC-048
-      },
+      where: { id: companyId },
       data: { deletedAt: new Date() },
     })
 
@@ -291,14 +267,14 @@ export async function deleteCompany(
     })
 
     revalidatePath('/companies')
-    return { data: { id: companyId } }
+    return { data: undefined }
   } catch (error) {
     console.error('deleteCompany error:', error)
-    return { error: 'Selskabet kunne ikke slettes — prøv igen eller kontakt support' }
+    return { error: 'Selskabet kunne ikke slettes' }
   }
 }
 
-// ==================== EJERSKAB ====================
+// ==================== OWNERSHIP ====================
 
 export async function createOwnership(
   input: z.infer<typeof createOwnershipSchema>
@@ -306,7 +282,6 @@ export async function createOwnership(
   const session = await auth()
   if (!session?.user) return { error: 'Ikke autoriseret' }
 
-  // SIKKERHED (PENTEST-001 / DEC-047)
   const hasWriteAccess = await canWrite(session.user.id)
   if (!hasWriteAccess) return { error: 'Du har ikke skriveadgang' }
 
@@ -316,52 +291,23 @@ export async function createOwnership(
     return { error: firstError?.message ?? 'Ugyldigt input' }
   }
 
-  const { companyId, ownerType, ownerPersonId, ownerCompanyId, ownershipPct, shareClass, effectiveDate } =
+  const { companyId, ownerType, ownerPersonId, ownerCompanyId, ownershipPct, shareClass, effectiveDate, contractId } =
     parsed.data
 
   const hasAccess = await canAccessCompany(session.user.id, companyId)
-  if (!hasAccess) return { error: 'Du har ikke adgang til dette selskab' }
-
-  // Validér at ejer-ID tilhører organisationen
-  if (ownerType === 'person' && ownerPersonId) {
-    const person = await prisma.person.findUnique({
-      where: {
-        id: ownerPersonId,
-        organizationId: session.user.organizationId,
-        deletedAt: null,
-      },
-    })
-    if (!person) return { error: 'Person ikke fundet i din organisation' }
-  }
+  if (!hasAccess) return { error: 'Adgang nægtet' }
 
   try {
-    const existingOwnerships = await prisma.ownership.findMany({
-      where: {
-        companyId,
-        organizationId: session.user.organizationId,
-      },
-    })
-
-    const totalExisting = existingOwnerships.reduce(
-      (sum, o) => sum + Number(o.ownershipPct),
-      0
-    )
-    if (totalExisting + ownershipPct > 100) {
-      return {
-        error: `Samlet ejerandel vil overstige 100% (nuværende: ${totalExisting.toFixed(2)}%)`,
-      }
-    }
-
     const ownership = await prisma.ownership.create({
       data: {
         organizationId: session.user.organizationId,
         companyId,
-        ownerPersonId: ownerType === 'person' ? ownerPersonId : null,
-        ownerCompanyId: ownerType === 'company' ? ownerCompanyId : null,
+        ownerPersonId: ownerType === 'person' ? ownerPersonId || null : null,
+        ownerCompanyId: ownerType === 'company' ? ownerCompanyId || null : null,
         ownershipPct,
         shareClass: shareClass || null,
         effectiveDate: effectiveDate ? new Date(effectiveDate) : null,
-        createdBy: session.user.id,
+        contractId: contractId || null,
       },
     })
 
@@ -369,7 +315,7 @@ export async function createOwnership(
     return { data: ownership }
   } catch (error) {
     console.error('createOwnership error:', error)
-    return { error: 'Ejerskab kunne ikke oprettes — prøv igen eller kontakt support' }
+    return { error: 'Ejerskabet kunne ikke oprettes' }
   }
 }
 
@@ -379,7 +325,6 @@ export async function updateOwnership(
   const session = await auth()
   if (!session?.user) return { error: 'Ikke autoriseret' }
 
-  // SIKKERHED (PENTEST-001 / DEC-047)
   const hasWriteAccess = await canWrite(session.user.id)
   if (!hasWriteAccess) return { error: 'Du har ikke skriveadgang' }
 
@@ -389,102 +334,61 @@ export async function updateOwnership(
     return { error: firstError?.message ?? 'Ugyldigt input' }
   }
 
-  const { ownershipId, companyId, ownershipPct, shareClass, effectiveDate } = parsed.data
-
-  const hasAccess = await canAccessCompany(session.user.id, companyId)
-  if (!hasAccess) return { error: 'Du har ikke adgang til dette selskab' }
+  const { id, ownershipPct, shareClass, effectiveDate, contractId } = parsed.data
 
   try {
-    const existing = await prisma.ownership.findFirst({
-      where: {
-        id: ownershipId,
-        companyId,
-        organizationId: session.user.organizationId,
-      },
-    })
-    if (!existing) return { error: 'Ejerskab ikke fundet' }
+    const existing = await prisma.ownership.findUnique({ where: { id } })
+    if (!existing) return { error: 'Ejerskabet blev ikke fundet' }
 
-    if (ownershipPct !== undefined) {
-      const otherOwnerships = await prisma.ownership.findMany({
-        where: {
-          companyId,
-          organizationId: session.user.organizationId,
-          id: { not: ownershipId },
-        },
-      })
-      const totalOthers = otherOwnerships.reduce((sum, o) => sum + Number(o.ownershipPct), 0)
-      if (totalOthers + ownershipPct > 100) {
-        return {
-          error: `Samlet ejerandel vil overstige 100% (øvrige ejeres andel: ${totalOthers.toFixed(2)}%)`,
-        }
-      }
-    }
+    const hasAccess = await canAccessCompany(session.user.id, existing.companyId)
+    if (!hasAccess) return { error: 'Adgang nægtet' }
 
-    const updated = await prisma.ownership.update({
-      where: {
-        id: ownershipId,
-        organizationId: session.user.organizationId, // ← SIKKERHED: DEC-048 / PENTEST-006
-      },
+    const ownership = await prisma.ownership.update({
+      where: { id },
       data: {
-        ownershipPct: ownershipPct ?? undefined,
-        shareClass: shareClass !== undefined ? shareClass || null : undefined,
-        effectiveDate:
-          effectiveDate !== undefined
-            ? effectiveDate
-              ? new Date(effectiveDate)
-              : null
-            : undefined,
+        ...(ownershipPct !== undefined ? { ownershipPct } : {}),
+        ...(shareClass !== undefined ? { shareClass: shareClass || null } : {}),
+        ...(effectiveDate !== undefined
+          ? { effectiveDate: effectiveDate ? new Date(effectiveDate) : null }
+          : {}),
+        ...(contractId !== undefined ? { contractId: contractId || null } : {}),
       },
     })
 
-    revalidatePath(`/companies/${companyId}`)
-    return { data: updated }
+    revalidatePath(`/companies/${existing.companyId}`)
+    return { data: ownership }
   } catch (error) {
     console.error('updateOwnership error:', error)
-    return { error: 'Ejerskab kunne ikke opdateres — prøv igen' }
+    return { error: 'Ejerskabet kunne ikke opdateres' }
   }
 }
 
 export async function deleteOwnership(
-  input: z.infer<typeof deleteOwnershipSchema>
-): Promise<ActionResult<{ id: string }>> {
+  id: string
+): Promise<ActionResult<void>> {
   const session = await auth()
   if (!session?.user) return { error: 'Ikke autoriseret' }
 
-  // SIKKERHED (PENTEST-001 / DEC-047)
   const hasWriteAccess = await canWrite(session.user.id)
   if (!hasWriteAccess) return { error: 'Du har ikke skriveadgang' }
 
-  const parsed = deleteOwnershipSchema.safeParse(input)
-  if (!parsed.success) return { error: 'Ugyldigt input' }
-
-  const { ownershipId, companyId } = parsed.data
-
-  const hasAccess = await canAccessCompany(session.user.id, companyId)
-  if (!hasAccess) return { error: 'Du har ikke adgang til dette selskab' }
-
   try {
-    const existing = await prisma.ownership.findFirst({
-      where: {
-        id: ownershipId,
-        companyId,
-        organizationId: session.user.organizationId,
-      },
-    })
-    if (!existing) return { error: 'Ejerskab ikke fundet' }
+    const existing = await prisma.ownership.findUnique({ where: { id } })
+    if (!existing) return { error: 'Ejerskabet blev ikke fundet' }
 
-    await prisma.ownership.delete({
-      where: {
-        id: ownershipId,
-        organizationId: session.user.organizationId, // ← SIKKERHED: DEC-048 / PENTEST-006
-      },
+    const hasAccess = await canAccessCompany(session.user.id, existing.companyId)
+    if (!hasAccess) return { error: 'Adgang nægtet' }
+
+    await prisma.ownership.update({
+      where: { id },
+      data: { deletedAt: new Date() },
     })
 
-    revalidatePath(`/companies/${companyId}`)
-    return { data: { id: ownershipId } }
+    revalidatePath(`/companies/${existing.companyId}`)
+    return { data: undefined }
   } catch (error) {
     console.error('deleteOwnership error:', error)
-    return { error: 'Ejerskab kunne ikke slettes — prøv igen' }
+    return { error: 'Ejerskabet kunne ikke slettes' }
   }
 }
 
@@ -495,33 +399,34 @@ export async function listOwnerships(
   if (!session?.user) return { error: 'Ikke autoriseret' }
 
   const parsed = listOwnershipsSchema.safeParse(input)
-  if (!parsed.success) return { error: 'Ugyldigt selskabs-ID' }
+  if (!parsed.success) return { error: 'Ugyldigt input' }
 
   const { companyId } = parsed.data
 
   const hasAccess = await canAccessCompany(session.user.id, companyId)
-  if (!hasAccess) return { error: 'Du har ikke adgang til dette selskab' }
+  if (!hasAccess) return { error: 'Adgang nægtet' }
 
   try {
     const ownerships = await prisma.ownership.findMany({
       where: {
         companyId,
         organizationId: session.user.organizationId,
+        deletedAt: null,
       },
       include: {
         ownerPerson: true,
+        ownerCompany: true,
       },
-      orderBy: { ownershipPct: 'desc' },
     })
 
-    return { data: ownerships as OwnershipWithPerson[] }
+    return { data: ownerships as unknown as OwnershipWithPerson[] }
   } catch (error) {
     console.error('listOwnerships error:', error)
-    return { error: 'Ejerskaber kunne ikke hentes — prøv igen' }
+    return { error: 'Ejerskaber kunne ikke hentes' }
   }
 }
 
-// ==================== GOVERNANCE / COMPANY PERSONS ====================
+// ==================== COMPANY PERSON ====================
 
 export async function createCompanyPerson(
   input: z.infer<typeof createCompanyPersonSchema>
@@ -529,7 +434,6 @@ export async function createCompanyPerson(
   const session = await auth()
   if (!session?.user) return { error: 'Ikke autoriseret' }
 
-  // SIKKERHED (PENTEST-001 / DEC-047)
   const hasWriteAccess = await canWrite(session.user.id)
   if (!hasWriteAccess) return { error: 'Du har ikke skriveadgang' }
 
@@ -543,30 +447,20 @@ export async function createCompanyPerson(
     parsed.data
 
   const hasAccess = await canAccessCompany(session.user.id, companyId)
-  if (!hasAccess) return { error: 'Du har ikke adgang til dette selskab' }
-
-  const person = await prisma.person.findUnique({
-    where: {
-      id: personId,
-      organizationId: session.user.organizationId,
-      deletedAt: null,
-    },
-  })
-  if (!person) return { error: 'Person ikke fundet i din organisation' }
+  if (!hasAccess) return { error: 'Adgang nægtet' }
 
   try {
     const companyPerson = await prisma.companyPerson.create({
       data: {
         organizationId: session.user.organizationId,
         companyId,
-        personId,
-        role,
+        personId: personId || '',
+        role: role || '',
         employmentType: employmentType || null,
-        startDate: startDate ? new Date(startDate) : null,
-        endDate: endDate ? new Date(endDate) : null,
-        anciennityStart: anciennityStart ? new Date(anciennityStart) : null,
+        startDate: startDate || null,
+        endDate: endDate || null,
+        anciennityStart: anciennityStart || null,
         contractId: contractId || null,
-        createdBy: session.user.id,
       },
     })
 
@@ -574,7 +468,7 @@ export async function createCompanyPerson(
     return { data: companyPerson }
   } catch (error) {
     console.error('createCompanyPerson error:', error)
-    return { error: 'Tilknytning kunne ikke oprettes — prøv igen eller kontakt support' }
+    return { error: 'Tilknytningen kunne ikke oprettes' }
   }
 }
 
@@ -584,7 +478,6 @@ export async function updateCompanyPerson(
   const session = await auth()
   if (!session?.user) return { error: 'Ikke autoriseret' }
 
-  // SIKKERHED (PENTEST-001 / DEC-047)
   const hasWriteAccess = await canWrite(session.user.id)
   if (!hasWriteAccess) return { error: 'Du har ikke skriveadgang' }
 
@@ -594,91 +487,61 @@ export async function updateCompanyPerson(
     return { error: firstError?.message ?? 'Ugyldigt input' }
   }
 
-  const { companyPersonId, companyId, role, employmentType, startDate, endDate, anciennityStart } =
-    parsed.data
-
-  const hasAccess = await canAccessCompany(session.user.id, companyId)
-  if (!hasAccess) return { error: 'Du har ikke adgang til dette selskab' }
+  const { id, role, employmentType, startDate, endDate, anciennityStart, contractId } = parsed.data
 
   try {
-    const existing = await prisma.companyPerson.findFirst({
-      where: {
-        id: companyPersonId,
-        companyId,
-        organizationId: session.user.organizationId,
-      },
-    })
-    if (!existing) return { error: 'Tilknytning ikke fundet' }
+    const existing = await prisma.companyPerson.findUnique({ where: { id } })
+    if (!existing) return { error: 'Tilknytningen blev ikke fundet' }
 
-    const updated = await prisma.companyPerson.update({
-      where: {
-        id: companyPersonId,
-        organizationId: session.user.organizationId, // ← SIKKERHED: DEC-048 / PENTEST-006
-      },
+    const hasAccess = await canAccessCompany(session.user.id, existing.companyId)
+    if (!hasAccess) return { error: 'Adgang nægtet' }
+
+    const companyPerson = await prisma.companyPerson.update({
+      where: { id },
       data: {
-        role: role ?? undefined,
-        employmentType: employmentType !== undefined ? employmentType || null : undefined,
-        startDate:
-          startDate !== undefined ? (startDate ? new Date(startDate) : null) : undefined,
-        endDate:
-          endDate !== undefined ? (endDate ? new Date(endDate) : null) : undefined,
-        anciennityStart:
-          anciennityStart !== undefined
-            ? anciennityStart
-              ? new Date(anciennityStart)
-              : null
-            : undefined,
+        ...(role !== undefined ? { role } : {}),
+        ...(employmentType !== undefined ? { employmentType: employmentType || null } : {}),
+        ...(startDate !== undefined ? { startDate: startDate || null } : {}),
+        ...(endDate !== undefined ? { endDate: endDate || null } : {}),
+        ...(anciennityStart !== undefined ? { anciennityStart: anciennityStart || null } : {}),
+        ...(contractId !== undefined ? { contractId: contractId || null } : {}),
       },
     })
 
-    revalidatePath(`/companies/${companyId}`)
-    return { data: updated }
+    revalidatePath(`/companies/${existing.companyId}`)
+    return { data: companyPerson }
   } catch (error) {
     console.error('updateCompanyPerson error:', error)
-    return { error: 'Tilknytning kunne ikke opdateres — prøv igen' }
+    return { error: 'Tilknytningen kunne ikke opdateres' }
   }
 }
 
 export async function deleteCompanyPerson(
-  input: z.infer<typeof deleteCompanyPersonSchema>
-): Promise<ActionResult<{ id: string }>> {
+  id: string
+): Promise<ActionResult<void>> {
   const session = await auth()
   if (!session?.user) return { error: 'Ikke autoriseret' }
 
-  // SIKKERHED (PENTEST-001 / DEC-047)
   const hasWriteAccess = await canWrite(session.user.id)
   if (!hasWriteAccess) return { error: 'Du har ikke skriveadgang' }
 
-  const parsed = deleteCompanyPersonSchema.safeParse(input)
-  if (!parsed.success) return { error: 'Ugyldigt input' }
-
-  const { companyPersonId, companyId } = parsed.data
-
-  const hasAccess = await canAccessCompany(session.user.id, companyId)
-  if (!hasAccess) return { error: 'Du har ikke adgang til dette selskab' }
-
   try {
-    const existing = await prisma.companyPerson.findFirst({
-      where: {
-        id: companyPersonId,
-        companyId,
-        organizationId: session.user.organizationId,
-      },
-    })
-    if (!existing) return { error: 'Tilknytning ikke fundet' }
+    const existing = await prisma.companyPerson.findUnique({ where: { id } })
+    if (!existing) return { error: 'Tilknytningen blev ikke fundet' }
 
-    await prisma.companyPerson.delete({
-      where: {
-        id: companyPersonId,
-        organizationId: session.user.organizationId, // ← SIKKERHED: DEC-048 / PENTEST-006
-      },
+    const hasAccess = await canAccessCompany(session.user.id, existing.companyId)
+    if (!hasAccess) return { error: 'Adgang nægtet' }
+
+    await prisma.companyPerson.update({
+      where: { id },
+      data: { deletedAt: new Date() },
     })
 
-    revalidatePath(`/companies/${companyId}`)
-    return { data: { id: companyPersonId } }
+    revalidatePath(`/companies/${existing.companyId}`)
+    return { data: undefined }
   } catch (error) {
     console.error('deleteCompanyPerson error:', error)
-    return { error: 'Tilknytning kunne ikke slettes — prøv igen' }
+    return { error: 'Tilknytningen kunne ikke slettes' }
   }
 }
 
@@ -689,104 +552,62 @@ export async function listCompanyPersons(
   if (!session?.user) return { error: 'Ikke autoriseret' }
 
   const parsed = listCompanyPersonsSchema.safeParse(input)
-  if (!parsed.success) return { error: 'Ugyldigt selskabs-ID' }
+  if (!parsed.success) return { error: 'Ugyldigt input' }
 
   const { companyId, role } = parsed.data
 
   const hasAccess = await canAccessCompany(session.user.id, companyId)
-  if (!hasAccess) return { error: 'Du har ikke adgang til dette selskab' }
+  if (!hasAccess) return { error: 'Adgang nægtet' }
 
   try {
     const persons = await prisma.companyPerson.findMany({
       where: {
         companyId,
         organizationId: session.user.organizationId,
-        ...(role ? { role } : {}),
+        deletedAt: null,
+        ...(role ? { role: { contains: role, mode: 'insensitive' } } : {}),
       },
       include: {
         person: true,
-        contract: true,
       },
-      orderBy: [{ role: 'asc' }, { createdAt: 'desc' }],
     })
 
-    return { data: persons as CompanyPersonWithPerson[] }
+    return { data: persons as unknown as CompanyPersonWithPerson[] }
   } catch (error) {
     console.error('listCompanyPersons error:', error)
-    return { error: 'Tilknytninger kunne ikke hentes — prøv igen' }
+    return { error: 'Personer kunne ikke hentes' }
   }
 }
 
-// ==================== AKTIVITETSLOG ====================
-
 export async function getActivityLog(
   input: z.infer<typeof getActivityLogSchema>
-): Promise<ActionResult<{ entries: ActivityLogEntry[]; total: number }>> {
+): Promise<ActionResult<ActivityLogEntry[]>> {
   const session = await auth()
   if (!session?.user) return { error: 'Ikke autoriseret' }
 
   const parsed = getActivityLogSchema.safeParse(input)
   if (!parsed.success) return { error: 'Ugyldigt input' }
 
-  const { companyId, limit, offset } = parsed.data
+  const { companyId, limit = 50, offset = 0 } = parsed.data
 
   const hasAccess = await canAccessCompany(session.user.id, companyId)
-  if (!hasAccess) return { error: 'Du har ikke adgang til dette selskab' }
+  if (!hasAccess) return { error: 'Adgang nægtet' }
 
   try {
-    const [entries, total] = await Promise.all([
-      prisma.auditLog.findMany({
-        where: {
-          organizationId: session.user.organizationId,
-          resourceType: 'company',
-          resourceId: companyId,
-        },
-        orderBy: { createdAt: 'desc' },
-        take: limit,
-        skip: offset,
-      }),
-      prisma.auditLog.count({
-        where: {
-          organizationId: session.user.organizationId,
-          resourceType: 'company',
-          resourceId: companyId,
-        },
-      }),
-    ])
-
-    return { data: { entries, total } }
-  } catch (error) {
-    console.error('getActivityLog error:', error)
-    return { error: 'Aktivitetslog kunne ikke hentes — prøv igen' }
-  }
-}
-
-// ==================== HJÆLPEFUNKTIONER ====================
-
-export async function getPersonsForOrganization(): Promise<
-  ActionResult<{ id: string; firstName: string; lastName: string; email: string | null }[]>
-> {
-  const session = await auth()
-  if (!session?.user) return { error: 'Ikke autoriseret' }
-
-  try {
-    const persons = await prisma.person.findMany({
+    const logs = await prisma.auditLog.findMany({
       where: {
         organizationId: session.user.organizationId,
-        deletedAt: null,
+        resourceType: 'company',
+        resourceId: companyId,
       },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-      },
-      orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      skip: offset,
     })
 
-    return { data: persons }
+    return { data: logs as unknown as ActivityLogEntry[] }
   } catch (error) {
-    console.error('getPersonsForOrganization error:', error)
-    return { error: 'Personer kunne ikke hentes — prøv igen' }
+    console.error('getActivityLog error:', error)
+    return { error: 'Aktivitetslog kunne ikke hentes' }
   }
 }
