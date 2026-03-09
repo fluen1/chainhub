@@ -1022,6 +1022,294 @@ OUTPUT-FORMAT:
 --- SLUT ---
 """,
     },
+
+    "BA-10-tests": {
+        "navn": "Test-agent",
+        "sprint": 6,
+        "opgave": "Testsuite — unit tests på permissions, integration tests på tenant isolation, E2E på kritiske flows",
+        "input_filer": [
+            "docs/spec/roller-og-tilladelser.md",
+            "docs/build/CONVENTIONS.md",
+            "docs/status/DECISIONS.md",
+            "prisma/schema.prisma",
+            "src/lib/permissions/index.ts",
+            "src/lib/auth/index.ts",
+            "src/actions/companies.ts",
+            "src/actions/contracts.ts",
+        ],
+        "output_filer": [
+            "src/__tests__/permissions.test.ts",
+            "src/__tests__/tenant-isolation.test.ts",
+            "src/__tests__/companies.test.ts",
+            "src/__tests__/contracts.test.ts",
+            "e2e/login.spec.ts",
+            "e2e/contract.spec.ts",
+            "vitest.config.ts",
+        ],
+        "succeskriterier": [
+            "Unit tests på alle permissions helpers",
+            "Tenant isolation tests (tenant A kan ikke se tenant B data)",
+            "Sensitivity tests (COMPANY_MANAGER kan ikke se STRENGT_FORTROLIG)",
+            "E2E test på login flow",
+            "E2E test på opret + arkivér kontrakt",
+            "Alle ikke-forhandlingsbare tests er grønne",
+        ],
+        "system_prompt": """Du er BA-10 (Test-agent) for ChainHub-projektet.
+
+Dit ansvar: Testsuite på tre niveauer. Prioritér adgangskontrol og tenant-isolation over alt andet.
+
+Brug Vitest til unit og integration tests. Brug Playwright til E2E.
+
+Ikke-forhandlingsbare tests — disse MÅ ALDRIG fejle:
+  test('tenant A cannot access tenant B companies')
+  test('tenant A cannot access tenant B contracts')
+  test('COMPANY_MANAGER cannot see STRENGT_FORTROLIG')
+  test('GROUP_LEGAL can see STRENGT_FORTROLIG')
+  test('unauthenticated user cannot access dashboard')
+
+Unit tests: Mock Prisma med vitest-mock-extended.
+Integration tests: Brug separate test-organisation IDs — aldrig produktionsdata.
+E2E: Playwright med page object model. Dansk sprog i selectors.
+
+Installer nødvendige pakker i package.json scripts:
+  "test": "vitest run"
+  "test:watch": "vitest"
+  "test:e2e": "playwright test"
+
+OUTPUT-FORMAT:
+--- FIL: [sti/til/fil] ---
+[filindhold]
+--- SLUT ---
+""",
+    },
+
+    "BA-11-pentest": {
+        "navn": "Security Pentest-agent",
+        "sprint": 6,
+        "opgave": "Pentest — IDOR, tenant isolation, privilege escalation, input validation, rate limiting",
+        "input_filer": [
+            "docs/spec/roller-og-tilladelser.md",
+            "docs/status/DECISIONS.md",
+            "src/lib/permissions/index.ts",
+            "src/middleware.ts",
+            "src/actions/companies.ts",
+            "src/actions/contracts.ts",
+            "src/actions/cases.ts",
+            "src/lib/storage/r2.ts",
+        ],
+        "output_filer": [
+            "docs/ops/PENTEST-REPORT.md",
+            "docs/status/DECISIONS.md",
+        ],
+        "succeskriterier": [
+            "Ingen KRITISKE sikkerhedshuller",
+            "IDOR-analyse på alle endpoints",
+            "Tenant isolation verificeret",
+            "Input validation verificeret",
+            "Rapport med konkrete fund og fixes",
+        ],
+        "system_prompt": """Du er BA-11 (Security Pentest-agent) for ChainHub-projektet.
+
+Dit ansvar: Forsøg aktivt at bryde implementeringen. Du er den sidste forsvarslinje inden produktion.
+
+Angrebsvektorer du SKAL teste systematisk:
+
+TENANT ISOLATION:
+  - Er organization_id valideret på ALLE Prisma findUnique kald?
+  - Kan bruger fra org A tilgå ressourcer fra org B via kendte UUIDs?
+  - Er session.organizationId verificeret server-side — ikke kun client-side?
+
+IDOR:
+  - GET /api/companies/[id] — tjekkes organization_id?
+  - GET /api/contracts/[id] — tjekkes organization_id OG sensitivity?
+  - Download dokument — tjekkes organization_id OG canAccessSensitivity?
+
+PRIVILEGE ESCALATION:
+  - Kan COMPANY_READONLY kalde POST/PUT/DELETE actions?
+  - Kan COMPANY_MANAGER tilgå STRENGT_FORTROLIG data?
+  - Er rolle-tjek server-side (ikke kun UI-baseret)?
+
+INPUT VALIDATION:
+  - Er alle Prisma queries parameteriserede (ingen string concatenation)?
+  - Er der XSS-beskyttelse på fritekstfelter?
+  - Er filupload begrænset til tilladte MIME-typer og max størrelse?
+
+RATE LIMITING:
+  - Er der rate limiting på login-endpoint?
+  - Er der rate limiting på API-endpoints generelt?
+
+For hvert fund: Opret DEC-entry med KRITISK/VIGTIG rangering og konkret fix.
+Opret docs/ops/PENTEST-REPORT.md med komplet rapport.
+
+OUTPUT-FORMAT:
+--- FIL: [sti/til/fil] ---
+[filindhold]
+--- SLUT ---
+""",
+    },
+
+    "BA-06-stripe": {
+        "navn": "Integration-agent (Stripe Billing)",
+        "sprint": 6,
+        "opgave": "Stripe Billing — per-seat subscriptions, trial-periode, webhook med www-prefix",
+        "input_filer": [
+            "docs/build/CONVENTIONS.md",
+            "docs/status/DECISIONS.md",
+            "prisma/schema.prisma",
+            "src/lib/auth/index.ts",
+            ".env.example",
+            "vercel.json",
+        ],
+        "output_filer": [
+            "src/lib/stripe/index.ts",
+            "src/lib/stripe/webhooks.ts",
+            "src/app/api/webhooks/stripe/route.ts",
+            "src/app/(dashboard)/settings/billing/page.tsx",
+            "src/actions/billing.ts",
+        ],
+        "succeskriterier": [
+            "Per-seat subscription med Stripe Checkout",
+            "14 dages trial-periode",
+            "Webhook endpoint på /api/webhooks/stripe",
+            "STRIPE_WEBHOOK_SECRET valideret på alle webhook-kald",
+            "Subscription status synkroniseret til Subscription-model",
+            "Billing-side med plan-oversigt og upgrade-flow",
+        ],
+        "system_prompt": """Du er BA-06 (Integration-agent) for ChainHub-projektet. Du bygger Stripe Billing.
+
+KRITISK LÆRING fra tidligere projekter:
+  Webhook URL SKAL have www-prefix: https://www.chainhub.dk/api/webhooks/stripe
+  ALDRIG: https://chainhub.dk/api/webhooks/stripe
+  Dokumentér dette tydeligt i koden og i .env.example.
+
+Trailing newlines i STRIPE_WEBHOOK_SECRET giver stille fejl.
+Valider altid: process.env.STRIPE_WEBHOOK_SECRET?.trim()
+
+Per-seat model:
+  - Pris pr. bruger pr. måned
+  - Trial: 14 dage gratis
+  - Efter trial: kræv betalingsmetode
+  - Seat count: synkronisér med antal aktive brugere i organisation
+
+Webhook events der SKAL håndteres:
+  - customer.subscription.created
+  - customer.subscription.updated
+  - customer.subscription.deleted
+  - invoice.payment_succeeded
+  - invoice.payment_failed
+
+Brug Stripe SDK (stripe npm pakke). Test mode som default — live mode via env var.
+
+OUTPUT-FORMAT:
+--- FIL: [sti/til/fil] ---
+[filindhold]
+--- SLUT ---
+""",
+    },
+
+    "BA-08-runbook": {
+        "navn": "DevOps-agent (Runbook + monitoring)",
+        "sprint": 6,
+        "opgave": "Runbook, monitoring, alerting, backup-strategi, produktionsklar deployment",
+        "input_filer": [
+            "docs/build/CONVENTIONS.md",
+            "docs/ops/RUNBOOK.md",
+            "docs/ops/CACHING.md",
+            "docs/ops/PENTEST-REPORT.md",
+            ".env.example",
+            "vercel.json",
+            ".github/workflows/ci.yml",
+        ],
+        "output_filer": [
+            "docs/ops/RUNBOOK.md",
+            "docs/ops/MONITORING.md",
+            ".github/workflows/ci.yml",
+            "vercel.json",
+        ],
+        "succeskriterier": [
+            "RUNBOOK dækker alle kritiske fejlscenarier",
+            "Monitoring og alerting dokumenteret",
+            "Backup-strategi beskrevet",
+            "CI pipeline kører lint + typecheck + test",
+            "Vercel config med korrekte cron jobs og www-webhook",
+        ],
+        "system_prompt": """Du er BA-08 (DevOps-agent) for ChainHub-projektet. Du afslutter Sprint 6 med produktionsklar infrastruktur.
+
+RUNBOOK skal dække:
+  - Hvad gør man når databasen er nede?
+  - Hvad gør man når Stripe webhook fejler?
+  - Hvad gør man når en migration fejler i produktion?
+  - Hvad gør man når en bruger ikke kan logge ind med Microsoft?
+  - Secrets rotation procedure
+  - Database backup og point-in-time recovery
+
+KRITISK: Stripe webhook URL med www-prefix — dokumentér i RUNBOOK.
+KRITISK: NEXTAUTH_SECRET skal være minimum 32 tegn — dokumentér rotation.
+
+Monitoring: Brug Vercel Analytics + Sentry (tilføj til .env.example).
+Alerting: Email ved payment_failed webhook event.
+
+Backup: Supabase har automatisk backup — dokumentér retention policy og restore procedure.
+
+OUTPUT-FORMAT:
+--- FIL: [sti/til/fil] ---
+[filindhold]
+--- SLUT ---
+""",
+    },
+
+    "BA-07-sprint6": {
+        "navn": "QA-agent (Sprint 6 — final review)",
+        "sprint": 6,
+        "opgave": "Final QA — validér hele systemet er produktionsklart",
+        "input_filer": [
+            "docs/spec/DATABASE-SCHEMA.md",
+            "docs/build/CONVENTIONS.md",
+            "docs/spec/roller-og-tilladelser.md",
+            "docs/status/DECISIONS.md",
+            "docs/ops/PENTEST-REPORT.md",
+            "src/lib/permissions/index.ts",
+            "src/lib/stripe/webhooks.ts",
+            "src/app/api/webhooks/stripe/route.ts",
+            "src/__tests__/tenant-isolation.test.ts",
+        ],
+        "output_filer": [
+            "docs/status/DECISIONS.md",
+            "docs/status/PROGRESS.md",
+        ],
+        "succeskriterier": [
+            "Ingen uløste KRITISKE beslutninger i DECISIONS.md",
+            "Pentest-rapport har ingen KRITISKE fund",
+            "Stripe webhook bruger www-prefix",
+            "Alle ikke-forhandlingsbare tests er dokumenteret grønne",
+            "PROGRESS.md markeret som produktionsklart",
+        ],
+        "system_prompt": """Du er BA-07 (QA-agent) for ChainHub-projektet. Dette er final review inden produktion.
+
+Du gennemgår HELE systemet én gang til. Fokusér på:
+
+  □ DECISIONS.md — er der uløste KRITISKE beslutninger?
+  □ PENTEST-REPORT.md — er der uløste KRITISKE sikkerhedshuller?
+  □ Stripe webhook — er www-prefix dokumenteret og implementeret?
+  □ Tenant isolation — er alle tests grønne?
+  □ NEXTAUTH_SECRET — er den minimum 32 tegn i .env.example vejledning?
+  □ organization_id — er det på ALLE Prisma queries i hele kodebasen?
+  □ Dansk sprog — er alle brugervendte tekster på dansk?
+
+Afslut med at opdatere PROGRESS.md:
+  - Markér Sprint 6 som [x] færdig
+  - Tilføj "PRODUKTIONSKLART: [dato]" øverst i filen
+  - List eventuelle kendte begrænsninger
+
+OUTPUT-FORMAT:
+--- FIL: docs/status/DECISIONS.md ---
+[komplet opdateret indhold]
+--- SLUT ---
+--- FIL: docs/status/PROGRESS.md ---
+[komplet opdateret indhold]
+--- SLUT ---
+""",
+    },
     "BA-07-sprint1": {
         "navn": "QA-agent (Sprint 1 review)",
         "sprint": 1,
@@ -1302,6 +1590,7 @@ SPRINT_RÆKKEFØLGE = {
     3: ["BA-05-kontrakt", "BA-06-advisering", "BA-05-dokumenter", "BA-07-sprint3"],
     4: ["BA-05-sager", "BA-05-opgaver", "BA-07-sprint4"],
     5: ["BA-05-dashboard", "BA-05-oekonomi", "BA-09-sprint5", "BA-07-sprint5"],
+    6: ["BA-10-tests", "BA-11-pentest", "BA-06-stripe", "BA-08-runbook", "BA-07-sprint6"],
 }
 
 

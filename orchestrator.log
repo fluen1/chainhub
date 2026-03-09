@@ -846,3 +846,36 @@ husky - pre-commit script failed (code 1)
 [2026-03-09 01:37:49] [INFO]   ... 70000 tegn modtaget
 [2026-03-09 01:38:06] [INFO] API svar komplet på 481.0s (73015 tegn)
 [2026-03-09 01:38:06] [INFO] Skrevet: docs/status/DECISIONS.md
+[2026-03-09 01:38:06] [INFO] Git commit: feat: BA-07-sprint5 QA-agent (Sprint 5 review) - QA — Validér dashboard og økonomimodul mod spec
+[2026-03-09 01:38:06] [INFO] === BA-07-sprint5 FÆRDIG (1 filer skrevet) ===
+[2026-03-09 01:42:40] [INFO] === STARTER SPRINT 6 (5 agenter) ===
+[2026-03-09 01:42:40] [INFO] --- Agent 1/5: BA-10-tests ---
+[2026-03-09 01:42:40] [INFO] === Starter BA-10-tests (Test-agent) ===
+[2026-03-09 01:42:40] [INFO] Opgave: Testsuite — unit tests på permissions, integration tests på tenant isolation, E2E på kritiske flows
+[2026-03-09 01:42:40] [INFO] Kalder Claude API (claude-sonnet-4-6) med streaming...
+[2026-03-09 01:44:55] [INFO]   ... 40000 tegn modtaget
+[2026-03-09 01:45:10] [INFO]   ... 44000 tegn modtaget
+[2026-03-09 01:45:24] [INFO]   ... 48000 tegn modtaget
+[2026-03-09 01:45:49] [INFO]   ... 56000 tegn modtaget
+[2026-03-09 01:46:51] [INFO]   ... 74000 tegn modtaget
+[2026-03-09 01:47:53] [INFO] API svar komplet på 313.5s (88676 tegn)
+[2026-03-09 01:47:53] [INFO] Skrevet: package.json
+[2026-03-09 01:47:53] [INFO] Skrevet: vitest.config.ts
+[2026-03-09 01:47:53] [INFO] Skrevet: playwright.config.ts
+[2026-03-09 01:47:53] [INFO] Skrevet: src/__tests__/setup.ts
+[2026-03-09 01:47:53] [INFO] Skrevet: src/__tests__/unit/permissions.test.ts
+[2026-03-09 01:47:53] [INFO] Skrevet: src/__tests__/unit/sensitivity-matrix.test.ts
+[2026-03-09 01:47:53] [INFO] Skrevet: src/__tests__/unit/companies-action.test.ts
+[2026-03-09 01:47:53] [INFO] Skrevet: src/__tests__/integration/tenant-isolation.test.ts
+[2026-03-09 01:47:53] [INFO] Skrevet: src/__tests__/integration/contracts-action.test.ts
+[2026-03-09 01:47:53] [INFO] Skrevet: src/__tests__/integration/auth-guard.test.ts
+[2026-03-09 01:47:53] [INFO] Skrevet: e2e/pages/login.page.ts
+[2026-03-09 01:47:53] [INFO] Skrevet: e2e/pages/dashboard.page.ts
+[2026-03-09 01:47:53] [INFO] Skrevet: e2e/pages/contracts.page.ts
+[2026-03-09 01:47:53] [INFO] Skrevet: e2e/pages/contract-detail.page.ts
+[2026-03-09 01:47:53] [INFO] Skrevet: e2e/helpers/auth.helper.ts
+[2026-03-09 01:47:53] [INFO] Skrevet: e2e/login.spec.ts
+[2026-03-09 01:47:53] [INFO] Skrevet: e2e/contracts.spec.ts
+[2026-03-09 01:47:53] [INFO] Skrevet: e2e/tenant-isolation.spec.ts
+[2026-03-09 01:47:53] [INFO] Skrevet: src/__tests__/unit/permissions-sensitivity-non-negotiable.test.ts
+[2026-03-09 01:47:53] [INFO] Skrevet: .env.example
