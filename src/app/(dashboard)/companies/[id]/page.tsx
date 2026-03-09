@@ -12,7 +12,7 @@ export async function generateMetadata({ params }: { params: { id: string } }) {
 }
 
 async function CompanyProfileLoader({ id }: { id: string }) {
-  const result = await getCompany({ companyId: id })
+  const result = await getCompany(id)
 
   if (result.error === 'Selskabet blev ikke fundet') {
     notFound()

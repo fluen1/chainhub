@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { CompanyPersonWithRelations } from '@/types/company'
+import { CompanyWithRelations } from '@/types/company'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -19,6 +19,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+
+type CompanyPersonWithRelations = CompanyWithRelations['persons'][number]
 
 interface EmployeesSectionProps {
   companyId: string
@@ -99,8 +101,8 @@ export function EmployeesSection({
                           ? `${cp.person.firstName} ${cp.person.lastName}`
                           : 'Ukendt person'}
                       </p>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="text-xs">
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <Badge variant="outline" className="text-xs">
                           {cp.role}
                         </Badge>
                         {cp.employmentType && (
@@ -139,16 +141,17 @@ export function EmployeesSection({
         </CardContent>
       </Card>
 
-      <CompanyPersonDialog
-        companyId={companyId}
-        companyPerson={editingPerson}
-        roleType="employee"
-        open={isDialogOpen}
-        onOpenChange={(open) => {
-          setIsDialogOpen(open)
-          if (!open) setEditingPerson(null)
-        }}
-      />
+      {isDialogOpen && (
+        <CompanyPersonDialog
+          companyId={companyId}
+          person={editingPerson}
+          open={isDialogOpen}
+          onOpenChange={(open) => {
+            setIsDialogOpen(open)
+            if (!open) setEditingPerson(null)
+          }}
+        />
+      )}
 
       <AlertDialog open={!!deletingId} onOpenChange={() => setDeletingId(null)}>
         <AlertDialogContent>

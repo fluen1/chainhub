@@ -103,7 +103,7 @@ export function OwnershipDialog({
           toast.error(result.error)
           return
         }
-        toast.success('Ejerskab tilføjet')
+        toast.success('Ejer tilføjet')
       }
       onOpenChange(false)
     } finally {
@@ -115,11 +115,9 @@ export function OwnershipDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>
-            {isEditing ? 'Rediger ejerskab' : 'Tilføj ejer'}
-          </DialogTitle>
+          <DialogTitle>{isEditing ? 'Rediger ejerskab' : 'Tilføj ejer'}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -129,12 +127,12 @@ export function OwnershipDialog({
                 <Label>Ejertype</Label>
                 <Select
                   value={ownerType}
-                  onValueChange={(value) =>
-                    form.setValue('ownerType', value as 'person' | 'company')
+                  onValueChange={(val) =>
+                    form.setValue('ownerType', val as 'person' | 'company')
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Vælg ejertype" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="person">Person</SelectItem>
@@ -143,82 +141,76 @@ export function OwnershipDialog({
                 </Select>
               </div>
 
-              {ownerType === 'person' && (
+              {ownerType === 'person' ? (
                 <div className="space-y-2">
-                  <Label htmlFor="ownerPersonId">Person-ID</Label>
+                  <Label htmlFor="ownerPersonId">Person ID</Label>
                   <Input
                     id="ownerPersonId"
                     {...form.register('ownerPersonId')}
-                    placeholder="Person-ID (UUID)"
+                    placeholder="Person ID"
                   />
-                  <p className="text-xs text-gray-500">
-                    Vælg en person fra personregistret
-                  </p>
+                  {form.formState.errors.ownerPersonId && (
+                    <p className="text-sm text-red-500">
+                      {form.formState.errors.ownerPersonId.message}
+                    </p>
+                  )}
                 </div>
-              )}
-
-              {ownerType === 'company' && (
+              ) : (
                 <div className="space-y-2">
-                  <Label htmlFor="ownerCompanyId">Ejerselskab-ID</Label>
+                  <Label htmlFor="ownerCompanyId">Selskab ID</Label>
                   <Input
                     id="ownerCompanyId"
                     {...form.register('ownerCompanyId')}
-                    placeholder="Selskabs-ID (UUID)"
+                    placeholder="Selskab ID"
                   />
-                  <p className="text-xs text-gray-500">
-                    Vælg et ejerselskab fra selskabslisten
-                  </p>
+                  {form.formState.errors.ownerCompanyId && (
+                    <p className="text-sm text-red-500">
+                      {form.formState.errors.ownerCompanyId.message}
+                    </p>
+                  )}
                 </div>
               )}
             </>
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="ownershipPct">Ejerandel (%)</Label>
+            <Label htmlFor="ownershipPct">Ejerskabsprocent</Label>
             <Input
               id="ownershipPct"
               type="number"
               step="0.01"
-              min="0.01"
+              min="0"
               max="100"
               {...form.register('ownershipPct', { valueAsNumber: true })}
             />
             {form.formState.errors.ownershipPct && (
-              <p className="text-sm text-red-600">
+              <p className="text-sm text-red-500">
                 {form.formState.errors.ownershipPct.message}
               </p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="shareClass">Anpartsklasse</Label>
+            <Label htmlFor="shareClass">Aktieklasse</Label>
             <Input
               id="shareClass"
               {...form.register('shareClass')}
-              placeholder="f.eks. A-anparter"
+              placeholder="Fx A-aktier"
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="effectiveDate">Ikrafttrædelsesdato</Label>
-            <Input
-              id="effectiveDate"
-              type="date"
-              {...form.register('effectiveDate')}
-            />
-          </div>
-
-          <div className="flex gap-4 pt-4">
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEditing ? 'Gem ændringer' : 'Tilføj'}
-            </Button>
+          <div className="flex justify-end gap-3 pt-2">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
             >
               Annuller
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {isEditing ? 'Gem ændringer' : 'Tilføj ejer'}
             </Button>
           </div>
         </form>

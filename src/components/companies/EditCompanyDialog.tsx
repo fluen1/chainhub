@@ -11,7 +11,9 @@ interface EditCompanyDialogProps {
   onClose: () => void
 }
 
-const COMPANY_TYPES = ['ApS', 'A/S', 'I/S', 'enkeltmandsvirksomhed', 'P/S', 'K/S', 'Andet']
+const COMPANY_TYPES = ['ApS', 'A/S', 'I/S', 'enkeltmandsvirksomhed', 'P/S', 'K/S', 'Andet'] as const
+type CompanyType = typeof COMPANY_TYPES[number]
+
 const STATUS_OPTIONS = [
   { value: 'aktiv', label: 'Aktiv' },
   { value: 'inaktiv', label: 'Inaktiv' },
@@ -24,7 +26,7 @@ export function EditCompanyDialog({ company, onClose }: EditCompanyDialogProps) 
   const [form, setForm] = useState({
     name: company.name,
     cvr: company.cvr ?? '',
-    companyType: company.companyType ?? '',
+    companyType: company.companyType ?? '' as CompanyType | '',
     address: company.address ?? '',
     city: company.city ?? '',
     postalCode: company.postalCode ?? '',
@@ -46,11 +48,15 @@ export function EditCompanyDialog({ company, onClose }: EditCompanyDialogProps) 
     e.preventDefault()
     setIsSubmitting(true)
 
+    const companyType = COMPANY_TYPES.includes(form.companyType as CompanyType)
+      ? (form.companyType as CompanyType)
+      : undefined
+
     const result = await updateCompany({
       companyId: company.id,
       name: form.name,
       cvr: form.cvr || '',
-      companyType: form.companyType as typeof form.companyType | undefined || undefined,
+      companyType,
       address: form.address,
       city: form.city,
       postalCode: form.postalCode,
@@ -95,7 +101,7 @@ export function EditCompanyDialog({ company, onClose }: EditCompanyDialogProps) 
                 required
                 value={form.name}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
 
@@ -107,38 +113,26 @@ export function EditCompanyDialog({ company, onClose }: EditCompanyDialogProps) 
                   type="text"
                   value={form.cvr}
                   onChange={handleChange}
-                  maxLength={8}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700">Selskabstype</label>
                 <select
                   name="companyType"
                   value={form.companyType}
                   onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
                   <option value="">Vælg type</option>
                   {COMPANY_TYPES.map((type) => (
-                    <option key={type} value={type}>{type}</option>
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
                   ))}
                 </select>
               </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Status</label>
-              <select
-                name="status"
-                value={form.status}
-                onChange={handleChange}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              >
-                {STATUS_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
             </div>
 
             <div>
@@ -148,11 +142,11 @@ export function EditCompanyDialog({ company, onClose }: EditCompanyDialogProps) 
                 type="text"
                 value={form.address}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Postnummer</label>
                 <input
@@ -160,18 +154,18 @@ export function EditCompanyDialog({ company, onClose }: EditCompanyDialogProps) 
                   type="text"
                   value={form.postalCode}
                   onChange={handleChange}
-                  maxLength={4}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
-              <div className="col-span-2">
+
+              <div>
                 <label className="block text-sm font-medium text-gray-700">By</label>
                 <input
                   name="city"
                   type="text"
                   value={form.city}
                   onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
             </div>
@@ -183,18 +177,34 @@ export function EditCompanyDialog({ company, onClose }: EditCompanyDialogProps) 
                 type="date"
                 value={form.foundedDate}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Status</label>
+              <select
+                name="status"
+                value={form.status}
+                onChange={handleChange}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                {STATUS_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700">Noter</label>
               <textarea
                 name="notes"
+                rows={3}
                 value={form.notes}
                 onChange={handleChange}
-                rows={3}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
           </div>
@@ -203,7 +213,7 @@ export function EditCompanyDialog({ company, onClose }: EditCompanyDialogProps) 
             <button
               type="button"
               onClick={onClose}
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
               Annuller
             </button>

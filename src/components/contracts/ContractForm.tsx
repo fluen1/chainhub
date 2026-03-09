@@ -84,108 +84,119 @@ export function ContractForm({ companies, initialData, isEdit = false }: Contrac
     sensitivity: initialData?.sensitivity || ('STANDARD' as SensitivityLevel),
     deadlineType: initialData?.deadlineType || ('INGEN' as DeadlineType),
     versionSource: initialData?.versionSource || ('CUSTOM' as VersionSource),
-    collectiveAgreement: initialData?.collectiveAgreement || '',
-    effectiveDate: initialData?.effectiveDate || null,
-    expiryDate: initialData?.expiryDate || null,
-    noticePeriodDays: initialData?.noticePeriodDays || null,
+    startDate: initialData?.startDate ? new Date(initialData.startDate) : null as Date | null,
+    endDate: initialData?.endDate ? new Date(initialData.endDate) : null as Date | null,
+    noticePeriodDays: initialData?.noticePeriodDays?.toString() || '',
+    autoRenews: initialData?.autoRenews ?? false,
+    counterpartyName: initialData?.counterpartyName || '',
+    counterpartyOrg: initialData?.counterpartyOrg || '',
     notes: initialData?.notes || '',
   })
 
-  // Beregn minimum sensitivity baseret på valgt type
-  const minSensitivity = formData.systemType 
-    ? getMinSensitivity(formData.systemType)
-    : 'STANDARD'
-
-  // Filtrér sensitivity options baseret på minimum
-  const availableSensitivities = SENSITIVITY_OPTIONS.filter(opt => 
-    meetsMinimumSensitivity(opt.value, minSensitivity)
-  )
-
-  // Opdater sensitivity når type ændres hvis nuværende er for lav
   const handleSystemTypeChange = (value: ContractSystemType) => {
-    const newMinSensitivity = getMinSensitivity(value)
-    let newSensitivity = formData.sensitivity
-    
-    if (!meetsMinimumSensitivity(formData.sensitivity, newMinSensitivity)) {
-      newSensitivity = newMinSensitivity
-    }
-    
-    setFormData(prev => ({
-      ...prev,
-      systemType: value,
-      sensitivity: newSensitivity,
-    }))
+    const minSensitivity = getMinSensitivity(value)
+    setFormData(prev => {
+      const currentSensitivityIndex = SENSITIVITY_OPTIONS.findIndex(o => o.value === prev.sensitivity)
+      const minSensitivityIndex = SENSITIVITY_OPTIONS.findIndex(o => o.value === minSensitivity)
+      return {
+        ...prev,
+        systemType: value,
+        sensitivity: currentSensitivityIndex < minSensitivityIndex ? minSensitivity : prev.sensitivity,
+      }
+    })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!formData.companyId) {
+      toast.error('Vælg et selskab')
+      return
+    }
+    
+    if (!formData.systemType) {
+      toast.error('Vælg en kontrakttype')
+      return
+    }
+
+    if (formData.systemType && !meetsMinimumSensitivity(formData.systemType, formData.sensitivity)) {
+      toast.error('Sensitivitetsniveau er for lavt for denne kontrakttype')
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
       if (isEdit && initialData?.id) {
-        const input: UpdateContractInput = {
+        const updateData: UpdateContractInput = {
           id: initialData.id,
-          displayName: formData.displayName,
+          displayName: formData.displayName || undefined,
           sensitivity: formData.sensitivity,
           deadlineType: formData.deadlineType,
-          versionSource: formData.versionSource,
-          collectiveAgreement: formData.collectiveAgreement || null,
-          effectiveDate: formData.effectiveDate,
-          expiryDate: formData.expiryDate,
-          noticePeriodDays: formData.noticePeriodDays,
-          notes: formData.notes || null,
+          startDate: formData.startDate?.toISOString() || undefined,
+          endDate: formData.endDate?.toISOString() || undefined,
+          noticePeriodDays: formData.noticePeriodDays ? parseInt(formData.noticePeriodDays) : undefined,
+          autoRenews: formData.autoRenews,
+          counterpartyName: formData.counterpartyName || undefined,
+          counterpartyOrg: formData.counterpartyOrg || undefined,
+          notes: formData.notes || undefined,
         }
-
-        const result = await updateContract(input)
+        
+        const result = await updateContract(updateData)
         
         if (result.error) {
           toast.error(result.error)
           return
         }
-
-        toast.success('Kontrakten blev opdateret')
+        
+        toast.success('Kontrakt opdateret')
         router.push(`/contracts/${initialData.id}`)
       } else {
-        const input: CreateContractInput = {
+        const createData: CreateContractInput = {
           companyId: formData.companyId,
           systemType: formData.systemType,
-          displayName: formData.displayName,
+          displayName: formData.displayName || undefined,
           sensitivity: formData.sensitivity,
           deadlineType: formData.deadlineType,
           versionSource: formData.versionSource,
-          collectiveAgreement: formData.collectiveAgreement || null,
-          effectiveDate: formData.effectiveDate,
-          expiryDate: formData.expiryDate,
-          noticePeriodDays: formData.noticePeriodDays,
-          notes: formData.notes || null,
+          startDate: formData.startDate?.toISOString() || undefined,
+          endDate: formData.endDate?.toISOString() || undefined,
+          noticePeriodDays: formData.noticePeriodDays ? parseInt(formData.noticePeriodDays) : undefined,
+          autoRenews: formData.autoRenews,
+          counterpartyName: formData.counterpartyName || undefined,
+          counterpartyOrg: formData.counterpartyOrg || undefined,
+          notes: formData.notes || undefined,
         }
-
-        const result = await createContract(input)
+        
+        const result = await createContract(createData)
         
         if (result.error) {
           toast.error(result.error)
           return
         }
-
-        toast.success('Kontrakten blev oprettet')
+        
+        toast.success('Kontrakt oprettet')
         router.push(`/contracts/${result.data!.id}`)
       }
-    } catch (error) {
-      toast.error('Noget gik galt — prøv igen')
     } finally {
       setIsSubmitting(false)
     }
   }
 
+  const minSensitivity = formData.systemType ? getMinSensitivity(formData.systemType) : null
+  const minSensitivityIndex = minSensitivity
+    ? SENSITIVITY_OPTIONS.findIndex(o => o.value === minSensitivity)
+    : -1
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Selskab (kun ved oprettelse) */}
+      {/* Selskab */}
       {!isEdit && (
         <div className="space-y-2">
           <Label htmlFor="companyId">Selskab *</Label>
           <Select
             value={formData.companyId}
-            onValueChange={(value) => setFormData(prev => ({ ...prev, companyId: value }))}
+            onValueChange={(val) => setFormData(prev => ({ ...prev, companyId: val }))}
           >
             <SelectTrigger>
               <SelectValue placeholder="Vælg selskab" />
@@ -201,13 +212,13 @@ export function ContractForm({ companies, initialData, isEdit = false }: Contrac
         </div>
       )}
 
-      {/* Kontrakttype (kun ved oprettelse) */}
+      {/* Kontrakttype */}
       {!isEdit && (
         <div className="space-y-2">
           <Label htmlFor="systemType">Kontrakttype *</Label>
           <Select
             value={formData.systemType}
-            onValueChange={handleSystemTypeChange}
+            onValueChange={(val) => handleSystemTypeChange(val as ContractSystemType)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Vælg kontrakttype" />
@@ -220,56 +231,56 @@ export function ContractForm({ companies, initialData, isEdit = false }: Contrac
               ))}
             </SelectContent>
           </Select>
-          {formData.systemType && (
-            <p className="text-xs text-muted-foreground">
-              Minimum sensitivitet: {SENSITIVITY_OPTIONS.find(s => s.value === minSensitivity)?.label}
-            </p>
-          )}
         </div>
       )}
 
-      {/* Navn */}
+      {/* Visningsnavn */}
       <div className="space-y-2">
-        <Label htmlFor="displayName">Kontraktnavn *</Label>
+        <Label htmlFor="displayName">Navn / beskrivelse</Label>
         <Input
           id="displayName"
           value={formData.displayName}
           onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))}
-          placeholder="F.eks. Lejekontrakt — Vesterbrogade 42"
-          required
+          placeholder="Fx 'Lejekontrakt Aarhus kontor'"
         />
       </div>
 
       {/* Sensitivitet */}
       <div className="space-y-2">
-        <Label htmlFor="sensitivity">Sensitivitet</Label>
+        <Label>Sensitivitetsniveau *</Label>
         <Select
           value={formData.sensitivity}
-          onValueChange={(value: SensitivityLevel) => 
-            setFormData(prev => ({ ...prev, sensitivity: value }))
-          }
+          onValueChange={(val) => setFormData(prev => ({ ...prev, sensitivity: val as SensitivityLevel }))}
         >
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {availableSensitivities.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
+            {SENSITIVITY_OPTIONS.map((opt, index) => (
+              <SelectItem
+                key={opt.value}
+                value={opt.value}
+                disabled={index < minSensitivityIndex}
+              >
                 {opt.label}
+                {index < minSensitivityIndex && ' (for lavt)'}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
+        {minSensitivity && (
+          <p className="text-xs text-gray-500">
+            Minimum for denne kontrakttype: {SENSITIVITY_OPTIONS.find(o => o.value === minSensitivity)?.label}
+          </p>
+        )}
       </div>
 
-      {/* Deadline type */}
+      {/* Deadline-type */}
       <div className="space-y-2">
-        <Label htmlFor="deadlineType">Fristtype</Label>
+        <Label>Deadline-type</Label>
         <Select
           value={formData.deadlineType}
-          onValueChange={(value: DeadlineType) => 
-            setFormData(prev => ({ ...prev, deadlineType: value }))
-          }
+          onValueChange={(val) => setFormData(prev => ({ ...prev, deadlineType: val as DeadlineType }))}
         >
           <SelectTrigger>
             <SelectValue />
@@ -284,118 +295,139 @@ export function ContractForm({ companies, initialData, isEdit = false }: Contrac
         </Select>
       </div>
 
-      {/* Version source */}
-      <div className="space-y-2">
-        <Label htmlFor="versionSource">Dokumentkilde</Label>
-        <Select
-          value={formData.versionSource}
-          onValueChange={(value: VersionSource) => 
-            setFormData(prev => ({ ...prev, versionSource: value }))
-          }
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {VERSION_SOURCE_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Overenskomst (vis kun ved BRANCHESTANDARD) */}
-      {formData.versionSource === 'BRANCHESTANDARD' && (
+      {/* Versionstype */}
+      {!isEdit && (
         <div className="space-y-2">
-          <Label htmlFor="collectiveAgreement">Overenskomst</Label>
-          <Input
-            id="collectiveAgreement"
-            value={formData.collectiveAgreement}
-            onChange={(e) => setFormData(prev => ({ ...prev, collectiveAgreement: e.target.value }))}
-            placeholder="Navn på overenskomst"
-          />
+          <Label>Dokumenttype</Label>
+          <Select
+            value={formData.versionSource}
+            onValueChange={(val) => setFormData(prev => ({ ...prev, versionSource: val as VersionSource }))}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {VERSION_SOURCE_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       )}
 
-      {/* Ikrafttrædelsesdato */}
-      <div className="space-y-2">
-        <Label>Ikrafttrædelsesdato</Label>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                'w-full justify-start text-left font-normal',
-                !formData.effectiveDate && 'text-muted-foreground'
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {formData.effectiveDate 
-                ? format(formData.effectiveDate, 'PPP', { locale: da })
-                : 'Vælg dato'
-              }
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={formData.effectiveDate || undefined}
-              onSelect={(date) => setFormData(prev => ({ ...prev, effectiveDate: date || null }))}
-              locale={da}
-            />
-          </PopoverContent>
-        </Popover>
+      {/* Datoer */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Startdato</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  'w-full justify-start text-left font-normal',
+                  !formData.startDate && 'text-muted-foreground'
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {formData.startDate
+                  ? format(formData.startDate, 'PPP', { locale: da })
+                  : 'Vælg dato'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={formData.startDate ?? undefined}
+                onSelect={(date) => setFormData(prev => ({ ...prev, startDate: date ?? null }))}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Slutdato</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  'w-full justify-start text-left font-normal',
+                  !formData.endDate && 'text-muted-foreground'
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {formData.endDate
+                  ? format(formData.endDate, 'PPP', { locale: da })
+                  : 'Vælg dato'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={formData.endDate ?? undefined}
+                onSelect={(date) => setFormData(prev => ({ ...prev, endDate: date ?? null }))}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
 
-      {/* Udløbsdato */}
-      <div className="space-y-2">
-        <Label>Udløbsdato</Label>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                'w-full justify-start text-left font-normal',
-                !formData.expiryDate && 'text-muted-foreground'
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {formData.expiryDate 
-                ? format(formData.expiryDate, 'PPP', { locale: da })
-                : 'Vælg dato (tom = løbende)'
-              }
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={formData.expiryDate || undefined}
-              onSelect={(date) => setFormData(prev => ({ ...prev, expiryDate: date || null }))}
-              locale={da}
+      {/* Opsigelse */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="noticePeriodDays">Opsigelsesperiode (dage)</Label>
+          <Input
+            id="noticePeriodDays"
+            type="number"
+            min="0"
+            value={formData.noticePeriodDays}
+            onChange={(e) => setFormData(prev => ({ ...prev, noticePeriodDays: e.target.value }))}
+            placeholder="Fx 30"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Automatisk fornyelse</Label>
+          <div className="flex items-center gap-2 pt-2">
+            <input
+              type="checkbox"
+              id="autoRenews"
+              checked={formData.autoRenews}
+              onChange={(e) => setFormData(prev => ({ ...prev, autoRenews: e.target.checked }))}
+              className="h-4 w-4 rounded border-gray-300"
             />
-          </PopoverContent>
-        </Popover>
-        <p className="text-xs text-muted-foreground">
-          Lad være tom for løbende kontrakter uden fast udløb
-        </p>
+            <label htmlFor="autoRenews" className="text-sm text-gray-700">
+              Kontrakten fornyes automatisk
+            </label>
+          </div>
+        </div>
       </div>
 
-      {/* Opsigelsesvarsel */}
-      <div className="space-y-2">
-        <Label htmlFor="noticePeriodDays">Opsigelsesvarsel (dage)</Label>
-        <Input
-          id="noticePeriodDays"
-          type="number"
-          min="0"
-          value={formData.noticePeriodDays || ''}
-          onChange={(e) => setFormData(prev => ({ 
-            ...prev, 
-            noticePeriodDays: e.target.value ? parseInt(e.target.value, 10) : null 
-          }))}
-          placeholder="F.eks. 90"
-        />
+      {/* Modpart */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="counterpartyName">Modpartsnavn</Label>
+          <Input
+            id="counterpartyName"
+            value={formData.counterpartyName}
+            onChange={(e) => setFormData(prev => ({ ...prev, counterpartyName: e.target.value }))}
+            placeholder="Fx Hansen Ejendomme A/S"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="counterpartyOrg">Modparts CVR</Label>
+          <Input
+            id="counterpartyOrg"
+            value={formData.counterpartyOrg}
+            onChange={(e) => setFormData(prev => ({ ...prev, counterpartyOrg: e.target.value }))}
+            placeholder="12345678"
+          />
+        </div>
       </div>
 
       {/* Noter */}
@@ -405,13 +437,13 @@ export function ContractForm({ companies, initialData, isEdit = false }: Contrac
           id="notes"
           value={formData.notes}
           onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-          placeholder="Eventuelle noter om kontrakten..."
-          rows={4}
+          placeholder="Interne noter om kontrakten..."
+          rows={3}
         />
       </div>
 
-      {/* Submit */}
-      <div className="flex gap-4">
+      {/* Knapper */}
+      <div className="flex justify-end gap-3">
         <Button
           type="button"
           variant="outline"
@@ -421,7 +453,7 @@ export function ContractForm({ companies, initialData, isEdit = false }: Contrac
           Annuller
         </Button>
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
           {isEdit ? 'Gem ændringer' : 'Opret kontrakt'}
         </Button>
       </div>

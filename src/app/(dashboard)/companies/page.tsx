@@ -2,18 +2,19 @@ import { Suspense } from 'react'
 import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { listCompanies } from '@/actions/companies'
+import { getCompanies } from '@/actions/companies'
 import { CompanyListSkeleton } from '@/components/companies/CompanyListSkeleton'
 import { CompanyCard } from '@/components/companies/CompanyCard'
 import { CompanyListEmpty } from '@/components/companies/CompanyListEmpty'
 import { CreateCompanyButton } from '@/components/companies/CreateCompanyButton'
+import type { Company } from '@/types/company'
 
 export const metadata = {
   title: 'Selskaber — ChainHub',
 }
 
 async function CompanyList() {
-  const result = await listCompanies()
+  const result = await getCompanies()
 
   if (result.error) {
     return (
@@ -31,7 +32,7 @@ async function CompanyList() {
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {companies.map((company) => (
+      {companies.map((company: Company) => (
         <CompanyCard key={company.id} company={company} />
       ))}
     </div>

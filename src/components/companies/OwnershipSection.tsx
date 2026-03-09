@@ -90,9 +90,9 @@ export function OwnershipSection({
                 >
                   <div className="flex items-center gap-3">
                     {ownership.ownerPersonId ? (
-                      <Users className="h-5 w-5 text-blue-500" />
+                      <Users className="h-5 w-5 text-gray-400" />
                     ) : (
-                      <Building2 className="h-5 w-5 text-gray-500" />
+                      <Building2 className="h-5 w-5 text-gray-400" />
                     )}
                     <div>
                       <p className="font-medium text-sm">
@@ -102,14 +102,14 @@ export function OwnershipSection({
                           ? ownership.ownerCompany.name
                           : 'Ukendt ejer'}
                       </p>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="text-xs">
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-sm font-medium">
                           {Number(ownership.ownershipPct).toFixed(2)}%
-                        </Badge>
+                        </span>
                         {ownership.shareClass && (
-                          <span className="text-xs text-gray-500">
+                          <Badge variant="outline" className="text-xs">
                             {ownership.shareClass}
-                          </span>
+                          </Badge>
                         )}
                       </div>
                     </div>

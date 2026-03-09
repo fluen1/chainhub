@@ -103,16 +103,87 @@ export function DocumentList({ companyId, caseId, contractId }: DocumentListProp
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-lg font-semibold">Dokumenter</h2>
+        <Button size="sm" onClick={() => setShowUploadDialog(true)}>
+          <Plus className="h-4 w-4 mr-1" />
+          Upload dokument
+        </Button>
+      </div>
+
+      {/* Filtre */}
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <form onSubmit={handleSearch} className="flex flex-1 gap-2">
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Søg i dokumenter..."
+            className="flex-1"
+          />
+          <Button type="submit" variant="outline" size="sm">
+            <Search className="h-4 w-4" />
+          </Button>
+        </form>
+
+        <Select value={sensitivity} onValueChange={setSensitivity}>
+          <SelectTrigger className="w-full sm:w-48">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {SENSITIVITY_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={fileType} onValueChange={setFileType}>
+          <SelectTrigger className="w-full sm:w-40">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {FILE_TYPE_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Indhold */}
+      {loading ? (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <DocumentCardSkeleton key={i} />
+          ))}
+        </div>
+      ) : error ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {error}
+        </div>
+      ) : documents.length === 0 ? (
+        <div className="rounded-lg border border-dashed p-8 text-center text-gray-500">
+          <FileX className="mx-auto h-8 w-8 mb-2 opacity-50" />
+          <p>Ingen dokumenter fundet</p>
+        </div>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {documents.map((doc) => (
+            <DocumentCard
+              key={doc.id}
+              document={doc}
+              onDeleted={fetchDocuments}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Upload dialog */}
+      {showUploadDialog && (
         <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Upload dokument
-            </Button>
-          </DialogTrigger>
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle>Upload dokumenter</DialogTitle>
+              <DialogTitle>Upload dokument</DialogTitle>
             </DialogHeader>
             <DocumentUpload
               companyId={companyId}
@@ -123,93 +194,6 @@ export function DocumentList({ companyId, caseId, contractId }: DocumentListProp
             />
           </DialogContent>
         </Dialog>
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <form onSubmit={handleSearch} className="flex-1">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              type="search"
-              placeholder="Søg i dokumenter..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-        </form>
-        <Select value={sensitivity} onValueChange={setSensitivity}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Sensitivitet" />
-          </SelectTrigger>
-          <SelectContent>
-            {SENSITIVITY_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={fileType} onValueChange={setFileType}>
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Filtype" />
-          </SelectTrigger>
-          <SelectContent>
-            {FILE_TYPE_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Content */}
-      {loading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <DocumentCardSkeleton key={i} />
-          ))}
-        </div>
-      ) : error ? (
-        <div className="text-center py-12">
-          <p className="text-red-600">{error}</p>
-          <Button variant="outline" className="mt-4" onClick={fetchDocuments}>
-            Prøv igen
-          </Button>
-        </div>
-      ) : documents.length === 0 ? (
-        <div className="text-center py-12">
-          <FileX className="mx-auto h-12 w-12 text-gray-300" />
-          <h3 className="mt-4 text-lg font-medium text-gray-900">
-            Ingen dokumenter fundet
-          </h3>
-          <p className="mt-1 text-sm text-gray-500">
-            {search || sensitivity !== 'all' || fileType !== 'all'
-              ? 'Prøv at ændre dine filtre'
-              : 'Upload det første dokument for at komme i gang'}
-          </p>
-          {!search && sensitivity === 'all' && fileType === 'all' && (
-            <Button
-              className="mt-4"
-              onClick={() => setShowUploadDialog(true)}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Upload dokument
-            </Button>
-          )}
-        </div>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {documents.map((document) => (
-            <DocumentCard
-              key={document.id}
-              document={document}
-              onDeleted={fetchDocuments}
-            />
-          ))}
-        </div>
       )}
     </div>
   )

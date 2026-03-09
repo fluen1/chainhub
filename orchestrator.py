@@ -1,18 +1,27 @@
 #!/usr/bin/env python3
 """
-ChainHub MABS — Autonom Multi-Agent Orkestrator v2
+ChainHub MABS — Autonom Multi-Agent Orkestrator v3
 ===================================================
-Nye features i v2:
-  - BA-12-repair agent: scanner imports, fikser deps, opretter shadcn-komponenter
-  - kør_build_gate(): npm install + prisma generate + tsc + next build efter hvert sprint
-  - --scan flag: vis manglende imports uden at fixe
-  - --build-gate N flag: kør kun build gate for sprint N
+v3 — Fuldt agil specialist repair-loop:
+  1. Repair-hukommelse          Anti-loop: agenter ser egne tidligere forsøg
+  2. Afhængighedsgraf           Cross-agent impact propagation ved interface-ændringer
+  3. Regressionsguard           Detektion af nyregressions introduceret under repair
+  4. Sprint replay               Downstream agenter flagges ved input-ændringer
+  5. Konvergensmetrik           TS-fejltæller pr. iteration — konvergerer / stagnerer / divergerer
+  6. INTELLIGENCE.md            Levende delt videnslag — opdateres efter hver repair-cyklus
+  7. Smoke test                 Acceptance-trin: next dev + route-check efter grøn build
+
+v2 features:
+  - BA-12-repair agent, build gate, specialist routing
 
 Brug:
   python orchestrator.py --sprint 1
   python orchestrator.py --agent BA-12-repair --force
   python orchestrator.py --scan
   python orchestrator.py --build-gate 1
+  python orchestrator.py --autorepair
+  python orchestrator.py --autorepair --max-iter 15
+  python orchestrator.py --smoke-test
   python orchestrator.py --all
   python orchestrator.py --list
 """
@@ -22,8 +31,11 @@ import re
 import sys
 import json
 import time
+import hashlib
 import argparse
 import subprocess
+import urllib.request
+import urllib.error
 from pathlib import Path
 from datetime import datetime
 from typing import Optional
@@ -38,12 +50,14 @@ except ImportError:
 load_dotenv(".env.local")
 load_dotenv(".env")
 
-REPO_ROOT     = Path(__file__).parent
-DOCS_STATUS   = REPO_ROOT / "docs" / "status"
-PROGRESS_FILE = DOCS_STATUS / "PROGRESS.md"
-MODEL         = "claude-sonnet-4-6"
-MAX_TOKENS    = 32000
-LOG_FILE      = REPO_ROOT / "orchestrator.log"
+REPO_ROOT          = Path(__file__).parent
+DOCS_STATUS        = REPO_ROOT / "docs" / "status"
+PROGRESS_FILE      = DOCS_STATUS / "PROGRESS.md"
+INTELLIGENCE_FILE  = REPO_ROOT / "docs" / "build" / "INTELLIGENCE.md"
+MODEL              = "claude-sonnet-4-6"
+MAX_TOKENS         = 32000
+LOG_FILE           = REPO_ROOT / "orchestrator.log"
+SMOKE_TEST_PORT    = 3001  # Brug 3001 for ikke at konflikte med evt. kørende dev-server
 
 
 def log(besked: str, niveau: str = "INFO"):
@@ -110,6 +124,335 @@ def parse_output_filer(tekst: str) -> dict:
         for i, indhold in enumerate(md_matches):
             filer[f"output-{i+1}.txt"] = indhold.strip()
     return filer
+
+
+# ============================================================
+# 1. REPAIR-HUKOMMELSE — Anti-loop mekanisme
+# Agenter ser deres egne tidligere forsog og undgaar at gentage dem
+# ============================================================
+
+class RepairHukommelse:
+    """Tracker fejl-hashs og forsoegte fixes pr. agent pr. session."""
+
+    def __init__(self):
+        self._forsoegte: list[dict] = []
+
+    @staticmethod
+    def fejl_hash(fejl_output: str) -> str:
+        return hashlib.md5(fejl_output.encode("utf-8", errors="replace")).hexdigest()[:10]
+
+    def er_set_foer(self, fejl_output: str, agent_id: str) -> bool:
+        h = self.fejl_hash(fejl_output)
+        return any(f["hash"] == h and f["agent_id"] == agent_id for f in self._forsoegte)
+
+    def registrer(self, fejl_output: str, agent_id: str, filer: list, ts_fejl: int):
+        self._forsoegte.append({
+            "hash": self.fejl_hash(fejl_output),
+            "agent_id": agent_id,
+            "filer": filer,
+            "ts_fejl": ts_fejl,
+            "ts": datetime.now().isoformat(timespec="seconds"),
+        })
+
+    def som_kontekst(self, agent_id: str) -> str:
+        """Returner tidligere forsog for denne specifikke agent som kontekst-tekst."""
+        relevante = [f for f in self._forsoegte if f["agent_id"] == agent_id]
+        if not relevante:
+            return ""
+        linjer = ["=== DINE TIDLIGERE FORSOG (undga disse tilgange) ==="]
+        for f in relevante[-5:]:
+            filer_str = ", ".join(f["filer"][:4]) + (" ..." if len(f["filer"]) > 4 else "")
+            linjer.append(f"  [{f['ts']}] Forsoegte fix pa: {filer_str} (fejl-hash: {f['hash']}, TS-fejl: {f['ts_fejl']})")
+        linjer.append("Vaelg en ANDEN tilgang end din forrige.")
+        return "\n".join(linjer)
+
+
+# ============================================================
+# 2. AFHAENGIGHEDSGRAF — Cross-agent impact propagation
+# Naar en agent aendrer en fil bruges som input af en anden agent,
+# detekteres dette og den paavirkede agent flagges til re-check.
+# ============================================================
+
+def byg_afhaengighedsgraf() -> dict:
+    """
+    Returner {agent_id: [downstream_agent_ids]}.
+    Downstream = agenter der har denne agents output-filer som input-filer.
+    Bygges dynamisk fra AGENTS-definitionen.
+    """
+    output_til_agent: dict[str, str] = {}
+    for agent_id, agent in AGENTS.items():
+        for sti in agent.get("output_filer", []):
+            output_til_agent[sti] = agent_id
+
+    afh: dict[str, list] = {aid: [] for aid in AGENTS}
+    for consumer_id, consumer in AGENTS.items():
+        for input_sti in consumer.get("input_filer", []):
+            kilde = output_til_agent.get(input_sti)
+            if kilde and kilde != consumer_id and consumer_id not in afh[kilde]:
+                afh[kilde].append(consumer_id)
+    return afh
+
+
+def identificer_paavirkede_downstream(
+    aendrede_filer: list, afh_graf: dict
+) -> list:
+    """
+    Find agenter der boer re-checkes fordi en af deres input-filer er aendret under repair.
+    Returner liste over agent_ids sorteret efter sprint-nummer.
+    """
+    output_til_agent: dict[str, str] = {}
+    for agent_id, agent in AGENTS.items():
+        for sti in agent.get("output_filer", []):
+            output_til_agent[sti] = agent_id
+
+    paavirkede: set[str] = set()
+    for fil in aendrede_filer:
+        kilde = output_til_agent.get(fil)
+        if kilde:
+            for downstream in afh_graf.get(kilde, []):
+                paavirkede.add(downstream)
+
+    # Sorter efter sprint saa vi re-checker i korrekt raekkefoelge
+    return sorted(
+        paavirkede,
+        key=lambda aid: AGENTS.get(aid, {}).get("sprint", 99)
+    )
+
+
+# ============================================================
+# 3. REGRESSIONSGUARD — Detektion af nye regressioner under repair
+# Tracker hvilke filer der var fejlfri foer repair og sammenligner efter.
+# ============================================================
+
+def regressionsguard_snapshot(fejl_filer_foer: list) -> set:
+    """
+    Tag snapshot af alle .ts/.tsx-filer der IKKE er i fejllisten nu.
+    Disse er fejlfri og boer forblive det efter repair.
+    """
+    alle_ts: set[str] = set()
+    src = REPO_ROOT / "src"
+    if src.exists():
+        for f in src.rglob("*.ts*"):
+            rel = str(f.relative_to(REPO_ROOT)).replace("\\", "/")
+            alle_ts.add(rel)
+    fejl_set = set(fejl_filer_foer)
+    return alle_ts - fejl_set
+
+
+def regressionsguard_check(fejlfri_foer: set, fejl_filer_efter: list) -> list:
+    """
+    Find filer der var fejlfri FOER men fejlede EFTER repair.
+    = regressioner som repair har introduceret.
+    """
+    return [f for f in fejl_filer_efter if f in fejlfri_foer]
+
+
+# ============================================================
+# 5. KONVERGENSMETRIK — Maaler om repair-loopen konvergerer
+# Taeller TypeScript-fejl pr. iteration og vurderer retningen.
+# ============================================================
+
+def tael_ts_fejl(fejl_output: str) -> int:
+    """Taell antal unikke TypeScript-fejl (error TSxxxx) i output."""
+    return len(re.findall(r"error TS\d+:", fejl_output))
+
+
+def vurder_konvergens(ts_fejl_historik: list) -> str:
+    """
+    Vurder om repair-loopen konvergerer, stagnerer eller divergerer.
+    Returner en beskrivende streng.
+    """
+    n = len(ts_fejl_historik)
+    if n == 0:
+        return "ingen data"
+    if ts_fejl_historik[-1] == 0:
+        return "LOEST"
+    if n < 2:
+        return f"{ts_fejl_historik[-1]} TS-fejl (baseline)"
+    seneste = ts_fejl_historik[-1]
+    naest = ts_fejl_historik[-2]
+    foerste = ts_fejl_historik[0]
+    if seneste < naest:
+        pct = round((foerste - seneste) / foerste * 100) if foerste > 0 else 0
+        return f"KONVERGERER ({foerste}->{seneste} fejl, -{pct}% fra start)"
+    if seneste == naest:
+        return f"STAGNERER ({seneste} fejl uaendret i 2 iterationer)"
+    return f"DIVERGERER ({naest}->{seneste} fejl STIGER)"
+
+
+# ============================================================
+# 6. INTELLIGENCE.md — Levende delt videnslag
+# Opdateres automatisk efter hver repair-cyklus.
+# Alle agenter laeder dette ved repair for at undgaa kendte fejl.
+# ============================================================
+
+def opdater_intelligence(laering: str, kontekst: str = "autorepair"):
+    """
+    Tilfoej en struktureret laering til INTELLIGENCE.md.
+    Nyeste post indsaettes oeverst efter header-sektionen.
+    """
+    INTELLIGENCE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    nu = datetime.now().strftime("%Y-%m-%d %H:%M")
+    ny_post = f"\n## [{nu}] {kontekst}\n{laering}\n"
+
+    if not INTELLIGENCE_FILE.exists():
+        header = (
+            "# INTELLIGENCE.md — ChainHub MABS Videnslag\n"
+            "Automatisk opdateret af orchestrator efter hver repair-cyklus.\n"
+            "Laeses af alle agenter ved repair for at undgaa kendte fejl.\n"
+            "Nyeste laering oeverst.\n"
+            "---\n"
+        )
+        INTELLIGENCE_FILE.write_text(header + ny_post, encoding="utf-8")
+    else:
+        eksisterende = INTELLIGENCE_FILE.read_text(encoding="utf-8")
+        marker = "---\n"
+        pos = eksisterende.find(marker)
+        if pos >= 0:
+            INTELLIGENCE_FILE.write_text(
+                eksisterende[:pos + len(marker)] + ny_post + eksisterende[pos + len(marker):],
+                encoding="utf-8"
+            )
+        else:
+            INTELLIGENCE_FILE.write_text(eksisterende + ny_post, encoding="utf-8")
+
+    log(f"  INTELLIGENCE.md opdateret: {laering[:100].strip()}")
+
+
+def byg_intelligence_laering(
+    agenter_med_fejl: dict,
+    ts_fejl_foer: int,
+    ts_fejl_efter: int,
+    fejlende_trin: str,
+    aendrede_filer: list,
+    regressioner: list,
+    konvergens: str,
+) -> str:
+    """Byg en struktureret laering baseret paa repair-resultatet."""
+    agenter_str = "; ".join(
+        f"{aid} ({len(filer)} filer)" for aid, filer in agenter_med_fejl.items()
+    )
+    filer_str = ", ".join(aendrede_filer[:6])
+    if len(aendrede_filer) > 6:
+        filer_str += f" (+{len(aendrede_filer) - 6} flere)"
+    linjer = [
+        f"- Trin: `{fejlende_trin}` | TS-fejl: {ts_fejl_foer}->{ts_fejl_efter} | Status: {konvergens}",
+        f"- Agenter: {agenter_str}",
+        f"- Rettede filer: {filer_str}",
+    ]
+    if regressioner:
+        linjer.append(f"- REGRESSIONER OPDAGET: {', '.join(regressioner)}")
+    return "\n".join(linjer)
+
+
+# ============================================================
+# 7. SMOKE TEST — Acceptance-trin efter groen build
+# Starter 'next dev', venter paa server, tester kritiske routes,
+# stopper server. Groen build PLUS fungerende applikation.
+# ============================================================
+
+def koer_smoke_test() -> bool:
+    """
+    Minimal acceptance-test efter groen next build:
+    1. Start 'next dev --port SMOKE_TEST_PORT' i baggrunden
+    2. Vent paa server er klar (max 90s)
+    3. Test at kritiske routes returnerer acceptable statuskoder
+    4. Stop server og rapporter resultat
+    """
+    _npx = "npx.cmd" if sys.platform == "win32" else "npx"
+    base = f"http://localhost:{SMOKE_TEST_PORT}"
+
+    # (url, acceptable HTTP-koder)
+    # 307/308 = redirect (fx login redirect fra protected route) er OK
+    # 404 er OK for /api/health hvis den ikke er implementeret endnu
+    kritiske_routes = [
+        (f"{base}/",             [200, 301, 302, 307, 308]),
+        (f"{base}/login",        [200, 301, 302, 307, 308]),
+        (f"{base}/api/health",   [200, 404]),
+    ]
+
+    log(f"=== SMOKE TEST: Starter next dev paa port {SMOKE_TEST_PORT} ===")
+    server_proc = None
+
+    try:
+        server_proc = subprocess.Popen(
+            [_npx, "next", "dev", "--port", str(SMOKE_TEST_PORT)],
+            cwd=REPO_ROOT,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+
+        # Vent paa server er klar
+        klar = False
+        log(f"  Venter paa server (max 90s)...")
+        for i in range(90):
+            time.sleep(1)
+            if server_proc.poll() is not None:
+                stderr_out = ""
+                try:
+                    stderr_out = server_proc.stderr.read(500) if server_proc.stderr else ""
+                except Exception:
+                    pass
+                log(f"  Next dev stoppede uventet: {stderr_out[:200]}", "FEJL")
+                return False
+            try:
+                urllib.request.urlopen(f"{base}/", timeout=2)
+                klar = True
+                log(f"  Server klar efter {i+1}s")
+                break
+            except urllib.error.HTTPError:
+                klar = True  # HTTP-fejl = server svarer
+                log(f"  Server klar efter {i+1}s (HTTP-svar)")
+                break
+            except Exception:
+                pass
+
+        if not klar:
+            log("  Server ikke klar efter 90s", "FEJL")
+            return False
+
+        # Test routes
+        alle_ok = True
+        for url, acceptable in kritiske_routes:
+            try:
+                try:
+                    resp = urllib.request.urlopen(
+                        urllib.request.Request(url), timeout=8
+                    )
+                    status = resp.status
+                except urllib.error.HTTPError as e:
+                    status = e.code
+                except urllib.error.URLError as e:
+                    # Kan vaere redirect til HTTPS—betragt som OK hvis acceptable inkl. 3xx
+                    status = 307 if any(c in acceptable for c in [301, 302, 307, 308]) else 0
+
+                if status in acceptable:
+                    log(f"  v {url} -> {status}")
+                else:
+                    log(f"  x {url} -> {status} (forventet {acceptable})", "FEJL")
+                    alle_ok = False
+            except Exception as e:
+                log(f"  x {url} -> undtagelse: {e}", "FEJL")
+                alle_ok = False
+
+        if alle_ok:
+            log("=== SMOKE TEST: PASSED ===")
+        else:
+            log("=== SMOKE TEST: FEJLEDE ===", "FEJL")
+        return alle_ok
+
+    except Exception as e:
+        log(f"  Smoke test undtagelse: {e}", "FEJL")
+        return False
+    finally:
+        if server_proc and server_proc.poll() is None:
+            server_proc.terminate()
+            try:
+                server_proc.wait(timeout=12)
+            except subprocess.TimeoutExpired:
+                server_proc.kill()
+            log("  Smoke test server stoppet")
 
 
 def opdater_progress(agent_id: str):
@@ -391,34 +734,43 @@ def identificer_ansvarlige_agenter(fejl_filer: list, fil_til_agent: dict) -> dic
     return grupper
 
 
-def kald_specialist_agent(klient: anthropic.Anthropic, agent_id: str,
-                          fejlende_trin: str, fejl_output: str,
-                          fejl_filer: list, iteration: int) -> Optional[str]:
+def kald_specialist_agent(
+    klient: anthropic.Anthropic,
+    agent_id: str,
+    fejlende_trin: str,
+    fejl_output: str,
+    fejl_filer: list,
+    iteration: int,
+    hukommelse: Optional["RepairHukommelse"] = None,
+) -> Optional[str]:
     """
     Kald den originale specialist-agent med dens egen system_prompt + fejl.
-    Agenten kender sine egne regler og konventioner bedst.
+    Agenten faar:
+      - Sin egen system_prompt (kender sine egne regler bedst)
+      - Fejloutput + fejlede filer
+      - Sine egne spec-inputfiler som kontekst
+      - Repair-hukommelse: tidligere forsoegte fixes (anti-loop)
+      - INTELLIGENCE.md: delt videnslag med kendte fejlmoenstre
     """
     agent = AGENTS.get(agent_id)
 
     if agent_id == "__generisk__" or not agent:
-        # Fallback: generisk repair
-        system_prompt = """Du er en ekspert Next.js/TypeScript repair-agent for ChainHub-projektet.
-Fix KUN de konkrete kompileringsfejl du ser. Minimal aendring — bevar eksisterende logik.
-OUTPUT-FORMAT:
---- FIL: sti/til/fil ---
-[komplet filindhold]
---- SLUT ---
-NPM_INSTALL: pakke1 pakke2  (eller 'NPM_INSTALL: ingen')"""
+        system_prompt = (
+            "Du er en ekspert Next.js/TypeScript repair-agent for ChainHub-projektet.\n"
+            "Fix KUN de konkrete kompileringsfejl du ser. Minimal aendring — bevar eksisterende logik.\n"
+            "OUTPUT-FORMAT:\n"
+            "--- FIL: sti/til/fil ---\n[komplet filindhold]\n--- SLUT ---\n"
+            "NPM_INSTALL: pakke1 pakke2  (eller 'NPM_INSTALL: ingen')"
+        )
         agent_navn = "Generisk repair"
     else:
-        # Tilfoej repair-instruktion til agentens originale system_prompt
         repair_tillaeg = """
 
 === REPAIR MODE ===
-Du er kaldt fordi din tidligere kode indeholder kompileringsfejl.
-Dit job nu: Fix KUN de fejl der er beskrevet nedenfor.
+Du er kaldt fordi din kode indeholder kompileringsfejl.
+Dit job: Fix KUN de fejl beskrevet nedenfor.
 Minimal aendring — bevar al eksisterende logik og arkitektur.
-Du kender dine egne regler bedst — anvend dem stadig.
+Anvend fortsat dine egne konventioner og regler.
 
 OUTPUT-FORMAT:
 --- FIL: sti/til/fil ---
@@ -428,35 +780,51 @@ NPM_INSTALL: pakke1 pakke2  (eller 'NPM_INSTALL: ingen')"""
         system_prompt = agent["system_prompt"] + repair_tillaeg
         agent_navn = agent["navn"]
 
-    # Laes de fejlede filer som kontekst
-    fil_kontekst = byg_fil_kontekst(fejl_filer)
+    # 6. INTELLIGENCE.md — laes levende videnslag
+    intelligence_kontekst = ""
+    if INTELLIGENCE_FILE.exists():
+        try:
+            intel = INTELLIGENCE_FILE.read_text(encoding="utf-8")
+            # Begraens til de seneste 3.000 tegn (nyeste laeringer)
+            if len(intel) > 3000:
+                intel = intel[:3000] + "\n...[afskaret]"
+            intelligence_kontekst = f"\n=== INTELLIGENCE.md (kendte fejlmoenstre) ===\n{intel}\n"
+        except Exception:
+            pass
 
-    # Laes ogsaa agentens originale input-filer for fuld kontekst
+    # Spec-inputfiler
+    spec_kontekst = ""
     if agent and agent_id != "__generisk__":
         ekstra_input = []
-        for sti in agent.get("input_filer", [])[:4]:  # Max 4 for at holde kontekst
+        for sti in agent.get("input_filer", [])[:4]:
             indhold = laes_fil(sti)
             if indhold:
                 afskaret = indhold[:2000] + "\n...[afskaret]" if len(indhold) > 2000 else indhold
                 ekstra_input.append(f"\n=== {sti} (spec) ===\n{afskaret}")
-        if ekstra_input:
-            fil_kontekst = "".join(ekstra_input) + "\n" + fil_kontekst
+        spec_kontekst = "".join(ekstra_input)
 
-    bruger_besked = f"""=== REPAIR ITERATION {iteration} ===
-Ansvarlig agent: {agent_navn} ({agent_id})
-Fejlende build-trin: {fejlende_trin}
+    # Fejlede filer
+    fil_kontekst = byg_fil_kontekst(fejl_filer)
 
-Fejloutput:
-{fejl_output[:4000]}
+    # 1. REPAIR-HUKOMMELSE — tidligere forsoegte fixes
+    hukommelse_kontekst = ""
+    if hukommelse:
+        hukommelse_kontekst = hukommelse.som_kontekst(agent_id)
+        if hukommelse_kontekst:
+            hukommelse_kontekst = f"\n{hukommelse_kontekst}\n"
 
-Fejlede filer du skal fixe:
-{chr(10).join(f'  - {f}' for f in fejl_filer)}
-
-Fil-indhold:
-{fil_kontekst}
-
-Fix KUN de fejl der fremgaar. Skriv komplette filer.
-"""
+    bruger_besked = (
+        f"=== REPAIR ITERATION {iteration} ===\n"
+        f"Ansvarlig agent: {agent_navn} ({agent_id})\n"
+        f"Fejlende build-trin: {fejlende_trin}\n"
+        f"{hukommelse_kontekst}"
+        f"{intelligence_kontekst}"
+        f"\nFejloutput:\n{fejl_output[:4000]}\n"
+        f"\nFejlede filer du skal fixe:\n"
+        + "\n".join(f"  - {f}" for f in fejl_filer)
+        + f"\n{spec_kontekst}\nFil-indhold:\n{fil_kontekst}\n"
+        "\nFix KUN de fejl der fremgaar. Skriv komplette filer."
+    )
 
     log(f"  Kalder {agent_navn} ({agent_id}) for repair...")
     try:
@@ -465,7 +833,7 @@ Fix KUN de fejl der fremgaar. Skriv komplette filer.
             model=MODEL,
             max_tokens=MAX_TOKENS,
             system=system_prompt,
-            messages=[{"role": "user", "content": bruger_besked}]
+            messages=[{"role": "user", "content": bruger_besked}],
         ) as stream:
             for tekst in stream.text_stream:
                 output += tekst
@@ -500,13 +868,25 @@ def anvend_fix(fix_output: str, _npm: str) -> int:
     return antal
 
 
-def koer_autorepair_loop(klient: anthropic.Anthropic, max_iter: int = 10) -> bool:
+def koer_autorepair_loop(
+    klient: anthropic.Anthropic,
+    max_iter: int = 10,
+    smoke_test: bool = False,
+) -> bool:
     """
-    Autonom specialist repair loop:
-    1. Koer build-trin
-    2. Ved fejl: identificer fejlede filer og route til ansvarlig agent
-    3. Agenten fikser med sine egne regler og konventioner
-    4. Gentag til groen build eller max_iter naaet
+    Fuldt agil specialist repair-loop (v3):
+
+    Pr. iteration:
+      - Koor build-trin (npm install -> prisma generate -> tsc -> next build)
+      - Maaler TS-fejl og vurderer konvergens (punkt 5)
+      - Router fejl til ansvarlige specialist-agenter (punkt 2-routing)
+      - Agenter ser INTELLIGENCE.md + egne tidligere forsoegte fixes (punkt 1+6)
+      - Regressionsguard: detekterer nye fejl introduceret af repair (punkt 3)
+      - Afhaengighedsgraf: flagger downstream agenter ved interface-aendringer (punkt 2+4)
+      - Opdaterer INTELLIGENCE.md med ny laering (punkt 6)
+
+    Ved groen build:
+      - Smoke test hvis --smoke-test er angivet (punkt 7)
     """
     _npm = "npm.cmd" if sys.platform == "win32" else "npm"
     _npx = "npx.cmd" if sys.platform == "win32" else "npx"
@@ -518,18 +898,37 @@ def koer_autorepair_loop(klient: anthropic.Anthropic, max_iter: int = 10) -> boo
         ([_npx, "next", "build"],                  "next build"),
     ]
 
-    # Byg reverse map én gang
-    fil_til_agent = byg_fil_til_agent_map()
-    log(f"  Fil->agent map: {len(fil_til_agent)} filer kortlagt til {len(set(fil_til_agent.values()))} agenter")
+    # Initialiser sessionsdata
+    hukommelse        = RepairHukommelse()          # punkt 1
+    afh_graf          = byg_afhaengighedsgraf()     # punkt 2
+    ts_fejl_historik: list[int] = []               # punkt 5
+    downstream_queue: list[str] = []               # punkt 4: agenter der skal re-checkes
 
-    log(f"=== AUTOREPAIR START (max {max_iter} iterationer) ===")
+    # Byg reverse map
+    fil_til_agent = byg_fil_til_agent_map()
+
+    log(
+        f"=== AUTOREPAIR START (max {max_iter} iterationer) ===\n"
+        f"  Fil->agent map: {len(fil_til_agent)} filer / {len(set(fil_til_agent.values()))} agenter\n"
+        f"  Afhaengighedsgraf: {sum(len(v) for v in afh_graf.values())} relationer kortlagt"
+    )
 
     for iteration in range(1, max_iter + 1):
-        log(f"\n--- Autorepair iteration {iteration}/{max_iter} ---")
-        fejl_output = ""
-        fejlende_trin = None
-        start_fra = 1 if iteration > 1 else 0
+        log(f"\n{'='*60}\n--- Autorepair iteration {iteration}/{max_iter} ---")
 
+        # Vis konvergensstatus
+        if ts_fejl_historik:
+            log(f"  Konvergens: {vurder_konvergens(ts_fejl_historik)}")
+
+        # Vis downstream queue
+        if downstream_queue:
+            log(f"  Downstream re-check koe: {', '.join(downstream_queue)}")
+
+        fejl_output   = ""
+        fejlende_trin = None
+        start_fra     = 1 if iteration > 1 else 0  # Spring npm install over efter 1. runde
+
+        # Koer build-trin
         for cmd, navn in trin_liste[start_fra:]:
             log(f"  Korer: {navn}...")
             start = time.time()
@@ -539,12 +938,12 @@ def koer_autorepair_loop(klient: anthropic.Anthropic, max_iter: int = 10) -> boo
                 )
             except subprocess.TimeoutExpired:
                 log(f"  x {navn} TIMEOUT", "FEJL")
-                fejl_output = f"TIMEOUT efter 300s under: {navn}"
+                fejl_output   = f"TIMEOUT efter 300s under: {navn}"
                 fejlende_trin = navn
                 break
             except Exception as e:
                 log(f"  x {navn} OS-FEJL: {e}", "FEJL")
-                fejl_output = str(e)
+                fejl_output   = str(e)
                 fejlende_trin = navn
                 break
 
@@ -554,68 +953,221 @@ def koer_autorepair_loop(klient: anthropic.Anthropic, max_iter: int = 10) -> boo
             else:
                 kombineret = (res.stdout + "\n" + res.stderr).strip()
                 log(f"  x {navn} FEJLEDE ({varighed}s)")
-                fejllinjer = [l for l in kombineret.splitlines()
-                              if "error" in l.lower() or "Error" in l][:8]
+                fejllinjer = [
+                    l for l in kombineret.splitlines()
+                    if "error" in l.lower() or "Error" in l
+                ][:8]
                 for linje in fejllinjer:
                     log(f"    {linje[:120]}", "FEJL")
-                fejl_output = kombineret
+                fejl_output   = kombineret
                 fejlende_trin = navn
                 break
 
-        # Alle trin OK?
+        # ============================================================
+        # ALLE TRIN OK -> BUILD GROENT
+        # ============================================================
         if fejlende_trin is None:
             log(f"\n=== AUTOREPAIR: BUILD GROENT efter {iteration} iteration(er) ===")
-            git_commit(f"chore: autorepair completed — build passing (iter {iteration})")
+
+            # INTELLIGENCE.md — skriv succes-laering
+            opdater_intelligence(
+                f"- Build groen efter {iteration} iterationer\n"
+                f"- TS-fejl historik: {' -> '.join(str(x) for x in ts_fejl_historik)} -> 0",
+                kontekst=f"autorepair-succes iter={iteration}"
+            )
+
+            git_commit(
+                f"chore: autorepair completed — build passing "
+                f"(iter {iteration}, {len(ts_fejl_historik)} repair-runder)"
+            )
+
+            # punkt 7: smoke test
+            if smoke_test:
+                smoke_ok = koer_smoke_test()
+                if not smoke_ok:
+                    log("  Build groen men smoke test fejlede — se log", "ADVARSEL")
+                    opdater_intelligence(
+                        "- Build groen men smoke test fejlede — applikationen starter/svarer ikke korrekt",
+                        kontekst="smoke-test-fejl"
+                    )
+                    return False
             return True
 
-        # Specielt: npm install fejl
+        # ============================================================
+        # SPECIELT: npm install fejl
+        # ============================================================
         if fejlende_trin == "npm install":
             log("  npm install fejlede — proever --force", "ADVARSEL")
-            subprocess.run([_npm, "install", "--force"], cwd=REPO_ROOT,
-                           capture_output=True, text=True, timeout=120)
+            subprocess.run(
+                [_npm, "install", "--force"],
+                cwd=REPO_ROOT, capture_output=True, text=True, timeout=120
+            )
             continue
 
+        # ============================================================
+        # MAX ITERATIONER NAAET
+        # ============================================================
         if iteration == max_iter:
             log(f"=== AUTOREPAIR: MAX ITERATIONER ({max_iter}) NAAET ===", "FEJL")
-            (REPO_ROOT / "autorepair-final-error.txt").write_text(
-                f"Trin: {fejlende_trin}\n\n{fejl_output}", encoding="utf-8"
+            fejl_sti = REPO_ROOT / "autorepair-final-error.txt"
+            fejl_sti.write_text(
+                f"Trin: {fejlende_trin}\n"
+                f"TS-fejl historik: {ts_fejl_historik}\n"
+                f"Konvergens: {vurder_konvergens(ts_fejl_historik)}\n\n"
+                f"{fejl_output}",
+                encoding="utf-8"
             )
-            log("  Fejloutput gemt i autorepair-final-error.txt", "FEJL")
+            log(f"  Fejloutput gemt: autorepair-final-error.txt", "FEJL")
+            opdater_intelligence(
+                f"- MISLYKKET: {max_iter} iterationer udtoemte uden groen build\n"
+                f"- TS-fejl historik: {' -> '.join(str(x) for x in ts_fejl_historik)}\n"
+                f"- Konvergens: {vurder_konvergens(ts_fejl_historik)}\n"
+                f"- Sidst fejlende trin: {fejlende_trin}",
+                kontekst=f"autorepair-fejlet max-iter={max_iter}"
+            )
             return False
 
+        # ============================================================
+        # punkt 5: KONVERGENSMETRIK — tael TS-fejl og vurder retning
+        # ============================================================
+        ts_fejl_nu = tael_ts_fejl(fejl_output)
+        ts_fejl_historik.append(ts_fejl_nu)
+        konvergens = vurder_konvergens(ts_fejl_historik)
+        log(f"  TS-fejl nu: {ts_fejl_nu} | {konvergens}")
+
+        # Divergens-alarm: stop hvis fejl stiger 2 iterationer i traek
+        if (
+            len(ts_fejl_historik) >= 3
+            and ts_fejl_historik[-1] > ts_fejl_historik[-2] > ts_fejl_historik[-3]
+        ):
+            log(
+                "  ADVARSEL: Fejl stiger 2 iterationer i traek — mulig strukturel issue."
+                " Fortsaetter men noterer i INTELLIGENCE.md.",
+                "ADVARSEL"
+            )
+            opdater_intelligence(
+                f"- Divergens detekteret: {ts_fejl_historik[-3]}->{ts_fejl_historik[-2]}->{ts_fejl_historik[-1]} TS-fejl\n"
+                f"- Trin: {fejlende_trin}",
+                kontekst="autorepair-divergens"
+            )
+
+        # ============================================================
         # Identificer fejlede filer og ansvarlige agenter
-        fejl_filer = udtraek_fejlfiler(fejl_output)
+        # ============================================================
+        fejl_filer       = udtraek_fejlfiler(fejl_output)
         agenter_med_fejl = identificer_ansvarlige_agenter(fejl_filer, fil_til_agent)
+
+        # punkt 3: REGRESSIONSGUARD — snapshot foer repair
+        fejlfri_snapshot = regressionsguard_snapshot(fejl_filer)
 
         log(f"  Fejlede filer: {len(fejl_filer)}")
         for agent_id, filer in agenter_med_fejl.items():
             agent_navn = AGENTS.get(agent_id, {}).get("navn", agent_id)
             log(f"  -> {agent_id} ({agent_navn}): {', '.join(f.split('/')[-1] for f in filer)}")
 
-        # Kald hver ansvarlig agent med sine egne fejl
-        total_filer_skrevet = 0
-        for agent_id, agentens_filer in agenter_med_fejl.items():
+        # ============================================================
+        # Kald specialisterne — inkl. downstream queue (punkt 4)
+        # ============================================================
+        alle_agenter_denne_iter = dict(agenter_med_fejl)
+
+        # Tilfoej downstream-agenter fra forrige iteration
+        for ds_agent_id in downstream_queue:
+            if ds_agent_id not in alle_agenter_denne_iter:
+                ds_filer = AGENTS.get(ds_agent_id, {}).get("output_filer", [])[:3]
+                alle_agenter_denne_iter[ds_agent_id] = ds_filer
+                log(f"  + Downstream re-check: {ds_agent_id}")
+        downstream_queue.clear()
+
+        total_filer_skrevet  = 0
+        alle_aendrede_filer: list[str] = []
+
+        for agent_id, agentens_filer in alle_agenter_denne_iter.items():
+            # punkt 1: Anti-loop check
+            if hukommelse.er_set_foer(fejl_output, agent_id):
+                log(f"  {agent_id}: samme fejl set foer — tvinger alternativ tilgang", "ADVARSEL")
+                # Fortsaet: hukommelse.som_kontekst() vil instruere agenten om at proeve nyt
+
             fix_output = kald_specialist_agent(
-                klient, agent_id, fejlende_trin, fejl_output, agentens_filer, iteration
+                klient, agent_id, fejlende_trin, fejl_output,
+                agentens_filer, iteration, hukommelse=hukommelse
             )
+
             if fix_output:
                 antal = anvend_fix(fix_output, _npm)
                 total_filer_skrevet += antal
+                aendrede = list(parse_output_filer(fix_output).keys())
+                alle_aendrede_filer.extend(aendrede)
                 log(f"  {agent_id}: {antal} filer rettet")
+
+                # punkt 1: Registrer dette forsog i hukommelsen
+                hukommelse.registrer(fejl_output, agent_id, aendrede, ts_fejl_nu)
+
+                # punkt 2+4: Find downstream agenter paavirkede af aendringer
+                paavirkede = identificer_paavirkede_downstream(aendrede, afh_graf)
+                if paavirkede:
+                    log(f"  {agent_id} aendrede filer der bruges af: {', '.join(paavirkede)}")
+                    for p in paavirkede:
+                        if p not in downstream_queue:
+                            downstream_queue.append(p)
             else:
                 log(f"  {agent_id}: ingen output — fortsaetter", "ADVARSEL")
 
+        # punkt 3: REGRESSIONSGUARD — check for nye fejl efter repair
+        if total_filer_skrevet > 0:
+            # Hent nye fejl via hurtig tsc-check
+            tsc_check = subprocess.run(
+                [_npx, "tsc", "--noEmit"],
+                cwd=REPO_ROOT, capture_output=True, text=True, timeout=120
+            )
+            if tsc_check.returncode != 0:
+                nye_fejl_filer = udtraek_fejlfiler(tsc_check.stdout + tsc_check.stderr)
+                regressioner   = regressionsguard_check(fejlfri_snapshot, nye_fejl_filer)
+                if regressioner:
+                    log(
+                        f"  REGRESSIONSGUARD: {len(regressioner)} nye fejl introduceret: "
+                        f"{', '.join(r.split('/')[-1] for r in regressioner)}",
+                        "ADVARSEL"
+                    )
+                    # Tilfoej de regrederede filer til naeste iterations ansvarlige agenter
+                    reg_agenter = identificer_ansvarlige_agenter(regressioner, fil_til_agent)
+                    for reg_agent in reg_agenter:
+                        if reg_agent not in downstream_queue:
+                            downstream_queue.append(reg_agent)
+                else:
+                    regressioner = []
+            else:
+                regressioner = []
+        else:
+            regressioner = []
+
+        # Ingen filer rettet denne iteration
         if total_filer_skrevet == 0:
-            log("  Ingen filer rettet i denne iteration — risiko for uendelig loop", "ADVARSEL")
-            # Skriv fejloutput til fil saa bruger kan inspicere
+            log("  Ingen filer rettet — risiko for uendelig loop", "ADVARSEL")
             (REPO_ROOT / f"autorepair-stuck-iter{iteration}.txt").write_text(
-                f"Trin: {fejlende_trin}\n\n{fejl_output}", encoding="utf-8"
+                f"Trin: {fejlende_trin}\nTS-fejl: {ts_fejl_nu}\n\n{fejl_output}",
+                encoding="utf-8"
             )
 
-        git_commit(f"fix: autorepair iter {iteration} — {fejlende_trin} ({len(agenter_med_fejl)} agenter)")
+        # punkt 6: INTELLIGENCE.md — opdater med ny laering
+        ts_fejl_efter = tael_ts_fejl(fejl_output)  # Opdateres naeste iteration
+        laering = byg_intelligence_laering(
+            agenter_med_fejl   = alle_agenter_denne_iter,
+            ts_fejl_foer       = ts_fejl_nu,
+            ts_fejl_efter      = ts_fejl_historik[-1] if ts_fejl_historik else ts_fejl_nu,
+            fejlende_trin      = fejlende_trin,
+            aendrede_filer     = alle_aendrede_filer,
+            regressioner       = regressioner,
+            konvergens         = konvergens,
+        )
+        opdater_intelligence(laering, kontekst=f"iter={iteration} trin={fejlende_trin}")
+
+        git_commit(
+            f"fix: autorepair iter {iteration} — {fejlende_trin} "
+            f"({len(alle_agenter_denne_iter)} agenter, {total_filer_skrevet} filer, {ts_fejl_nu} TS-fejl)"
+        )
         log(f"  Iteration {iteration} afsluttet — korer build igen...")
 
-    log(f"=== AUTOREPAIR: AFSLUTTET UDEN GROENT BUILD ===", "FEJL")
+    log("=== AUTOREPAIR: AFSLUTTET UDEN GROENT BUILD ===", "FEJL")
     return False
 
 
@@ -1234,6 +1786,7 @@ def main():
     parser.add_argument("--scan", action="store_true", help="Scann for manglende imports")
     parser.add_argument("--autorepair", action="store_true", help="Autonom repair loop: korer build og fikser fejl til det er groent")
     parser.add_argument("--max-iter", type=int, default=10, help="Max iterationer for autorepair (default: 10)")
+    parser.add_argument("--smoke-test", action="store_true", help="Koor smoke test efter groen build (next dev + route-check)")
     args = parser.parse_args()
 
     if args.list:
@@ -1247,6 +1800,8 @@ def main():
         print("  --agent BA-12-repair --force        Fix alle deps + build")
         print("  --autorepair                        Autonom loop: korer til groen build")
         print("  --autorepair --max-iter 15          Som ovenfor med 15 maks iterationer")
+        print("  --autorepair --smoke-test           Autorepair + smoke test efter groen build")
+        print("  --smoke-test                        Kun smoke test (next dev + route-check)")
         return
 
     if args.scan:
@@ -1275,9 +1830,18 @@ def main():
 
     klient = anthropic.Anthropic(api_key=api_noegle)
 
+    if hasattr(args, 'smoke_test') and args.smoke_test and not (hasattr(args, 'autorepair') and args.autorepair):
+        # Kun smoke test uden autorepair
+        succes = koer_smoke_test()
+        sys.exit(0 if succes else 1)
+
     if hasattr(args, 'autorepair') and args.autorepair:
         klient = anthropic.Anthropic(api_key=api_noegle)
-        succes = koer_autorepair_loop(klient, max_iter=args.max_iter)
+        succes = koer_autorepair_loop(
+            klient,
+            max_iter=args.max_iter,
+            smoke_test=getattr(args, 'smoke_test', False),
+        )
         sys.exit(0 if succes else 1)
 
     if args.dry_run:

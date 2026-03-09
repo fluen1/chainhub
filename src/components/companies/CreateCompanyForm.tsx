@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { createCompany } from '@/actions/companies'
 
-const COMPANY_TYPES = ['ApS', 'A/S', 'I/S', 'enkeltmandsvirksomhed', 'P/S', 'K/S', 'Andet']
+const COMPANY_TYPES = ['ApS', 'A/S', 'I/S', 'enkeltmandsvirksomhed', 'P/S', 'K/S', 'Andet'] as const
+type CompanyType = typeof COMPANY_TYPES[number]
+
 const STATUS_OPTIONS = [
   { value: 'aktiv', label: 'Aktiv' },
   { value: 'inaktiv', label: 'Inaktiv' },
@@ -20,7 +22,7 @@ export function CreateCompanyForm() {
   const [form, setForm] = useState({
     name: '',
     cvr: '',
-    companyType: '',
+    companyType: '' as CompanyType | '',
     address: '',
     city: '',
     postalCode: '',
@@ -40,10 +42,14 @@ export function CreateCompanyForm() {
     e.preventDefault()
     setIsSubmitting(true)
 
+    const companyType = COMPANY_TYPES.includes(form.companyType as CompanyType)
+      ? (form.companyType as CompanyType)
+      : undefined
+
     const result = await createCompany({
       name: form.name,
       cvr: form.cvr || undefined,
-      companyType: form.companyType as typeof form.companyType | undefined || undefined,
+      companyType,
       address: form.address || undefined,
       city: form.city || undefined,
       postalCode: form.postalCode || undefined,
@@ -99,7 +105,6 @@ export function CreateCompanyForm() {
                 value={form.cvr}
                 onChange={handleChange}
                 placeholder="12345678"
-                maxLength={8}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
@@ -126,6 +131,64 @@ export function CreateCompanyForm() {
           </div>
 
           <div>
+            <label htmlFor="address" className="block text-sm font-medium text-gray-700">
+              Adresse
+            </label>
+            <input
+              id="address"
+              name="address"
+              type="text"
+              value={form.address}
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700">
+                Postnummer
+              </label>
+              <input
+                id="postalCode"
+                name="postalCode"
+                type="text"
+                value={form.postalCode}
+                onChange={handleChange}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="city" className="block text-sm font-medium text-gray-700">
+                By
+              </label>
+              <input
+                id="city"
+                name="city"
+                type="text"
+                value={form.city}
+                onChange={handleChange}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="foundedDate" className="block text-sm font-medium text-gray-700">
+              Stiftelsesdato
+            </label>
+            <input
+              id="foundedDate"
+              name="foundedDate"
+              type="date"
+              value={form.foundedDate}
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
             <label htmlFor="status" className="block text-sm font-medium text-gray-700">
               Status
             </label>
@@ -143,81 +206,6 @@ export function CreateCompanyForm() {
               ))}
             </select>
           </div>
-        </div>
-      </div>
-
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-500">
-          Adresse
-        </h2>
-        <div className="space-y-4">
-          <div>
-            <label htmlFor="address" className="block text-sm font-medium text-gray-700">
-              Adresse
-            </label>
-            <input
-              id="address"
-              name="address"
-              type="text"
-              value={form.address}
-              onChange={handleChange}
-              placeholder="Fx Amaliegade 1"
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700">
-                Postnummer
-              </label>
-              <input
-                id="postalCode"
-                name="postalCode"
-                type="text"
-                value={form.postalCode}
-                onChange={handleChange}
-                placeholder="1234"
-                maxLength={4}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-            </div>
-            <div className="col-span-2">
-              <label htmlFor="city" className="block text-sm font-medium text-gray-700">
-                By
-              </label>
-              <input
-                id="city"
-                name="city"
-                type="text"
-                value={form.city}
-                onChange={handleChange}
-                placeholder="Fx København K"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-gray-500">
-          Yderligere oplysninger
-        </h2>
-        <div className="space-y-4">
-          <div>
-            <label htmlFor="foundedDate" className="block text-sm font-medium text-gray-700">
-              Stiftelsesdato
-            </label>
-            <input
-              id="foundedDate"
-              name="foundedDate"
-              type="date"
-              value={form.foundedDate}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
 
           <div>
             <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
@@ -226,21 +214,20 @@ export function CreateCompanyForm() {
             <textarea
               id="notes"
               name="notes"
+              rows={3}
               value={form.notes}
               onChange={handleChange}
-              rows={4}
-              placeholder="Interne noter om selskabet..."
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
         </div>
       </div>
 
-      <div className="flex items-center justify-end gap-3">
+      <div className="flex justify-end gap-3">
         <button
           type="button"
           onClick={() => router.back()}
-          className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
         >
           Annuller
         </button>

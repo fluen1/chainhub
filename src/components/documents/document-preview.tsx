@@ -59,7 +59,6 @@ export function DocumentPreview({
       return
     }
 
-    // Åbn download i nyt vindue
     window.open(result.data!.downloadUrl, '_blank')
   }
 
@@ -99,42 +98,49 @@ export function DocumentPreview({
               <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
             </div>
           ) : error ? (
-            <div className="flex h-full flex-col items-center justify-center p-4 text-center">
-              <FileText className="h-12 w-12 text-gray-300" />
-              <p className="mt-4 text-sm text-gray-500">{error}</p>
-              <Button variant="outline" className="mt-4" onClick={handleDownload}>
-                <Download className="h-4 w-4 mr-1" />
-                Download i stedet
-              </Button>
+            <div className="flex h-full items-center justify-center text-center p-8">
+              <div>
+                <FileText className="mx-auto h-12 w-12 text-gray-300 mb-3" />
+                <p className="text-sm text-gray-500">{error}</p>
+              </div>
             </div>
           ) : !canPreview ? (
-            <div className="flex h-full flex-col items-center justify-center p-4 text-center">
-              <FileText className="h-12 w-12 text-gray-300" />
-              <p className="mt-4 text-sm font-medium text-gray-700">
-                Forhåndsvisning ikke tilgængelig
-              </p>
-              <p className="mt-1 text-xs text-gray-500">
-                Denne filtype kan ikke forhåndsvises i browseren
-              </p>
-              <Button variant="outline" className="mt-4" onClick={handleDownload}>
-                <Download className="h-4 w-4 mr-1" />
-                Download fil
-              </Button>
+            <div className="flex h-full items-center justify-center text-center p-8">
+              <div>
+                <FileText className="mx-auto h-12 w-12 text-gray-300 mb-3" />
+                <p className="text-sm text-gray-500">
+                  Forhåndsvisning ikke tilgængelig for denne filtype
+                </p>
+                <Button variant="outline" size="sm" className="mt-3" onClick={handleDownload}>
+                  <Download className="h-4 w-4 mr-1" />
+                  Download i stedet
+                </Button>
+              </div>
             </div>
-          ) : fileType === 'application/pdf' && previewUrl ? (
-            <iframe
-              src={previewUrl}
-              className="h-full w-full"
-              title={fileName}
-            />
-          ) : (fileType === 'image/png' || fileType === 'image/jpeg') && previewUrl ? (
-            <div className="flex h-full items-center justify-center p-4">
+          ) : previewUrl ? (
+            fileType === 'application/pdf' ? (
+              <iframe
+                src={previewUrl}
+                className="h-full w-full"
+                title={fileName}
+              />
+            ) : fileType === 'image/png' || fileType === 'image/jpeg' ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={previewUrl}
                 alt={fileName}
-                className="max-h-full max-w-full object-contain"
+                className="h-full w-full object-contain"
               />
-            </div>
+            ) : (
+              <div className="flex h-full items-center justify-center text-center p-8">
+                <div>
+                  <FileText className="mx-auto h-12 w-12 text-gray-300 mb-3" />
+                  <p className="text-sm text-gray-500">
+                    Forhåndsvisning ikke tilgængelig
+                  </p>
+                </div>
+              </div>
+            )
           ) : null}
         </div>
       </DialogContent>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { CompanyPersonWithRelations } from '@/types/company'
+import { CompanyWithRelations } from '@/types/company'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -19,6 +19,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+
+type CompanyPersonWithRelations = CompanyWithRelations['persons'][number]
 
 interface GovernanceSectionProps {
   companyId: string
@@ -103,7 +105,7 @@ export function GovernanceSection({
                             ? `${cp.person.firstName} ${cp.person.lastName}`
                             : 'Ukendt person'}
                         </p>
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge variant="outline" className="text-xs mt-0.5">
                           {roleLabels[cp.role.toLowerCase()] ?? cp.role}
                         </Badge>
                       </div>
@@ -137,21 +139,22 @@ export function GovernanceSection({
         </CardContent>
       </Card>
 
-      <CompanyPersonDialog
-        companyId={companyId}
-        companyPerson={editingPerson}
-        roleType="governance"
-        open={isDialogOpen}
-        onOpenChange={(open) => {
-          setIsDialogOpen(open)
-          if (!open) setEditingPerson(null)
-        }}
-      />
+      {isDialogOpen && (
+        <CompanyPersonDialog
+          companyId={companyId}
+          person={editingPerson}
+          open={isDialogOpen}
+          onOpenChange={(open) => {
+            setIsDialogOpen(open)
+            if (!open) setEditingPerson(null)
+          }}
+        />
+      )}
 
       <AlertDialog open={!!deletingId} onOpenChange={() => setDeletingId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Fjern fra governance</AlertDialogTitle>
+            <AlertDialogTitle>Fjern person</AlertDialogTitle>
             <AlertDialogDescription>
               Er du sikker på, at du vil fjerne denne person fra governance?
             </AlertDialogDescription>

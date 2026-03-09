@@ -1165,3 +1165,51 @@ Next.js build worker exited with code: 1 and signal: null
 [2026-03-09 23:49:53] [INFO]   Kalder Generisk repair (__generisk__) for repair...
 [2026-03-09 23:50:52] [INFO] Skrevet: src/actions/companies.ts
 [2026-03-09 23:50:52] [INFO]   __generisk__: 1 filer rettet
+[2026-03-09 23:50:53] [INFO] Git commit: fix: autorepair iter 2 — tsc typecheck (2 agenter)
+[2026-03-09 23:50:53] [INFO]   Iteration 2 afsluttet — korer build igen...
+[2026-03-09 23:50:53] [INFO] 
+--- Autorepair iteration 3/10 ---
+[2026-03-09 23:50:53] [INFO]   Korer: prisma generate...
+[2026-03-09 23:50:54] [INFO]   v prisma generate OK (1.8s)
+[2026-03-09 23:50:54] [INFO]   Korer: tsc typecheck...
+[2026-03-09 23:51:03] [INFO]   x tsc typecheck FEJLEDE (9.1s)
+[2026-03-09 23:51:03] [FEJL]     src/__tests__/integration/auth-guard.test.ts(23,25): error TS2724: '"@/actions/companies"' has no exported member named 
+[2026-03-09 23:51:03] [FEJL]     src/__tests__/integration/auth-guard.test.ts(43,37): error TS2345: Argument of type '{ companyId: string; }' is not assi
+[2026-03-09 23:51:03] [FEJL]     src/__tests__/integration/auth-guard.test.ts(78,22): error TS2345: Argument of type '{ companyId: string; }' is not assi
+[2026-03-09 23:51:03] [FEJL]     src/__tests__/integration/tenant-isolation.test.ts(30,22): error TS2724: '"@/actions/companies"' has no exported member 
+[2026-03-09 23:51:03] [FEJL]     src/__tests__/integration/tenant-isolation.test.ts(85,37): error TS2345: Argument of type '{ companyId: string; }' is no
+[2026-03-09 23:51:04] [FEJL]     src/__tests__/integration/tenant-isolation.test.ts(97,22): error TS2345: Argument of type '{ companyId: string; }' is no
+[2026-03-09 23:51:04] [FEJL]     src/__tests__/unit/companies-action.test.ts(22,3): error TS2724: '"@/actions/companies"' has no exported member named 'l
+[2026-03-09 23:51:04] [FEJL]     src/__tests__/unit/companies-action.test.ts(181,37): error TS2345: Argument of type '{ companyId: string; }' is not assi
+[2026-03-09 23:51:04] [INFO]   Fejlede filer: 20
+[2026-03-09 23:51:04] [INFO]   -> __generisk__ (__generisk__): auth-guard.test.ts, companies-action.test.ts, CreateCompanyForm.tsx, EditCompanyDialog.tsx, EmployeesSection.tsx, GovernanceSection.tsx, OwnershipDialog.tsx, OwnershipSection.tsx, ContractForm.tsx, ContractStatusSelect.tsx, DocumentUploadModal.tsx, document-card.tsx, document-list.tsx, document-preview.tsx, document-upload.tsx
+[2026-03-09 23:51:04] [INFO]   -> BA-10-tests (Test-agent): tenant-isolation.test.ts
+[2026-03-09 23:51:04] [INFO]   -> BA-05-selskab (Feature-agent (Selskabsprofil)): companies.ts, page.tsx
+[2026-03-09 23:51:04] [INFO]   -> BA-03 (Auth-agent): page.tsx, page.tsx
+[2026-03-09 23:51:04] [INFO]   Kalder Generisk repair (__generisk__) for repair...
+[2026-03-09 23:56:03] [INFO] Skrevet: src/__tests__/integration/auth-guard.test.ts
+[2026-03-09 23:56:03] [INFO] Skrevet: src/__tests__/unit/companies-action.test.ts
+[2026-03-09 23:56:03] [INFO] Skrevet: src/components/companies/CreateCompanyForm.tsx
+[2026-03-09 23:56:03] [INFO] Skrevet: src/components/companies/EditCompanyDialog.tsx
+[2026-03-09 23:56:03] [INFO] Skrevet: src/components/companies/EmployeesSection.tsx
+[2026-03-09 23:56:03] [INFO] Skrevet: src/components/companies/GovernanceSection.tsx
+[2026-03-09 23:56:03] [INFO] Skrevet: src/components/companies/OwnershipDialog.tsx
+[2026-03-09 23:56:03] [INFO] Skrevet: src/components/companies/OwnershipSection.tsx
+[2026-03-09 23:56:03] [INFO] Skrevet: src/components/contracts/ContractForm.tsx
+[2026-03-09 23:56:03] [INFO] Skrevet: src/components/contracts/ContractStatusSelect.tsx
+[2026-03-09 23:56:03] [INFO] Skrevet: src/components/documents/DocumentUploadModal.tsx
+[2026-03-09 23:56:03] [INFO] Skrevet: src/components/documents/document-card.tsx
+[2026-03-09 23:56:03] [INFO] Skrevet: src/components/documents/document-list.tsx
+[2026-03-09 23:56:03] [INFO] Skrevet: src/components/documents/document-preview.tsx
+[2026-03-09 23:56:03] [INFO]   __generisk__: 14 filer rettet
+[2026-03-09 23:56:03] [INFO]   Kalder Test-agent (BA-10-tests) for repair...
+[2026-03-09 23:56:30] [INFO] Skrevet: src/__tests__/integration/tenant-isolation.test.ts
+[2026-03-09 23:56:30] [INFO]   BA-10-tests: 1 filer rettet
+[2026-03-09 23:56:30] [INFO]   Kalder Feature-agent (Selskabsprofil) (BA-05-selskab) for repair...
+[2026-03-09 23:57:15] [INFO] Skrevet: src/actions/companies.ts
+[2026-03-09 23:57:15] [INFO] Skrevet: src/app/(dashboard)/companies/[id]/page.tsx
+[2026-03-09 23:57:15] [INFO]   BA-05-selskab: 2 filer rettet
+[2026-03-09 23:57:15] [INFO]   Kalder Auth-agent (BA-03) for repair...
+[2026-03-09 23:57:25] [INFO] Skrevet: src/app/(dashboard)/companies/page.tsx
+[2026-03-09 23:57:25] [INFO] Skrevet: src/app/(dashboard)/companies/[id]/edit/page.tsx
+[2026-03-09 23:57:25] [INFO]   BA-03: 2 filer rettet

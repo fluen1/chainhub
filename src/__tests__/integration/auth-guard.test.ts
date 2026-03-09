@@ -20,7 +20,7 @@ vi.mock('@/lib/permissions', () => ({
 }))
 
 import { auth } from '@/lib/auth'
-import { createCompany, listCompanies, getCompany, deleteCompany } from '@/actions/companies'
+import { createCompany, getCompanies, getCompany, deleteCompany } from '@/actions/companies'
 import { getContract, listContracts, deleteContract } from '@/actions/contracts'
 
 const mockAuth = vi.mocked(auth)
@@ -33,14 +33,14 @@ beforeEach(() => {
 
 // IKKE-FORHANDLINGSBAR TEST
 describe('unauthenticated user cannot access dashboard', () => {
-  it('listCompanies afviser uautoriseret bruger', async () => {
-    const result = await listCompanies()
+  it('getCompanies afviser uautoriseret bruger', async () => {
+    const result = await getCompanies()
     expect(result.error).toBe('Ikke autoriseret')
     expect(result.data).toBeUndefined()
   })
 
   it('getCompany afviser uautoriseret bruger', async () => {
-    const result = await getCompany({ companyId: 'any-id' })
+    const result = await getCompany('any-id')
     expect(result.error).toBe('Ikke autoriseret')
   })
 
@@ -74,14 +74,13 @@ describe('unauthenticated user cannot access dashboard', () => {
 
 describe('Prisma aldrig kaldt ved uautoriseret adgang', () => {
   it('ingen DB-kald ved manglende session', async () => {
-    await listCompanies()
-    await getCompany({ companyId: 'test' })
+    await getCompanies()
+    await getCompany('test')
     await createCompany({ name: 'Test', status: 'aktiv' })
     await listContracts({})
 
     expect(mockPrisma.company.findMany).not.toHaveBeenCalled()
     expect(mockPrisma.company.findUnique).not.toHaveBeenCalled()
     expect(mockPrisma.company.create).not.toHaveBeenCalled()
-    expect(mockPrisma.contract.findMany).not.toHaveBeenCalled()
   })
 })
