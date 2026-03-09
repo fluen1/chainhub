@@ -402,7 +402,12 @@ PostgreSQL og Prisma understøtter fuldt UTF-8 i enum-værdier. ASCII-erstatning
 2. Gør koden sværere at læse og vedligeholde
 3. Kræver konvertering i application-laget
 
-**Anbefaling:** Ret alle enum-værdier til at matche spec (brug danske tegn).
+**Sprint 5 QA-observationer:**
+- dashboard.ts Query 3 (revenueRows): bruger `fm.metric_type = 'OMSAETNING'` og `fm.period_type = 'HELAAR'` som $queryRaw string-literals. Hvis databasen har OMSÆTNING/HELÅR (spec-korrekt), returnerer disse queries ALTID 0 rækker — dashboard viser ingen omsætningsdata for nogen selskaber.
+- finance.ts: bruger `PeriodType.HELAAR` (importeret fra @prisma/client) — matcher hvad Prisma genererer, men ikke spec.
+- Konsekvensen er binær: enten er DEC-020 løst (dansk tegn i DB) og dashboard er brudt, eller DEC-020 ikke er løst (ASCII i DB) og finance.ts er brudt.
+
+**Anbefaling:** Ret alle enum-værdier til at matche spec (brug danske tegn). Koordinér med dashboard.ts og finance.ts at opdatere hardkodede string-literals til matchende værdier.
 
 ---
 
@@ -445,6 +450,8 @@ async function getUserRoleAssignments(userId: string) {
 }
 ```
 
+**Sprint 5 QA-status:** STADIG ÅBEN — ingen ændring i permissions/index.ts.
+
 ---
 
 ## DEC-022: Auth config fil mangler — session-struktur kan ikke valideres
@@ -465,7 +472,7 @@ Uden auth config-filen kan vi ikke verificere at:
 2. JWT/session strategy er korrekt konfigureret
 3. Microsoft OAuth provider er korrekt sat op
 
-**Anbefaling:** Auth config-fil skal leveres og valideres.
+**Sprint 5 QA-status:** STADIG ÅBEN — fil ikke leveret.
 
 ---
 
@@ -488,6 +495,8 @@ authorized: ({ token, req }) => {
 En bruger med et gyldigt token men uden organizationId (fx fejl i auth-flow) kunne potentielt tilgå beskyttede routes og forårsage null-reference fejl i downstream kode.
 
 **Anbefaling:** Tilføj validering: `return !!token && !!token.organizationId`
+
+**Sprint 5 QA-status:** STADIG ÅBEN — fil ikke leveret til review.
 
 ---
 
@@ -585,6 +594,8 @@ Uden denne fil kan vi ikke verificere at implementationen matcher spec.
 
 **Anbefaling:** Validation-fil skal leveres og valideret mod CONTRACT-TYPES.md og DATABASE-SCHEMA.md.
 
+**Sprint 5 QA-status:** STADIG ÅBEN — fil ikke leveret.
+
 ---
 
 ## DEC-028: Validation-fil src/lib/validations/document.ts ikke leveret til review
@@ -603,6 +614,8 @@ src/actions/documents.ts importerer fra '@/lib/validations/document':
 Uden denne fil kan vi ikke verificere at input-validering er korrekt.
 
 **Anbefaling:** Validation-fil skal leveres og valideret.
+
+**Sprint 5 QA-status:** STADIG ÅBEN — fil ikke leveret.
 
 ---
 
@@ -624,6 +637,8 @@ Uden denne fil kan vi ikke verificere at opbevaringspligt-logikken matcher CONTR
 
 **Anbefaling:** Retention helper skal leveres og valideret mod spec.
 
+**Sprint 5 QA-status:** STADIG ÅBEN — fil ikke leveret.
+
 ---
 
 ## DEC-030: Storage helper src/lib/storage/index.ts ikke leveret til review
@@ -643,6 +658,8 @@ src/actions/documents.ts importerer fra '@/lib/storage':
 Uden denne fil kan vi ikke verificere at fil-håndtering er korrekt implementeret.
 
 **Anbefaling:** Storage helper skal leveres.
+
+**Sprint 5 QA-status:** STADIG ÅBEN — fil ikke leveret.
 
 ---
 
@@ -681,6 +698,8 @@ Kontrakten gemmes med reminder_90_days, reminder_30_days, reminder_7_days flags,
 
 **Anbefaling:** Implementér reminder-generering og cron-job, eller dokumentér at dette er planlagt til senere sprint.
 
+**Sprint 5 QA-status:** STADIG ÅBEN — ikke adresseret.
+
 ---
 
 ## DEC-032: Type-filer src/types/contract.ts og src/types/document.ts ikke leveret
@@ -699,6 +718,8 @@ import { ActionResult, DocumentWithRelations, UploadUrlResponse, ... } from '@/t
 Uden disse filer kan vi ikke verificere at return-typer er korrekt defineret.
 
 **Anbefaling:** Type-filer skal leveres.
+
+**Sprint 5 QA-status:** STADIG ÅBEN — filer ikke leveret.
 
 ---
 
@@ -883,6 +904,8 @@ export async function getTasksForDigest(organizationId: string): Promise<...> {
 
 Cron-job ansvar: hente alle aktive organisationer og kalde getTasksForDigest(org.id) per organisation.
 
+**Sprint 5 QA-status:** STADIG ÅBEN — ikke adresseret.
+
 ---
 
 ## DEC-034: Sager uden tilknyttede selskaber omgår canAccessCompany()-tjek
@@ -926,6 +949,8 @@ Sensitivity-tjekket klarer den ene del, men company-isolation er ikke garanteret
 
 **Anbefaling:** Option 1 foretrækkes — tilføj `.min(1)` validering på companyIds i createCaseSchema. Dokumentér at sager altid skal have mindst ét tilknyttet selskab.
 
+**Sprint 5 QA-status:** STADIG ÅBEN — ikke adresseret.
+
 ---
 
 ## DEC-035: Validation-fil src/lib/validations/case.ts ikke leveret til review
@@ -959,6 +984,8 @@ Uden denne fil kan vi ikke verificere at implementationen er korrekt.
 
 **Anbefaling:** Validation-fil skal leveres til næste review-runde.
 
+**Sprint 5 QA-status:** STADIG ÅBEN — fil ikke leveret.
+
 ---
 
 ## DEC-036: Type-fil src/types/case.ts ikke leveret — CaseStatus-flow uverificerbart
@@ -991,6 +1018,8 @@ Særligt genåbnings-flows (AFVENTER_* → AKTIV) er kritiske for korrekt sagsst
 1. Alle 6 statusser er repræsenteret i VALID_CASE_STATUS_TRANSITIONS
 2. ARKIVERET er en terminal status (ingen udgående transitions)
 3. AFVENTER_EKSTERN og AFVENTER_KLIENT begge kan genåbnes til AKTIV
+
+**Sprint 5 QA-status:** STADIG ÅBEN — fil ikke leveret.
 
 ---
 
@@ -1036,6 +1065,8 @@ Dette er en diskrepans mellem spec og implementation. Enten:
 
 **Anbefaling:** Afklar med Orchestrator om Task-modellen skal have priority. Hvis ja: tilføj `priority Prioritet? @default(MELLEM)` til Task-modellen i DATABASE-SCHEMA.md og opret migration. Hvis nej: fjern priority fra tasks.ts.
 
+**Sprint 5 QA-status:** STADIG ÅBEN — ikke adresseret.
+
 ---
 
 ## DEC-038: getTasksForDigest() tjekker ikke advise_sent_at — Deadline-records ignoreres
@@ -1073,6 +1104,8 @@ Problemerne med den nuværende `getTasksForDigest()`:
   3. Opdaterer `advise_sent_at = NOW()` ved afsendelse (i cron-job, ikke i query-funktionen)
 - Overvej om Task-digest skal have tilsvarende "sent_at"-mekanisme, eller om 7-dages vindue er acceptabelt
 
+**Sprint 5 QA-status:** STADIG ÅBEN — ikke adresseret.
+
 ---
 
 ## DEC-039: Validation-fil src/lib/validations/task.ts ikke leveret til review
@@ -1097,3 +1130,422 @@ Disse schemas er kritiske for at verificere:
 4. At input-validering er korrekt for alle task-operationer
 
 **Anbefaling:** Validation-fil skal leveres til næste review-runde. Verificér specifikt at TaskStatus-enum-værdier matcher DATABASE-SCHEMA.md.
+
+**Sprint 5 QA-status:** STADIG ÅBEN — fil ikke leveret.
+
+---
+
+## QA-RAPPORT — Sprint 5 Dashboard og Økonomimodul
+
+### GODKENDT:
+
+**src/actions/finance.ts:**
+- requireFinanceAccess() (canAccessModule + canAccessSensitivity('FORTROLIG')) kaldt på ALLE offentlige actions: ✅
+- organization_id på alle findFirst/findMany/count queries: ✅
+- canAccessCompany() kaldt ved selskabsspecifikke operationer: ✅
+- Audit log med sensitivity: 'FORTROLIG' på alle operationer: ✅
+- Fejlbeskeder på dansk: ✅
+- Pagination implementeret (listFinancialMetrics, listTimeEntries, listInvoices, listDividends): ✅
+- MAX_PAGE_SIZE enforced: ✅
+- P2002-fejlhåndtering (unique constraint): ✅
+
+**src/actions/dashboard.ts:**
+- Ingen N+1 queries — 3 queries total via $queryRaw aggregering: ✅
+- organization_id på alle $queryRaw parametre: ✅
+- unstable_cache med TTL og tags: ✅
+- Promise.all til parallelisering: ✅
+- Fejlbesked på dansk: ✅
+
+### FEJL OG MANGLER:
+
+#### KRITISK:
+
+**DEC-040: dashboard.ts bruger ugyldig ModuleType 'dashboard' — canAccessModule fejler altid**
+Se separat entry nedenfor.
+
+**DEC-041: dashboard.ts revenueRows $queryRaw bruger ASCII enum-værdier — returnerer altid 0 rækker ved korrekt DB**
+Se separat entry nedenfor.
+
+#### VIGTIG:
+
+**DEC-042: finance.ts update/delete Prisma-kald mangler organization_id i where-clause**
+Se separat entry nedenfor.
+
+**DEC-043: createTimeEntry mangler canAccessCompany()-tjek**
+Se separat entry nedenfor.
+
+**DEC-044: finance.ts PeriodType.HELAAR matcher ikke spec-enum HELÅR**
+Se separat entry nedenfor.
+
+**DEC-045: finance.ts listFinancialMetrics pagination-parametre uden for Zod-schema**
+Se separat entry nedenfor.
+
+#### NICE-TO-HAVE:
+
+**DEC-046: Manglende filer — src/lib/validations/finance.ts, src/lib/cache/finance.ts, src/types/finance.ts**
+Se separat entry nedenfor.
+
+### TIDLIGERE UDESTÅENDE (fra Sprint 2+3+4 — fortsat åbne):
+- DEC-021: getUserRoleAssignments mangler organizationId filter — STADIG ÅBEN
+- DEC-022: Auth config fil mangler — STADIG ÅBEN
+- DEC-023: Middleware organizationId validering — STADIG ÅBEN
+- DEC-027: src/lib/validations/contract.ts ikke leveret — STADIG ÅBEN
+- DEC-028: src/lib/validations/document.ts ikke leveret — STADIG ÅBEN
+- DEC-029: src/lib/contracts/retention.ts ikke leveret — STADIG ÅBEN
+- DEC-030: src/lib/storage/index.ts ikke leveret — STADIG ÅBEN
+- DEC-031: Adviserings-cron ikke implementeret — STADIG ÅBEN
+- DEC-032: src/types/contract.ts og document.ts ikke leveret — STADIG ÅBEN
+- DEC-033: getTasksForDigest() mangler organization_id — STADIG ÅBEN
+- DEC-034: Sager uden selskaber omgår canAccessCompany() — STADIG ÅBEN
+- DEC-035: src/lib/validations/case.ts ikke leveret — STADIG ÅBEN
+- DEC-036: src/types/case.ts ikke leveret — STADIG ÅBEN
+- DEC-037: Task-model mangler priority-felt — STADIG ÅBEN
+- DEC-038: getTasksForDigest() tjekker ikke advise_sent_at — STADIG ÅBEN
+- DEC-039: src/lib/validations/task.ts ikke leveret — STADIG ÅBEN
+
+---
+
+## DEC-040: dashboard.ts bruger ugyldig ModuleType 'dashboard' — canAccessModule fejler altid
+**Status:** CHALLENGED
+**Proposed by:** BA-07 (QA-agent)
+**Dato:** 2025-01-16
+**Rangering:** KRITISK
+
+**Forslag/Indsigelse:**
+src/actions/dashboard.ts linje ca. 210:
+
+```typescript
+const hasModule = await canAccessModule(session.user.id, 'dashboard')
+if (!hasModule) return { error: 'Du har ikke adgang til dashboardet' }
+```
+
+`'dashboard'` er **ikke** en gyldig `ModuleType` i `src/lib/permissions/index.ts`. Gyldige værdier (fra CONVENTIONS.md §10 og permissions/index.ts) er:
+```typescript
+type ModuleType =
+  | 'companies'
+  | 'contracts'
+  | 'cases'
+  | 'tasks'
+  | 'persons'
+  | 'documents'
+  | 'finance'
+  | 'settings'
+  | 'user_management'
+```
+
+TypeScript vil fange dette som en compile-fejl hvis `canAccessModule` er korrekt typet med `module: ModuleType`. Hvis den accepterer `string`, vil `ROLE_MODULE_ACCESS[role]` aldrig indeholde `'dashboard'`, og `canAccessModule` returnerer **altid `false`**.
+
+Konsekvensen: **Ingen bruger kan tilgå dashboardet** — `getDashboardData()` returnerer altid `{ error: 'Du har ikke adgang til dashboardet' }`.
+
+**Anbefaling:** Ændr til en gyldig ModuleType. Dashboard er en portals-visning af data der kræver adgang til `'companies'` (og evt. `'finance'`). Anvend:
+
+```typescript
+const hasModule = await canAccessModule(session.user.id, 'companies')
+if (!hasModule) return { error: 'Du har ikke adgang til dashboardet' }
+```
+
+Alternativt: Tilføj `'dashboard'` til `ModuleType` i CONVENTIONS.md og `ROLE_MODULE_ACCESS` i permissions/index.ts, og tildel det til alle roller der i dag har `'companies'`.
+
+---
+
+## DEC-041: dashboard.ts revenueRows $queryRaw bruger ASCII enum-værdier — bryder ved korrekt DB
+**Status:** CHALLENGED
+**Proposed by:** BA-07 (QA-agent)
+**Dato:** 2025-01-16
+**Rangering:** KRITISK
+
+**Forslag/Indsigelse:**
+src/actions/dashboard.ts `computeCompanyRows()` Query 3:
+
+```typescript
+const revenueRows = await prisma.$queryRaw<...>(
+  Prisma.sql`
+    SELECT DISTINCT ON (fm.company_id)
+      fm.company_id,
+      fm.value::text AS value,
+      fm.period_year
+    FROM financial_metrics fm
+    WHERE fm.company_id = ANY(${companyIds}::uuid[])
+      AND fm.organization_id = ${organizationId}
+      AND fm.metric_type = 'OMSAETNING'     -- ← ASCII-erstatning for OMSÆTNING
+      AND fm.period_type = 'HELAAR'          -- ← ASCII-erstatning for HELÅR
+    ORDER BY fm.company_id, fm.period_year DESC
+  `
+)
+```
+
+Spec (DATABASE-SCHEMA.md) definerer:
+```
+enum MetricType { OMSÆTNING, EBITDA, RESULTAT, LIKVIDITET, EGENKAPITAL, ANDET }
+enum PeriodType { HELÅR, H1, H2, Q1, Q2, Q3, Q4, MÅNED }
+```
+
+Hvis databasen er migreret korrekt med danske tegn (spec-compliant), vil disse $queryRaw string-literals **aldrig matche** nogen rækker. Dashboard viser `latestRevenue: null` for alle selskaber — omsætningsdata er komplet usynlig.
+
+Hvis databasen bruger ASCII (DEC-020 ikke løst), matcher de — men er spec-inkonsistente.
+
+Dette er det mest synlige runtime-symptom på DEC-020-problematikken og påvirker direkte brugeroplevelsen på portfolio-dashboardet.
+
+**Anbefaling:** Koordinér med DEC-020-resolution:
+- Hvis DB bruger danske tegn: ret til `'OMSÆTNING'` og `'HELÅR'`
+- Hvis DB bruger ASCII: ret til `'OMSAETNING'` og `'HELAAR'` midlertidigt, men planlæg migration til dansk
+
+Brug om muligt Prisma-enums i stedet for string-literals for at undgå fremtidige mismatch:
+```typescript
+-- Kan ikke bruges direkte i $queryRaw, men definer konstanter:
+const METRIC_TYPE_REVENUE = 'OMSÆTNING' as const  // eller hent fra Prisma enum
+```
+
+---
+
+## DEC-042: finance.ts update/delete Prisma-kald mangler organization_id i where-clause
+**Status:** CHALLENGED
+**Proposed by:** BA-07 (QA-agent)
+**Dato:** 2025-01-16
+**Rangering:** VIGTIG
+
+**Forslag/Indsigelse:**
+Følgende Prisma-kald i src/actions/finance.ts bruger **kun ID** i where-clause på `update` og `delete`:
+
+```typescript
+// updateFinancialMetric
+const updated = await prisma.financialMetric.update({
+  where: { id: metricId },  // ← Mangler organizationId
+  data: { ... },
+})
+
+// deleteFinancialMetric
+await prisma.financialMetric.delete({ where: { id: metricId } })  // ← Mangler organizationId
+
+// updateInvoice
+const updated = await prisma.financialMetric.update({
+  where: { id: invoiceId },  // ← Mangler organizationId
+  data: { notes: updatedNotes },
+})
+
+// deleteInvoice
+await prisma.financialMetric.delete({ where: { id: invoiceId } })  // ← Mangler organizationId
+
+// updateDividend
+const updated = await prisma.financialMetric.update({
+  where: { id: dividendId },  // ← Mangler organizationId
+  data: { ... },
+})
+
+// deleteDividend
+await prisma.financialMetric.delete({ where: { id: dividendId } })  // ← Mangler organizationId
+
+// updateTimeEntry
+const updated = await prisma.timeEntry.update({
+  where: { id: timeEntryId },  // ← Mangler organizationId
+  data: { ... },
+})
+
+// deleteTimeEntry
+await prisma.timeEntry.delete({ where: { id: timeEntryId } })  // ← Mangler organizationId
+```
+
+Mønsteret er at `findFirst` med `organizationId`-filter verificerer ejerskab inden `update/delete`. Dette er **funktionelt tilstrækkeligt** men bryder CONVENTIONS.md §4: "ALTID: organization_id på ALLE queries — ingen undtagelse".
+
+Risikoscenariet: En race condition mellem `findFirst`-verificering og `update/delete` kan i teorien lade en anden tenant mutere data. I praksis er risikoen lav, men princippet skal overholdes.
+
+**Anbefaling:** Tilføj `organizationId` til alle `update`/`delete` where-clauses:
+
+```typescript
+await prisma.financialMetric.update({
+  where: {
+    id: metricId,
+    organizationId: session.user.organizationId,  // ← Tilføj dette
+  },
+  data: { ... },
+})
+```
+
+Note: Prisma understøtter composite where på update/delete hvis der er et unikt index eller compound unique constraint der inkluderer `organizationId`.
+
+---
+
+## DEC-043: createTimeEntry mangler canAccessCompany()-tjek
+**Status:** CHALLENGED
+**Proposed by:** BA-07 (QA-agent)
+**Dato:** 2025-01-16
+**Rangering:** VIGTIG
+
+**Forslag/Indsigelse:**
+src/actions/finance.ts `createTimeEntry()`:
+
+```typescript
+export async function createTimeEntry(input) {
+  const session = await auth()
+  if (!session?.user) return { error: 'Ikke autoriseret' }
+
+  const accessError = await requireFinanceAccess(session.user.id)
+  if (accessError) return { error: accessError }
+
+  // ... Zod parsing ...
+
+  const caseRecord = await prisma.case.findUnique({
+    where: {
+      id: caseId,
+      organizationId: session.user.organizationId,
+      deletedAt: null,
+    },
+    select: { id: true, title: true },
+  })
+  if (!caseRecord) return { error: 'Sagen blev ikke fundet' }
+
+  // ← Ingen canAccessCompany() for de tilknyttede selskaber!
+  // En GROUP_FINANCE bruger med scope=ASSIGNED til selskab A kan registrere tid
+  // på en sag der tilhører selskab B, hvis begge selskaber er i samme organisation.
+```
+
+Per CONVENTIONS.md §10: "Enhver server action der returnerer data SKAL kalde mindst canAccessCompany() eller canAccessSensitivity()".
+
+`requireFinanceAccess()` kalder `canAccessSensitivity('FORTROLIG')` — dette er én del af kravet. Men for en bruger med `scope=ASSIGNED` er der ingen garanti for at de har adgang til det specifikke selskab som sagen tilhører.
+
+**Anbefaling:** Hent sagernes tilknyttede selskaber og kald `canAccessCompany()`:
+
+```typescript
+const caseRecord = await prisma.case.findUnique({
+  where: {
+    id: caseId,
+    organizationId: session.user.organizationId,
+    deletedAt: null,
+  },
+  select: {
+    id: true,
+    title: true,
+    caseCompanies: { select: { companyId: true } },
+  },
+})
+if (!caseRecord) return { error: 'Sagen blev ikke fundet' }
+
+// Tjek adgang til mindst ét tilknyttet selskab
+if (caseRecord.caseCompanies.length > 0) {
+  let hasAccess = false
+  for (const { companyId } of caseRecord.caseCompanies) {
+    if (await canAccessCompany(session.user.id, companyId)) {
+      hasAccess = true
+      break
+    }
+  }
+  if (!hasAccess) return { error: 'Du har ikke adgang til denne sag' }
+}
+```
+
+---
+
+## DEC-044: finance.ts PeriodType.HELAAR matcher ikke spec-enum HELÅR
+**Status:** CHALLENGED
+**Proposed by:** BA-07 (QA-agent)
+**Dato:** 2025-01-16
+**Rangering:** VIGTIG
+
+**Forslag/Indsigelse:**
+src/actions/finance.ts bruger `PeriodType.HELAAR` (importeret fra `@prisma/client`) i `createInvoice()` og `createDividend()`:
+
+```typescript
+metricType: MetricType.ANDET,
+periodType: PeriodType.HELAAR,   // ← ASCII-erstatning
+```
+
+DATABASE-SCHEMA.md v0.4 definerer:
+```prisma
+enum PeriodType {
+  HELÅR    // ← Dansk tegn — spec-korrekt
+  H1
+  H2
+  // ...
+}
+```
+
+Dette er en direkte konsekvens af DEC-020. Prisma genererer `PeriodType.HELAAR` fordi schema.prisma bruger ASCII-erstatninger. Hvis schema.prisma rettes til at bruge `HELÅR`, genererer Prisma `PeriodType.HELÅR` og denne linje skal opdateres til `PeriodType.HELÅR`.
+
+Tilsvarende for `source: 'UREVIDERET'` — bruges som string-literal i stedet for `MetricSource.UREVIDERET`. Selv om dette matcher spec-enum-værdien, bør det bruges som `MetricSource.UREVIDERET` for typesikkerhed.
+
+**Anbefaling:**
+1. Løs DEC-020 (Danish tegn i Prisma schema)
+2. Opdater alle Prisma-enum-referencer i finance.ts til at bruge dansk-tegn-versioner
+3. Brug `MetricSource.UREVIDERET` i stedet for string-literal `'UREVIDERET'`
+
+---
+
+## DEC-045: finance.ts listFinancialMetrics/listTimeEntries/listDividends pagination-parametre uden for Zod-schema
+**Status:** CHALLENGED
+**Proposed by:** BA-07 (QA-agent)
+**Dato:** 2025-01-16
+**Rangering:** VIGTIG
+
+**Forslag/Indsigelse:**
+src/actions/finance.ts henter `page` og `pageSize` via type assertion uden for de validerede Zod-schemas:
+
+```typescript
+// listFinancialMetrics
+const page = Math.max(1, (input as { page?: number }).page ?? 1)
+const pageSize = Math.min(
+  MAX_PAGE_SIZE,
+  Math.max(1, (input as { pageSize?: number }).pageSize ?? DEFAULT_PAGE_SIZE)
+)
+```
+
+Dette mønster gentages i `listTimeEntries()` og `listDividends()`.
+
+Problemet: `input as { page?: number }` er en usikker type assertion der omgår Zod-validering. Brugeren kan sende:
+- `page: -1` — `Math.max(1, -1)` giver 1, men `skip: (1-1)*20 = 0` (OK)
+- `page: 99999` — `Math.max(1, 99999)` giver 99999, `skip: 99999*20 = 1.999.980` — ingen fejl, men potentielt ineffektivt
+- `pageSize: "abc"` — `(input as ...).pageSize` er `"abc"`, `Math.max(1, NaN)` er `1` (OK men tilfældig)
+- `pageSize: 0` — `Math.max(1, 0)` = 1 (OK)
+
+Korrekt mønster per CONVENTIONS.md §5 er at inkludere `page` og `pageSize` i Zod-schema:
+
+```typescript
+const listFinancialMetricsSchema = z.object({
+  companyId: z.string().uuid(),
+  periodYear: z.number().int().optional(),
+  metricType: z.nativeEnum(MetricType).optional(),
+  page: z.number().int().min(1).default(1),
+  pageSize: z.number().int().min(1).max(100).default(20),
+})
+```
+
+**Anbefaling:** Tilføj `page` og `pageSize` til `listFinancialMetricsSchema`, `listTimeEntriesSchema` og `listDividendsSchema` i `src/lib/validations/finance.ts`. Brug de Zod-validerede værdier direkte i stedet for type assertions.
+
+---
+
+## DEC-046: Manglende filer — src/lib/validations/finance.ts, src/lib/cache/finance.ts, src/types/finance.ts
+**Status:** CHALLENGED
+**Proposed by:** BA-07 (QA-agent)
+**Dato:** 2025-01-16
+**Rangering:** VIGTIG
+
+**Forslag/Indsigelse:**
+src/actions/finance.ts importerer fra tre filer der ikke er leveret til review:
+
+**1. src/lib/validations/finance.ts** — indeholder alle Zod-schemas:
+- createFinancialMetricSchema, updateFinancialMetricSchema, deleteFinancialMetricSchema, listFinancialMetricsSchema
+- createTimeEntrySchema, updateTimeEntrySchema, deleteTimeEntrySchema, listTimeEntriesSchema
+- createInvoiceSchema, updateInvoiceSchema, deleteInvoiceSchema, listInvoicesSchema
+- createDividendSchema, updateDividendSchema, deleteDividendSchema, listDividendsSchema
+
+Uden denne fil kan vi ikke verificere:
+- At MetricType/PeriodType/MetricSource nativeEnum bruges korrekt i Zod
+- At pagination-felter er med (se DEC-045)
+- At numeriske validationer (value > 0, periodYear range, minutes > 0) er korrekte
+
+**2. src/lib/cache/finance.ts** — indeholder caching-logik:
+- getCachedFinancialMetrics() — Prisma-query med caching
+- getCachedFinancialOverview() — aggregeret overblik
+- invalidateFinanceCache() — cache-invalidering
+
+Uden denne fil kan vi ikke verificere:
+- At organization_id anvendes korrekt inde i de cachede queries
+- At cache-nøgler er organisation-scopede (tenant isolation i cache)
+- At TTL er konfigureret passende
+
+**3. src/types/finance.ts** — indeholder TypeScript-typer:
+- ActionResult, FinancialMetricWithCompany, TimeEntryWithUser, TimeEntrySummary
+- InvoiceWithCompany, InvoiceSummary, DividendWithCompany
+
+Uden denne fil kan vi ikke verificere at return-typer matcher hvad funktionerne faktisk returnerer.
+
+**Anbefaling:** Alle tre filer skal leveres til næste review-runde. Særlig høj prioritet på `src/lib/cache/finance.ts` da cache-logikken er kritisk for korrekt tenant isolation og korrekt brug af organization_id.
