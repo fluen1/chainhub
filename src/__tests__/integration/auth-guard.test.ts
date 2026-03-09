@@ -51,7 +51,7 @@ describe('unauthenticated user cannot access dashboard', () => {
   })
 
   it('deleteCompany afviser uautoriseret bruger', async () => {
-    const result = await deleteCompany({ companyId: 'any-id' })
+    const result = await deleteCompany('any-id')
     expect(result.error).toBe('Ikke autoriseret')
     expect(mockPrisma.company.update).not.toHaveBeenCalled()
   })

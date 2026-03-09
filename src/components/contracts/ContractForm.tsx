@@ -76,7 +76,7 @@ const VERSION_SOURCE_OPTIONS: { value: VersionSource; label: string }[] = [
 export function ContractForm({ companies, initialData, isEdit = false }: ContractFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  
+
   const [formData, setFormData] = useState({
     companyId: initialData?.companyId || '',
     systemType: initialData?.systemType || ('' as ContractSystemType),
@@ -84,46 +84,35 @@ export function ContractForm({ companies, initialData, isEdit = false }: Contrac
     sensitivity: initialData?.sensitivity || ('STANDARD' as SensitivityLevel),
     deadlineType: initialData?.deadlineType || ('INGEN' as DeadlineType),
     versionSource: initialData?.versionSource || ('CUSTOM' as VersionSource),
-    startDate: initialData?.startDate ? new Date(initialData.startDate) : null as Date | null,
-    endDate: initialData?.endDate ? new Date(initialData.endDate) : null as Date | null,
-    noticePeriodDays: initialData?.noticePeriodDays?.toString() || '',
-    autoRenews: initialData?.autoRenews ?? false,
     counterpartyName: initialData?.counterpartyName || '',
     counterpartyOrg: initialData?.counterpartyOrg || '',
-    notes: initialData?.notes || '',
+    startDate: initialData?.startDate ? new Date(initialData.startDate) : undefined as Date | undefined,
+    endDate: initialData?.endDate ? new Date(initialData.endDate) : undefined as Date | undefined,
+    deadlineDate: initialData?.deadlineDate ? new Date(initialData.deadlineDate) : undefined as Date | undefined,
+    noticeDays: initialData?.noticeDays || undefined as number | undefined,
+    autoRenew: initialData?.autoRenew || false,
+    description: initialData?.description || '',
+    internalNotes: initialData?.internalNotes || '',
+    tags: initialData?.tags || [] as string[],
   })
 
+  const [tagInput, setTagInput] = useState('')
+
+  const minSensitivity = formData.systemType ? getMinSensitivity(formData.systemType) : null
+
   const handleSystemTypeChange = (value: ContractSystemType) => {
-    const minSensitivity = getMinSensitivity(value)
-    setFormData(prev => {
-      const currentSensitivityIndex = SENSITIVITY_OPTIONS.findIndex(o => o.value === prev.sensitivity)
-      const minSensitivityIndex = SENSITIVITY_OPTIONS.findIndex(o => o.value === minSensitivity)
-      return {
-        ...prev,
-        systemType: value,
-        sensitivity: currentSensitivityIndex < minSensitivityIndex ? minSensitivity : prev.sensitivity,
+    const newMin = getMinSensitivity(value)
+    setFormData((prev) => {
+      let sensitivity = prev.sensitivity
+      if (newMin && !meetsMinimumSensitivity(prev.sensitivity, newMin)) {
+        sensitivity = newMin
       }
+      return { ...prev, systemType: value, sensitivity }
     })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    if (!formData.companyId) {
-      toast.error('Vælg et selskab')
-      return
-    }
-    
-    if (!formData.systemType) {
-      toast.error('Vælg en kontrakttype')
-      return
-    }
-
-    if (formData.systemType && !meetsMinimumSensitivity(formData.systemType, formData.sensitivity)) {
-      toast.error('Sensitivitetsniveau er for lavt for denne kontrakttype')
-      return
-    }
-
     setIsSubmitting(true)
 
     try {
@@ -133,22 +122,23 @@ export function ContractForm({ companies, initialData, isEdit = false }: Contrac
           displayName: formData.displayName || undefined,
           sensitivity: formData.sensitivity,
           deadlineType: formData.deadlineType,
-          startDate: formData.startDate?.toISOString() || undefined,
-          endDate: formData.endDate?.toISOString() || undefined,
-          noticePeriodDays: formData.noticePeriodDays ? parseInt(formData.noticePeriodDays) : undefined,
-          autoRenews: formData.autoRenews,
           counterpartyName: formData.counterpartyName || undefined,
           counterpartyOrg: formData.counterpartyOrg || undefined,
-          notes: formData.notes || undefined,
+          startDate: formData.startDate?.toISOString(),
+          endDate: formData.endDate?.toISOString(),
+          deadlineDate: formData.deadlineDate?.toISOString(),
+          noticeDays: formData.noticeDays,
+          autoRenew: formData.autoRenew,
+          description: formData.description || undefined,
+          internalNotes: formData.internalNotes || undefined,
+          tags: formData.tags,
         }
-        
+
         const result = await updateContract(updateData)
-        
         if (result.error) {
           toast.error(result.error)
           return
         }
-        
         toast.success('Kontrakt opdateret')
         router.push(`/contracts/${initialData.id}`)
       } else {
@@ -159,34 +149,45 @@ export function ContractForm({ companies, initialData, isEdit = false }: Contrac
           sensitivity: formData.sensitivity,
           deadlineType: formData.deadlineType,
           versionSource: formData.versionSource,
-          startDate: formData.startDate?.toISOString() || undefined,
-          endDate: formData.endDate?.toISOString() || undefined,
-          noticePeriodDays: formData.noticePeriodDays ? parseInt(formData.noticePeriodDays) : undefined,
-          autoRenews: formData.autoRenews,
           counterpartyName: formData.counterpartyName || undefined,
           counterpartyOrg: formData.counterpartyOrg || undefined,
-          notes: formData.notes || undefined,
+          startDate: formData.startDate?.toISOString(),
+          endDate: formData.endDate?.toISOString(),
+          deadlineDate: formData.deadlineDate?.toISOString(),
+          noticeDays: formData.noticeDays,
+          autoRenew: formData.autoRenew,
+          description: formData.description || undefined,
+          internalNotes: formData.internalNotes || undefined,
+          tags: formData.tags,
         }
-        
+
         const result = await createContract(createData)
-        
         if (result.error) {
           toast.error(result.error)
           return
         }
-        
         toast.success('Kontrakt oprettet')
-        router.push(`/contracts/${result.data!.id}`)
+        router.push('/contracts')
       }
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  const minSensitivity = formData.systemType ? getMinSensitivity(formData.systemType) : null
-  const minSensitivityIndex = minSensitivity
-    ? SENSITIVITY_OPTIONS.findIndex(o => o.value === minSensitivity)
-    : -1
+  const addTag = () => {
+    const tag = tagInput.trim().toLowerCase()
+    if (tag && !formData.tags.includes(tag)) {
+      setFormData((prev) => ({ ...prev, tags: [...prev.tags, tag] }))
+    }
+    setTagInput('')
+  }
+
+  const removeTag = (tag: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      tags: prev.tags.filter((t) => t !== tag),
+    }))
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -196,10 +197,12 @@ export function ContractForm({ companies, initialData, isEdit = false }: Contrac
           <Label htmlFor="companyId">Selskab *</Label>
           <Select
             value={formData.companyId}
-            onValueChange={(val) => setFormData(prev => ({ ...prev, companyId: val }))}
+            onValueChange={(value) =>
+              setFormData((prev) => ({ ...prev, companyId: value }))
+            }
           >
             <SelectTrigger>
-              <SelectValue placeholder="Vælg selskab" />
+              <SelectValue placeholder="Vælg selskab..." />
             </SelectTrigger>
             <SelectContent>
               {companies.map((company) => (
@@ -218,10 +221,12 @@ export function ContractForm({ companies, initialData, isEdit = false }: Contrac
           <Label htmlFor="systemType">Kontrakttype *</Label>
           <Select
             value={formData.systemType}
-            onValueChange={(val) => handleSystemTypeChange(val as ContractSystemType)}
+            onValueChange={(value) =>
+              handleSystemTypeChange(value as ContractSystemType)
+            }
           >
             <SelectTrigger>
-              <SelectValue placeholder="Vælg kontrakttype" />
+              <SelectValue placeholder="Vælg kontrakttype..." />
             </SelectTrigger>
             <SelectContent>
               {MVP_CONTRACT_TYPES.map((type) => (
@@ -236,51 +241,66 @@ export function ContractForm({ companies, initialData, isEdit = false }: Contrac
 
       {/* Visningsnavn */}
       <div className="space-y-2">
-        <Label htmlFor="displayName">Navn / beskrivelse</Label>
+        <Label htmlFor="displayName">Visningsnavn (valgfri)</Label>
         <Input
           id="displayName"
           value={formData.displayName}
-          onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))}
-          placeholder="Fx 'Lejekontrakt Aarhus kontor'"
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, displayName: e.target.value }))
+          }
+          placeholder="f.eks. Lejekontrakt Østerbrogade 2024"
         />
       </div>
 
       {/* Sensitivitet */}
       <div className="space-y-2">
-        <Label>Sensitivitetsniveau *</Label>
+        <Label>Sensitivitet *</Label>
+        {minSensitivity && (
+          <p className="text-xs text-amber-600">
+            Minimum sensitivitet for denne kontrakttype: {minSensitivity}
+          </p>
+        )}
         <Select
           value={formData.sensitivity}
-          onValueChange={(val) => setFormData(prev => ({ ...prev, sensitivity: val as SensitivityLevel }))}
+          onValueChange={(value) =>
+            setFormData((prev) => ({
+              ...prev,
+              sensitivity: value as SensitivityLevel,
+            }))
+          }
         >
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {SENSITIVITY_OPTIONS.map((opt, index) => (
+            {SENSITIVITY_OPTIONS.map((opt) => (
               <SelectItem
                 key={opt.value}
                 value={opt.value}
-                disabled={index < minSensitivityIndex}
+                disabled={
+                  minSensitivity
+                    ? !meetsMinimumSensitivity(opt.value, minSensitivity)
+                    : false
+                }
               >
                 {opt.label}
-                {index < minSensitivityIndex && ' (for lavt)'}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-        {minSensitivity && (
-          <p className="text-xs text-gray-500">
-            Minimum for denne kontrakttype: {SENSITIVITY_OPTIONS.find(o => o.value === minSensitivity)?.label}
-          </p>
-        )}
       </div>
 
-      {/* Deadline-type */}
+      {/* Deadline type */}
       <div className="space-y-2">
         <Label>Deadline-type</Label>
         <Select
           value={formData.deadlineType}
-          onValueChange={(val) => setFormData(prev => ({ ...prev, deadlineType: val as DeadlineType }))}
+          onValueChange={(value) =>
+            setFormData((prev) => ({
+              ...prev,
+              deadlineType: value as DeadlineType,
+            }))
+          }
         >
           <SelectTrigger>
             <SelectValue />
@@ -295,13 +315,18 @@ export function ContractForm({ companies, initialData, isEdit = false }: Contrac
         </Select>
       </div>
 
-      {/* Versionstype */}
+      {/* Version source */}
       {!isEdit && (
         <div className="space-y-2">
-          <Label>Dokumenttype</Label>
+          <Label>Dokumentkilde</Label>
           <Select
             value={formData.versionSource}
-            onValueChange={(val) => setFormData(prev => ({ ...prev, versionSource: val as VersionSource }))}
+            onValueChange={(value) =>
+              setFormData((prev) => ({
+                ...prev,
+                versionSource: value as VersionSource,
+              }))
+            }
           >
             <SelectTrigger>
               <SelectValue />
@@ -317,8 +342,41 @@ export function ContractForm({ companies, initialData, isEdit = false }: Contrac
         </div>
       )}
 
-      {/* Datoer */}
+      {/* Modpart */}
       <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="counterpartyName">Modpartens navn</Label>
+          <Input
+            id="counterpartyName"
+            value={formData.counterpartyName}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                counterpartyName: e.target.value,
+              }))
+            }
+            placeholder="f.eks. Acme A/S"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="counterpartyOrg">CVR-nummer</Label>
+          <Input
+            id="counterpartyOrg"
+            value={formData.counterpartyOrg}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                counterpartyOrg: e.target.value,
+              }))
+            }
+            placeholder="f.eks. 12345678"
+          />
+        </div>
+      </div>
+
+      {/* Datoer */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {/* Startdato */}
         <div className="space-y-2">
           <Label>Startdato</Label>
           <Popover>
@@ -339,14 +397,17 @@ export function ContractForm({ companies, initialData, isEdit = false }: Contrac
             <PopoverContent className="w-auto p-0">
               <Calendar
                 mode="single"
-                selected={formData.startDate ?? undefined}
-                onSelect={(date) => setFormData(prev => ({ ...prev, startDate: date ?? null }))}
+                selected={formData.startDate}
+                onSelect={(date) =>
+                  setFormData((prev) => ({ ...prev, startDate: date }))
+                }
                 initialFocus
               />
             </PopoverContent>
           </Popover>
         </div>
 
+        {/* Slutdato */}
         <div className="space-y-2">
           <Label>Slutdato</Label>
           <Popover>
@@ -367,8 +428,41 @@ export function ContractForm({ companies, initialData, isEdit = false }: Contrac
             <PopoverContent className="w-auto p-0">
               <Calendar
                 mode="single"
-                selected={formData.endDate ?? undefined}
-                onSelect={(date) => setFormData(prev => ({ ...prev, endDate: date ?? null }))}
+                selected={formData.endDate}
+                onSelect={(date) =>
+                  setFormData((prev) => ({ ...prev, endDate: date }))
+                }
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        {/* Deadline */}
+        <div className="space-y-2">
+          <Label>Deadline</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  'w-full justify-start text-left font-normal',
+                  !formData.deadlineDate && 'text-muted-foreground'
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {formData.deadlineDate
+                  ? format(formData.deadlineDate, 'PPP', { locale: da })
+                  : 'Vælg dato'}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={formData.deadlineDate}
+                onSelect={(date) =>
+                  setFormData((prev) => ({ ...prev, deadlineDate: date }))
+                }
                 initialFocus
               />
             </PopoverContent>
@@ -376,74 +470,109 @@ export function ContractForm({ companies, initialData, isEdit = false }: Contrac
         </div>
       </div>
 
-      {/* Opsigelse */}
+      {/* Opsigelse og auto-fornyelse */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="noticePeriodDays">Opsigelsesperiode (dage)</Label>
+          <Label htmlFor="noticeDays">Opsigelsesfrist (dage)</Label>
           <Input
-            id="noticePeriodDays"
+            id="noticeDays"
             type="number"
             min="0"
-            value={formData.noticePeriodDays}
-            onChange={(e) => setFormData(prev => ({ ...prev, noticePeriodDays: e.target.value }))}
-            placeholder="Fx 30"
+            value={formData.noticeDays ?? ''}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                noticeDays: e.target.value ? parseInt(e.target.value) : undefined,
+              }))
+            }
+            placeholder="f.eks. 90"
           />
         </div>
-
-        <div className="space-y-2">
-          <Label>Automatisk fornyelse</Label>
-          <div className="flex items-center gap-2 pt-2">
+        <div className="flex items-end pb-2">
+          <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
-              id="autoRenews"
-              checked={formData.autoRenews}
-              onChange={(e) => setFormData(prev => ({ ...prev, autoRenews: e.target.checked }))}
+              checked={formData.autoRenew}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, autoRenew: e.target.checked }))
+              }
               className="h-4 w-4 rounded border-gray-300"
             />
-            <label htmlFor="autoRenews" className="text-sm text-gray-700">
-              Kontrakten fornyes automatisk
-            </label>
-          </div>
+            <span className="text-sm font-medium">Automatisk fornyelse</span>
+          </label>
         </div>
       </div>
 
-      {/* Modpart */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="counterpartyName">Modpartsnavn</Label>
-          <Input
-            id="counterpartyName"
-            value={formData.counterpartyName}
-            onChange={(e) => setFormData(prev => ({ ...prev, counterpartyName: e.target.value }))}
-            placeholder="Fx Hansen Ejendomme A/S"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="counterpartyOrg">Modparts CVR</Label>
-          <Input
-            id="counterpartyOrg"
-            value={formData.counterpartyOrg}
-            onChange={(e) => setFormData(prev => ({ ...prev, counterpartyOrg: e.target.value }))}
-            placeholder="12345678"
-          />
-        </div>
-      </div>
-
-      {/* Noter */}
+      {/* Beskrivelse */}
       <div className="space-y-2">
-        <Label htmlFor="notes">Noter</Label>
+        <Label htmlFor="description">Beskrivelse</Label>
         <Textarea
-          id="notes"
-          value={formData.notes}
-          onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-          placeholder="Interne noter om kontrakten..."
+          id="description"
+          value={formData.description}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, description: e.target.value }))
+          }
+          placeholder="Kort beskrivelse af kontrakten..."
           rows={3}
         />
       </div>
 
-      {/* Knapper */}
-      <div className="flex justify-end gap-3">
+      {/* Interne noter */}
+      <div className="space-y-2">
+        <Label htmlFor="internalNotes">Interne noter</Label>
+        <Textarea
+          id="internalNotes"
+          value={formData.internalNotes}
+          onChange={(e) =>
+            setFormData((prev) => ({ ...prev, internalNotes: e.target.value }))
+          }
+          placeholder="Interne noter (kun synlige for din organisation)..."
+          rows={3}
+        />
+      </div>
+
+      {/* Tags */}
+      <div className="space-y-2">
+        <Label>Tags</Label>
+        <div className="flex gap-2">
+          <Input
+            value={tagInput}
+            onChange={(e) => setTagInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                addTag()
+              }
+            }}
+            placeholder="Tilføj tag..."
+          />
+          <Button type="button" variant="outline" onClick={addTag}>
+            Tilføj
+          </Button>
+        </div>
+        {formData.tags.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {formData.tags.map((tag) => (
+              <span
+                key={tag}
+                className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800"
+              >
+                {tag}
+                <button
+                  type="button"
+                  onClick={() => removeTag(tag)}
+                  className="ml-1 text-blue-600 hover:text-blue-800"
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Submit */}
+      <div className="flex justify-end gap-3 pt-4 border-t">
         <Button
           type="button"
           variant="outline"
@@ -453,7 +582,7 @@ export function ContractForm({ companies, initialData, isEdit = false }: Contrac
           Annuller
         </Button>
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {isEdit ? 'Gem ændringer' : 'Opret kontrakt'}
         </Button>
       </div>

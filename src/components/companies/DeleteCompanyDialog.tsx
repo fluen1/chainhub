@@ -23,7 +23,7 @@ export function DeleteCompanyDialog({ company, onClose }: DeleteCompanyDialogPro
     if (!isConfirmed) return
 
     setIsDeleting(true)
-    const result = await deleteCompany({ companyId: company.id })
+    const result = await deleteCompany(company.id)
     setIsDeleting(false)
 
     if (result.error) {
@@ -82,7 +82,7 @@ export function DeleteCompanyDialog({ company, onClose }: DeleteCompanyDialogPro
           <button
             onClick={handleDelete}
             disabled={!isConfirmed || isDeleting}
-            className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-40"
+            className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isDeleting ? 'Sletter...' : 'Slet selskab'}
           </button>

@@ -1213,3 +1213,88 @@ Next.js build worker exited with code: 1 and signal: null
 [2026-03-09 23:57:25] [INFO] Skrevet: src/app/(dashboard)/companies/page.tsx
 [2026-03-09 23:57:25] [INFO] Skrevet: src/app/(dashboard)/companies/[id]/edit/page.tsx
 [2026-03-09 23:57:25] [INFO]   BA-03: 2 filer rettet
+[2026-03-09 23:57:26] [INFO] Git commit: fix: autorepair iter 3 — tsc typecheck (4 agenter)
+[2026-03-09 23:57:26] [INFO]   Iteration 3 afsluttet — korer build igen...
+[2026-03-09 23:57:26] [INFO] 
+--- Autorepair iteration 4/10 ---
+[2026-03-09 23:57:26] [INFO]   Korer: prisma generate...
+[2026-03-09 23:57:28] [INFO]   v prisma generate OK (1.8s)
+[2026-03-09 23:57:28] [INFO]   Korer: tsc typecheck...
+[2026-03-09 23:57:38] [INFO]   x tsc typecheck FEJLEDE (10.5s)
+[2026-03-09 23:57:38] [FEJL]     src/__tests__/integration/auth-guard.test.ts(54,40): error TS2345: Argument of type '{ companyId: string; }' is not assi
+[2026-03-09 23:57:38] [FEJL]     src/__tests__/integration/tenant-isolation.test.ts(85,37): error TS2345: Argument of type '{ companyId: string; }' is no
+[2026-03-09 23:57:38] [FEJL]     src/__tests__/integration/tenant-isolation.test.ts(97,22): error TS2345: Argument of type '{ companyId: string; }' is no
+[2026-03-09 23:57:38] [FEJL]     src/__tests__/integration/tenant-isolation.test.ts(140,16): error TS2339: Property 'companies' does not exist on type '{
+[2026-03-09 23:57:38] [FEJL]       Property 'companies' does not exist on type '{ data: { companies: ({ _count: { ownerships: number; companyPersons: num
+[2026-03-09 23:57:38] [FEJL]     src/__tests__/integration/tenant-isolation.test.ts(141,40): error TS2339: Property 'companies' does not exist on type '{
+[2026-03-09 23:57:38] [FEJL]       Property 'companies' does not exist on type '{ data: { companies: ({ _count: { ownerships: number; companyPersons: num
+[2026-03-09 23:57:38] [FEJL]     src/__tests__/integration/tenant-isolation.test.ts(164,38): error TS2345: Argument of type 'string' is not assignable to
+[2026-03-09 23:57:38] [INFO]   Fejlede filer: 20
+[2026-03-09 23:57:38] [INFO]   -> __generisk__ (__generisk__): auth-guard.test.ts, companies-action.test.ts, ActivityLog.tsx, AddOwnershipDialog.tsx, CompanyActivityLog.tsx, CompanyEmployees.tsx, CompanyGovernance.tsx, CompanyOwnership.tsx, DeleteCompanyDialog.tsx, EmployeesSection.tsx, GovernanceSection.tsx, OwnershipDialog.tsx, OwnershipSection.tsx, ContractForm.tsx, ContractStatusSelect.tsx, DocumentUploadModal.tsx
+[2026-03-09 23:57:38] [INFO]   -> BA-10-tests (Test-agent): tenant-isolation.test.ts
+[2026-03-09 23:57:38] [INFO]   -> BA-05-selskab (Feature-agent (Selskabsprofil)): companies.ts, page.tsx
+[2026-03-09 23:57:38] [INFO]   -> BA-03 (Auth-agent): page.tsx
+[2026-03-09 23:57:38] [INFO]   Kalder Generisk repair (__generisk__) for repair...
+[2026-03-09 23:58:32] [INFO] Skrevet: src/__tests__/integration/auth-guard.test.ts
+[2026-03-09 23:58:32] [INFO] Skrevet: src/__tests__/unit/companies-action.test.ts
+[2026-03-09 23:58:32] [INFO] Skrevet: src/components/companies/DeleteCompanyDialog.tsx
+[2026-03-09 23:58:32] [INFO]   __generisk__: 3 filer rettet
+[2026-03-09 23:58:32] [INFO]   Kalder Test-agent (BA-10-tests) for repair...
+[2026-03-09 23:59:16] [INFO] Skrevet: src/__tests__/integration/tenant-isolation.test.ts
+[2026-03-09 23:59:16] [INFO]   BA-10-tests: 1 filer rettet
+[2026-03-09 23:59:16] [INFO]   Kalder Feature-agent (Selskabsprofil) (BA-05-selskab) for repair...
+[2026-03-09 23:59:59] [INFO] === AUTOREPAIR START (max 10 iterationer) ===
+  Fil->agent map: 55 filer / 20 agenter
+  Afhaengighedsgraf: 58 relationer kortlagt
+[2026-03-09 23:59:59] [INFO] 
+============================================================
+--- Autorepair iteration 1/10 ---
+[2026-03-09 23:59:59] [INFO]   Korer: npm install...
+[2026-03-10 00:00:02] [INFO]   v npm install OK (3.0s)
+[2026-03-10 00:00:02] [INFO]   Korer: prisma generate...
+[2026-03-10 00:00:04] [INFO]   v prisma generate OK (1.6s)
+[2026-03-10 00:00:04] [INFO]   Korer: tsc typecheck...
+[2026-03-10 00:00:09] [INFO]   x tsc typecheck FEJLEDE (4.7s)
+[2026-03-10 00:00:09] [FEJL]     src/__tests__/integration/tenant-isolation.test.ts(183,38): error TS2345: Argument of type 'string' is not assignable to
+[2026-03-10 00:00:09] [FEJL]     src/__tests__/integration/tenant-isolation.test.ts(193,23): error TS2345: Argument of type 'string' is not assignable to
+[2026-03-10 00:00:09] [FEJL]     src/__tests__/integration/tenant-isolation.test.ts(264,46): error TS2345: Argument of type 'boolean' is not assignable t
+[2026-03-10 00:00:09] [FEJL]     src/__tests__/integration/tenant-isolation.test.ts(272,23): error TS7053: Element implicitly has an 'any' type because e
+[2026-03-10 00:00:09] [FEJL]     src/__tests__/integration/tenant-isolation.test.ts(290,46): error TS2345: Argument of type 'boolean' is not assignable t
+[2026-03-10 00:00:09] [FEJL]     src/__tests__/integration/tenant-isolation.test.ts(320,38): error TS2345: Argument of type 'string' is not assignable to
+[2026-03-10 00:00:09] [FEJL]     src/__tests__/integration/tenant-isolation.test.ts(349,28): error TS7053: Element implicitly has an 'any' type because e
+[2026-03-10 00:00:09] [FEJL]     src/__tests__/integration/tenant-isolation.test.ts(366,28): error TS7053: Element implicitly has an 'any' type because e
+[2026-03-10 00:00:09] [INFO]   TS-fejl nu: 109 | 109 TS-fejl (baseline)
+[2026-03-10 00:00:09] [INFO]   Fejlede filer: 20
+[2026-03-10 00:00:09] [INFO]   -> BA-10-tests (Test-agent): tenant-isolation.test.ts
+[2026-03-10 00:00:09] [INFO]   -> BA-05-selskab (Feature-agent (Selskabsprofil)): companies.ts, page.tsx
+[2026-03-10 00:00:09] [INFO]   -> BA-03 (Auth-agent): page.tsx
+[2026-03-10 00:00:09] [INFO]   -> __generisk__ (__generisk__): ActivityLog.tsx, AddOwnershipDialog.tsx, CompanyActivityLog.tsx, CompanyEmployees.tsx, CompanyGovernance.tsx, CompanyOwnership.tsx, EmployeesSection.tsx, GovernanceSection.tsx, OwnershipDialog.tsx, OwnershipSection.tsx, ContractForm.tsx, ContractStatusSelect.tsx, DocumentUploadModal.tsx, document-card.tsx, document-list.tsx, document-preview.tsx
+[2026-03-10 00:00:09] [INFO]   Kalder Test-agent (BA-10-tests) for repair...
+[2026-03-10 00:01:02] [INFO] Skrevet: src/__tests__/integration/tenant-isolation.test.ts
+[2026-03-10 00:01:02] [INFO]   BA-10-tests: 1 filer rettet
+[2026-03-10 00:01:02] [INFO]   Kalder Feature-agent (Selskabsprofil) (BA-05-selskab) for repair...
+[2026-03-10 00:01:47] [INFO] Skrevet: src/actions/companies.ts
+[2026-03-10 00:01:47] [INFO] Skrevet: src/app/(dashboard)/companies/[id]/page.tsx
+[2026-03-10 00:01:47] [INFO]   BA-05-selskab: 2 filer rettet
+[2026-03-10 00:01:47] [INFO]   BA-05-selskab aendrede filer der bruges af: BA-09-sprint2, BA-05-person, BA-07-sprint2, BA-05-dashboard, BA-10-tests, BA-11-pentest
+[2026-03-10 00:01:47] [INFO]   Kalder Auth-agent (BA-03) for repair...
+[2026-03-10 00:01:56] [INFO] Skrevet: src/app/(dashboard)/companies/page.tsx
+[2026-03-10 00:01:56] [INFO]   BA-03: 1 filer rettet
+[2026-03-10 00:01:56] [INFO]   Kalder Generisk repair (__generisk__) for repair...
+[2026-03-10 00:06:59] [INFO] Skrevet: src/__tests__/integration/tenant-isolation.test.ts
+[2026-03-10 00:06:59] [INFO] Skrevet: src/components/companies/AddOwnershipDialog.tsx
+[2026-03-10 00:06:59] [INFO] Skrevet: src/components/companies/CompanyActivityLog.tsx
+[2026-03-10 00:06:59] [INFO] Skrevet: src/components/companies/CompanyEmployees.tsx
+[2026-03-10 00:06:59] [INFO] Skrevet: src/components/companies/CompanyGovernance.tsx
+[2026-03-10 00:06:59] [INFO] Skrevet: src/components/companies/CompanyOwnership.tsx
+[2026-03-10 00:06:59] [INFO] Skrevet: src/components/companies/EmployeesSection.tsx
+[2026-03-10 00:06:59] [INFO] Skrevet: src/components/companies/GovernanceSection.tsx
+[2026-03-10 00:06:59] [INFO] Skrevet: src/components/companies/OwnershipDialog.tsx
+[2026-03-10 00:06:59] [INFO] Skrevet: src/components/companies/OwnershipSection.tsx
+[2026-03-10 00:06:59] [INFO] Skrevet: src/components/contracts/ContractForm.tsx
+[2026-03-10 00:06:59] [INFO] Skrevet: src/components/contracts/ContractStatusSelect.tsx
+[2026-03-10 00:06:59] [INFO] Skrevet: src/components/documents/DocumentUploadModal.tsx
+[2026-03-10 00:06:59] [INFO] Skrevet: src/components/documents/document-card.tsx
+[2026-03-10 00:06:59] [INFO]   __generisk__: 14 filer rettet
+[2026-03-10 00:07:03] [INFO]   INTELLIGENCE.md opdateret: - Trin: `tsc typecheck` | TS-fejl: 109->109 | Status: 109 TS-fejl (baseline)
+- Agenter: BA-10-tests

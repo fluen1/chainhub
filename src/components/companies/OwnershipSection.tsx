@@ -88,28 +88,28 @@ export function OwnershipSection({
                   key={ownership.id}
                   className="flex items-center justify-between p-3 border rounded-lg"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-1">
                     {ownership.ownerPersonId ? (
                       <Users className="h-5 w-5 text-gray-400" />
                     ) : (
                       <Building2 className="h-5 w-5 text-gray-400" />
                     )}
                     <div>
-                      <p className="font-medium text-sm">
+                      <p className="font-medium">
                         {ownership.ownerPerson
                           ? `${ownership.ownerPerson.firstName} ${ownership.ownerPerson.lastName}`
                           : ownership.ownerCompany
-                          ? ownership.ownerCompany.name
-                          : 'Ukendt ejer'}
+                          ? (ownership.ownerCompany as any).name
+                          : 'Ukendt'}
                       </p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-sm font-medium">
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="outline" className="text-xs">
                           {Number(ownership.ownershipPct).toFixed(2)}%
-                        </span>
+                        </Badge>
                         {ownership.shareClass && (
-                          <Badge variant="outline" className="text-xs">
+                          <span className="text-xs text-gray-500">
                             {ownership.shareClass}
-                          </Badge>
+                          </span>
                         )}
                       </div>
                     </div>
@@ -130,8 +130,9 @@ export function OwnershipSection({
                         variant="ghost"
                         size="sm"
                         onClick={() => setDeletingId(ownership.id)}
+                        className="text-red-500 hover:text-red-700"
                       >
-                        <Trash2 className="h-4 w-4 text-red-500" />
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   )}
@@ -152,17 +153,23 @@ export function OwnershipSection({
         }}
       />
 
-      <AlertDialog open={!!deletingId} onOpenChange={() => setDeletingId(null)}>
+      <AlertDialog
+        open={!!deletingId}
+        onOpenChange={(open) => !open && setDeletingId(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Slet ejerskab</AlertDialogTitle>
             <AlertDialogDescription>
-              Er du sikker på, at du vil slette dette ejerskab?
+              Er du sikker på, at du vil slette dette ejerskab? Dette kan ikke fortrydes.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Annuller</AlertDialogCancel>
-            <AlertDialogAction onClick={() => deletingId && handleDelete(deletingId)}>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={() => deletingId && handleDelete(deletingId)}
+            >
               Slet
             </AlertDialogAction>
           </AlertDialogFooter>

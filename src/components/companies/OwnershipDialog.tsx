@@ -103,7 +103,7 @@ export function OwnershipDialog({
           toast.error(result.error)
           return
         }
-        toast.success('Ejer tilføjet')
+        toast.success('Ejerskab oprettet')
       }
       onOpenChange(false)
     } finally {
@@ -111,13 +111,13 @@ export function OwnershipDialog({
     }
   }
 
-  const ownerType = form.watch('ownerType')
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEditing ? 'Rediger ejerskab' : 'Tilføj ejer'}</DialogTitle>
+          <DialogTitle>
+            {isEditing ? 'Rediger ejerskab' : 'Tilføj ejerskab'}
+          </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -126,13 +126,13 @@ export function OwnershipDialog({
               <div className="space-y-2">
                 <Label>Ejertype</Label>
                 <Select
-                  value={ownerType}
-                  onValueChange={(val) =>
-                    form.setValue('ownerType', val as 'person' | 'company')
+                  value={form.watch('ownerType')}
+                  onValueChange={(value) =>
+                    form.setValue('ownerType', value as 'person' | 'company')
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Vælg ejertype" />
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="person">Person</SelectItem>
@@ -141,7 +141,7 @@ export function OwnershipDialog({
                 </Select>
               </div>
 
-              {ownerType === 'person' ? (
+              {form.watch('ownerType') === 'person' ? (
                 <div className="space-y-2">
                   <Label htmlFor="ownerPersonId">Person ID</Label>
                   <Input
@@ -174,12 +174,12 @@ export function OwnershipDialog({
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="ownershipPct">Ejerskabsprocent</Label>
+            <Label htmlFor="ownershipPct">Ejerandel (%)</Label>
             <Input
               id="ownershipPct"
               type="number"
               step="0.01"
-              min="0"
+              min="0.01"
               max="100"
               {...form.register('ownershipPct', { valueAsNumber: true })}
             />
@@ -191,11 +191,20 @@ export function OwnershipDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="shareClass">Aktieklasse</Label>
+            <Label htmlFor="shareClass">Aktieklasse (valgfri)</Label>
             <Input
               id="shareClass"
               {...form.register('shareClass')}
-              placeholder="Fx A-aktier"
+              placeholder="f.eks. A-aktier"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="effectiveDate">Ikrafttrædelsesdato (valgfri)</Label>
+            <Input
+              id="effectiveDate"
+              type="date"
+              {...form.register('effectiveDate')}
             />
           </div>
 
@@ -204,13 +213,12 @@ export function OwnershipDialog({
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
             >
               Annuller
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {isEditing ? 'Gem ændringer' : 'Tilføj ejer'}
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isEditing ? 'Gem ændringer' : 'Tilføj ejerskab'}
             </Button>
           </div>
         </form>

@@ -97,15 +97,13 @@ export function GovernanceSection({
                     key={cp.id}
                     className="flex items-center justify-between p-3 border rounded-lg"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-1">
                       <Icon className="h-5 w-5 text-gray-400" />
                       <div>
-                        <p className="font-medium text-sm">
-                          {cp.person
-                            ? `${cp.person.firstName} ${cp.person.lastName}`
-                            : 'Ukendt person'}
+                        <p className="font-medium">
+                          {cp.person.firstName} {cp.person.lastName}
                         </p>
-                        <Badge variant="outline" className="text-xs mt-0.5">
+                        <Badge variant="outline" className="text-xs mt-1">
                           {roleLabels[cp.role.toLowerCase()] ?? cp.role}
                         </Badge>
                       </div>
@@ -126,8 +124,9 @@ export function GovernanceSection({
                           variant="ghost"
                           size="sm"
                           onClick={() => setDeletingId(cp.id)}
+                          className="text-red-500 hover:text-red-700"
                         >
-                          <Trash2 className="h-4 w-4 text-red-500" />
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     )}
@@ -142,7 +141,7 @@ export function GovernanceSection({
       {isDialogOpen && (
         <CompanyPersonDialog
           companyId={companyId}
-          person={editingPerson}
+          person={editingPerson ?? undefined}
           open={isDialogOpen}
           onOpenChange={(open) => {
             setIsDialogOpen(open)
@@ -151,17 +150,23 @@ export function GovernanceSection({
         />
       )}
 
-      <AlertDialog open={!!deletingId} onOpenChange={() => setDeletingId(null)}>
+      <AlertDialog
+        open={!!deletingId}
+        onOpenChange={(open) => !open && setDeletingId(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Fjern person</AlertDialogTitle>
             <AlertDialogDescription>
-              Er du sikker på, at du vil fjerne denne person fra governance?
+              Er du sikker på, at du vil fjerne denne person fra governance? Dette kan ikke fortrydes.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Annuller</AlertDialogCancel>
-            <AlertDialogAction onClick={() => deletingId && handleDelete(deletingId)}>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={() => deletingId && handleDelete(deletingId)}
+            >
               Fjern
             </AlertDialogAction>
           </AlertDialogFooter>

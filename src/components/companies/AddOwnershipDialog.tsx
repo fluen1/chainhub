@@ -97,9 +97,7 @@ export function AddOwnershipDialog({ companyId, onClose }: AddOwnershipDialogPro
 
             {form.ownerType === 'person' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Person <span className="text-red-500">*</span>
-                </label>
+                <label className="block text-sm font-medium text-gray-700">Person</label>
                 <select
                   name="ownerPersonId"
                   value={form.ownerPersonId}
@@ -107,7 +105,7 @@ export function AddOwnershipDialog({ companyId, onClose }: AddOwnershipDialogPro
                   required
                   className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
-                  <option value="">Vælg person</option>
+                  <option value="">Vælg person...</option>
                   {persons.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.firstName} {p.lastName}
@@ -121,15 +119,15 @@ export function AddOwnershipDialog({ companyId, onClose }: AddOwnershipDialogPro
             {form.ownerType === 'company' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  Ejerselskab ID <span className="text-red-500">*</span>
+                  Ejerselskab ID
                 </label>
                 <input
-                  name="ownerCompanyId"
                   type="text"
+                  name="ownerCompanyId"
                   value={form.ownerCompanyId}
                   onChange={handleChange}
                   required
-                  placeholder="Selskabs UUID"
+                  placeholder="Selskabets ID"
                   className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
@@ -137,43 +135,43 @@ export function AddOwnershipDialog({ companyId, onClose }: AddOwnershipDialogPro
 
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Ejerandel (%) <span className="text-red-500">*</span>
+                Ejerandel (%)
               </label>
               <input
-                name="ownershipPct"
                 type="number"
-                step="0.01"
-                min="0.01"
-                max="100"
-                required
+                name="ownershipPct"
                 value={form.ownershipPct}
                 onChange={handleChange}
-                placeholder="Fx 50.00"
+                required
+                min="0.01"
+                max="100"
+                step="0.01"
+                placeholder="0.00"
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Anpartsklasse
+                Aktieklasse (valgfri)
               </label>
               <input
-                name="shareClass"
                 type="text"
+                name="shareClass"
                 value={form.shareClass}
                 onChange={handleChange}
-                placeholder="Fx A-anparter"
+                placeholder="f.eks. A-aktier"
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Ikrafttrædelsesdato
+                Ikrafttrædelsesdato (valgfri)
               </label>
               <input
-                name="effectiveDate"
                 type="date"
+                name="effectiveDate"
                 value={form.effectiveDate}
                 onChange={handleChange}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -185,7 +183,7 @@ export function AddOwnershipDialog({ companyId, onClose }: AddOwnershipDialogPro
             <button
               type="button"
               onClick={onClose}
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
               Annuller
             </button>
@@ -194,7 +192,7 @@ export function AddOwnershipDialog({ companyId, onClose }: AddOwnershipDialogPro
               disabled={isSubmitting}
               className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
             >
-              {isSubmitting ? 'Tilføjer...' : 'Tilføj ejer'}
+              {isSubmitting ? 'Gemmer...' : 'Tilføj ejer'}
             </button>
           </div>
         </form>

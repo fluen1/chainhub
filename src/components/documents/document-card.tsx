@@ -115,14 +115,12 @@ export function DocumentCard({ document, onDeleted }: DocumentCardProps) {
             <div className="flex-shrink-0 mt-1">
               {getFileIcon(document.fileType)}
             </div>
-
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <h3 className="font-medium text-sm truncate">{document.title}</h3>
-                  <p className="text-xs text-gray-500 truncate">{document.fileName}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-gray-900 truncate">{document.title}</p>
+                  <p className="text-sm text-gray-500 truncate">{document.fileName}</p>
                 </div>
-
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -149,7 +147,7 @@ export function DocumentCard({ document, onDeleted }: DocumentCardProps) {
                       className="text-red-600"
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
-                      {isDeleting ? 'Sletter...' : 'Slet'}
+                      Slet
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -159,41 +157,35 @@ export function DocumentCard({ document, onDeleted }: DocumentCardProps) {
                 <Badge
                   className={cn(
                     'text-xs',
-                    SENSITIVITY_COLORS[document.sensitivity]
+                    SENSITIVITY_COLORS[document.sensitivity as SensitivityLevel]
                   )}
                 >
-                  {SENSITIVITY_LABELS[document.sensitivity]}
+                  {SENSITIVITY_LABELS[document.sensitivity as SensitivityLevel]}
                 </Badge>
-
-                <span className="text-xs text-gray-400">
-                  {formatFileSize(document.fileSizeBytes)}
-                </span>
-
                 <span className="text-xs text-gray-400">
                   {getFileTypeName(document.fileType)}
+                </span>
+                <span className="text-xs text-gray-400">
+                  {formatFileSize(document.fileSizeBytes)}
                 </span>
               </div>
 
               {(document.company || document.case) && (
-                <div className="flex flex-wrap items-center gap-2 mt-2">
+                <div className="flex flex-wrap items-center gap-3 mt-2">
                   {document.company && (
-                    <span className="flex items-center gap-1 text-xs text-gray-500">
+                    <div className="flex items-center gap-1 text-xs text-gray-500">
                       <Building2 className="h-3 w-3" />
                       {document.company.name}
-                    </span>
+                    </div>
                   )}
                   {document.case && (
-                    <span className="flex items-center gap-1 text-xs text-gray-500">
+                    <div className="flex items-center gap-1 text-xs text-gray-500">
                       <Briefcase className="h-3 w-3" />
                       {document.case.title}
-                    </span>
+                    </div>
                   )}
                 </div>
               )}
-
-              <p className="text-xs text-gray-400 mt-2">
-                {new Date(document.createdAt).toLocaleDateString('da-DK')}
-              </p>
             </div>
           </div>
         </CardContent>
@@ -215,14 +207,14 @@ export function DocumentCardSkeleton() {
   return (
     <Card>
       <CardContent className="p-4">
-        <div className="flex items-start gap-3">
-          <div className="h-8 w-8 rounded bg-gray-200 animate-pulse flex-shrink-0 mt-1" />
+        <div className="flex items-start gap-3 animate-pulse">
+          <div className="h-8 w-8 bg-gray-200 rounded mt-1 flex-shrink-0" />
           <div className="flex-1 space-y-2">
-            <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4" />
-            <div className="h-3 bg-gray-200 rounded animate-pulse w-1/2" />
+            <div className="h-4 bg-gray-200 rounded w-3/4" />
+            <div className="h-3 bg-gray-100 rounded w-1/2" />
             <div className="flex gap-2">
-              <div className="h-5 bg-gray-200 rounded animate-pulse w-16" />
-              <div className="h-5 bg-gray-200 rounded animate-pulse w-12" />
+              <div className="h-5 bg-gray-100 rounded w-16" />
+              <div className="h-5 bg-gray-100 rounded w-12" />
             </div>
           </div>
         </div>

@@ -5,7 +5,7 @@ import { getCompany } from '@/actions/companies'
 import { CompanyProfileSkeleton } from '@/components/companies/CompanyProfileSkeleton'
 import { CompanyProfile } from '@/components/companies/CompanyProfile'
 
-export async function generateMetadata({ params }: { params: { id: string } }) {
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   return {
     title: 'Selskabsprofil — ChainHub',
   }
@@ -32,14 +32,16 @@ async function CompanyProfileLoader({ id }: { id: string }) {
 export default async function CompanyProfilePage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
   const session = await auth()
   if (!session?.user) redirect('/login')
 
+  const { id } = await params
+
   return (
     <Suspense fallback={<CompanyProfileSkeleton />}>
-      <CompanyProfileLoader id={params.id} />
+      <CompanyProfileLoader id={id} />
     </Suspense>
   )
 }

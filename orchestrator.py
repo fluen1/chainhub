@@ -1775,90 +1775,64 @@ def koer_sprint(sprint_nr: int, klient: anthropic.Anthropic, dry_run: bool = Fal
 # ============================================================
 
 def main():
-    parser = argparse.ArgumentParser(description="ChainHub MABS orkestrator v2")
-    parser.add_argument("--sprint", type=int)
-    parser.add_argument("--agent", type=str)
-    parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--list", action="store_true")
-    parser.add_argument("--all", action="store_true")
-    parser.add_argument("--force", action="store_true")
-    parser.add_argument("--build-gate", type=int, metavar="SPRINT")
-    parser.add_argument("--scan", action="store_true", help="Scann for manglende imports")
-    parser.add_argument("--autorepair", action="store_true", help="Autonom repair loop: korer build og fikser fejl til det er groent")
-    parser.add_argument("--max-iter", type=int, default=10, help="Max iterationer for autorepair (default: 10)")
-    parser.add_argument("--smoke-test", action="store_true", help="Koor smoke test efter groen build (next dev + route-check)")
+    parser = argparse.ArgumentParser(
+        description="ChainHub MABS orkestrator v3",
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog=(
+            "Eksempler:\n"
+            "  python orchestrator.py --sprint 1       Koor sprint 1\n"
+            "  python orchestrator.py --all            Koor alle sprints\n"
+            "  python orchestrator.py --autorepair     Fix til groen build + smoke test\n"
+            "  python orchestrator.py --list           Vis alle agenter og status\n"
+        )
+    )
+    parser.add_argument("--sprint",      type=int,          help="Koor et enkelt sprint (1-6)")
+    parser.add_argument("--all",         action="store_true", help="Koor alle sprints i raekkefoelge")
+    parser.add_argument("--autorepair",  action="store_true", help="Autonom repair loop + smoke test")
+    parser.add_argument("--agent",       type=str,           help="Koor en specifik agent direkte")
+    parser.add_argument("--list",        action="store_true", help="Vis alle agenter og sprint-status")
+    # Modifiers
+    parser.add_argument("--force",       action="store_true", help="Tving genkoersel selv om output eksisterer")
+    parser.add_argument("--dry-run",     action="store_true", help="Simuler uden API-kald")
+    parser.add_argument("--max-iter",    type=int, default=10, metavar="N",
+                        help="Max repair-iterationer (default: 10)")
     args = parser.parse_args()
 
     if args.list:
-        print("\nTilgaengelige agenter:")
+        print("\nAgenter:")
         for aid, ag in AGENTS.items():
             sprint_str = f"Sprint {ag['sprint']}" if ag['sprint'] > 0 else "Repair  "
-            print(f"  {aid:25} {sprint_str:10} {ag['navn']}")
-        print("\nSpecielle kommandoer:")
-        print("  --scan                              Scann for manglende imports")
-        print("  --build-gate N                      Kor build gate for sprint N")
-        print("  --agent BA-12-repair --force        Fix alle deps + build")
-        print("  --autorepair                        Autonom loop: korer til groen build")
-        print("  --autorepair --max-iter 15          Som ovenfor med 15 maks iterationer")
-        print("  --autorepair --smoke-test           Autorepair + smoke test efter groen build")
-        print("  --smoke-test                        Kun smoke test (next dev + route-check)")
-        return
-
-    if args.scan:
-        manglende_npm, manglende_shadcn = scan_manglende_imports()
-        print(f"\nManglende npm-pakker ({len(manglende_npm)}):")
-        for p in manglende_npm:
-            print(f"  - {p}")
-        print(f"\nManglende shadcn-komponenter ({len(manglende_shadcn)}):")
-        for k in manglende_shadcn:
-            print(f"  - src/components/ui/{k}.tsx")
-        if not manglende_npm and not manglende_shadcn:
-            print("  Ingen manglende imports!")
-        return
-
-    if args.build_gate is not None:
-        koer_build_gate(args.build_gate)
+            status = "OK" if all((REPO_ROOT / f).exists() for f in ag.get("output_filer", []) if ag.get("output_filer")) else "--"
+            print(f"  {aid:25} {sprint_str:10} [{status}]  {ag['navn']}")
+        print("\nBrug:")
+        print("  python orchestrator.py --sprint 1")
+        print("  python orchestrator.py --all")
+        print("  python orchestrator.py --autorepair")
+        print("  python orchestrator.py --autorepair --max-iter 15")
+        print("  python orchestrator.py --agent BA-02 --force")
         return
 
     api_noegle = os.getenv("ANTHROPIC_API_KEY")
-    if hasattr(args, 'autorepair') and args.autorepair and not api_noegle:
-        log("ANTHROPIC_API_KEY ikke fundet i .env.local", "FEJL")
-        sys.exit(1)
     if not api_noegle:
         log("ANTHROPIC_API_KEY ikke fundet i .env.local", "FEJL")
         sys.exit(1)
 
     klient = anthropic.Anthropic(api_key=api_noegle)
 
-    if hasattr(args, 'smoke_test') and args.smoke_test and not (hasattr(args, 'autorepair') and args.autorepair):
-        # Kun smoke test uden autorepair
-        succes = koer_smoke_test()
+    if args.autorepair:
+        # Smoke test er altid med i autorepair — det er hele pointen
+        succes = koer_autorepair_loop(klient, max_iter=args.max_iter, smoke_test=True)
         sys.exit(0 if succes else 1)
-
-    if hasattr(args, 'autorepair') and args.autorepair:
-        klient = anthropic.Anthropic(api_key=api_noegle)
-        succes = koer_autorepair_loop(
-            klient,
-            max_iter=args.max_iter,
-            smoke_test=getattr(args, 'smoke_test', False),
-        )
-        sys.exit(0 if succes else 1)
-
-    if args.dry_run:
-        log("=== DRY RUN ===")
 
     if args.all:
         for sprint_nr in sorted(SPRINT_RAEKKEFOLGEP.keys()):
             koer_sprint(sprint_nr, klient, args.dry_run, args.force)
-    elif args.agent:
-        koer_agent(args.agent, klient, args.dry_run, args.force)
     elif args.sprint:
         koer_sprint(args.sprint, klient, args.dry_run, args.force)
+    elif args.agent:
+        koer_agent(args.agent, klient, args.dry_run, args.force)
     else:
-        log("Ingen handling. Eksempler:")
-        log("  python orchestrator.py --sprint 1")
-        log("  python orchestrator.py --agent BA-12-repair --force")
-        log("  python orchestrator.py --scan")
+        parser.print_help()
 
 
 if __name__ == "__main__":

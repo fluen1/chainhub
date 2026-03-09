@@ -93,24 +93,20 @@ export function EmployeesSection({
                   key={cp.id}
                   className="flex items-center justify-between p-3 border rounded-lg"
                 >
-                  <div className="flex items-center gap-3">
-                    <Users className="h-5 w-5 text-gray-400" />
-                    <div>
-                      <p className="font-medium text-sm">
-                        {cp.person
-                          ? `${cp.person.firstName} ${cp.person.lastName}`
-                          : 'Ukendt person'}
-                      </p>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <Badge variant="outline" className="text-xs">
-                          {cp.role}
-                        </Badge>
-                        {cp.employmentType && (
-                          <span className="text-xs text-gray-500">
-                            {employmentTypeLabels[cp.employmentType] ?? cp.employmentType}
-                          </span>
-                        )}
-                      </div>
+                  <div className="flex-1">
+                    <p className="font-medium">
+                      {cp.person.firstName} {cp.person.lastName}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge variant="outline" className="text-xs">
+                        {cp.role}
+                      </Badge>
+                      {(cp as any).employmentType && (
+                        <span className="text-xs text-gray-500">
+                          {employmentTypeLabels[(cp as any).employmentType] ??
+                            (cp as any).employmentType}
+                        </span>
+                      )}
                     </div>
                   </div>
                   {canEdit && (
@@ -129,8 +125,9 @@ export function EmployeesSection({
                         variant="ghost"
                         size="sm"
                         onClick={() => setDeletingId(cp.id)}
+                        className="text-red-500 hover:text-red-700"
                       >
-                        <Trash2 className="h-4 w-4 text-red-500" />
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   )}
@@ -144,7 +141,7 @@ export function EmployeesSection({
       {isDialogOpen && (
         <CompanyPersonDialog
           companyId={companyId}
-          person={editingPerson}
+          person={editingPerson ?? undefined}
           open={isDialogOpen}
           onOpenChange={(open) => {
             setIsDialogOpen(open)
@@ -153,17 +150,23 @@ export function EmployeesSection({
         />
       )}
 
-      <AlertDialog open={!!deletingId} onOpenChange={() => setDeletingId(null)}>
+      <AlertDialog
+        open={!!deletingId}
+        onOpenChange={(open) => !open && setDeletingId(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Fjern medarbejder</AlertDialogTitle>
             <AlertDialogDescription>
-              Er du sikker på, at du vil fjerne denne medarbejder fra selskabet?
+              Er du sikker på, at du vil fjerne denne medarbejder? Dette kan ikke fortrydes.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Annuller</AlertDialogCancel>
-            <AlertDialogAction onClick={() => deletingId && handleDelete(deletingId)}>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={() => deletingId && handleDelete(deletingId)}
+            >
               Fjern
             </AlertDialogAction>
           </AlertDialogFooter>

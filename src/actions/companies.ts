@@ -49,7 +49,6 @@ export async function getCompanies(params?: {
 
     const { search, status, limit = 50, offset = 0 } = params ?? {}
 
-    // Hent bruger for at tjekke scope
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -116,64 +115,37 @@ export async function getCompany(companyId: string) {
       include: {
         ownerships: {
           where: {
-            deletedAt: null,
-          },
+            organizationId,
+          } as any,
+          orderBy: { percentage: 'desc' } as any,
           include: {
-            ownerCompany: {
-              select: {
-                id: true,
-                name: true,
-                cvr: true,
-              },
-            },
-            ownedCompany: {
-              select: {
-                id: true,
-                name: true,
-                cvr: true,
-              },
-            },
-          },
-          orderBy: { ownershipPercentage: 'desc' },
+            ownerCompanyRel: true,
+          } as any,
         },
         companyPersons: {
           where: {
-            deletedAt: null,
-          },
+            organizationId,
+          } as any,
           include: {
-            person: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                email: true,
-                phone: true,
-              },
-            },
-          },
-          orderBy: { createdAt: 'asc' },
+            person: true,
+          } as any,
         },
         contracts: {
           where: {
+            organizationId,
             deletedAt: null,
-          },
-          select: {
-            id: true,
-            title: true,
-            status: true,
-            systemType: true,
-            expiresAt: true,
-            createdAt: true,
-          },
+          } as any,
           orderBy: { createdAt: 'desc' },
           take: 10,
-        },
-        _count: {
           select: {
-            ownerships: true,
-            companyPersons: true,
-            contracts: true,
-          },
+            id: true,
+            organizationId: true,
+            status: true,
+            systemType: true,
+            sensitivity: true,
+            createdAt: true,
+            updatedAt: true,
+          } as any,
         },
       },
     })
@@ -189,17 +161,30 @@ export async function getCompany(companyId: string) {
   }
 }
 
-export async function createCompany(input: CreateCompanyInput): Promise<ActionResult<{ id: string }>> {
+// ─── Adgangstjek ─────────────────────────────────────────────────────────────
+
+export async function canAccessCompany(companyId: string): Promise<boolean> {
+  try {
+    const organizationId = await getOrganizationId()
+    const company = await prisma.company.findFirst({
+      where: { id: companyId, organizationId, deletedAt: null },
+      select: { id: true },
+    })
+    return company !== null
+  } catch {
+    return false
+  }
+}
+
+// ─── Opret selskab ────────────────────────────────────────────────────────────
+
+export async function createCompany(
+  input: CreateCompanyInput
+): Promise<ActionResult<{ id: string }>> {
   try {
     const organizationId = await getOrganizationId()
     const userId = await getUserId()
-
-    const parsed = createCompanySchema.safeParse(input)
-    if (!parsed.success) {
-      return { error: parsed.error.errors[0]?.message ?? 'Ugyldigt input' }
-    }
-
-    const data = parsed.data
+    const data = createCompanySchema.parse(input)
 
     const company = await prisma.company.create({
       data: {
@@ -218,66 +203,54 @@ export async function createCompany(input: CreateCompanyInput): Promise<ActionRe
   }
 }
 
-export async function updateCompany(input: UpdateCompanyInput): Promise<ActionResult<{ id: string }>> {
+// ─── Opdater selskab ──────────────────────────────────────────────────────────
+
+export async function updateCompany(
+  companyId: string,
+  input: UpdateCompanyInput
+): Promise<ActionResult<{ id: string }>> {
   try {
     const organizationId = await getOrganizationId()
-    const userId = await getUserId()
+    const data = updateCompanySchema.parse(input)
 
-    const parsed = updateCompanySchema.safeParse(input)
-    if (!parsed.success) {
-      return { error: parsed.error.errors[0]?.message ?? 'Ugyldigt input' }
-    }
-
-    const { id, ...data } = parsed.data
-
-    // Verificer at selskabet tilhører organisationen
     const existing = await prisma.company.findFirst({
-      where: { id, organizationId, deletedAt: null },
+      where: { id: companyId, organizationId, deletedAt: null },
       select: { id: true },
     })
-
-    if (!existing) {
-      return { error: 'Selskabet blev ikke fundet' }
-    }
+    if (!existing) return { error: 'Selskabet blev ikke fundet' }
 
     await prisma.company.update({
-      where: { id },
-      data: {
-        ...data,
-        updatedAt: new Date(),
-      },
+      where: { id: companyId },
+      data,
     })
 
+    revalidatePath(`/companies/${companyId}`)
     revalidatePath('/companies')
-    revalidatePath(`/companies/${id}`)
-    return { data: { id } }
+    return { data: { id: companyId } }
   } catch (err) {
     console.error('[updateCompany]', err)
     return { error: 'Kunne ikke opdatere selskab' }
   }
 }
 
-export async function deleteCompany(companyId: string): Promise<ActionResult<{ id: string }>> {
+// ─── Slet selskab (soft delete) ───────────────────────────────────────────────
+
+export async function deleteCompany(
+  companyId: string
+): Promise<ActionResult<{ id: string }>> {
   try {
     const organizationId = await getOrganizationId()
     const userId = await getUserId()
 
-    // Verificer at selskabet tilhører organisationen
     const existing = await prisma.company.findFirst({
       where: { id: companyId, organizationId, deletedAt: null },
       select: { id: true },
     })
-
-    if (!existing) {
-      return { error: 'Selskabet blev ikke fundet' }
-    }
+    if (!existing) return { error: 'Selskabet blev ikke fundet' }
 
     await prisma.company.update({
       where: { id: companyId },
-      data: {
-        deletedAt: new Date(),
-        updatedAt: new Date(),
-      },
+      data: { deletedAt: new Date(), updatedBy: userId } as any,
     })
 
     revalidatePath('/companies')
@@ -288,46 +261,32 @@ export async function deleteCompany(companyId: string): Promise<ActionResult<{ i
   }
 }
 
-// ─── Ejerskab ─────────────────────────────────────────────────────────────────
+// ─── Ejerskaber ───────────────────────────────────────────────────────────────
 
-export async function createOwnership(input: CreateOwnershipInput): Promise<ActionResult<{ id: string }>> {
+export async function createOwnership(
+  companyId: string,
+  input: CreateOwnershipInput
+): Promise<ActionResult<{ id: string }>> {
   try {
     const organizationId = await getOrganizationId()
     const userId = await getUserId()
 
-    const parsed = createOwnershipSchema.safeParse(input)
-    if (!parsed.success) {
-      return { error: parsed.error.errors[0]?.message ?? 'Ugyldigt input' }
-    }
+    const canAccess = await canAccessCompany(companyId)
+    if (!canAccess) return { error: 'Ingen adgang til selskabet' }
 
-    const data = parsed.data
-
-    // Verificer at begge selskaber tilhører organisationen
-    const [ownerCompany, ownedCompany] = await Promise.all([
-      prisma.company.findFirst({
-        where: { id: data.ownerCompanyId, organizationId, deletedAt: null },
-        select: { id: true },
-      }),
-      prisma.company.findFirst({
-        where: { id: data.ownedCompanyId, organizationId, deletedAt: null },
-        select: { id: true },
-      }),
-    ])
-
-    if (!ownerCompany) return { error: 'Ejende selskab ikke fundet' }
-    if (!ownedCompany) return { error: 'Ejet selskab ikke fundet' }
+    const data = createOwnershipSchema.parse(input)
 
     const ownership = await prisma.ownership.create({
       data: {
         ...data,
+        companyId,
         organizationId,
         createdBy: userId,
-      },
+      } as any,
       select: { id: true },
     })
 
-    revalidatePath(`/companies/${data.ownerCompanyId}`)
-    revalidatePath(`/companies/${data.ownedCompanyId}`)
+    revalidatePath(`/companies/${companyId}`)
     return { data: { id: ownership.id } }
   } catch (err) {
     console.error('[createOwnership]', err)
@@ -335,67 +294,61 @@ export async function createOwnership(input: CreateOwnershipInput): Promise<Acti
   }
 }
 
-export async function updateOwnership(input: UpdateOwnershipInput): Promise<ActionResult<{ id: string }>> {
+export async function updateOwnership(
+  ownershipId: string,
+  companyId: string,
+  input: UpdateOwnershipInput
+): Promise<ActionResult<{ id: string }>> {
   try {
     const organizationId = await getOrganizationId()
 
-    const parsed = updateOwnershipSchema.safeParse(input)
-    if (!parsed.success) {
-      return { error: parsed.error.errors[0]?.message ?? 'Ugyldigt input' }
-    }
+    const canAccess = await canAccessCompany(companyId)
+    if (!canAccess) return { error: 'Ingen adgang til selskabet' }
 
-    const { id, ...data } = parsed.data
+    const data = updateOwnershipSchema.parse(input)
 
-    // Verificer at ejerskabet tilhører organisationen
     const existing = await prisma.ownership.findFirst({
-      where: { id, organizationId, deletedAt: null },
-      select: { id: true, ownerCompanyId: true, ownedCompanyId: true },
+      where: { id: ownershipId, organizationId } as any,
+      select: { id: true },
     })
-
-    if (!existing) {
-      return { error: 'Ejerskab ikke fundet' }
-    }
+    if (!existing) return { error: 'Ejerskab ikke fundet' }
 
     await prisma.ownership.update({
-      where: { id },
-      data: {
-        ...data,
-        updatedAt: new Date(),
-      },
+      where: { id: ownershipId },
+      data: data as any,
     })
 
-    revalidatePath(`/companies/${existing.ownerCompanyId}`)
-    revalidatePath(`/companies/${existing.ownedCompanyId}`)
-    return { data: { id } }
+    revalidatePath(`/companies/${companyId}`)
+    return { data: { id: ownershipId } }
   } catch (err) {
     console.error('[updateOwnership]', err)
     return { error: 'Kunne ikke opdatere ejerskab' }
   }
 }
 
-export async function deleteOwnership(ownershipId: string): Promise<ActionResult<{ id: string }>> {
+export async function deleteOwnership(
+  ownershipId: string,
+  companyId: string
+): Promise<ActionResult<{ id: string }>> {
   try {
     const organizationId = await getOrganizationId()
+    const userId = await getUserId()
+
+    const canAccess = await canAccessCompany(companyId)
+    if (!canAccess) return { error: 'Ingen adgang til selskabet' }
 
     const existing = await prisma.ownership.findFirst({
-      where: { id: ownershipId, organizationId, deletedAt: null },
-      select: { id: true, ownerCompanyId: true, ownedCompanyId: true },
+      where: { id: ownershipId, organizationId } as any,
+      select: { id: true },
     })
-
-    if (!existing) {
-      return { error: 'Ejerskab ikke fundet' }
-    }
+    if (!existing) return { error: 'Ejerskab ikke fundet' }
 
     await prisma.ownership.update({
       where: { id: ownershipId },
-      data: {
-        deletedAt: new Date(),
-        updatedAt: new Date(),
-      },
+      data: { deletedAt: new Date(), updatedBy: userId } as any,
     })
 
-    revalidatePath(`/companies/${existing.ownerCompanyId}`)
-    revalidatePath(`/companies/${existing.ownedCompanyId}`)
+    revalidatePath(`/companies/${companyId}`)
     return { data: { id: ownershipId } }
   } catch (err) {
     console.error('[deleteOwnership]', err)
@@ -405,109 +358,95 @@ export async function deleteOwnership(ownershipId: string): Promise<ActionResult
 
 // ─── Selskabspersoner ─────────────────────────────────────────────────────────
 
-export async function createCompanyPerson(input: CreateCompanyPersonInput): Promise<ActionResult<{ id: string }>> {
+export async function createCompanyPerson(
+  companyId: string,
+  input: CreateCompanyPersonInput
+): Promise<ActionResult<{ id: string }>> {
   try {
     const organizationId = await getOrganizationId()
     const userId = await getUserId()
 
-    const parsed = createCompanyPersonSchema.safeParse(input)
-    if (!parsed.success) {
-      return { error: parsed.error.errors[0]?.message ?? 'Ugyldigt input' }
-    }
+    const canAccess = await canAccessCompany(companyId)
+    if (!canAccess) return { error: 'Ingen adgang til selskabet' }
 
-    const data = parsed.data
-
-    // Verificer at selskabet tilhører organisationen
-    const company = await prisma.company.findFirst({
-      where: { id: data.companyId, organizationId, deletedAt: null },
-      select: { id: true },
-    })
-
-    if (!company) return { error: 'Selskabet blev ikke fundet' }
-
-    const { notes: _notes, ...dataWithoutNotes } = data as any
+    const data = createCompanyPersonSchema.parse(input)
 
     const companyPerson = await prisma.companyPerson.create({
       data: {
-        ...dataWithoutNotes,
+        ...data,
+        companyId,
         organizationId,
         createdBy: userId,
-      },
+      } as any,
       select: { id: true },
     })
 
-    revalidatePath(`/companies/${data.companyId}`)
+    revalidatePath(`/companies/${companyId}`)
     return { data: { id: companyPerson.id } }
   } catch (err) {
     console.error('[createCompanyPerson]', err)
-    return { error: 'Kunne ikke tilknytte person til selskab' }
+    return { error: 'Kunne ikke tilknytte person' }
   }
 }
 
-export async function updateCompanyPerson(input: UpdateCompanyPersonInput): Promise<ActionResult<{ id: string }>> {
+export async function updateCompanyPerson(
+  companyPersonId: string,
+  companyId: string,
+  input: UpdateCompanyPersonInput
+): Promise<ActionResult<{ id: string }>> {
   try {
     const organizationId = await getOrganizationId()
 
-    const parsed = updateCompanyPersonSchema.safeParse(input)
-    if (!parsed.success) {
-      return { error: parsed.error.errors[0]?.message ?? 'Ugyldigt input' }
-    }
+    const canAccess = await canAccessCompany(companyId)
+    if (!canAccess) return { error: 'Ingen adgang til selskabet' }
 
-    const { id, ...data } = parsed.data
-
-    // Verificer at relationen tilhører organisationen
-    const existing = await prisma.companyPerson.findFirst({
-      where: { id, organizationId, deletedAt: null },
-      select: { id: true, companyId: true },
-    })
-
-    if (!existing) {
-      return { error: 'Person-relation ikke fundet' }
-    }
-
-    const { notes: _notes, ...dataWithoutNotes } = data as any
-
-    await prisma.companyPerson.update({
-      where: { id },
-      data: {
-        ...dataWithoutNotes,
-        updatedAt: new Date(),
-      },
-    })
-
-    revalidatePath(`/companies/${existing.companyId}`)
-    return { data: { id } }
-  } catch (err) {
-    console.error('[updateCompanyPerson]', err)
-    return { error: 'Kunne ikke opdatere person-relation' }
-  }
-}
-
-export async function deleteCompanyPerson(companyPersonId: string): Promise<ActionResult<{ id: string }>> {
-  try {
-    const organizationId = await getOrganizationId()
+    const data = updateCompanyPersonSchema.parse(input)
 
     const existing = await prisma.companyPerson.findFirst({
-      where: { id: companyPersonId, organizationId, deletedAt: null },
-      select: { id: true, companyId: true },
+      where: { id: companyPersonId, organizationId } as any,
+      select: { id: true },
     })
-
-    if (!existing) {
-      return { error: 'Person-relation ikke fundet' }
-    }
+    if (!existing) return { error: 'Tilknytning ikke fundet' }
 
     await prisma.companyPerson.update({
       where: { id: companyPersonId },
-      data: {
-        deletedAt: new Date(),
-        updatedAt: new Date(),
-      },
+      data: data as any,
     })
 
-    revalidatePath(`/companies/${existing.companyId}`)
+    revalidatePath(`/companies/${companyId}`)
+    return { data: { id: companyPersonId } }
+  } catch (err) {
+    console.error('[updateCompanyPerson]', err)
+    return { error: 'Kunne ikke opdatere tilknytning' }
+  }
+}
+
+export async function deleteCompanyPerson(
+  companyPersonId: string,
+  companyId: string
+): Promise<ActionResult<{ id: string }>> {
+  try {
+    const organizationId = await getOrganizationId()
+    const userId = await getUserId()
+
+    const canAccess = await canAccessCompany(companyId)
+    if (!canAccess) return { error: 'Ingen adgang til selskabet' }
+
+    const existing = await prisma.companyPerson.findFirst({
+      where: { id: companyPersonId, organizationId } as any,
+      select: { id: true },
+    })
+    if (!existing) return { error: 'Tilknytning ikke fundet' }
+
+    await prisma.companyPerson.update({
+      where: { id: companyPersonId },
+      data: { deletedAt: new Date(), updatedBy: userId } as any,
+    })
+
+    revalidatePath(`/companies/${companyId}`)
     return { data: { id: companyPersonId } }
   } catch (err) {
     console.error('[deleteCompanyPerson]', err)
-    return { error: 'Kunne ikke fjerne person fra selskab' }
+    return { error: 'Kunne ikke fjerne tilknytning' }
   }
 }

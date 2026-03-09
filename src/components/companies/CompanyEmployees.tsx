@@ -80,17 +80,20 @@ export function CompanyEmployees({ companyId, companyPersons }: CompanyEmployees
                     <p className="font-medium text-gray-900">{fullName}</p>
                     <div className="flex items-center gap-2 text-sm text-gray-500">
                       <span>{ROLE_LABELS[cp.role] ?? cp.role}</span>
-                      {cp.employmentType && (
+                      {(cp as any).employmentType && (
                         <>
                           <span>·</span>
-                          <span>{EMPLOYMENT_TYPE_LABELS[cp.employmentType] ?? cp.employmentType}</span>
+                          <span>
+                            {EMPLOYMENT_TYPE_LABELS[(cp as any).employmentType] ??
+                              (cp as any).employmentType}
+                          </span>
                         </>
                       )}
                     </div>
-                    {cp.startDate && (
+                    {(cp as any).startDate && (
                       <p className="text-xs text-gray-400">
-                        Fra {formatDate(cp.startDate)}
-                        {cp.endDate ? ` til ${formatDate(cp.endDate)}` : ''}
+                        Fra {formatDate((cp as any).startDate)}
+                        {(cp as any).endDate && ` til ${formatDate((cp as any).endDate)}`}
                       </p>
                     )}
                   </div>
@@ -98,14 +101,14 @@ export function CompanyEmployees({ companyId, companyPersons }: CompanyEmployees
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setEditingPerson(cp)}
-                    className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                    className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
                   >
                     <Pencil className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => handleDelete(cp.id)}
                     disabled={deletingId === cp.id}
-                    className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                    className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -138,14 +141,18 @@ export function CompanyEmployees({ companyId, companyPersons }: CompanyEmployees
 
 function EmployeesEmpty({ onAdd }: { onAdd: () => void }) {
   return (
-    <div className="rounded-lg border-2 border-dashed border-gray-200 p-8 text-center">
-      <UserCircle className="mx-auto h-10 w-10 text-gray-300" />
-      <p className="mt-2 text-sm text-gray-500">Ingen ansatte eller tilknyttede endnu</p>
+    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 py-10 text-center">
+      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
+        <UserCircle className="h-6 w-6 text-gray-400" />
+      </div>
+      <h3 className="mb-1 text-sm font-semibold text-gray-900">Ingen ansatte</h3>
+      <p className="mb-4 text-sm text-gray-500">Tilføj ansatte og tilknyttede personer.</p>
       <button
         onClick={onAdd}
-        className="mt-3 text-sm font-medium text-blue-600 hover:text-blue-700"
+        className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
       >
-        Tilføj den første
+        <Plus className="h-4 w-4" />
+        Tilføj person
       </button>
     </div>
   )

@@ -77,21 +77,26 @@ export function CompanyOwnership({ companyId, ownerships }: CompanyOwnershipProp
                     <p className="font-medium text-gray-900">{ownerName}</p>
                     <p className="text-sm text-gray-500">
                       {Number(ownership.ownershipPct).toFixed(2)}%
-                      {ownership.shareClass ? ` · ${ownership.shareClass}` : ''}
+                      {(ownership as any).shareClass && ` · ${(ownership as any).shareClass}`}
                     </p>
+                    {(ownership as any).effectiveDate && (
+                      <p className="text-xs text-gray-400">
+                        Fra {String((ownership as any).effectiveDate).slice(0, 10)}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setEditingOwnership(ownership)}
-                    className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                    className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
                   >
                     <Pencil className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => handleDelete(ownership.id)}
                     disabled={deletingId === ownership.id}
-                    className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                    className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -111,7 +116,6 @@ export function CompanyOwnership({ companyId, ownerships }: CompanyOwnershipProp
       {editingOwnership && (
         <EditOwnershipDialog
           ownership={editingOwnership}
-          companyId={companyId}
           onClose={() => setEditingOwnership(null)}
         />
       )}

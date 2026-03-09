@@ -42,7 +42,7 @@ export function ContractStatusSelect({
 
   const handleStatusChange = async (newStatus: ContractStatus) => {
     setIsUpdating(true)
-    
+
     try {
       const result = await updateContractStatus({
         id: contractId,
