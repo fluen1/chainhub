@@ -24,6 +24,11 @@ import {
   deleteDividendSchema,
   listDividendsSchema,
 } from '@/lib/validations/finance'
+import {
+  getCachedFinancialMetrics,
+  getCachedFinancialOverview,
+  invalidateFinanceCache,
+} from '@/lib/cache/finance'
 import type {
   ActionResult,
   FinancialMetricWithCompany,
@@ -34,6 +39,11 @@ import type {
   DividendWithCompany,
 } from '@/types/finance'
 import type { FinancialMetric, TimeEntry } from '@prisma/client'
+
+// ==================== PAGINATION-KONSTANTER ====================
+
+const DEFAULT_PAGE_SIZE = 20
+const MAX_PAGE_SIZE = 100
 
 // ==================== INTERNE HJÆLPERE ====================
 
@@ -59,7 +69,6 @@ export async function createFinancialMetric(
   const session = await auth()
   if (!session?.user) return { error: 'Ikke autoriseret' }
 
-  // Sensitivity-tjek: FORTROLIG minimum på alle finance-queries
   const accessError = await requireFinanceAccess(session.user.id)
   if (accessError) return { error: accessError }
 
@@ -75,7 +84,6 @@ export async function createFinancialMetric(
   const hasAccess = await canAccessCompany(session.user.id, companyId)
   if (!hasAccess) return { error: 'Du har ikke adgang til dette selskab' }
 
-  // Verificér selskab tilhører organisation
   const company = await prisma.company.findUnique({
     where: { id: companyId, organizationId: session.user.organizationId, deletedAt: null },
     select: { id: true, name: true },
@@ -109,11 +117,13 @@ export async function createFinancialMetric(
       },
     })
 
+    // Invalider finance-cache for dette selskab
+    await invalidateFinanceCache(session.user.organizationId, companyId)
+
     revalidatePath(`/companies/${companyId}/finance`)
     revalidatePath('/finance')
     return { data: metric }
   } catch (error: unknown) {
-    // Unique constraint: samme metric for samme periode
     if (
       typeof error === 'object' &&
       error !== null &&
@@ -181,6 +191,9 @@ export async function updateFinancialMetric(
       },
     })
 
+    // Invalider finance-cache for dette selskab
+    await invalidateFinanceCache(session.user.organizationId, companyId)
+
     revalidatePath(`/companies/${companyId}/finance`)
     revalidatePath('/finance')
     return { data: updated }
@@ -230,6 +243,9 @@ export async function deleteFinancialMetric(
       },
     })
 
+    // Invalider finance-cache for dette selskab
+    await invalidateFinanceCache(session.user.organizationId, companyId)
+
     revalidatePath(`/companies/${companyId}/finance`)
     revalidatePath('/finance')
     return { data: { id: metricId } }
@@ -239,13 +255,28 @@ export async function deleteFinancialMetric(
   }
 }
 
+/**
+ * listFinancialMetrics — med pagination og caching.
+ *
+ * Sprint 5 ændringer:
+ * - Tilføjet page + pageSize pagination (MANGLEDE i Sprint 4)
+ * - Bruger getCachedFinancialMetrics() — TTL 1 time
+ * - Returnerer { metrics, total, hasMore, page, pageSize }
+ */
 export async function listFinancialMetrics(
   input: z.infer<typeof listFinancialMetricsSchema>
-): Promise<ActionResult<FinancialMetric[]>> {
+): Promise<
+  ActionResult<{
+    metrics: FinancialMetric[]
+    total: number
+    hasMore: boolean
+    page: number
+    pageSize: number
+  }>
+> {
   const session = await auth()
   if (!session?.user) return { error: 'Ikke autoriseret' }
 
-  // canAccessSensitivity SKAL kaldes — økonomidata er FORTROLIG minimum
   const accessError = await requireFinanceAccess(session.user.id)
   if (accessError) return { error: accessError }
 
@@ -254,19 +285,26 @@ export async function listFinancialMetrics(
 
   const { companyId, periodYear, metricType } = parsed.data
 
+  // Pagination-parametre — brug defaults hvis ikke angivet
+  const page = Math.max(1, (input as { page?: number }).page ?? 1)
+  const pageSize = Math.min(
+    MAX_PAGE_SIZE,
+    Math.max(1, (input as { pageSize?: number }).pageSize ?? DEFAULT_PAGE_SIZE)
+  )
+
   const hasAccess = await canAccessCompany(session.user.id, companyId)
   if (!hasAccess) return { error: 'Du har ikke adgang til dette selskab' }
 
   try {
-    const metrics = await prisma.financialMetric.findMany({
-      where: {
-        organizationId: session.user.organizationId,
-        companyId,
-        ...(periodYear !== undefined ? { periodYear } : {}),
-        ...(metricType !== undefined ? { metricType } : {}),
-      },
-      orderBy: [{ periodYear: 'desc' }, { periodType: 'asc' }, { metricType: 'asc' }],
-    })
+    // Brug cached query — ingen direkte Prisma-kald her
+    const result = await getCachedFinancialMetrics(
+      session.user.organizationId,
+      companyId,
+      periodYear,
+      metricType,
+      page,
+      pageSize
+    )
 
     await prisma.auditLog.create({
       data: {
@@ -279,13 +317,28 @@ export async function listFinancialMetrics(
       },
     })
 
-    return { data: metrics }
+    return {
+      data: {
+        metrics: result.metrics,
+        total: result.total,
+        hasMore: result.hasMore,
+        page,
+        pageSize,
+      },
+    }
   } catch (error) {
     console.error('listFinancialMetrics error:', error)
     return { error: 'Nøgletal kunne ikke hentes — prøv igen' }
   }
 }
 
+/**
+ * getFinancialOverview — med caching.
+ *
+ * Sprint 5 ændringer:
+ * - Bruger getCachedFinancialOverview() — TTL 1 time
+ * - Invalider ved mutation via invalidateFinanceCache()
+ */
 export async function getFinancialOverview(
   companyId: string
 ): Promise<
@@ -297,7 +350,6 @@ export async function getFinancialOverview(
   const session = await auth()
   if (!session?.user) return { error: 'Ikke autoriseret' }
 
-  // canAccessSensitivity SKAL kaldes
   const accessError = await requireFinanceAccess(session.user.id)
   if (accessError) return { error: accessError }
 
@@ -308,22 +360,8 @@ export async function getFinancialOverview(
   if (!hasAccess) return { error: 'Du har ikke adgang til dette selskab' }
 
   try {
-    const metrics = await prisma.financialMetric.findMany({
-      where: {
-        organizationId: session.user.organizationId,
-        companyId,
-      },
-      include: {
-        company: {
-          select: { id: true, name: true },
-        },
-      },
-      orderBy: [{ periodYear: 'desc' }, { metricType: 'asc' }],
-    })
-
-    const availableYears = [...new Set(metrics.map((m) => m.periodYear))].sort(
-      (a, b) => b - a
-    )
+    // Brug cached overview — ingen direkte Prisma-kald
+    const result = await getCachedFinancialOverview(session.user.organizationId, companyId)
 
     await prisma.auditLog.create({
       data: {
@@ -336,7 +374,7 @@ export async function getFinancialOverview(
       },
     })
 
-    return { data: { metrics: metrics as FinancialMetricWithCompany[], availableYears } }
+    return { data: result }
   } catch (error) {
     console.error('getFinancialOverview error:', error)
     return { error: 'Økonomi-overblik kunne ikke hentes — prøv igen' }
@@ -351,7 +389,6 @@ export async function createTimeEntry(
   const session = await auth()
   if (!session?.user) return { error: 'Ikke autoriseret' }
 
-  // Tidsregistrering tilknyttet sag — tjek finance adgang
   const accessError = await requireFinanceAccess(session.user.id)
   if (accessError) return { error: accessError }
 
@@ -363,7 +400,6 @@ export async function createTimeEntry(
 
   const { caseId, description, minutes, date, billable, hourlyRate } = parsed.data
 
-  // Verificér sagen tilhører organisationen
   const caseRecord = await prisma.case.findUnique({
     where: {
       id: caseId,
@@ -435,7 +471,6 @@ export async function updateTimeEntry(
     })
     if (!existing) return { error: 'Tidsregistreringen blev ikke fundet' }
 
-    // Kun brugeren der oprettede, eller admin, kan redigere
     if (existing.userId !== session.user.id) {
       const hasAdmin = await canAccessSensitivity(session.user.id, 'STRENGT_FORTROLIG')
       if (!hasAdmin) {
@@ -534,7 +569,6 @@ export async function listTimeEntries(
   const session = await auth()
   if (!session?.user) return { error: 'Ikke autoriseret' }
 
-  // canAccessSensitivity SKAL kaldes
   const accessError = await requireFinanceAccess(session.user.id)
   if (accessError) return { error: accessError }
 
@@ -543,7 +577,13 @@ export async function listTimeEntries(
 
   const { caseId, fromDate, toDate } = parsed.data
 
-  // Verificér sagen tilhører organisationen
+  // Pagination
+  const page = Math.max(1, (input as { page?: number }).page ?? 1)
+  const pageSize = Math.min(
+    MAX_PAGE_SIZE,
+    Math.max(1, (input as { pageSize?: number }).pageSize ?? DEFAULT_PAGE_SIZE)
+  )
+
   const caseRecord = await prisma.case.findUnique({
     where: {
       id: caseId,
@@ -555,21 +595,29 @@ export async function listTimeEntries(
   if (!caseRecord) return { error: 'Sagen blev ikke fundet' }
 
   try {
-    const entries = await prisma.timeEntry.findMany({
-      where: {
-        organizationId: session.user.organizationId,
-        caseId,
-        ...(fromDate || toDate
-          ? {
-              date: {
-                ...(fromDate ? { gte: new Date(fromDate) } : {}),
-                ...(toDate ? { lte: new Date(toDate) } : {}),
-              },
-            }
-          : {}),
-      },
-      orderBy: { date: 'desc' },
-    })
+    const where = {
+      organizationId: session.user.organizationId,
+      caseId,
+      ...(fromDate || toDate
+        ? {
+            date: {
+              ...(fromDate ? { gte: new Date(fromDate) } : {}),
+              ...(toDate ? { lte: new Date(toDate) } : {}),
+            },
+          }
+        : {}),
+    }
+
+    // Paralleliser count og data-query
+    const [total, entries] = await Promise.all([
+      prisma.timeEntry.count({ where }),
+      prisma.timeEntry.findMany({
+        where,
+        orderBy: { date: 'desc' },
+        take: pageSize,
+        skip: (page - 1) * pageSize,
+      }),
+    ])
 
     const totalMinutes = entries.reduce((sum, e) => sum + e.minutes, 0)
     const billableMinutes = entries
@@ -582,6 +630,11 @@ export async function listTimeEntries(
         billableMinutes,
         nonBillableMinutes: totalMinutes - billableMinutes,
         entries: entries as TimeEntryWithUser[],
+        // Pagination metadata
+        total,
+        hasMore: (page - 1) * pageSize + entries.length < total,
+        page,
+        pageSize,
       },
     }
   } catch (error) {
@@ -590,23 +643,8 @@ export async function listTimeEntries(
   }
 }
 
-// ==================== FAKTURAOVERSIGT (intern, ingen integration) ====================
+// ==================== FAKTURAOVERSIGT ====================
 
-/**
- * Fakturaoversigt-tabellen eksisterer ikke i Prisma-skemaet endnu
- * (sprint-scope: simpel liste, ingen faktureringssystem-integration).
- * Vi bruger FinancialMetric med MetricType.ANDET som intern faktura-placeholder,
- * og gemmer strukturerede data i notes-feltet som JSON.
- *
- * ALTERNATIVT: Fakturaer gemmes som separate records i en intern in-memory
- * struktur indtil fakturamodulet tilføjes til schema i næste sprint.
- *
- * I dette sprint: Server Actions returnerer data fra en simpel JSON-struktur
- * gemt i FinancialMetric.notes for at opfylde kravet om intern fakturaoversigt
- * uden ekstern integration.
- */
-
-// Hjælpefunktion til at parse invoice fra notes
 function parseInvoiceFromNotes(metric: FinancialMetric): InvoiceWithCompany | null {
   try {
     if (!metric.notes) return null
@@ -680,7 +718,6 @@ export async function createInvoice(
   })
   if (!company) return { error: 'Selskabet blev ikke fundet' }
 
-  // Gem som FinancialMetric med ANDET type og struktureret JSON i notes
   const invoicePeriodYear = new Date(invoiceDate).getFullYear()
 
   try {
@@ -695,8 +732,6 @@ export async function createInvoice(
       userNotes: notes ?? null,
     })
 
-    // Brug ANDET + unik invoiceNumber i periodType for at undgå unique constraint
-    // Vi bruger en custom kombination ved at gemme faktura-ID i year
     const metric = await prisma.financialMetric.create({
       data: {
         organizationId: session.user.organizationId,
@@ -723,6 +758,7 @@ export async function createInvoice(
       },
     })
 
+    await invalidateFinanceCache(session.user.organizationId, companyId)
     revalidatePath(`/companies/${companyId}/finance`)
     revalidatePath('/finance/invoices')
 
@@ -774,7 +810,6 @@ export async function updateInvoice(
     })
     if (!existing) return { error: 'Faktura ikke fundet' }
 
-    // Parse og opdater JSON
     const currentData = existing.notes ? JSON.parse(existing.notes) : {}
     if (currentData.__type !== 'INVOICE') return { error: 'Faktura ikke fundet' }
 
@@ -802,6 +837,7 @@ export async function updateInvoice(
       },
     })
 
+    await invalidateFinanceCache(session.user.organizationId, companyId)
     revalidatePath(`/companies/${companyId}/finance`)
     revalidatePath('/finance/invoices')
 
@@ -858,6 +894,7 @@ export async function deleteInvoice(
       },
     })
 
+    await invalidateFinanceCache(session.user.organizationId, companyId)
     revalidatePath(`/companies/${companyId}/finance`)
     revalidatePath('/finance/invoices')
     return { data: { id: invoiceId } }
@@ -867,13 +904,15 @@ export async function deleteInvoice(
   }
 }
 
+/**
+ * listInvoices — med pagination (allerede i original, bevaret + forbedret).
+ */
 export async function listInvoices(
   input: z.infer<typeof listInvoicesSchema>
 ): Promise<ActionResult<{ invoices: InvoiceWithCompany[]; summary: InvoiceSummary }>> {
   const session = await auth()
   if (!session?.user) return { error: 'Ikke autoriseret' }
 
-  // canAccessSensitivity SKAL kaldes
   const accessError = await requireFinanceAccess(session.user.id)
   if (accessError) return { error: accessError }
 
@@ -881,6 +920,10 @@ export async function listInvoices(
   if (!parsed.success) return { error: 'Ugyldigt input' }
 
   const { companyId, status, limit, offset } = parsed.data
+
+  // Enforcer max page-size
+  const take = Math.min(limit ?? DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE)
+  const skip = offset ?? 0
 
   if (companyId) {
     const hasAccess = await canAccessCompany(session.user.id, companyId)
@@ -896,8 +939,8 @@ export async function listInvoices(
         notes: { contains: '"__type":"INVOICE"' },
       },
       orderBy: { createdAt: 'desc' },
-      take: limit,
-      skip: offset,
+      take,
+      skip,
     })
 
     const invoices = metrics
@@ -939,13 +982,6 @@ export async function listInvoices(
 
 // ==================== UDBYTTENOTERING ====================
 
-/**
- * Udbytteotering gemmes som FinancialMetric med MetricType.ANDET og
- * struktureret JSON i notes-feltet med __type: 'DIVIDEND'.
- * Spec: "Beløb + dato + selskab — gem som FinancialMetric med type CUSTOM"
- * (CUSTOM mapper til ANDET i det faktiske Prisma-schema)
- */
-
 function parseDividendFromNotes(metric: FinancialMetric): DividendWithCompany | null {
   try {
     if (!metric.notes) return null
@@ -979,7 +1015,6 @@ export async function createDividend(
   const session = await auth()
   if (!session?.user) return { error: 'Ikke autoriseret' }
 
-  // canAccessSensitivity SKAL kaldes — økonomidata er FORTROLIG minimum
   const accessError = await requireFinanceAccess(session.user.id)
   if (accessError) return { error: accessError }
 
@@ -1036,6 +1071,7 @@ export async function createDividend(
       },
     })
 
+    await invalidateFinanceCache(session.user.organizationId, companyId)
     revalidatePath(`/companies/${companyId}/finance`)
     revalidatePath('/finance/dividends')
 
@@ -1116,6 +1152,7 @@ export async function updateDividend(
       },
     })
 
+    await invalidateFinanceCache(session.user.organizationId, companyId)
     revalidatePath(`/companies/${companyId}/finance`)
     revalidatePath('/finance/dividends')
 
@@ -1172,6 +1209,7 @@ export async function deleteDividend(
       },
     })
 
+    await invalidateFinanceCache(session.user.organizationId, companyId)
     revalidatePath(`/companies/${companyId}/finance`)
     revalidatePath('/finance/dividends')
     return { data: { id: dividendId } }
@@ -1181,13 +1219,25 @@ export async function deleteDividend(
   }
 }
 
+/**
+ * listDividends — med pagination.
+ *
+ * Sprint 5 ændring: Tilføjet page + pageSize (MANGLEDE i Sprint 4).
+ */
 export async function listDividends(
   input: z.infer<typeof listDividendsSchema>
-): Promise<ActionResult<DividendWithCompany[]>> {
+): Promise<
+  ActionResult<{
+    dividends: DividendWithCompany[]
+    total: number
+    hasMore: boolean
+    page: number
+    pageSize: number
+  }>
+> {
   const session = await auth()
   if (!session?.user) return { error: 'Ikke autoriseret' }
 
-  // canAccessSensitivity SKAL kaldes
   const accessError = await requireFinanceAccess(session.user.id)
   if (accessError) return { error: accessError }
 
@@ -1196,27 +1246,40 @@ export async function listDividends(
 
   const { companyId, fromYear, toYear } = parsed.data
 
+  const page = Math.max(1, (input as { page?: number }).page ?? 1)
+  const pageSize = Math.min(
+    MAX_PAGE_SIZE,
+    Math.max(1, (input as { pageSize?: number }).pageSize ?? DEFAULT_PAGE_SIZE)
+  )
+
   const hasAccess = await canAccessCompany(session.user.id, companyId)
   if (!hasAccess) return { error: 'Du har ikke adgang til dette selskab' }
 
   try {
-    const metrics = await prisma.financialMetric.findMany({
-      where: {
-        organizationId: session.user.organizationId,
-        companyId,
-        metricType: MetricType.ANDET,
-        notes: { contains: '"__type":"DIVIDEND"' },
-        ...(fromYear || toYear
-          ? {
-              periodYear: {
-                ...(fromYear ? { gte: fromYear } : {}),
-                ...(toYear ? { lte: toYear } : {}),
-              },
-            }
-          : {}),
-      },
-      orderBy: { periodYear: 'desc' },
-    })
+    const where = {
+      organizationId: session.user.organizationId,
+      companyId,
+      metricType: MetricType.ANDET,
+      notes: { contains: '"__type":"DIVIDEND"' },
+      ...(fromYear || toYear
+        ? {
+            periodYear: {
+              ...(fromYear ? { gte: fromYear } : {}),
+              ...(toYear ? { lte: toYear } : {}),
+            },
+          }
+        : {}),
+    }
+
+    const [total, metrics] = await Promise.all([
+      prisma.financialMetric.count({ where }),
+      prisma.financialMetric.findMany({
+        where,
+        orderBy: { periodYear: 'desc' },
+        take: pageSize,
+        skip: (page - 1) * pageSize,
+      }),
+    ])
 
     const dividends = metrics
       .map(parseDividendFromNotes)
@@ -1233,7 +1296,15 @@ export async function listDividends(
       },
     })
 
-    return { data: dividends }
+    return {
+      data: {
+        dividends,
+        total,
+        hasMore: (page - 1) * pageSize + dividends.length < total,
+        page,
+        pageSize,
+      },
+    }
   } catch (error) {
     console.error('listDividends error:', error)
     return { error: 'Udbytteoteringer kunne ikke hentes — prøv igen' }
