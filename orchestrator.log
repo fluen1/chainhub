@@ -897,3 +897,30 @@ husky - pre-commit script failed (code 1)
 [2026-03-09 01:54:49] [INFO] Skrevet: src/lib/permissions/index.ts
 [2026-03-09 01:54:49] [INFO] Skrevet: src/middleware.ts
 [2026-03-09 01:54:49] [INFO] Skrevet: src/actions/companies.ts
+[2026-03-09 01:54:50] [INFO] Git commit: feat: BA-11-pentest Security Pentest-agent - Pentest — IDOR, tenant isolation, privilege escala
+[2026-03-09 01:54:50] [INFO] === BA-11-pentest FÆRDIG (5 filer skrevet) ===
+[2026-03-09 01:54:52] [INFO] --- Agent 3/5: BA-06-stripe ---
+[2026-03-09 01:54:52] [INFO] === Starter BA-06-stripe (Integration-agent (Stripe Billing)) ===
+[2026-03-09 01:54:52] [INFO] Opgave: Stripe Billing — per-seat subscriptions, trial-periode, webhook med www-prefix
+[2026-03-09 01:54:52] [INFO] Kalder Claude API (claude-sonnet-4-6) med streaming...
+[2026-03-09 01:55:37] [INFO]   ... 12000 tegn modtaget
+[2026-03-09 01:56:52] [INFO]   ... 34000 tegn modtaget
+[2026-03-09 01:57:16] [INFO]   ... 42000 tegn modtaget
+[2026-03-09 01:58:46] [INFO] API svar komplet på 234.2s (65155 tegn)
+[2026-03-09 01:58:46] [INFO] Skrevet: src/lib/stripe/index.ts
+[2026-03-09 01:58:46] [INFO] Skrevet: src/lib/stripe/webhook.ts
+[2026-03-09 01:58:46] [INFO] Skrevet: src/lib/stripe/checkout.ts
+[2026-03-09 01:58:46] [INFO] Skrevet: src/app/api/webhooks/stripe/route.ts
+[2026-03-09 01:58:46] [INFO] Skrevet: src/app/api/billing/checkout/route.ts
+[2026-03-09 01:58:46] [INFO] Skrevet: src/app/api/billing/portal/route.ts
+[2026-03-09 01:58:46] [INFO] Skrevet: src/actions/billing.ts
+[2026-03-09 01:58:46] [INFO] Skrevet: src/app/(dashboard)/settings/billing/page.tsx
+[2026-03-09 01:58:46] [INFO] Skrevet: src/components/billing/SubscriptionStatus.tsx
+[2026-03-09 01:58:46] [INFO] Skrevet: src/components/billing/PlanCards.tsx
+[2026-03-09 01:58:46] [INFO] Skrevet: src/components/billing/BillingOverview.tsx
+[2026-03-09 01:58:46] [INFO] Skrevet: src/components/billing/TrialBanner.tsx
+[2026-03-09 01:58:46] [INFO] Skrevet: src/lib/billing/guard.ts
+[2026-03-09 01:58:46] [INFO] Skrevet: .env.example
+[2026-03-09 01:58:46] [INFO] Skrevet: src/lib/billing/validate-env.ts
+[2026-03-09 01:58:46] [INFO] Skrevet: src/__tests__/billing/webhook.test.ts
+[2026-03-09 01:58:46] [INFO] Skrevet: src/__tests__/billing/checkout.test.ts
