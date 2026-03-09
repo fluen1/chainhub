@@ -4,14 +4,29 @@ import { useState } from 'react'
 import { Plus, Pencil, Trash2, UserCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { deleteCompanyPerson } from '@/actions/companies'
-import type { CompanyPersonWithPerson } from '@/types/company'
-import { AddPersonRoleDialog } from './AddPersonRoleDialog'
-import { EditPersonRoleDialog } from './EditPersonRoleDialog'
 import { formatDate } from '@/lib/utils'
+
+interface Person {
+  id: string
+  firstName: string
+  lastName: string
+  email: string | null
+}
+
+interface CompanyPersonItem {
+  id: string
+  role: string
+  employmentType: string | null
+  startDate: string | Date | null
+  endDate: string | Date | null
+  anciennityStart: string | Date | null
+  contractId: string | null
+  person: Person
+}
 
 interface CompanyEmployeesProps {
   companyId: string
-  companyPersons: CompanyPersonWithPerson[]
+  companyPersons: CompanyPersonItem[]
 }
 
 const ROLE_LABELS: Record<string, string> = {
@@ -29,9 +44,26 @@ const EMPLOYMENT_TYPE_LABELS: Record<string, string> = {
 
 const EMPLOYEE_ROLES = ['ansat', 'revisor', 'advokat']
 
+function EmployeesEmpty({ onAdd }: { onAdd: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 py-10 text-center">
+      <UserCircle className="mb-3 h-10 w-10 text-gray-400" />
+      <h3 className="mb-1 text-sm font-semibold text-gray-900">Ingen ansatte endnu</h3>
+      <p className="mb-4 text-xs text-gray-500">Tilføj ansatte og tilknyttede</p>
+      <button
+        onClick={onAdd}
+        className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+      >
+        <Plus className="h-4 w-4" />
+        Tilføj person
+      </button>
+    </div>
+  )
+}
+
 export function CompanyEmployees({ companyId, companyPersons }: CompanyEmployeesProps) {
   const [showAddDialog, setShowAddDialog] = useState(false)
-  const [editingPerson, setEditingPerson] = useState<CompanyPersonWithPerson | null>(null)
+  const [editingPerson, setEditingPerson] = useState<CompanyPersonItem | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const handleDelete = async (id: string) => {
@@ -48,6 +80,10 @@ export function CompanyEmployees({ companyId, companyPersons }: CompanyEmployees
     }
   }
 
+  const employees = companyPersons.filter((cp) =>
+    EMPLOYEE_ROLES.includes(cp.role.toLowerCase())
+  )
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -61,12 +97,17 @@ export function CompanyEmployees({ companyId, companyPersons }: CompanyEmployees
         </button>
       </div>
 
-      {companyPersons.length === 0 ? (
+      {employees.length === 0 ? (
         <EmployeesEmpty onAdd={() => setShowAddDialog(true)} />
       ) : (
         <div className="space-y-2">
-          {companyPersons.map((cp) => {
+          {employees.map((cp) => {
             const fullName = `${cp.person.firstName} ${cp.person.lastName}`
+            const startDateStr = cp.startDate
+              ? cp.startDate instanceof Date
+                ? cp.startDate.toISOString().split('T')[0]
+                : cp.startDate
+              : null
             return (
               <div
                 key={cp.id}
@@ -80,22 +121,19 @@ export function CompanyEmployees({ companyId, companyPersons }: CompanyEmployees
                     <p className="font-medium text-gray-900">{fullName}</p>
                     <div className="flex items-center gap-2 text-sm text-gray-500">
                       <span>{ROLE_LABELS[cp.role] ?? cp.role}</span>
-                      {(cp as any).employmentType && (
+                      {cp.employmentType && (
                         <>
                           <span>·</span>
-                          <span>
-                            {EMPLOYMENT_TYPE_LABELS[(cp as any).employmentType] ??
-                              (cp as any).employmentType}
-                          </span>
+                          <span>{EMPLOYMENT_TYPE_LABELS[cp.employmentType] ?? cp.employmentType}</span>
+                        </>
+                      )}
+                      {startDateStr && (
+                        <>
+                          <span>·</span>
+                          <span>Fra {formatDate(startDateStr)}</span>
                         </>
                       )}
                     </div>
-                    {(cp as any).startDate && (
-                      <p className="text-xs text-gray-400">
-                        Fra {formatDate((cp as any).startDate)}
-                        {(cp as any).endDate && ` til ${formatDate((cp as any).endDate)}`}
-                      </p>
-                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -108,7 +146,7 @@ export function CompanyEmployees({ companyId, companyPersons }: CompanyEmployees
                   <button
                     onClick={() => handleDelete(cp.id)}
                     disabled={deletingId === cp.id}
-                    className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                    className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-red-600 disabled:opacity-50"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -118,42 +156,6 @@ export function CompanyEmployees({ companyId, companyPersons }: CompanyEmployees
           })}
         </div>
       )}
-
-      {showAddDialog && (
-        <AddPersonRoleDialog
-          companyId={companyId}
-          allowedRoles={EMPLOYEE_ROLES}
-          title="Tilføj ansat"
-          onClose={() => setShowAddDialog(false)}
-        />
-      )}
-      {editingPerson && (
-        <EditPersonRoleDialog
-          companyPerson={editingPerson}
-          companyId={companyId}
-          allowedRoles={EMPLOYEE_ROLES}
-          onClose={() => setEditingPerson(null)}
-        />
-      )}
-    </div>
-  )
-}
-
-function EmployeesEmpty({ onAdd }: { onAdd: () => void }) {
-  return (
-    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 py-10 text-center">
-      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
-        <UserCircle className="h-6 w-6 text-gray-400" />
-      </div>
-      <h3 className="mb-1 text-sm font-semibold text-gray-900">Ingen ansatte</h3>
-      <p className="mb-4 text-sm text-gray-500">Tilføj ansatte og tilknyttede personer.</p>
-      <button
-        onClick={onAdd}
-        className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
-      >
-        <Plus className="h-4 w-4" />
-        Tilføj person
-      </button>
     </div>
   )
 }

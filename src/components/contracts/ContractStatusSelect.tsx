@@ -38,7 +38,7 @@ export function ContractStatusSelect({
   canEdit,
 }: ContractStatusSelectProps) {
   const [isUpdating, setIsUpdating] = useState(false)
-  const validTransitions = VALID_STATUS_TRANSITIONS[currentStatus]
+  const validTransitions = VALID_STATUS_TRANSITIONS[currentStatus] ?? []
 
   const handleStatusChange = async (newStatus: ContractStatus) => {
     setIsUpdating(true)
@@ -55,14 +55,13 @@ export function ContractStatusSelect({
       }
 
       toast.success(`Status ændret til ${STATUS_LABELS[newStatus]}`)
-    } catch (error) {
+    } catch {
       toast.error('Status kunne ikke ændres — prøv igen')
     } finally {
       setIsUpdating(false)
     }
   }
 
-  // Hvis brugeren ikke kan redigere eller ingen gyldige transitioner, vis kun badge
   if (!canEdit || validTransitions.length === 0) {
     return <ContractStatusBadge status={currentStatus} />
   }

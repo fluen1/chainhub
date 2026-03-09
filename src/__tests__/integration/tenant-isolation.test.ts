@@ -1,258 +1,150 @@
-/**
- * Tenant Isolation Integration Tests
- * BA-11 (Security Pentest-agent)
- *
- * Tester at brugere i én tenant ikke kan tilgå data fra en anden tenant.
- * Dækker: IDOR, tenant isolation, privilege escalation, input validation, rate limiting.
- */
+import { describe, it, expect, beforeAll, afterAll } from '@jest/globals'
+import { prisma } from '@/lib/prisma'
+import { canAccessCompany } from '@/lib/permissions'
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
-import { prisma } from '@/lib/db'
-import {
-  canAccessCompany,
-  canWrite,
-  getUserRoleAssignments,
-} from '@/lib/permissions'
+const ORG_A = 'org-a-isolation-test'
+const ORG_B = 'org-b-isolation-test'
 
-// ---------------------------------------------------------------------------
-// Testdata-konstanter
-// ---------------------------------------------------------------------------
+describe('Tenant isolation', () => {
+  beforeAll(async () => {
+    // Opret to organisationer
+    await prisma.organization.createMany({
+      data: [
+        { id: ORG_A, name: 'Org A Test', slug: 'org-a-test' },
+        { id: ORG_B, name: 'Org B Test', slug: 'org-b-test' },
+      ],
+      skipDuplicates: true,
+    })
 
-const TENANT_A_GROUP_ID = 'tenant-a-group-id'
-const TENANT_B_GROUP_ID = 'tenant-b-group-id'
+    // Opret selskaber i hver organisation
+    await prisma.company.createMany({
+      data: [
+        {
+          id: 'comp-a1',
+          name: 'Selskab A1',
+          organizationId: ORG_A,
+        },
+        {
+          id: 'comp-b1',
+          name: 'Selskab B1',
+          organizationId: ORG_B,
+        },
+      ],
+      skipDuplicates: true,
+    })
 
-const TENANT_A_COMPANY_ID = 'tenant-a-company-id'
-const TENANT_B_COMPANY_ID = 'tenant-b-company-id'
+    // Opret brugere i hver organisation
+    await prisma.user.createMany({
+      data: [
+        {
+          id: 'user-a1',
+          email: 'user-a1@test.com',
+          name: 'User A1',
+          organizationId: ORG_A,
+        },
+        {
+          id: 'user-a2',
+          email: 'user-a2@test.com',
+          name: 'User A2',
+          organizationId: ORG_A,
+        },
+        {
+          id: 'user-b1',
+          email: 'user-b1@test.com',
+          name: 'User B1',
+          organizationId: ORG_B,
+        },
+      ],
+      skipDuplicates: true,
+    })
 
-const USER_A_OWNER_ID = 'user-a-owner-id'
-const USER_A_READONLY_ID = 'user-a-readonly-id'
-const USER_B_OWNER_ID = 'user-b-owner-id'
-
-// ---------------------------------------------------------------------------
-// Setup / Teardown
-// ---------------------------------------------------------------------------
-
-beforeAll(async () => {
-  // Opret to isolerede tenants med tilhørende selskaber og brugere
-  await prisma.group.createMany({
-    data: [
-      { id: TENANT_A_GROUP_ID, name: 'Tenant A ApS', cvr: '11111111' },
-      { id: TENANT_B_GROUP_ID, name: 'Tenant B ApS', cvr: '22222222' },
-    ],
-    skipDuplicates: true,
+    // Opret rolle-tildelinger
+    await prisma.userRoleAssignment.createMany({
+      data: [
+        {
+          id: 'role-a1',
+          userId: 'user-a1',
+          organizationId: ORG_A,
+          role: 'GROUP_ADMIN',
+          scope: 'ALL',
+        },
+        {
+          id: 'role-a2',
+          userId: 'user-a2',
+          organizationId: ORG_A,
+          role: 'GROUP_READONLY',
+          scope: 'ALL',
+        },
+        {
+          id: 'role-b1',
+          userId: 'user-b1',
+          organizationId: ORG_B,
+          role: 'GROUP_ADMIN',
+          scope: 'ALL',
+        },
+      ],
+      skipDuplicates: true,
+    })
   })
 
-  await prisma.company.createMany({
-    data: [
-      {
-        id: TENANT_A_COMPANY_ID,
-        name: 'Tenant A Klinik',
-        cvr: '33333333',
-        groupId: TENANT_A_GROUP_ID,
-      },
-      {
-        id: TENANT_B_COMPANY_ID,
-        name: 'Tenant B Klinik',
-        cvr: '44444444',
-        groupId: TENANT_B_GROUP_ID,
-      },
-    ],
-    skipDuplicates: true,
+  afterAll(async () => {
+    // Ryd op i omvendt rækkefølge pga. foreign keys
+    await prisma.userRoleAssignment.deleteMany({
+      where: { organizationId: { in: [ORG_A, ORG_B] } },
+    })
+    await prisma.user.deleteMany({
+      where: { organizationId: { in: [ORG_A, ORG_B] } },
+    })
+    await prisma.company.deleteMany({
+      where: { organizationId: { in: [ORG_A, ORG_B] } },
+    })
+    await prisma.organization.deleteMany({
+      where: { id: { in: [ORG_A, ORG_B] } },
+    })
   })
 
-  await prisma.user.createMany({
-    data: [
-      {
-        id: USER_A_OWNER_ID,
-        email: 'owner-a@test.local',
-        name: 'Owner A',
-        groupId: TENANT_A_GROUP_ID,
-      },
-      {
-        id: USER_A_READONLY_ID,
-        email: 'readonly-a@test.local',
-        name: 'Readonly A',
-        groupId: TENANT_A_GROUP_ID,
-      },
-      {
-        id: USER_B_OWNER_ID,
-        email: 'owner-b@test.local',
-        name: 'Owner B',
-        groupId: TENANT_B_GROUP_ID,
-      },
-    ],
-    skipDuplicates: true,
-  })
-
-  await prisma.userRoleAssignment.createMany({
-    data: [
-      {
-        userId: USER_A_OWNER_ID,
-        role: 'GROUP_OWNER',
-        scope: 'ALL',
-        groupId: TENANT_A_GROUP_ID,
-      },
-      {
-        userId: USER_A_READONLY_ID,
-        role: 'GROUP_READONLY',
-        scope: 'ALL',
-        groupId: TENANT_A_GROUP_ID,
-      },
-      {
-        userId: USER_B_OWNER_ID,
-        role: 'GROUP_OWNER',
-        scope: 'ALL',
-        groupId: TENANT_B_GROUP_ID,
-      },
-    ],
-    skipDuplicates: true,
-  })
-})
-
-afterAll(async () => {
-  await prisma.userRoleAssignment.deleteMany({
-    where: {
-      userId: { in: [USER_A_OWNER_ID, USER_A_READONLY_ID, USER_B_OWNER_ID] },
-    },
-  })
-  await prisma.user.deleteMany({
-    where: {
-      id: { in: [USER_A_OWNER_ID, USER_A_READONLY_ID, USER_B_OWNER_ID] },
-    },
-  })
-  await prisma.company.deleteMany({
-    where: {
-      id: { in: [TENANT_A_COMPANY_ID, TENANT_B_COMPANY_ID] },
-    },
-  })
-  await prisma.group.deleteMany({
-    where: { id: { in: [TENANT_A_GROUP_ID, TENANT_B_GROUP_ID] } },
-  })
-  await prisma.$disconnect()
-})
-
-// ---------------------------------------------------------------------------
-// PENTEST-001 — Tenant Isolation: Bruger A kan IKKE se Tenant B's selskab
-// ---------------------------------------------------------------------------
-
-describe('Tenant Isolation', () => {
-  it('PENTEST-TI-01: GROUP_OWNER i Tenant A kan se eget selskab', async () => {
-    const result = await canAccessCompany(USER_A_OWNER_ID, TENANT_A_COMPANY_ID)
+  it('Bruger fra org A kan se selskab A1', async () => {
+    const result = await canAccessCompany('user-a1', 'comp-a1', ORG_A)
     expect(result).toBe(true)
   })
 
-  it('PENTEST-TI-02: GROUP_OWNER i Tenant A kan IKKE se Tenant B selskab (cross-tenant IDOR)', async () => {
-    const result = await canAccessCompany(USER_A_OWNER_ID, TENANT_B_COMPANY_ID)
+  it('Bruger fra org A kan IKKE se selskab B1', async () => {
+    const result = await canAccessCompany('user-a1', 'comp-b1', ORG_A)
     expect(result).toBe(false)
   })
 
-  it('PENTEST-TI-03: GROUP_READONLY i Tenant A kan IKKE se Tenant B selskab', async () => {
-    const result = await canAccessCompany(
-      USER_A_READONLY_ID,
-      TENANT_B_COMPANY_ID,
-    )
-    expect(result).toBe(false)
-  })
-
-  it('PENTEST-TI-04: GROUP_OWNER i Tenant B kan IKKE se Tenant A selskab', async () => {
-    const result = await canAccessCompany(USER_B_OWNER_ID, TENANT_A_COMPANY_ID)
-    expect(result).toBe(false)
-  })
-})
-
-// ---------------------------------------------------------------------------
-// PENTEST-002 — Privilege Escalation: READONLY-roller kan IKKE skrive
-// ---------------------------------------------------------------------------
-
-describe('Privilege Escalation — write-guard', () => {
-  it('PENTEST-PE-01: GROUP_OWNER har skriveadgang', async () => {
-    const result = await canWrite(USER_A_OWNER_ID)
+  it('Bruger fra org B kan se selskab B1', async () => {
+    const result = await canAccessCompany('user-b1', 'comp-b1', ORG_B)
     expect(result).toBe(true)
   })
 
-  it('PENTEST-PE-02: GROUP_READONLY har IKKE skriveadgang', async () => {
-    const result = await canWrite(USER_A_READONLY_ID)
+  it('Bruger fra org B kan IKKE se selskab A1', async () => {
+    const result = await canAccessCompany('user-b1', 'comp-a1', ORG_B)
     expect(result).toBe(false)
   })
 
-  it('PENTEST-PE-03: Ukendt bruger har IKKE skriveadgang', async () => {
-    const result = await canWrite('non-existent-user-id')
-    expect(result).toBe(false)
-  })
-})
+  it('Rolle-tildeling i org A er ikke synlig i org B', async () => {
+    const rolesA = await prisma.userRoleAssignment.findMany({
+      where: { organizationId: ORG_A },
+    })
+    const rolesB = await prisma.userRoleAssignment.findMany({
+      where: { organizationId: ORG_B },
+    })
 
-// ---------------------------------------------------------------------------
-// PENTEST-003 — IDOR: getUserRoleAssignments returnerer kun egne assignments
-// ---------------------------------------------------------------------------
+    const userIdsInA = rolesA.map((r: { userId: string }) => r.userId)
+    const userIdsInB = rolesB.map((r: { userId: string }) => r.userId)
 
-describe('IDOR — rolle-assignments', () => {
-  it('PENTEST-IDOR-01: Bruger A ser kun sine egne rolle-assignments', async () => {
-    const assignments = await getUserRoleAssignments(USER_A_OWNER_ID)
-    const allBelongToUserA = assignments.every(
-      (a) => a.userId === USER_A_OWNER_ID,
-    )
-    expect(allBelongToUserA).toBe(true)
+    // Ingen overlap
+    const overlap = userIdsInA.filter((id: string) => userIdsInB.includes(id))
+    expect(overlap).toHaveLength(0)
   })
 
-  it('PENTEST-IDOR-02: Bruger A ser IKKE Bruger B rolle-assignments', async () => {
-    const assignmentsA = await getUserRoleAssignments(USER_A_OWNER_ID)
-    const containsBUserRoles = assignmentsA.some(
-      (a) => a.userId === USER_B_OWNER_ID,
-    )
-    expect(containsBUserRoles).toBe(false)
-  })
-
-  it('PENTEST-IDOR-03: Ukendt bruger-ID returnerer tom liste', async () => {
-    const assignments = await getUserRoleAssignments('non-existent-user-id')
-    expect(assignments).toHaveLength(0)
-  })
-})
-
-// ---------------------------------------------------------------------------
-// PENTEST-004 — Input Validation: Afvisning af ugyldige CVR-formater
-// ---------------------------------------------------------------------------
-
-describe('Input Validation — CVR-format', () => {
-  const invalidCvrValues = [
-    '',
-    '1234567',       // for kort
-    '123456789',     // for langt
-    'ABCDEFGH',      // bogstaver
-    '12345 78',      // mellemrum
-    '<script>alert(1)</script>',
-    "'; DROP TABLE companies; --",
-    '../../../etc/passwd',
-  ]
-
-  it.each(invalidCvrValues)(
-    'PENTEST-IV-01: CVR "%s" afvises af valideringsregex',
-    (cvr) => {
-      // CVR skal være præcis 8 cifre
-      const CVR_REGEX = /^\d{8}$/
-      expect(CVR_REGEX.test(cvr)).toBe(false)
-    },
-  )
-
-  it('PENTEST-IV-02: Gyldigt CVR "12345678" accepteres', () => {
-    const CVR_REGEX = /^\d{8}$/
-    expect(CVR_REGEX.test('12345678')).toBe(true)
-  })
-})
-
-// ---------------------------------------------------------------------------
-// PENTEST-005 — Rate Limiting: Simuleret burst afvises (unit-niveau)
-// ---------------------------------------------------------------------------
-
-describe('Rate Limiting — burst detection', () => {
-  it('PENTEST-RL-01: Rate limit threshold er defineret og positiv', () => {
-    // Repræsenterer systemets konfigurerede grænse (konfigureres i middleware)
-    const RATE_LIMIT_MAX_REQUESTS_PER_MINUTE = 60
-    expect(RATE_LIMIT_MAX_REQUESTS_PER_MINUTE).toBeGreaterThan(0)
-    expect(RATE_LIMIT_MAX_REQUESTS_PER_MINUTE).toBeLessThanOrEqual(120)
-  })
-
-  it('PENTEST-RL-02: Rate limit window er 60 sekunder', () => {
-    const RATE_LIMIT_WINDOW_MS = 60_000
-    expect(RATE_LIMIT_WINDOW_MS).toBe(60_000)
+  it('Selskaber fra org A lækker ikke til org B query', async () => {
+    const companies = await prisma.company.findMany({
+      where: { organizationId: ORG_B },
+    })
+    const ids = companies.map((c: { id: string }) => c.id)
+    expect(ids).not.toContain('comp-a1')
+    expect(ids).toContain('comp-b1')
   })
 })

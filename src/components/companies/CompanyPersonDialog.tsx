@@ -20,12 +20,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { createCompanyPersonSchema, CreateCompanyPersonInput } from '@/lib/validations/company'
+import { createCompanyPersonSchema, type CreateCompanyPersonInput } from '@/lib/validations/company'
 import { createCompanyPerson, updateCompanyPerson } from '@/actions/companies'
-import { CompanyWithRelations } from '@/types/company'
 import { Loader2 } from 'lucide-react'
 
-// Use a local type for the companyPerson prop since CompanyPersonWithRelations may not be exported
 type CompanyPersonData = {
   id: string
   companyId: string
@@ -51,6 +49,11 @@ const governanceRoles = [
   { value: 'bestyrelsesformand', label: 'Bestyrelsesformand' },
   { value: 'bestyrelsesmedlem', label: 'Bestyrelsesmedlem' },
   { value: 'revisor', label: 'Revisor' },
+]
+
+const employeeRoles = [
+  { value: 'ansat', label: 'Ansat' },
+  { value: 'advokat', label: 'Advokat' },
 ]
 
 const employmentTypes = [
@@ -90,7 +93,7 @@ export function CompanyPersonDialog({
         companyId,
         personId: companyPerson.personId,
         role: companyPerson.role,
-        employmentType: companyPerson.employmentType as any,
+        employmentType: (companyPerson.employmentType as any) ?? undefined,
         startDate: companyPerson.startDate ?? undefined,
         endDate: companyPerson.endDate ?? undefined,
         anciennityStart: companyPerson.anciennityStart ?? undefined,
@@ -109,6 +112,9 @@ export function CompanyPersonDialog({
       })
     }
   }, [companyPerson, companyId, form])
+
+  const availableRoles = roleType === 'governance' ? governanceRoles : employeeRoles
+  const showEmploymentType = roleType === 'employee'
 
   async function onSubmit(data: CreateCompanyPersonInput) {
     setIsSubmitting(true)
@@ -134,7 +140,7 @@ export function CompanyPersonDialog({
           toast.error(result.error)
           return
         }
-        toast.success('Person tilføjet')
+        toast.success('Person tilknyttet')
       }
       onOpenChange(false)
     } finally {
@@ -142,15 +148,9 @@ export function CompanyPersonDialog({
     }
   }
 
-  const roles = roleType === 'governance' ? governanceRoles : [
-    { value: 'ansat', label: 'Ansat' },
-    { value: 'vikar', label: 'Vikar' },
-    { value: 'elev', label: 'Elev' },
-  ]
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>
             {isEditing ? 'Rediger person' : roleType === 'governance' ? 'Tilføj til governance' : 'Tilføj ansat'}
@@ -159,47 +159,50 @@ export function CompanyPersonDialog({
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           {!isEditing && (
-            <div className="space-y-2">
-              <Label htmlFor="personId">Person ID</Label>
+            <div className="space-y-1">
+              <Label htmlFor="personId">Person-ID</Label>
               <Input
                 id="personId"
                 {...form.register('personId')}
-                placeholder="Person ID"
+                placeholder="Person-ID"
               />
               {form.formState.errors.personId && (
-                <p className="text-sm text-red-500">{form.formState.errors.personId.message}</p>
+                <p className="text-xs text-red-600">{form.formState.errors.personId.message}</p>
               )}
             </div>
           )}
 
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label htmlFor="role">Rolle</Label>
             <Select
               value={form.watch('role')}
-              onValueChange={(value) => form.setValue('role', value)}
+              onValueChange={(v) => form.setValue('role', v)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Vælg rolle" />
               </SelectTrigger>
               <SelectContent>
-                {roles.map((r) => (
+                {availableRoles.map((r) => (
                   <SelectItem key={r.value} value={r.value}>
                     {r.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {form.formState.errors.role && (
+              <p className="text-xs text-red-600">{form.formState.errors.role.message}</p>
+            )}
           </div>
 
-          {roleType === 'employee' && (
-            <div className="space-y-2">
-              <Label>Ansættelsestype</Label>
+          {showEmploymentType && (
+            <div className="space-y-1">
+              <Label htmlFor="employmentType">Ansættelsestype</Label>
               <Select
                 value={form.watch('employmentType') ?? ''}
-                onValueChange={(value) => form.setValue('employmentType', value as any)}
+                onValueChange={(v) => form.setValue('employmentType', v as any)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Vælg ansættelsestype" />
+                  <SelectValue placeholder="Vælg type" />
                 </SelectTrigger>
                 <SelectContent>
                   {employmentTypes.map((t) => (
@@ -212,8 +215,8 @@ export function CompanyPersonDialog({
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
               <Label htmlFor="startDate">Startdato</Label>
               <Input
                 id="startDate"
@@ -221,7 +224,7 @@ export function CompanyPersonDialog({
                 {...form.register('startDate')}
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1">
               <Label htmlFor="endDate">Slutdato</Label>
               <Input
                 id="endDate"
@@ -231,7 +234,18 @@ export function CompanyPersonDialog({
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-2">
+          {showEmploymentType && (
+            <div className="space-y-1">
+              <Label htmlFor="anciennityStart">Anciennitetsdato</Label>
+              <Input
+                id="anciennityStart"
+                type="date"
+                {...form.register('anciennityStart')}
+              />
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Annuller
             </Button>

@@ -1360,3 +1360,129 @@ Next.js build worker exited with code: 1 and signal: null
 [2026-03-10 00:13:21] [ADVARSEL]   REGRESSIONSGUARD: 19 nye fejl introduceret: persons.ts, page.tsx, page.tsx, page.tsx, ActivityLog.tsx, AddOwnershipDialog.tsx, CompanyActivityLog.tsx, CompanyEmployees.tsx, CompanyForm.tsx, CompanyGovernance.tsx, CompanyOwnership.tsx, CompanyPersonDialog.tsx, EditCompanyDialog.tsx, EmployeesSection.tsx, GovernanceSection.tsx, OwnershipDialog.tsx, OwnershipSection.tsx, ContractForm.tsx, ContractStatusSelect.tsx
 [2026-03-10 00:13:21] [INFO]   INTELLIGENCE.md opdateret: - Trin: `tsc typecheck` | TS-fejl: 160->160 | Status: DIVERGERER (109->160 fejl STIGER)
 - Agenter: B
+[2026-03-10 00:13:22] [INFO] Git commit: fix: autorepair iter 2 — tsc typecheck (6 agenter, 14 filer, 160 TS-fejl)
+[2026-03-10 00:13:22] [INFO]   Iteration 2 afsluttet — korer build igen...
+[2026-03-10 00:13:22] [INFO] 
+============================================================
+--- Autorepair iteration 3/10 ---
+[2026-03-10 00:13:22] [INFO]   Konvergens: DIVERGERER (109->160 fejl STIGER)
+[2026-03-10 00:13:22] [INFO]   Downstream re-check koe: BA-02, BA-05-selskab, BA-07-sprint2, BA-07-sprint3, BA-05-kontrakt, BA-07-sprint4, BA-07-sprint5, BA-07-sprint6, BA-11-pentest, BA-09-sprint2, BA-09-sprint5, BA-05-person, BA-03, __generisk__
+[2026-03-10 00:13:22] [INFO]   Korer: prisma generate...
+[2026-03-10 00:13:23] [INFO]   v prisma generate OK (1.6s)
+[2026-03-10 00:13:23] [INFO]   Korer: tsc typecheck...
+[2026-03-10 00:13:27] [INFO]   x tsc typecheck FEJLEDE (3.8s)
+[2026-03-10 00:13:27] [FEJL]     src/__tests__/integration/tenant-isolation.test.ts(14,3): error TS2459: Module '"@/lib/permissions"' declares 'getUserRo
+[2026-03-10 00:13:27] [FEJL]     src/__tests__/integration/tenant-isolation.test.ts(37,16): error TS2339: Property 'group' does not exist on type 'Prisma
+[2026-03-10 00:13:27] [FEJL]     src/__tests__/integration/tenant-isolation.test.ts(51,9): error TS2353: Object literal may only specify known properties
+[2026-03-10 00:13:27] [FEJL]     src/__tests__/integration/tenant-isolation.test.ts(57,9): error TS2353: Object literal may only specify known properties
+[2026-03-10 00:13:27] [FEJL]     src/__tests__/integration/tenant-isolation.test.ts(69,9): error TS2353: Object literal may only specify known properties
+[2026-03-10 00:13:27] [FEJL]     src/__tests__/integration/tenant-isolation.test.ts(75,9): error TS2353: Object literal may only specify known properties
+[2026-03-10 00:13:27] [FEJL]     src/__tests__/integration/tenant-isolation.test.ts(81,9): error TS2353: Object literal may only specify known properties
+[2026-03-10 00:13:27] [FEJL]     src/__tests__/integration/tenant-isolation.test.ts(93,9): error TS2353: Object literal may only specify known properties
+[2026-03-10 00:13:27] [INFO]   TS-fejl nu: 119 | KONVERGERER (109->119 fejl, --9% fra start)
+[2026-03-10 00:13:27] [INFO]   Fejlede filer: 20
+[2026-03-10 00:13:27] [INFO]   -> BA-10-tests (Test-agent): tenant-isolation.test.ts
+[2026-03-10 00:13:27] [INFO]   -> BA-05-person (Feature-agent (Persondatabase)): persons.ts
+[2026-03-10 00:13:27] [INFO]   -> BA-05-selskab (Feature-agent (Selskabsprofil)): page.tsx, CompanyForm.tsx
+[2026-03-10 00:13:27] [INFO]   -> BA-03 (Auth-agent): page.tsx, page.tsx
+[2026-03-10 00:13:27] [INFO]   -> __generisk__ (__generisk__): ActivityLog.tsx, AddOwnershipDialog.tsx, CompanyActivityLog.tsx, CompanyEmployees.tsx, CompanyGovernance.tsx, CompanyOwnership.tsx, CompanyPersonDialog.tsx, EditCompanyDialog.tsx, EmployeesSection.tsx, GovernanceSection.tsx, OwnershipDialog.tsx, OwnershipSection.tsx, ContractForm.tsx, ContractStatusSelect.tsx
+[2026-03-10 00:13:27] [INFO]   + Downstream re-check: BA-02
+[2026-03-10 00:13:27] [INFO]   + Downstream re-check: BA-07-sprint2
+[2026-03-10 00:13:27] [INFO]   + Downstream re-check: BA-07-sprint3
+[2026-03-10 00:13:27] [INFO]   + Downstream re-check: BA-05-kontrakt
+[2026-03-10 00:13:27] [INFO]   + Downstream re-check: BA-07-sprint4
+[2026-03-10 00:13:27] [INFO]   + Downstream re-check: BA-07-sprint5
+[2026-03-10 00:13:27] [INFO]   + Downstream re-check: BA-07-sprint6
+[2026-03-10 00:13:27] [INFO]   + Downstream re-check: BA-11-pentest
+[2026-03-10 00:13:27] [INFO]   + Downstream re-check: BA-09-sprint2
+[2026-03-10 00:13:27] [INFO]   + Downstream re-check: BA-09-sprint5
+[2026-03-10 00:13:27] [INFO]   Kalder Test-agent (BA-10-tests) for repair...
+[2026-03-10 00:14:18] [INFO] Skrevet: src/__tests__/integration/tenant-isolation.test.ts
+[2026-03-10 00:14:18] [INFO]   BA-10-tests: 1 filer rettet
+[2026-03-10 00:14:18] [INFO]   Kalder Feature-agent (Persondatabase) (BA-05-person) for repair...
+[2026-03-10 00:15:00] [INFO] Skrevet: src/actions/persons.ts
+[2026-03-10 00:15:00] [INFO]   BA-05-person: 1 filer rettet
+[2026-03-10 00:15:00] [INFO]   BA-05-person aendrede filer der bruges af: BA-09-sprint2, BA-07-sprint2
+[2026-03-10 00:15:00] [INFO]   Kalder Feature-agent (Selskabsprofil) (BA-05-selskab) for repair...
+[2026-03-10 00:15:30] [INFO] Skrevet: src/app/(dashboard)/companies/[id]/page.tsx
+[2026-03-10 00:15:30] [INFO] Skrevet: src/components/companies/CompanyForm.tsx
+[2026-03-10 00:15:30] [INFO]   BA-05-selskab: 2 filer rettet
+[2026-03-10 00:15:30] [INFO]   BA-05-selskab aendrede filer der bruges af: BA-09-sprint2, BA-05-person, BA-07-sprint2, BA-05-dashboard, BA-10-tests, BA-11-pentest
+[2026-03-10 00:15:30] [INFO]   Kalder Auth-agent (BA-03) for repair...
+[2026-03-10 00:16:18] [INFO] Skrevet: src/actions/persons.ts
+[2026-03-10 00:16:18] [INFO] Skrevet: src/app/(dashboard)/companies/page.tsx
+[2026-03-10 00:16:18] [INFO] Skrevet: src/app/(dashboard)/persons/page.tsx
+[2026-03-10 00:16:18] [INFO]   BA-03: 3 filer rettet
+[2026-03-10 00:16:18] [INFO]   BA-03 aendrede filer der bruges af: BA-09-sprint2, BA-07-sprint2
+[2026-03-10 00:16:18] [INFO]   Kalder Generisk repair (__generisk__) for repair...
+[2026-03-10 00:21:02] [INFO] Skrevet: src/__tests__/integration/tenant-isolation.test.ts
+[2026-03-10 00:21:02] [INFO] Skrevet: src/actions/persons.ts
+[2026-03-10 00:21:02] [INFO] Skrevet: src/components/companies/ActivityLog.tsx
+[2026-03-10 00:21:02] [INFO] Skrevet: src/components/companies/AddOwnershipDialog.tsx
+[2026-03-10 00:21:02] [INFO] Skrevet: src/components/companies/CompanyActivityLog.tsx
+[2026-03-10 00:21:02] [INFO] Skrevet: src/components/companies/CompanyEmployees.tsx
+[2026-03-10 00:21:02] [INFO] Skrevet: src/components/companies/CompanyGovernance.tsx
+[2026-03-10 00:21:02] [INFO] Skrevet: src/components/companies/CompanyOwnership.tsx
+[2026-03-10 00:21:02] [INFO] Skrevet: src/components/companies/CompanyPersonDialog.tsx
+[2026-03-10 00:21:02] [INFO] Skrevet: src/components/companies/EditCompanyDialog.tsx
+[2026-03-10 00:21:02] [INFO] Skrevet: src/components/companies/EmployeesSection.tsx
+[2026-03-10 00:21:02] [INFO] Skrevet: src/components/companies/GovernanceSection.tsx
+[2026-03-10 00:21:02] [INFO] Skrevet: src/components/companies/OwnershipDialog.tsx
+[2026-03-10 00:21:02] [INFO] Skrevet: src/components/companies/OwnershipSection.tsx
+[2026-03-10 00:21:02] [INFO] Skrevet: src/components/contracts/ContractForm.tsx
+[2026-03-10 00:21:02] [INFO] Skrevet: src/components/contracts/ContractStatusSelect.tsx
+[2026-03-10 00:21:02] [INFO]   __generisk__: 16 filer rettet
+[2026-03-10 00:21:02] [INFO]   __generisk__ aendrede filer der bruges af: BA-09-sprint2, BA-07-sprint2
+[2026-03-10 00:21:02] [INFO]   Kalder Schema-agent (BA-02) for repair...
+[2026-03-10 00:23:25] [INFO] Skrevet: prisma/schema.prisma
+[2026-03-10 00:23:25] [INFO] Skrevet: prisma/seed.ts
+[2026-03-10 00:23:25] [INFO]   BA-02: 2 filer rettet
+[2026-03-10 00:23:25] [INFO]   BA-02 aendrede filer der bruges af: BA-03, BA-07-sprint1, BA-09-sprint2, BA-05-selskab, BA-05-person, BA-05-kontrakt, BA-06-advisering, BA-05-dokumenter, BA-05-sager, BA-05-opgaver, BA-09-sprint5, BA-05-oekonomi, BA-05-dashboard, BA-06-stripe, BA-10-tests
+[2026-03-10 00:23:25] [INFO]   Kalder QA-agent (Sprint 2) (BA-07-sprint2) for repair...
+[2026-03-10 00:24:00] [INFO] Skrevet: docs/status/DECISIONS.md
+[2026-03-10 00:24:00] [INFO]   BA-07-sprint2: 1 filer rettet
+[2026-03-10 00:24:00] [INFO]   BA-07-sprint2 aendrede filer der bruges af: BA-02, BA-05-selskab, BA-07-sprint2, BA-07-sprint3, BA-05-kontrakt, BA-07-sprint4, BA-07-sprint5, BA-07-sprint6, BA-11-pentest
+[2026-03-10 00:24:00] [ADVARSEL] Fil ikke fundet: src/lib/advisering/deadlines.ts
+[2026-03-10 00:24:00] [INFO]   Kalder QA-agent (Sprint 3) (BA-07-sprint3) for repair...
+[2026-03-10 00:24:45] [INFO] Skrevet: docs/status/DECISIONS.md
+[2026-03-10 00:24:45] [INFO]   BA-07-sprint3: 1 filer rettet
+[2026-03-10 00:24:45] [INFO]   BA-07-sprint3 aendrede filer der bruges af: BA-02, BA-05-selskab, BA-07-sprint2, BA-07-sprint3, BA-05-kontrakt, BA-07-sprint4, BA-07-sprint5, BA-07-sprint6, BA-11-pentest
+[2026-03-10 00:24:45] [INFO]   Kalder Feature-agent (Kontraktstyring) (BA-05-kontrakt) for repair...
+[2026-03-10 00:26:51] [INFO] Skrevet: src/lib/validations/contract.ts
+[2026-03-10 00:26:51] [INFO] Skrevet: src/types/contract.ts
+[2026-03-10 00:26:51] [INFO] Skrevet: src/actions/contracts.ts
+[2026-03-10 00:26:51] [INFO]   BA-05-kontrakt: 3 filer rettet
+[2026-03-10 00:26:51] [INFO]   BA-05-kontrakt aendrede filer der bruges af: BA-06-advisering, BA-07-sprint3, BA-11-pentest
+[2026-03-10 00:26:51] [INFO]   Kalder QA-agent (Sprint 4) (BA-07-sprint4) for repair...
+[2026-03-10 00:27:25] [INFO] Skrevet: docs/status/DECISIONS.md
+[2026-03-10 00:27:25] [INFO]   BA-07-sprint4: 1 filer rettet
+[2026-03-10 00:27:25] [INFO]   BA-07-sprint4 aendrede filer der bruges af: BA-02, BA-05-selskab, BA-07-sprint2, BA-07-sprint3, BA-05-kontrakt, BA-07-sprint4, BA-07-sprint5, BA-07-sprint6, BA-11-pentest
+[2026-03-10 00:27:25] [INFO]   Kalder QA-agent (Sprint 5) (BA-07-sprint5) for repair...
+[2026-03-10 00:27:59] [INFO] Skrevet: docs/status/DECISIONS.md
+[2026-03-10 00:27:59] [INFO]   BA-07-sprint5: 1 filer rettet
+[2026-03-10 00:27:59] [INFO]   BA-07-sprint5 aendrede filer der bruges af: BA-02, BA-05-selskab, BA-07-sprint2, BA-07-sprint3, BA-05-kontrakt, BA-07-sprint4, BA-07-sprint5, BA-07-sprint6, BA-11-pentest
+[2026-03-10 00:27:59] [INFO]   Kalder QA-agent (Sprint 6 — final review) (BA-07-sprint6) for repair...
+[2026-03-10 00:28:47] [INFO] Skrevet: docs/status/PROGRESS.md
+[2026-03-10 00:28:47] [INFO] Skrevet: docs/status/DECISIONS.md
+[2026-03-10 00:28:47] [INFO]   BA-07-sprint6: 2 filer rettet
+[2026-03-10 00:28:47] [INFO]   BA-07-sprint6 aendrede filer der bruges af: BA-02, BA-05-selskab, BA-07-sprint2, BA-07-sprint3, BA-05-kontrakt, BA-07-sprint4, BA-07-sprint5, BA-07-sprint6, BA-11-pentest
+[2026-03-10 00:28:47] [ADVARSEL] Fil ikke fundet: src/middleware.ts
+[2026-03-10 00:28:47] [INFO]   Kalder Security Pentest-agent (BA-11-pentest) for repair...
+[2026-03-10 00:31:17] [INFO] Skrevet: docs/ops/PENTEST-REPORT.md
+[2026-03-10 00:31:17] [INFO] Skrevet: docs/status/DECISIONS.md
+[2026-03-10 00:31:17] [INFO]   BA-11-pentest: 2 filer rettet
+[2026-03-10 00:31:17] [INFO]   BA-11-pentest aendrede filer der bruges af: BA-02, BA-05-selskab, BA-07-sprint2, BA-07-sprint3, BA-05-kontrakt, BA-07-sprint4, BA-07-sprint5, BA-07-sprint6, BA-11-pentest
+[2026-03-10 00:31:17] [INFO]   Kalder Performance-agent (Sprint 2) (BA-09-sprint2) for repair...
+[2026-03-10 00:33:02] [INFO] Skrevet: src/__tests__/integration/tenant-isolation.test.ts
+[2026-03-10 00:33:02] [INFO] Skrevet: src/actions/persons.ts
+[2026-03-10 00:33:02] [INFO] Skrevet: docs/status/DECISIONS.md
+[2026-03-10 00:33:02] [INFO] Skrevet: docs/ops/CACHING.md
+[2026-03-10 00:33:02] [INFO]   BA-09-sprint2: 4 filer rettet
+[2026-03-10 00:33:02] [INFO]   BA-09-sprint2 aendrede filer der bruges af: BA-02, BA-09-sprint2, BA-05-selskab, BA-07-sprint2, BA-07-sprint3, BA-05-kontrakt, BA-07-sprint4, BA-07-sprint5, BA-07-sprint6, BA-11-pentest
+[2026-03-10 00:33:02] [INFO]   Kalder Performance-agent (Sprint 5) (BA-09-sprint5) for repair...
+[2026-03-10 00:33:34] [INFO] Skrevet: docs/status/DECISIONS.md
+[2026-03-10 00:33:34] [INFO]   BA-09-sprint5: 1 filer rettet
+[2026-03-10 00:33:34] [INFO]   BA-09-sprint5 aendrede filer der bruges af: BA-02, BA-05-selskab, BA-07-sprint2, BA-07-sprint3, BA-05-kontrakt, BA-07-sprint4, BA-07-sprint5, BA-07-sprint6, BA-11-pentest
+[2026-03-10 00:33:42] [ADVARSEL]   REGRESSIONSGUARD: 6 nye fejl introduceret: auth-guard.test.ts, contracts-action.test.ts, contracts.ts, page.tsx, page.tsx, CompanyProfile.tsx
+[2026-03-10 00:33:42] [INFO]   INTELLIGENCE.md opdateret: - Trin: `tsc typecheck` | TS-fejl: 119->119 | Status: KONVERGERER (109->119 fejl, --9% fra start)
+-

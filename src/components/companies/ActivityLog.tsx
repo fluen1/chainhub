@@ -20,7 +20,7 @@ const actionLabels: Record<string, string> = {
   VIEW: 'Set',
 }
 
-const actionIcons: Record<string, typeof Plus> = {
+const actionIcons: Record<string, React.ElementType> = {
   CREATE: Plus,
   UPDATE: Pencil,
   DELETE: Trash2,
@@ -32,6 +32,26 @@ const resourceLabels: Record<string, string> = {
   ownership: 'Ejerskab',
   company_person: 'Person',
   contract: 'Kontrakt',
+}
+
+function ActivityLogSkeleton() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <History className="h-5 w-5" />
+          Aktivitetslog
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-12 rounded bg-gray-100 animate-pulse" />
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  )
 }
 
 export function ActivityLog({ companyId }: ActivityLogProps) {
@@ -89,6 +109,9 @@ export function ActivityLog({ companyId }: ActivityLogProps) {
                           {actionLabels[activity.action] || activity.action}
                         </span>
                       </div>
+                      {activity.description && (
+                        <p className="text-gray-500 mt-1 truncate">{activity.description}</p>
+                      )}
                       <p className="text-gray-400 text-xs mt-1">
                         {formatDistanceToNow(new Date(activity.createdAt), {
                           addSuffix: true,
@@ -102,29 +125,6 @@ export function ActivityLog({ companyId }: ActivityLogProps) {
             </div>
           </ScrollArea>
         )}
-      </CardContent>
-    </Card>
-  )
-}
-
-export function ActivityLogSkeleton() {
-  return (
-    <Card>
-      <CardHeader>
-        <div className="h-6 w-32 bg-gray-200 rounded animate-pulse" />
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex gap-3 border-l-2 border-gray-200 pl-4">
-              <div className="h-4 w-4 bg-gray-200 rounded animate-pulse" />
-              <div className="flex-1 space-y-2">
-                <div className="h-4 w-32 bg-gray-200 rounded animate-pulse" />
-                <div className="h-3 w-20 bg-gray-100 rounded animate-pulse" />
-              </div>
-            </div>
-          ))}
-        </div>
       </CardContent>
     </Card>
   )

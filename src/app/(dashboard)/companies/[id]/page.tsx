@@ -14,11 +14,11 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 async function CompanyProfileLoader({ id }: { id: string }) {
   const result = await getCompany(id)
 
-  if (result.error === 'Selskabet blev ikke fundet') {
+  if (!result.success && result.error === 'Selskabet blev ikke fundet') {
     notFound()
   }
 
-  if (result.error) {
+  if (!result.success) {
     return (
       <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
         {result.error}
@@ -26,7 +26,7 @@ async function CompanyProfileLoader({ id }: { id: string }) {
     )
   }
 
-  return <CompanyProfile company={result.data!} />
+  return <CompanyProfile company={result.data} />
 }
 
 export default async function CompanyProfilePage({

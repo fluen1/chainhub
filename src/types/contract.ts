@@ -1,9 +1,5 @@
+import type { Contract, ContractParty, ContractVersion, ContractAttachment, ContractRelation, Person, Company } from '@prisma/client'
 import type {
-  Contract,
-  ContractParty,
-  ContractVersion,
-  ContractAttachment,
-  ContractRelation,
   ContractSystemType,
   ContractStatus,
   SensitivityLevel,
@@ -11,9 +7,18 @@ import type {
   VersionSource,
   ChangeType,
   RelationType,
-  Person,
-  Company,
-} from '@prisma/client'
+} from '@/lib/validations/contract'
+
+// Re-eksporter lokale enum-typer så de er tilgængelige
+export type {
+  ContractSystemType,
+  ContractStatus,
+  SensitivityLevel,
+  DeadlineType,
+  VersionSource,
+  ChangeType,
+  RelationType,
+}
 
 // Fælles return type for alle actions
 export type ActionResult<T> =

@@ -1,522 +1,342 @@
 'use server'
 
-import { auth } from '@/lib/auth'
-import { prisma } from '@/lib/db'
 import { revalidatePath } from 'next/cache'
-import { z } from 'zod'
+import { prisma } from '@/lib/prisma'
+import { getCurrentUser } from '@/lib/auth'
 import {
   createPersonSchema,
   updatePersonSchema,
-  deletePersonSchema,
-  getPersonSchema,
-  listPersonsSchema,
-  addPersonToCompanySchema,
-  removePersonFromCompanySchema,
-  updatePersonCompanyRoleSchema,
-  importOutlookContactsBatchSchema,
+  createCompanyPersonSchema,
+  updateCompanyPersonSchema,
+  type CreatePersonInput,
+  type UpdatePersonInput,
+  type CreateCompanyPersonInput,
+  type UpdateCompanyPersonInput,
 } from '@/lib/validations/person'
-import type {
-  ActionResult,
-  PersonWithCompanies,
-  PersonSummary,
-  OutlookImportResult,
-} from '@/types/person'
-import type { Person } from '@prisma/client'
 
-// ==================== PERSON CRUD ====================
+type ActionResult<T = void> = { data?: T; error?: string }
 
-export async function createPerson(
-  input: z.infer<typeof createPersonSchema>
-): Promise<ActionResult<Person>> {
-  const session = await auth()
-  if (!session?.user) return { error: 'Ikke autoriseret' }
+// ── GET PERSONS ──────────────────────────────────────────────────────────────
 
-  const parsed = createPersonSchema.safeParse(input)
-  if (!parsed.success) {
-    const firstError = parsed.error.errors[0]
-    return { error: firstError?.message ?? 'Ugyldigt input' }
-  }
-
-  const { firstName, lastName, email, phone, notes } = parsed.data
-
+export async function getPersons(): Promise<
+  ActionResult<{ id: string; firstName: string; lastName: string; email: string | null; phone: string | null; createdAt: Date }[]>
+> {
   try {
+    const user = await getCurrentUser()
+    if (!user) return { error: 'Ikke logget ind' }
+
+    const persons = await prisma.person.findMany({
+      where: { organizationId: user.organizationId },
+      orderBy: { lastName: 'asc' },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        createdAt: true,
+      },
+    })
+
+    return { data: persons }
+  } catch (err) {
+    console.error('getPersons error:', err)
+    return { error: 'Kunne ikke hente personer' }
+  }
+}
+
+// ── GET PERSON ───────────────────────────────────────────────────────────────
+
+export async function getPerson(input: { id: string }): Promise<
+  ActionResult<{
+    id: string
+    firstName: string
+    lastName: string
+    email: string | null
+    phone: string | null
+    address: string | null
+    city: string | null
+    postalCode: string | null
+    birthDate: string | null
+    nationality: string | null
+    notes: string | null
+    createdAt: Date
+    updatedAt: Date
+    companyPersons: {
+      id: string
+      role: string
+      employmentType: string | null
+      startDate: string | null
+      endDate: string | null
+      anciennityStart: string | null
+      contractId: string | null
+      company: {
+        id: string
+        name: string
+      }
+    }[]
+  }>
+> {
+  try {
+    const user = await getCurrentUser()
+    if (!user) return { error: 'Ikke logget ind' }
+
+    const person = await prisma.person.findFirst({
+      where: {
+        id: input.id,
+        organizationId: user.organizationId,
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        address: true,
+        city: true,
+        postalCode: true,
+        birthDate: true,
+        nationality: true,
+        notes: true,
+        createdAt: true,
+        updatedAt: true,
+        companyPersons: {
+          where: { endDate: null },
+          select: {
+            id: true,
+            role: true,
+            employmentType: true,
+            startDate: true,
+            endDate: true,
+            anciennityStart: true,
+            contractId: true,
+            company: {
+              select: { id: true, name: true },
+            },
+          },
+        },
+      },
+    })
+
+    if (!person) return { error: 'Person ikke fundet' }
+    return { data: person as any }
+  } catch (err) {
+    console.error('getPerson error:', err)
+    return { error: 'Kunne ikke hente person' }
+  }
+}
+
+// ── CREATE PERSON ─────────────────────────────────────────────────────────────
+
+export async function createPerson(input: CreatePersonInput): Promise<ActionResult<{ id: string }>> {
+  try {
+    const user = await getCurrentUser()
+    if (!user) return { error: 'Ikke logget ind' }
+
+    const parsed = createPersonSchema.safeParse(input)
+    if (!parsed.success) return { error: parsed.error.errors[0].message }
+
+    const { firstName, lastName, email, phone, address, city, postalCode, birthDate, nationality, notes } = parsed.data
+
     const person = await prisma.person.create({
       data: {
-        organizationId: session.user.organizationId,
         firstName,
         lastName,
         email: email ?? null,
         phone: phone ?? null,
+        address: address ?? null,
+        city: city ?? null,
+        postalCode: postalCode ?? null,
+        birthDate: birthDate ?? null,
+        nationality: nationality ?? null,
         notes: notes ?? null,
-        createdBy: session.user.id,
+        organizationId: user.organizationId,
       },
-    })
-
-    await prisma.auditLog.create({
-      data: {
-        organizationId: session.user.organizationId,
-        userId: session.user.id,
-        action: 'CREATE',
-        resourceType: 'person',
-        resourceId: person.id,
-      },
+      select: { id: true },
     })
 
     revalidatePath('/persons')
     return { data: person }
-  } catch (error) {
-    console.error('createPerson error:', error)
-    return { error: 'Personen kunne ikke oprettes — prøv igen eller kontakt support' }
+  } catch (err) {
+    console.error('createPerson error:', err)
+    return { error: 'Kunne ikke oprette person' }
   }
 }
 
-export async function getPerson(
-  input: z.infer<typeof getPersonSchema>
-): Promise<ActionResult<PersonWithCompanies>> {
-  const session = await auth()
-  if (!session?.user) return { error: 'Ikke autoriseret' }
+// ── UPDATE PERSON ─────────────────────────────────────────────────────────────
 
-  const parsed = getPersonSchema.safeParse(input)
-  if (!parsed.success) return { error: 'Ugyldigt person-ID' }
-
-  const { personId } = parsed.data
-
+export async function updatePerson(input: UpdatePersonInput): Promise<ActionResult> {
   try {
-    const person = await prisma.person.findUnique({
-      where: {
-        id: personId,
-        organizationId: session.user.organizationId,
-        deletedAt: null,
-      },
-      include: {
-        companyPersons: {
-          include: {
-            company: true,
-            contract: true,
-          },
-          orderBy: { createdAt: 'desc' },
-        },
-        _count: {
-          select: {
-            companyPersons: true,
-            contractParties: true,
-            ownerships: true,
-          },
-        },
-      },
-    })
+    const user = await getCurrentUser()
+    if (!user) return { error: 'Ikke logget ind' }
 
-    if (!person) return { error: 'Personen blev ikke fundet' }
+    const parsed = updatePersonSchema.safeParse(input)
+    if (!parsed.success) return { error: parsed.error.errors[0].message }
 
-    return { data: person as unknown as PersonWithCompanies }
-  } catch (error) {
-    console.error('getPerson error:', error)
-    return { error: 'Personen kunne ikke hentes' }
-  }
-}
-
-export async function listPersons(
-  input: z.infer<typeof listPersonsSchema>
-): Promise<ActionResult<PersonSummary[]>> {
-  const session = await auth()
-  if (!session?.user) return { error: 'Ikke autoriseret' }
-
-  const parsed = listPersonsSchema.safeParse(input)
-  if (!parsed.success) return { error: 'Ugyldigt input' }
-
-  const { search, companyId, page = 1, pageSize = 50 } = parsed.data
-
-  try {
-    const where = {
-      organizationId: session.user.organizationId,
-      deletedAt: null,
-      ...(search
-        ? {
-            OR: [
-              { firstName: { contains: search, mode: 'insensitive' as const } },
-              { lastName: { contains: search, mode: 'insensitive' as const } },
-              { email: { contains: search, mode: 'insensitive' as const } },
-            ],
-          }
-        : {}),
-      ...(companyId
-        ? {
-            companyPersons: {
-              some: {
-                companyId,
-                deletedAt: null,
-              },
-            },
-          }
-        : {}),
-    }
-
-    const persons = await prisma.person.findMany({
-      where,
-      include: {
-        _count: {
-          select: { companyPersons: true },
-        },
-        companyPersons: {
-          where: { deletedAt: null },
-          include: { company: { select: { id: true, name: true } } },
-          take: 3,
-          orderBy: { createdAt: 'desc' },
-        },
-      },
-      orderBy: [{ lastName: 'asc' }, { firstName: 'asc' }],
-      skip: (page - 1) * pageSize,
-      take: pageSize,
-    })
-
-    return { data: persons as unknown as PersonSummary[] }
-  } catch (error) {
-    console.error('listPersons error:', error)
-    return { error: 'Personlisten kunne ikke hentes' }
-  }
-}
-
-export async function updatePerson(
-  input: z.infer<typeof updatePersonSchema>
-): Promise<ActionResult<Person>> {
-  const session = await auth()
-  if (!session?.user) return { error: 'Ikke autoriseret' }
-
-  const parsed = updatePersonSchema.safeParse(input)
-  if (!parsed.success) {
-    const firstError = parsed.error.errors[0]
-    return { error: firstError?.message ?? 'Ugyldigt input' }
-  }
-
-  const { personId, firstName, lastName, email, phone, notes } = parsed.data
-
-  try {
-    const existing = await prisma.person.findUnique({
-      where: {
-        id: personId,
-        organizationId: session.user.organizationId,
-        deletedAt: null,
-      },
-    })
-
-    if (!existing) return { error: 'Personen blev ikke fundet' }
-
-    const person = await prisma.person.update({
-      where: { id: personId },
-      data: {
-        ...(firstName !== undefined && { firstName }),
-        ...(lastName !== undefined && { lastName }),
-        ...(email !== undefined && { email: email ?? null }),
-        ...(phone !== undefined && { phone: phone ?? null }),
-        ...(notes !== undefined && { notes: notes ?? null }),
-        updatedAt: new Date(),
-      },
-    })
-
-    await prisma.auditLog.create({
-      data: {
-        organizationId: session.user.organizationId,
-        userId: session.user.id,
-        action: 'UPDATE',
-        resourceType: 'person',
-        resourceId: person.id,
-      },
-    })
-
-    revalidatePath('/persons')
-    revalidatePath(`/persons/${personId}`)
-    return { data: person }
-  } catch (error) {
-    console.error('updatePerson error:', error)
-    return { error: 'Personen kunne ikke opdateres' }
-  }
-}
-
-export async function deletePerson(
-  input: z.infer<typeof deletePersonSchema>
-): Promise<ActionResult<{ deleted: boolean }>> {
-  const session = await auth()
-  if (!session?.user) return { error: 'Ikke autoriseret' }
-
-  const parsed = deletePersonSchema.safeParse(input)
-  if (!parsed.success) return { error: 'Ugyldigt person-ID' }
-
-  const { personId } = parsed.data
-
-  try {
-    const existing = await prisma.person.findUnique({
-      where: {
-        id: personId,
-        organizationId: session.user.organizationId,
-        deletedAt: null,
-      },
-    })
-
-    if (!existing) return { error: 'Personen blev ikke fundet' }
+    const { id, firstName, lastName, email, phone, address, city, postalCode, birthDate, nationality, notes } = parsed.data
 
     await prisma.person.update({
-      where: { id: personId },
-      data: { deletedAt: new Date() },
-    })
-
-    await prisma.auditLog.create({
+      where: { id, organizationId: user.organizationId },
       data: {
-        organizationId: session.user.organizationId,
-        userId: session.user.id,
-        action: 'DELETE',
-        resourceType: 'person',
-        resourceId: personId,
+        firstName,
+        lastName,
+        email: email ?? null,
+        phone: phone ?? null,
+        address: address ?? null,
+        city: city ?? null,
+        postalCode: postalCode ?? null,
+        birthDate: birthDate ?? null,
+        nationality: nationality ?? null,
+        notes: notes ?? null,
       },
     })
 
     revalidatePath('/persons')
-    return { data: { deleted: true } }
-  } catch (error) {
-    console.error('deletePerson error:', error)
-    return { error: 'Personen kunne ikke slettes' }
+    revalidatePath(`/persons/${id}`)
+    return {}
+  } catch (err) {
+    console.error('updatePerson error:', err)
+    return { error: 'Kunne ikke opdatere person' }
   }
 }
 
-export async function addPersonToCompany(
-  input: z.infer<typeof addPersonToCompanySchema>
-): Promise<ActionResult<{ id: string }>> {
-  const session = await auth()
-  if (!session?.user) return { error: 'Ikke autoriseret' }
+// ── DELETE PERSON ─────────────────────────────────────────────────────────────
 
-  const parsed = addPersonToCompanySchema.safeParse(input)
-  if (!parsed.success) {
-    const firstError = parsed.error.errors[0]
-    return { error: firstError?.message ?? 'Ugyldigt input' }
-  }
-
-  const { personId, companyId, role, title, startDate, endDate, contractId } = parsed.data
-
+export async function deletePerson(input: { id: string }): Promise<ActionResult> {
   try {
-    // Verificer at selskabet tilhører organisationen
-    const company = await prisma.company.findUnique({
-      where: {
-        id: companyId,
-        organizationId: session.user.organizationId,
-        deletedAt: null,
-      },
-    })
-    if (!company) return { error: 'Selskabet blev ikke fundet' }
+    const user = await getCurrentUser()
+    if (!user) return { error: 'Ikke logget ind' }
 
-    // Verificer at personen tilhører organisationen
-    const person = await prisma.person.findUnique({
+    // Slet tilknytninger først
+    await prisma.companyPerson.deleteMany({
       where: {
-        id: personId,
-        organizationId: session.user.organizationId,
-        deletedAt: null,
+        personId: input.id,
+        company: { organizationId: user.organizationId },
       },
     })
-    if (!person) return { error: 'Personen blev ikke fundet' }
+
+    await prisma.person.delete({
+      where: { id: input.id, organizationId: user.organizationId },
+    })
+
+    revalidatePath('/persons')
+    return {}
+  } catch (err) {
+    console.error('deletePerson error:', err)
+    return { error: 'Kunne ikke slette person' }
+  }
+}
+
+// ── CREATE COMPANY PERSON ─────────────────────────────────────────────────────
+
+export async function createCompanyPerson(input: CreateCompanyPersonInput): Promise<ActionResult<{ id: string }>> {
+  try {
+    const user = await getCurrentUser()
+    if (!user) return { error: 'Ikke logget ind' }
+
+    const parsed = createCompanyPersonSchema.safeParse(input)
+    if (!parsed.success) return { error: parsed.error.errors[0].message }
+
+    const { role, companyId, personId, anciennityStart, contractId, employmentType, startDate, endDate } = parsed.data
+
+    // Verificer at selskabet tilhører organisationen
+    const company = await prisma.company.findFirst({
+      where: { id: companyId, organizationId: user.organizationId },
+      select: { id: true },
+    })
+    if (!company) return { error: 'Selskab ikke fundet' }
 
     const companyPerson = await prisma.companyPerson.create({
       data: {
-        organizationId: session.user.organizationId,
-        personId,
-        companyId,
         role,
-        title: title ?? null,
+        companyId,
+        personId,
+        anciennityStart: anciennityStart ?? null,
+        contractId: contractId ?? null,
+        employmentType: employmentType ?? null,
         startDate: startDate ?? null,
         endDate: endDate ?? null,
-        contractId: contractId ?? null,
-        createdBy: session.user.id,
       },
-    })
-
-    await prisma.auditLog.create({
-      data: {
-        organizationId: session.user.organizationId,
-        userId: session.user.id,
-        action: 'CREATE',
-        resourceType: 'companyPerson',
-        resourceId: companyPerson.id,
-      },
+      select: { id: true },
     })
 
     revalidatePath(`/persons/${personId}`)
     revalidatePath(`/companies/${companyId}`)
-    return { data: { id: companyPerson.id } }
-  } catch (error) {
-    console.error('addPersonToCompany error:', error)
-    return { error: 'Tilknytningen kunne ikke oprettes' }
+    return { data: companyPerson }
+  } catch (err) {
+    console.error('createCompanyPerson error:', err)
+    return { error: 'Kunne ikke oprette tilknytning' }
   }
 }
 
-export async function removePersonFromCompany(
-  input: z.infer<typeof removePersonFromCompanySchema>
-): Promise<ActionResult<{ removed: boolean }>> {
-  const session = await auth()
-  if (!session?.user) return { error: 'Ikke autoriseret' }
+// ── UPDATE COMPANY PERSON ─────────────────────────────────────────────────────
 
-  const parsed = removePersonFromCompanySchema.safeParse(input)
-  if (!parsed.success) return { error: 'Ugyldigt input' }
-
-  const { companyPersonId } = parsed.data
-
+export async function updateCompanyPerson(input: UpdateCompanyPersonInput): Promise<ActionResult> {
   try {
-    const existing = await prisma.companyPerson.findUnique({
+    const user = await getCurrentUser()
+    if (!user) return { error: 'Ikke logget ind' }
+
+    const parsed = updateCompanyPersonSchema.safeParse(input)
+    if (!parsed.success) return { error: parsed.error.errors[0].message }
+
+    const { companyPersonId, companyId, role, anciennityStart, employmentType, startDate, endDate } = parsed.data
+
+    // Verificer adgang
+    const existing = await prisma.companyPerson.findFirst({
       where: {
         id: companyPersonId,
-        organizationId: session.user.organizationId,
-        deletedAt: null,
+        company: { organizationId: user.organizationId },
       },
+      select: { id: true, personId: true },
     })
-
-    if (!existing) return { error: 'Tilknytningen blev ikke fundet' }
+    if (!existing) return { error: 'Tilknytning ikke fundet' }
 
     await prisma.companyPerson.update({
       where: { id: companyPersonId },
-      data: { deletedAt: new Date() },
-    })
-
-    await prisma.auditLog.create({
       data: {
-        organizationId: session.user.organizationId,
-        userId: session.user.id,
-        action: 'DELETE',
-        resourceType: 'companyPerson',
-        resourceId: companyPersonId,
+        role: role ?? undefined,
+        anciennityStart: anciennityStart ?? null,
+        employmentType: employmentType ?? null,
+        startDate: startDate ?? undefined,
+        endDate: endDate ?? null,
       },
     })
 
-    revalidatePath('/persons')
-    return { data: { removed: true } }
-  } catch (error) {
-    console.error('removePersonFromCompany error:', error)
-    return { error: 'Tilknytningen kunne ikke fjernes' }
+    revalidatePath(`/persons/${existing.personId}`)
+    revalidatePath(`/companies/${companyId}`)
+    return {}
+  } catch (err) {
+    console.error('updateCompanyPerson error:', err)
+    return { error: 'Kunne ikke opdatere tilknytning' }
   }
 }
 
-export async function updatePersonCompanyRole(
-  input: z.infer<typeof updatePersonCompanyRoleSchema>
-): Promise<ActionResult<{ id: string }>> {
-  const session = await auth()
-  if (!session?.user) return { error: 'Ikke autoriseret' }
+// ── DELETE COMPANY PERSON ─────────────────────────────────────────────────────
 
-  const parsed = updatePersonCompanyRoleSchema.safeParse(input)
-  if (!parsed.success) {
-    const firstError = parsed.error.errors[0]
-    return { error: firstError?.message ?? 'Ugyldigt input' }
-  }
-
-  const { companyPersonId, role, title, startDate, endDate } = parsed.data
-
+export async function deleteCompanyPerson(input: { companyPersonId: string; personId: string; companyId: string }): Promise<ActionResult> {
   try {
-    const existing = await prisma.companyPerson.findUnique({
+    const user = await getCurrentUser()
+    if (!user) return { error: 'Ikke logget ind' }
+
+    // Verificer adgang
+    const existing = await prisma.companyPerson.findFirst({
       where: {
-        id: companyPersonId,
-        organizationId: session.user.organizationId,
-        deletedAt: null,
+        id: input.companyPersonId,
+        company: { organizationId: user.organizationId },
       },
+      select: { id: true },
+    })
+    if (!existing) return { error: 'Tilknytning ikke fundet' }
+
+    await prisma.companyPerson.delete({
+      where: { id: input.companyPersonId },
     })
 
-    if (!existing) return { error: 'Tilknytningen blev ikke fundet' }
-
-    const updated = await prisma.companyPerson.update({
-      where: { id: companyPersonId },
-      data: {
-        ...(role !== undefined && { role }),
-        ...(title !== undefined && { title: title ?? null }),
-        ...(startDate !== undefined && { startDate: startDate ?? null }),
-        ...(endDate !== undefined && { endDate: endDate ?? null }),
-        updatedAt: new Date(),
-      },
-    })
-
-    await prisma.auditLog.create({
-      data: {
-        organizationId: session.user.organizationId,
-        userId: session.user.id,
-        action: 'UPDATE',
-        resourceType: 'companyPerson',
-        resourceId: companyPersonId,
-      },
-    })
-
-    revalidatePath('/persons')
-    return { data: { id: updated.id } }
-  } catch (error) {
-    console.error('updatePersonCompanyRole error:', error)
-    return { error: 'Rollen kunne ikke opdateres' }
-  }
-}
-
-export async function importOutlookContactsBatch(
-  input: z.infer<typeof importOutlookContactsBatchSchema>
-): Promise<ActionResult<OutlookImportResult>> {
-  const session = await auth()
-  if (!session?.user) return { error: 'Ikke autoriseret' }
-
-  const parsed = importOutlookContactsBatchSchema.safeParse(input)
-  if (!parsed.success) {
-    const firstError = parsed.error.errors[0]
-    return { error: firstError?.message ?? 'Ugyldigt input' }
-  }
-
-  const { contacts } = parsed.data
-
-  let created = 0
-  let skipped = 0
-  let failed = 0
-  const errors: string[] = []
-
-  for (const contact of contacts) {
-    try {
-      // Tjek om personen allerede eksisterer (via email)
-      if (contact.email) {
-        const existing = await prisma.person.findFirst({
-          where: {
-            email: contact.email,
-            organizationId: session.user.organizationId,
-            deletedAt: null,
-          },
-        })
-        if (existing) {
-          skipped++
-          continue
-        }
-      }
-
-      await prisma.person.create({
-        data: {
-          organizationId: session.user.organizationId,
-          firstName: contact.firstName,
-          lastName: contact.lastName,
-          email: contact.email ?? null,
-          phone: contact.phone ?? null,
-          notes: contact.notes ?? null,
-          createdBy: session.user.id,
-        },
-      })
-      created++
-    } catch (err) {
-      console.error('importOutlookContactsBatch item error:', err)
-      failed++
-      errors.push(`${contact.firstName} ${contact.lastName}: Import fejlede`)
-    }
-  }
-
-  await prisma.auditLog.create({
-    data: {
-      organizationId: session.user.organizationId,
-      userId: session.user.id,
-      action: 'IMPORT',
-      resourceType: 'person',
-      resourceId: session.user.organizationId,
-      metadata: { created, skipped, failed },
-    },
-  })
-
-  revalidatePath('/persons')
-  return {
-    data: {
-      created,
-      skipped,
-      failed,
-      errors,
-    },
+    revalidatePath(`/persons/${input.personId}`)
+    revalidatePath(`/companies/${input.companyId}`)
+    return {}
+  } catch (err) {
+    console.error('deleteCompanyPerson error:', err)
+    return { error: 'Kunne ikke slette tilknytning' }
   }
 }

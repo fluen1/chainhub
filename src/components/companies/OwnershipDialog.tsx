@@ -20,14 +20,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { createOwnershipSchema, updateOwnershipSchema, CreateOwnershipInput } from '@/lib/validations/company'
+import { createOwnershipSchema, updateOwnershipSchema, type CreateOwnershipInput } from '@/lib/validations/company'
 import { createOwnership, updateOwnership } from '@/actions/companies'
-import { OwnershipWithRelations } from '@/types/company'
 import { Loader2 } from 'lucide-react'
+
+interface OwnershipData {
+  id: string
+  ownerPersonId: string | null
+  ownerCompanyId: string | null
+  ownershipPct: number | string
+  shareClass: string | null
+  effectiveDate: string | null
+  contractId: string | null
+}
 
 interface OwnershipDialogProps {
   companyId: string
-  ownership?: OwnershipWithRelations | null
+  ownership?: OwnershipData | null
   open: boolean
   onOpenChange: (open: boolean) => void
 }
@@ -113,67 +122,31 @@ export function OwnershipDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>
-            {isEditing ? 'Rediger ejerskab' : 'Tilføj ejerskab'}
-          </DialogTitle>
+          <DialogTitle>{isEditing ? 'Rediger ejerskab' : 'Tilføj ejer'}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           {!isEditing && (
-            <>
-              <div className="space-y-2">
-                <Label>Ejertype</Label>
-                <Select
-                  value={form.watch('ownerType')}
-                  onValueChange={(value) =>
-                    form.setValue('ownerType', value as 'person' | 'company')
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="person">Person</SelectItem>
-                    <SelectItem value="company">Selskab</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {form.watch('ownerType') === 'person' ? (
-                <div className="space-y-2">
-                  <Label htmlFor="ownerPersonId">Person ID</Label>
-                  <Input
-                    id="ownerPersonId"
-                    {...form.register('ownerPersonId')}
-                    placeholder="Person ID"
-                  />
-                  {form.formState.errors.ownerPersonId && (
-                    <p className="text-sm text-red-500">
-                      {form.formState.errors.ownerPersonId.message}
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <Label htmlFor="ownerCompanyId">Selskab ID</Label>
-                  <Input
-                    id="ownerCompanyId"
-                    {...form.register('ownerCompanyId')}
-                    placeholder="Selskab ID"
-                  />
-                  {form.formState.errors.ownerCompanyId && (
-                    <p className="text-sm text-red-500">
-                      {form.formState.errors.ownerCompanyId.message}
-                    </p>
-                  )}
-                </div>
-              )}
-            </>
+            <div className="space-y-1">
+              <Label>Ejertype</Label>
+              <Select
+                value={form.watch('ownerType')}
+                onValueChange={(v) => form.setValue('ownerType', v as 'person' | 'company')}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Vælg type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="person">Person</SelectItem>
+                  <SelectItem value="company">Selskab</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           )}
 
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label htmlFor="ownershipPct">Ejerandel (%)</Label>
             <Input
               id="ownershipPct"
@@ -184,23 +157,21 @@ export function OwnershipDialog({
               {...form.register('ownershipPct', { valueAsNumber: true })}
             />
             {form.formState.errors.ownershipPct && (
-              <p className="text-sm text-red-500">
-                {form.formState.errors.ownershipPct.message}
-              </p>
+              <p className="text-xs text-red-600">{form.formState.errors.ownershipPct.message}</p>
             )}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="shareClass">Aktieklasse (valgfri)</Label>
+          <div className="space-y-1">
+            <Label htmlFor="shareClass">Aktieklasse</Label>
             <Input
               id="shareClass"
               {...form.register('shareClass')}
-              placeholder="f.eks. A-aktier"
+              placeholder="fx A-aktier"
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="effectiveDate">Ikrafttrædelsesdato (valgfri)</Label>
+          <div className="space-y-1">
+            <Label htmlFor="effectiveDate">Ikrafttrædelsesdato</Label>
             <Input
               id="effectiveDate"
               type="date"
@@ -209,16 +180,12 @@ export function OwnershipDialog({
           </div>
 
           <div className="flex justify-end gap-3 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Annuller
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isEditing ? 'Gem ændringer' : 'Tilføj ejerskab'}
+              {isEditing ? 'Gem ændringer' : 'Tilføj ejer'}
             </Button>
           </div>
         </form>

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { OwnershipWithRelations } from '@/types/company'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -20,9 +19,32 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 
+interface OwnerPerson {
+  id: string
+  firstName: string
+  lastName: string
+}
+
+interface OwnerCompany {
+  id: string
+  name: string
+}
+
+interface OwnershipItem {
+  id: string
+  ownerPersonId: string | null
+  ownerCompanyId: string | null
+  ownershipPct: number | string
+  shareClass: string | null
+  effectiveDate: string | null
+  contractId: string | null
+  ownerPerson: OwnerPerson | null
+  ownerCompany: OwnerCompany | null
+}
+
 interface OwnershipSectionProps {
   companyId: string
-  ownerships: OwnershipWithRelations[]
+  ownerships: OwnershipItem[]
   canEdit: boolean
 }
 
@@ -32,7 +54,7 @@ export function OwnershipSection({
   canEdit,
 }: OwnershipSectionProps) {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [editingOwnership, setEditingOwnership] = useState<OwnershipWithRelations | null>(null)
+  const [editingOwnership, setEditingOwnership] = useState<OwnershipItem | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const totalOwnership = ownerships.reduce(
@@ -83,61 +105,54 @@ export function OwnershipSection({
             </div>
           ) : (
             <div className="space-y-3">
-              {ownerships.map((ownership) => (
-                <div
-                  key={ownership.id}
-                  className="flex items-center justify-between p-3 border rounded-lg"
-                >
-                  <div className="flex items-center gap-3 flex-1">
-                    {ownership.ownerPersonId ? (
-                      <Users className="h-5 w-5 text-gray-400" />
-                    ) : (
-                      <Building2 className="h-5 w-5 text-gray-400" />
-                    )}
-                    <div>
-                      <p className="font-medium">
-                        {ownership.ownerPerson
-                          ? `${ownership.ownerPerson.firstName} ${ownership.ownerPerson.lastName}`
-                          : ownership.ownerCompany
-                          ? (ownership.ownerCompany as any).name
-                          : 'Ukendt'}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="outline" className="text-xs">
-                          {Number(ownership.ownershipPct).toFixed(2)}%
-                        </Badge>
-                        {ownership.shareClass && (
-                          <span className="text-xs text-gray-500">
-                            {ownership.shareClass}
-                          </span>
-                        )}
+              {ownerships.map((ownership) => {
+                const ownerName = ownership.ownerPerson
+                  ? `${ownership.ownerPerson.firstName} ${ownership.ownerPerson.lastName}`
+                  : ownership.ownerCompany
+                  ? ownership.ownerCompany.name
+                  : 'Ukendt ejer'
+                const Icon = ownership.ownerPersonId ? Users : Building2
+
+                return (
+                  <div
+                    key={ownership.id}
+                    className="flex items-center justify-between p-3 border rounded-lg"
+                  >
+                    <div className="flex items-center gap-3 flex-1">
+                      <Icon className="h-5 w-5 text-gray-400" />
+                      <div>
+                        <p className="font-medium text-gray-900">{ownerName}</p>
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                          <span>{Number(ownership.ownershipPct).toFixed(2)}%</span>
+                          {ownership.shareClass && (
+                            <Badge variant="outline" className="text-xs">
+                              {ownership.shareClass}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </div>
+                    {canEdit && (
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditingOwnership(ownership)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDeletingId(ownership.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                  {canEdit && (
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setEditingOwnership(ownership)
-                          setIsDialogOpen(true)
-                        }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setDeletingId(ownership.id)}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </CardContent>
@@ -145,18 +160,20 @@ export function OwnershipSection({
 
       <OwnershipDialog
         companyId={companyId}
-        ownership={editingOwnership}
         open={isDialogOpen}
-        onOpenChange={(open) => {
-          setIsDialogOpen(open)
-          if (!open) setEditingOwnership(null)
-        }}
+        onOpenChange={setIsDialogOpen}
       />
 
-      <AlertDialog
-        open={!!deletingId}
-        onOpenChange={(open) => !open && setDeletingId(null)}
-      >
+      {editingOwnership && (
+        <OwnershipDialog
+          companyId={companyId}
+          ownership={editingOwnership}
+          open={!!editingOwnership}
+          onOpenChange={(open) => { if (!open) setEditingOwnership(null) }}
+        />
+      )}
+
+      <AlertDialog open={!!deletingId} onOpenChange={(open) => { if (!open) setDeletingId(null) }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Slet ejerskab</AlertDialogTitle>
@@ -166,10 +183,7 @@ export function OwnershipSection({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Annuller</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-red-600 hover:bg-red-700"
-              onClick={() => deletingId && handleDelete(deletingId)}
-            >
+            <AlertDialogAction onClick={() => deletingId && handleDelete(deletingId)}>
               Slet
             </AlertDialogAction>
           </AlertDialogFooter>

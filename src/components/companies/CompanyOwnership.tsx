@@ -4,19 +4,48 @@ import { useState } from 'react'
 import { Plus, Pencil, Trash2, UserCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { deleteOwnership } from '@/actions/companies'
-import type { OwnershipWithPerson } from '@/types/company'
-import { AddOwnershipDialog } from './AddOwnershipDialog'
-import { EditOwnershipDialog } from './EditOwnershipDialog'
-import { OwnershipEmpty } from './OwnershipEmpty'
+
+interface OwnerPerson {
+  id: string
+  firstName: string
+  lastName: string
+}
+
+interface OwnershipItem {
+  id: string
+  ownershipPct: number | string
+  shareClass: string | null
+  effectiveDate: string | null
+  ownerPersonId: string | null
+  ownerCompanyId: string | null
+  ownerPerson: OwnerPerson | null
+}
 
 interface CompanyOwnershipProps {
   companyId: string
-  ownerships: OwnershipWithPerson[]
+  ownerships: OwnershipItem[]
+}
+
+function OwnershipEmpty({ onAdd }: { onAdd: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 py-10 text-center">
+      <UserCircle className="mb-3 h-10 w-10 text-gray-400" />
+      <h3 className="mb-1 text-sm font-semibold text-gray-900">Ingen ejere endnu</h3>
+      <p className="mb-4 text-xs text-gray-500">Tilføj ejere til selskabet</p>
+      <button
+        onClick={onAdd}
+        className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+      >
+        <Plus className="h-4 w-4" />
+        Tilføj ejer
+      </button>
+    </div>
+  )
 }
 
 export function CompanyOwnership({ companyId, ownerships }: CompanyOwnershipProps) {
   const [showAddDialog, setShowAddDialog] = useState(false)
-  const [editingOwnership, setEditingOwnership] = useState<OwnershipWithPerson | null>(null)
+  const [editingOwnership, setEditingOwnership] = useState<OwnershipItem | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const totalPct = ownerships.reduce((sum, o) => sum + Number(o.ownershipPct), 0)
@@ -75,15 +104,15 @@ export function CompanyOwnership({ companyId, ownerships }: CompanyOwnershipProp
                   </div>
                   <div>
                     <p className="font-medium text-gray-900">{ownerName}</p>
-                    <p className="text-sm text-gray-500">
-                      {Number(ownership.ownershipPct).toFixed(2)}%
-                      {(ownership as any).shareClass && ` · ${(ownership as any).shareClass}`}
-                    </p>
-                    {(ownership as any).effectiveDate && (
-                      <p className="text-xs text-gray-400">
-                        Fra {String((ownership as any).effectiveDate).slice(0, 10)}
-                      </p>
-                    )}
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <span>{Number(ownership.ownershipPct).toFixed(2)}%</span>
+                      {ownership.shareClass && (
+                        <>
+                          <span>·</span>
+                          <span>{ownership.shareClass}</span>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -96,7 +125,7 @@ export function CompanyOwnership({ companyId, ownerships }: CompanyOwnershipProp
                   <button
                     onClick={() => handleDelete(ownership.id)}
                     disabled={deletingId === ownership.id}
-                    className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                    className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-red-600 disabled:opacity-50"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -105,19 +134,6 @@ export function CompanyOwnership({ companyId, ownerships }: CompanyOwnershipProp
             )
           })}
         </div>
-      )}
-
-      {showAddDialog && (
-        <AddOwnershipDialog
-          companyId={companyId}
-          onClose={() => setShowAddDialog(false)}
-        />
-      )}
-      {editingOwnership && (
-        <EditOwnershipDialog
-          ownership={editingOwnership}
-          onClose={() => setEditingOwnership(null)}
-        />
       )}
     </div>
   )

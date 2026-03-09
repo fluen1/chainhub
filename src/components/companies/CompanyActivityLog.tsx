@@ -2,9 +2,16 @@
 
 import { useEffect, useState } from 'react'
 import { getActivityLog } from '@/actions/companies'
-import type { ActivityLogEntry } from '@/types/company'
 import { formatDate } from '@/lib/utils'
 import { Activity } from 'lucide-react'
+
+interface ActivityLogEntry {
+  id: string
+  action: string
+  createdAt: string | Date
+  resourceType?: string
+  description?: string | null
+}
 
 interface CompanyActivityLogProps {
   companyId: string
@@ -16,6 +23,28 @@ const ACTION_LABELS: Record<string, string> = {
   UPDATE: 'Opdaterede selskabet',
   DELETE: 'Slettede selskabet',
   DOWNLOAD: 'Downloadede dokument',
+}
+
+function ActivityLogSkeleton() {
+  return (
+    <div className="space-y-2">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="h-12 rounded bg-gray-100 animate-pulse" />
+      ))}
+    </div>
+  )
+}
+
+function ActivityLogEmpty() {
+  return (
+    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 py-10 text-center">
+      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
+        <Activity className="h-6 w-6 text-gray-400" />
+      </div>
+      <h3 className="mb-1 text-sm font-semibold text-gray-900">Ingen aktivitet endnu</h3>
+      <p className="text-xs text-gray-500">Aktivitet registreres automatisk</p>
+    </div>
+  )
 }
 
 export function CompanyActivityLog({ companyId }: CompanyActivityLogProps) {
@@ -31,9 +60,9 @@ export function CompanyActivityLog({ companyId }: CompanyActivityLogProps) {
       setIsLoading(false)
       if (result.error) {
         setError(result.error)
-      } else {
-        setEntries(result.data!.entries)
-        setTotal(result.data!.total)
+      } else if (result.data) {
+        setEntries(result.data.entries as ActivityLogEntry[])
+        setTotal(result.data.total)
       }
     }
     load()
@@ -77,46 +106,13 @@ export function CompanyActivityLog({ companyId }: CompanyActivityLogProps) {
                   {ACTION_LABELS[entry.action] ?? entry.action}
                 </p>
                 <p className="text-xs text-gray-400">
-                  {formatDate(entry.createdAt)}
+                  {formatDate(entry.createdAt instanceof Date ? entry.createdAt.toISOString() : entry.createdAt)}
                 </p>
               </div>
             </div>
           ))}
         </div>
       )}
-    </div>
-  )
-}
-
-function ActivityLogEmpty() {
-  return (
-    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-gray-300 py-10 text-center">
-      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
-        <Activity className="h-6 w-6 text-gray-400" />
-      </div>
-      <h3 className="mb-1 text-sm font-semibold text-gray-900">Ingen aktivitet</h3>
-      <p className="text-sm text-gray-500">Aktivitet vil vises her efterhånden som den sker.</p>
-    </div>
-  )
-}
-
-function ActivityLogSkeleton() {
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="h-5 w-32 animate-pulse rounded bg-gray-200" />
-      </div>
-      <div className="space-y-1">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="flex items-start gap-3 rounded-lg px-3 py-2">
-            <div className="h-7 w-7 animate-pulse rounded-full bg-gray-200" />
-            <div className="flex-1 space-y-1.5 pt-1">
-              <div className="h-4 w-3/4 animate-pulse rounded bg-gray-200" />
-              <div className="h-3 w-1/3 animate-pulse rounded bg-gray-100" />
-            </div>
-          </div>
-        ))}
-      </div>
     </div>
   )
 }

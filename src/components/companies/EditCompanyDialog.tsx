@@ -4,10 +4,22 @@ import { useState } from 'react'
 import { X } from 'lucide-react'
 import { toast } from 'sonner'
 import { updateCompany } from '@/actions/companies'
-import type { CompanyWithRelations } from '@/types/company'
+
+interface CompanyData {
+  id: string
+  name: string
+  cvr: string | null
+  companyType: string | null
+  address: string | null
+  city: string | null
+  postalCode: string | null
+  foundedDate: string | Date | null
+  status: string
+  notes: string | null
+}
 
 interface EditCompanyDialogProps {
-  company: CompanyWithRelations
+  company: CompanyData
   onClose: () => void
 }
 
@@ -23,16 +35,23 @@ const STATUS_OPTIONS = [
 
 export function EditCompanyDialog({ company, onClose }: EditCompanyDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const getFoundedDateStr = () => {
+    if (!company.foundedDate) return ''
+    if (company.foundedDate instanceof Date) {
+      return company.foundedDate.toISOString().split('T')[0]
+    }
+    return String(company.foundedDate).split('T')[0]
+  }
+
   const [form, setForm] = useState({
     name: company.name,
     cvr: company.cvr ?? '',
-    companyType: company.companyType ?? '' as CompanyType | '',
+    companyType: (company.companyType ?? '') as CompanyType | '',
     address: company.address ?? '',
     city: company.city ?? '',
     postalCode: company.postalCode ?? '',
-    foundedDate: company.foundedDate
-      ? new Date(company.foundedDate).toISOString().split('T')[0]
-      : '',
+    foundedDate: getFoundedDateStr(),
     status: company.status,
     notes: company.notes ?? '',
   })
@@ -92,93 +111,42 @@ export function EditCompanyDialog({ company, onClose }: EditCompanyDialogProps) 
         <form onSubmit={handleSubmit} className="max-h-[70vh] overflow-y-auto">
           <div className="space-y-4 px-6 py-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Selskabsnavn <span className="text-red-500">*</span>
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Navn *</label>
               <input
-                name="name"
                 type="text"
-                required
+                name="name"
                 value={form.name}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                required
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">CVR-nummer</label>
-                <input
-                  name="cvr"
-                  type="text"
-                  value={form.cvr}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Selskabstype</label>
-                <select
-                  name="companyType"
-                  value={form.companyType}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                >
-                  <option value="">Vælg type</option>
-                  {COMPANY_TYPES.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
             <div>
-              <label className="block text-sm font-medium text-gray-700">Adresse</label>
+              <label className="block text-sm font-medium text-gray-700">CVR-nummer</label>
               <input
-                name="address"
                 type="text"
-                value={form.address}
+                name="cvr"
+                value={form.cvr}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                maxLength={8}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Postnummer</label>
-                <input
-                  name="postalCode"
-                  type="text"
-                  value={form.postalCode}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">By</label>
-                <input
-                  name="city"
-                  type="text"
-                  value={form.city}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Stiftelsesdato</label>
-              <input
-                name="foundedDate"
-                type="date"
-                value={form.foundedDate}
+              <label className="block text-sm font-medium text-gray-700">Selskabstype</label>
+              <select
+                name="companyType"
+                value={form.companyType}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="">Vælg type...</option>
+                {COMPANY_TYPES.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
             </div>
 
             <div>
@@ -187,24 +155,67 @@ export function EditCompanyDialog({ company, onClose }: EditCompanyDialogProps) 
                 name="status"
                 value={form.status}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
-                {STATUS_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
+                {STATUS_OPTIONS.map((s) => (
+                  <option key={s.value} value={s.value}>{s.label}</option>
                 ))}
               </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Adresse</label>
+              <input
+                type="text"
+                name="address"
+                value={form.address}
+                onChange={handleChange}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">By</label>
+                <input
+                  type="text"
+                  name="city"
+                  value={form.city}
+                  onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Postnummer</label>
+                <input
+                  type="text"
+                  name="postalCode"
+                  value={form.postalCode}
+                  onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Stiftelsesdato</label>
+              <input
+                type="date"
+                name="foundedDate"
+                value={form.foundedDate}
+                onChange={handleChange}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700">Noter</label>
               <textarea
                 name="notes"
-                rows={3}
                 value={form.notes}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                rows={3}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
           </div>
@@ -213,7 +224,7 @@ export function EditCompanyDialog({ company, onClose }: EditCompanyDialogProps) 
             <button
               type="button"
               onClick={onClose}
-              className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
               Annuller
             </button>

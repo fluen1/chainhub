@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { CompanyWithRelations } from '@/types/company'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -20,7 +19,25 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 
-type CompanyPersonWithRelations = CompanyWithRelations['persons'][number]
+interface Person {
+  id: string
+  firstName: string
+  lastName: string
+  email: string | null
+}
+
+interface CompanyPersonWithRelations {
+  id: string
+  companyId: string
+  personId: string
+  role: string
+  employmentType: string | null
+  startDate: string | null
+  endDate: string | null
+  anciennityStart: string | null
+  contractId: string | null
+  person: Person
+}
 
 interface EmployeesSectionProps {
   companyId: string
@@ -93,20 +110,19 @@ export function EmployeesSection({
                   key={cp.id}
                   className="flex items-center justify-between p-3 border rounded-lg"
                 >
-                  <div className="flex-1">
-                    <p className="font-medium">
-                      {cp.person.firstName} {cp.person.lastName}
-                    </p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="outline" className="text-xs">
-                        {cp.role}
-                      </Badge>
-                      {(cp as any).employmentType && (
-                        <span className="text-xs text-gray-500">
-                          {employmentTypeLabels[(cp as any).employmentType] ??
-                            (cp as any).employmentType}
-                        </span>
-                      )}
+                  <div className="flex items-center gap-3 flex-1">
+                    <div>
+                      <p className="font-medium text-gray-900">
+                        {cp.person.firstName} {cp.person.lastName}
+                      </p>
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <span>{cp.role}</span>
+                        {cp.employmentType && (
+                          <Badge variant="outline" className="text-xs">
+                            {employmentTypeLabels[cp.employmentType] ?? cp.employmentType}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
                   {canEdit && (
@@ -114,10 +130,7 @@ export function EmployeesSection({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => {
-                          setEditingPerson(cp)
-                          setIsDialogOpen(true)
-                        }}
+                        onClick={() => setEditingPerson(cp)}
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -125,9 +138,8 @@ export function EmployeesSection({
                         variant="ghost"
                         size="sm"
                         onClick={() => setDeletingId(cp.id)}
-                        className="text-red-500 hover:text-red-700"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-4 w-4 text-red-500" />
                       </Button>
                     </div>
                   )}
@@ -138,35 +150,34 @@ export function EmployeesSection({
         </CardContent>
       </Card>
 
-      {isDialogOpen && (
+      <CompanyPersonDialog
+        companyId={companyId}
+        roleType="employee"
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+      />
+
+      {editingPerson && (
         <CompanyPersonDialog
           companyId={companyId}
-          person={editingPerson ?? undefined}
-          open={isDialogOpen}
-          onOpenChange={(open) => {
-            setIsDialogOpen(open)
-            if (!open) setEditingPerson(null)
-          }}
+          companyPerson={editingPerson}
+          roleType="employee"
+          open={!!editingPerson}
+          onOpenChange={(open) => { if (!open) setEditingPerson(null) }}
         />
       )}
 
-      <AlertDialog
-        open={!!deletingId}
-        onOpenChange={(open) => !open && setDeletingId(null)}
-      >
+      <AlertDialog open={!!deletingId} onOpenChange={(open) => { if (!open) setDeletingId(null) }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Fjern medarbejder</AlertDialogTitle>
             <AlertDialogDescription>
-              Er du sikker på, at du vil fjerne denne medarbejder? Dette kan ikke fortrydes.
+              Er du sikker på, at du vil fjerne denne medarbejder fra selskabet?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Annuller</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-red-600 hover:bg-red-700"
-              onClick={() => deletingId && handleDelete(deletingId)}
-            >
+            <AlertDialogAction onClick={() => deletingId && handleDelete(deletingId)}>
               Fjern
             </AlertDialogAction>
           </AlertDialogFooter>
