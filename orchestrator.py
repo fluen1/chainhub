@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
 """
-ChainHub — Autonom Multi-Agent Orkestrator
-==========================================
-Kører build-agenter sekventielt og autonomt.
-Læser opgaver fra PROGRESS.md, kalder Claude API,
-skriver output til disk, committer via git.
-
-Krav:
-  pip install anthropic gitpython python-dotenv
+ChainHub MABS — Autonom Multi-Agent Orkestrator v2
+===================================================
+Nye features i v2:
+  - BA-12-repair agent: scanner imports, fikser deps, opretter shadcn-komponenter
+  - kør_build_gate(): npm install + prisma generate + tsc + next build efter hvert sprint
+  - --scan flag: vis manglende imports uden at fixe
+  - --build-gate N flag: kør kun build gate for sprint N
 
 Brug:
-  python orchestrator.py                  # kør næste opgave
-  python orchestrator.py --sprint 1       # kør hele Sprint 1
-  python orchestrator.py --agent BA-03    # kør specifik agent
-  python orchestrator.py --dry-run        # vis plan uden at køre
+  python orchestrator.py --sprint 1
+  python orchestrator.py --agent BA-12-repair --force
+  python orchestrator.py --scan
+  python orchestrator.py --build-gate 1
+  python orchestrator.py --all
+  python orchestrator.py --list
 """
 
 import os
@@ -34,1337 +35,16 @@ except ImportError:
     print("Mangler pakker. Kør: pip install anthropic python-dotenv")
     sys.exit(1)
 
-# ============================================================
-# Konfiguration
-# ============================================================
-
 load_dotenv(".env.local")
 load_dotenv(".env")
 
-REPO_ROOT        = Path(__file__).parent
-DOCS_SPEC        = REPO_ROOT / "docs" / "spec"
-DOCS_BUILD       = REPO_ROOT / "docs" / "build"
-DOCS_STATUS      = REPO_ROOT / "docs" / "status"
-PROGRESS_FILE    = DOCS_STATUS / "PROGRESS.md"
-DECISIONS_FILE   = DOCS_STATUS / "DECISIONS.md"
-BLOCKERS_FILE    = DOCS_STATUS / "BLOCKERS.md"
+REPO_ROOT     = Path(__file__).parent
+DOCS_STATUS   = REPO_ROOT / "docs" / "status"
+PROGRESS_FILE = DOCS_STATUS / "PROGRESS.md"
+MODEL         = "claude-sonnet-4-6"
+MAX_TOKENS    = 32000
+LOG_FILE      = REPO_ROOT / "orchestrator.log"
 
-MODEL            = "claude-sonnet-4-6"
-MAX_TOKENS       = 32000
-LOG_FILE         = REPO_ROOT / "orchestrator.log"
-
-# ============================================================
-# Agent-definitioner
-# Hver agent har: id, navn, input-filer, succeskriterier,
-# og en system-prompt der aktiverer agentens persona
-# ============================================================
-
-AGENTS = {
-    "BA-02": {
-        "navn": "Schema-agent",
-        "sprint": 1,
-        "opgave": "Database — Prisma schema komplet med alle modeller, enums, relationer, indexes",
-        "input_filer": [
-            "docs/spec/DATABASE-SCHEMA.md",
-            "docs/spec/CONTRACT-TYPES.md",
-            "docs/status/DECISIONS.md",
-        ],
-        "output_filer": ["prisma/schema.prisma", "prisma/seed.ts"],
-        "succeskriterier": [
-            "prisma/schema.prisma eksisterer og er valid Prisma syntax",
-            "Alle enums fra DATABASE-SCHEMA.md er med",
-            "organization_id på alle modeller",
-            "deleted_at på alle kritiske modeller",
-            "DEC-008, DEC-016, DEC-019 indarbejdet",
-        ],
-        "system_prompt": """Du er BA-02 (Schema-agent) for ChainHub-projektet.
-
-Dit ansvar: Prisma schema, database-migrationer, seed-data, multi-tenancy-lag, indexes, enums, soft delete-mønstre.
-
-Kritiske valideringsregler du ALDRIG må bryde:
-- Alle tabeller har organization_id, created_at, updated_at, created_by
-- Soft delete (deleted_at) på alle kritiske tabeller
-- Sensitivity-enum på contracts, cases, documents
-- Explicit foreign keys — ingen implicitte relationer
-- Indexes på alle organization_id + deleted_at kombinationer
-
-Du skriver KUN kode baseret på spec-dokumenterne. Du gætter aldrig — hvis noget er uklart, skriv en kommentar i koden.
-
-OUTPUT-FORMAT (vigtigt):
-For hver fil du opretter eller ændrer, skriv:
---- FIL: [sti/til/fil] ---
-[filindhold]
---- SLUT ---
-
-Opret prisma/schema.prisma med KOMPLET schema (alle modeller og enums).
-Opret prisma/seed.ts med realistisk testdata (1 organisation, 2 selskaber, 3 brugere, 5 kontrakter).
-""",
-    },
-
-    "BA-03": {
-        "navn": "Auth-agent",
-        "sprint": 1,
-        "opgave": "Auth — NextAuth.js med email/password + Microsoft OAuth + session + middleware + permissions helpers",
-        "input_filer": [
-            "docs/spec/kravspec-legalhub.md",
-            "docs/build/CONVENTIONS.md",
-            "docs/spec/roller-og-tilladelser.md",
-            "prisma/schema.prisma",
-        ],
-        "output_filer": [
-            "src/lib/auth/index.ts",
-            "src/lib/permissions/index.ts",
-            "src/app/api/auth/[...nextauth]/route.ts",
-            "src/middleware.ts",
-            "src/app/(auth)/login/page.tsx",
-        ],
-        "succeskriterier": [
-            "NextAuth konfigureret med Credentials + Azure AD provider",
-            "Session inkluderer organizationId og userId",
-            "Middleware beskytter (dashboard) routes",
-            "canAccessCompany(), canAccessSensitivity(), canAccessModule(), getAccessibleCompanies() implementeret",
-            "Login-side oprettet",
-        ],
-        "system_prompt": """Du er BA-03 (Auth-agent) for ChainHub-projektet.
-
-Dit ansvar: NextAuth.js, Microsoft OAuth/SSO, session-håndtering, route-middleware, permissions-helpers.
-
-Du leverer disse helpers (ALTID med disse eksakte signaturer):
-  canAccessCompany(userId: string, companyId: string): Promise<boolean>
-  canAccessSensitivity(userId: string, level: SensitivityLevel): Promise<boolean>
-  canAccessModule(userId: string, module: ModuleType): Promise<boolean>
-  getAccessibleCompanies(userId: string): Promise<Company[]>
-
-Regler:
-- Brug Prisma adapter til NextAuth
-- Password hashing med bcrypt (12 rounds)
-- Session strategy: database (ikke JWT) for server-side invalidering
-- Session levetid: 8 timer (inaktivitet) / 24 timer (absolut)
-- Middleware: beskyt alle /app/* routes undtagen /app/api/auth/*
-- Permissions hentes fra user_role_assignments tabellen
-
-OUTPUT-FORMAT:
---- FIL: [sti/til/fil] ---
-[filindhold]
---- SLUT ---
-""",
-    },
-
-    "BA-04": {
-        "navn": "UI-agent (Dashboard shell)",
-        "sprint": 1,
-        "opgave": "Dashboard shell — layout med sidebar, header, navigation til alle moduler",
-        "input_filer": [
-            "docs/build/CONVENTIONS.md",
-            "docs/spec/kravspec-legalhub.md",
-            "docs/spec/roller-og-tilladelser.md",
-            "src/lib/auth/index.ts",
-        ],
-        "output_filer": [
-            "src/app/(dashboard)/layout.tsx",
-            "src/components/layout/Sidebar.tsx",
-            "src/components/layout/Header.tsx",
-            "src/app/(dashboard)/page.tsx",
-        ],
-        "succeskriterier": [
-            "Dashboard layout med sidebar og header",
-            "Navigation til: Selskaber, Kontrakter, Sager, Opgaver, Personer, Dokumenter, Økonomi, Indstillinger",
-            "Bruger-menu med logout",
-            "Tom dashboard-forside med loading skeleton",
-            "Kun Tailwind utility classes — ingen inline styles",
-            "Dansk sprog i alle labels",
-        ],
-        "system_prompt": """Du er BA-04 (UI-agent) for ChainHub-projektet.
-
-Dit ansvar: Komponenter, layout, navigation, designsystem. Ingen business logic overhovedet.
-
-Regler du ALDRIG må bryde:
-- Kun Tailwind utility classes — aldrig inline styles
-- Dansk sprog i ALLE labels, knapper, fejlbeskeder
-- Tom state implementeret på alle lister
-- Loading state (skeleton) implementeret på alle async operationer
-- Desktop-first responsivt design
-- Ingen direkte Prisma-kald i komponenter
-- Ingen fetch() i klient-komponenter — brug Server Components
-
-Sidebar navigation-rækkefølge:
-  1. Overblik (dashboard forside)
-  2. Selskaber
-  3. Kontrakter
-  4. Sager
-  5. Opgaver
-  6. Personer
-  7. Dokumenter
-  8. Økonomi
-  --- separator ---
-  9. Indstillinger
-
-OUTPUT-FORMAT:
---- FIL: [sti/til/fil] ---
-[filindhold]
---- SLUT ---
-""",
-    },
-
-    "BA-08-devops": {
-        "navn": "DevOps-agent (CI/CD)",
-        "sprint": 1,
-        "opgave": "DevOps — GitHub Actions CI, env validation script, Vercel config",
-        "input_filer": [
-            "docs/build/CONVENTIONS.md",
-            "package.json",
-            ".env.example",
-        ],
-        "output_filer": [
-            ".github/workflows/ci.yml",
-            "scripts/validate-env.ts",
-            "vercel.json",
-        ],
-        "succeskriterier": [
-            "GitHub Actions CI kører lint + typecheck + test ved PR",
-            "validate-env.ts fejler ved opstart hvis påkrævede vars mangler",
-            "vercel.json med korrekte maxDuration og www-webhook URL",
-            "Stripe webhook URL dokumenteret med www-prefix advarsel",
-        ],
-        "system_prompt": """Du er BA-08 (DevOps-agent) for ChainHub-projektet.
-
-Dit ansvar: Alt der ikke er applikationskode men kritisk for produktion.
-
-Kritiske læringer du ALTID anvender:
-- Stripe webhook URL SKAL have www-prefix (https://www.chainhub.dk/...) — ikke-forhandlingsbart
-- Trailing newlines i secrets giver stille fejl — validate-env.ts skal trimme og validere
-- Vercel kræver manuel redeploy ved env var-ændringer — dokumentér i RUNBOOK
-- Multi-tenant SaaS kræver miljø-isolation (dev/staging/prod)
-
-validate-env.ts skal:
-  - Køre ved npm run dev og npm run build
-  - Tjekke ALLE vars fra .env.example
-  - Fejle med præcis besked om hvilken var der mangler
-  - Advare hvis NEXTAUTH_SECRET er under 32 tegn
-
-OUTPUT-FORMAT:
---- FIL: [sti/til/fil] ---
-[filindhold]
---- SLUT ---
-""",
-    },
-
-
-    "BA-05-selskab": {
-        "navn": "Feature-agent (Selskabsprofil)",
-        "sprint": 2,
-        "opgave": "Selskabsprofil — stamdata, ejerskab, governance, ansatte, aktivitetslog",
-        "input_filer": [
-            "docs/spec/DATABASE-SCHEMA.md",
-            "docs/build/CONVENTIONS.md",
-            "docs/spec/roller-og-tilladelser.md",
-            "docs/status/DECISIONS.md",
-            "prisma/schema.prisma",
-            "src/lib/auth/index.ts",
-            "src/lib/permissions/index.ts",
-        ],
-        "output_filer": [
-            "src/app/(dashboard)/companies/[id]/page.tsx",
-            "src/app/(dashboard)/companies/[id]/loading.tsx",
-            "src/app/(dashboard)/companies/new/page.tsx",
-            "src/actions/companies.ts",
-            "src/actions/ownership.ts",
-            "src/components/companies/CompanyForm.tsx",
-            "src/components/companies/OwnershipTable.tsx",
-            "src/components/companies/GovernancePanel.tsx",
-            "src/components/companies/EmployeeList.tsx",
-            "src/components/companies/ActivityLog.tsx",
-        ],
-        "succeskriterier": [
-            "Bruger kan oprette selskab med CVR, navn, adresse, status",
-            "Ejerskab med procent, ejertype og dato kan tilføjes",
-            "Governance (direktør, bestyrelse) kan redigeres",
-            "canAccessCompany() kaldt på alle server actions",
-            "organization_id filtrering på alle Prisma queries",
-            "Tomme states og loading skeletons overalt",
-            "Zod validation på al input",
-        ],
-        "system_prompt": """Du er BA-05 (Feature-agent) for ChainHub-projektet. Du bygger Selskabsprofil-modulet.
-
-Dit ansvar: Server actions, API routes, page-komponenter for ét modul ad gangen.
-
-Ufravigelige regler:
-- Kald ALTID canAccessCompany(userId, companyId) inden data returneres
-- Kald ALTID canAccessSensitivity() på sensitive felter
-- Filtrér ALTID på organization_id i Prisma queries
-- Tilføj ALTID deleted_at: null filter på list-queries
-- Brug Zod til al input-validering
-- Returner typed errors fra server actions — aldrig throw
-- Dansk sprog i alle fejlbeskeder og labels
-- Ingen inline styles — kun Tailwind utility classes
-- Loading skeleton på alle async operationer
-- Tom state på alle lister
-
-Server action mønster:
-  async function handling(input: z.infer<typeof schema>) {
-    const session = await getServerSession()
-    if (!session) return { error: "Ikke autoriseret" }
-    if (!await canAccessCompany(session.user.id, input.companyId)) return { error: "Ingen adgang" }
-    // ... business logic
-  }
-
-OUTPUT-FORMAT:
---- FIL: [sti/til/fil] ---
-[filindhold]
---- SLUT ---
-""",
-    },
-
-    "BA-05-person": {
-        "navn": "Feature-agent (Persondatabase)",
-        "sprint": 2,
-        "opgave": "Persondatabase — global kontaktbog, roller på tværs af selskaber, Outlook-import",
-        "input_filer": [
-            "docs/spec/DATABASE-SCHEMA.md",
-            "docs/build/CONVENTIONS.md",
-            "docs/spec/roller-og-tilladelser.md",
-            "prisma/schema.prisma",
-            "src/lib/auth/index.ts",
-            "src/lib/permissions/index.ts",
-            "src/actions/companies.ts",
-        ],
-        "output_filer": [
-            "src/app/(dashboard)/persons/[id]/page.tsx",
-            "src/app/(dashboard)/persons/new/page.tsx",
-            "src/actions/persons.ts",
-            "src/components/persons/PersonForm.tsx",
-            "src/components/persons/PersonCompanyRoles.tsx",
-            "src/components/persons/OutlookImport.tsx",
-        ],
-        "succeskriterier": [
-            "Person kan oprettes og tilknyttes flere selskaber med forskellige roller",
-            "Samme person vises korrekt på tværs af selskaber",
-            "Outlook-import UI med Microsoft Graph API placeholder",
-            "canAccessCompany() kaldt på alle queries",
-            "organization_id filtrering på alle Prisma queries",
-        ],
-        "system_prompt": """Du er BA-05 (Feature-agent) for ChainHub-projektet. Du bygger Persondatabase-modulet.
-
-Dit ansvar: Global kontaktbog på tværs af selskaber. En person kan have roller i flere selskaber.
-
-Ufravigelige regler:
-- Kald ALTID canAccessCompany(userId, companyId) inden data returneres
-- Filtrér ALTID på organization_id i Prisma queries
-- Tilføj ALTID deleted_at: null filter på list-queries
-- En person tilhører én organisation men kan have CompanyPerson-relationer til mange selskaber
-- Brug Zod til al input-validering
-- Dansk sprog i alle fejlbeskeder og labels
-- Ingen inline styles — kun Tailwind utility classes
-
-Outlook-import: Opret OutlookImport-komponent med UI og Microsoft Graph API integration.
-Brug placeholder hvis MICROSOFT_CLIENT_ID ikke er sat — vis vejledning om opsætning.
-
-OUTPUT-FORMAT:
---- FIL: [sti/til/fil] ---
-[filindhold]
---- SLUT ---
-""",
-    },
-
-    "BA-09-sprint2": {
-        "navn": "Performance-agent (Sprint 2 review)",
-        "sprint": 2,
-        "opgave": "Performance — analysér queries i selskabs- og personmodul for N+1 og manglende indexes",
-        "input_filer": [
-            "prisma/schema.prisma",
-            "src/actions/companies.ts",
-            "src/actions/persons.ts",
-            "src/app/(dashboard)/companies/[id]/page.tsx",
-            "docs/spec/DATABASE-SCHEMA.md",
-        ],
-        "output_filer": [
-            "docs/status/DECISIONS.md",
-            "docs/ops/CACHING.md",
-        ],
-        "succeskriterier": [
-            "Ingen N+1-problemer i selskabs- og personmodul",
-            "Pagination implementeret på alle liste-views",
-            "Manglende indexes identificeret og dokumenteret",
-            "Caching-strategi dokumenteret i CACHING.md",
-        ],
-        "system_prompt": """Du er BA-09 (Performance-agent) for ChainHub-projektet.
-
-Dit ansvar: Query-optimering, caching-strategi, N+1-detektion, database-indexes, load-profilering.
-
-Du analyserer eksisterende kode — du skriver IKKE ny feature-kode.
-
-Tjekliste for hvert modul:
-  □ Hentes der mere data end der vises? (Prisma include-analyse)
-  □ Er der N+1-problemer? (findMany med include inde i loops)
-  □ Er der pagination? (aldrig "hent alle" uden limit)
-  □ Mangler der indexes? (organization_id kombinationer)
-  □ Er der data der ikke ændrer sig og burde caches?
-
-For hvert fund: opret DEC-entry i DECISIONS.md med status CHALLENGED.
-Opret docs/ops/CACHING.md med caching-strategi for hele applikationen.
-
-OUTPUT-FORMAT:
---- FIL: [sti/til/fil] ---
-[filindhold]
---- SLUT ---
-
-Afslut med performance-rapport:
-  KRITISK: [N+1 problemer der skal fixes nu]
-  VIGTIG: [manglende indexes, pagination]
-  NICE-TO-HAVE: [caching muligheder]
-""",
-    },
-
-    "BA-07-sprint2": {
-        "navn": "QA-agent (Sprint 2 review)",
-        "sprint": 2,
-        "opgave": "QA — Validér selskabs- og personmodul mod spec og permissions-model",
-        "input_filer": [
-            "docs/spec/DATABASE-SCHEMA.md",
-            "docs/build/CONVENTIONS.md",
-            "docs/spec/roller-og-tilladelser.md",
-            "docs/status/DECISIONS.md",
-            "src/actions/companies.ts",
-            "src/actions/persons.ts",
-            "src/components/companies/CompanyForm.tsx",
-            "src/components/companies/OwnershipTable.tsx",
-            "src/lib/permissions/index.ts",
-        ],
-        "output_filer": ["docs/status/DECISIONS.md"],
-        "succeskriterier": [
-            "canAccessCompany() kaldt på alle server actions",
-            "organization_id på alle Prisma queries",
-            "Zod validation på al input",
-            "Tomme states implementeret",
-            "Dansk sprog i alle labels og fejl",
-        ],
-        "system_prompt": """Du er BA-07 (QA-agent) for ChainHub-projektet. Du reviewer Sprint 2 — selskabs- og personmodul.
-
-Tjekliste du gennemgår for HVER fil:
-  □ organization_id på alle Prisma queries
-  □ deleted_at: null på alle list-queries
-  □ canAccessCompany() kaldt inden data returneres
-  □ canAccessSensitivity() kaldt på sensitive ressourcer
-  □ Zod validation på al brugerinput
-  □ Fejlbeskeder på dansk
-  □ Ingen inline styles
-  □ Tom state på alle lister
-  □ Loading skeleton implementeret
-  □ Ingen console.log i produktionskode
-
-For hvert fund: opret DEC-entry i DECISIONS.md med status CHALLENGED.
-For hvert godkendt modul: skriv "QA-GODKENDT: [modul] [dato]" i DECISIONS.md.
-
-OUTPUT-FORMAT:
---- FIL: docs/status/DECISIONS.md ---
-[komplet opdateret DECISIONS.md indhold]
---- SLUT ---
-
-Afslut med QA-rapport:
-  GODKENDT: [liste]
-  FEJL: [liste med fil og linje]
-  MANGLER: [liste]
-""",
-    },
-
-    "BA-05-kontrakt": {
-        "navn": "Feature-agent (Kontraktstyring)",
-        "sprint": 3,
-        "opgave": "Kontraktstyring — opret kontrakt, status-flow, parter, fil-upload, versionsstyring, relationer",
-        "input_filer": [
-            "docs/spec/DATABASE-SCHEMA.md",
-            "docs/spec/CONTRACT-TYPES.md",
-            "docs/build/CONVENTIONS.md",
-            "docs/spec/roller-og-tilladelser.md",
-            "docs/status/DECISIONS.md",
-            "prisma/schema.prisma",
-            "src/lib/auth/index.ts",
-            "src/lib/permissions/index.ts",
-            "src/actions/companies.ts",
-        ],
-        "output_filer": [
-            "src/lib/validations/contract.ts",
-            "src/types/contract.ts",
-            "src/actions/contracts.ts",
-            "src/app/(dashboard)/contracts/page.tsx",
-            "src/app/(dashboard)/contracts/new/page.tsx",
-            "src/app/(dashboard)/contracts/[id]/page.tsx",
-            "src/components/contracts/ContractForm.tsx",
-            "src/components/contracts/ContractStatusBadge.tsx",
-            "src/components/contracts/ContractPartiesSection.tsx",
-            "src/components/contracts/ContractVersionHistory.tsx",
-            "src/components/contracts/DeadlineAlert.tsx",
-        ],
-        "succeskriterier": [
-            "Kontrakt kan oprettes med alle 34 system_types fra CONTRACT-TYPES.md",
-            "Status-flow UDKAST → TIL_REVIEW → TIL_UNDERSKRIFT → AKTIV → UDLØBET/OPSAGT/FORNYET/ARKIVERET",
-            "Sensitivity-minimum håndhæves pr. kontrakttype",
-            "Parter og underskrivere kan tilknyttes",
-            "Fil-upload placeholder (Cloudflare R2)",
-            "Versionsstyring med ContractVersion-model",
-            "canAccessCompany() og canAccessSensitivity() på alle queries",
-            "organization_id filtrering overalt",
-        ],
-        "system_prompt": """Du er BA-05 (Feature-agent) for ChainHub-projektet. Du bygger Kontraktstyring-modulet.
-
-KRITISK: Kontraktstyring er kernen i ChainHub. Disse regler er ufravigelige:
-
-Status-flow (nøjagtigt som spec):
-  UDKAST → TIL_REVIEW → TIL_UNDERSKRIFT → AKTIV
-  AKTIV → UDLØBET | OPSAGT | FORNYET | ARKIVERET
-  Ingen andre transitioner er gyldige.
-
-Sensitivity-minimum pr. kontrakttype:
-  EJERAFTALE, DIREKTØRKONTRAKT → minimum FORTROLIG
-  Alle andre → minimum INTERN
-
-Kontrakttyper: Brug system_type enum — aldrig fri tekst.
-Lag 2-typer (LEASE_AGREEMENT, SUBLEASE osv.) aktiveres KUN ved kæde-struktur.
-
-Permissions:
-- canAccessCompany() på alle queries
-- canAccessSensitivity(userId, contract.sensitivity) inden data returneres
-- organization_id på alle Prisma queries
-- deleted_at: null på alle list-queries
-
-Fil-upload: Opret placeholder med R2_BUCKET_NAME env var check.
-Vis vejledning hvis ikke konfigureret.
-
-OUTPUT-FORMAT:
---- FIL: [sti/til/fil] ---
-[filindhold]
---- SLUT ---
-""",
-    },
-
-    "BA-06-advisering": {
-        "navn": "Integration-agent (Advisering)",
-        "sprint": 3,
-        "opgave": "Adviseringslogik — 90/30/7 dage, løbende kontrakter, auto-renewal, email via Resend",
-        "input_filer": [
-            "docs/spec/DATABASE-SCHEMA.md",
-            "docs/build/CONVENTIONS.md",
-            "docs/status/DECISIONS.md",
-            "prisma/schema.prisma",
-            "src/actions/contracts.ts",
-            "src/lib/auth/index.ts",
-        ],
-        "output_filer": [
-            "src/lib/advisering/deadlines.ts",
-            "src/lib/advisering/notifications.ts",
-            "src/lib/advisering/email-templates.tsx",
-            "src/app/api/cron/check-deadlines/route.ts",
-            "src/actions/deadlines.ts",
-        ],
-        "succeskriterier": [
-            "Cron job tjekker deadlines dagligt",
-            "Advis sendes 90, 30 og 7 dage før udløb",
-            "Løbende kontrakter: advis baseret på notice_period_days",
-            "Auto-renewal logik for leverandørkontrakter",
-            "Email-skabelon på dansk via Resend",
-            "advise_sent_at opdateres så der ikke sendes dobbelt",
-        ],
-        "system_prompt": """Du er BA-06 (Integration-agent) for ChainHub-projektet. Du bygger adviseringslogikken.
-
-Dit ansvar: Deadline-beregning, email-notifikationer, cron jobs.
-
-Adviseringslogik (nøjagtigt):
-  - Faste kontrakter: advis 90, 30, 7 dage før end_date
-  - Løbende kontrakter: advis notice_period_days + 30 dage før seneste opsigelsesdato
-  - Auto-renewal: leverandørkontrakter fornyes automatisk medmindre OPSAGT inden notice_period
-  - advise_sent_at sættes efter afsendelse — tjek altid at den er null inden afsendelse
-
-Cron endpoint: /api/cron/check-deadlines
-  - Beskyttet med CRON_SECRET header
-  - Kører dagligt via Vercel Cron
-  - Opdater vercel.json med cron schedule
-
-Email: Brug Resend SDK. Dansk sprog. Inkludér:
-  - Kontraktnavn og type
-  - Dage til udløb
-  - Link til kontrakt i ChainHub
-  - Klar handlingsopfordring
-
-organization_id på alle queries — multi-tenancy er kritisk.
-
-OUTPUT-FORMAT:
---- FIL: [sti/til/fil] ---
-[filindhold]
---- SLUT ---
-""",
-    },
-
-    "BA-05-dokumenter": {
-        "navn": "Feature-agent (Dokumenthåndtering)",
-        "sprint": 3,
-        "opgave": "Dokumenthåndtering — upload, preview, download, tilknytning til selskab og kontrakt",
-        "input_filer": [
-            "docs/spec/DATABASE-SCHEMA.md",
-            "docs/build/CONVENTIONS.md",
-            "prisma/schema.prisma",
-            "src/lib/auth/index.ts",
-            "src/lib/permissions/index.ts",
-            "src/actions/contracts.ts",
-        ],
-        "output_filer": [
-            "src/lib/validations/document.ts",
-            "src/actions/documents.ts",
-            "src/app/(dashboard)/documents/page.tsx",
-            "src/components/documents/DocumentUpload.tsx",
-            "src/components/documents/DocumentList.tsx",
-            "src/components/documents/DocumentPreview.tsx",
-            "src/lib/storage/r2.ts",
-        ],
-        "succeskriterier": [
-            "Fil-upload til Cloudflare R2 (eller mock hvis ikke konfigureret)",
-            "Preview af PDF og billeder",
-            "Download med signeret URL",
-            "Tilknytning til selskab og/eller kontrakt",
-            "canAccessSensitivity() på alle dokumenter",
-            "organization_id på alle queries",
-        ],
-        "system_prompt": """Du er BA-05 (Feature-agent) for ChainHub-projektet. Du bygger Dokumenthåndtering.
-
-Storage: Cloudflare R2 via AWS S3-kompatibel SDK (@aws-sdk/client-s3).
-Brug signerede URLs til upload og download — aldrig direkte public URLs.
-Hvis R2_BUCKET_NAME ikke er sat: vis mock-UI med vejledning.
-
-Sensitivity: Dokumenter arver sensitivity fra tilknyttet kontrakt/sag.
-canAccessSensitivity() SKAL kaldes inden download returneres.
-
-Filtyper: Acceptér PDF, DOCX, XLSX, PNG, JPG. Max 50MB.
-Gem original filnavn + MIME type + størrelse i Document-modellen.
-
-OUTPUT-FORMAT:
---- FIL: [sti/til/fil] ---
-[filindhold]
---- SLUT ---
-""",
-    },
-
-    "BA-07-sprint3": {
-        "navn": "QA-agent (Sprint 3 review)",
-        "sprint": 3,
-        "opgave": "QA — Validér kontraktstyring, advisering og dokumentmodul mod spec",
-        "input_filer": [
-            "docs/spec/DATABASE-SCHEMA.md",
-            "docs/spec/CONTRACT-TYPES.md",
-            "docs/build/CONVENTIONS.md",
-            "docs/spec/roller-og-tilladelser.md",
-            "docs/status/DECISIONS.md",
-            "src/actions/contracts.ts",
-            "src/actions/documents.ts",
-            "src/lib/advisering/deadlines.ts",
-            "src/lib/permissions/index.ts",
-        ],
-        "output_filer": ["docs/status/DECISIONS.md"],
-        "succeskriterier": [
-            "Status-flow transitions er korrekte og komplette",
-            "Sensitivity-minimum håndhæves pr. kontrakttype",
-            "Adviseringslogik dækker alle scenarier (fast, løbende, auto-renewal)",
-            "canAccessSensitivity() kaldt på alle dokument-downloads",
-            "organization_id på alle queries",
-        ],
-        "system_prompt": """Du er BA-07 (QA-agent) for ChainHub-projektet. Du reviewer Sprint 3.
-
-Fokusér særligt på:
-  □ Kontraktstatus-transitions — er alle gyldige flows implementeret?
-  □ Sensitivity-minimum pr. kontrakttype — håndhæves det ved oprettelse OG redigering?
-  □ Adviseringslogik — dækkes faste, løbende og auto-renewal kontrakter?
-  □ advise_sent_at — tjekkes den inden afsendelse?
-  □ Dokument-download — canAccessSensitivity() kaldt?
-  □ organization_id på alle Prisma queries
-  □ deleted_at: null på alle list-queries
-  □ Zod validation på al input
-  □ Dansk sprog i alle labels og fejl
-
-For hvert fund: opret DEC-entry i DECISIONS.md med status CHALLENGED.
-
-OUTPUT-FORMAT:
---- FIL: docs/status/DECISIONS.md ---
-[komplet opdateret DECISIONS.md indhold]
---- SLUT ---
-""",
-    },
-
-    "BA-05-sager": {
-        "navn": "Feature-agent (Sagsstyring)",
-        "sprint": 4,
-        "opgave": "Sagsstyring — sagstyper, tilknytning til selskaber/kontrakter/personer, frister, email-sync",
-        "input_filer": [
-            "docs/spec/DATABASE-SCHEMA.md",
-            "docs/build/CONVENTIONS.md",
-            "docs/spec/roller-og-tilladelser.md",
-            "docs/status/DECISIONS.md",
-            "prisma/schema.prisma",
-            "src/lib/auth/index.ts",
-            "src/lib/permissions/index.ts",
-            "src/actions/companies.ts",
-            "src/actions/contracts.ts",
-        ],
-        "output_filer": [
-            "src/lib/validations/case.ts",
-            "src/types/case.ts",
-            "src/actions/cases.ts",
-            "src/app/(dashboard)/cases/page.tsx",
-            "src/app/(dashboard)/cases/new/page.tsx",
-            "src/app/(dashboard)/cases/[id]/page.tsx",
-            "src/components/cases/CaseForm.tsx",
-            "src/components/cases/CaseStatusBadge.tsx",
-            "src/components/cases/CaseLinkedObjects.tsx",
-            "src/components/cases/CaseTaskList.tsx",
-        ],
-        "succeskriterier": [
-            "Sag kan oprettes med alle CaseType-værdier",
-            "Status-flow NY → AKTIV → AFVENTER_EKSTERN/KLIENT → LUKKET/ARKIVERET",
-            "Tilknytning til selskaber, kontrakter og personer",
-            "Opgaveliste pr. sag",
-            "Frister og ansvarlige",
-            "canAccessCompany() og canAccessSensitivity() på alle queries",
-        ],
-        "system_prompt": """Du er BA-05 (Feature-agent) for ChainHub-projektet. Du bygger Sagsstyring.
-
-CaseStatus flow (nøjagtigt):
-  NY → AKTIV → AFVENTER_EKSTERN | AFVENTER_KLIENT
-  AKTIV | AFVENTER_* → LUKKET | ARKIVERET
-
-Sagstyper fra DATABASE-SCHEMA: Brug CaseType enum.
-En sag kan tilknyttes: mange selskaber, mange kontrakter, mange personer.
-Brug junction-tabellerne CaseCompany, CaseContract, CasePerson.
-
-Permissions:
-- canAccessCompany() på alle sag-queries
-- canAccessSensitivity() hvis sag har sensitivity > INTERN
-- organization_id på alle queries
-
-Email-sync: Opret placeholder for Microsoft Graph BCC-integration.
-Vis konfigurationsvejledning hvis MICROSOFT_CLIENT_ID mangler.
-
-OUTPUT-FORMAT:
---- FIL: [sti/til/fil] ---
-[filindhold]
---- SLUT ---
-""",
-    },
-
-    "BA-05-opgaver": {
-        "navn": "Feature-agent (Opgavestyring)",
-        "sprint": 4,
-        "opgave": "Opgavestyring — kanban/liste/kalender, daglig digest, Outlook Calendar push",
-        "input_filer": [
-            "docs/spec/DATABASE-SCHEMA.md",
-            "docs/build/CONVENTIONS.md",
-            "prisma/schema.prisma",
-            "src/lib/auth/index.ts",
-            "src/lib/permissions/index.ts",
-            "src/actions/cases.ts",
-            "src/lib/advisering/notifications.ts",
-        ],
-        "output_filer": [
-            "src/lib/validations/task.ts",
-            "src/types/task.ts",
-            "src/actions/tasks.ts",
-            "src/app/(dashboard)/tasks/page.tsx",
-            "src/components/tasks/TaskKanban.tsx",
-            "src/components/tasks/TaskList.tsx",
-            "src/components/tasks/TaskForm.tsx",
-            "src/components/tasks/TaskCard.tsx",
-            "src/app/api/cron/task-digest/route.ts",
-        ],
-        "succeskriterier": [
-            "Opgaver kan oprettes og tilknyttes sager",
-            "Kanban-visning med drag-and-drop (eller statisk)",
-            "Liste-visning med filtrering på prioritet og status",
-            "Daglig email-digest cron job",
-            "Outlook Calendar push placeholder",
-            "organization_id på alle queries",
-        ],
-        "system_prompt": """Du er BA-05 (Feature-agent) for ChainHub-projektet. Du bygger Opgavestyring.
-
-Visninger: Implementér liste-visning som primær. Kanban som sekundær (statisk accepteres).
-Drag-and-drop: Brug @dnd-kit/core hvis tilgængeligt, ellers statisk kanban.
-
-Prioriteter: LAV | MEDIUM | HØJ | KRITISK (fra Prioritet enum)
-Status: ÅBEN | I_GANG | AFVENTER | LUKKET
-
-Daglig digest: /api/cron/task-digest
-- Kører kl. 07:00 dansk tid
-- Gruppér opgaver pr. ansvarlig bruger
-- Sendes kun hvis der er opgaver der udløber inden for 7 dage
-- Brug Resend SDK, dansk sprog
-
-Outlook Calendar push: Placeholder med MICROSOFT_CLIENT_ID check.
-
-organization_id på alle queries — kritisk.
-
-OUTPUT-FORMAT:
---- FIL: [sti/til/fil] ---
-[filindhold]
---- SLUT ---
-""",
-    },
-
-    "BA-07-sprint4": {
-        "navn": "QA-agent (Sprint 4 review)",
-        "sprint": 4,
-        "opgave": "QA — Validér sags- og opgavemodul mod spec og permissions-model",
-        "input_filer": [
-            "docs/spec/DATABASE-SCHEMA.md",
-            "docs/build/CONVENTIONS.md",
-            "docs/status/DECISIONS.md",
-            "src/actions/cases.ts",
-            "src/actions/tasks.ts",
-            "src/lib/permissions/index.ts",
-        ],
-        "output_filer": ["docs/status/DECISIONS.md"],
-        "succeskriterier": [
-            "CaseStatus-flow er komplet og korrekt",
-            "Junction-tabeller bruges korrekt (CaseCompany, CaseContract, CasePerson)",
-            "organization_id på alle queries",
-            "Daglig digest tjekker advise_sent_at",
-        ],
-        "system_prompt": """Du er BA-07 (QA-agent) for ChainHub-projektet. Du reviewer Sprint 4.
-
-Fokusér på:
-  □ CaseStatus-transitions — alle gyldige flows?
-  □ Junction-tabeller — organization_id på CaseCompany, CaseContract, CasePerson?
-  □ Opgave-prioriteter og status — korrekte enum-værdier?
-  □ Daglig digest — sendes kun til rette brugere i rette organisation?
-  □ organization_id på alle Prisma queries
-  □ canAccessCompany() kaldt inden data returneres
-  □ Zod validation på al input
-
-OUTPUT-FORMAT:
---- FIL: docs/status/DECISIONS.md ---
-[komplet opdateret DECISIONS.md indhold]
---- SLUT ---
-""",
-    },
-
-    "BA-05-dashboard": {
-        "navn": "Feature-agent (Portfolio-dashboard)",
-        "sprint": 5,
-        "opgave": "Portfolio-dashboard — overblik over alle selskaber, status, ejerandel, aktive sager, udløbende kontrakter",
-        "input_filer": [
-            "docs/spec/DATABASE-SCHEMA.md",
-            "docs/build/CONVENTIONS.md",
-            "docs/status/DECISIONS.md",
-            "docs/ops/CACHING.md",
-            "prisma/schema.prisma",
-            "src/lib/auth/index.ts",
-            "src/lib/permissions/index.ts",
-            "src/actions/companies.ts",
-            "src/actions/contracts.ts",
-            "src/actions/cases.ts",
-        ],
-        "output_filer": [
-            "src/actions/dashboard.ts",
-            "src/app/(dashboard)/page.tsx",
-            "src/components/dashboard/PortfolioOverview.tsx",
-            "src/components/dashboard/CompanySummaryCard.tsx",
-            "src/components/dashboard/ExpiringContractsList.tsx",
-            "src/components/dashboard/ActiveCasesList.tsx",
-            "src/components/dashboard/DashboardFilters.tsx",
-        ],
-        "succeskriterier": [
-            "Dashboard loader data via aggregerede counts — ikke N+1",
-            "Viser alle selskaber med status, ejerandel, aktive sager, udløbende kontrakter",
-            "Filtrering på status, ejerandel og sagstype",
-            "Loading under 2 sekunder for 10 selskaber",
-            "Skeleton loading states",
-            "organization_id på alle queries",
-        ],
-        "system_prompt": """Du er BA-05 (Feature-agent) for ChainHub-projektet. Du bygger Portfolio-dashboard.
-
-PERFORMANCE er kritisk her. Regler:
-- Brug aggregerede counts i én query — ALDRIG findMany med include i loops
-- Eksempel på korrekt mønster:
-    SELECT c.id, c.name,
-      COUNT(DISTINCT cases.id) as active_cases,
-      COUNT(DISTINCT contracts.id) as expiring_contracts
-    FROM companies c
-    LEFT JOIN cases ON cases.company_id = c.id AND cases.status = 'AKTIV'
-    LEFT JOIN contracts ON contracts.company_id = c.id AND contracts.end_date < NOW() + INTERVAL '90 days'
-    WHERE c.organization_id = $1 AND c.deleted_at IS NULL
-    GROUP BY c.id
-- Brug Prisma $queryRaw til komplekse aggregeringer
-- Pagination: max 25 selskaber pr. side
-
-Filtrering: status, min/max ejerandel, har aktive sager, har udløbende kontrakter.
-Implementér som URL search params (Next.js searchParams).
-
-organization_id på ALLE queries — kritisk for multi-tenancy.
-
-OUTPUT-FORMAT:
---- FIL: [sti/til/fil] ---
-[filindhold]
---- SLUT ---
-""",
-    },
-
-    "BA-05-oekonomi": {
-        "navn": "Feature-agent (Økonomi-overblik)",
-        "sprint": 5,
-        "opgave": "Økonomi-overblik — nøgletal, tidsregistrering, fakturaoversigt, udbyttenotering",
-        "input_filer": [
-            "docs/spec/DATABASE-SCHEMA.md",
-            "docs/build/CONVENTIONS.md",
-            "prisma/schema.prisma",
-            "src/lib/auth/index.ts",
-            "src/lib/permissions/index.ts",
-            "src/actions/companies.ts",
-        ],
-        "output_filer": [
-            "src/lib/validations/finance.ts",
-            "src/types/finance.ts",
-            "src/actions/finance.ts",
-            "src/app/(dashboard)/finance/page.tsx",
-            "src/app/(dashboard)/finance/[companyId]/page.tsx",
-            "src/components/finance/FinancialMetricsTable.tsx",
-            "src/components/finance/TimeEntryList.tsx",
-            "src/components/finance/DividendSection.tsx",
-        ],
-        "succeskriterier": [
-            "Nøgletal kan indtastes og vises pr. selskab pr. periode",
-            "Tidsregistrering tilknyttet sager",
-            "Fakturaoversigt (intern)",
-            "Udbyttenotering med dato og beløb",
-            "MetricType og PeriodType enums brugt korrekt (DEC-008)",
-            "organization_id på alle queries",
-        ],
-        "system_prompt": """Du er BA-05 (Feature-agent) for ChainHub-projektet. Du bygger Økonomi-overblik.
-
-FinancialMetric model (fra DEC-008):
-  MetricType enum: OMSAETNING | EBITDA | RESULTAT | EGENKAPITAL | GAELD | ANTAL_ANSATTE | CUSTOM
-  PeriodType enum: MAANED | KVARTAL | HALVAAR | AAR
-  MetricSource enum: MANUEL | IMPORTERET | BEREGNET
-
-Tidsregistrering: Tilknyt TimeEntry til Case og User.
-Fakturaoversigt: Simpel liste — ingen faktureringssystem integration i dette sprint.
-Udbytteotering: Beløb + dato + selskab — gem som FinancialMetric med type CUSTOM.
-
-Sensitivity: Økonomidata er FORTROLIG minimum.
-canAccessSensitivity(userId, "FORTROLIG") SKAL kaldes på alle finance-queries.
-
-OUTPUT-FORMAT:
---- FIL: [sti/til/fil] ---
-[filindhold]
---- SLUT ---
-""",
-    },
-
-    "BA-09-sprint5": {
-        "navn": "Performance-agent (Sprint 5 review)",
-        "sprint": 5,
-        "opgave": "Performance — validér dashboard query-tid under 2 sekunder, N+1 analyse",
-        "input_filer": [
-            "prisma/schema.prisma",
-            "src/actions/dashboard.ts",
-            "src/actions/finance.ts",
-            "docs/ops/CACHING.md",
-            "docs/status/DECISIONS.md",
-        ],
-        "output_filer": ["docs/status/DECISIONS.md", "docs/ops/CACHING.md"],
-        "succeskriterier": [
-            "Dashboard bruger aggregerede queries — ingen N+1",
-            "Økonomidata caches korrekt",
-            "Alle liste-views har pagination",
-        ],
-        "system_prompt": """Du er BA-09 (Performance-agent) for ChainHub-projektet. Du reviewer Sprint 5.
-
-Succeskriterium: Dashboard med 10 selskaber loader under 2 sekunder.
-
-Tjek:
-  □ Dashboard-query: aggregerede counts eller N+1?
-  □ Finance-queries: caches nøgletal der ikke ændrer sig ofte?
-  □ Pagination på alle liste-views?
-  □ Prisma $queryRaw brugt korrekt med parameterisering?
-  □ Mangler der indexes på organization_id + deleted_at?
-
-OUTPUT-FORMAT:
---- FIL: [sti/til/fil] ---
-[filindhold]
---- SLUT ---
-""",
-    },
-
-    "BA-07-sprint5": {
-        "navn": "QA-agent (Sprint 5 review)",
-        "sprint": 5,
-        "opgave": "QA — Validér dashboard og økonomimodul mod spec",
-        "input_filer": [
-            "docs/spec/DATABASE-SCHEMA.md",
-            "docs/build/CONVENTIONS.md",
-            "docs/status/DECISIONS.md",
-            "src/actions/dashboard.ts",
-            "src/actions/finance.ts",
-            "src/lib/permissions/index.ts",
-        ],
-        "output_filer": ["docs/status/DECISIONS.md"],
-        "succeskriterier": [
-            "MetricType/PeriodType/MetricSource enums brugt korrekt",
-            "canAccessSensitivity(FORTROLIG) på alle finance-queries",
-            "organization_id på alle queries",
-            "Pagination implementeret",
-        ],
-        "system_prompt": """Du er BA-07 (QA-agent) for ChainHub-projektet. Du reviewer Sprint 5.
-
-Fokusér på:
-  □ FinancialMetric enums — MetricType, PeriodType, MetricSource korrekte?
-  □ canAccessSensitivity("FORTROLIG") kaldt på finance-data?
-  □ Dashboard — ingen N+1 queries?
-  □ organization_id på alle Prisma queries
-  □ Pagination på alle lister
-
-OUTPUT-FORMAT:
---- FIL: docs/status/DECISIONS.md ---
-[komplet opdateret DECISIONS.md indhold]
---- SLUT ---
-""",
-    },
-
-    "BA-10-tests": {
-        "navn": "Test-agent",
-        "sprint": 6,
-        "opgave": "Testsuite — unit tests på permissions, integration tests på tenant isolation, E2E på kritiske flows",
-        "input_filer": [
-            "docs/spec/roller-og-tilladelser.md",
-            "docs/build/CONVENTIONS.md",
-            "docs/status/DECISIONS.md",
-            "prisma/schema.prisma",
-            "src/lib/permissions/index.ts",
-            "src/lib/auth/index.ts",
-            "src/actions/companies.ts",
-            "src/actions/contracts.ts",
-        ],
-        "output_filer": [
-            "src/__tests__/permissions.test.ts",
-            "src/__tests__/tenant-isolation.test.ts",
-            "src/__tests__/companies.test.ts",
-            "src/__tests__/contracts.test.ts",
-            "e2e/login.spec.ts",
-            "e2e/contract.spec.ts",
-            "vitest.config.ts",
-        ],
-        "succeskriterier": [
-            "Unit tests på alle permissions helpers",
-            "Tenant isolation tests (tenant A kan ikke se tenant B data)",
-            "Sensitivity tests (COMPANY_MANAGER kan ikke se STRENGT_FORTROLIG)",
-            "E2E test på login flow",
-            "E2E test på opret + arkivér kontrakt",
-            "Alle ikke-forhandlingsbare tests er grønne",
-        ],
-        "system_prompt": """Du er BA-10 (Test-agent) for ChainHub-projektet.
-
-Dit ansvar: Testsuite på tre niveauer. Prioritér adgangskontrol og tenant-isolation over alt andet.
-
-Brug Vitest til unit og integration tests. Brug Playwright til E2E.
-
-Ikke-forhandlingsbare tests — disse MÅ ALDRIG fejle:
-  test('tenant A cannot access tenant B companies')
-  test('tenant A cannot access tenant B contracts')
-  test('COMPANY_MANAGER cannot see STRENGT_FORTROLIG')
-  test('GROUP_LEGAL can see STRENGT_FORTROLIG')
-  test('unauthenticated user cannot access dashboard')
-
-Unit tests: Mock Prisma med vitest-mock-extended.
-Integration tests: Brug separate test-organisation IDs — aldrig produktionsdata.
-E2E: Playwright med page object model. Dansk sprog i selectors.
-
-Installer nødvendige pakker i package.json scripts:
-  "test": "vitest run"
-  "test:watch": "vitest"
-  "test:e2e": "playwright test"
-
-OUTPUT-FORMAT:
---- FIL: [sti/til/fil] ---
-[filindhold]
---- SLUT ---
-""",
-    },
-
-    "BA-11-pentest": {
-        "navn": "Security Pentest-agent",
-        "sprint": 6,
-        "opgave": "Pentest — IDOR, tenant isolation, privilege escalation, input validation, rate limiting",
-        "input_filer": [
-            "docs/spec/roller-og-tilladelser.md",
-            "docs/status/DECISIONS.md",
-            "src/lib/permissions/index.ts",
-            "src/middleware.ts",
-            "src/actions/companies.ts",
-            "src/actions/contracts.ts",
-            "src/actions/cases.ts",
-            "src/lib/storage/r2.ts",
-        ],
-        "output_filer": [
-            "docs/ops/PENTEST-REPORT.md",
-            "docs/status/DECISIONS.md",
-        ],
-        "succeskriterier": [
-            "Ingen KRITISKE sikkerhedshuller",
-            "IDOR-analyse på alle endpoints",
-            "Tenant isolation verificeret",
-            "Input validation verificeret",
-            "Rapport med konkrete fund og fixes",
-        ],
-        "system_prompt": """Du er BA-11 (Security Pentest-agent) for ChainHub-projektet.
-
-Dit ansvar: Forsøg aktivt at bryde implementeringen. Du er den sidste forsvarslinje inden produktion.
-
-Angrebsvektorer du SKAL teste systematisk:
-
-TENANT ISOLATION:
-  - Er organization_id valideret på ALLE Prisma findUnique kald?
-  - Kan bruger fra org A tilgå ressourcer fra org B via kendte UUIDs?
-  - Er session.organizationId verificeret server-side — ikke kun client-side?
-
-IDOR:
-  - GET /api/companies/[id] — tjekkes organization_id?
-  - GET /api/contracts/[id] — tjekkes organization_id OG sensitivity?
-  - Download dokument — tjekkes organization_id OG canAccessSensitivity?
-
-PRIVILEGE ESCALATION:
-  - Kan COMPANY_READONLY kalde POST/PUT/DELETE actions?
-  - Kan COMPANY_MANAGER tilgå STRENGT_FORTROLIG data?
-  - Er rolle-tjek server-side (ikke kun UI-baseret)?
-
-INPUT VALIDATION:
-  - Er alle Prisma queries parameteriserede (ingen string concatenation)?
-  - Er der XSS-beskyttelse på fritekstfelter?
-  - Er filupload begrænset til tilladte MIME-typer og max størrelse?
-
-RATE LIMITING:
-  - Er der rate limiting på login-endpoint?
-  - Er der rate limiting på API-endpoints generelt?
-
-For hvert fund: Opret DEC-entry med KRITISK/VIGTIG rangering og konkret fix.
-Opret docs/ops/PENTEST-REPORT.md med komplet rapport.
-
-OUTPUT-FORMAT:
---- FIL: [sti/til/fil] ---
-[filindhold]
---- SLUT ---
-""",
-    },
-
-    "BA-06-stripe": {
-        "navn": "Integration-agent (Stripe Billing)",
-        "sprint": 6,
-        "opgave": "Stripe Billing — per-seat subscriptions, trial-periode, webhook med www-prefix",
-        "input_filer": [
-            "docs/build/CONVENTIONS.md",
-            "docs/status/DECISIONS.md",
-            "prisma/schema.prisma",
-            "src/lib/auth/index.ts",
-            ".env.example",
-            "vercel.json",
-        ],
-        "output_filer": [
-            "src/lib/stripe/index.ts",
-            "src/lib/stripe/webhooks.ts",
-            "src/app/api/webhooks/stripe/route.ts",
-            "src/app/(dashboard)/settings/billing/page.tsx",
-            "src/actions/billing.ts",
-        ],
-        "succeskriterier": [
-            "Per-seat subscription med Stripe Checkout",
-            "14 dages trial-periode",
-            "Webhook endpoint på /api/webhooks/stripe",
-            "STRIPE_WEBHOOK_SECRET valideret på alle webhook-kald",
-            "Subscription status synkroniseret til Subscription-model",
-            "Billing-side med plan-oversigt og upgrade-flow",
-        ],
-        "system_prompt": """Du er BA-06 (Integration-agent) for ChainHub-projektet. Du bygger Stripe Billing.
-
-KRITISK LÆRING fra tidligere projekter:
-  Webhook URL SKAL have www-prefix: https://www.chainhub.dk/api/webhooks/stripe
-  ALDRIG: https://chainhub.dk/api/webhooks/stripe
-  Dokumentér dette tydeligt i koden og i .env.example.
-
-Trailing newlines i STRIPE_WEBHOOK_SECRET giver stille fejl.
-Valider altid: process.env.STRIPE_WEBHOOK_SECRET?.trim()
-
-Per-seat model:
-  - Pris pr. bruger pr. måned
-  - Trial: 14 dage gratis
-  - Efter trial: kræv betalingsmetode
-  - Seat count: synkronisér med antal aktive brugere i organisation
-
-Webhook events der SKAL håndteres:
-  - customer.subscription.created
-  - customer.subscription.updated
-  - customer.subscription.deleted
-  - invoice.payment_succeeded
-  - invoice.payment_failed
-
-Brug Stripe SDK (stripe npm pakke). Test mode som default — live mode via env var.
-
-OUTPUT-FORMAT:
---- FIL: [sti/til/fil] ---
-[filindhold]
---- SLUT ---
-""",
-    },
-
-    "BA-08-runbook": {
-        "navn": "DevOps-agent (Runbook + monitoring)",
-        "sprint": 6,
-        "opgave": "Runbook, monitoring, alerting, backup-strategi, produktionsklar deployment",
-        "input_filer": [
-            "docs/build/CONVENTIONS.md",
-            "docs/ops/RUNBOOK.md",
-            "docs/ops/CACHING.md",
-            "docs/ops/PENTEST-REPORT.md",
-            ".env.example",
-            "vercel.json",
-            ".github/workflows/ci.yml",
-        ],
-        "output_filer": [
-            "docs/ops/RUNBOOK.md",
-            "docs/ops/MONITORING.md",
-            ".github/workflows/ci.yml",
-            "vercel.json",
-        ],
-        "succeskriterier": [
-            "RUNBOOK dækker alle kritiske fejlscenarier",
-            "Monitoring og alerting dokumenteret",
-            "Backup-strategi beskrevet",
-            "CI pipeline kører lint + typecheck + test",
-            "Vercel config med korrekte cron jobs og www-webhook",
-        ],
-        "system_prompt": """Du er BA-08 (DevOps-agent) for ChainHub-projektet. Du afslutter Sprint 6 med produktionsklar infrastruktur.
-
-RUNBOOK skal dække:
-  - Hvad gør man når databasen er nede?
-  - Hvad gør man når Stripe webhook fejler?
-  - Hvad gør man når en migration fejler i produktion?
-  - Hvad gør man når en bruger ikke kan logge ind med Microsoft?
-  - Secrets rotation procedure
-  - Database backup og point-in-time recovery
-
-KRITISK: Stripe webhook URL med www-prefix — dokumentér i RUNBOOK.
-KRITISK: NEXTAUTH_SECRET skal være minimum 32 tegn — dokumentér rotation.
-
-Monitoring: Brug Vercel Analytics + Sentry (tilføj til .env.example).
-Alerting: Email ved payment_failed webhook event.
-
-Backup: Supabase har automatisk backup — dokumentér retention policy og restore procedure.
-
-OUTPUT-FORMAT:
---- FIL: [sti/til/fil] ---
-[filindhold]
---- SLUT ---
-""",
-    },
-
-    "BA-07-sprint6": {
-        "navn": "QA-agent (Sprint 6 — final review)",
-        "sprint": 6,
-        "opgave": "Final QA — validér hele systemet er produktionsklart",
-        "input_filer": [
-            "docs/spec/DATABASE-SCHEMA.md",
-            "docs/build/CONVENTIONS.md",
-            "docs/spec/roller-og-tilladelser.md",
-            "docs/status/DECISIONS.md",
-            "docs/ops/PENTEST-REPORT.md",
-            "src/lib/permissions/index.ts",
-            "src/lib/stripe/webhooks.ts",
-            "src/app/api/webhooks/stripe/route.ts",
-            "src/__tests__/tenant-isolation.test.ts",
-        ],
-        "output_filer": [
-            "docs/status/DECISIONS.md",
-            "docs/status/PROGRESS.md",
-        ],
-        "succeskriterier": [
-            "Ingen uløste KRITISKE beslutninger i DECISIONS.md",
-            "Pentest-rapport har ingen KRITISKE fund",
-            "Stripe webhook bruger www-prefix",
-            "Alle ikke-forhandlingsbare tests er dokumenteret grønne",
-            "PROGRESS.md markeret som produktionsklart",
-        ],
-        "system_prompt": """Du er BA-07 (QA-agent) for ChainHub-projektet. Dette er final review inden produktion.
-
-Du gennemgår HELE systemet én gang til. Fokusér på:
-
-  □ DECISIONS.md — er der uløste KRITISKE beslutninger?
-  □ PENTEST-REPORT.md — er der uløste KRITISKE sikkerhedshuller?
-  □ Stripe webhook — er www-prefix dokumenteret og implementeret?
-  □ Tenant isolation — er alle tests grønne?
-  □ NEXTAUTH_SECRET — er den minimum 32 tegn i .env.example vejledning?
-  □ organization_id — er det på ALLE Prisma queries i hele kodebasen?
-  □ Dansk sprog — er alle brugervendte tekster på dansk?
-
-Afslut med at opdatere PROGRESS.md:
-  - Markér Sprint 6 som [x] færdig
-  - Tilføj "PRODUKTIONSKLART: [dato]" øverst i filen
-  - List eventuelle kendte begrænsninger
-
-OUTPUT-FORMAT:
---- FIL: docs/status/DECISIONS.md ---
-[komplet opdateret indhold]
---- SLUT ---
---- FIL: docs/status/PROGRESS.md ---
-[komplet opdateret indhold]
---- SLUT ---
-""",
-    },
-    "BA-07-sprint1": {
-        "navn": "QA-agent (Sprint 1 review)",
-        "sprint": 1,
-        "opgave": "QA — Validér at Sprint 1 kode matcher spec. Find gaps og inkonsistenser.",
-        "input_filer": [
-            "docs/spec/DATABASE-SCHEMA.md",
-            "docs/build/CONVENTIONS.md",
-            "docs/spec/roller-og-tilladelser.md",
-            "docs/spec/API-SPEC.md",
-            "docs/status/DECISIONS.md",
-            "prisma/schema.prisma",
-            "src/lib/auth/index.ts",
-            "src/lib/permissions/index.ts",
-            "src/middleware.ts",
-        ],
-        "output_filer": ["docs/status/DECISIONS.md"],
-        "succeskriterier": [
-            "Alle permissions helpers har korrekte signaturer",
-            "organization_id tjek på alle Prisma queries",
-            "Ingen inline styles i UI-komponenter",
-            "Session indeholder organizationId og userId",
-        ],
-        "system_prompt": """Du er BA-07 (QA-agent) for ChainHub-projektet.
-
-Dit ansvar: Validér at bygget kode matcher spec. Find gaps og inkonsistenser. Du skriver ALDRIG ny feature-kode.
-
-Tjekliste du gennemgår for HVER fil:
-  □ organization_id på alle Prisma queries
-  □ deleted_at: null på alle list-queries
-  □ canAccessCompany() kaldt inden data returneres
-  □ canAccessSensitivity() kaldt på sensitive ressourcer
-  □ Zod validation på al brugerinput
-  □ Fejlbeskeder på dansk
-  □ Ingen inline styles
-  □ Ingen console.log i produktionskode
-
-For hvert fund: opret DEC-entry i DECISIONS.md med status CHALLENGED.
-For hvert godkendt modul: skriv "QA-GODKENDT: [modul] [dato]" i DECISIONS.md.
-
-OUTPUT-FORMAT:
---- FIL: docs/status/DECISIONS.md ---
-[komplet opdateret DECISIONS.md indhold]
---- SLUT ---
-
-Afslut med en QA-rapport:
-  GODKENDT: [liste]
-  FEJL: [liste med fil og linje]
-  MANGLER: [liste]
-""",
-    },
-}
-
-# ============================================================
-# Hjælpefunktioner
-# ============================================================
 
 def log(besked: str, niveau: str = "INFO"):
     tidsstempel = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -1374,8 +54,7 @@ def log(besked: str, niveau: str = "INFO"):
         f.write(linje + "\n")
 
 
-def læs_fil(sti: str) -> Optional[str]:
-    """Læs en fil relativt til REPO_ROOT. Returner None hvis den ikke findes."""
+def laes_fil(sti: str) -> Optional[str]:
     fuld_sti = REPO_ROOT / sti
     if not fuld_sti.exists():
         log(f"Fil ikke fundet: {sti}", "ADVARSEL")
@@ -1384,22 +63,19 @@ def læs_fil(sti: str) -> Optional[str]:
 
 
 def skriv_fil(sti: str, indhold: str):
-    """Skriv fil og opret mapper hvis nødvendigt."""
     fuld_sti = REPO_ROOT / sti
     fuld_sti.parent.mkdir(parents=True, exist_ok=True)
     fuld_sti.write_text(indhold, encoding="utf-8")
     log(f"Skrevet: {sti}")
 
 
-def git_commit(besked: str, filer: list[str] = None):
-    """Commit specifikke filer eller alle ændringer."""
+def git_commit(besked: str, filer=None):
     try:
         if filer:
             for fil in filer:
                 subprocess.run(["git", "add", fil], cwd=REPO_ROOT, check=True, capture_output=True)
         else:
             subprocess.run(["git", "add", "-A"], cwd=REPO_ROOT, check=True, capture_output=True)
-
         resultat = subprocess.run(
             ["git", "commit", "--no-verify", "-m", besked],
             cwd=REPO_ROOT, capture_output=True, text=True
@@ -1407,129 +83,899 @@ def git_commit(besked: str, filer: list[str] = None):
         if resultat.returncode == 0:
             log(f"Git commit: {besked}")
         else:
-            log(f"Git commit fejlede (muligvis ingen ændringer): {resultat.stderr}", "ADVARSEL")
-    except subprocess.CalledProcessError as e:
+            log(f"Git commit: ingen aendringer", "ADVARSEL")
+    except Exception as e:
         log(f"Git fejl: {e}", "FEJL")
 
 
-def parse_output_filer(tekst: str) -> dict[str, str]:
-    """
-    Parser agent-output og udtrækker filer.
-    Format: --- FIL: sti/til/fil ---\n[indhold]\n--- SLUT ---
-    Håndterer afskårne filer (manglende --- SLUT --- ved token-grænse).
-    """
+def parse_output_filer(tekst: str) -> dict:
     filer = {}
-
-    # Forsøg 1: komplet format med --- SLUT ---
-    mønster = r"--- FIL: (.+?) ---\n(.*?)--- SLUT ---"
-    matches = re.findall(mønster, tekst, re.DOTALL)
+    moenster = r"--- FIL: (.+?) ---\n(.*?)--- SLUT ---"
+    matches = re.findall(moenster, tekst, re.DOTALL)
     for sti, indhold in matches:
         filer[sti.strip()] = indhold.strip()
-
     if filer:
         return filer
-
-    # Forsøg 2: afskåret output — find alle --- FIL: --- headers
-    # og tag indholdet frem til næste header eller slutning
     sektioner = re.split(r"--- FIL: (.+?) ---", tekst)
-    # sektioner = [tekst_før, sti1, indhold1, sti2, indhold2, ...]
     if len(sektioner) > 1:
         for i in range(1, len(sektioner), 2):
             sti = sektioner[i].strip()
             indhold = sektioner[i+1].strip() if i+1 < len(sektioner) else ""
-            # Fjern eventuel --- SLUT --- i slutningen
             indhold = re.sub(r"\s*--- SLUT ---\s*$", "", indhold).strip()
             if sti and indhold:
                 filer[sti] = indhold
-
-    # Forsøg 3: markdown kodeblokke som fallback
     if not filer:
-        md_mønster = r"```(?:typescript|prisma|yaml|json|bash)?\n(.*?)```"
-        md_matches = re.findall(md_mønster, tekst, re.DOTALL)
+        md_moenster = r"```(?:typescript|prisma|yaml|json|bash)?\n(.*?)```"
+        md_matches = re.findall(md_moenster, tekst, re.DOTALL)
         for i, indhold in enumerate(md_matches):
             filer[f"output-{i+1}.txt"] = indhold.strip()
-
     return filer
 
 
-def opdater_progress(agent_id: str, status: str = "x"):
-    """Opdater PROGRESS.md — marker opgave som færdig."""
+def opdater_progress(agent_id: str):
     if not PROGRESS_FILE.exists():
         return
     indhold = PROGRESS_FILE.read_text(encoding="utf-8")
-    # Simpel opdatering — sæt [x] på linjer der matcher agent-opgaven
     agent = AGENTS.get(agent_id, {})
-    opgave_nøgleord = agent.get("opgave", "")[:30]
-    # Opdater seneste opdatering sektion
     nu = datetime.now().strftime("%Y-%m-%d")
     if "## Seneste opdatering" in indhold:
         indhold = re.sub(
             r"(## Seneste opdatering\n)Dato: .*\nAf: .*\nNote: .*",
-            f"\\1Dato: {nu}\nAf: {agent_id} ({agent.get('navn', '')})\nNote: {opgave_nøgleord} fuldført",
+            f"\\1Dato: {nu}\nAf: {agent_id} ({agent.get('navn', '')})\nNote: {agent.get('opgave','')[:30]} faerdigt",
             indhold
         )
     PROGRESS_FILE.write_text(indhold, encoding="utf-8")
 
 
 # ============================================================
-# Kerne: kald Claude API med agent-prompt
+# Scan + Build Gate
 # ============================================================
 
-def kør_agent(agent_id: str, klient: anthropic.Anthropic, dry_run: bool = False, force: bool = False) -> bool:
+def scan_manglende_imports() -> tuple:
     """
-    Kør én agent:
-    1. Saml input-filer
-    2. Kald Claude API
-    3. Parse output og skriv filer til disk
-    4. Git commit
-    5. Opdater PROGRESS.md
+    Scann alle .ts/.tsx filer i src/ for imports uden matchende node_module.
+    Returner (manglende_npm: list, manglende_shadcn: list).
     """
+    node_modules = REPO_ROOT / "node_modules"
+    manglende_npm = set()
+    manglende_shadcn = set()
+
+    pkg_json_sti = REPO_ROOT / "package.json"
+    installerede = set()
+    if pkg_json_sti.exists():
+        pkg = json.loads(pkg_json_sti.read_text(encoding="utf-8"))
+        installerede.update(pkg.get("dependencies", {}).keys())
+        installerede.update(pkg.get("devDependencies", {}).keys())
+
+    src_dir = REPO_ROOT / "src"
+    if not src_dir.exists():
+        return [], []
+
+    import_re = re.compile(r'''(?:^import\s+.*?from\s+|^from\s+)['"](.*?)['"]|require\(['"](.*?)['"]\)''', re.MULTILINE)
+
+    for fil in src_dir.rglob("*.ts*"):
+        try:
+            indhold = fil.read_text(encoding="utf-8")
+        except Exception:
+            continue
+
+        for m in import_re.finditer(indhold):
+            imp = m.group(1) or m.group(2) or ""
+            if not imp:
+                continue
+            if imp.startswith(".") or imp.startswith("/"):
+                continue
+            if imp.startswith("@/components/ui/"):
+                komponent_navn = imp.split("/")[-1]
+                komponent_sti = REPO_ROOT / "src" / "components" / "ui" / f"{komponent_navn}.tsx"
+                if not komponent_sti.exists():
+                    manglende_shadcn.add(komponent_navn)
+                continue
+            if imp.startswith("@/"):
+                continue
+            dele = imp.split("/")
+            pakke_navn = "/".join(dele[:2]) if imp.startswith("@") and len(dele) >= 2 else dele[0]
+            if pakke_navn not in installerede and not (node_modules / pakke_navn).exists():
+                manglende_npm.add(pakke_navn)
+
+    return sorted(manglende_npm), sorted(manglende_shadcn)
+
+
+def koer_build_gate(sprint_nr: int) -> bool:
+    """
+    Kør build gate: npm install + prisma generate + tsc + next build.
+    Returnerer True hvis alt passes.
+    """
+    log(f"=== BUILD GATE: Sprint {sprint_nr} ===")
+
+    # Pre-scan
+    log("Scannner for manglende imports...")
+    manglende_npm, manglende_shadcn = scan_manglende_imports()
+    if manglende_npm:
+        log(f"  Manglende npm: {', '.join(manglende_npm)}", "ADVARSEL")
+    if manglende_shadcn:
+        log(f"  Manglende shadcn: {', '.join(manglende_shadcn)}", "ADVARSEL")
+    if manglende_npm or manglende_shadcn:
+        log("  Kør: python orchestrator.py --agent BA-12-repair --force for auto-fix", "ADVARSEL")
+
+    # Windows kræver .cmd suffix — på Unix er npm/npx direkte
+    _npm = "npm.cmd" if sys.platform == "win32" else "npm"
+    _npx = "npx.cmd" if sys.platform == "win32" else "npx"
+
+    kommandoer = [
+        ([_npm, "install", "--legacy-peer-deps"], "npm install"),
+        ([_npx, "prisma", "generate"], "prisma generate"),
+        ([_npx, "tsc", "--noEmit"], "tsc typecheck"),
+        ([_npx, "next", "build"], "next build"),
+    ]
+
+    alle_ok = True
+    for cmd, navn in kommandoer:
+        log(f"  Korer: {navn}...")
+        start = time.time()
+        try:
+            resultat = subprocess.run(cmd, cwd=REPO_ROOT, capture_output=True, text=True, timeout=300)
+        except subprocess.TimeoutExpired:
+            log(f"  x {navn} TIMEOUT", "FEJL")
+            alle_ok = False
+            break
+        except Exception as e:
+            log(f"  x {navn} FEJL: {e}", "FEJL")
+            alle_ok = False
+            break
+
+        varighed = round(time.time() - start, 1)
+        if resultat.returncode == 0:
+            log(f"  v {navn} OK ({varighed}s)")
+        else:
+            log(f"  x {navn} FEJLEDE ({varighed}s)", "FEJL")
+            if resultat.stderr:
+                log(f"    {resultat.stderr[-600:]}", "FEJL")
+            alle_ok = False
+            if navn == "prisma generate":
+                break
+
+    if alle_ok:
+        log(f"=== BUILD GATE SPRINT {sprint_nr}: PASSED ===")
+        git_commit(f"chore: sprint {sprint_nr} build gate passed")
+    else:
+        log(f"=== BUILD GATE SPRINT {sprint_nr}: FEJLEDE ===", "FEJL")
+        log("  Fix: python orchestrator.py --autorepair", "FEJL")
+
+    return alle_ok
+
+
+# ============================================================
+# Autonom Repair Loop
+# Korer build -> fanger fejl -> sender til Claude -> anvender fix -> gentager
+# ============================================================
+
+def udtraek_fejlfiler(fejl_output: str) -> list:
+    """
+    Ekstraher filstier fra TypeScript/Next.js/Prisma fejloutput.
+    Returner liste over relative stier der eksisterer i repo.
+    """
+    kandidater = set()
+
+    # TypeScript: src/app/page.tsx(10,5): error TS2345:
+    for m in re.finditer(r"([\w./\-\[\]()@]+\.tsx?)(?:\(\d+,\d+\))?", fejl_output):
+        kandidater.add(m.group(1))
+
+    # Next.js: ./ prefix
+    for m in re.finditer(r"\./([\w./\-\[\]()@]+\.tsx?)", fejl_output):
+        kandidater.add(m.group(1))
+
+    # Prisma
+    for m in re.finditer(r"(prisma/[\w./]+)", fejl_output):
+        kandidater.add(m.group(1))
+
+    # Behold kun filer der faktisk eksisterer
+    eksisterende = []
+    for sti in sorted(kandidater):
+        fuld = REPO_ROOT / sti
+        if fuld.exists() and fuld.is_file():
+            eksisterende.append(sti)
+
+    # Max 20 filer for at holde kontekst under kontrol
+    return eksisterende[:20]
+
+
+def byg_fil_kontekst(fil_stier: list, max_tegn_pr_fil: int = 3000) -> str:
+    """Laes filer og byg kontekst-streng til Claude."""
+    kontekst = []
+    for sti in fil_stier:
+        fuld = REPO_ROOT / sti
+        try:
+            indhold = fuld.read_text(encoding="utf-8")
+            if len(indhold) > max_tegn_pr_fil:
+                indhold = indhold[:max_tegn_pr_fil] + f"\n... [afskaret ved {max_tegn_pr_fil} tegn]"
+            kontekst.append(f"\n=== {sti} ===\n{indhold}")
+        except Exception:
+            pass
+    return "".join(kontekst)
+
+
+def kald_repair_claude(klient: anthropic.Anthropic, fejlende_trin: str,
+                       fejl_output: str, fil_kontekst: str, iteration: int) -> Optional[str]:
+    """Kald Claude API med fejl + filer og returnerer fix som tekst."""
+
+    system_prompt = """Du er en ekspert Next.js/TypeScript repair-agent for ChainHub-projektet.
+
+Dit ENESTE job: Fix de konkrete kompileringsfejl du ser. Intet andet.
+
+Regler:
+- Ret KUN de filer der er noedvendige for at fixe fejlene
+- Introducér ALDRIG nye features eller refaktorering
+- Bevar eksisterende logik — kun minimal aendring for at fixe fejlen
+- Manglende exports: tilfoej dem
+- Manglende typer: tilfoej dem eller brug 'any' som midlertidig fix
+- Manglende imports: tilfoej dem eller installer pakken
+- Syntaksfejl: ret dem
+- Manglende shadcn/ui-komponenter: opret minimal fungerende version
+
+OUTPUT-FORMAT — brug KUN dette format:
+--- FIL: sti/til/fil ---
+[komplet filindhold]
+--- SLUT ---
+
+Hvis npm-pakker mangler, tilfoej:
+NPM_INSTALL: pakke1 pakke2
+
+Afslut med: FAERDIG
+"""
+
+    bruger_besked = f"""=== ITERATION {iteration} ===
+Fejlende trin: {fejlende_trin}
+
+Fejloutput:
+{fejl_output[:4000]}
+
+Relevante filer:
+{fil_kontekst}
+
+Fix KUN de fejl der fremgaar af fejloutputtet. Skriv komplette filer.
+"""
+
+    try:
+        output = ""
+        with klient.messages.stream(
+            model=MODEL,
+            max_tokens=MAX_TOKENS,
+            system=system_prompt,
+            messages=[{"role": "user", "content": bruger_besked}]
+        ) as stream:
+            for tekst in stream.text_stream:
+                output += tekst
+        return output
+    except Exception as e:
+        log(f"  Claude API fejl: {e}", "FEJL")
+        return None
+
+
+def koer_autorepair_loop(klient: anthropic.Anthropic, max_iter: int = 10) -> bool:
+    """
+    Autonom repair loop:
+    1. Korer hvert build-trin
+    2. Ved fejl: ekstraher fejlede filer, kald Claude, anvend fix
+    3. Gentager indtil groen build eller max_iter naas
+    """
+    _npm = "npm.cmd" if sys.platform == "win32" else "npm"
+    _npx = "npx.cmd" if sys.platform == "win32" else "npx"
+
+    # Build-trin i raekkefoelge — npm install springes over efter foerste runde
+    trin_liste = [
+        ([_npm, "install", "--legacy-peer-deps"], "npm install"),
+        ([_npx, "prisma", "generate"],             "prisma generate"),
+        ([_npx, "tsc", "--noEmit"],                "tsc typecheck"),
+        ([_npx, "next", "build"],                  "next build"),
+    ]
+
+    log(f"=== AUTOREPAIR START (max {max_iter} iterationer) ===")
+
+    for iteration in range(1, max_iter + 1):
+        log(f"\n--- Autorepair iteration {iteration}/{max_iter} ---")
+        fejl_output = ""
+        fejlende_trin = None
+        start_fra = 1 if iteration > 1 else 0  # spring npm install over efter 1. runde
+
+        for cmd, navn in trin_liste[start_fra:]:
+            log(f"  Korer: {navn}...")
+            start = time.time()
+            try:
+                res = subprocess.run(
+                    cmd, cwd=REPO_ROOT, capture_output=True, text=True, timeout=300
+                )
+            except subprocess.TimeoutExpired:
+                log(f"  x {navn} TIMEOUT", "FEJL")
+                fejl_output = f"TIMEOUT efter 300s under: {navn}"
+                fejlende_trin = navn
+                break
+            except Exception as e:
+                log(f"  x {navn} OS-FEJL: {e}", "FEJL")
+                fejl_output = str(e)
+                fejlende_trin = navn
+                break
+
+            varighed = round(time.time() - start, 1)
+            if res.returncode == 0:
+                log(f"  v {navn} OK ({varighed}s)")
+            else:
+                kombineret = (res.stdout + "\n" + res.stderr).strip()
+                log(f"  x {navn} FEJLEDE ({varighed}s)")
+                # Log de foerste fejllinjer
+                fejllinjer = [l for l in kombineret.splitlines() if "error" in l.lower() or "Error" in l][:8]
+                for linje in fejllinjer:
+                    log(f"    {linje[:120]}", "FEJL")
+                fejl_output = kombineret
+                fejlende_trin = navn
+                break
+
+        # Alle trin OK?
+        if fejlende_trin is None:
+            log(f"\n=== AUTOREPAIR: BUILD GROENT efter {iteration} iteration(er) ===")
+            git_commit(f"chore: autorepair completed — build passing (iter {iteration})")
+            return True
+
+        # Ekstraher fejlfiler og byg kontekst
+        fejl_filer = udtraek_fejlfiler(fejl_output)
+        log(f"  Fejlfiler fundet: {len(fejl_filer)} ({', '.join(fejl_filer[:5])}{'...' if len(fejl_filer) > 5 else ''})")
+        fil_kontekst = byg_fil_kontekst(fejl_filer)
+
+        # Haandter specielle tilfaelde uden Claude-kald
+        if fejlende_trin == "npm install":
+            log("  npm install fejlede — proever med --force", "ADVARSEL")
+            subprocess.run([_npm, "install", "--force"], cwd=REPO_ROOT,
+                           capture_output=True, text=True, timeout=120)
+            continue
+
+        if iteration == max_iter:
+            log(f"=== AUTOREPAIR: MAX ITERATIONER ({max_iter}) NAAET ===", "FEJL")
+            log("  Bygget fejler stadig. Seneste fejloutput gemmes.", "FEJL")
+            (REPO_ROOT / "autorepair-final-error.txt").write_text(
+                f"Trin: {fejlende_trin}\n\n{fejl_output}", encoding="utf-8"
+            )
+            return False
+
+        # Kald Claude for fix
+        log(f"  Sender fejl til Claude (iter {iteration})...")
+        fix_output = kald_repair_claude(klient, fejlende_trin, fejl_output, fil_kontekst, iteration)
+
+        if not fix_output:
+            log("  Claude returnerede intet — afbryder", "FEJL")
+            return False
+
+        # Anvend fixes
+        filer = parse_output_filer(fix_output)
+        if filer:
+            log(f"  Anvender {len(filer)} filer fra Claude...")
+            for sti, indhold in filer.items():
+                skriv_fil(sti, indhold)
+        else:
+            log("  Ingen filer i Claude-output", "ADVARSEL")
+
+        # Haandter NPM_INSTALL direktivet
+        npm_match = re.search(r"NPM_INSTALL:\s*(.+)", fix_output)
+        if npm_match:
+            pakker_str = npm_match.group(1).strip()
+            if pakker_str.lower() not in ("ingen", "none", ""):
+                pakker = [p for p in pakker_str.split() if p and not p.startswith("#")]
+                if pakker:
+                    log(f"  Installerer: {' '.join(pakker)}")
+                    subprocess.run(
+                        [_npm, "install"] + pakker + ["--legacy-peer-deps"],
+                        cwd=REPO_ROOT, capture_output=True, text=True, timeout=120
+                    )
+
+        git_commit(f"fix: autorepair iter {iteration} — {fejlende_trin}")
+        log(f"  Iteration {iteration} fix anvendt — korer igen...")
+
+    log(f"=== AUTOREPAIR: AFSLUTTET UDEN GROENT BUILD ===", "FEJL")
+    return False
+
+
+# ============================================================
+# Agent-definitioner
+# ============================================================
+
+AGENTS = {
+    "BA-02": {
+        "navn": "Schema-agent",
+        "sprint": 1,
+        "opgave": "Database — Prisma schema komplet med alle modeller, enums, relationer, indexes",
+        "input_filer": ["docs/spec/DATABASE-SCHEMA.md", "docs/spec/CONTRACT-TYPES.md", "docs/status/DECISIONS.md"],
+        "output_filer": ["prisma/schema.prisma", "prisma/seed.ts"],
+        "succeskriterier": ["prisma/schema.prisma eksisterer og er valid", "organization_id på alle modeller", "deleted_at på kritiske modeller"],
+        "system_prompt": """Du er BA-02 (Schema-agent) for ChainHub-projektet.
+Dit ansvar: Prisma schema, seed-data, multi-tenancy, indexes, enums, soft delete.
+Alle tabeller har: organization_id, created_at, updated_at, created_by, deleted_at (kritiske).
+OUTPUT-FORMAT:
+--- FIL: [sti/til/fil] ---
+[filindhold]
+--- SLUT ---""",
+    },
+
+    "BA-03": {
+        "navn": "Auth-agent",
+        "sprint": 1,
+        "opgave": "Auth — NextAuth.js med email/password + Microsoft OAuth + session + middleware + permissions helpers",
+        "input_filer": ["docs/spec/kravspec-legalhub.md", "docs/build/CONVENTIONS.md", "docs/spec/roller-og-tilladelser.md", "prisma/schema.prisma"],
+        "output_filer": ["src/lib/auth/index.ts", "src/lib/permissions/index.ts", "src/app/api/auth/[...nextauth]/route.ts", "src/middleware.ts", "src/app/(auth)/login/page.tsx"],
+        "succeskriterier": ["NextAuth med Credentials + Azure AD", "canAccessCompany(), canAccessSensitivity(), canAccessModule(), getAccessibleCompanies() implementeret"],
+        "system_prompt": """Du er BA-03 (Auth-agent) for ChainHub-projektet.
+Levér disse helpers med eksakte signaturer:
+  canAccessCompany(userId: string, companyId: string): Promise<boolean>
+  canAccessSensitivity(userId: string, level: SensitivityLevel): Promise<boolean>
+  canAccessModule(userId: string, module: ModuleType): Promise<boolean>
+  getAccessibleCompanies(userId: string): Promise<Company[]>
+OUTPUT-FORMAT:
+--- FIL: [sti/til/fil] ---
+[filindhold]
+--- SLUT ---""",
+    },
+
+    "BA-04": {
+        "navn": "UI-agent (Dashboard shell)",
+        "sprint": 1,
+        "opgave": "Dashboard shell — layout med sidebar, header, navigation til alle moduler",
+        "input_filer": ["docs/build/CONVENTIONS.md", "docs/spec/kravspec-legalhub.md", "src/lib/auth/index.ts"],
+        "output_filer": ["src/app/(dashboard)/layout.tsx", "src/components/layout/Sidebar.tsx", "src/components/layout/Header.tsx", "src/app/(dashboard)/page.tsx"],
+        "succeskriterier": ["Sidebar med dansk navigation", "Bruger-menu med logout", "Kun Tailwind — ingen inline styles"],
+        "system_prompt": """Du er BA-04 (UI-agent) for ChainHub-projektet.
+Kun Tailwind utility classes. Dansk sprog i alle labels.
+Sidebar: Overblik, Selskaber, Kontrakter, Sager, Opgaver, Personer, Dokumenter, Okonomi, Indstillinger.
+OUTPUT-FORMAT:
+--- FIL: [sti/til/fil] ---
+[filindhold]
+--- SLUT ---""",
+    },
+
+    "BA-08-devops": {
+        "navn": "DevOps-agent (CI/CD)",
+        "sprint": 1,
+        "opgave": "DevOps — GitHub Actions CI, env validation script, Vercel config",
+        "input_filer": ["docs/build/CONVENTIONS.md", "package.json", ".env.example"],
+        "output_filer": [".github/workflows/ci.yml", "scripts/validate-env.ts", "vercel.json"],
+        "succeskriterier": ["CI korer lint + typecheck + test", "validate-env.ts fejler tidligt", "Stripe webhook www-prefix dokumenteret"],
+        "system_prompt": """Du er BA-08 (DevOps-agent) for ChainHub-projektet.
+KRITISK: Stripe webhook URL SKAL have www-prefix. Trailing newlines i secrets giver stille fejl.
+OUTPUT-FORMAT:
+--- FIL: [sti/til/fil] ---
+[filindhold]
+--- SLUT ---""",
+    },
+
+    "BA-05-selskab": {
+        "navn": "Feature-agent (Selskabsprofil)",
+        "sprint": 2,
+        "opgave": "Selskabsprofil — stamdata, ejerskab, governance, ansatte, aktivitetslog",
+        "input_filer": ["docs/spec/DATABASE-SCHEMA.md", "docs/build/CONVENTIONS.md", "docs/spec/roller-og-tilladelser.md", "docs/status/DECISIONS.md", "prisma/schema.prisma", "src/lib/auth/index.ts", "src/lib/permissions/index.ts"],
+        "output_filer": ["src/app/(dashboard)/companies/[id]/page.tsx", "src/actions/companies.ts", "src/components/companies/CompanyForm.tsx"],
+        "succeskriterier": ["canAccessCompany() på alle actions", "organization_id på alle queries", "Zod validation"],
+        "system_prompt": """Du er BA-05 (Feature-agent) for ChainHub-projektet. Du bygger Selskabsprofil.
+Kald ALTID canAccessCompany(). Filtrer ALTID på organization_id. Zod på al input.
+OUTPUT-FORMAT:
+--- FIL: [sti/til/fil] ---
+[filindhold]
+--- SLUT ---""",
+    },
+
+    "BA-05-person": {
+        "navn": "Feature-agent (Persondatabase)",
+        "sprint": 2,
+        "opgave": "Persondatabase — global kontaktbog, roller på tvaers af selskaber",
+        "input_filer": ["docs/spec/DATABASE-SCHEMA.md", "docs/build/CONVENTIONS.md", "prisma/schema.prisma", "src/lib/auth/index.ts", "src/lib/permissions/index.ts", "src/actions/companies.ts"],
+        "output_filer": ["src/app/(dashboard)/persons/[id]/page.tsx", "src/actions/persons.ts", "src/components/persons/PersonForm.tsx"],
+        "succeskriterier": ["Person kan tilknyttes flere selskaber", "organization_id på alle queries"],
+        "system_prompt": """Du er BA-05 (Feature-agent) for ChainHub-projektet. Du bygger Persondatabase.
+OUTPUT-FORMAT:
+--- FIL: [sti/til/fil] ---
+[filindhold]
+--- SLUT ---""",
+    },
+
+    "BA-09-sprint2": {
+        "navn": "Performance-agent (Sprint 2)",
+        "sprint": 2,
+        "opgave": "Performance — N+1 analyse, indexes, caching-strategi for selskabs- og personmodul",
+        "input_filer": ["prisma/schema.prisma", "src/actions/companies.ts", "src/actions/persons.ts"],
+        "output_filer": ["docs/status/DECISIONS.md", "docs/ops/CACHING.md"],
+        "succeskriterier": ["Ingen N+1", "Pagination på alle lister"],
+        "system_prompt": """Du er BA-09 (Performance-agent). Analyser queries — skriv ikke ny kode.
+OUTPUT-FORMAT:
+--- FIL: [sti/til/fil] ---
+[filindhold]
+--- SLUT ---""",
+    },
+
+    "BA-07-sprint2": {
+        "navn": "QA-agent (Sprint 2)",
+        "sprint": 2,
+        "opgave": "QA — Validér selskabs- og personmodul",
+        "input_filer": ["docs/build/CONVENTIONS.md", "docs/status/DECISIONS.md", "src/actions/companies.ts", "src/actions/persons.ts", "src/lib/permissions/index.ts"],
+        "output_filer": ["docs/status/DECISIONS.md"],
+        "succeskriterier": ["canAccessCompany() kaldt", "organization_id overalt", "Zod validation"],
+        "system_prompt": """Du er BA-07 (QA-agent). Du reviewer Sprint 2.
+OUTPUT-FORMAT:
+--- FIL: docs/status/DECISIONS.md ---
+[indhold]
+--- SLUT ---""",
+    },
+
+    "BA-05-kontrakt": {
+        "navn": "Feature-agent (Kontraktstyring)",
+        "sprint": 3,
+        "opgave": "Kontraktstyring — opret kontrakt, status-flow, parter, fil-upload, versionsstyring",
+        "input_filer": ["docs/spec/DATABASE-SCHEMA.md", "docs/spec/CONTRACT-TYPES.md", "docs/build/CONVENTIONS.md", "docs/status/DECISIONS.md", "prisma/schema.prisma", "src/lib/auth/index.ts", "src/lib/permissions/index.ts"],
+        "output_filer": ["src/lib/validations/contract.ts", "src/types/contract.ts", "src/actions/contracts.ts", "src/app/(dashboard)/contracts/page.tsx", "src/app/(dashboard)/contracts/[id]/page.tsx"],
+        "succeskriterier": ["Alle 34 system_types", "Status-flow korrekt", "Sensitivity-minimum haandhaevet"],
+        "system_prompt": """Du er BA-05 (Feature-agent). Du bygger Kontraktstyring.
+Status-flow: UDKAST -> TIL_REVIEW -> TIL_UNDERSKRIFT -> AKTIV -> UDLOBET/OPSAGT/FORNYET/ARKIVERET
+OUTPUT-FORMAT:
+--- FIL: [sti/til/fil] ---
+[filindhold]
+--- SLUT ---""",
+    },
+
+    "BA-06-advisering": {
+        "navn": "Integration-agent (Advisering)",
+        "sprint": 3,
+        "opgave": "Adviseringslogik — 90/30/7 dage, løbende kontrakter, auto-renewal, email",
+        "input_filer": ["docs/spec/DATABASE-SCHEMA.md", "docs/build/CONVENTIONS.md", "prisma/schema.prisma", "src/actions/contracts.ts"],
+        "output_filer": ["src/lib/advisering/deadlines.ts", "src/lib/advisering/notifications.ts", "src/app/api/cron/check-deadlines/route.ts"],
+        "succeskriterier": ["Cron tjekker deadlines dagligt", "90/30/7-dages advis"],
+        "system_prompt": """Du er BA-06 (Integration-agent). Du bygger advisering.
+OUTPUT-FORMAT:
+--- FIL: [sti/til/fil] ---
+[filindhold]
+--- SLUT ---""",
+    },
+
+    "BA-05-dokumenter": {
+        "navn": "Feature-agent (Dokumenthaandtering)",
+        "sprint": 3,
+        "opgave": "Dokumenthaandtering — upload, preview, download, tilknytning",
+        "input_filer": ["docs/spec/DATABASE-SCHEMA.md", "docs/build/CONVENTIONS.md", "prisma/schema.prisma", "src/lib/permissions/index.ts"],
+        "output_filer": ["src/actions/documents.ts", "src/app/(dashboard)/documents/page.tsx", "src/lib/storage/r2.ts"],
+        "succeskriterier": ["Cloudflare R2 upload", "canAccessSensitivity() på downloads"],
+        "system_prompt": """Du er BA-05 (Feature-agent). Du bygger Dokumenthaandtering.
+OUTPUT-FORMAT:
+--- FIL: [sti/til/fil] ---
+[filindhold]
+--- SLUT ---""",
+    },
+
+    "BA-07-sprint3": {
+        "navn": "QA-agent (Sprint 3)",
+        "sprint": 3,
+        "opgave": "QA — Validér kontraktstyring, advisering og dokumentmodul",
+        "input_filer": ["docs/build/CONVENTIONS.md", "docs/status/DECISIONS.md", "src/actions/contracts.ts", "src/lib/advisering/deadlines.ts"],
+        "output_filer": ["docs/status/DECISIONS.md"],
+        "succeskriterier": ["Status-flow korrekt", "Sensitivity-minimum haandhaevet"],
+        "system_prompt": """Du er BA-07 (QA-agent). Du reviewer Sprint 3.
+OUTPUT-FORMAT:
+--- FIL: docs/status/DECISIONS.md ---
+[indhold]
+--- SLUT ---""",
+    },
+
+    "BA-05-sager": {
+        "navn": "Feature-agent (Sagsstyring)",
+        "sprint": 4,
+        "opgave": "Sagsstyring — sagstyper, tilknytning, frister",
+        "input_filer": ["docs/spec/DATABASE-SCHEMA.md", "docs/build/CONVENTIONS.md", "prisma/schema.prisma", "src/lib/auth/index.ts", "src/lib/permissions/index.ts"],
+        "output_filer": ["src/types/case.ts", "src/actions/cases.ts", "src/app/(dashboard)/cases/page.tsx", "src/app/(dashboard)/cases/[id]/page.tsx"],
+        "succeskriterier": ["Alle CaseType-vaerdier", "Status-flow NY->AKTIV->LUKKET"],
+        "system_prompt": """Du er BA-05 (Feature-agent). Du bygger Sagsstyring.
+OUTPUT-FORMAT:
+--- FIL: [sti/til/fil] ---
+[filindhold]
+--- SLUT ---""",
+    },
+
+    "BA-05-opgaver": {
+        "navn": "Feature-agent (Opgavestyring)",
+        "sprint": 4,
+        "opgave": "Opgavestyring — liste/kanban, daglig digest",
+        "input_filer": ["docs/spec/DATABASE-SCHEMA.md", "docs/build/CONVENTIONS.md", "prisma/schema.prisma", "src/actions/cases.ts"],
+        "output_filer": ["src/types/task.ts", "src/actions/tasks.ts", "src/app/(dashboard)/tasks/page.tsx"],
+        "succeskriterier": ["Opgaver tilknyttet sager", "Daglig digest cron"],
+        "system_prompt": """Du er BA-05 (Feature-agent). Du bygger Opgavestyring.
+OUTPUT-FORMAT:
+--- FIL: [sti/til/fil] ---
+[filindhold]
+--- SLUT ---""",
+    },
+
+    "BA-07-sprint4": {
+        "navn": "QA-agent (Sprint 4)",
+        "sprint": 4,
+        "opgave": "QA — Validér sags- og opgavemodul",
+        "input_filer": ["docs/build/CONVENTIONS.md", "docs/status/DECISIONS.md", "src/actions/cases.ts", "src/actions/tasks.ts"],
+        "output_filer": ["docs/status/DECISIONS.md"],
+        "succeskriterier": ["CaseStatus-flow korrekt", "organization_id overalt"],
+        "system_prompt": """Du er BA-07 (QA-agent). Du reviewer Sprint 4.
+OUTPUT-FORMAT:
+--- FIL: docs/status/DECISIONS.md ---
+[indhold]
+--- SLUT ---""",
+    },
+
+    "BA-05-dashboard": {
+        "navn": "Feature-agent (Portfolio-dashboard)",
+        "sprint": 5,
+        "opgave": "Portfolio-dashboard — overblik, filtrering, aggregerede counts",
+        "input_filer": ["docs/spec/DATABASE-SCHEMA.md", "docs/build/CONVENTIONS.md", "prisma/schema.prisma", "src/lib/permissions/index.ts", "src/actions/companies.ts"],
+        "output_filer": ["src/actions/dashboard.ts", "src/app/(dashboard)/page.tsx", "src/components/dashboard/PortfolioOverview.tsx"],
+        "succeskriterier": ["Aggregerede counts — ingen N+1", "Under 2 sekunder"],
+        "system_prompt": """Du er BA-05 (Feature-agent). Du bygger Portfolio-dashboard.
+PERFORMANCE: Brug aggregerede counts i en query — aldrig N+1.
+OUTPUT-FORMAT:
+--- FIL: [sti/til/fil] ---
+[filindhold]
+--- SLUT ---""",
+    },
+
+    "BA-05-oekonomi": {
+        "navn": "Feature-agent (Oekonomi-overblik)",
+        "sprint": 5,
+        "opgave": "Oekonomi — noegletal, tidsregistrering, fakturaoversigt, udbytte",
+        "input_filer": ["docs/spec/DATABASE-SCHEMA.md", "docs/build/CONVENTIONS.md", "prisma/schema.prisma", "src/lib/permissions/index.ts"],
+        "output_filer": ["src/actions/finance.ts", "src/app/(dashboard)/finance/page.tsx"],
+        "succeskriterier": ["MetricType/PeriodType enums korrekte", "canAccessSensitivity(FORTROLIG)"],
+        "system_prompt": """Du er BA-05 (Feature-agent). Du bygger Oekonomi-overblik.
+canAccessSensitivity(userId, "FORTROLIG") SKAL kaldes pa alle finance-queries.
+OUTPUT-FORMAT:
+--- FIL: [sti/til/fil] ---
+[filindhold]
+--- SLUT ---""",
+    },
+
+    "BA-09-sprint5": {
+        "navn": "Performance-agent (Sprint 5)",
+        "sprint": 5,
+        "opgave": "Performance — validér dashboard under 2s, N+1 analyse",
+        "input_filer": ["prisma/schema.prisma", "src/actions/dashboard.ts", "src/actions/finance.ts"],
+        "output_filer": ["docs/status/DECISIONS.md"],
+        "succeskriterier": ["Dashboard aggregerede queries", "Oekonomidata caches"],
+        "system_prompt": """Du er BA-09 (Performance-agent). Du reviewer Sprint 5.
+OUTPUT-FORMAT:
+--- FIL: [sti/til/fil] ---
+[filindhold]
+--- SLUT ---""",
+    },
+
+    "BA-07-sprint5": {
+        "navn": "QA-agent (Sprint 5)",
+        "sprint": 5,
+        "opgave": "QA — Validér dashboard og oekonomimodul",
+        "input_filer": ["docs/build/CONVENTIONS.md", "docs/status/DECISIONS.md", "src/actions/dashboard.ts", "src/actions/finance.ts"],
+        "output_filer": ["docs/status/DECISIONS.md"],
+        "succeskriterier": ["Enums korrekte", "canAccessSensitivity(FORTROLIG)"],
+        "system_prompt": """Du er BA-07 (QA-agent). Du reviewer Sprint 5.
+OUTPUT-FORMAT:
+--- FIL: docs/status/DECISIONS.md ---
+[indhold]
+--- SLUT ---""",
+    },
+
+    "BA-10-tests": {
+        "navn": "Test-agent",
+        "sprint": 6,
+        "opgave": "Testsuite — unit, integration og E2E tests",
+        "input_filer": ["docs/spec/roller-og-tilladelser.md", "docs/build/CONVENTIONS.md", "prisma/schema.prisma", "src/lib/permissions/index.ts", "src/actions/companies.ts"],
+        "output_filer": ["src/__tests__/unit/permissions.test.ts", "src/__tests__/integration/tenant-isolation.test.ts", "e2e/login.spec.ts", "vitest.config.ts"],
+        "succeskriterier": ["Tenant isolation tests", "Alle ikke-forhandlingsbare tests groenne"],
+        "system_prompt": """Du er BA-10 (Test-agent). Brug Vitest + Playwright.
+Ikke-forhandlingsbare tests:
+  test('tenant A cannot access tenant B companies')
+  test('COMPANY_MANAGER cannot see STRENGT_FORTROLIG')
+OUTPUT-FORMAT:
+--- FIL: [sti/til/fil] ---
+[filindhold]
+--- SLUT ---""",
+    },
+
+    "BA-11-pentest": {
+        "navn": "Security Pentest-agent",
+        "sprint": 6,
+        "opgave": "Pentest — IDOR, tenant isolation, privilege escalation, input validation",
+        "input_filer": ["docs/spec/roller-og-tilladelser.md", "docs/status/DECISIONS.md", "src/lib/permissions/index.ts", "src/middleware.ts", "src/actions/companies.ts", "src/actions/contracts.ts"],
+        "output_filer": ["docs/ops/PENTEST-REPORT.md", "docs/status/DECISIONS.md"],
+        "succeskriterier": ["Ingen KRITISKE sikkerhedshuller", "IDOR-analyse gennemfoert"],
+        "system_prompt": """Du er BA-11 (Pentest-agent). Forsog aktivt at bryde systemet.
+Test: tenant isolation, IDOR, privilege escalation, input validation, rate limiting.
+OUTPUT-FORMAT:
+--- FIL: [sti/til/fil] ---
+[filindhold]
+--- SLUT ---""",
+    },
+
+    "BA-06-stripe": {
+        "navn": "Integration-agent (Stripe Billing)",
+        "sprint": 6,
+        "opgave": "Stripe Billing — per-seat subscriptions, trial, webhook",
+        "input_filer": ["docs/build/CONVENTIONS.md", "prisma/schema.prisma", "src/lib/auth/index.ts", ".env.example"],
+        "output_filer": ["src/lib/stripe/index.ts", "src/lib/stripe/webhook.ts", "src/app/api/webhooks/stripe/route.ts", "src/actions/billing.ts"],
+        "succeskriterier": ["Per-seat subscription", "14 dages trial", "www-prefix pa webhook URL"],
+        "system_prompt": """Du er BA-06 (Integration-agent). Du bygger Stripe Billing.
+KRITISK: Webhook URL = https://www.chainhub.dk/api/webhooks/stripe (www-prefix er ikke-forhandlingsbart)
+OUTPUT-FORMAT:
+--- FIL: [sti/til/fil] ---
+[filindhold]
+--- SLUT ---""",
+    },
+
+    "BA-08-runbook": {
+        "navn": "DevOps-agent (Runbook + monitoring)",
+        "sprint": 6,
+        "opgave": "Runbook, monitoring, alerting, backup, produktionsklar deployment",
+        "input_filer": ["docs/build/CONVENTIONS.md", "docs/ops/RUNBOOK.md", ".env.example", "vercel.json"],
+        "output_filer": ["docs/ops/RUNBOOK.md", ".github/workflows/ci.yml", "vercel.json"],
+        "succeskriterier": ["RUNBOOK daekker kritiske scenarier", "CI pipeline komplet"],
+        "system_prompt": """Du er BA-08 (DevOps-agent). Afslut Sprint 6 med produktionsklar infrastruktur.
+OUTPUT-FORMAT:
+--- FIL: [sti/til/fil] ---
+[filindhold]
+--- SLUT ---""",
+    },
+
+    "BA-07-sprint6": {
+        "navn": "QA-agent (Sprint 6 — final review)",
+        "sprint": 6,
+        "opgave": "Final QA — validér hele systemet er produktionsklart",
+        "input_filer": ["docs/build/CONVENTIONS.md", "docs/status/DECISIONS.md", "docs/ops/PENTEST-REPORT.md", "src/lib/permissions/index.ts"],
+        "output_filer": ["docs/status/DECISIONS.md", "docs/status/PROGRESS.md"],
+        "succeskriterier": ["Ingen uloeste KRITISKE beslutninger", "PROGRESS.md markeret produktionsklart"],
+        "system_prompt": """Du er BA-07 (QA-agent). Final review inden produktion.
+Opdater PROGRESS.md med PRODUKTIONSKLART: [dato].
+OUTPUT-FORMAT:
+--- FIL: [sti] ---
+[indhold]
+--- SLUT ---""",
+    },
+
+    "BA-07-sprint1": {
+        "navn": "QA-agent (Sprint 1 review)",
+        "sprint": 1,
+        "opgave": "QA — Validér Sprint 1 kode mod spec",
+        "input_filer": ["docs/spec/DATABASE-SCHEMA.md", "docs/build/CONVENTIONS.md", "docs/status/DECISIONS.md", "prisma/schema.prisma", "src/lib/auth/index.ts", "src/lib/permissions/index.ts"],
+        "output_filer": ["docs/status/DECISIONS.md"],
+        "succeskriterier": ["Permissions helpers korrekte", "organization_id overalt"],
+        "system_prompt": """Du er BA-07 (QA-agent). Du reviewer Sprint 1.
+OUTPUT-FORMAT:
+--- FIL: docs/status/DECISIONS.md ---
+[indhold]
+--- SLUT ---""",
+    },
+
+    # ============================================================
+    # BA-12: Repair-agent — scanner og fikser manglende deps
+    # Kores med: python orchestrator.py --agent BA-12-repair --force
+    # ============================================================
+    "BA-12-repair": {
+        "navn": "Repair-agent (Dependencies + Build)",
+        "sprint": 0,
+        "opgave": "Scann alle imports, installer manglende pakker, opret manglende shadcn-komponenter, verificer build",
+        "input_filer": ["package.json", "docs/build/CONVENTIONS.md"],
+        "output_filer": [],
+        "succeskriterier": [
+            "Alle imports har matchende pakke i node_modules",
+            "Alle manglende shadcn/ui-komponenter er oprettet",
+            "npx next build gennemfoeres uden fejl",
+        ],
+        "system_prompt": """Du er BA-12 (Repair-agent) for ChainHub-projektet.
+
+Dit ENESTE ansvar: Opret manglende shadcn/ui-komponenter som komplette TypeScript/React filer.
+
+Du modtager en liste over manglende komponenter og pakker.
+
+For hver manglende shadcn/ui-komponent (src/components/ui/X.tsx):
+Opret den som en komplet, fungerende implementering baseret pa @radix-ui primitives.
+Brug cn() fra @/lib/utils og React.forwardRef monsteret.
+
+Standard struktur:
+  "use client"
+  import * as React from "react"
+  import * as XPrimitive from "@radix-ui/react-x"
+  import { cn } from "@/lib/utils"
+  const Component = React.forwardRef<...>(({ className, ...props }, ref) => (
+    <XPrimitive.Root ref={ref} className={cn("base-classes", className)} {...props} />
+  ))
+  Component.displayName = XPrimitive.Root.displayName
+  export { Component }
+
+Tilgaengelige @radix-ui primitives (allerede installeret):
+  @radix-ui/react-select, @radix-ui/react-dialog, @radix-ui/react-dropdown-menu,
+  @radix-ui/react-tabs, @radix-ui/react-avatar, @radix-ui/react-checkbox,
+  @radix-ui/react-popover, @radix-ui/react-toast, @radix-ui/react-label,
+  @radix-ui/react-separator, @radix-ui/react-slot
+
+OUTPUT-FORMAT:
+--- FIL: src/components/ui/[komponent-navn].tsx ---
+[komplet filindhold]
+--- SLUT ---
+
+Afslut med:
+NPM_INSTALL: [pakke1 pakke2]
+(eller "NPM_INSTALL: ingen" hvis ingen npm-pakker mangler)
+""",
+    },
+}
+
+
+# ============================================================
+# Sprint-raekkefoelge
+# ============================================================
+
+SPRINT_RAEKKEFOLGEP = {
+    1: ["BA-02", "BA-03", "BA-04", "BA-08-devops", "BA-07-sprint1"],
+    2: ["BA-05-selskab", "BA-05-person", "BA-09-sprint2", "BA-07-sprint2"],
+    3: ["BA-05-kontrakt", "BA-06-advisering", "BA-05-dokumenter", "BA-07-sprint3"],
+    4: ["BA-05-sager", "BA-05-opgaver", "BA-07-sprint4"],
+    5: ["BA-05-dashboard", "BA-05-oekonomi", "BA-09-sprint5", "BA-07-sprint5"],
+    6: ["BA-10-tests", "BA-11-pentest", "BA-06-stripe", "BA-08-runbook", "BA-07-sprint6"],
+}
+
+
+def koer_agent(agent_id: str, klient: anthropic.Anthropic, dry_run: bool = False, force: bool = False) -> bool:
     agent = AGENTS.get(agent_id)
     if not agent:
         log(f"Ukendt agent: {agent_id}", "FEJL")
         return False
 
-    # Tjek om output-filer allerede eksisterer — skip hvis alt er på plads
     output_filer = agent.get("output_filer", [])
-    if not force and output_filer and all((REPO_ROOT / f).exists() for f in output_filer):
+    if agent_id != "BA-12-repair" and not force and output_filer and all((REPO_ROOT / f).exists() for f in output_filer):
         log(f"=== {agent_id} SPRINGER OVER — output-filer eksisterer allerede ===")
         return True
 
     log(f"=== Starter {agent_id} ({agent['navn']}) ===")
     log(f"Opgave: {agent['opgave']}")
 
-    # --- 1. Saml input-filer ---
     fil_kontekst = []
     for sti in agent["input_filer"]:
-        indhold = læs_fil(sti)
+        indhold = laes_fil(sti)
         if indhold:
             fil_kontekst.append(f"\n\n=== {sti} ===\n{indhold}")
         else:
-            log(f"Input-fil mangler: {sti} — fortsætter uden", "ADVARSEL")
+            log(f"Input-fil mangler: {sti} — fortsaetter uden", "ADVARSEL")
+
+    ekstra_kontekst = ""
+    if agent_id == "BA-12-repair":
+        log("Scanner for manglende imports...")
+        manglende_npm, manglende_shadcn = scan_manglende_imports()
+        if not manglende_npm and not manglende_shadcn:
+            log("Ingen manglende imports — korer build gate direkte")
+            return koer_build_gate(0)
+        ekstra_kontekst = f"""
+=== SCAN RESULTAT ===
+Manglende npm-pakker ({len(manglende_npm)}):
+{chr(10).join(f'  - {p}' for p in manglende_npm) if manglende_npm else '  ingen'}
+
+Manglende shadcn/ui-komponenter ({len(manglende_shadcn)}):
+{chr(10).join(f'  - src/components/ui/{k}.tsx' for k in manglende_shadcn) if manglende_shadcn else '  ingen'}
+"""
+        log(f"Fund: {len(manglende_npm)} npm, {len(manglende_shadcn)} shadcn")
 
     bruger_besked = f"""Din opgave: {agent['opgave']}
 
 Succeskriterier:
 {chr(10).join(f'- {k}' for k in agent['succeskriterier'])}
-
-Her er de relevante filer:
+{ekstra_kontekst}
+Relevante filer:
 {''.join(fil_kontekst)}
 
-Udfør opgaven nu. Skriv ALLE filer i formatet:
+Udfør opgaven nu.
 --- FIL: sti/til/fil ---
 [komplet filindhold]
 --- SLUT ---
 
-Afslut med en kort status: FÆRDIG / BLOKERET [årsag]
+Afslut: FAERDIG / BLOKERET [aarsag]
 """
 
     if dry_run:
-        log(f"[DRY RUN] Ville kalde API for {agent_id}")
-        log(f"[DRY RUN] System prompt: {agent['system_prompt'][:100]}...")
-        log(f"[DRY RUN] Input filer: {agent['input_filer']}")
+        log(f"[DRY RUN] {agent_id} — ville kalde API")
         return True
 
-    # --- 2. Kald Claude API (streaming) ---
     log(f"Kalder Claude API ({MODEL}) med streaming...")
     start = time.time()
 
@@ -1549,18 +995,16 @@ Afslut med en kort status: FÆRDIG / BLOKERET [årsag]
                     log(f"  ... {chunks} tegn modtaget")
 
         varighed = round(time.time() - start, 1)
-        log(f"API svar komplet på {varighed}s ({len(output_tekst)} tegn)")
+        log(f"API svar komplet paa {varighed}s ({len(output_tekst)} tegn)")
 
     except Exception as e:
         log(f"API fejl: {e}", "FEJL")
         return False
 
-    # --- 3. Parse og skriv filer ---
     filer = parse_output_filer(output_tekst)
 
-    if not filer:
-        log("Ingen filer fundet i output — tjek format", "ADVARSEL")
-        # Gem raw output til debug
+    if not filer and agent_id != "BA-12-repair":
+        log("Ingen filer fundet i output", "ADVARSEL")
         debug_sti = REPO_ROOT / f"orchestrator-debug-{agent_id}.txt"
         debug_sti.write_text(output_tekst, encoding="utf-8")
         log(f"Raw output gemt: {debug_sti}")
@@ -1569,34 +1013,39 @@ Afslut med en kort status: FÆRDIG / BLOKERET [årsag]
     for sti, indhold in filer.items():
         skriv_fil(sti, indhold)
 
-    # --- 4. Git commit ---
+    # BA-12: installer pakker fra NPM_INSTALL-linjen
+    if agent_id == "BA-12-repair":
+        npm_match = re.search(r"NPM_INSTALL:\s*(.+)", output_tekst)
+        if npm_match:
+            pakker_str = npm_match.group(1).strip()
+            if pakker_str.lower() != "ingen":
+                pakker = [p for p in pakker_str.split() if p and not p.startswith("#")]
+                if pakker:
+                    log(f"Installerer: {' '.join(pakker)}")
+                    _npm = "npm.cmd" if sys.platform == "win32" else "npm"
+                    res = subprocess.run(
+                        [_npm, "install"] + pakker + ["--legacy-peer-deps"],
+                        cwd=REPO_ROOT, capture_output=True, text=True, timeout=120
+                    )
+                    if res.returncode == 0:
+                        log(f"npm install OK")
+                    else:
+                        log(f"npm install fejlede: {res.stderr[-200:]}", "ADVARSEL")
+
     commit_besked = f"feat: {agent_id} {agent['navn']} - {agent['opgave'][:50]}"
     git_commit(commit_besked)
-
-    # --- 5. Opdater PROGRESS.md ---
     opdater_progress(agent_id)
 
-    log(f"=== {agent_id} FÆRDIG ({len(filer)} filer skrevet) ===")
+    if agent_id == "BA-12-repair":
+        log("BA-12 faerdig — korer build gate...")
+        koer_build_gate(0)
+
+    log(f"=== {agent_id} FAERDIG ({len(filer)} filer skrevet) ===")
     return True
 
 
-# ============================================================
-# Sprint-kørsel: kør alle agenter i et sprint sekventielt
-# ============================================================
-
-SPRINT_RÆKKEFØLGE = {
-    1: ["BA-02", "BA-03", "BA-04", "BA-08-devops", "BA-07-sprint1"],
-    2: ["BA-05-selskab", "BA-05-person", "BA-09-sprint2", "BA-07-sprint2"],
-    3: ["BA-05-kontrakt", "BA-06-advisering", "BA-05-dokumenter", "BA-07-sprint3"],
-    4: ["BA-05-sager", "BA-05-opgaver", "BA-07-sprint4"],
-    5: ["BA-05-dashboard", "BA-05-oekonomi", "BA-09-sprint5", "BA-07-sprint5"],
-    6: ["BA-10-tests", "BA-11-pentest", "BA-06-stripe", "BA-08-runbook", "BA-07-sprint6"],
-}
-
-
-def kør_sprint(sprint_nr: int, klient: anthropic.Anthropic, dry_run: bool = False, force: bool = False):
-    """Kør alle agenter i et sprint sekventielt."""
-    agenter = SPRINT_RÆKKEFØLGE.get(sprint_nr)
+def koer_sprint(sprint_nr: int, klient: anthropic.Anthropic, dry_run: bool = False, force: bool = False):
+    agenter = SPRINT_RAEKKEFOLGEP.get(sprint_nr)
     if not agenter:
         log(f"Ukendt sprint: {sprint_nr}", "FEJL")
         return
@@ -1606,17 +1055,21 @@ def kør_sprint(sprint_nr: int, klient: anthropic.Anthropic, dry_run: bool = Fal
 
     for i, agent_id in enumerate(agenter, 1):
         log(f"--- Agent {i}/{len(agenter)}: {agent_id} ---")
-        succes = kør_agent(agent_id, klient, dry_run, force)
+        succes = koer_agent(agent_id, klient, dry_run, force)
         if not succes:
-            log(f"Agent {agent_id} fejlede — stopper sprint", "FEJL")
-            log("Tjek orchestrator-debug-*.txt for detaljer")
+            log(f"Agent {agent_id} fejlede — stopper", "FEJL")
             break
-        # Kort pause mellem agenter
         if i < len(agenter):
             time.sleep(2)
 
+    # Automatisk build gate efter hvert sprint
+    if not dry_run:
+        build_ok = koer_build_gate(sprint_nr)
+        if not build_ok:
+            log(f"Build gate fejlede — fix: python orchestrator.py --agent BA-12-repair --force", "FEJL")
+
     varighed = round(time.time() - start, 1)
-    log(f"=== SPRINT {sprint_nr} AFSLUTTET på {varighed}s ===")
+    log(f"=== SPRINT {sprint_nr} AFSLUTTET paa {varighed}s ===")
 
 
 # ============================================================
@@ -1624,48 +1077,78 @@ def kør_sprint(sprint_nr: int, klient: anthropic.Anthropic, dry_run: bool = Fal
 # ============================================================
 
 def main():
-    parser = argparse.ArgumentParser(description="ChainHub autonom orkestrator")
-    parser.add_argument("--sprint", type=int, help="Kør hele et sprint (fx --sprint 1)")
-    parser.add_argument("--agent", type=str, help="Kør specifik agent (fx --agent BA-03)")
-    parser.add_argument("--dry-run", action="store_true", help="Vis plan uden at køre")
-    parser.add_argument("--list", action="store_true", help="List alle agenter")
-    parser.add_argument("--all", action="store_true", help="Kør alle sprints sekventielt (1 → 5)")
-    parser.add_argument("--force", action="store_true", help="Tving kørsel selv om output-filer eksisterer")
+    parser = argparse.ArgumentParser(description="ChainHub MABS orkestrator v2")
+    parser.add_argument("--sprint", type=int)
+    parser.add_argument("--agent", type=str)
+    parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--list", action="store_true")
+    parser.add_argument("--all", action="store_true")
+    parser.add_argument("--force", action="store_true")
+    parser.add_argument("--build-gate", type=int, metavar="SPRINT")
+    parser.add_argument("--scan", action="store_true", help="Scann for manglende imports")
+    parser.add_argument("--autorepair", action="store_true", help="Autonom repair loop: korer build og fikser fejl til det er groent")
+    parser.add_argument("--max-iter", type=int, default=10, help="Max iterationer for autorepair (default: 10)")
     args = parser.parse_args()
 
     if args.list:
-        print("\nTilgængelige agenter:")
-        for agent_id, agent in AGENTS.items():
-            print(f"  {agent_id:20} Sprint {agent['sprint']} — {agent['navn']}")
-        print("\nSprints:")
-        for sprint_nr, agenter in SPRINT_RÆKKEFØLGE.items():
-            print(f"  Sprint {sprint_nr}: {' → '.join(agenter)}")
+        print("\nTilgaengelige agenter:")
+        for aid, ag in AGENTS.items():
+            sprint_str = f"Sprint {ag['sprint']}" if ag['sprint'] > 0 else "Repair  "
+            print(f"  {aid:25} {sprint_str:10} {ag['navn']}")
+        print("\nSpecielle kommandoer:")
+        print("  --scan                              Scann for manglende imports")
+        print("  --build-gate N                      Kor build gate for sprint N")
+        print("  --agent BA-12-repair --force        Fix alle deps + build")
+        print("  --autorepair                        Autonom loop: korer til groen build")
+        print("  --autorepair --max-iter 15          Som ovenfor med 15 maks iterationer")
         return
 
-    # Tjek API-nøgle
-    api_nøgle = os.getenv("ANTHROPIC_API_KEY")
-    if not api_nøgle:
-        log("ANTHROPIC_API_KEY ikke fundet i .env.local eller miljøvariabler", "FEJL")
-        log("Tilføj: ANTHROPIC_API_KEY=sk-ant-... til .env.local")
+    if args.scan:
+        manglende_npm, manglende_shadcn = scan_manglende_imports()
+        print(f"\nManglende npm-pakker ({len(manglende_npm)}):")
+        for p in manglende_npm:
+            print(f"  - {p}")
+        print(f"\nManglende shadcn-komponenter ({len(manglende_shadcn)}):")
+        for k in manglende_shadcn:
+            print(f"  - src/components/ui/{k}.tsx")
+        if not manglende_npm and not manglende_shadcn:
+            print("  Ingen manglende imports!")
+        return
+
+    if args.build_gate is not None:
+        koer_build_gate(args.build_gate)
+        return
+
+    api_noegle = os.getenv("ANTHROPIC_API_KEY")
+    if hasattr(args, 'autorepair') and args.autorepair and not api_noegle:
+        log("ANTHROPIC_API_KEY ikke fundet i .env.local", "FEJL")
+        sys.exit(1)
+    if not api_noegle:
+        log("ANTHROPIC_API_KEY ikke fundet i .env.local", "FEJL")
         sys.exit(1)
 
-    klient = anthropic.Anthropic(api_key=api_nøgle)
+    klient = anthropic.Anthropic(api_key=api_noegle)
+
+    if hasattr(args, 'autorepair') and args.autorepair:
+        klient = anthropic.Anthropic(api_key=api_noegle)
+        succes = koer_autorepair_loop(klient, max_iter=args.max_iter)
+        sys.exit(0 if succes else 1)
 
     if args.dry_run:
-        log("=== DRY RUN — ingen filer skrives, ingen API-kald ===")
+        log("=== DRY RUN ===")
 
     if args.all:
-        alle_sprints = sorted(SPRINT_RÆKKEFØLGE.keys())
-        log(f"=== KØRER ALLE SPRINTS: {alle_sprints} ===")
-        for sprint_nr in alle_sprints:
-            kør_sprint(sprint_nr, klient, args.dry_run, args.force)
+        for sprint_nr in sorted(SPRINT_RAEKKEFOLGEP.keys()):
+            koer_sprint(sprint_nr, klient, args.dry_run, args.force)
     elif args.agent:
-        kør_agent(args.agent, klient, args.dry_run, args.force)
+        koer_agent(args.agent, klient, args.dry_run, args.force)
     elif args.sprint:
-        kør_sprint(args.sprint, klient, args.dry_run, args.force)
+        koer_sprint(args.sprint, klient, args.dry_run, args.force)
     else:
-        log("Ingen handling angivet. Brug --sprint 1, --agent BA-03, --all eller --list")
-        log("Eksempel: python orchestrator.py --all")
+        log("Ingen handling. Eksempler:")
+        log("  python orchestrator.py --sprint 1")
+        log("  python orchestrator.py --agent BA-12-repair --force")
+        log("  python orchestrator.py --scan")
 
 
 if __name__ == "__main__":

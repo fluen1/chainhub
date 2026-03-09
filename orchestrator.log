@@ -967,3 +967,58 @@ husky - pre-commit script failed (code 1)
 [2026-03-09 23:18:58] [INFO] Skrevet: .env.example
 [2026-03-09 23:18:58] [INFO] Skrevet: vercel.json
 [2026-03-09 23:18:58] [INFO] Skrevet: .github/workflows/ci.yml
+[2026-03-09 23:18:58] [INFO] Git commit: feat: BA-08-runbook DevOps-agent (Runbook + monitoring) - Runbook, monitoring, alerting, backup-strategi, pr
+[2026-03-09 23:18:58] [INFO] === BA-08-runbook FÆRDIG (4 filer skrevet) ===
+[2026-03-09 23:31:46] [INFO] === Starter BA-12-repair (Repair-agent (Dependencies + Build)) ===
+[2026-03-09 23:31:46] [INFO] Opgave: Scann alle imports, installer manglende pakker, opret manglende shadcn-komponenter, verificer build
+[2026-03-09 23:31:46] [INFO] Scanner for manglende imports...
+[2026-03-09 23:31:46] [INFO] Ingen manglende imports — korer build gate direkte
+[2026-03-09 23:31:46] [INFO] === BUILD GATE: Sprint 0 ===
+[2026-03-09 23:31:46] [INFO] Scannner for manglende imports...
+[2026-03-09 23:31:46] [INFO]   Korer: npm install...
+[2026-03-09 23:31:46] [FEJL]   x npm install FEJL: [WinError 2] Den angivne fil blev ikke fundet
+[2026-03-09 23:31:46] [FEJL] === BUILD GATE SPRINT 0: FEJLEDE ===
+[2026-03-09 23:31:46] [FEJL]   Fix: python orchestrator.py --agent BA-12-repair --force
+[2026-03-09 23:34:06] [INFO] === BUILD GATE: Sprint 0 ===
+[2026-03-09 23:34:06] [INFO] Scannner for manglende imports...
+[2026-03-09 23:34:06] [INFO]   Korer: npm install...
+[2026-03-09 23:34:10] [INFO]   v npm install OK (3.5s)
+[2026-03-09 23:34:10] [INFO]   Korer: prisma generate...
+[2026-03-09 23:34:12] [INFO]   v prisma generate OK (1.8s)
+[2026-03-09 23:34:12] [INFO]   Korer: tsc typecheck...
+[2026-03-09 23:34:22] [FEJL]   x tsc typecheck FEJLEDE (9.9s)
+[2026-03-09 23:34:22] [INFO]   Korer: next build...
+[2026-03-09 23:34:42] [FEJL]   x next build FEJLEDE (20.6s)
+[2026-03-09 23:34:42] [FEJL]     90m 69 |[39m     [36mtry[39m {[0m
+[0m [90m 70 |[39m       [36mif[39m (mode [33m===[39m [32m'create'[39m) {[0m
+[0m[31m[1m>[22m[39m[90m 71 |[39m         [36mconst[39m result [33m=[39m [36mawait[39m createCompany(data)[0m
+[0m [90m    |[39m                                            [31m[1m^[22m[39m[0m
+[0m [90m 72 |[39m         [36mif[39m (result[33m.[39merror) {[0m
+[0m [90m 73 |[39m           toast[33m.[39merror(result[33m.[39merror)[0m
+[0m [90m 74 |[39m           [36mreturn[39m[0m
+Next.js build worker exited with code: 1 and signal: null
+
+[2026-03-09 23:34:42] [FEJL] === BUILD GATE SPRINT 0: FEJLEDE ===
+[2026-03-09 23:34:42] [FEJL]   Fix: python orchestrator.py --agent BA-12-repair --force
+[2026-03-09 23:38:21] [INFO] === AUTOREPAIR START (max 10 iterationer) ===
+[2026-03-09 23:38:21] [INFO] 
+--- Autorepair iteration 1/10 ---
+[2026-03-09 23:38:21] [INFO]   Korer: npm install...
+[2026-03-09 23:38:24] [INFO]   v npm install OK (2.3s)
+[2026-03-09 23:38:24] [INFO]   Korer: prisma generate...
+[2026-03-09 23:38:25] [INFO]   v prisma generate OK (1.7s)
+[2026-03-09 23:38:25] [INFO]   Korer: tsc typecheck...
+[2026-03-09 23:38:29] [INFO]   x tsc typecheck FEJLEDE (3.8s)
+[2026-03-09 23:38:29] [FEJL]     src/__tests__/integration/auth-guard.test.ts(48,40): error TS2345: Argument of type '{ name: string; }' is not assignabl
+[2026-03-09 23:38:29] [FEJL]     src/__tests__/integration/auth-guard.test.ts(79,25): error TS2345: Argument of type '{ name: string; }' is not assignabl
+[2026-03-09 23:38:29] [FEJL]     src/__tests__/integration/contracts-action.test.ts(36,9): error TS2698: Spread types may only be created from object typ
+[2026-03-09 23:38:29] [FEJL]     src/__tests__/integration/contracts-action.test.ts(155,41): error TS2345: Argument of type '{ companyId: string; systemT
+[2026-03-09 23:38:29] [FEJL]     src/__tests__/integration/contracts-action.test.ts(175,41): error TS2345: Argument of type '{ companyId: string; systemT
+[2026-03-09 23:38:29] [FEJL]     src/__tests__/integration/contracts-action.test.ts(189,41): error TS2345: Argument of type '{ companyId: string; systemT
+[2026-03-09 23:38:29] [FEJL]     src/__tests__/integration/contracts-action.test.ts(207,26): error TS2345: Argument of type '{ companyId: string; systemT
+[2026-03-09 23:38:29] [FEJL]     src/__tests__/integration/contracts-action.test.ts(313,22): error TS7053: Element implicitly has an 'any' type because e
+[2026-03-09 23:38:29] [INFO]   Fejlfiler fundet: 20 (src/__tests__/integration/auth-guard.test.ts, src/__tests__/integration/contracts-action.test.ts, src/__tests__/integration/tenant-isolation.test.ts, src/__tests__/unit/companies-action.test.ts, src/components/companies/CompanyForm.tsx...)
+[2026-03-09 23:38:29] [INFO]   Sender fejl til Claude (iter 1)...
+[2026-03-09 23:39:26] [INFO]   Anvender 2 filer fra Claude...
+[2026-03-09 23:39:26] [INFO] Skrevet: src/lib/validations/company.ts
+[2026-03-09 23:39:26] [INFO] Skrevet: src/__tests__/integration/contracts-action.test.ts
