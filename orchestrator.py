@@ -352,17 +352,165 @@ Fix KUN de fejl der fremgaar af fejloutputtet. Skriv komplette filer.
         return None
 
 
+def byg_fil_til_agent_map() -> dict:
+    """
+    Byg reverse map: relativ_filsti -> agent_id
+    Baseret paa output_filer i hver agents definition.
+    Bruges til at route fejl tilbage til den ansvarlige specialist.
+    """
+    fil_map = {}
+    for agent_id, agent in AGENTS.items():
+        for sti in agent.get("output_filer", []):
+            # Normaliser stien (forward slash, lowercase)
+            norm = sti.replace("\\", "/").lower()
+            fil_map[norm] = agent_id
+    return fil_map
+
+
+def identificer_ansvarlige_agenter(fejl_filer: list, fil_til_agent: dict) -> dict:
+    """
+    Gruppér fejlede filer pr. ansvarlig agent.
+    Returner {agent_id: [fil1, fil2, ...]}.
+    Filer uden ansvarlig agent samles under '__generisk__'.
+    """
+    grupper = {}
+    for sti in fejl_filer:
+        norm = sti.replace("\\", "/").lower()
+        # Direkte match
+        agent_id = fil_til_agent.get(norm)
+        # Prøv delvis match (fx '[id]' vs '[companyId]' varianter)
+        if not agent_id:
+            for mappet_sti, aid in fil_til_agent.items():
+                # Sammenlign filnavn uden mappe
+                if norm.split("/")[-1] == mappet_sti.split("/")[-1]:
+                    agent_id = aid
+                    break
+        if not agent_id:
+            agent_id = "__generisk__"
+        grupper.setdefault(agent_id, []).append(sti)
+    return grupper
+
+
+def kald_specialist_agent(klient: anthropic.Anthropic, agent_id: str,
+                          fejlende_trin: str, fejl_output: str,
+                          fejl_filer: list, iteration: int) -> Optional[str]:
+    """
+    Kald den originale specialist-agent med dens egen system_prompt + fejl.
+    Agenten kender sine egne regler og konventioner bedst.
+    """
+    agent = AGENTS.get(agent_id)
+
+    if agent_id == "__generisk__" or not agent:
+        # Fallback: generisk repair
+        system_prompt = """Du er en ekspert Next.js/TypeScript repair-agent for ChainHub-projektet.
+Fix KUN de konkrete kompileringsfejl du ser. Minimal aendring — bevar eksisterende logik.
+OUTPUT-FORMAT:
+--- FIL: sti/til/fil ---
+[komplet filindhold]
+--- SLUT ---
+NPM_INSTALL: pakke1 pakke2  (eller 'NPM_INSTALL: ingen')"""
+        agent_navn = "Generisk repair"
+    else:
+        # Tilfoej repair-instruktion til agentens originale system_prompt
+        repair_tillaeg = """
+
+=== REPAIR MODE ===
+Du er kaldt fordi din tidligere kode indeholder kompileringsfejl.
+Dit job nu: Fix KUN de fejl der er beskrevet nedenfor.
+Minimal aendring — bevar al eksisterende logik og arkitektur.
+Du kender dine egne regler bedst — anvend dem stadig.
+
+OUTPUT-FORMAT:
+--- FIL: sti/til/fil ---
+[komplet filindhold]
+--- SLUT ---
+NPM_INSTALL: pakke1 pakke2  (eller 'NPM_INSTALL: ingen')"""
+        system_prompt = agent["system_prompt"] + repair_tillaeg
+        agent_navn = agent["navn"]
+
+    # Laes de fejlede filer som kontekst
+    fil_kontekst = byg_fil_kontekst(fejl_filer)
+
+    # Laes ogsaa agentens originale input-filer for fuld kontekst
+    if agent and agent_id != "__generisk__":
+        ekstra_input = []
+        for sti in agent.get("input_filer", [])[:4]:  # Max 4 for at holde kontekst
+            indhold = laes_fil(sti)
+            if indhold:
+                afskaret = indhold[:2000] + "\n...[afskaret]" if len(indhold) > 2000 else indhold
+                ekstra_input.append(f"\n=== {sti} (spec) ===\n{afskaret}")
+        if ekstra_input:
+            fil_kontekst = "".join(ekstra_input) + "\n" + fil_kontekst
+
+    bruger_besked = f"""=== REPAIR ITERATION {iteration} ===
+Ansvarlig agent: {agent_navn} ({agent_id})
+Fejlende build-trin: {fejlende_trin}
+
+Fejloutput:
+{fejl_output[:4000]}
+
+Fejlede filer du skal fixe:
+{chr(10).join(f'  - {f}' for f in fejl_filer)}
+
+Fil-indhold:
+{fil_kontekst}
+
+Fix KUN de fejl der fremgaar. Skriv komplette filer.
+"""
+
+    log(f"  Kalder {agent_navn} ({agent_id}) for repair...")
+    try:
+        output = ""
+        with klient.messages.stream(
+            model=MODEL,
+            max_tokens=MAX_TOKENS,
+            system=system_prompt,
+            messages=[{"role": "user", "content": bruger_besked}]
+        ) as stream:
+            for tekst in stream.text_stream:
+                output += tekst
+        return output
+    except Exception as e:
+        log(f"  Claude API fejl: {e}", "FEJL")
+        return None
+
+
+def anvend_fix(fix_output: str, _npm: str) -> int:
+    """Parser og anvender filer + npm install fra agent-output. Returnerer antal filer skrevet."""
+    filer = parse_output_filer(fix_output)
+    antal = 0
+    if filer:
+        for sti, indhold in filer.items():
+            skriv_fil(sti, indhold)
+            antal += 1
+    else:
+        log("  Ingen filer i agent-output", "ADVARSEL")
+
+    npm_match = re.search(r"NPM_INSTALL:\s*(.+)", fix_output)
+    if npm_match:
+        pakker_str = npm_match.group(1).strip()
+        if pakker_str.lower() not in ("ingen", "none", ""):
+            pakker = [p for p in pakker_str.split() if p and not p.startswith("#")]
+            if pakker:
+                log(f"  Installerer npm: {' '.join(pakker)}")
+                subprocess.run(
+                    [_npm, "install"] + pakker + ["--legacy-peer-deps"],
+                    cwd=REPO_ROOT, capture_output=True, text=True, timeout=120
+                )
+    return antal
+
+
 def koer_autorepair_loop(klient: anthropic.Anthropic, max_iter: int = 10) -> bool:
     """
-    Autonom repair loop:
-    1. Korer hvert build-trin
-    2. Ved fejl: ekstraher fejlede filer, kald Claude, anvend fix
-    3. Gentager indtil groen build eller max_iter naas
+    Autonom specialist repair loop:
+    1. Koer build-trin
+    2. Ved fejl: identificer fejlede filer og route til ansvarlig agent
+    3. Agenten fikser med sine egne regler og konventioner
+    4. Gentag til groen build eller max_iter naaet
     """
     _npm = "npm.cmd" if sys.platform == "win32" else "npm"
     _npx = "npx.cmd" if sys.platform == "win32" else "npx"
 
-    # Build-trin i raekkefoelge — npm install springes over efter foerste runde
     trin_liste = [
         ([_npm, "install", "--legacy-peer-deps"], "npm install"),
         ([_npx, "prisma", "generate"],             "prisma generate"),
@@ -370,13 +518,17 @@ def koer_autorepair_loop(klient: anthropic.Anthropic, max_iter: int = 10) -> boo
         ([_npx, "next", "build"],                  "next build"),
     ]
 
+    # Byg reverse map én gang
+    fil_til_agent = byg_fil_til_agent_map()
+    log(f"  Fil->agent map: {len(fil_til_agent)} filer kortlagt til {len(set(fil_til_agent.values()))} agenter")
+
     log(f"=== AUTOREPAIR START (max {max_iter} iterationer) ===")
 
     for iteration in range(1, max_iter + 1):
         log(f"\n--- Autorepair iteration {iteration}/{max_iter} ---")
         fejl_output = ""
         fejlende_trin = None
-        start_fra = 1 if iteration > 1 else 0  # spring npm install over efter 1. runde
+        start_fra = 1 if iteration > 1 else 0
 
         for cmd, navn in trin_liste[start_fra:]:
             log(f"  Korer: {navn}...")
@@ -402,8 +554,8 @@ def koer_autorepair_loop(klient: anthropic.Anthropic, max_iter: int = 10) -> boo
             else:
                 kombineret = (res.stdout + "\n" + res.stderr).strip()
                 log(f"  x {navn} FEJLEDE ({varighed}s)")
-                # Log de foerste fejllinjer
-                fejllinjer = [l for l in kombineret.splitlines() if "error" in l.lower() or "Error" in l][:8]
+                fejllinjer = [l for l in kombineret.splitlines()
+                              if "error" in l.lower() or "Error" in l][:8]
                 for linje in fejllinjer:
                     log(f"    {linje[:120]}", "FEJL")
                 fejl_output = kombineret
@@ -416,58 +568,52 @@ def koer_autorepair_loop(klient: anthropic.Anthropic, max_iter: int = 10) -> boo
             git_commit(f"chore: autorepair completed — build passing (iter {iteration})")
             return True
 
-        # Ekstraher fejlfiler og byg kontekst
-        fejl_filer = udtraek_fejlfiler(fejl_output)
-        log(f"  Fejlfiler fundet: {len(fejl_filer)} ({', '.join(fejl_filer[:5])}{'...' if len(fejl_filer) > 5 else ''})")
-        fil_kontekst = byg_fil_kontekst(fejl_filer)
-
-        # Haandter specielle tilfaelde uden Claude-kald
+        # Specielt: npm install fejl
         if fejlende_trin == "npm install":
-            log("  npm install fejlede — proever med --force", "ADVARSEL")
+            log("  npm install fejlede — proever --force", "ADVARSEL")
             subprocess.run([_npm, "install", "--force"], cwd=REPO_ROOT,
                            capture_output=True, text=True, timeout=120)
             continue
 
         if iteration == max_iter:
             log(f"=== AUTOREPAIR: MAX ITERATIONER ({max_iter}) NAAET ===", "FEJL")
-            log("  Bygget fejler stadig. Seneste fejloutput gemmes.", "FEJL")
             (REPO_ROOT / "autorepair-final-error.txt").write_text(
                 f"Trin: {fejlende_trin}\n\n{fejl_output}", encoding="utf-8"
             )
+            log("  Fejloutput gemt i autorepair-final-error.txt", "FEJL")
             return False
 
-        # Kald Claude for fix
-        log(f"  Sender fejl til Claude (iter {iteration})...")
-        fix_output = kald_repair_claude(klient, fejlende_trin, fejl_output, fil_kontekst, iteration)
+        # Identificer fejlede filer og ansvarlige agenter
+        fejl_filer = udtraek_fejlfiler(fejl_output)
+        agenter_med_fejl = identificer_ansvarlige_agenter(fejl_filer, fil_til_agent)
 
-        if not fix_output:
-            log("  Claude returnerede intet — afbryder", "FEJL")
-            return False
+        log(f"  Fejlede filer: {len(fejl_filer)}")
+        for agent_id, filer in agenter_med_fejl.items():
+            agent_navn = AGENTS.get(agent_id, {}).get("navn", agent_id)
+            log(f"  -> {agent_id} ({agent_navn}): {', '.join(f.split('/')[-1] for f in filer)}")
 
-        # Anvend fixes
-        filer = parse_output_filer(fix_output)
-        if filer:
-            log(f"  Anvender {len(filer)} filer fra Claude...")
-            for sti, indhold in filer.items():
-                skriv_fil(sti, indhold)
-        else:
-            log("  Ingen filer i Claude-output", "ADVARSEL")
+        # Kald hver ansvarlig agent med sine egne fejl
+        total_filer_skrevet = 0
+        for agent_id, agentens_filer in agenter_med_fejl.items():
+            fix_output = kald_specialist_agent(
+                klient, agent_id, fejlende_trin, fejl_output, agentens_filer, iteration
+            )
+            if fix_output:
+                antal = anvend_fix(fix_output, _npm)
+                total_filer_skrevet += antal
+                log(f"  {agent_id}: {antal} filer rettet")
+            else:
+                log(f"  {agent_id}: ingen output — fortsaetter", "ADVARSEL")
 
-        # Haandter NPM_INSTALL direktivet
-        npm_match = re.search(r"NPM_INSTALL:\s*(.+)", fix_output)
-        if npm_match:
-            pakker_str = npm_match.group(1).strip()
-            if pakker_str.lower() not in ("ingen", "none", ""):
-                pakker = [p for p in pakker_str.split() if p and not p.startswith("#")]
-                if pakker:
-                    log(f"  Installerer: {' '.join(pakker)}")
-                    subprocess.run(
-                        [_npm, "install"] + pakker + ["--legacy-peer-deps"],
-                        cwd=REPO_ROOT, capture_output=True, text=True, timeout=120
-                    )
+        if total_filer_skrevet == 0:
+            log("  Ingen filer rettet i denne iteration — risiko for uendelig loop", "ADVARSEL")
+            # Skriv fejloutput til fil saa bruger kan inspicere
+            (REPO_ROOT / f"autorepair-stuck-iter{iteration}.txt").write_text(
+                f"Trin: {fejlende_trin}\n\n{fejl_output}", encoding="utf-8"
+            )
 
-        git_commit(f"fix: autorepair iter {iteration} — {fejlende_trin}")
-        log(f"  Iteration {iteration} fix anvendt — korer igen...")
+        git_commit(f"fix: autorepair iter {iteration} — {fejlende_trin} ({len(agenter_med_fejl)} agenter)")
+        log(f"  Iteration {iteration} afsluttet — korer build igen...")
 
     log(f"=== AUTOREPAIR: AFSLUTTET UDEN GROENT BUILD ===", "FEJL")
     return False

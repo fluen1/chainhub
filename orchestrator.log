@@ -1068,3 +1068,23 @@ Next.js build worker exited with code: 1 and signal: null
 [2026-03-09 23:43:11] [INFO] Skrevet: src/actions/companies.ts
 [2026-03-09 23:43:11] [INFO] Skrevet: src/components/companies/CompanyForm.tsx
 [2026-03-09 23:43:11] [INFO] Skrevet: src/__tests__/unit/companies-action.test.ts
+[2026-03-09 23:43:11] [INFO] Git commit: fix: autorepair iter 3 — tsc typecheck
+[2026-03-09 23:43:11] [INFO]   Iteration 3 fix anvendt — korer igen...
+[2026-03-09 23:43:11] [INFO] 
+--- Autorepair iteration 4/10 ---
+[2026-03-09 23:43:11] [INFO]   Korer: prisma generate...
+[2026-03-09 23:43:13] [INFO]   v prisma generate OK (1.8s)
+[2026-03-09 23:43:13] [INFO]   Korer: tsc typecheck...
+[2026-03-09 23:43:22] [INFO]   x tsc typecheck FEJLEDE (9.5s)
+[2026-03-09 23:43:22] [FEJL]     src/actions/companies.ts(112,20): error TS2353: Object literal may only specify known properties, and 'deletedAt' does n
+[2026-03-09 23:43:22] [FEJL]     src/actions/companies.ts(115,13): error TS2353: Object literal may only specify known properties, and 'ownerCompany' doe
+[2026-03-09 23:43:22] [FEJL]     src/actions/companies.ts(119,20): error TS2353: Object literal may only specify known properties, and 'deletedAt' does n
+[2026-03-09 23:43:22] [FEJL]     src/actions/companies.ts(163,36): error TS2353: Object literal may only specify known properties, and 'deletedAt' does n
+[2026-03-09 23:43:22] [FEJL]     src/actions/companies.ts(164,40): error TS2353: Object literal may only specify known properties, and 'deletedAt' does n
+[2026-03-09 23:43:22] [FEJL]     src/actions/companies.ts(302,7): error TS2322: Type '{ organizationId: string; companyId: string; ownerPersonId: string 
+[2026-03-09 23:43:22] [FEJL]     src/actions/companies.ts(384,15): error TS2353: Object literal may only specify known properties, and 'deletedAt' does n
+[2026-03-09 23:43:22] [FEJL]     src/actions/companies.ts(414,9): error TS2353: Object literal may only specify known properties, and 'deletedAt' does no
+[2026-03-09 23:43:22] [INFO]   Fejlfiler fundet: 20 (src/actions/companies.ts, src/components/companies/ActivityLog.tsx, src/components/companies/AddOwnershipDialog.tsx, src/components/companies/CompanyActivityLog.tsx, src/components/companies/CompanyEmployees.tsx...)
+[2026-03-09 23:43:23] [INFO]   Sender fejl til Claude (iter 4)...
+[2026-03-09 23:44:26] [INFO]   Anvender 1 filer fra Claude...
+[2026-03-09 23:44:26] [INFO] Skrevet: src/actions/companies.ts
