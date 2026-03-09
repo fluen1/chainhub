@@ -303,6 +303,11 @@ Forslag: Tilføj `anonymization_strategy` felt på `ContractSystemType`-konfigur
 **Rangering:** KRITISK
 **Orchestrators afgørelse:** ACCEPTED — Klart brud på princip 1 (multi-tenancy) og princip 3 (audit). organization_id, created_at, created_by tilføjes til CaseCompany, CaseContract, CasePerson i DATABASE-SCHEMA.md. Indexes tilføjes. Skal være på plads inden Sprint 1 schema-migration.
 
+**QA-verifikation Sprint 4:** IMPLEMENTERET ✅
+- CaseCompany, CaseContract, CasePerson har alle organization_id, created_at, created_by
+- Alle create-kald i cases.ts sætter organization_id korrekt
+- Indexes bekræftet i schema
+
 **Forslag/Indsigelse:**
 DATABASE-SCHEMA.md princip 1 siger: "Multi-tenancy: organization_id på ALLE tabeller — ingen undtagelse". Men tre junction-tabeller bryder dette:
 
@@ -322,6 +327,11 @@ Forslag: Tilføj `organization_id`, `created_at`, `created_by` til alle tre tabe
 **Dato:** 2026-03-08
 **Rangering:** VIGTIG
 **Orchestrators afgørelse:** ACCEPTED — `changes` (Json?) tilføjes til AuditLog i DATABASE-SCHEMA.md. Application-laget populerer feltet ved UPDATE på STRENGT_FORTROLIG og FORTROLIG records. Implementeres i Sprint 3 sammen med kontraktstyring.
+
+**QA-verifikation Sprint 4:** IMPLEMENTERET ✅
+- cases.ts updateCase(): changes-objekt bygges og gemmes for FORTROLIG/STRENGT_FORTROLIG
+- updateCaseStatus(): altid gemmer status-ændring i changes
+- Mønsteret er konsistent med contracts.ts
 
 **Forslag/Indsigelse:**
 `AuditLog`-tabellen logger hvem der tilgik hvad hvornår, men ikke HVAD der blev ændret. For STRENGT_FORTROLIG records (ejeraftaler, direktørkontrakter) kræver revisorer og tilsynsmyndigheder at man kan se: "Bruger X ændrede `ownership_percentage` fra 40% til 60% den [dato]".
@@ -739,3 +749,351 @@ Uden disse filer kan vi ikke verificere at return-typer er korrekt defineret.
 - DEC-021: getUserRoleAssignments mangler organizationId filter — STADIG ÅBEN
 - DEC-022: Auth config fil mangler — STADIG ÅBEN
 - DEC-023: Middleware organizationId validering — STADIG ÅBEN
+
+---
+
+## QA-RAPPORT — Sprint 4 Sags- og Opgavemodul
+
+### GODKENDT:
+
+**src/actions/cases.ts:**
+- organization_id på alle Prisma queries: ✅
+- deleted_at: null på alle list-queries: ✅
+- canAccessCompany() kaldt via verifyCaseAccess(): ✅
+- canAccessSensitivity() kaldt korrekt: ✅
+- Junction-tabeller CaseCompany/CaseContract/CasePerson — organization_id sat korrekt i alle create-kald: ✅ (DEC-016 implementeret)
+- Audit log med changes på FORTROLIG/STRENGT_FORTROLIG: ✅ (DEC-017 implementeret)
+- Soft delete på sager, opgaver, frister: ✅
+- Zod safeParse() på alle actions: ✅
+- Fejlbeskeder på dansk: ✅
+- Sensitivity-filter i listCases() — kun viser niveauer brugeren har adgang til: ✅
+- organization_id filter i junction-table queries (companyId-filter bruger organizationId): ✅
+- updateCaseStatus() sætter closedAt korrekt for LUKKET/ARKIVERET: ✅
+- Status-transition validering via isValidCaseStatusTransition(): ✅ (struktur korrekt — indhold ikke verificerbart, se DEC-035)
+
+**src/actions/tasks.ts (standalone):**
+- organization_id på alle Prisma queries: ✅
+- deleted_at: null på alle list-queries: ✅
+- canAccessCompany() kaldt via verifyTaskAccess(): ✅
+- canAccessModule('tasks') tjekket på alle offentlige actions: ✅
+- Soft delete: ✅
+- Zod safeParse() på alle actions: ✅
+- Fejlbeskeder på dansk: ✅
+- Typesikre where-clauses (Prisma.TaskWhereInput): ✅
+
+**src/lib/permissions/index.ts:**
+- Ingen ændringer fra Sprint 3 — fortsat CHALLENGED på DEC-021
+
+### FEJL OG MANGLER:
+
+#### KRITISK:
+
+**DEC-033: getTasksForDigest() mangler organization_id filter og tenant-isolation (NY)**
+Se separat entry nedenfor.
+
+**DEC-034: Sager uden tilknyttede selskaber omgår canAccessCompany()-tjek (NY)**
+Se separat entry nedenfor.
+
+**DEC-035: Validation-fil src/lib/validations/case.ts ikke leveret til review (NY)**
+Se separat entry nedenfor.
+
+**DEC-036: Type-fil src/types/case.ts ikke leveret — CaseStatus-flow uverificerbart (NY)**
+Se separat entry nedenfor.
+
+#### VIGTIG:
+
+**DEC-037: Task-model i DATABASE-SCHEMA.md mangler priority-felt — tasks.ts antager det eksisterer (NY)**
+Se separat entry nedenfor.
+
+**DEC-038: getTasksForDigest() tjekker ikke advise_sent_at på Deadline-records (NY)**
+Se separat entry nedenfor.
+
+**DEC-039: Validation-fil src/lib/validations/task.ts ikke leveret til review (NY)**
+Se separat entry nedenfor.
+
+### TIDLIGERE UDESTÅENDE (fra Sprint 2+3 — fortsat åbne):
+- DEC-021: getUserRoleAssignments mangler organizationId filter — STADIG ÅBEN
+- DEC-022: Auth config fil mangler — STADIG ÅBEN
+- DEC-023: Middleware organizationId validering — STADIG ÅBEN
+- DEC-027: src/lib/validations/contract.ts ikke leveret — STADIG ÅBEN
+- DEC-028: src/lib/validations/document.ts ikke leveret — STADIG ÅBEN
+- DEC-029: src/lib/contracts/retention.ts ikke leveret — STADIG ÅBEN
+- DEC-030: src/lib/storage/index.ts ikke leveret — STADIG ÅBEN
+- DEC-031: Adviserings-cron ikke implementeret — STADIG ÅBEN
+- DEC-032: src/types/contract.ts og document.ts ikke leveret — STADIG ÅBEN
+
+---
+
+## DEC-033: getTasksForDigest() mangler organization_id filter — tenant data-lækage
+**Status:** CHALLENGED
+**Proposed by:** BA-07 (QA-agent)
+**Dato:** 2025-01-15
+**Rangering:** KRITISK
+
+**Forslag/Indsigelse:**
+src/actions/tasks.ts — `getTasksForDigest()` linje ca. 394-430:
+
+```typescript
+const tasks = await prisma.task.findMany({
+  where: {
+    deletedAt: null,
+    status: { notIn: ['LUKKET'] },
+    assignedTo: { not: null },
+    dueDate: {
+      gte: now,
+      lte: sevenDaysFromNow,
+    },
+    // ← MANGLER: organizationId filter!
+  },
+  // ...
+})
+```
+
+Denne funktion henter tasks på tværs af ALLE organisationer. En cron-job der bruger denne funktion vil:
+1. Sende digest-emails til brugere med tasks fra andre organisationers data
+2. Potentielt eksponere task-titler/-beskrivelser på tværs af tenants i email-indhold
+
+CONVENTIONS.md §4: "ALTID: organization_id på ALLE queries — ingen undtagelse"
+
+Digest-cron skal enten:
+a) Iterere over alle aktive organisationer og kalde en organisation-scoped version, eller
+b) Gruppere resultater per organisation og sende organisation-specifik email
+
+**Anbefaling:** Omskriv til organisation-scopet version:
+
+```typescript
+export async function getTasksForDigest(organizationId: string): Promise<...> {
+  const tasks = await prisma.task.findMany({
+    where: {
+      organizationId,  // ← PÅKRÆVET
+      deletedAt: null,
+      status: { notIn: ['LUKKET'] },
+      assignedTo: { not: null },
+      dueDate: { gte: now, lte: sevenDaysFromNow },
+    },
+    include: {
+      assignee: {
+        select: { id: true, name: true, email: true },
+      },
+    },
+  })
+  // ...
+}
+```
+
+Cron-job ansvar: hente alle aktive organisationer og kalde getTasksForDigest(org.id) per organisation.
+
+---
+
+## DEC-034: Sager uden tilknyttede selskaber omgår canAccessCompany()-tjek
+**Status:** CHALLENGED
+**Proposed by:** BA-07 (QA-agent)
+**Dato:** 2025-01-15
+**Rangering:** KRITISK
+
+**Forslag/Indsigelse:**
+src/actions/cases.ts — `verifyCaseAccess()` linje ca. 60-80:
+
+```typescript
+// Selskabsadgang — tjek mindst ét tilknyttet selskab
+if (caseBase.caseCompanies.length > 0) {
+  let hasAnyCompanyAccess = false
+  for (const { companyId } of caseBase.caseCompanies) {
+    const hasAccess = await canAccessCompany(userId, companyId)
+    if (hasAccess) {
+      hasAnyCompanyAccess = true
+      break
+    }
+  }
+  if (!hasAnyCompanyAccess) {
+    return { ok: false, error: '...' }
+  }
+}
+// ← Hvis caseCompanies.length === 0: canAccessCompany() ALDRIG kaldt!
+// Alle brugere i organisationen (inkl. scope=ASSIGNED med begrænset adgang)
+// kan tilgå sagen.
+```
+
+Scenariet: En COMPANY_MANAGER med scope=ASSIGNED til selskab A opretter en sag uden at tilknytte noget selskab. En anden COMPANY_MANAGER med scope=ASSIGNED til selskab B kan nu tilgå denne sag — fordi company-tjekket springes over.
+
+Per CONVENTIONS.md §10: "Enhver server action og API route der returnerer data SKAL kalde mindst canAccessCompany() eller canAccessSensitivity() FØR data returneres".
+
+Sensitivity-tjekket klarer den ene del, men company-isolation er ikke garanteret for sager uden selskaber.
+
+**Anbefaling:** To mulige løsninger:
+1. Kræv mindst ét selskab ved sagsoprettelse (Zod-validering: `companyIds: z.array(z.string().uuid()).min(1, 'Mindst ét selskab skal tilknyttes')`)
+2. Fald tilbage til rolle-baseret tjek: brugere med scope=ASSIGNED til ingen relevante selskaber får ikke adgang til "løse" sager medmindre de har GROUP_*-rolle med scope=ALL
+
+**Anbefaling:** Option 1 foretrækkes — tilføj `.min(1)` validering på companyIds i createCaseSchema. Dokumentér at sager altid skal have mindst ét tilknyttet selskab.
+
+---
+
+## DEC-035: Validation-fil src/lib/validations/case.ts ikke leveret til review
+**Status:** CHALLENGED
+**Proposed by:** BA-07 (QA-agent)
+**Dato:** 2025-01-15
+**Rangering:** KRITISK
+
+**Forslag/Indsigelse:**
+src/actions/cases.ts importerer fra '@/lib/validations/case':
+- createCaseSchema
+- updateCaseSchema
+- updateCaseStatusSchema
+- deleteCaseSchema
+- getCaseSchema
+- listCasesSchema
+- addCaseCompanySchema / removeCaseCompanySchema
+- addCaseContractSchema / removeCaseContractSchema
+- addCasePersonSchema / removeCasePersonSchema / updateCasePersonRoleSchema
+- createTaskSchema / updateTaskSchema / deleteTaskSchema / listTasksSchema
+- createDeadlineSchema / updateDeadlineSchema / deleteDeadlineSchema / listDeadlinesSchema
+- createTimeEntrySchema / listTimeEntriesSchema
+
+Disse schemas er centrale for:
+1. Input-validering af alle sags-operationer
+2. Validering af companyIds (min-length — se DEC-034)
+3. Validering af SagsType/SagsSubtype kombinationer (case_type=ANDET kræver ingen subtype)
+4. Validering af CaseStatus ved oprettelse (altid NY)
+
+Uden denne fil kan vi ikke verificere at implementationen er korrekt.
+
+**Anbefaling:** Validation-fil skal leveres til næste review-runde.
+
+---
+
+## DEC-036: Type-fil src/types/case.ts ikke leveret — CaseStatus-flow uverificerbart
+**Status:** CHALLENGED
+**Proposed by:** BA-07 (QA-agent)
+**Dato:** 2025-01-15
+**Rangering:** KRITISK
+
+**Forslag/Indsigelse:**
+src/actions/cases.ts importerer fra '@/types/case':
+- `isValidCaseStatusTransition`
+- `VALID_CASE_STATUS_TRANSITIONS`
+
+`VALID_CASE_STATUS_TRANSITIONS` definerer det faktiske status-flow. Spec (DATABASE-SCHEMA.md) angiver 6 statusser:
+`NY | AKTIV | AFVENTER_EKSTERN | AFVENTER_KLIENT | LUKKET | ARKIVERET`
+
+Vi kan ikke verificere at alle gyldige transitions er implementeret, herunder:
+- NY → AKTIV ✓ (forventet)
+- AKTIV → AFVENTER_EKSTERN ✓ (forventet)
+- AKTIV → AFVENTER_KLIENT ✓ (forventet)
+- AFVENTER_EKSTERN → AKTIV ✓ (genåbning — er dette implementeret?)
+- AFVENTER_KLIENT → AKTIV ✓ (genåbning — er dette implementeret?)
+- AKTIV → LUKKET ✓ (forventet)
+- LUKKET → ARKIVERET ✓ (forventet)
+- ARKIVERET → ? (bør ingen transitions have — er dette enforced?)
+
+Særligt genåbnings-flows (AFVENTER_* → AKTIV) er kritiske for korrekt sagsstyring og ikke-trivielle at implementere korrekt.
+
+**Anbefaling:** Type-fil skal leveres. Verificér specifikt at:
+1. Alle 6 statusser er repræsenteret i VALID_CASE_STATUS_TRANSITIONS
+2. ARKIVERET er en terminal status (ingen udgående transitions)
+3. AFVENTER_EKSTERN og AFVENTER_KLIENT begge kan genåbnes til AKTIV
+
+---
+
+## DEC-037: Task-model mangler priority-felt — tasks.ts antager det eksisterer
+**Status:** CHALLENGED
+**Proposed by:** BA-07 (QA-agent)
+**Dato:** 2025-01-15
+**Rangering:** VIGTIG
+
+**Forslag/Indsigelse:**
+DATABASE-SCHEMA.md Task-model:
+```prisma
+model Task {
+  id              String     @id @default(uuid())
+  organization_id String
+  title           String
+  description     String?
+  status          TaskStatus @default(NY)
+  due_date        DateTime?
+  assigned_to     String?
+  case_id         String?
+  company_id      String?
+  contract_id     String?
+  created_at      DateTime   @default(now())
+  updated_at      DateTime   @updatedAt
+  created_by      String
+  deleted_at      DateTime?
+  // ← INGEN priority-felt!
+}
+```
+
+src/actions/tasks.ts (standalone) refererer til `priority` på Task:
+- `createTask()`: `data: { ..., priority: data.priority, ... }`
+- `listTasks()`: `...(priority && { priority })`
+- `updateTask()`: `...(updateData.priority !== undefined && { priority: updateData.priority })`
+- `updateTaskStatusSchema` importerer `priority` fra validations
+
+`Prioritet`-enum er kun tilknyttet `Deadline`-modellen i spec. Task-modellen har ingen prioritet i DATABASE-SCHEMA.md.
+
+Dette er en diskrepans mellem spec og implementation. Enten:
+1. DATABASE-SCHEMA.md skal opdateres til at inkludere `priority Prioritet?` på Task, eller
+2. tasks.ts skal fjerne alle priority-referencer og validation-schema skal opdateres
+
+**Anbefaling:** Afklar med Orchestrator om Task-modellen skal have priority. Hvis ja: tilføj `priority Prioritet? @default(MELLEM)` til Task-modellen i DATABASE-SCHEMA.md og opret migration. Hvis nej: fjern priority fra tasks.ts.
+
+---
+
+## DEC-038: getTasksForDigest() tjekker ikke advise_sent_at — Deadline-records ignoreres
+**Status:** CHALLENGED
+**Proposed by:** BA-07 (QA-agent)
+**Dato:** 2025-01-15
+**Rangering:** VIGTIG
+
+**Forslag/Indsigelse:**
+Spec (DATABASE-SCHEMA.md) definerer `advise_sent_at` på `Deadline`-modellen:
+```prisma
+model Deadline {
+  // ...
+  advise_days_before Int       @default(3)
+  advise_sent_at    DateTime?
+  // ...
+  @@index([due_date, advise_sent_at])   // advis-cron query
+}
+```
+
+Index-kommentaren `// advis-cron query` indikerer at dette felt er designet til at forhindre duplikate adviserings-emails.
+
+Problemerne med den nuværende `getTasksForDigest()`:
+
+1. **Manglende advise_sent_at check**: Funktionen returnerer tasks i et 7-dages vindue, men tjekker ikke om en advis allerede er sendt. En bruger vil modtage daglige emails om samme task i op til 7 dage.
+
+2. **Forkert model**: Digest er baseret på `Task`-modellen, men spec's adviseringsmekanisme (`advise_sent_at`) er på `Deadline`-modellen. Der er ingen digest-funktion for Deadline-records.
+
+3. **Manglende opdatering af advise_sent_at**: Selv hvis check var implementeret, opdaterer funktionen aldrig `advise_sent_at` — så næste kørsel vil sende igen.
+
+**Anbefaling:**
+- Tilføj separat `getDeadlinesForDigest()` funktion der:
+  1. Filtrerer på `advise_sent_at IS NULL`
+  2. Filtrerer på `due_date <= NOW() + advise_days_before * 24h`
+  3. Opdaterer `advise_sent_at = NOW()` ved afsendelse (i cron-job, ikke i query-funktionen)
+- Overvej om Task-digest skal have tilsvarende "sent_at"-mekanisme, eller om 7-dages vindue er acceptabelt
+
+---
+
+## DEC-039: Validation-fil src/lib/validations/task.ts ikke leveret til review
+**Status:** CHALLENGED
+**Proposed by:** BA-07 (QA-agent)
+**Dato:** 2025-01-15
+**Rangering:** VIGTIG
+
+**Forslag/Indsigelse:**
+src/actions/tasks.ts (standalone) importerer fra '@/lib/validations/task':
+- createTaskSchema
+- updateTaskSchema
+- deleteTaskSchema
+- getTaskSchema
+- listTasksSchema
+- updateTaskStatusSchema
+
+Disse schemas er kritiske for at verificere:
+1. At `priority`-feltet er med (se DEC-037 — diskrepans med schema)
+2. At `status`-feltet ved oprettelse defaulter korrekt (NY per spec)
+3. At TaskStatus enum-værdier matcher spec (NY | AKTIV | AFVENTER | LUKKET)
+4. At input-validering er korrekt for alle task-operationer
+
+**Anbefaling:** Validation-fil skal leveres til næste review-runde. Verificér specifikt at TaskStatus-enum-værdier matcher DATABASE-SCHEMA.md.

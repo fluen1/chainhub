@@ -1187,7 +1187,7 @@ def opdater_progress(agent_id: str, status: str = "x"):
 # Kerne: kald Claude API med agent-prompt
 # ============================================================
 
-def kør_agent(agent_id: str, klient: anthropic.Anthropic, dry_run: bool = False) -> bool:
+def kør_agent(agent_id: str, klient: anthropic.Anthropic, dry_run: bool = False, force: bool = False) -> bool:
     """
     Kør én agent:
     1. Saml input-filer
@@ -1203,7 +1203,7 @@ def kør_agent(agent_id: str, klient: anthropic.Anthropic, dry_run: bool = False
 
     # Tjek om output-filer allerede eksisterer — skip hvis alt er på plads
     output_filer = agent.get("output_filer", [])
-    if output_filer and all((REPO_ROOT / f).exists() for f in output_filer):
+    if not force and output_filer and all((REPO_ROOT / f).exists() for f in output_filer):
         log(f"=== {agent_id} SPRINGER OVER — output-filer eksisterer allerede ===")
         return True
 
@@ -1305,7 +1305,7 @@ SPRINT_RÆKKEFØLGE = {
 }
 
 
-def kør_sprint(sprint_nr: int, klient: anthropic.Anthropic, dry_run: bool = False):
+def kør_sprint(sprint_nr: int, klient: anthropic.Anthropic, dry_run: bool = False, force: bool = False):
     """Kør alle agenter i et sprint sekventielt."""
     agenter = SPRINT_RÆKKEFØLGE.get(sprint_nr)
     if not agenter:
@@ -1317,7 +1317,7 @@ def kør_sprint(sprint_nr: int, klient: anthropic.Anthropic, dry_run: bool = Fal
 
     for i, agent_id in enumerate(agenter, 1):
         log(f"--- Agent {i}/{len(agenter)}: {agent_id} ---")
-        succes = kør_agent(agent_id, klient, dry_run)
+        succes = kør_agent(agent_id, klient, dry_run, force)
         if not succes:
             log(f"Agent {agent_id} fejlede — stopper sprint", "FEJL")
             log("Tjek orchestrator-debug-*.txt for detaljer")
@@ -1341,6 +1341,7 @@ def main():
     parser.add_argument("--dry-run", action="store_true", help="Vis plan uden at køre")
     parser.add_argument("--list", action="store_true", help="List alle agenter")
     parser.add_argument("--all", action="store_true", help="Kør alle sprints sekventielt (1 → 5)")
+    parser.add_argument("--force", action="store_true", help="Tving kørsel selv om output-filer eksisterer")
     args = parser.parse_args()
 
     if args.list:
@@ -1368,11 +1369,11 @@ def main():
         alle_sprints = sorted(SPRINT_RÆKKEFØLGE.keys())
         log(f"=== KØRER ALLE SPRINTS: {alle_sprints} ===")
         for sprint_nr in alle_sprints:
-            kør_sprint(sprint_nr, klient, args.dry_run)
+            kør_sprint(sprint_nr, klient, args.dry_run, args.force)
     elif args.agent:
-        kør_agent(args.agent, klient, args.dry_run)
+        kør_agent(args.agent, klient, args.dry_run, args.force)
     elif args.sprint:
-        kør_sprint(args.sprint, klient, args.dry_run)
+        kør_sprint(args.sprint, klient, args.dry_run, args.force)
     else:
         log("Ingen handling angivet. Brug --sprint 1, --agent BA-03, --all eller --list")
         log("Eksempel: python orchestrator.py --all")
