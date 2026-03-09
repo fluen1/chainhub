@@ -1140,3 +1140,28 @@ Next.js build worker exited with code: 1 and signal: null
 [2026-03-09 23:48:38] [INFO] Skrevet: src/components/companies/GovernanceSection.tsx
 [2026-03-09 23:48:38] [INFO] Skrevet: src/components/companies/OwnershipSection.tsx
 [2026-03-09 23:48:38] [INFO]   __generisk__: 8 filer rettet
+[2026-03-09 23:48:39] [INFO] Git commit: fix: autorepair iter 1 — tsc typecheck (2 agenter)
+[2026-03-09 23:48:39] [INFO]   Iteration 1 afsluttet — korer build igen...
+[2026-03-09 23:48:39] [INFO] 
+--- Autorepair iteration 2/10 ---
+[2026-03-09 23:48:39] [INFO]   Korer: prisma generate...
+[2026-03-09 23:48:41] [INFO]   v prisma generate OK (2.0s)
+[2026-03-09 23:48:41] [INFO]   Korer: tsc typecheck...
+[2026-03-09 23:48:52] [INFO]   x tsc typecheck FEJLEDE (10.8s)
+[2026-03-09 23:48:52] [FEJL]     src/actions/companies.ts(111,20): error TS2353: Object literal may only specify known properties, and 'deletedAt' does n
+[2026-03-09 23:48:52] [FEJL]     src/actions/companies.ts(112,22): error TS2353: Object literal may only specify known properties, and 'person' does not 
+[2026-03-09 23:48:52] [FEJL]     src/actions/companies.ts(116,20): error TS2353: Object literal may only specify known properties, and 'deletedAt' does n
+[2026-03-09 23:48:52] [FEJL]     src/actions/companies.ts(123,13): error TS2353: Object literal may only specify known properties, and 'cases' does not e
+[2026-03-09 23:48:52] [FEJL]     src/actions/companies.ts(146,17): error TS2353: Object literal may only specify known properties, and 'scope' does not e
+[2026-03-09 23:48:52] [FEJL]     src/actions/companies.ts(154,15): error TS2339: Property 'scope' does not exist on type '{ name: string; id: string; org
+[2026-03-09 23:48:52] [FEJL]     src/actions/companies.ts(154,44): error TS2339: Property 'assignedCompanyIds' does not exist on type '{ name: string; id
+[2026-03-09 23:48:52] [FEJL]     src/actions/companies.ts(155,35): error TS2339: Property 'assignedCompanyIds' does not exist on type '{ name: string; id
+[2026-03-09 23:48:52] [INFO]   Fejlede filer: 20
+[2026-03-09 23:48:52] [INFO]   -> BA-05-selskab (Feature-agent (Selskabsprofil)): companies.ts
+[2026-03-09 23:48:52] [INFO]   -> __generisk__ (__generisk__): ActivityLog.tsx, AddOwnershipDialog.tsx, CompanyActivityLog.tsx, CreateCompanyForm.tsx, EditCompanyDialog.tsx, EmployeesSection.tsx, GovernanceSection.tsx, OwnershipDialog.tsx, OwnershipSection.tsx, ContractForm.tsx, ContractStatusSelect.tsx, DocumentUploadModal.tsx, document-card.tsx, document-list.tsx, document-preview.tsx, document-upload.tsx, PersonCard.tsx, PersonDetail.tsx, PersonEditDialog.tsx
+[2026-03-09 23:48:52] [INFO]   Kalder Feature-agent (Selskabsprofil) (BA-05-selskab) for repair...
+[2026-03-09 23:49:52] [INFO] Skrevet: src/actions/companies.ts
+[2026-03-09 23:49:52] [INFO]   BA-05-selskab: 1 filer rettet
+[2026-03-09 23:49:53] [INFO]   Kalder Generisk repair (__generisk__) for repair...
+[2026-03-09 23:50:52] [INFO] Skrevet: src/actions/companies.ts
+[2026-03-09 23:50:52] [INFO]   __generisk__: 1 filer rettet
