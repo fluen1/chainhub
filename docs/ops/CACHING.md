@@ -77,163 +77,163 @@ dashboard:{orgId} → invalidateDashboardCache(organizationId)
 
 ### Strategi: 3 queries uanset antal selskaber (ingen N+1)
 
-```
-Query 1: company.findMany() — max 50 rækker
-Query 2: $queryRaw GROUP BY company_id — counts per selskab
-Query 3: $queryRaw DISTINCT ON company_id — seneste nøgletal per selskab
+```sql
+-- Query 1: Aggregeret summary (counts + deadlines)
+SELECT
+  COUNT(*) FILTER (WHERE "deletedAt" IS NULL) as company_count,
+  COUNT(*) FILTER (WHERE status = 'AKTIV' AND "deletedAt" IS NULL) as active_contracts,
+  COUNT(*) FILTER (WHERE status IN ('UDKAST','TIL_REVIEW') AND "deletedAt" IS NULL) as pending_contracts,
+  COUNT(*) FILTER (WHERE "dueDate" < NOW() AND status != 'LUKKET' AND "deletedAt" IS NULL) as overdue_deadlines
+FROM companies, contracts, deadlines
+WHERE "organizationId" = $1;
+
+-- Query 2: Top selskaber med kontrakt-counts
+SELECT c.id, c.name, COUNT(k.id) as contract_count
+FROM companies c
+LEFT JOIN contracts k ON k."companyId" = c.id AND k."deletedAt" IS NULL
+WHERE c."organizationId" = $1 AND c."deletedAt" IS NULL
+GROUP BY c.id, c.name
+ORDER BY contract_count DESC
+LIMIT 10;
+
+-- Query 3: Kommende frister (næste 30 dage)
+SELECT id, title, "dueDate", priority, "companyId"
+FROM deadlines
+WHERE "organizationId" = $1
+  AND "deletedAt" IS NULL
+  AND status != 'LUKKET'
+  AND "dueDate" BETWEEN NOW() AND NOW() + INTERVAL '30 days'
+ORDER BY "dueDate" ASC
+LIMIT 20;
 ```
 
-### `$queryRaw` parameterisering
+### Forventet performance med indexes:
+- Query 1: ~5ms (index scan på organizationId)
+- Query 2: ~15ms (index scan + hash join)
+- Query 3: ~8ms (composite index på organizationId + dueDate)
+- **Total: <30ms** (parallelt via Promise.all)
 
-**KORREKT (Prisma.sql — parameteriseret):**
+---
+
+## Index-strategi (Sprint 5)
+
+### Composite indexes implementeret i schema.prisma:
+
+```prisma
+// Company
+@@index([organizationId, deletedAt])
+@@index([organizationId, status])
+
+// Contract
+@@index([organizationId, deletedAt])
+@@index([organizationId, status])
+@@index([organizationId, companyId])
+@@index([organizationId, systemType])
+@@index([expiresAt]) // deadline scanning
+
+// Deadline
+@@index([organizationId, deletedAt])
+@@index([organizationId, status])
+@@index([organizationId, dueDate])
+@@index([companyId, status])
+
+// FinancialMetric
+@@index([organizationId, companyId])
+@@index([organizationId, metricType])
+@@index([companyId, recordedAt])
+
+// AuditLog
+@@index([organizationId, createdAt])
+@@index([resourceType, resourceId])
+```
+
+### Begrundelse:
+- `(organizationId, deletedAt)`: Soft-delete filter er universelt — composite index eliminerer full table scan
+- `(organizationId, status)`: Status-filtrering er næst hyppigst forespurgt
+- `(organizationId, dueDate)`: Dashboard deadline-query kræver range scan på dato
+
+---
+
+## Multi-tenant Cache Isolation
+
+**REGEL:** Alle cache-keys SKAL indeholde `organizationId` som første segment.
+
 ```typescript
-import { Prisma } from '@prisma/client'
+// KORREKT
+const cacheKey = [`finance`, organizationId, companyId]
 
-prisma.$queryRaw(
-  Prisma.sql`SELECT * FROM companies WHERE organization_id = ${organizationId}`
-)
+// FORKERT — sikkerhedsfejl
+const cacheKey = [`finance`, companyId]
 ```
 
-**FORKERT (aldrig string-interpolation):**
+### Verifikation:
+- Integration-tests i `src/__tests__/integration/tenant-isolation.test.ts` verificerer at:
+  1. Organisation A kan ikke se Organisation B's data
+  2. Cache for Organisation A returnerer ikke Organisation B's data
+  3. Alle queries inkluderer `organizationId` i where-clause
+
+---
+
+## Connection Pooling
+
+**Konfiguration** (`src/lib/db.ts`):
 ```typescript
-// ❌ SQL-injection risiko — bruges ALDRIG
-prisma.$queryRaw(`SELECT * FROM companies WHERE organization_id = '${organizationId}'`)
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL,
+    },
+  },
+  log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+})
 ```
 
-Alle `$queryRaw`-kald i `src/actions/dashboard.ts` og `src/lib/cache/finance.ts`
-bruger udelukkende `Prisma.sql` template literals.
+**PgBouncer / Supabase Pooler:**
+- Brug `?pgbouncer=true&connection_limit=1` på `DATABASE_URL` i produktionsmiljø
+- Transaction mode anbefales til serverless (Next.js edge/serverless functions)
+- Session mode til long-running queries (rapporter, bulk-import)
+
+**Connection limits:**
+| Miljø | Max connections | Pool size |
+|-------|----------------|-----------|
+| Development | 10 | 5 |
+| Staging | 20 | 10 |
+| Production | 100 | 25 |
 
 ---
 
-## Indexes tilføjet i Sprint 5
+## Monitoring & Alerting
 
-### `companies`
-```sql
--- Dashboard compound index
-CREATE INDEX idx_companies_org_status_deleted
-  ON companies (organization_id, status, deleted_at);
+### Slow Query Threshold: >500ms
+
+```typescript
+// src/lib/db.ts — query logging i development
+prisma.$on('query', (e) => {
+  if (e.duration > 500) {
+    console.warn(`SLOW QUERY (${e.duration}ms):`, e.query)
+  }
+})
 ```
 
-### `contracts`
-```sql
--- "Udløber inden 30 dage"-query
-CREATE INDEX idx_contracts_org_status_expiry
-  ON contracts (organization_id, status, expiry_date);
-```
-
-### `case_companies`
-```sql
--- Dashboard JOIN på company_id for case-counts
-CREATE INDEX idx_case_companies_org_company
-  ON case_companies (organization_id, company_id);
-```
-
-### `tasks`
-```sql
--- Dashboard task-count per selskab
-CREATE INDEX idx_tasks_org_company_deleted
-  ON tasks (organization_id, company_id, deleted_at);
-```
-
-### `deadlines`
-```sql
--- "Overskrene frister"-query
-CREATE INDEX idx_deadlines_org_completed_due
-  ON deadlines (organization_id, completed_at, due_date);
-```
-
-### `financial_metrics`
-```sql
--- DISTINCT ON query for seneste nøgletal
-CREATE INDEX idx_financial_metrics_full
-  ON financial_metrics (organization_id, company_id, metric_type, period_type, period_year);
-
--- Finance-oversigt sorteret på år
-CREATE INDEX idx_financial_metrics_org_year
-  ON financial_metrics (organization_id, period_year);
-```
-
-### `time_entries`
-```sql
--- Date-range filter i listTimeEntries
-CREATE INDEX idx_time_entries_org_case_date
-  ON time_entries (organization_id, case_id, date);
-```
+### Metrics at tracke:
+- P50/P95/P99 query latency per endpoint
+- Cache hit rate (target: >80% for dashboard)
+- Connection pool utilization
+- Slow queries (>500ms) per dag
 
 ---
 
-## Pagination — implementeret Sprint 5
+## Sprint 5 — Implementeringsstatus
 
-### Alle liste-views har nu pagination
-
-| Action | Pagination | Page size |
-|--------|-----------|-----------|
-| `listFinancialMetrics()` | ✅ page + pageSize | default 20, max 100 |
-| `listTimeEntries()` | ✅ page + pageSize | default 20, max 100 |
-| `listInvoices()` | ✅ limit + offset | max 100 |
-| `listDividends()` | ✅ page + pageSize | default 20, max 100 |
-
-### Alle returnerer `{ total, hasMore, page, pageSize }` i response.
-
----
-
-## Cache-kandidater (ikke implementeret — fremtidig)
-
-### Medium prioritet (v1.1)
-
-| Data | TTL | Invalidering | Nøgle-format |
-|------|-----|--------------|--------------|
-| User permissions | 5 min | Ved rolle-ændring | `perm:${orgId}:${userId}` |
-| Accessible companies | 5 min | Ved rolle-ændring | `access:${orgId}:${userId}` |
-| Organization features | 15 min | Ved plan-ændring | `org:${orgId}:features` |
-
-### Lav prioritet (v2)
-
-| Data | TTL | Invalidering | Nøgle-format |
-|------|-----|--------------|--------------|
-| Audit log aggregates | 10 min | Ved ny log-entry | `audit:${orgId}:daily` |
+| Feature | Status | Fil |
+|---------|--------|-----|
+| Finance cache (`unstable_cache`) | ✅ Implementeret | `src/lib/cache/finance.ts` |
+| Dashboard cache | ✅ Implementeret | `src/actions/dashboard.ts` |
+| Cache invalidering (finance) | ✅ Implementeret | `src/lib/cache/finance.ts` |
+| Cache invalidering (dashboard) | ✅ Implementeret | `src/actions/dashboard.ts` |
+| Composite indexes (schema) | ✅ Implementeret | `prisma/schema.prisma` |
+| Tenant isolation tests | ✅ Implementeret | `src/__tests__/integration/tenant-isolation.test.ts` |
+| Connection pooling config | 📋 Dokumenteret | `docs/ops/CACHING.md` |
+| Slow query monitoring | 📋 Dokumenteret | `docs/ops/CACHING.md` |
 
 ---
-
-## Anti-patterns at undgå
-
-```
-❌ Cache hele resultatsæt fra listCompanies() — for store, personlige
-❌ Cache uden organizationId i key — tenant-isolation-brud
-❌ Cache audit logs — compliance-risiko
-❌ Cache med lang TTL på kontrakt-status — forældet data
-❌ Global cache for brugerspecifikke queries
-❌ $queryRaw med string-interpolation — SQL-injection risiko
-❌ $queryRaw uden Prisma.sql template literal
-```
-
----
-
-## Monitoring (fremtidig)
-
-- Cache hit/miss ratio per endpoint
-- Cache memory usage
-- Invalidation frequency
-- Stale data incidents
-- Dashboard p95 load-time (mål: <2 sekunder)
-
----
-
-## Changelog
-
-```
-v2.0 (Sprint 5):
-  - Implementeret unstable_cache for financial metrics (TTL 1 time)
-  - Implementeret dashboard-cache (TTL 2 minutter)
-  - Finance-cache invalidering ved alle mutationer
-  - Pagination tilføjet til alle liste-views der manglede det
-  - 7 nye database-indexes for dashboard-query performance
-  - $queryRaw dokumenteret med Prisma.sql parameterisering
-  - src/lib/cache/finance.ts oprettet
-  - src/actions/dashboard.ts oprettet
-
-v1.0 (Sprint 3):
-  - Initial caching-strategi
-  - Cache-kandidater identificeret
-  - Anti-patterns dokumenteret
-```

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -15,8 +16,10 @@ import {
   CardContent,
   CardFooter,
 } from '@/components/ui/card'
-import { createPersonSchema, CreatePersonInput } from '@/lib/validations/person'
+import { createPersonSchema } from '@/lib/validations/person'
 import { createPerson } from '@/actions/persons'
+
+type CreatePersonInput = z.infer<typeof createPersonSchema>
 
 export function PersonForm() {
   const router = useRouter()
@@ -114,7 +117,7 @@ export function PersonForm() {
             <Label htmlFor="notes">Noter</Label>
             <Textarea
               id="notes"
-              placeholder="Eventuelle noter om personen..."
+              placeholder="Tilføj noter om personen..."
               rows={4}
               {...register('notes')}
             />
@@ -124,7 +127,7 @@ export function PersonForm() {
           </div>
         </CardContent>
 
-        <CardFooter className="flex justify-end gap-3 border-t pt-6">
+        <CardFooter className="flex justify-between">
           <Button
             type="button"
             variant="outline"

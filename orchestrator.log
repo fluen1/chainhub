@@ -1298,3 +1298,65 @@ Next.js build worker exited with code: 1 and signal: null
 [2026-03-10 00:06:59] [INFO]   __generisk__: 14 filer rettet
 [2026-03-10 00:07:03] [INFO]   INTELLIGENCE.md opdateret: - Trin: `tsc typecheck` | TS-fejl: 109->109 | Status: 109 TS-fejl (baseline)
 - Agenter: BA-10-tests
+[2026-03-10 00:07:03] [INFO] Git commit: fix: autorepair iter 1 — tsc typecheck (4 agenter, 18 filer, 109 TS-fejl)
+[2026-03-10 00:07:03] [INFO]   Iteration 1 afsluttet — korer build igen...
+[2026-03-10 00:07:03] [INFO] 
+============================================================
+--- Autorepair iteration 2/10 ---
+[2026-03-10 00:07:03] [INFO]   Konvergens: 109 TS-fejl (baseline)
+[2026-03-10 00:07:03] [INFO]   Downstream re-check koe: BA-09-sprint2, BA-05-person, BA-07-sprint2, BA-05-dashboard, BA-10-tests, BA-11-pentest
+[2026-03-10 00:07:03] [INFO]   Korer: prisma generate...
+[2026-03-10 00:07:05] [INFO]   v prisma generate OK (1.7s)
+[2026-03-10 00:07:05] [INFO]   Korer: tsc typecheck...
+[2026-03-10 00:07:09] [INFO]   x tsc typecheck FEJLEDE (3.9s)
+[2026-03-10 00:07:09] [FEJL]     src/__tests__/integration/tenant-isolation.test.ts(1,1): error TS1434: Unexpected keyword or identifier.
+[2026-03-10 00:07:09] [FEJL]     src/__tests__/integration/tenant-isolation.test.ts(1,3): error TS1434: Unexpected keyword or identifier.
+[2026-03-10 00:07:09] [FEJL]     src/__tests__/integration/tenant-isolation.test.ts(1,250): error TS1002: Unterminated string literal.
+[2026-03-10 00:07:09] [FEJL]     src/__tests__/integration/tenant-isolation.test.ts(3,1): error TS1434: Unexpected keyword or identifier.
+[2026-03-10 00:07:09] [FEJL]     src/__tests__/integration/tenant-isolation.test.ts(3,7): error TS1434: Unexpected keyword or identifier.
+[2026-03-10 00:07:09] [FEJL]     src/__tests__/integration/tenant-isolation.test.ts(3,9): error TS1434: Unexpected keyword or identifier.
+[2026-03-10 00:07:09] [FEJL]     src/__tests__/integration/tenant-isolation.test.ts(3,14): error TS1434: Unexpected keyword or identifier.
+[2026-03-10 00:07:09] [FEJL]     src/__tests__/integration/tenant-isolation.test.ts(3,19): error TS1434: Unexpected keyword or identifier.
+[2026-03-10 00:07:09] [INFO]   TS-fejl nu: 160 | DIVERGERER (109->160 fejl STIGER)
+[2026-03-10 00:07:09] [INFO]   Fejlede filer: 1
+[2026-03-10 00:07:09] [INFO]   -> BA-10-tests (Test-agent): tenant-isolation.test.ts
+[2026-03-10 00:07:09] [INFO]   + Downstream re-check: BA-09-sprint2
+[2026-03-10 00:07:09] [INFO]   + Downstream re-check: BA-05-person
+[2026-03-10 00:07:09] [INFO]   + Downstream re-check: BA-07-sprint2
+[2026-03-10 00:07:09] [INFO]   + Downstream re-check: BA-05-dashboard
+[2026-03-10 00:07:09] [INFO]   + Downstream re-check: BA-11-pentest
+[2026-03-10 00:07:09] [INFO]   Kalder Test-agent (BA-10-tests) for repair...
+[2026-03-10 00:07:29] [INFO] Skrevet: src/__tests__/integration/tenant-isolation.test.ts
+[2026-03-10 00:07:29] [INFO]   BA-10-tests: 1 filer rettet
+[2026-03-10 00:07:29] [INFO]   Kalder Performance-agent (Sprint 2) (BA-09-sprint2) for repair...
+[2026-03-10 00:08:41] [INFO] Skrevet: docs/status/DECISIONS.md
+[2026-03-10 00:08:41] [INFO] Skrevet: docs/ops/CACHING.md
+[2026-03-10 00:08:41] [INFO]   BA-09-sprint2: 2 filer rettet
+[2026-03-10 00:08:41] [INFO]   BA-09-sprint2 aendrede filer der bruges af: BA-02, BA-05-selskab, BA-07-sprint2, BA-07-sprint3, BA-05-kontrakt, BA-07-sprint4, BA-07-sprint5, BA-07-sprint6, BA-11-pentest
+[2026-03-10 00:08:41] [INFO]   Kalder Feature-agent (Persondatabase) (BA-05-person) for repair...
+[2026-03-10 00:09:39] [INFO] Skrevet: src/app/(dashboard)/persons/[id]/page.tsx
+[2026-03-10 00:09:39] [INFO] Skrevet: src/actions/persons.ts
+[2026-03-10 00:09:39] [INFO] Skrevet: src/components/persons/PersonForm.tsx
+[2026-03-10 00:09:39] [INFO]   BA-05-person: 3 filer rettet
+[2026-03-10 00:09:39] [INFO]   BA-05-person aendrede filer der bruges af: BA-09-sprint2, BA-07-sprint2
+[2026-03-10 00:09:39] [INFO]   Kalder QA-agent (Sprint 2) (BA-07-sprint2) for repair...
+[2026-03-10 00:10:02] [INFO] Skrevet: docs/status/DECISIONS.md
+[2026-03-10 00:10:02] [INFO]   BA-07-sprint2: 1 filer rettet
+[2026-03-10 00:10:02] [INFO]   BA-07-sprint2 aendrede filer der bruges af: BA-02, BA-05-selskab, BA-07-sprint2, BA-07-sprint3, BA-05-kontrakt, BA-07-sprint4, BA-07-sprint5, BA-07-sprint6, BA-11-pentest
+[2026-03-10 00:10:02] [INFO]   Kalder Feature-agent (Portfolio-dashboard) (BA-05-dashboard) for repair...
+[2026-03-10 00:10:55] [INFO] Skrevet: src/actions/dashboard.ts
+[2026-03-10 00:10:55] [INFO] Skrevet: src/app/(dashboard)/page.tsx
+[2026-03-10 00:10:55] [INFO] Skrevet: src/components/dashboard/PortfolioOverview.tsx
+[2026-03-10 00:10:55] [INFO] Skrevet: src/components/dashboard/PortfolioOverviewSkeleton.tsx
+[2026-03-10 00:10:55] [INFO]   BA-05-dashboard: 4 filer rettet
+[2026-03-10 00:10:55] [INFO]   BA-05-dashboard aendrede filer der bruges af: BA-07-sprint5, BA-09-sprint5
+[2026-03-10 00:10:55] [ADVARSEL] Fil ikke fundet: src/middleware.ts
+[2026-03-10 00:10:55] [INFO]   Kalder Security Pentest-agent (BA-11-pentest) for repair...
+[2026-03-10 00:13:15] [INFO] Skrevet: src/__tests__/integration/tenant-isolation.test.ts
+[2026-03-10 00:13:15] [INFO] Skrevet: docs/ops/PENTEST-REPORT.md
+[2026-03-10 00:13:15] [INFO] Skrevet: docs/status/DECISIONS.md
+[2026-03-10 00:13:15] [INFO]   BA-11-pentest: 3 filer rettet
+[2026-03-10 00:13:15] [INFO]   BA-11-pentest aendrede filer der bruges af: BA-02, BA-05-selskab, BA-07-sprint2, BA-07-sprint3, BA-05-kontrakt, BA-07-sprint4, BA-07-sprint5, BA-07-sprint6, BA-11-pentest
+[2026-03-10 00:13:21] [ADVARSEL]   REGRESSIONSGUARD: 19 nye fejl introduceret: persons.ts, page.tsx, page.tsx, page.tsx, ActivityLog.tsx, AddOwnershipDialog.tsx, CompanyActivityLog.tsx, CompanyEmployees.tsx, CompanyForm.tsx, CompanyGovernance.tsx, CompanyOwnership.tsx, CompanyPersonDialog.tsx, EditCompanyDialog.tsx, EmployeesSection.tsx, GovernanceSection.tsx, OwnershipDialog.tsx, OwnershipSection.tsx, ContractForm.tsx, ContractStatusSelect.tsx
+[2026-03-10 00:13:21] [INFO]   INTELLIGENCE.md opdateret: - Trin: `tsc typecheck` | TS-fejl: 160->160 | Status: DIVERGERER (109->160 fejl STIGER)
+- Agenter: B

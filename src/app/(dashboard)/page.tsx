@@ -1,33 +1,13 @@
 import { Suspense } from 'react'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { PortfolioDashboard } from '@/components/portfolio/PortfolioDashboard'
-import { PortfolioDashboardSkeleton } from '@/components/portfolio/PortfolioDashboardSkeleton'
-import { getPortfolioData } from '@/actions/portfolio'
+import { getDashboardData } from '@/actions/dashboard'
+import { PortfolioOverview } from '@/components/dashboard/PortfolioOverview'
+import { PortfolioOverviewSkeleton } from '@/components/dashboard/PortfolioOverviewSkeleton'
 
-interface DashboardPageProps {
-  searchParams: {
-    status?: string
-    minEjerandel?: string
-    maxEjerandel?: string
-    harAktiveSager?: string
-    harUdloebende?: string
-    page?: string
-  }
-}
-
-export default async function DashboardPage({ searchParams }: DashboardPageProps) {
+export default async function DashboardPage() {
   const session = await auth()
   if (!session?.user) redirect('/login')
-
-  const filters = {
-    status: searchParams.status,
-    minEjerandel: searchParams.minEjerandel ? Number(searchParams.minEjerandel) : undefined,
-    maxEjerandel: searchParams.maxEjerandel ? Number(searchParams.maxEjerandel) : undefined,
-    harAktiveSager: searchParams.harAktiveSager === 'true',
-    harUdloebende: searchParams.harUdloebende === 'true',
-    page: searchParams.page ? Math.max(1, Number(searchParams.page)) : 1,
-  }
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -38,26 +18,15 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         </p>
       </div>
 
-      <Suspense fallback={<PortfolioDashboardSkeleton />}>
-        <PortfolioDashboardLoader filters={filters} />
+      <Suspense fallback={<PortfolioOverviewSkeleton />}>
+        <PortfolioOverviewLoader />
       </Suspense>
     </div>
   )
 }
 
-async function PortfolioDashboardLoader({
-  filters,
-}: {
-  filters: {
-    status?: string
-    minEjerandel?: number
-    maxEjerandel?: number
-    harAktiveSager?: boolean
-    harUdloebende?: boolean
-    page: number
-  }
-}) {
-  const result = await getPortfolioData(filters)
+async function PortfolioOverviewLoader() {
+  const result = await getDashboardData()
 
   if (result.error) {
     return (
@@ -67,5 +36,5 @@ async function PortfolioDashboardLoader({
     )
   }
 
-  return <PortfolioDashboard data={result.data!} filters={filters} />
+  return <PortfolioOverview data={result.data!} />
 }
