@@ -1,0 +1,272 @@
+Trin: prisma generate
+TS-fejl: 0
+
+Environment variables loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+
+Error: Prisma schema validation - (get-config wasm)
+Error code: P1012
+error: Error validating: This line is not an enum value definition.
+  -->  prisma\schema.prisma:31
+   | 
+30 |   AKTIV
+31 |   UDLÃ˜BET
+32 |   OPSAGT
+   | 
+
+
+error: Error validating: This line is not an enum value definition.
+  -->  prisma\schema.prisma:40
+   | 
+39 |   EJERAFTALE
+40 |   DIREKTÃ˜RKONTRAKT
+41 |   OVERDRAGELSESAFTALE
+   | 
+
+
+error: Error validating: This line is not an enum value definition.
+  -->  prisma\schema.prisma:42
+   | 
+41 |   OVERDRAGELSESAFTALE
+42 |   AKTIONÃ†RLÃ…N
+43 |   PANTSÃ†TNING
+   | 
+
+
+error: Error validating: This line is not an enum value definition.
+  -->  prisma\schema.prisma:43
+   | 
+42 |   AKTIONÃ†RLÃ…N
+43 |   PANTSÃ†TNING
+44 |   VEDTÃ†GTER
+   | 
+
+
+error: Error validating: This line is not an enum value definition.
+  -->  prisma\schema.prisma:44
+   | 
+43 |   PANTSÃ†TNING
+44 |   VEDTÃ†GTER
+45 |   ANSÃ†TTELSE_FUNKTIONÃ†R
+   | 
+
+
+error: Error validating: This line is not an enum value definition.
+  -->  prisma\schema.prisma:45
+   | 
+44 |   VEDTÃ†GTER
+45 |   ANSÃ†TTELSE_FUNKTIONÃ†R
+46 |   ANSÃ†TTELSE_IKKE_FUNKTIONÃ†R
+   | 
+
+
+error: Error validating: This line is not an enum value definition.
+  -->  prisma\schema.prisma:46
+   | 
+45 |   ANSÃ†TTELSE_FUNKTIONÃ†R
+46 |   ANSÃ†TTELSE_IKKE_FUNKTIONÃ†R
+47 |   VIKARAFTALE
+   | 
+
+
+error: Error validating: This line is not an enum value definition.
+  -->  prisma\schema.prisma:49
+   | 
+48 |   UDDANNELSESAFTALE
+49 |   FRATRÃ†DELSESAFTALE
+50 |   KONKURRENCEKLAUSUL
+   | 
+
+
+error: Error validating: This line is not an enum value definition.
+  -->  prisma\schema.prisma:51
+   | 
+50 |   KONKURRENCEKLAUSUL
+51 |   PERSONALEHÃ…NDBOG
+52 |   LEJEKONTRAKT_ERHVERV
+   | 
+
+
+error: Error validating: This line is not an enum value definition.
+  -->  prisma\schema.prisma:54
+   | 
+53 |   LEASINGAFTALE
+54 |   LEVERANDÃ˜RKONTRAKT
+55 |   SAMARBEJDSAFTALE
+   | 
+
+
+error: Error validating: This line is not an enum value definition.
+  -->  prisma\schema.prisma:69
+   | 
+68 |   OPTIONSAFTALE
+69 |   TILTRÃ†DELSESDOKUMENT
+70 |   KASSEKREDIT
+   | 
+
+
+error: Error validating: This line is not an enum value definition.
+  -->  prisma\schema.prisma:72
+   | 
+71 |   CASH_POOL
+72 |   INTERCOMPANY_LÃ…N
+73 |   SELSKABSGARANTI
+   | 
+
+
+error: Error validating: This line is not an enum value definition.
+  -->  prisma\schema.prisma:110
+   | 
+109 |   // TRANSAKTION
+110 |   VIRKSOMHEDSKÃ˜B
+111 |   VIRKSOMHEDSSALG
+   | 
+
+
+error: Error validating: This line is not an enum value definition.
+  -->  prisma\schema.prisma:122
+   | 
+121 |   GDPR
+122 |   ARBEJDSMILJÃ˜
+123 |   MYNDIGHEDSPÃ…BUD
+   | 
+
+
+error: Error validating: This line is not an enum value definition.
+  -->  prisma\schema.prisma:123
+   | 
+122 |   ARBEJDSMILJÃ˜
+123 |   MYNDIGHEDSPÃ…BUD
+124 |   SKATTEMÃ†SSIG
+   | 
+
+
+error: Error validating: This line is not an enum value definition.
+  -->  prisma\schema.prisma:124
+   | 
+123 |   MYNDIGHEDSPÃ…BUD
+124 |   SKATTEMÃ†SSIG
+125 |   // KONTRAKT
+   | 
+
+
+error: Error validating: This line is not an enum value definition.
+  -->  prisma\schema.prisma:132
+   | 
+131 |   GENERALFORSAMLING
+132 |   BESTYRELSESMÃ˜DE
+133 |   VEDTÃ†GTSÃ†NDRING
+   | 
+
+
+error: Error validating: This line is not an enum value definition.
+  -->  prisma\schema.prisma:133
+   | 
+132 |   BESTYRELSESMÃ˜DE
+133 |   VEDTÃ†GTSÃ†NDRING
+134 |   DIREKTÃ˜RSKIFTE
+   | 
+
+
+error: Error validating: This line is not an enum value definition.
+  -->  prisma\schema.prisma:134
+   | 
+133 |   VEDTÃ†GTSÃ†NDRING
+134 |   DIREKTÃ˜RSKIFTE
+135 | }
+   | 
+
+
+error: Error validating: This line is not an enum value definition.
+  -->  prisma\schema.prisma:179
+   | 
+178 | enum MeetingType {
+179 |   ORDINÃ†R
+180 |   EKSTRAORDINÃ†R
+   | 
+
+
+error: Error validating: This line is not an enum value definition.
+  -->  prisma\schema.prisma:180
+   | 
+179 |   ORDINÃ†R
+180 |   EKSTRAORDINÃ†R
+181 | }
+   | 
+
+
+error: Error validating: This line is not an enum value definition.
+  -->  prisma\schema.prisma:195
+   | 
+194 | enum MetricType {
+195 |   OMSÃ†TNING
+196 |   EBITDA
+   | 
+
+
+error: Error validating: This line is not an enum value definition.
+  -->  prisma\schema.prisma:204
+   | 
+203 | enum PeriodType {
+204 |   HELÃ…R
+205 |   H1
+   | 
+
+
+error: Error validating: This line is not an enum value definition.
+  -->  prisma\schema.prisma:211
+   | 
+210 |   Q4
+211 |   MÃ…NED
+212 | }
+   | 
+
+
+error: Error validating: This line is not an enum value definition.
+  -->  prisma\schema.prisma:237
+   | 
+236 |   REGULERER
+237 |   KRÃ†VER
+238 |   UDLÃ˜SER
+   | 
+
+
+error: Error validating: This line is not an enum value definition.
+  -->  prisma\schema.prisma:238
+   | 
+237 |   KRÃ†VER
+238 |   UDLÃ˜SER
+239 |   SUPPLERER
+   | 
+
+
+error: Error validating: This line is not an enum value definition.
+  -->  prisma\schema.prisma:255
+   | 
+254 |   OPDATERET
+255 |   STATUS_Ã†NDRET
+256 |   SLETTET
+   | 
+
+
+error: Error validating: This line is not an enum value definition.
+  -->  prisma\schema.prisma:257
+   | 
+256 |   SLETTET
+257 |   TILGÃ…ET
+258 |   DOWNLOADET
+   | 
+
+
+error: Error validating: This line is not an enum value definition.
+  -->  prisma\schema.prisma:264
+   | 
+263 |   MELLEM
+264 |   HÃ˜J
+265 |   KRITISK
+   | 
+
+Validation Error Count: 29
+[Context: getConfig]
+
+Prisma CLI Version : 5.22.0
