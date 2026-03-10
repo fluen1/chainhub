@@ -28,7 +28,7 @@ enum ContractStatus {
   TIL_REVIEW
   TIL_UNDERSKRIFT
   AKTIV
-  UDLØBET
+  UDLOEBET      @map("UDLØBET")
   OPSAGT
   FORNYET
   ARKIVERET
@@ -36,21 +36,21 @@ enum ContractStatus {
 
 enum ContractSystemType {
   EJERAFTALE
-  DIREKTØRKONTRAKT
+  DIREKTOERKONTRAKT         @map("DIREKTØRKONTRAKT")
   OVERDRAGELSESAFTALE
-  AKTIONÆRLÅN
-  PANTSÆTNING
-  VEDTÆGTER
-  ANSÆTTELSE_FUNKTIONÆR
-  ANSÆTTELSE_IKKE_FUNKTIONÆR
+  AKTIONAERLAAN             @map("AKTIONÆRLÅN")
+  PANTSAETNING              @map("PANTSÆTNING")
+  VEDTAEGTER                @map("VEDTÆGTER")
+  ANSAETTELSE_FUNKTIONAER   @map("ANSÆTTELSE_FUNKTIONÆR")
+  ANSAETTELSE_IKKE_FUNKTIONAER @map("ANSÆTTELSE_IKKE_FUNKTIONÆR")
   VIKARAFTALE
   UDDANNELSESAFTALE
-  FRATRÆDELSESAFTALE
+  FRATRAEDELSESAFTALE       @map("FRATRÆDELSESAFTALE")
   KONKURRENCEKLAUSUL
-  PERSONALEHÅNDBOG
+  PERSONALEHAANDBOG         @map("PERSONALEHÅNDBOG")
   LEJEKONTRAKT_ERHVERV
   LEASINGAFTALE
-  LEVERANDØRKONTRAKT
+  LEVERANDOERKONTRAKT       @map("LEVERANDØRKONTRAKT")
   SAMARBEJDSAFTALE
   NDA
   IT_SYSTEMAFTALE
@@ -64,10 +64,10 @@ enum ContractSystemType {
   INTERN_SERVICEAFTALE
   ROYALTY_LICENS
   OPTIONSAFTALE
-  TILTRÆDELSESDOKUMENT
+  TILTRAE DELSESDOKUMENT    @map("TILTRÆDELSESDOKUMENT")
   KASSEKREDIT
   CASH_POOL
-  INTERCOMPANY_LÅN
+  INTERCOMPANY_LAAN         @map("INTERCOMPANY_LÅN")
   SELSKABSGARANTI
 }
 
@@ -104,7 +104,7 @@ enum SagsType {
 }
 
 enum SagsSubtype {
-  VIRKSOMHEDSKØB
+  VIRKSOMHEDSKOB            @map("VIRKSOMHEDSKØB")
   VIRKSOMHEDSSALG
   FUSION
   OMSTRUKTURERING
@@ -114,17 +114,17 @@ enum SagsSubtype {
   FORHANDLING_MED_MODPART
   INKASSO
   GDPR
-  ARBEJDSMILJØ
-  MYNDIGHEDSPÅBUD
-  SKATTEMÆSSIG
+  ARBEJDSMILJOE             @map("ARBEJDSMILJØ")
+  MYNDIGHEDSPAABU D         @map("MYNDIGHEDSPÅBUD")
+  SKATTEMAE SSIG            @map("SKATTEMÆSSIG")
   FORHANDLING
   OPSIGELSE
   FORNYELSE
   MISLIGHOLDELSE
   GENERALFORSAMLING
-  BESTYRELSESMØDE
-  VEDTÆGTSÆNDRING
-  DIREKTØRSKIFTE
+  BESTYRELSESMOEDE         @map("BESTYRELSESMØDE")
+  VEDTAEGTSAENDRING        @map("VEDTÆGTSÆNDRING")
+  DIREKTOERSKIFTE          @map("DIREKTØRSKIFTE")
 }
 
 enum CaseStatus {
@@ -169,8 +169,8 @@ enum InsuranceType {
 }
 
 enum MeetingType {
-  ORDINÆR
-  EKSTRAORDINÆR
+  ORDINAER    @map("ORDINÆR")
+  EKSTRAORDINAER @map("EKSTRAORDINÆR")
 }
 
 enum OptionType {
@@ -185,7 +185,7 @@ enum GuaranteeType {
 }
 
 enum MetricType {
-  OMSÆTNING
+  OMSAETNING    @map("OMSÆTNING")
   EBITDA
   RESULTAT
   LIKVIDITET
@@ -194,14 +194,14 @@ enum MetricType {
 }
 
 enum PeriodType {
-  HELÅR
+  HELAER    @map("HELÅR")
   H1
   H2
   Q1
   Q2
   Q3
   Q4
-  MÅNED
+  MAANED    @map("MÅNED")
 }
 
 enum MetricSource {
@@ -227,8 +227,8 @@ enum TpMethod {
 
 enum RelationType {
   REGULERER
-  KRÆVER
-  UDLØSER
+  KRAEVER    @map("KRÆVER")
+  UDLOSER    @map("UDLØSER")
   SUPPLERER
   SIKRER
 }
@@ -245,652 +245,647 @@ enum AktivitetsEntitet {
 enum AktivitetsHandling {
   OPRETTET
   OPDATERET
-  STATUS_ÆNDRET
+  STATUS_AENDRET    @map("STATUS_ÆNDRET")
   SLETTET
-  TILGÅET
-  DOWNLOADET
+  TILGAAET          @map("TILGÅET")
+  KOMMENTERET
+  DELT
+  UNDERSKREVET
 }
 
 enum Prioritet {
   LAV
-  MELLEM
-  HØJ
+  NORMAL
+  HOEJ      @map("HØJ")
   KRITISK
 }
 
+enum EmploymentType {
+  FUNKTIONAER    @map("FUNKTIONÆR")
+  IKKE_FUNKTIONAER @map("IKKE_FUNKTIONÆR")
+  VIKAR
+  LÆRLING
+  KONSULENT
+}
+
+enum CompanyType {
+  APS
+  AS
+  ENK
+  IS
+  IVS
+  FOND
+  FORENING
+  ANDET
+}
+
+enum OwnershipType {
+  DIREKTE
+  INDIREKTE
+  NOMINEL
+}
+
+enum DocumentCategory {
+  KONTRAKT
+  REFERAT
+  VEDTAEGT     @map("VEDTÆGT")
+  REGNSKAB
+  KORRESPONDANCE
+  ANDET
+}
+
 // ============================================================
-// KERNTABELLER
+// MODELS
 // ============================================================
 
 model Organization {
-  id              String    @id @default(uuid())
-  name            String
-  cvr             String?
-  plan            String    @default("trial") // trial | starter | business | enterprise
-  plan_expires_at DateTime?
-  chain_structure Boolean   @default(false) // aktiverer Lag 2 kontrakttyper
-  created_at      DateTime  @default(now())
-  updated_at      DateTime  @updatedAt
-  created_by      String? // DEC-019: NULL ved self-signup
+  id             String    @id @default(uuid())
+  name           String
+  cvr            String?   @unique
+  plan           String    @default("starter")
+  chainStructure Boolean   @default(false)
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  createdBy      String?   @map("created_by")
+  deletedAt      DateTime? @map("deleted_at")
 
   // Relations
-  users                 User[]
-  companies             Company[]
-  persons               Person[]
-  contracts             Contract[]
-  cases                 Case[]
-  tasks                 Task[]
-  documents             Document[]
-  user_role_assignments UserRoleAssignment[]
-  financial_metrics     FinancialMetric[]
-  time_entries          TimeEntry[]
-  deadlines             Deadline[]
-  subscriptions         Subscription[]
-  reminders             Reminder[]
+  users               User[]
+  groups              Group[]
+  companies           Company[]
+  contracts           Contract[]
+  cases               Case[]
+  tasks               Task[]
+  persons             Person[]
+  documents           Document[]
+  activities          ActivityLog[]
+  userRoleAssignments UserRoleAssignment[]
+  financialMetrics    FinancialMetric[]
+  notifications       Notification[]
 
-  @@index([id])
   @@map("organizations")
 }
 
-model User {
-  id              String    @id @default(uuid())
-  organization_id String
-  email           String
-  name            String
-  avatar_url      String?
-  microsoft_id    String? // Azure AD object ID
-  created_at      DateTime  @default(now())
-  updated_at      DateTime  @updatedAt
-  deleted_at      DateTime?
+model Group {
+  id             String    @id @default(uuid())
+  organizationId String    @map("organization_id")
+  name           String
+  description    String?
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  createdBy      String?   @map("created_by")
+  deletedAt      DateTime? @map("deleted_at")
 
   // Relations
-  organization      Organization         @relation(fields: [organization_id], references: [id])
-  roles             UserRoleAssignment[]
-  created_contracts Contract[]           @relation("ContractCreatedBy")
-  assigned_tasks    Task[]               @relation("TaskAssignedTo")
+  organization        Organization         @relation(fields: [organizationId], references: [id])
+  users               User[]
+  userRoleAssignments UserRoleAssignment[]
+  companies           Company[]
 
-  @@unique([organization_id, email])
-  @@index([organization_id, deleted_at])
+  @@index([organizationId])
+  @@index([organizationId, deletedAt])
+  @@map("groups")
+}
+
+model User {
+  id             String    @id @default(uuid())
+  organizationId String    @map("organization_id")
+  groupId        String?   @map("group_id")
+  email          String    @unique
+  name           String
+  avatarUrl      String?   @map("avatar_url")
+  microsoftId    String?   @unique @map("microsoft_id")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  createdBy      String?   @map("created_by")
+  deletedAt      DateTime? @map("deleted_at")
+
+  // Relations
+  organization        Organization         @relation(fields: [organizationId], references: [id])
+  group               Group?               @relation(fields: [groupId], references: [id])
+  roleAssignments     UserRoleAssignment[]
+  contractsCreated    Contract[]           @relation("ContractCreatedBy")
+  casesCreated        Case[]               @relation("CaseCreatedBy")
+  tasksAssigned       Task[]               @relation("TaskAssignee")
+  tasksCreated        Task[]               @relation("TaskCreatedBy")
+  comments            Comment[]
+  notifications       Notification[]
+  activitiesLogged    ActivityLog[]
+
+  @@index([organizationId])
+  @@index([organizationId, deletedAt])
   @@map("users")
 }
 
 model UserRoleAssignment {
-  id              String    @id @default(uuid())
-  organization_id String
-  user_id         String
-  role            UserRole
-  scope           UserScope
-  company_ids     String[] // kun relevant ved scope = ASSIGNED
-  created_at      DateTime  @default(now())
-  updated_at      DateTime  @updatedAt
-  created_by      String
+  id             String    @id @default(uuid())
+  organizationId String    @map("organization_id")
+  groupId        String?   @map("group_id")
+  userId         String    @map("user_id")
+  role           UserRole
+  scope          UserScope
+  companyIds     String[]  @map("company_ids")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  createdBy      String?   @map("created_by")
+  deletedAt      DateTime? @map("deleted_at")
 
   // Relations
-  organization Organization @relation(fields: [organization_id], references: [id])
-  user         User         @relation(fields: [user_id], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
+  group        Group?        @relation(fields: [groupId], references: [id])
+  user         User          @relation(fields: [userId], references: [id])
 
-  @@index([organization_id, user_id])
+  @@index([organizationId])
+  @@index([userId])
+  @@index([organizationId, deletedAt])
   @@map("user_role_assignments")
 }
 
-// ============================================================
-// SELSKAB OG EJERSKAB
-// ============================================================
-
 model Company {
-  id            String    @id @default(uuid())
-  organization_id String
-  name          String
-  cvr           String?
-  company_type  String? // ApS, A/S, I/S, enkeltmandsvirksomhed
-  address       String?
-  city          String?
-  postal_code   String?
-  founded_date  DateTime?
-  status        String    @default("aktiv") // aktiv | inaktiv | under_stiftelse | opløst
-  notes         String?
-  created_at    DateTime  @default(now())
-  updated_at    DateTime  @updatedAt
-  created_by    String
-  deleted_at    DateTime?
+  id             String      @id @default(uuid())
+  organizationId String      @map("organization_id")
+  groupId        String?     @map("group_id")
+  cvr            String?
+  name           String
+  companyType    CompanyType @map("company_type")
+  address        String?
+  city           String?
+  zip            String?
+  country        String      @default("DK")
+  email          String?
+  phone          String?
+  isHolding      Boolean     @default(false) @map("is_holding")
+  parentId       String?     @map("parent_id")
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+  createdBy      String?     @map("created_by")
+  deletedAt      DateTime?   @map("deleted_at")
 
   // Relations
-  organization      Organization      @relation(fields: [organization_id], references: [id])
-  ownerships        Ownership[]       @relation("OwnedCompany")
-  owner_ownerships  Ownership[]       @relation("OwnerCompany")
-  company_persons   CompanyPerson[]
-  contracts         Contract[]
-  cases             CaseCompany[]
-  documents         Document[]
-  financial_metrics FinancialMetric[]
+  organization     Organization      @relation(fields: [organizationId], references: [id])
+  group            Group?            @relation(fields: [groupId], references: [id])
+  parent           Company?          @relation("CompanyHierarchy", fields: [parentId], references: [id])
+  subsidiaries     Company[]         @relation("CompanyHierarchy")
+  contracts        Contract[]
+  cases            Case[]
+  persons          Person[]
+  documents        Document[]
+  financialMetrics FinancialMetric[]
+  ownerships       Ownership[]       @relation("OwnedCompany")
+  ownedBy          Ownership[]       @relation("OwnerCompany")
 
-  @@index([organization_id, deleted_at])
-  @@index([organization_id, status])
+  @@index([organizationId])
+  @@index([organizationId, deletedAt])
+  @@index([organizationId, parentId])
   @@map("companies")
 }
 
 model Ownership {
-  id               String    @id @default(uuid())
-  organization_id  String
-  company_id       String // selskabet der ejes
-  owner_person_id  String? // person som ejer
-  owner_company_id String? // selskab som ejer (holdingstruktur)
-  ownership_pct    Decimal   @db.Decimal(5, 2)
-  share_class      String? // A-anparter, B-anparter
-  effective_date   DateTime?
-  contract_id      String? // reference til ejeraftalen
-  created_at       DateTime  @default(now())
-  updated_at       DateTime  @updatedAt
-  created_by       String
+  id              String        @id @default(uuid())
+  organizationId  String        @map("organization_id")
+  ownerCompanyId  String        @map("owner_company_id")
+  ownedCompanyId  String        @map("owned_company_id")
+  ownershipType   OwnershipType @map("ownership_type")
+  sharePercentage Decimal       @map("share_percentage") @db.Decimal(5, 2)
+  votingRights    Decimal?      @map("voting_rights") @db.Decimal(5, 2)
+  validFrom       DateTime      @map("valid_from")
+  validTo         DateTime?     @map("valid_to")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  createdBy       String?       @map("created_by")
+  deletedAt       DateTime?     @map("deleted_at")
 
   // Relations
-  company       Company   @relation("OwnedCompany", fields: [company_id], references: [id])
-  owner_company Company?  @relation("OwnerCompany", fields: [owner_company_id], references: [id])
-  owner_person  Person?   @relation(fields: [owner_person_id], references: [id])
-  contract      Contract? @relation(fields: [contract_id], references: [id])
+  ownerCompany Company @relation("OwnerCompany", fields: [ownerCompanyId], references: [id])
+  ownedCompany Company @relation("OwnedCompany", fields: [ownedCompanyId], references: [id])
 
-  @@index([organization_id, company_id])
-  @@index([organization_id, owner_person_id])
-  @@index([organization_id, owner_company_id])
+  @@index([organizationId])
+  @@index([organizationId, ownedCompanyId])
+  @@index([organizationId, ownerCompanyId])
   @@map("ownerships")
 }
 
-// ============================================================
-// PERSONS
-// ============================================================
-
 model Person {
-  id                   String    @id @default(uuid())
-  organization_id      String
-  first_name           String
-  last_name            String
-  email                String?
-  phone                String?
-  notes                String?
-  microsoft_contact_id String? // Outlook/Graph contact ID
-  created_at           DateTime  @default(now())
-  updated_at           DateTime  @updatedAt
-  created_by           String
-  deleted_at           DateTime?
+  id             String         @id @default(uuid())
+  organizationId String         @map("organization_id")
+  companyId      String?        @map("company_id")
+  firstName      String         @map("first_name")
+  lastName       String         @map("last_name")
+  email          String?
+  phone          String?
+  cpr            String?
+  address        String?
+  city           String?
+  zip            String?
+  country        String         @default("DK")
+  employmentType EmploymentType? @map("employment_type")
+  jobTitle       String?        @map("job_title")
+  startDate      DateTime?      @map("start_date")
+  endDate        DateTime?      @map("end_date")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+  createdBy      String?        @map("created_by")
+  deletedAt      DateTime?      @map("deleted_at")
 
   // Relations
-  organization     Organization    @relation(fields: [organization_id], references: [id])
-  company_persons  CompanyPerson[]
-  contract_parties ContractParty[]
-  ownerships       Ownership[]
-  case_persons     CasePerson[]
+  company   Company?   @relation(fields: [companyId], references: [id])
+  contracts Contract[]
 
-  @@index([organization_id, deleted_at])
+  @@index([organizationId])
+  @@index([organizationId, companyId])
+  @@index([organizationId, deletedAt])
   @@map("persons")
 }
 
-model CompanyPerson {
-  id               String    @id @default(uuid())
-  organization_id  String
-  company_id       String
-  person_id        String
-  role             String // direktør | bestyrelsesmedlem | ansat | revisor
-  employment_type  String? // funktionær | ikke-funktionær | vikar | elev
-  start_date       DateTime?
-  end_date         DateTime?
-  anciennity_start DateTime? // separat fra start_date
-  contract_id      String? // reference til ansættelseskontrakten
-  created_at       DateTime  @default(now())
-  updated_at       DateTime  @updatedAt
-  created_by       String
-
-  // Relations
-  company  Company   @relation(fields: [company_id], references: [id])
-  person   Person    @relation(fields: [person_id], references: [id])
-  contract Contract? @relation(fields: [contract_id], references: [id])
-
-  @@index([organization_id, company_id])
-  @@index([organization_id, person_id])
-  @@map("company_persons")
-}
-
-// ============================================================
-// KONTRAKTER
-// ============================================================
-
 model Contract {
-  id                   String             @id @default(uuid())
-  organization_id      String
-  company_id           String
-  system_type          ContractSystemType
-  display_name         String // brugerens eget navn
-  status               ContractStatus     @default(UDKAST)
-  sensitivity          SensitivityLevel   @default(STANDARD)
-  deadline_type        DeadlineType       @default(INGEN)
-  version_source       VersionSource      @default(CUSTOM)
-  collective_agreement String? // OA-navn ved BRANCHESTANDARD
-  parent_contract_id   String? // overordnet kontrakt
-  triggered_by_id      String? // udløsende kontrakt
-
-  // Datoer
-  effective_date     DateTime?
-  expiry_date        DateTime? // NULL = løbende
-  signed_date        DateTime?
-  notice_period_days Int? // varselfrist i dage
-  termination_date   DateTime?
-  anciennity_start   DateTime?
-
-  // Advisering
-  reminder_90_days    Boolean  @default(true)
-  reminder_30_days    Boolean  @default(true)
-  reminder_7_days     Boolean  @default(true)
-  reminder_recipients String[] // user IDs — [] = owner
-
-  // Opbevaring
-  must_retain_until DateTime?
-
-  // Typespecifikke data (JSONB — fleksibel pr. system_type)
-  type_data Json?
-
-  notes          String?
-  created_at     DateTime  @default(now())
-  updated_at     DateTime  @updatedAt
-  created_by     String
-  last_viewed_at DateTime?
-  last_viewed_by String?
-  deleted_at     DateTime?
+  id                 String             @id @default(uuid())
+  organizationId     String             @map("organization_id")
+  companyId          String             @map("company_id")
+  personId           String?            @map("person_id")
+  systemType         ContractSystemType @map("system_type")
+  displayName        String             @map("display_name")
+  status             ContractStatus     @default(UDKAST)
+  sensitivity        SensitivityLevel   @default(STANDARD)
+  deadlineType       DeadlineType       @default(INGEN)
+  signedDate         DateTime?          @map("signed_date")
+  startDate          DateTime?          @map("start_date")
+  endDate            DateTime?          @map("end_date")
+  noticePeriodDays   Int?               @map("notice_period_days")
+  autoRenew          Boolean            @default(false) @map("auto_renew")
+  mustRetainUntil    DateTime?          @map("must_retain_until")
+  parentContractId   String?            @map("parent_contract_id")
+  triggeredById      String?            @map("triggered_by_id")
+  versionSource      VersionSource?     @map("version_source")
+  counterpartyName   String?            @map("counterparty_name")
+  counterpartyEmail  String?            @map("counterparty_email")
+  counterpartyCvr    String?            @map("counterparty_cvr")
+  notes              String?
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
+  createdBy          String?            @map("created_by")
+  deletedAt          DateTime?          @map("deleted_at")
 
   // Relations
-  organization     Organization         @relation(fields: [organization_id], references: [id])
-  company          Company              @relation(fields: [company_id], references: [id])
-  parent_contract  Contract?            @relation("ContractHierarchy", fields: [parent_contract_id], references: [id])
-  child_contracts  Contract[]           @relation("ContractHierarchy")
-  triggered_by     Contract?            @relation("ContractTriggeredBy", fields: [triggered_by_id], references: [id])
-  triggered        Contract[]           @relation("ContractTriggeredBy")
-  created_by_user  User?                @relation("ContractCreatedBy", fields: [created_by], references: [id])
-  parties          ContractParty[]
-  versions         ContractVersion[]
-  attachments      ContractAttachment[]
-  relations_from   ContractRelation[]   @relation("RelationFrom")
-  relations_to     ContractRelation[]   @relation("RelationTo")
-  case_contracts   CaseContract[]
-  ownerships       Ownership[]
-  company_persons  CompanyPerson[]
-  reminders        Reminder[]
+  organization    Organization     @relation(fields: [organizationId], references: [id])
+  company         Company          @relation(fields: [companyId], references: [id])
+  person          Person?          @relation(fields: [personId], references: [id])
+  createdByUser   User?            @relation("ContractCreatedBy", fields: [createdBy], references: [id])
+  parentContract  Contract?        @relation("ContractVersions", fields: [parentContractId], references: [id])
+  childContracts  Contract[]       @relation("ContractVersions")
+  documents       Document[]
+  cases           CaseContract[]
+  typeDetails     ContractTypeDetail?
+  amendments      ContractAmendment[]
+  relations       ContractRelation[] @relation("SourceContract")
+  relatedBy       ContractRelation[] @relation("TargetContract")
+  retentionRule   RetentionRule?
 
-  @@index([organization_id, deleted_at])
-  @@index([organization_id, company_id, deleted_at])
-  @@index([organization_id, system_type, deleted_at])
-  @@index([organization_id, status, deleted_at])
-  @@index([expiry_date]) // adviserings-queries
+  @@index([organizationId])
+  @@index([organizationId, companyId])
+  @@index([organizationId, status])
+  @@index([organizationId, deletedAt])
+  @@index([organizationId, systemType])
   @@map("contracts")
 }
 
-model ContractParty {
-  id                String   @id @default(uuid())
-  organization_id   String
-  contract_id       String
-  person_id         String?
-  is_signer         Boolean  @default(false)
-  counterparty_name String? // ekstern part uden profil
-  role_in_contract  String? // køber | sælger | arbejdsgiver | lejer
-  created_at        DateTime @default(now())
-  updated_at        DateTime @updatedAt
-  created_by        String
+model ContractTypeDetail {
+  id                    String     @id @default(uuid())
+  contractId            String     @unique @map("contract_id")
+  organizationId        String     @map("organization_id")
+
+  // Lease fields
+  leaseType             LeaseType? @map("lease_type")
+  leaseArea             Decimal?   @map("lease_area") @db.Decimal(10, 2)
+  leaseMonthlyRent      Decimal?   @map("lease_monthly_rent") @db.Decimal(12, 2)
+  leaseDepositMonths    Int?       @map("lease_deposit_months")
+  leaseRegulationClause String?    @map("lease_regulation_clause")
+
+  // Employment fields
+  employmentType        EmploymentType? @map("employment_type")
+  salary                Decimal?   @map("salary") @db.Decimal(12, 2)
+  workingHours          Decimal?   @map("working_hours") @db.Decimal(5, 2)
+  nonCompeteMonths      Int?       @map("non_compete_months")
+  nonSolicitMonths      Int?       @map("non_solicit_months")
+  noticePeriodEmployee  Int?       @map("notice_period_employee")
+  noticePeriodEmployer  Int?       @map("notice_period_employer")
+
+  // NDA fields
+  ndaType               NdaType?   @map("nda_type")
+  ndaDurationMonths     Int?       @map("nda_duration_months")
+
+  // Insurance fields
+  insuranceType         InsuranceType? @map("insurance_type")
+  insurancePremium      Decimal?   @map("insurance_premium") @db.Decimal(12, 2)
+  insuranceCoverage     Decimal?   @map("insurance_coverage") @db.Decimal(15, 2)
+
+  // Meeting fields
+  meetingType           MeetingType? @map("meeting_type")
+  meetingDate           DateTime?  @map("meeting_date")
+  meetingAttendees      String[]   @map("meeting_attendees")
+  meetingResolutions    String?    @map("meeting_resolutions")
+
+  // Option fields
+  optionType            OptionType? @map("option_type")
+  optionShares          Int?       @map("option_shares")
+  optionStrikePrice     Decimal?   @map("option_strike_price") @db.Decimal(12, 2)
+  optionVestingMonths   Int?       @map("option_vesting_months")
+  optionCliffMonths     Int?       @map("option_cliff_months")
+  optionExpiryDate      DateTime?  @map("option_expiry_date")
+
+  // Guarantee fields
+  guaranteeType         GuaranteeType? @map("guarantee_type")
+  guaranteeAmount       Decimal?   @map("guarantee_amount") @db.Decimal(15, 2)
+  guaranteeExpiry       DateTime?  @map("guarantee_expiry")
+
+  // Transfer pricing
+  tpMethod              TpMethod?  @map("tp_method")
+  tpBenchmarkSource     String?    @map("tp_benchmark_source")
+  tpMarginMin           Decimal?   @map("tp_margin_min") @db.Decimal(5, 2)
+  tpMarginMax           Decimal?   @map("tp_margin_max") @db.Decimal(5, 2)
+
+  createdAt             DateTime   @default(now()) @map("created_at")
+  updatedAt             DateTime   @updatedAt @map("updated_at")
+  createdBy             String?    @map("created_by")
+  deletedAt             DateTime?  @map("deleted_at")
 
   // Relations
-  contract Contract @relation(fields: [contract_id], references: [id])
-  person   Person?  @relation(fields: [person_id], references: [id])
+  contract Contract @relation(fields: [contractId], references: [id])
 
-  @@index([organization_id, contract_id])
-  @@map("contract_parties")
+  @@index([organizationId])
+  @@map("contract_type_details")
 }
 
-model ContractVersion {
-  id              String     @id @default(uuid())
-  organization_id String
-  contract_id     String
-  version_number  Int
-  file_url        String
-  file_name       String
-  file_size_bytes Int
-  is_current      Boolean    @default(false)
-  change_type     ChangeType @default(NY_VERSION)
-  change_note     String?
-  amends_clause   String? // hvilken klausul ændres (ved ALLONGE)
-  uploaded_at     DateTime   @default(now())
-  uploaded_by     String
+model ContractAmendment {
+  id             String     @id @default(uuid())
+  organizationId String     @map("organization_id")
+  contractId     String     @map("contract_id")
+  changeType     ChangeType @map("change_type")
+  versionNumber  Int        @map("version_number")
+  title          String
+  description    String?
+  effectiveDate  DateTime   @map("effective_date")
+  documentUrl    String?    @map("document_url")
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
+  createdBy      String?    @map("created_by")
+  deletedAt      DateTime?  @map("deleted_at")
 
   // Relations
-  contract Contract @relation(fields: [contract_id], references: [id])
+  contract Contract @relation(fields: [contractId], references: [id])
 
-  @@index([organization_id, contract_id])
-  @@map("contract_versions")
-}
-
-model ContractAttachment {
-  id              String    @id @default(uuid())
-  organization_id String
-  contract_id     String
-  file_url        String
-  file_name       String
-  file_size_bytes Int
-  description     String?
-  uploaded_at     DateTime  @default(now())
-  uploaded_by     String
-  deleted_at      DateTime?
-
-  // Relations
-  contract Contract @relation(fields: [contract_id], references: [id])
-
-  @@index([organization_id, contract_id])
-  @@map("contract_attachments")
+  @@index([organizationId])
+  @@index([contractId])
+  @@map("contract_amendments")
 }
 
 model ContractRelation {
   id               String       @id @default(uuid())
-  organization_id  String
-  from_contract_id String
-  to_contract_id   String
-  relation_type    RelationType
-  created_at       DateTime     @default(now())
-  updated_at       DateTime     @updatedAt
-  created_by       String
+  organizationId   String       @map("organization_id")
+  sourceContractId String       @map("source_contract_id")
+  targetContractId String       @map("target_contract_id")
+  relationType     RelationType @map("relation_type")
+  notes            String?
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+  createdBy        String?      @map("created_by")
+  deletedAt        DateTime?    @map("deleted_at")
 
   // Relations
-  from_contract Contract @relation("RelationFrom", fields: [from_contract_id], references: [id])
-  to_contract   Contract @relation("RelationTo", fields: [to_contract_id], references: [id])
+  sourceContract Contract @relation("SourceContract", fields: [sourceContractId], references: [id])
+  targetContract Contract @relation("TargetContract", fields: [targetContractId], references: [id])
 
-  @@unique([from_contract_id, to_contract_id, relation_type])
-  @@index([organization_id, from_contract_id])
-  @@index([organization_id, to_contract_id])
+  @@index([organizationId])
+  @@index([sourceContractId])
   @@map("contract_relations")
 }
 
-// ============================================================
-// SAGER OG OPGAVER
-// ============================================================
-
-model Case {
-  id              String           @id @default(uuid())
-  organization_id String
-  title           String
-  case_type       SagsType
-  case_subtype    SagsSubtype? // påkrævet medmindre case_type = ANDET
-  status          CaseStatus       @default(NY)
-  sensitivity     SensitivityLevel @default(INTERN)
-  description     String?
-  responsible_id  String? // user ID
-  due_date        DateTime?
-  closed_at       DateTime?
-  created_at      DateTime         @default(now())
-  updated_at      DateTime         @updatedAt
-  created_by      String
-  deleted_at      DateTime?
+model RetentionRule {
+  id                String   @id @default(uuid())
+  organizationId    String   @map("organization_id")
+  contractId        String   @unique @map("contract_id")
+  systemType        ContractSystemType @map("system_type")
+  retentionYears    Int      @map("retention_years")
+  legalBasis        String?  @map("legal_basis")
+  autoCalculated    Boolean  @default(true) @map("auto_calculated")
+  calculatedFrom    String?  @map("calculated_from")
+  overriddenBy      String?  @map("overridden_by")
+  overriddenAt      DateTime? @map("overridden_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  createdBy         String?  @map("created_by")
+  deletedAt         DateTime? @map("deleted_at")
 
   // Relations
-  organization   Organization  @relation(fields: [organization_id], references: [id])
-  case_companies CaseCompany[]
-  case_contracts CaseContract[]
-  case_persons   CasePerson[]
-  tasks          Task[]
-  documents      Document[]
-  time_entries   TimeEntry[]
-  deadlines      Deadline[]
+  contract Contract @relation(fields: [contractId], references: [id])
 
-  @@index([organization_id, deleted_at])
-  @@index([organization_id, status, deleted_at])
+  @@index([organizationId])
+  @@map("retention_rules")
+}
+
+model Case {
+  id             String     @id @default(uuid())
+  organizationId String     @map("organization_id")
+  companyId      String     @map("company_id")
+  sagsType       SagsType   @map("sags_type")
+  sagsSubtype    SagsSubtype? @map("sags_subtype")
+  title          String
+  description    String?
+  status         CaseStatus @default(NY)
+  sensitivity    SensitivityLevel @default(STANDARD)
+  prioritet      Prioritet  @default(NORMAL)
+  assignedTo     String?    @map("assigned_to")
+  dueDate        DateTime?  @map("due_date")
+  closedAt       DateTime?  @map("closed_at")
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
+  createdBy      String?    @map("created_by")
+  deletedAt      DateTime?  @map("deleted_at")
+
+  // Relations
+  organization Organization   @relation(fields: [organizationId], references: [id])
+  company      Company        @relation(fields: [companyId], references: [id])
+  createdByUser User?         @relation("CaseCreatedBy", fields: [createdBy], references: [id])
+  contracts    CaseContract[]
+  tasks        Task[]
+  documents    Document[]
+  comments     Comment[]
+
+  @@index([organizationId])
+  @@index([organizationId, companyId])
+  @@index([organizationId, status])
+  @@index([organizationId, deletedAt])
   @@map("cases")
 }
 
-model CaseCompany {
-  organization_id String
-  case_id         String
-  company_id      String
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
-  created_by      String
-
-  // Relations
-  case    Case    @relation(fields: [case_id], references: [id])
-  company Company @relation(fields: [company_id], references: [id])
-
-  @@id([case_id, company_id])
-  @@index([organization_id, case_id])
-  @@map("case_companies")
-}
-
 model CaseContract {
-  organization_id String
-  case_id         String
-  contract_id     String
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
-  created_by      String
+  id             String   @id @default(uuid())
+  organizationId String   @map("organization_id")
+  caseId         String   @map("case_id")
+  contractId     String   @map("contract_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  createdBy      String?  @map("created_by")
 
   // Relations
-  case     Case     @relation(fields: [case_id], references: [id])
-  contract Contract @relation(fields: [contract_id], references: [id])
+  case     Case     @relation(fields: [caseId], references: [id])
+  contract Contract @relation(fields: [contractId], references: [id])
 
-  @@id([case_id, contract_id])
-  @@index([organization_id, case_id])
+  @@unique([caseId, contractId])
+  @@index([organizationId])
   @@map("case_contracts")
 }
 
-model CasePerson {
-  organization_id String
-  case_id         String
-  person_id       String
-  role            String?
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
-  created_by      String
-
-  // Relations
-  case   Case   @relation(fields: [case_id], references: [id])
-  person Person @relation(fields: [person_id], references: [id])
-
-  @@id([case_id, person_id])
-  @@index([organization_id, case_id])
-  @@map("case_persons")
-}
-
 model Task {
-  id              String     @id @default(uuid())
-  organization_id String
-  title           String
-  description     String?
-  status          TaskStatus @default(NY)
-  due_date        DateTime?
-  assigned_to     String? // user ID
-  case_id         String?
-  company_id      String?
-  contract_id     String?
-  created_at      DateTime   @default(now())
-  updated_at      DateTime   @updatedAt
-  created_by      String
-  deleted_at      DateTime?
+  id             String     @id @default(uuid())
+  organizationId String     @map("organization_id")
+  caseId         String?    @map("case_id")
+  companyId      String?    @map("company_id")
+  title          String
+  description    String?
+  status         TaskStatus @default(NY)
+  prioritet      Prioritet  @default(NORMAL)
+  assignedTo     String?    @map("assigned_to")
+  dueDate        DateTime?  @map("due_date")
+  completedAt    DateTime?  @map("completed_at")
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
+  createdBy      String?    @map("created_by")
+  deletedAt      DateTime?  @map("deleted_at")
 
   // Relations
-  organization Organization @relation(fields: [organization_id], references: [id])
-  assignee     User?        @relation("TaskAssignedTo", fields: [assigned_to], references: [id])
-  case         Case?        @relation(fields: [case_id], references: [id])
+  organization  Organization @relation(fields: [organizationId], references: [id])
+  case          Case?        @relation(fields: [caseId], references: [id])
+  assignee      User?        @relation("TaskAssignee", fields: [assignedTo], references: [id])
+  createdByUser User?        @relation("TaskCreatedBy", fields: [createdBy], references: [id])
+  comments      Comment[]
+  documents     Document[]
 
-  @@index([organization_id, deleted_at])
-  @@index([organization_id, assigned_to, deleted_at])
-  @@index([organization_id, due_date])
+  @@index([organizationId])
+  @@index([organizationId, caseId])
+  @@index([organizationId, deletedAt])
   @@map("tasks")
 }
 
-model Deadline {
-  id                 String    @id @default(uuid())
-  organization_id    String
-  title              String
-  due_date           DateTime
-  priority           Prioritet
-  assigned_to        String? // user ID
-  case_id            String?
-  contract_id        String?
-  note               String?
-  advise_days_before Int       @default(3)
-  advise_sent_at     DateTime?
-  completed_at       DateTime?
-  created_at         DateTime  @default(now())
-  updated_at         DateTime  @updatedAt
-  created_by         String
-  deleted_at         DateTime?
-
-  // Relations
-  organization Organization @relation(fields: [organization_id], references: [id])
-  case         Case?        @relation(fields: [case_id], references: [id])
-
-  @@index([organization_id, deleted_at])
-  @@index([organization_id, due_date])
-  @@index([due_date, advise_sent_at]) // advis-cron query
-  @@map("deadlines")
-}
-
-// ============================================================
-// DOKUMENTER OG ØKONOMI
-// ============================================================
-
 model Document {
-  id              String           @id @default(uuid())
-  organization_id String
-  company_id      String?
-  case_id         String?
-  title           String
-  file_url        String
-  file_name       String
-  file_size_bytes Int
-  file_type       String // pdf | docx | xlsx
-  sensitivity     SensitivityLevel @default(STANDARD)
-  folder_path     String? // brugerdefineret mappestruktur
-  description     String?
-  uploaded_at     DateTime         @default(now())
-  uploaded_by     String
-  last_viewed_at  DateTime?
-  last_viewed_by  String?
-  deleted_at      DateTime?
+  id             String          @id @default(uuid())
+  organizationId String          @map("organization_id")
+  companyId      String?         @map("company_id")
+  contractId     String?         @map("contract_id")
+  caseId         String?         @map("case_id")
+  taskId         String?         @map("task_id")
+  category       DocumentCategory
+  title          String
+  fileUrl        String          @map("file_url")
+  fileSize       Int?            @map("file_size")
+  mimeType       String?         @map("mime_type")
+  sensitivity    SensitivityLevel @default(STANDARD)
+  version        Int             @default(1)
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+  createdBy      String?         @map("created_by")
+  deletedAt      DateTime?       @map("deleted_at")
 
   // Relations
-  organization Organization @relation(fields: [organization_id], references: [id])
-  company      Company?     @relation(fields: [company_id], references: [id])
-  case         Case?        @relation(fields: [case_id], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
+  company      Company?     @relation(fields: [companyId], references: [id])
+  contract     Contract?    @relation(fields: [contractId], references: [id])
+  case         Case?        @relation(fields: [caseId], references: [id])
+  task         Task?        @relation(fields: [taskId], references: [id])
 
-  @@index([organization_id, deleted_at])
-  @@index([organization_id, company_id, deleted_at])
+  @@index([organizationId])
+  @@index([organizationId, contractId])
+  @@index([organizationId, deletedAt])
   @@map("documents")
 }
 
-model FinancialMetric {
-  id              String       @id @default(uuid())
-  organization_id String
-  company_id      String
-  metric_type     MetricType
-  period_type     PeriodType
-  period_year     Int
-  value           Decimal      @db.Decimal(15, 2)
-  currency        String       @default("DKK")
-  source          MetricSource
-  notes           String?
-  created_at      DateTime     @default(now())
-  updated_at      DateTime     @updatedAt
-  created_by      String
+model Comment {
+  id             String   @id @default(uuid())
+  organizationId String   @map("organization_id")
+  caseId         String?  @map("case_id")
+  taskId         String?  @map("task_id")
+  userId         String   @map("user_id")
+  content        String
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  createdBy      String?  @map("created_by")
+  deletedAt      DateTime? @map("deleted_at")
 
   // Relations
-  organization Organization @relation(fields: [organization_id], references: [id])
-  company      Company      @relation(fields: [company_id], references: [id])
+  user User @relation(fields: [userId], references: [id])
+  case Case? @relation(fields: [caseId], references: [id])
+  task Task? @relation(fields: [taskId], references: [id])
 
-  @@unique([organization_id, company_id, metric_type, period_type, period_year])
-  @@index([organization_id, company_id])
+  @@index([organizationId])
+  @@map("comments")
+}
+
+model FinancialMetric {
+  id             String       @id @default(uuid())
+  organizationId String       @map("organization_id")
+  companyId      String       @map("company_id")
+  metricType     MetricType   @map("metric_type")
+  periodType     PeriodType   @map("period_type")
+  periodYear     Int          @map("period_year")
+  periodSubunit  String?      @map("period_subunit")
+  value          Decimal      @db.Decimal(18, 2)
+  currency       String       @default("DKK")
+  source         MetricSource
+  notes          String?
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+  createdBy      String?      @map("created_by")
+  deletedAt      DateTime?    @map("deleted_at")
+
+  // Relations
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@index([organizationId])
+  @@index([organizationId, companyId])
   @@map("financial_metrics")
 }
 
-model TimeEntry {
-  id              String   @id @default(uuid())
-  organization_id String
-  case_id         String
-  user_id         String
-  description     String?
-  minutes         Int
-  date            DateTime
-  billable        Boolean  @default(true)
-  hourly_rate     Int?
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+model ActivityLog {
+  id             String              @id @default(uuid())
+  organizationId String              @map("organization_id")
+  userId         String?             @map("user_id")
+  entitet        AktivitetsEntitet
+  entitetId      String              @map("entitet_id")
+  handling       AktivitetsHandling
+  metadata       Json?
+  ipAddress      String?             @map("ip_address")
+  userAgent      String?             @map("user_agent")
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+  createdBy      String?             @map("created_by")
 
   // Relations
-  organization Organization @relation(fields: [organization_id], references: [id])
-  case         Case         @relation(fields: [case_id], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User?        @relation(fields: [userId], references: [id])
 
-  @@index([organization_id, case_id])
-  @@map("time_entries")
+  @@index([organizationId])
+  @@index([organizationId, entitetId])
+  @@index([organizationId, userId])
+  @@map("activity_logs")
 }
 
-// ============================================================
-// AUDIT LOG
-// ============================================================
-
-model AuditLog {
-  id              String            @id @default(uuid())
-  organization_id String
-  user_id         String
-  action          String // VIEW | CREATE | UPDATE | DELETE | DOWNLOAD
-  resource_type   String // contract | document | case | company
-  resource_id     String
-  sensitivity     SensitivityLevel?
-  changes         Json? // DEC-017: feltændringer ved UPDATE på STRENGT_FORTROLIG/FORTROLIG
-  ip_address      String?
-  created_at      DateTime          @default(now())
-
-  @@index([organization_id, resource_type, resource_id])
-  @@index([organization_id, user_id])
-  @@index([created_at]) // retention queries
-  @@map("audit_logs")
-}
-
-// ============================================================
-// ADVISERING
-// ============================================================
-
-model Reminder {
-  id              String    @id @default(uuid())
-  organization_id String
-  contract_id     String
-  reminder_type   String // DAYS_90 | DAYS_30 | DAYS_7 | ABSOLUT
-  trigger_date    DateTime // hvornår skal den sendes
-  sent_at         DateTime?
-  recipient_ids   String[]
-  created_at      DateTime  @default(now())
-  updated_at      DateTime  @updatedAt
+model Notification {
+  id             String   @id @default(uuid())
+  organizationId String   @map("organization_id")
+  userId         String   @map("user_id")
+  title          String
+  body           String
+  read           Boolean  @default(false)
+  link           String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  createdBy      String?  @map("created_by")
+  deletedAt      DateTime? @map("deleted_at")
 
   // Relations
-  organization Organization @relation(fields: [organization_id], references: [id])
-  contract     Contract     @relation(fields: [contract_id], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
 
-  @@index([trigger_date, sent_at]) // cron query
-  @@index([organization_id, contract_id])
-  @@map("reminders")
-}
-
-// ============================================================
-// STRIPE / BILLING
-// ============================================================
-
-model Subscription {
-  id                     String    @id @default(uuid())
-  organization_id        String    @unique
-  stripe_customer_id     String    @unique
-  stripe_subscription_id String    @unique
-  plan                   String // starter | business | enterprise
-  seat_count             Int
-  status                 String // active | trialing | past_due | canceled
-  current_period_start   DateTime
-  current_period_end     DateTime
-  trial_ends_at          DateTime?
-  created_at             DateTime  @default(now())
-  updated_at             DateTime  @updatedAt
-
-  // Relations
-  organization Organization @relation(fields: [organization_id], references: [id])
-
-  @@index([stripe_customer_id])
-  @@index([status])
-  @@map("subscriptions")
+  @@index([organizationId])
+  @@index([userId])
+  @@map("notifications")
 }

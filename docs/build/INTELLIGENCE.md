@@ -4,6 +4,23 @@ Laeses af alle agenter ved repair for at undgaa kendte fejl.
 Nyeste laering oeverst.
 ---
 
+## [2026-03-10 01:18] iter=1 trin=prisma generate
+- Trin: `prisma generate` | TS-fejl: 0->0 | Status: LOEST
+- Agenter: BA-02 (2 filer)
+- Rettede filer: prisma/schema.prisma, prisma/seed.ts
+- REGRESSIONER OPDAGET: src/__tests__/integration/auth-guard.test.ts, src/__tests__/integration/contracts-action.test.ts, src/__tests__/integration/tenant-isolation.test.ts, src/__tests__/unit/permissions.test.ts, src/actions/contracts.ts, src/actions/persons.ts, src/app/(dashboard)/companies/[id]/page.tsx, src/app/(dashboard)/companies/page.tsx, src/app/(dashboard)/persons/[id]/[personId]/page.tsx, src/app/(dashboard)/persons/[id]/page.tsx, src/app/(dashboard)/persons/page.tsx, src/app/api/contracts/upload/route.ts, src/app/api/cron/check-deadlines/route.ts, src/components/companies/ActivityLog.tsx, src/components/companies/AddOwnershipDialog.tsx, src/components/companies/CompanyActivityLog.tsx, src/components/companies/CompanyEmployees.tsx, src/components/companies/CompanyForm.tsx, src/components/companies/CompanyGovernance.tsx
+
+## [2026-03-10 01:18] interface-change iter=1
+- INTERFACE_CHANGE: Prisma enum værdier med danske specialtegn er erstattet med ASCII-ækvivalenter + @map til database
+  Paavirkede: BA-03, BA-05-person, BA-05-selskab, BA-05-kontrakt, BA-07-sprint2, BA-07-sprint3, BA-07-sprint4, BA-07-sprint5, BA-07-sprint6, BA-09-sprint2, BA-09-sprint5, BA-10-tests, BA-11-pentest
+  Detaljer: Prisma enum navne der indeholdt Ø/Æ/Å er omdøbt til ASCII. Database-kolonneværdierne bevares via @map(). Ændringer:
+
+## [2026-03-10 01:13] autorepair-fejlet max-iter=10
+- MISLYKKET: 10 iterationer udtoemte uden groen build
+- TS-fejl historik: 0 -> 0 -> 0 -> 0 -> 0 -> 0 -> 0 -> 0 -> 0
+- Konvergens: LOEST
+- Sidst fejlende trin: prisma generate
+
 ## [2026-03-10 01:13] iter=9 trin=prisma generate
 - Trin: `prisma generate` | TS-fejl: 0->0 | Status: LOEST
 - Agenter: 

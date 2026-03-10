@@ -1809,3 +1809,63 @@ Next.js build worker exited with code: 1 and signal: null
 [2026-03-10 01:13:33] [INFO]   INTELLIGENCE.md opdateret: - Trin: `prisma generate` | TS-fejl: 0->0 | Status: LOEST
 - Agenter: 
 - Rettede filer:
+[2026-03-10 01:13:33] [INFO] Git commit: fix: autorepair iter 9 — prisma generate (0 agenter, 0 filer, 0 TS-fejl)
+[2026-03-10 01:13:33] [INFO]   Iteration 9 afsluttet — korer build igen...
+[2026-03-10 01:13:33] [INFO] 
+============================================================
+--- Autorepair iteration 10/10 ---
+[2026-03-10 01:13:33] [INFO]   Konvergens: LOEST
+[2026-03-10 01:13:33] [INFO]   Korer: prisma generate...
+[2026-03-10 01:13:34] [INFO]   x prisma generate FEJLEDE (1.0s)
+[2026-03-10 01:13:34] [FEJL]     Error: Prisma schema validation - (get-config wasm)
+[2026-03-10 01:13:34] [FEJL]     Error code: P1012
+[2026-03-10 01:13:34] [FEJL]     error: Error validating: This line is not an enum value definition.
+[2026-03-10 01:13:34] [FEJL]     error: Error validating: This line is not an enum value definition.
+[2026-03-10 01:13:34] [FEJL]     error: Error validating: This line is not an enum value definition.
+[2026-03-10 01:13:34] [FEJL]     error: Error validating: This line is not an enum value definition.
+[2026-03-10 01:13:34] [FEJL]     error: Error validating: This line is not an enum value definition.
+[2026-03-10 01:13:34] [FEJL]     error: Error validating: This line is not an enum value definition.
+[2026-03-10 01:13:34] [FEJL] === AUTOREPAIR: MAX ITERATIONER (10) NAAET ===
+[2026-03-10 01:13:34] [FEJL]   Fejloutput gemt: autorepair-final-error.txt
+[2026-03-10 01:13:34] [INFO]   INTELLIGENCE.md opdateret: - MISLYKKET: 10 iterationer udtoemte uden groen build
+- TS-fejl historik: 0 -> 0 -> 0 -> 0 -> 0 -> 0
+[2026-03-10 01:15:11] [INFO] === AUTOREPAIR START (max 10 iterationer) ===
+  Fil->agent map: 55 filer / 20 agenter
+  Afhaengighedsgraf: 58 relationer kortlagt
+[2026-03-10 01:15:11] [INFO] 
+============================================================
+--- Autorepair iteration 1/10 ---
+[2026-03-10 01:15:11] [INFO]   Korer: npm install...
+[2026-03-10 01:15:13] [INFO]   v npm install OK (2.1s)
+[2026-03-10 01:15:13] [INFO]   Korer: prisma generate...
+[2026-03-10 01:15:14] [INFO]   x prisma generate FEJLEDE (0.9s)
+[2026-03-10 01:15:14] [FEJL]     Error: Prisma schema validation - (get-config wasm)
+[2026-03-10 01:15:14] [FEJL]     Error code: P1012
+[2026-03-10 01:15:14] [FEJL]     error: Error validating: This line is not an enum value definition.
+[2026-03-10 01:15:14] [FEJL]     error: Error validating: This line is not an enum value definition.
+[2026-03-10 01:15:14] [FEJL]     error: Error validating: This line is not an enum value definition.
+[2026-03-10 01:15:14] [FEJL]     error: Error validating: This line is not an enum value definition.
+[2026-03-10 01:15:14] [FEJL]     error: Error validating: This line is not an enum value definition.
+[2026-03-10 01:15:14] [FEJL]     error: Error validating: This line is not an enum value definition.
+[2026-03-10 01:15:14] [INFO]   TS-fejl nu: 0 | LOEST
+[2026-03-10 01:15:14] [ADVARSEL]   Ingen fejlede filer fundet for 'prisma generate' — router til BA-02 (schema-ejer)
+[2026-03-10 01:15:14] [INFO]   Fejlede filer: 0
+[2026-03-10 01:15:14] [INFO]   -> BA-02 (Schema-agent): schema.prisma, seed.ts
+[2026-03-10 01:15:14] [INFO]   Kalder Schema-agent (BA-02) for repair...
+[2026-03-10 01:18:05] [INFO] Skrevet: prisma/schema.prisma
+[2026-03-10 01:18:05] [INFO] Skrevet: prisma/seed.ts
+[2026-03-10 01:18:05] [INFO]   BA-02: 2 filer rettet
+[2026-03-10 01:18:05] [INFO]   BA-02 aendrede filer der bruges af: BA-03, BA-07-sprint1, BA-09-sprint2, BA-05-person, BA-05-selskab, BA-06-advisering, BA-05-dokumenter, BA-05-kontrakt, BA-05-sager, BA-05-opgaver, BA-05-oekonomi, BA-09-sprint5, BA-05-dashboard, BA-10-tests, BA-06-stripe
+[2026-03-10 01:18:05] [INFO]   INTERFACE_CHANGE: Prisma enum værdier med danske specialtegn er erstattet med ASCII-ækvivalenter + @map til database
+    Paavirkede: BA-03, BA-05-person, BA-05-selskab, BA-05-kontrakt, BA-07-sprint2, BA-07-sprint3, BA-07-sprint4, BA-07-sprint5, BA-07-sprint6, BA-09-sprint2, BA-09-sprint5, BA-10-tests, BA-11-pentest
+[2026-03-10 01:18:05] [INFO]   INTELLIGENCE.md opdateret: - INTERFACE_CHANGE: Prisma enum værdier med danske specialtegn er erstattet med ASCII-ækvivalenter +
+[2026-03-10 01:18:05] [INFO]   + INTERFACE_CHANGE downstream: BA-07-sprint2
+[2026-03-10 01:18:05] [INFO]   + INTERFACE_CHANGE downstream: BA-07-sprint3
+[2026-03-10 01:18:05] [INFO]   + INTERFACE_CHANGE downstream: BA-07-sprint4
+[2026-03-10 01:18:05] [INFO]   + INTERFACE_CHANGE downstream: BA-07-sprint5
+[2026-03-10 01:18:05] [INFO]   + INTERFACE_CHANGE downstream: BA-07-sprint6
+[2026-03-10 01:18:05] [INFO]   + INTERFACE_CHANGE downstream: BA-11-pentest
+[2026-03-10 01:18:15] [ADVARSEL]   REGRESSIONSGUARD: 19 nye fejl introduceret: auth-guard.test.ts, contracts-action.test.ts, tenant-isolation.test.ts, permissions.test.ts, contracts.ts, persons.ts, page.tsx, page.tsx, page.tsx, page.tsx, page.tsx, route.ts, route.ts, ActivityLog.tsx, AddOwnershipDialog.tsx, CompanyActivityLog.tsx, CompanyEmployees.tsx, CompanyForm.tsx, CompanyGovernance.tsx
+[2026-03-10 01:18:15] [INFO]   INTELLIGENCE.md opdateret: - Trin: `prisma generate` | TS-fejl: 0->0 | Status: LOEST
+- Agenter: BA-02 (2 filer)
+- Rettede filer
