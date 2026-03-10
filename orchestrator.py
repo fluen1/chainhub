@@ -1244,6 +1244,12 @@ def koer_autorepair_loop(
         fejl_filer       = udtraek_fejlfiler(fejl_output)
         agenter_med_fejl = identificer_ansvarlige_agenter(fejl_filer, fil_til_agent)
 
+        # FALLBACK: prisma generate/migrate fejler uden TS-filstier — router altid til BA-02
+        if not agenter_med_fejl and not fejl_filer and fejlende_trin in ("prisma generate", "prisma migrate dev"):
+            log(f"  Ingen fejlede filer fundet for '{fejlende_trin}' — router til BA-02 (schema-ejer)", "ADVARSEL")
+            schema_filer = AGENTS.get("BA-02", {}).get("output_filer", ["prisma/schema.prisma"])
+            agenter_med_fejl = {"BA-02": schema_filer}
+
         # punkt 3: REGRESSIONSGUARD — snapshot foer repair
         fejlfri_snapshot = regressionsguard_snapshot(fejl_filer)
 
