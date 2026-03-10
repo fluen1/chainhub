@@ -1,84 +1,82 @@
 # INTELLIGENCE.md — ChainHub MABS Videnslag
 Automatisk opdateret af orchestrator efter hver repair-cyklus.
-Laeses af alle agenter ved repair for at undgaa kendte fejl.
-Nyeste laering oeverst.
+Læses af alle agenter ved repair for at undgå kendte fejl.
+Nyeste læring øverst.
 ---
 
-## [2026-03-10 01:18] iter=1 trin=prisma generate
-- Trin: `prisma generate` | TS-fejl: 0->0 | Status: LOEST
-- Agenter: BA-02 (2 filer)
-- Rettede filer: prisma/schema.prisma, prisma/seed.ts
-- REGRESSIONER OPDAGET: src/__tests__/integration/auth-guard.test.ts, src/__tests__/integration/contracts-action.test.ts, src/__tests__/integration/tenant-isolation.test.ts, src/__tests__/unit/permissions.test.ts, src/actions/contracts.ts, src/actions/persons.ts, src/app/(dashboard)/companies/[id]/page.tsx, src/app/(dashboard)/companies/page.tsx, src/app/(dashboard)/persons/[id]/[personId]/page.tsx, src/app/(dashboard)/persons/[id]/page.tsx, src/app/(dashboard)/persons/page.tsx, src/app/api/contracts/upload/route.ts, src/app/api/cron/check-deadlines/route.ts, src/components/companies/ActivityLog.tsx, src/components/companies/AddOwnershipDialog.tsx, src/components/companies/CompanyActivityLog.tsx, src/components/companies/CompanyEmployees.tsx, src/components/companies/CompanyForm.tsx, src/components/companies/CompanyGovernance.tsx
+## Kendte fejlmønstre
 
-## [2026-03-10 01:18] interface-change iter=1
-- INTERFACE_CHANGE: Prisma enum værdier med danske specialtegn er erstattet med ASCII-ækvivalenter + @map til database
-  Paavirkede: BA-03, BA-05-person, BA-05-selskab, BA-05-kontrakt, BA-07-sprint2, BA-07-sprint3, BA-07-sprint4, BA-07-sprint5, BA-07-sprint6, BA-09-sprint2, BA-09-sprint5, BA-10-tests, BA-11-pentest
-  Detaljer: Prisma enum navne der indeholdt Ø/Æ/Å er omdøbt til ASCII. Database-kolonneværdierne bevares via @map(). Ændringer:
+### Interaktive kommandoer hænger — stdin er lukket (KRITISK)
+bash() toolen kører med stdin=DEVNULL. Kommandoer der prompter for input
+(fx "Ok to proceed? (y)") vil HÆNGE eller FEJLE stille.
 
-## [2026-03-10 01:13] autorepair-fejlet max-iter=10
-- MISLYKKET: 10 iterationer udtoemte uden groen build
-- TS-fejl historik: 0 -> 0 -> 0 -> 0 -> 0 -> 0 -> 0 -> 0 -> 0
-- Konvergens: LOEST
-- Sidst fejlende trin: prisma generate
+**Løsning:** Brug ALTID non-interaktive flags:
+```bash
+# npx — brug --yes for at auto-bekræfte pakke-installation
+npx --yes create-next-app@14 . --typescript --tailwind --eslint --app --src-dir --no-import-alias --use-npm
 
-## [2026-03-10 01:13] iter=9 trin=prisma generate
-- Trin: `prisma generate` | TS-fejl: 0->0 | Status: LOEST
-- Agenter: 
-- Rettede filer: 
+# npm init — brug --yes
+npm init --yes
 
-## [2026-03-10 01:13] iter=8 trin=prisma generate
-- Trin: `prisma generate` | TS-fejl: 0->0 | Status: LOEST
-- Agenter: 
-- Rettede filer: 
+# prisma — er allerede non-interaktiv, men brug altid --name på migrate:
+npx prisma migrate dev --name init
+```
 
-## [2026-03-10 01:13] iter=7 trin=prisma generate
-- Trin: `prisma generate` | TS-fejl: 0->0 | Status: LOEST
-- Agenter: 
-- Rettede filer: 
+**Windows-specifikt:**
+- Brug `npx.cmd` / `npm.cmd` (orchestratoren gør dette automatisk)
+- Undgå Linux-kommandoer: `tail`, `head`, `grep` → brug PowerShell-ækvivalenter eller search_in_files tool
+- Pipe (`|`) virker, men `2>&1` opfanges allerede af orchestratoren
 
-## [2026-03-10 01:13] iter=6 trin=prisma generate
-- Trin: `prisma generate` | TS-fejl: 0->0 | Status: LOEST
-- Agenter: 
-- Rettede filer: 
+### Supabase + Prisma — forbindelsesopsætning (KRITISK)
+ChainHub bruger Supabase PostgreSQL. Prisma KRÆVER to forskellige connection strings:
 
-## [2026-03-10 01:13] iter=5 trin=prisma generate
-- Trin: `prisma generate` | TS-fejl: 0->0 | Status: LOEST
-- Agenter: 
-- Rettede filer: 
+```prisma
+// prisma/schema.prisma — datasource SKAL se sådan ud:
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")       // Pooled (Transaction mode, port 6543)
+  directUrl = env("DIRECT_URL")         // Direct (port 5432) — til migrationer
+}
+```
 
-## [2026-03-10 01:13] iter=4 trin=prisma generate
-- Trin: `prisma generate` | TS-fejl: 0->0 | Status: LOEST
-- Agenter: 
-- Rettede filer: 
+**Regler:**
+- `DATABASE_URL` = Supabase Transaction Pooler URL (port 6543, med `?pgbouncer=true`)
+- `DIRECT_URL` = Supabase Direct URL (port 5432) — bruges KUN af `prisma migrate dev`
+- `prisma migrate dev` FEJLER hvis den kører mod pooler-URL'en
+- `prisma generate` bruger ingen af dem (kun schema-parsing)
+- `prisma db push` og `prisma migrate dev` KRÆVER `DIRECT_URL`
 
-## [2026-03-10 01:13] iter=3 trin=prisma generate
-- Trin: `prisma generate` | TS-fejl: 0->0 | Status: LOEST
-- Agenter: 
-- Rettede filer: 
+**Supabase connection pooler:**
+- Supabase bruger PgBouncer i Transaction mode
+- Prisma interactive transactions virker IKKE over pooler — brug `directUrl`
+- Preview features: `previewFeatures = []` — tilføj KUN hvis nødvendigt
 
-## [2026-03-10 01:13] iter=2 trin=prisma generate
-- Trin: `prisma generate` | TS-fejl: 0->0 | Status: LOEST
-- Agenter: 
-- Rettede filer: 
+### Prisma Æ/Ø/Å-encoding (KRITISK)
+Prisma accepterer IKKE danske specialtegn i enum-navne — `prisma generate` crasher.
+Brug altid ASCII + @map() for at bevare danske DB-værdier:
+```prisma
+UDLOEBET   @map("UDLØBET")    // korrekt
+UDLØBET                        // FEJL — crasher prisma generate
+```
+Alle korrekte ASCII-navne og @map-værdier: docs/spec/DATABASE-SCHEMA.md
 
-## [2026-03-10 01:13] iter=1 trin=prisma generate
-- Trin: `prisma generate` | TS-fejl: 0->0 | Status: LOEST
-- Agenter: 
-- Rettede filer: 
+### Repair-loop divergens
+Når TS-fejl STIGER mellem iterationer (fx 109 → 160), STOP reparation.
+Årsag: agenten retter symptomer i downstream-filer i stedet for kilden.
+Løsning: Ret altid kilden først: prisma schema → prisma generate → types → downstream.
+Aldrig ret 20 filer parallelt — ret én kilde og lad fejlene forsvinde nedstrøms.
 
-## [2026-03-10 00:33] iter=3 trin=tsc typecheck
-- Trin: `tsc typecheck` | TS-fejl: 119->119 | Status: KONVERGERER (109->119 fejl, --9% fra start)
-- Agenter: BA-10-tests (1 filer); BA-05-person (1 filer); BA-05-selskab (2 filer); BA-03 (2 filer); __generisk__ (14 filer); BA-02 (2 filer); BA-07-sprint2 (1 filer); BA-07-sprint3 (1 filer); BA-05-kontrakt (3 filer); BA-07-sprint4 (1 filer); BA-07-sprint5 (1 filer); BA-07-sprint6 (2 filer); BA-11-pentest (2 filer); BA-09-sprint2 (2 filer); BA-09-sprint5 (1 filer)
-- Rettede filer: src/__tests__/integration/tenant-isolation.test.ts, src/actions/persons.ts, src/app/(dashboard)/companies/[id]/page.tsx, src/components/companies/CompanyForm.tsx, src/actions/persons.ts, src/app/(dashboard)/companies/page.tsx (+35 flere)
-- REGRESSIONER OPDAGET: src/__tests__/integration/auth-guard.test.ts, src/__tests__/integration/contracts-action.test.ts, src/actions/contracts.ts, src/app/(dashboard)/persons/[id]/[personId]/page.tsx, src/app/(dashboard)/persons/[id]/page.tsx, src/components/companies/CompanyProfile.tsx
+### Garblede enum-værdier ved write_file
+Tidligere kørsel producerede korrupte enum-navne med uønskede mellemrum
+(fx `TILTRAE DELSESDOKUMENT` i stedet for `TILTRAEDELSESDOKUMENT`).
+Årsag: sandsynligvis token-splitting i streaming output.
+Forebyggelse: Verificér altid med `file_encoding_check` UMIDDELBART efter write_file
+på prisma/schema.prisma.
 
-## [2026-03-10 00:13] iter=2 trin=tsc typecheck
-- Trin: `tsc typecheck` | TS-fejl: 160->160 | Status: DIVERGERER (109->160 fejl STIGER)
-- Agenter: BA-10-tests (1 filer); BA-09-sprint2 (2 filer); BA-05-person (3 filer); BA-07-sprint2 (1 filer); BA-05-dashboard (3 filer); BA-11-pentest (2 filer)
-- Rettede filer: src/__tests__/integration/tenant-isolation.test.ts, docs/status/DECISIONS.md, docs/ops/CACHING.md, src/app/(dashboard)/persons/[id]/page.tsx, src/actions/persons.ts, src/components/persons/PersonForm.tsx (+8 flere)
-- REGRESSIONER OPDAGET: src/actions/persons.ts, src/app/(dashboard)/companies/[id]/page.tsx, src/app/(dashboard)/companies/page.tsx, src/app/(dashboard)/persons/page.tsx, src/components/companies/ActivityLog.tsx, src/components/companies/AddOwnershipDialog.tsx, src/components/companies/CompanyActivityLog.tsx, src/components/companies/CompanyEmployees.tsx, src/components/companies/CompanyForm.tsx, src/components/companies/CompanyGovernance.tsx, src/components/companies/CompanyOwnership.tsx, src/components/companies/CompanyPersonDialog.tsx, src/components/companies/EditCompanyDialog.tsx, src/components/companies/EmployeesSection.tsx, src/components/companies/GovernanceSection.tsx, src/components/companies/OwnershipDialog.tsx, src/components/companies/OwnershipSection.tsx, src/components/contracts/ContractForm.tsx, src/components/contracts/ContractStatusSelect.tsx
+### Dependency-regel
+Enhver ny import KRÆVER at pakken tilføjes til package.json i samme handling.
+Kode med imports til ikke-installerede pakker fejler ved `next build`.
+Sprint-gate: `npm install --legacy-peer-deps` → `prisma generate` → `tsc --noEmit` → `next build`.
 
-## [2026-03-10 00:07] iter=1 trin=tsc typecheck
-- Trin: `tsc typecheck` | TS-fejl: 109->109 | Status: 109 TS-fejl (baseline)
-- Agenter: BA-10-tests (1 filer); BA-05-selskab (2 filer); BA-03 (1 filer); __generisk__ (16 filer)
-- Rettede filer: src/__tests__/integration/tenant-isolation.test.ts, src/actions/companies.ts, src/app/(dashboard)/companies/[id]/page.tsx, src/app/(dashboard)/companies/page.tsx, src/__tests__/integration/tenant-isolation.test.ts, src/components/companies/AddOwnershipDialog.tsx (+12 flere)
+## [2026-03-10 22:53]
+### Prisma v7 breaking change — datasource URL i schema (KRITISK)\nPrisma v7+ kræver connection URLs i prisma.config.ts, ikke i schema.prisma.\nVores setup bruger Prisma v5 som er kompatibel med url/directUrl i schema.prisma.\nLøsning: Pinned til prisma@5 og @prisma/client@5.

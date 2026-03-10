@@ -1,5 +1,5 @@
 # Adgangs- og rollemodel — ChainHub
-**Version 0.2 — QA-rettet**
+**Version 0.3 — QA-R2-rettet**
 
 ---
 
@@ -58,8 +58,8 @@ Alle records i systemet tildeles ét af disse niveauer:
 
 | Niveau | Kode | Eksempler | Synlig for |
 |---|---|---|---|
-| Strengt fortroligt | `STRENGT_FORTROLIG` | Ejeraftale, aktionæroverenskomst, M&A-dokumenter | `GROUP_OWNER`, `GROUP_ADMIN`, `GROUP_LEGAL` |
-| Fortroligt | `FORTROLIG` | Direktørkontrakt, bestyrelsesreferater, økonominøgletal | Alle gruppe-roller + `COMPANY_MANAGER` |
+| Strengt fortroligt | `STRENGT_FORTROLIG` | Ejeraftale, aktionæroverenskomst, M&A-dokumenter, direktørkontrakt | `GROUP_OWNER`, `GROUP_ADMIN`, `GROUP_LEGAL` |
+| Fortroligt | `FORTROLIG` | Bestyrelsesreferater, økonominøgletal | Alle gruppe-roller + `COMPANY_MANAGER` |
 | Internt | `INTERN` | Lejekontrakt, leverandøraftaler, sager | Alle med adgang til det pågældende selskab |
 | Normalt | `STANDARD` | Ansættelseskontrakter, opgaver, kontaktinfo | Alle med selskabsadgang |
 | Offentligt | `PUBLIC` | Stamdata (CVR, adresse, selskabsnavn) | Alle brugere |
@@ -102,8 +102,8 @@ Ser ikke: Økonomi-nøgletal (hører under GROUP_FINANCE)
 Rolle:  GROUP_FINANCE
 Scope:  ALL
 Ser:    Økonominøgletal, udbyttelogger, tidsregistrering
-        Fortrolige data (direktørkontrakt undtaget = STRENGT_FORTROLIG)
-Ser ikke: Ejeraftaler, M&A-dokumenter
+        Fortrolige data (bestyrelsesreferater, økonominøgletal)
+Ser ikke: Ejeraftaler, direktørkontrakter, M&A-dokumenter (STRENGT_FORTROLIG)
 ```
 
 ### Eksempel C: Klinikchef (ansvarlig for 2 klinikker)
@@ -170,7 +170,7 @@ CREATE TABLE user_role_assignments (
 -- Sensitivitetsniveau på alle records
 -- Tilføjes som kolonne på: kontrakter, sager, dokumenter
 ALTER TABLE contracts    ADD COLUMN sensitivity TEXT DEFAULT 'STANDARD'; -- SensitivityLevel enum
-ALTER TABLE cases        ADD COLUMN sensitivity TEXT DEFAULT 'STANDARD'; -- SensitivityLevel enum
+ALTER TABLE cases        ADD COLUMN sensitivity TEXT DEFAULT 'INTERN';    -- SensitivityLevel enum
 ALTER TABLE documents    ADD COLUMN sensitivity TEXT DEFAULT 'STANDARD'; -- SensitivityLevel enum
 ```
 
@@ -180,22 +180,37 @@ ALTER TABLE documents    ADD COLUMN sensitivity TEXT DEFAULT 'STANDARD'; -- Sens
 
 1. **Kan én person have to roller?**
    Fx Philip har `GROUP_LEGAL` (ser alle kontrakter) OG `GROUP_FINANCE` (ser økonomi)?
-   → Anbefaling: Ja, ved at tildele flere rækker i `user_role_assignments`
+   → **AFKLARET:** Ja — `user_role_assignments` understøtter flere rækker pr. bruger.
+   Kilde: DATABASE-SCHEMA.md (`user_role_assignments`-tabel)
 
 2. **Kan GROUP_LEGAL brugere oprette brugere på selskabsniveau?**
-   → Anbefaling: Nej — kun `GROUP_OWNER` og `GROUP_ADMIN`
+   → **AFKLARET:** Nej — kun `GROUP_OWNER` og `GROUP_ADMIN`.
+   Kilde: Modul-adgangstabellen ovenfor (Brugerstyring-række)
 
 3. **Hvad sker der når et selskab skifter status til "Solgt"?**
    → Anbefaling: Data arkiveres, readonly for alle, kan kun ses af `GROUP_OWNER`
+   (ikke endeligt afklaret i andre dokumenter — afventer DECISIONS.md)
 
 4. **Skal der være audit log på sensitive adgange?**
-   → Anbefaling: Ja — hvem så hvad hvornår på `STRENGT_FORTROLIG` records
+   → **AFKLARET:** Ja — `audit_log`-tabel + `last_viewed_at`/`last_viewed_by` på
+   kontrakter og dokumenter.
+   Kilde: DATABASE-SCHEMA.md (`audit_log`-tabel, linje ~840)
 
 ---
 
 ## Changelog
 
 ```
+v0.3 (QA-R2-rettet):
+  [K1] Lag 3-tabel: direktørkontrakt flyttet fra FORTROLIG → STRENGT_FORTROLIG.
+       Kilde: CONTRACT-TYPES.md KT-02 (autoritativ).
+       Eksempel B rettet tilsvarende — parentetisk korrektion fjernet.
+  [K2] SQL DDL: cases sensitivity default rettet:
+       DEFAULT 'STANDARD' → DEFAULT 'INTERN'
+       Kilde: DATABASE-SCHEMA.md (linje ~637) og kravspec-legalhub.md (sektion 6.5).
+  [M1] Åbne spørgsmål: spørgsmål 1, 2 og 4 markeret AFKLARET med kildehenvisning.
+       Spørgsmål 3 (solgt selskab) afventer fortsat DECISIONS.md-afklaring.
+
 v0.2 (QA-rettet):
   [K1] Sensitivity enum-værdier oversat til dansk igennem hele dokumentet:
        STRICTLY_CONFIDENTIAL → STRENGT_FORTROLIG (linje 61, 105, 123, 140, 192)

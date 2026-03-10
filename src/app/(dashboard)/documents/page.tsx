@@ -1,74 +1,63 @@
-import { Suspense } from 'react'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { canAccessModule } from '@/lib/permissions'
-import { isStorageConfigured } from '@/lib/storage'
-import { DocumentsClientPage } from '@/components/documents/DocumentsClientPage'
-import { StorageNotConfiguredBanner } from '@/components/documents/StorageNotConfiguredBanner'
-import { DocumentsPageSkeleton } from '@/components/documents/DocumentsPageSkeleton'
 import { prisma } from '@/lib/db'
-
-export const metadata = {
-  title: 'Dokumenter — ChainHub',
-}
+import { FolderOpen } from 'lucide-react'
 
 export default async function DocumentsPage() {
   const session = await auth()
-  if (!session?.user) redirect('/login')
+  if (!session) redirect('/login')
 
-  const hasAccess = await canAccessModule(session.user.id, 'documents')
-  if (!hasAccess) {
-    return (
-      <div className="p-6">
-        <div className="rounded-lg bg-red-50 p-4 text-red-700">
-          Du har ikke adgang til dokumentmodulet. Kontakt din administrator.
-        </div>
-      </div>
-    )
-  }
-
-  // Hent selskaber og sager til filtrering
-  const [companies, cases] = await Promise.all([
-    prisma.company.findMany({
-      where: {
-        organizationId: session.user.organizationId,
-        deletedAt: null,
-      },
-      select: { id: true, name: true },
-      orderBy: { name: 'asc' },
-    }),
-    prisma.case.findMany({
-      where: {
-        organizationId: session.user.organizationId,
-        deletedAt: null,
-      },
-      select: { id: true, title: true },
-      orderBy: { title: 'asc' },
-    }),
-  ])
-
-  const storageConfigured = isStorageConfigured()
+  const documents = await prisma.document.findMany({
+    where: {
+      organization_id: session.user.organizationId,
+      deleted_at: null,
+    },
+    include: {
+      company: { select: { name: true } },
+    },
+    orderBy: { uploaded_at: 'desc' },
+    take: 50,
+  })
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dokumenter</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Upload, søg og administrer dokumenter
-          </p>
-        </div>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Dokumenter</h1>
+        <p className="mt-1 text-sm text-gray-500">Alle dokumenter på tværs af selskaber</p>
       </div>
 
-      {!storageConfigured && <StorageNotConfiguredBanner />}
-
-      <Suspense fallback={<DocumentsPageSkeleton />}>
-        <DocumentsClientPage
-          companies={companies}
-          cases={cases}
-          storageConfigured={storageConfigured}
-        />
-      </Suspense>
+      {documents.length === 0 ? (
+        <div className="rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
+          <FolderOpen className="mx-auto h-12 w-12 text-gray-400" />
+          <h3 className="mt-2 text-sm font-semibold text-gray-900">Ingen dokumenter endnu</h3>
+          <p className="mt-1 text-sm text-gray-500">Upload det første dokument for et selskab.</p>
+        </div>
+      ) : (
+        <div className="overflow-hidden rounded-lg border bg-white shadow-sm">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Titel</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Selskab</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Type</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Uploadet</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 bg-white">
+              {documents.map((doc) => (
+                <tr key={doc.id} className="hover:bg-gray-50">
+                  <td className="whitespace-nowrap px-6 py-4 font-medium text-gray-900">{doc.title}</td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{doc.company?.name || '—'}</td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">{doc.file_type}</td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                    {new Date(doc.uploaded_at).toLocaleDateString('da-DK')}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   )
 }

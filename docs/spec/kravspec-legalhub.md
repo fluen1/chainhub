@@ -1,6 +1,6 @@
 # Kravspecifikation: ChainHub — Porteføljestyring for kæder med delejede lokationsselskaber
 
-**Version 2.1 | QA-rettet**
+**Version 2.2 | MABS-rettet**
 **Målgruppe for produktet:** Kæder/grupper der co-ejer lokationsselskaber med lokale partnere (tandlæge-, optiker-, fysio-, franchise-kæder)
 
 ---
@@ -345,7 +345,7 @@ Ikke et regnskabssystem — et overblagsmodul til intern styring.
 
 ---
 
-## 10. Time-estimat i Claude Code
+## 10. Time-estimat (vejledende)
 
 ```
 Modul                              Lav    Høj
@@ -369,70 +369,65 @@ Test, bugfix, edge cases            6     10
 TOTAL MVP                          82    125 timer
 ```
 
-**Realistisk tempo med Claude Code:**
-- Intensivt arbejde (6–8 t/dag): **2,5–3 uger til beta**
-- Roligere tempo (3–4 t/dag): **5–6 uger til beta**
+Faktisk tempo styres af MABS sprint-gate og repair-loops — se `SPRINT-PLAN.md`.
 
 ---
 
-## 11. Anbefalet Claude Code sekvens
+## 11. Build-sekvens (MABS)
+
+Builds styres ikke manuelt — de eksekveres autonomt af `orchestrator.py` via
+Claude Streaming API med `MASTER-PROMPT.md` som system-prompt og alle MD-filer
+som fælles kontekst.
+
+Autoritativ sprint-definition: **`SPRINT-PLAN.md`**
 
 ```
-Sprint 1 — Fundament (dag 1–3)
-  → Repo-setup, database-schema (KOMPLET fra start), auth, multi-tenancy
-
-Sprint 2 — Kerneobjekter (dag 4–8)
-  → Selskabsprofil + alle faner, persondatabase, grundlæggende navigation
-
-Sprint 3 — Kontrakter & sager (dag 9–13)
-  → Kontraktstyring med advisering, sagsstyring med opgaver
-
-Sprint 4 — Økonomi, dokumenter & integration (dag 14–18)
-  → Dokumenthåndtering, økonomi-overblik, M365-integration
-
-Sprint 5 — Go-to-market (dag 19–21)
-  → Stripe, onboarding-flow, portfolio-dashboard, polish
+Sprint 1 — Fundament       BA-02 → BA-03 → BA-04 → BA-08
+Sprint 2 — Kerneobjekter   BA-05 (selskab + person) → BA-09 → BA-07
+Sprint 3 — Kontrakter      BA-05 (kontrakt) → BA-06 (advisering) → BA-07
+Sprint 4 — Sager           BA-05 (sager + opgaver) → BA-07
+Sprint 5 — Dashboard       BA-05 (dashboard + økonomi) → BA-09 → BA-07
+Sprint 6 — Produktion      BA-10 → BA-11 → BA-06 (Stripe) → BA-08 → BA-07
 ```
+
+Hvert sprint afsluttes med sprint-gate:
+`npm install → prisma generate → tsc --noEmit → next build`
+Sprint markeres ikke færdigt ved fejl.
 
 ---
 
-## 12. Første Claude Code prompt (klar til brug)
+## 12. MABS aktivering
 
+Systemet startes med:
+```bash
+python orchestrator.py
 ```
-Du er en senior full-stack udvikler. Vi bygger "ChainHub" — et multi-tenant 
-SaaS-system i Next.js 14 (App Router), TypeScript, Tailwind CSS, Prisma og 
-PostgreSQL.
 
-Systemet bruges af kædegrupper (fx tandlægekæder) til at styre delejede 
-lokationsselskaber. Datamodellen er:
+`orchestrator.py` sender automatisk `MASTER-PROMPT.md` som system-prompt
+og alle spec- og build-dokumenter som første user-besked via Claude Streaming API.
 
-ORGANISATION (tenant) → SELSKAB (ApS med CVR) → PERSON (med roller/ansættelses-
-tilknytninger) + KONTRAKT + SAG + OPGAVE + DOKUMENT
+Al intelligens bor i MD-dokumenterne. Python er tændingsnøglen.
 
-Brugerroller (UserRole enum): GROUP_OWNER, GROUP_ADMIN, GROUP_LEGAL,
-GROUP_FINANCE, GROUP_READONLY, COMPANY_MANAGER, COMPANY_LEGAL, COMPANY_READONLY
-Rolle-tildelinger gemmes i user_role_assignments-tabellen (ikke user_roles).
-
-Start med:
-1. Initialiser Next.js 14 projekt med TypeScript og Tailwind
-2. Opsæt Prisma med PostgreSQL
-3. Definer det KOMPLETTE database-schema med alle modeller og relationer 
-   (organisation, user, user_role_assignment, selskab, person, kontrakt, 
-   sag, opgave, dokument)
-   - Multi-tenancy: organisation_id på alle tabeller
-   - Soft delete: deleted_at på kritiske modeller
-   - Audit trail: created_at, updated_at, created_by på alle modeller
-4. Kør initial migration
-5. Opsæt NextAuth.js med email/password provider
-
-Skriv schema.prisma komplet og forklar alle relations og design-beslutninger.
-```
+Autoritativ agent-definition: **`AGENT-ROSTER.md`**
+Autoritativ arkitektur: **`AGENT-ARCHITECTURE.md`**
 
 ---
 
 ## Changelog
 
 ```
+v2.2 (MABS-rettet):
+  [K1] Sektion 10: Overskrift rettet — "i Claude Code" fjernet.
+       Claude Code-temponoter fjernet. MABS-reference til SPRINT-PLAN.md tilføjet.
+  [K2] Sektion 11: "Anbefalet Claude Code sekvens" erstattet med
+       "Build-sekvens (MABS)" — 6 sprints med BA-agenter, sprint-gate regel.
+       Autoritativ kilde delegeret til SPRINT-PLAN.md.
+  [K3] Sektion 12: "Første Claude Code prompt" erstattet med
+       "MABS aktivering" — orchestrator.py kommando, streaming API-model,
+       reference til AGENT-ROSTER.md og AGENT-ARCHITECTURE.md.
+  [M1] Changelog K3: "32 typer" rettet til "33 typer".
+  [M2] Footer opdateret: kravspec er MABS-klar, ikke "klar til review".
+
 v2.1 (QA-rettet):
   [K1] Sektion 4: Rolleliste erstattet med kanoniske SCREAMING_SNAKE_CASE navne
        fra roller-og-tilladelser.md v0.2 — 4 generiske navne → 8 korrekte roller
@@ -441,7 +436,7 @@ v2.1 (QA-rettet):
   [K2] Sektion 4: Selskabs-niveau roller tilføjet (COMPANY_*).
        Fase 2-roller (EXTERNAL_PARTNER, EXTERNAL_EMPLOYEE) adskilt tydeligt
   [K3] Sektion 5.4 (nu 6.4): Kontrakttype-liste erstattet med komplet
-       ContractSystemType-enum (32 typer) fra DATABASE-SCHEMA.md v0.2
+       ContractSystemType-enum (33 typer) fra DATABASE-SCHEMA.md v0.2
   [K4] Sektion 5.5 (nu 6.5): Sagstyper erstattet med SagsType + SagsSubtype
        enums fra DATABASE-SCHEMA.md v0.2
   [K5] Sektion 5.5 (nu 6.5): Sagsstatus rettet til CaseStatus-enum:
@@ -466,4 +461,4 @@ v1.0:
 
 ---
 
-*Kravspec klar til review og justering inden Claude Code-session.*
+*kravspec-legalhub.md v2.2 — MABS-klar.*
