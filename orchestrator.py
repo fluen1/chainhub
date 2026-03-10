@@ -742,6 +742,7 @@ def kald_specialist_agent(
     fejl_filer: list,
     iteration: int,
     hukommelse: Optional["RepairHukommelse"] = None,
+    findings_buffer: Optional[dict] = None,
 ) -> Optional[str]:
     """
     Kald den originale specialist-agent med dens egen system_prompt + fejl.
@@ -776,7 +777,25 @@ OUTPUT-FORMAT:
 --- FIL: sti/til/fil ---
 [komplet filindhold]
 --- SLUT ---
-NPM_INSTALL: pakke1 pakke2  (eller 'NPM_INSTALL: ingen')"""
+NPM_INSTALL: pakke1 pakke2  (eller 'NPM_INSTALL: ingen')
+
+=== KOMMUNIKATION MED ANDRE AGENTER ===
+Hvis du opdager et problem i en fil du IKKE ejer, rapporter det:
+  FINDING: <ejeragent-id>
+  Fil: <relativ-sti>
+  Beskrivelse: <hvad der er galt>
+
+Hvis du mangler information fra en anden agent for at loese din opgave:
+  CLARIFICATION_NEEDED: <ejeragent-id>
+  Spoergsmaal: <praecist spoergsmaal>
+  Blokerer: <fil/opgave der venter>
+
+Hvis du aendrer en public interface (funktion, enum, model) andre bruger:
+  INTERFACE_CHANGE: <beskrivelse>
+  Paavirkede agenter: <agent-id1>, <agent-id2>
+  Detaljer: <gamle vs. nye signaturer/vaerdier>
+
+Direktiver skrives EFTER dine filer i dit output."""
         system_prompt = agent["system_prompt"] + repair_tillaeg
         agent_navn = agent["navn"]
 
@@ -813,12 +832,20 @@ NPM_INSTALL: pakke1 pakke2  (eller 'NPM_INSTALL: ingen')"""
         if hukommelse_kontekst:
             hukommelse_kontekst = f"\n{hukommelse_kontekst}\n"
 
+    # sektion 18: FINDINGS + CLARIFICATION-SVAR fra andre agenter
+    findings_kontekst = ""
+    if findings_buffer:
+        findings_kontekst = byg_findings_kontekst(agent_id, findings_buffer)
+        if findings_kontekst:
+            findings_kontekst = f"\n{findings_kontekst}\n"
+
     bruger_besked = (
         f"=== REPAIR ITERATION {iteration} ===\n"
         f"Ansvarlig agent: {agent_navn} ({agent_id})\n"
         f"Fejlende build-trin: {fejlende_trin}\n"
         f"{hukommelse_kontekst}"
         f"{intelligence_kontekst}"
+        f"{findings_kontekst}"
         f"\nFejloutput:\n{fejl_output[:4000]}\n"
         f"\nFejlede filer du skal fixe:\n"
         + "\n".join(f"  - {f}" for f in fejl_filer)
@@ -868,6 +895,165 @@ def anvend_fix(fix_output: str, _npm: str) -> int:
     return antal
 
 
+# ============================================================
+# SEKTION 18: Agent-til-agent kommunikationsprotokol
+# Parser FINDING, CLARIFICATION_NEEDED og INTERFACE_CHANGE
+# fra agentoutput og router dem korrekt.
+# ============================================================
+
+def parse_agent_direktiver(output: str) -> dict:
+    """
+    Parser tre kommunikationstyper fra agentoutput:
+      FINDING, CLARIFICATION_NEEDED, INTERFACE_CHANGE
+    Returner dict med lister af hvert.
+    """
+    direktiver = {
+        "findings":        [],  # {agent_id, fil, beskrivelse}
+        "clarifications":  [],  # {agent_id, spoergsmaal, bloekerer}
+        "interface_changes": [], # {beskrivelse, paavirkede, detaljer}
+    }
+
+    # FINDING: BA-02 / Fil: ... / Beskrivelse: ...
+    for m in re.finditer(
+        r"FINDING:\s*(\S+)\s*\nFil:\s*(.+?)\s*\nBeskrivelse:\s*(.+?)(?=\n(?:FINDING|CLARIFICATION|INTERFACE|---)|\.?$)",
+        output, re.DOTALL | re.MULTILINE
+    ):
+        direktiver["findings"].append({
+            "agent_id":    m.group(1).strip(),
+            "fil":         m.group(2).strip(),
+            "beskrivelse": m.group(3).strip()[:300],
+        })
+
+    # CLARIFICATION_NEEDED: BA-02 / Spoergsmaal: ... / Bloekerer: ...
+    for m in re.finditer(
+        r"CLARIFICATION_NEEDED:\s*(\S+)\s*\nSp.rgsm.l:\s*(.+?)\s*\nBlokerer:\s*(.+?)(?=\n(?:FINDING|CLARIFICATION|INTERFACE|---)|\.?$)",
+        output, re.DOTALL | re.MULTILINE
+    ):
+        direktiver["clarifications"].append({
+            "agent_id":   m.group(1).strip(),
+            "spoergsmaal": m.group(2).strip()[:400],
+            "bloekerer":  m.group(3).strip(),
+        })
+
+    # INTERFACE_CHANGE: beskrivelse / Paavirkede agenter: ... / Detaljer: ...
+    for m in re.finditer(
+        r"INTERFACE_CHANGE:\s*(.+?)\s*\nP.virkede agenter:\s*(.+?)\s*\nDetaljer:\s*(.+?)(?=\n(?:FINDING|CLARIFICATION|INTERFACE|---)|\.?$)",
+        output, re.DOTALL | re.MULTILINE
+    ):
+        paavirkede = [a.strip() for a in m.group(2).split(",") if a.strip()]
+        direktiver["interface_changes"].append({
+            "beskrivelse": m.group(1).strip()[:200],
+            "paavirkede":  paavirkede,
+            "detaljer":    m.group(3).strip()[:400],
+        })
+
+    return direktiver
+
+
+def behandl_direktiver(
+    direktiver: dict,
+    klient: anthropic.Anthropic,
+    downstream_queue: list,
+    findings_buffer: dict,   # {agent_id: [beskrivelse, ...]}
+    iteration: int,
+) -> None:
+    """
+    Router direktiver fra agentoutput:
+      INTERFACE_CHANGE -> tilfoej paavirkede til downstream_queue
+      FINDING         -> bufrer til ejeragentens naeste kald
+      CLARIFICATION   -> kald ejeragent med spoergsmaal, log svar
+    Raekkefølge: INTERFACE_CHANGE foerst, derefter FINDING, CLARIFICATION sidst.
+    """
+    # 1. INTERFACE_CHANGE — trigger downstream foer alt andet
+    for ic in direktiver["interface_changes"]:
+        log(
+            f"  INTERFACE_CHANGE: {ic['beskrivelse']}\n"
+            f"    Paavirkede: {', '.join(ic['paavirkede'])}"
+        )
+        opdater_intelligence(
+            f"- INTERFACE_CHANGE: {ic['beskrivelse']}\n"
+            f"  Paavirkede: {', '.join(ic['paavirkede'])}\n"
+            f"  Detaljer: {ic['detaljer']}",
+            kontekst=f"interface-change iter={iteration}"
+        )
+        for aid in ic["paavirkede"]:
+            if aid in AGENTS and aid not in downstream_queue:
+                downstream_queue.append(aid)
+                log(f"  + INTERFACE_CHANGE downstream: {aid}")
+
+    # 2. FINDING — bufrer til ejeragentens naeste kald
+    for f in direktiver["findings"]:
+        target = f["agent_id"]
+        if target not in AGENTS:
+            log(f"  FINDING til ukendt agent '{target}' — ignoreret", "ADVARSEL")
+            continue
+        findings_buffer.setdefault(target, [])
+        findings_buffer[target].append(
+            f"[Iter {iteration}] Fil: {f['fil']}\nBeskrivelse: {f['beskrivelse']}"
+        )
+        log(f"  FINDING -> {target}: {f['fil']} ({f['beskrivelse'][:80]})")
+        opdater_intelligence(
+            f"- FINDING til {target}: {f['fil']}\n  {f['beskrivelse']}",
+            kontekst=f"finding iter={iteration}"
+        )
+        # Ejeragenten skal med i naeste iteration
+        if target not in downstream_queue:
+            downstream_queue.append(target)
+
+    # 3. CLARIFICATION_NEEDED — kald ejeragent synkront og log svaret
+    for cl in direktiver["clarifications"]:
+        target = cl["agent_id"]
+        agent  = AGENTS.get(target)
+        if not agent:
+            log(f"  CLARIFICATION til ukendt agent '{target}' — ignoreret", "ADVARSEL")
+            continue
+
+        log(f"  CLARIFICATION_NEEDED -> {target}: {cl['spoergsmaal'][:100]}")
+
+        # Byg et minimalt kald til ejeragenten med kun spoergsmaalet
+        svar_besked = (
+            f"=== CLARIFICATION REQUEST (iter {iteration}) ===\n"
+            f"En anden agent har brug for din ekspertise.\n"
+            f"Spoergsmaal: {cl['spoergsmaal']}\n"
+            f"Kontekst (blokeret fil): {cl['bloekerer']}\n"
+            f"\nSvar kort og praecist. Ingen filer noedvendige medmindre svaret kraever kodeaendring."
+        )
+        try:
+            svar = ""
+            with klient.messages.stream(
+                model=MODEL,
+                max_tokens=2000,
+                system=agent["system_prompt"],
+                messages=[{"role": "user", "content": svar_besked}],
+            ) as stream:
+                for tekst in stream.text_stream:
+                    svar += tekst
+
+            log(f"  {target} svar: {svar[:200].strip()}")
+            opdater_intelligence(
+                f"- CLARIFICATION {target} -> svar:\n  Sp: {cl['spoergsmaal']}\n  Sv: {svar[:300].strip()}",
+                kontekst=f"clarification iter={iteration}"
+            )
+            # Bufrer svaret saa den blokerede agent faar det i naeste kald
+            findings_buffer.setdefault(cl["agent_id"] + "__clarification", [])
+            findings_buffer[cl["agent_id"] + "__clarification"].append(
+                f"SVAR FRA {target} om '{cl['bloekerer']}':\n{svar[:600]}"
+            )
+        except Exception as e:
+            log(f"  CLARIFICATION API fejl: {e}", "FEJL")
+
+
+def byg_findings_kontekst(agent_id: str, findings_buffer: dict) -> str:
+    """Hent akkumulerede findings og clarification-svar til denne agent."""
+    linjer = []
+    for key in (agent_id, agent_id + "__clarification"):
+        if key in findings_buffer and findings_buffer[key]:
+            linjer.append(f"=== FINDINGS/SVAR TIL {agent_id} ===")
+            linjer.extend(findings_buffer[key])
+            findings_buffer[key] = []  # Forbrugt
+    return "\n".join(linjer) if linjer else ""
+
+
 def koer_autorepair_loop(
     klient: anthropic.Anthropic,
     max_iter: int = 10,
@@ -903,6 +1089,7 @@ def koer_autorepair_loop(
     afh_graf          = byg_afhaengighedsgraf()     # punkt 2
     ts_fejl_historik: list[int] = []               # punkt 5
     downstream_queue: list[str] = []               # punkt 4: agenter der skal re-checkes
+    findings_buffer:  dict      = {}               # sektion 18: findings + clarifications
 
     # Byg reverse map
     fil_til_agent = byg_fil_til_agent_map()
@@ -1089,7 +1276,8 @@ def koer_autorepair_loop(
 
             fix_output = kald_specialist_agent(
                 klient, agent_id, fejlende_trin, fejl_output,
-                agentens_filer, iteration, hukommelse=hukommelse
+                agentens_filer, iteration, hukommelse=hukommelse,
+                findings_buffer=findings_buffer
             )
 
             if fix_output:
@@ -1109,6 +1297,14 @@ def koer_autorepair_loop(
                     for p in paavirkede:
                         if p not in downstream_queue:
                             downstream_queue.append(p)
+
+                # sektion 18: parser og router FINDING / CLARIFICATION / INTERFACE_CHANGE
+                direktiver = parse_agent_direktiver(fix_output)
+                if any(direktiver.values()):
+                    behandl_direktiver(
+                        direktiver, klient, downstream_queue,
+                        findings_buffer, iteration
+                    )
             else:
                 log(f"  {agent_id}: ingen output — fortsaetter", "ADVARSEL")
 
@@ -1613,6 +1809,148 @@ SPRINT_RAEKKEFOLGEP = {
     5: ["BA-05-dashboard", "BA-05-oekonomi", "BA-09-sprint5", "BA-07-sprint5"],
     6: ["BA-10-tests", "BA-11-pentest", "BA-06-stripe", "BA-08-runbook", "BA-07-sprint6"],
 }
+
+
+
+# ============================================================
+# SEKTION 18: Agent-til-agent kommunikationsprotokol
+# Parser FINDING, CLARIFICATION_NEEDED og INTERFACE_CHANGE
+# fra agentoutput og router dem korrekt.
+# ============================================================
+
+def parse_agent_direktiver(output: str) -> dict:
+    """
+    Parser tre kommunikationstyper fra agentoutput:
+      FINDING, CLARIFICATION_NEEDED, INTERFACE_CHANGE
+    Returner dict med lister af hvert.
+    """
+    direktiver = {
+        "findings":        [],  # {agent_id, fil, beskrivelse}
+        "clarifications":  [],  # {agent_id, spoergsmaal, bloekerer}
+        "interface_changes": [], # {beskrivelse, paavirkede, detaljer}
+    }
+
+    # FINDING: BA-02 / Fil: ... / Beskrivelse: ...
+    for m in re.finditer(
+        r"FINDING:\s*(\S+)\s*\nFil:\s*(.+?)\s*\nBeskrivelse:\s*(.+?)(?=\n(?:FINDING|CLARIFICATION|INTERFACE|---)|\.?$)",
+        output, re.DOTALL | re.MULTILINE
+    ):
+        direktiver["findings"].append({
+            "agent_id":    m.group(1).strip(),
+            "fil":         m.group(2).strip(),
+            "beskrivelse": m.group(3).strip()[:300],
+        })
+
+    # CLARIFICATION_NEEDED
+    for m in re.finditer(
+        r"CLARIFICATION_NEEDED:\s*(\S+)\s*\nSp.rgsm.l:\s*(.+?)\s*\nBlokerer:\s*(.+?)(?=\n(?:FINDING|CLARIFICATION|INTERFACE|---)|\.?$)",
+        output, re.DOTALL | re.MULTILINE
+    ):
+        direktiver["clarifications"].append({
+            "agent_id":    m.group(1).strip(),
+            "spoergsmaal": m.group(2).strip()[:400],
+            "bloekerer":   m.group(3).strip(),
+        })
+
+    # INTERFACE_CHANGE
+    for m in re.finditer(
+        r"INTERFACE_CHANGE:\s*(.+?)\s*\nP.virkede agenter:\s*(.+?)\s*\nDetaljer:\s*(.+?)(?=\n(?:FINDING|CLARIFICATION|INTERFACE|---)|\.?$)",
+        output, re.DOTALL | re.MULTILINE
+    ):
+        paavirkede = [a.strip() for a in m.group(2).split(",") if a.strip()]
+        direktiver["interface_changes"].append({
+            "beskrivelse": m.group(1).strip()[:200],
+            "paavirkede":  paavirkede,
+            "detaljer":    m.group(3).strip()[:400],
+        })
+
+    return direktiver
+
+
+def behandl_direktiver(
+    direktiver: dict,
+    klient: anthropic.Anthropic,
+    downstream_queue: list,
+    findings_buffer: dict,
+    iteration: int,
+) -> None:
+    """
+    Router direktiver: INTERFACE_CHANGE foerst, FINDING dernaest, CLARIFICATION sidst.
+    """
+    # 1. INTERFACE_CHANGE
+    for ic in direktiver["interface_changes"]:
+        log(f"  INTERFACE_CHANGE: {ic['beskrivelse']}\n    Paavirkede: {', '.join(ic['paavirkede'])}")
+        opdater_intelligence(
+            f"- INTERFACE_CHANGE: {ic['beskrivelse']}\n  Paavirkede: {', '.join(ic['paavirkede'])}\n  Detaljer: {ic['detaljer']}",
+            kontekst=f"interface-change iter={iteration}"
+        )
+        for aid in ic["paavirkede"]:
+            if aid in AGENTS and aid not in downstream_queue:
+                downstream_queue.append(aid)
+                log(f"  + INTERFACE_CHANGE downstream: {aid}")
+
+    # 2. FINDING
+    for f in direktiver["findings"]:
+        target = f["agent_id"]
+        if target not in AGENTS:
+            log(f"  FINDING til ukendt agent '{target}' — ignoreret", "ADVARSEL")
+            continue
+        findings_buffer.setdefault(target, [])
+        findings_buffer[target].append(f"[Iter {iteration}] Fil: {f['fil']}\nBeskrivelse: {f['beskrivelse']}")
+        log(f"  FINDING -> {target}: {f['fil']} ({f['beskrivelse'][:80]})")
+        opdater_intelligence(
+            f"- FINDING til {target}: {f['fil']}\n  {f['beskrivelse']}",
+            kontekst=f"finding iter={iteration}"
+        )
+        if target not in downstream_queue:
+            downstream_queue.append(target)
+
+    # 3. CLARIFICATION_NEEDED
+    for cl in direktiver["clarifications"]:
+        target = cl["agent_id"]
+        agent  = AGENTS.get(target)
+        if not agent:
+            log(f"  CLARIFICATION til ukendt agent '{target}' — ignoreret", "ADVARSEL")
+            continue
+        log(f"  CLARIFICATION_NEEDED -> {target}: {cl['spoergsmaal'][:100]}")
+        svar_besked = (
+            f"=== CLARIFICATION REQUEST (iter {iteration}) ===\n"
+            f"En anden agent har brug for din ekspertise.\n"
+            f"Spoergsmaal: {cl['spoergsmaal']}\n"
+            f"Kontekst (blokeret fil): {cl['bloekerer']}\n"
+            f"\nSvar kort og praecist."
+        )
+        try:
+            svar = ""
+            with klient.messages.stream(
+                model=MODEL, max_tokens=2000,
+                system=agent["system_prompt"],
+                messages=[{"role": "user", "content": svar_besked}],
+            ) as stream:
+                for tekst in stream.text_stream:
+                    svar += tekst
+            log(f"  {target} svar: {svar[:200].strip()}")
+            opdater_intelligence(
+                f"- CLARIFICATION {target} -> svar:\n  Sp: {cl['spoergsmaal']}\n  Sv: {svar[:300].strip()}",
+                kontekst=f"clarification iter={iteration}"
+            )
+            findings_buffer.setdefault(cl["agent_id"] + "__clarification", [])
+            findings_buffer[cl["agent_id"] + "__clarification"].append(
+                f"SVAR FRA {target} om '{cl['bloekerer']}':\n{svar[:600]}"
+            )
+        except Exception as e:
+            log(f"  CLARIFICATION API fejl: {e}", "FEJL")
+
+
+def byg_findings_kontekst(agent_id: str, findings_buffer: dict) -> str:
+    """Hent akkumulerede findings og clarification-svar til denne agent."""
+    linjer = []
+    for key in (agent_id, agent_id + "__clarification"):
+        if key in findings_buffer and findings_buffer[key]:
+            linjer.append(f"=== FINDINGS/SVAR TIL {agent_id} ===")
+            linjer.extend(findings_buffer[key])
+            findings_buffer[key] = []  # Forbrugt
+    return "\n".join(linjer) if linjer else ""
 
 
 def koer_agent(agent_id: str, klient: anthropic.Anthropic, dry_run: bool = False, force: bool = False) -> bool:

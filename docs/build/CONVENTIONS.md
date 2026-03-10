@@ -526,9 +526,141 @@ Inden kode markeres som færdig — tjek:
 
 ---
 
+## Sektion 16: MABS-livscyklusprincip
+
+Ethvert MABS-system skal producere en applikation der kan starte i en
+**komplet fejlfri tilstand**. Følgende trin er alle ikke-forhandlingsbare
+og betragtes som ét samlet succeskriterie:
+
+```
+Grøn build     →  npx next build uden fejl
+Grøn smoke     →  next dev starter + kritiske routes svarer
+Grøn migration →  npx prisma migrate dev gennemføres uden fejl
+Seeded DB      →  npx prisma db seed gennemføres uden fejl
+Appstart       →  applikationen loader og svarer på / og /login
+```
+
+Ingen af disse trin er optionelle. En grøn build alene er ikke nok.
+MABS er først færdig når alle fem trin er grønne.
+
+---
+
+## Sektion 17: Fil-ejerskabsprincip
+
+Hver fil i systemet **ejes af præcis én agent**. Kun ejeragenten må
+skrive til filen under repair og build.
+
+Ejeragenten er den agent der har filen i sin `output_filer`-liste.
+
+```
+Regel:  Kun ejeragenten skriver til sin fil.
+Regel:  Andre agenter der opdager inkonsistens i en fil de ikke ejer,
+        rapporterer det som en FINDING i deres output.
+        De retter ALDRIG filen direkte.
+Regel:  Repair-loopen router altid til ejeragenten — aldrig til
+        en tilfældig agent der kender filen.
+```
+
+Eksempel: `prisma/schema.prisma` ejes af BA-02.
+Hvis BA-05-kontrakt opdager et manglende felt i schema, skriver den:
+`FINDING: prisma/schema.prisma mangler felt X på model Y`
+— den skriver ikke schema.prisma selv.
+
+---
+
+## Sektion 18: Agent-til-agent kommunikationsprotokol
+
+Agenter kommunikerer med hinanden via strukturerede direktiver i deres
+output. Orkestratoren læser og router disse — agenter taler aldrig
+direkte til hinanden, men altid gennem orkestratoren som mellemmand.
+
+Tre kommunikationsmønstre er defineret:
+
+### 18.1 FINDING — passiv rapportering
+En agent opdager inkonsistens i en fil den ikke ejer.
+Den rapporterer det — retter det ikke selv.
+
+```
+FINDING: <ejeragent-id>
+Fil: <relativ-sti>
+Beskrivelse: <hvad der er galt>
+```
+
+Orkestratoren logger findingen og sender den til ejeragenten
+som kontekst i næste kald.
+
+Eksempel:
+```
+FINDING: BA-02
+Fil: prisma/schema.prisma
+Beskrivelse: Model ContractRelation mangler organization_id felt
+```
+
+### 18.2 CLARIFICATION_NEEDED — aktiv afklaring
+En agent kan ikke løse sin opgave uden information fra en anden agent.
+I stedet for at gætte blokerer den og beder om svar.
+
+```
+CLARIFICATION_NEEDED: <ejeragent-id>
+Spørgsmål: <præcist spørgsmål>
+Blokerer: <hvilken fil/opgave der venter på svaret>
+```
+
+Orkestratoren sætter agenten i kø, kalder den angivne agent
+med spørgsmålet, og genoptager den ventende agent med svaret.
+
+Eksempel:
+```
+CLARIFICATION_NEEDED: BA-02
+Spørgsmål: Har Organization-modellen et felt 'displayName' eller bruges 'name' overalt?
+Blokerer: src/components/companies/CompanyForm.tsx
+```
+
+### 18.3 INTERFACE_CHANGE — proaktiv annoncering
+En agent har ændret en public interface andre agenter afhænger af.
+Den annoncerer det proaktivt så downstream agenter kan reagere
+før regressionsguarden opdager det.
+
+```
+INTERFACE_CHANGE: <beskrivelse>
+Påvirkede agenter: <agent-id1>, <agent-id2>
+Detaljer: <hvad der ændrede sig — gamle vs. nye signaturer/værdier>
+```
+
+Orkestratoren trigger automatisk re-check hos alle angivne agenter.
+
+Eksempel:
+```
+INTERFACE_CHANGE: canAccessCompany() tager nu (userId, companyId, organizationId)
+Påvirkede agenter: BA-05-selskab, BA-05-kontrakt, BA-10-tests
+Detaljer: Tredje parameter organizationId tilføjet (required)
+```
+
+### Generelle regler
+- Alle tre direktiver skrives i agentens output — efter filerne.
+- Et output kan indeholde flere direktiver af forskellig type.
+- Orkestratoren behandler dem i rækkefølge:
+  INTERFACE_CHANGE først → FINDING → CLARIFICATION_NEEDED sidst.
+- INTELLIGENCE.md opdateres automatisk med alle kommunikationer.
+
+---
+
 ## Changelog
 
 ```
+v0.5 (Agent-til-agent kommunikationsprotokol):
+  + Sektion 18: Tre kommunikationsmønstre defineret:
+    FINDING (passiv rapportering til ejeragent),
+    CLARIFICATION_NEEDED (blokering + afklaring),
+    INTERFACE_CHANGE (proaktiv annoncering til downstream)
+  + Orkestratoren router alle tre — agenter taler aldrig direkte
+
+v0.4 (Livscyklus + ejerskab):
+  + Sektion 16: MABS-livscyklusprincip — grøn build er ikke nok,
+    alle 5 trin (build, smoke, migrate, seed, appstart) kræves
+  + Sektion 17: Fil-ejerskabsprincip — én fil, én ejeragent;
+    andre agenter rapporterer FINDING, skriver aldrig direkte
+
 v0.3 (MABS-læringer):
   + Sektion 14: Dependency-regel — alle imports kræver pakke i package.json
   + Sektion 14: Build-gate — npm install, prisma generate, tsc, next build

@@ -60,6 +60,9 @@
     "uuid": "^13.0.0",
     "zod": "^3.25.76"
   },
+  "lint-staged": {
+    "*.{ts,tsx}": ["eslint --fix"]
+  },
   "devDependencies": {
     "@playwright/test": "^1.42.0",
     "@testing-library/jest-dom": "^6.4.0",
