@@ -80,3 +80,42 @@ Sprint-gate: `npm install --legacy-peer-deps` → `prisma generate` → `tsc --n
 
 ## [2026-03-10 22:53]
 ### Prisma v7 breaking change — datasource URL i schema (KRITISK)\nPrisma v7+ kræver connection URLs i prisma.config.ts, ikke i schema.prisma.\nVores setup bruger Prisma v5 som er kompatibel med url/directUrl i schema.prisma.\nLøsning: Pinned til prisma@5 og @prisma/client@5.
+
+## [2026-03-10 23:41]
+useSearchParams() i Next.js 14 kræver Suspense-boundary. Symptom: build fejler med "useSearchParams() should be wrapped in a suspense boundary". Fix: Pak den komponent der kalder useSearchParams() ind i &lt;Suspense fallback=&gt;. Pattern: eksportér en default page-komponent der wrapper form-komponenten i Suspense.
+
+## [2026-03-10 23:56]
+## [Sprint 6] ESLint i next build
+Next.js `next build` kører ESLint på AL kode inkl. test-filer i src/.
+Ubrugte imports i test-filer (`vi`, `beforeEach`) slår fejl.
+Løsning: Fjern ubrugte imports fra test-imports, eller tilføj `// eslint-disable-next-line` på test-filer.
+Alternativt: konfigurér ESLint til at ignorere __tests__/ mappen i .eslintrc.json.
+
+## [2026-03-11 20:24]
+## [Sprint 7] Prisma CompanyGetPayload type-assertion nødvendig ved dynamisk where
+Når `prisma.company.findMany` kaldes med dynamisk `where`-objekt (fx `const where: Prisma.CompanyWhereInput = {}`),
+infererer TypeScript ikke korrekt at result inkluderer `_count` og `company_persons`.
+Løsning: Brug `as Promise<Prisma.CompanyGetPayload<{ include: {...} }>>` type-assertion på query-kaldet.
+Pattern: Definer type med `type CompanyWithRelations = Prisma.CompanyGetPayload<{...}>` øverst i filen.
+
+## [2026-03-11 20:24]
+## [Sprint 7] Company schema har ikke tasks[] som relation
+Company-modellen i Prisma-schema mangler `tasks Task[]` som reverse relation
+(Task har company_id men ingen back-relation er defineret).
+Konsekvens: `_count: { select: { tasks: true } }` fejler med TS-fejl.
+Løsning: Brug separat `prisma.task.count({ where: { company_id } })` for opgave-count pr. selskab.
+Alternativt: Tilføj `tasks Task[]` til Company-modellen i schema i Sprint 8 (BA-02).
+
+## [2026-03-11 20:24]
+## [Sprint 7] CaseCompany junction har ikke deleted_at kolonne
+Prisma CaseCompany model mangler deleted_at. Queries der forsøger at filtrere på
+`case.deleted_at` inde i `CaseCompany` nested where fejler med TS2353.
+Workaround: Filtrer via `case: { deleted_at: null }` i nested relation where.
+Eksempel: `prisma.caseCompany.count({ where: { case: { deleted_at: null } } })`
+
+## [2026-03-11 20:24]
+## [Sprint 7] Windows CRLF line endings i node file manipulation
+Node.js read/write af filer på Windows producerer CRLF line endings (\r\n).
+String-matching med `l !== '  Plus,'` fejler fordi den faktiske linje er `'  Plus,\r'`.
+Fix: Brug `l.trimEnd() !== '  Plus,'` ELLER read/write med explicit encoding og line ending normalisering.
+Pattern: `lines.filter(l => l.trimEnd() !== 'TARGET_LINE')`

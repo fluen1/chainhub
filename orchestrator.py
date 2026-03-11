@@ -29,31 +29,28 @@ load_dotenv(".env.local")
 load_dotenv(".env")
 
 REPO_ROOT  = Path(__file__).parent
-MODEL      = "claude-opus-4-6"
+MODEL      = "claude-sonnet-4-6"
 MAX_TOKENS = 32000
 
 # Context window management
-MAX_CONTEXT_CHARS    = 550_000   # ~157K tokens — sikkerhedsmargin til 200K window
-MAX_TOOL_RESULT_CHARS = 12_000   # Trunkér individuelle tool-results over dette
-KEEP_RECENT_TURNS    = 20        # Behold altid de seneste N assistant+user par
+MAX_CONTEXT_CHARS    = 550_000
+MAX_TOOL_RESULT_CHARS = 12_000
+KEEP_RECENT_TURNS    = 20
 
 KONTEKST_FILER = [
-    "docs/build/MASTER-PROMPT.md",
-    "docs/status/PROGRESS.md",
-    "docs/build/INTELLIGENCE.md",
-    "docs/status/DECISIONS.md",
-    "docs/status/BLOCKERS.md",
-    "docs/build/CONVENTIONS.md",
-    "docs/build/AGENT-ROSTER.md",
-    "docs/build/AGENT-ARCHITECTURE.md",
-    "docs/build/SPRINT-PLAN.md",
-    "docs/build/DEA-PROMPTS.md",
-    "docs/spec/DATABASE-SCHEMA.md",
-    "docs/spec/CONTRACT-TYPES.md",
-    "docs/spec/roller-og-tilladelser.md",
-    "docs/spec/kravspec-legalhub.md",
-    "docs/spec/UI-FLOWS.md",
-    "docs/spec/API-SPEC.md",
+    "docs/build/MASTER-PROMPT.md",          # System-prompt + arbejdsflow + sprint 7-9
+    "docs/status/PROGRESS.md",              # Sprint-status
+    "docs/build/INTELLIGENCE.md",           # Kendte fejlmønstre
+    "docs/status/DECISIONS.md",             # Arkitekturbeslutninger
+    "docs/status/BLOCKERS.md",              # Aktive blokkere
+    "docs/build/CONVENTIONS.md",            # Kodekonventioner
+    "docs/build/AGENT-ROSTER.md",           # Alle 21 agenter (inkl. DEA-08/09, BA-12)
+    "docs/spec/DATABASE-SCHEMA.md",         # Datamodel
+    "docs/spec/CONTRACT-TYPES.md",          # 34 kontrakttyper
+    "docs/spec/roller-og-tilladelser.md",   # Adgangsmodel
+    "docs/spec/kravspec-legalhub.md",       # Produktkrav
+    "docs/spec/UI-FLOWS.md",               # Brugerflows
+    "docs/spec/SPEC-TILLAEG-v2.md",        # UI + nye moduler (Sprint 7+)
 ]
 
 _processer:      dict[int, subprocess.Popen] = {}
@@ -81,21 +78,15 @@ def _tilfoej(sti: Path, tekst: str):
         f.write(tekst)
 
 def _log_reader(proc: subprocess.Popen, port: int):
-    """Læs stdout fra baggrundsproces i en separat tråd (Windows-kompatibel)."""
     try:
         while True:
             line = proc.stdout.readline()
-            if not line:
-                break
+            if not line: break
             _process_logs.setdefault(port, []).append(line.rstrip())
-    except Exception:
-        pass
+    except Exception: pass
 
-
-# ── Context window management ─────────────────────────────────────────────────
 
 def _estimer_besked_chars(beskeder: list) -> int:
-    """Estimér samlet tegnantal i beskedlisten."""
     total = 0
     for msg in beskeder:
         content = msg.get("content", "")
@@ -113,19 +104,10 @@ def _estimer_besked_chars(beskeder: list) -> int:
     return total
 
 def _trim_beskeder(beskeder: list) -> list:
-    """
-    Trim beskedlisten hvis den overstiger MAX_CONTEXT_CHARS.
-    Behold altid: besked[0] (initial kontekst) + de seneste KEEP_RECENT_TURNS par.
-    Erstat midterste beskeder med en kort opsummering.
-    """
     total = _estimer_besked_chars(beskeder)
-    if total <= MAX_CONTEXT_CHARS:
-        return beskeder
-
+    if total <= MAX_CONTEXT_CHARS: return beskeder
     keep_end = KEEP_RECENT_TURNS * 2
-    if len(beskeder) <= 1 + keep_end:
-        return beskeder
-
+    if len(beskeder) <= 1 + keep_end: return beskeder
     trimmed_count = len(beskeder) - 1 - keep_end
     opsummering = {
         "role": "user",
@@ -133,17 +115,13 @@ def _trim_beskeder(beskeder: list) -> list:
                    f"Al persistent tilstand er gemt i PROGRESS.md, INTELLIGENCE.md, DECISIONS.md og BLOCKERS.md. "
                    f"Læs disse filer for at genoptage kontekst.]"
     }
-
     nye_beskeder = [beskeder[0], opsummering] + beskeder[-(keep_end):]
     ny_total = _estimer_besked_chars(nye_beskeder)
     log(f"⚡ CONTEXT TRIM: {total:,} → {ny_total:,} tegn ({trimmed_count} beskeder fjernet)")
-
     return nye_beskeder
 
 def _truncer_tool_result(resultat: str) -> str:
-    """Trunkér store tool-results for at spare context window."""
-    if len(resultat) <= MAX_TOOL_RESULT_CHARS:
-        return resultat
+    if len(resultat) <= MAX_TOOL_RESULT_CHARS: return resultat
     halv = MAX_TOOL_RESULT_CHARS // 2
     return (resultat[:halv]
             + f"\n\n[... TRUNKERET — {len(resultat):,} tegn total, viser første og sidste {halv:,} ...]\n\n"
@@ -163,8 +141,6 @@ def byg_kontekst() -> str:
         sektioner.append(f"\n\n=== {rel} ===\n{indhold}")
     return "".join(sektioner)
 
-
-# ── Tools ─────────────────────────────────────────────────────────────────────
 
 TOOLS = [
     {"name":"read_file","description":"Læs en fil","input_schema":{"type":"object","properties":{"path":{"type":"string"}},"required":["path"]}},
@@ -226,30 +202,22 @@ def _eksekver_tool(navn: str, inp: dict) -> str:
     if navn == "read_file":
         p = REPO_ROOT / inp["path"]
         return p.read_text(encoding="utf-8") if p.exists() else f"[FIL IKKE FUNDET: {inp['path']}]"
-
     if navn == "write_file":
         p = REPO_ROOT / inp["path"]
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(inp["content"], encoding="utf-8")
         return f"✓ Skrevet: {inp['path']} ({len(inp['content'])} tegn)"
-
     if navn == "delete_file":
-        p = REPO_ROOT / inp["path"]
-        p.unlink(missing_ok=True)
-        return f"✓ Slettet: {inp['path']}"
-
+        p = REPO_ROOT / inp["path"]; p.unlink(missing_ok=True); return f"✓ Slettet: {inp['path']}"
     if navn == "move_file":
         src, dst = REPO_ROOT / inp["from_path"], REPO_ROOT / inp["to_path"]
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        shutil.move(str(src), str(dst))
+        dst.parent.mkdir(parents=True, exist_ok=True); shutil.move(str(src), str(dst))
         return f"✓ Flyttet: {inp['from_path']} → {inp['to_path']}"
-
     if navn == "list_files":
         p = REPO_ROOT / inp["directory"]
         if not p.exists(): return f"[MAPPE IKKE FUNDET: {inp['directory']}]"
         filer = [str(f.relative_to(REPO_ROOT)) for f in (p.rglob("*") if inp.get("recursive") else p.iterdir()) if f.is_file()]
         return "\n".join(sorted(filer)) or "[Tom]"
-
     if navn == "search_in_files":
         p, pat, glob = REPO_ROOT / inp["directory"], inp["pattern"], inp.get("file_glob","*")
         hits = []
@@ -260,22 +228,18 @@ def _eksekver_tool(navn: str, inp: dict) -> str:
                     if re.search(pat, linje): hits.append(f"{fil.relative_to(REPO_ROOT)}:{nr}: {linje.strip()}")
             except Exception: pass
         return "\n".join(hits[:100]) or "[Ingen match]"
-
     if navn == "diff_files":
         a = (REPO_ROOT/inp["path_a"]).read_text(encoding="utf-8",errors="replace").splitlines()
         b = (REPO_ROOT/inp["path_b"]).read_text(encoding="utf-8",errors="replace").splitlines()
         return "\n".join(difflib.unified_diff(a,b,fromfile=inp["path_a"],tofile=inp["path_b"],lineterm="")) or "[Ingen forskel]"
-
     if navn == "file_encoding_check":
         p = REPO_ROOT / inp["path"]
         problemer = [l for l in p.read_text(encoding="utf-8",errors="replace").splitlines()
                      if re.search(r'[ÆØÅæøå]', l.split("//")[0].split("@map")[0])]
         return ("PROBLEMER:\n" + "\n".join(problemer[:20])) if problemer else "✓ Ingen problemer"
-
     if navn == "file_encoding_fix":
         tabel = {"Æ":"AE","æ":"ae","Ø":"OE","ø":"oe","Å":"AA","å":"aa"}
-        p = REPO_ROOT / inp["path"]
-        linjer = []
+        p = REPO_ROOT / inp["path"]; linjer = []
         for l in p.read_text(encoding="utf-8").splitlines():
             s = l.strip()
             if s and not s.startswith("//") and "@map" not in l:
@@ -287,222 +251,118 @@ def _eksekver_tool(navn: str, inp: dict) -> str:
             linjer.append(l)
         p.write_text("\n".join(linjer), encoding="utf-8")
         return f"✓ Encoding-fix: {inp['path']}"
-
     if navn == "bash":
         cwd = REPO_ROOT / inp["working_dir"] if "working_dir" in inp else REPO_ROOT
         return _run(inp["command"], inp.get("timeout",300), cwd)
-
     if navn == "start_process":
         port = inp["port"]
         proc = subprocess.Popen(inp["command"], shell=True, cwd=REPO_ROOT,
-                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                text=True, stdin=subprocess.DEVNULL)
-        _processer[port] = proc
-        _process_logs[port] = []
-        t = threading.Thread(target=_log_reader, args=(proc, port), daemon=True)
-        t.start()
+                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, stdin=subprocess.DEVNULL)
+        _processer[port] = proc; _process_logs[port] = []
+        t = threading.Thread(target=_log_reader, args=(proc, port), daemon=True); t.start()
         return f"✓ Startet port {port} (PID {proc.pid})"
-
     if navn == "stop_process":
-        proc = _processer.pop(inp["port"], None)
-        _process_logs.pop(inp["port"], None)
+        proc = _processer.pop(inp["port"], None); _process_logs.pop(inp["port"], None)
         if proc:
             proc.terminate()
             try: proc.wait(timeout=10)
             except subprocess.TimeoutExpired: proc.kill()
             return f"✓ Stoppet port {inp['port']}"
         return f"[Ingen proces på port {inp['port']}]"
-
     if navn == "wait_for_port":
         import time
         for i in range(inp.get("timeout",90)):
             try:
                 urllib.request.urlopen(f"http://localhost:{inp['port']}/", timeout=2)
                 return f"✓ Port {inp['port']} klar efter {i+1}s"
-            except urllib.error.HTTPError:
-                return f"✓ Port {inp['port']} klar efter {i+1}s"
+            except urllib.error.HTTPError: return f"✓ Port {inp['port']} klar efter {i+1}s"
             except Exception: time.sleep(1)
         return f"[TIMEOUT: port {inp['port']}]"
-
     if navn == "read_process_logs":
         port = inp["port"]
-        if port not in _processer:
-            return f"[Ingen proces på port {port}]"
-        logs = _process_logs.get(port, [])
-        return "\n".join(logs[-100:]) or "[Ingen nye linjer]"
-
+        if port not in _processer: return f"[Ingen proces på port {port}]"
+        return "\n".join(_process_logs.get(port, [])[-100:]) or "[Ingen nye linjer]"
     if navn == "process_list":
         return "\n".join(f"Port {p}: PID {pr.pid} ({'kørende' if pr.poll() is None else 'stoppet'})"
                          for p, pr in _processer.items()) or "[Ingen aktive processer]"
-
     if navn == "http_session":
-        import http.cookiejar
-        _http_sessioner[inp["name"]] = http.cookiejar.CookieJar()
+        import http.cookiejar; _http_sessioner[inp["name"]] = http.cookiejar.CookieJar()
         return f"✓ Session '{inp['name']}' oprettet"
-
     if navn == "http_request":
         body = inp["body"].encode("utf-8") if inp.get("body") else None
-        req  = urllib.request.Request(inp["url"], data=body, method=inp.get("method","GET"))
+        req = urllib.request.Request(inp["url"], data=body, method=inp.get("method","GET"))
         for k,v in (inp.get("headers") or {}).items(): req.add_header(k,v)
         try:
             with urllib.request.urlopen(req, timeout=30) as r:
                 return f"Status: {r.status}\n{r.read(4096).decode('utf-8',errors='replace')}"
-        except urllib.error.HTTPError as e:
-            return f"Status: {e.code}\n{e.read(2048).decode('utf-8',errors='replace')}"
+        except urllib.error.HTTPError as e: return f"Status: {e.code}\n{e.read(2048).decode('utf-8',errors='replace')}"
         except Exception as e: return f"[FEJL: {e}]"
-
     if navn == "db_query":
         db = os.getenv("DATABASE_URL","")
         return _run(f'psql "{db}" -c "{inp["sql"].replace(chr(34), chr(39))}"') if db else "[DATABASE_URL ikke sat]"
-
-    if navn == "db_prisma":
-        return _run(f"{npx} prisma {inp['command']}", timeout=120)
-
-    if navn == "typescript_check":
-        return _run(f"{npx} tsc --noEmit {inp.get('path','')}", timeout=120)
-
-    if navn == "lint":
-        return _run(f"{npx} eslint {inp.get('path','.')}", timeout=120)
-
+    if navn == "db_prisma": return _run(f"{npx} prisma {inp['command']}", timeout=120)
+    if navn == "typescript_check": return _run(f"{npx} tsc --noEmit {inp.get('path','')}", timeout=120)
+    if navn == "lint": return _run(f"{npx} eslint {inp.get('path','.')}", timeout=120)
     if navn == "test_run":
-        pat = inp.get("pattern","")
-        rep = inp.get("reporter","verbose")
-        return _run(f"{npx} vitest run {pat} --reporter={rep}", timeout=300)
-
-    if navn == "test_coverage":
-        return _run(f"{npx} vitest run --coverage", timeout=300)
-
-    if navn == "npm_audit":
-        return _run(f"{npm} audit", timeout=60)
-
-    if navn == "bundle_analyze":
-        return _run("ANALYZE=true npx next build", timeout=300)
-
-    if navn == "lighthouse":
-        return _run(f"{npx} lighthouse {inp['url']} --output=json --quiet", timeout=120)
-
-    if navn == "git":
-        return _run(f"git {inp['command']}", timeout=60)
-
-    if navn == "env_get":
-        return os.getenv(inp["key"], f"[{inp['key']} ikke sat]")
-
+        return _run(f"{npx} vitest run {inp.get('pattern','')} --reporter={inp.get('reporter','verbose')}", timeout=300)
+    if navn == "test_coverage": return _run(f"{npx} vitest run --coverage", timeout=300)
+    if navn == "npm_audit": return _run(f"{npm} audit", timeout=60)
+    if navn == "bundle_analyze": return _run("ANALYZE=true npx next build", timeout=300)
+    if navn == "lighthouse": return _run(f"{npx} lighthouse {inp['url']} --output=json --quiet", timeout=120)
+    if navn == "git": return _run(f"git {inp['command']}", timeout=60)
+    if navn == "env_get": return os.getenv(inp["key"], f"[{inp['key']} ikke sat]")
     if navn == "env_set":
         p = REPO_ROOT / ".env.local"
-        linjer = p.read_text(encoding="utf-8").splitlines() if p.exists() else []
-        opdateret = False
+        linjer = p.read_text(encoding="utf-8").splitlines() if p.exists() else []; opdateret = False
         for i, l in enumerate(linjer):
             if l.startswith(f"{inp['key']}="):
                 linjer[i] = f"{inp['key']}={inp['value']}"; opdateret = True; break
         if not opdateret: linjer.append(f"{inp['key']}={inp['value']}")
-        p.write_text("\n".join(linjer)+"\n", encoding="utf-8")
-        return f"✓ {inp['key']} sat i .env.local"
-
+        p.write_text("\n".join(linjer)+"\n", encoding="utf-8"); return f"✓ {inp['key']} sat i .env.local"
     if navn == "env_validate":
         ex = REPO_ROOT / ".env.example"
         if not ex.exists(): return "[.env.example ikke fundet]"
-        krav = [l.split("=")[0].strip() for l in ex.read_text(encoding="utf-8").splitlines()
-                if l.strip() and not l.startswith("#") and "=" in l]
+        krav = [l.split("=")[0].strip() for l in ex.read_text(encoding="utf-8").splitlines() if l.strip() and not l.startswith("#") and "=" in l]
         mangler = [k for k in krav if not os.getenv(k)]
         return ("MANGLER:\n" + "\n".join(f"  - {k}" for k in mangler)) if mangler else f"✓ Alle {len(krav)} vars sat"
-
     if navn == "env_diff":
         f1 = (REPO_ROOT/inp.get("env1",".env.example")).read_text(encoding="utf-8",errors="replace").splitlines()
         f2 = (REPO_ROOT/inp.get("env2",".env.local")).read_text(encoding="utf-8",errors="replace").splitlines()
         return "\n".join(difflib.unified_diff(f1,f2,lineterm="")) or "[Ingen forskel]"
-
     if navn == "inspect_headers":
         try:
             with urllib.request.urlopen(urllib.request.Request(inp["url"]), timeout=10) as r:
                 return "\n".join(f"{k}: {v}" for k,v in r.headers.items())
-        except urllib.error.HTTPError as e:
-            return "\n".join(f"{k}: {v}" for k,v in e.headers.items())
+        except urllib.error.HTTPError as e: return "\n".join(f"{k}: {v}" for k,v in e.headers.items())
         except Exception as e: return f"[FEJL: {e}]"
-
     if navn == "check_auth_bypass":
-        req = urllib.request.Request(inp["url"], data=inp["payload"].encode(),
-                                     method="POST", headers={"Content-Type":"application/json"})
+        req = urllib.request.Request(inp["url"], data=inp["payload"].encode(), method="POST", headers={"Content-Type":"application/json"})
         try:
             with urllib.request.urlopen(req, timeout=10) as r:
                 return f"Status: {r.status}\n{r.read(2048).decode('utf-8',errors='replace')}"
-        except urllib.error.HTTPError as e:
-            return f"Status: {e.code}\n{e.read(1024).decode('utf-8',errors='replace')}"
+        except urllib.error.HTTPError as e: return f"Status: {e.code}\n{e.read(1024).decode('utf-8',errors='replace')}"
         except Exception as e: return f"[FEJL: {e}]"
-
-    if navn == "stripe_cli":
-        return _run(f"stripe {inp['command']}", timeout=60)
-
+    if navn == "stripe_cli": return _run(f"stripe {inp['command']}", timeout=60)
     if navn == "generate_test_data":
         return _run(f"{npx} ts-node scripts/generate-test-data.ts {inp['schema']} {inp.get('count',10)}", timeout=60)
-
     if navn == "browser_screenshot":
-        out = inp.get("output","screenshot.png")
-        return _run(f"{npx} playwright screenshot {inp['url']} {out}", timeout=60)
-
+        return _run(f"{npx} playwright screenshot {inp['url']} {inp.get('output','screenshot.png')}", timeout=60)
     if navn == "browser_get_dom":
         selector = inp.get("selector", "body")
-        script = f"""
-const {{ chromium }} = require('playwright');
-(async () => {{
-  const browser = await chromium.launch();
-  const page = await browser.newPage();
-  await page.goto('{inp["url"]}', {{ waitUntil: 'networkidle', timeout: 30000 }});
-  const el = await page.$('{selector}');
-  if (el) {{
-    const html = await el.innerHTML();
-    console.log(html.substring(0, 8000));
-  }} else {{
-    console.log('[SELECTOR IKKE FUNDET: {selector}]');
-  }}
-  await browser.close();
-}})();
-""".strip()
+        script = f"const{{chromium}}=require('playwright');(async()=>{{const b=await chromium.launch();const p=await b.newPage();await p.goto('{inp['url']}',{{waitUntil:'networkidle',timeout:30000}});const e=await p.$('{selector}');console.log(e?((await e.innerHTML()).substring(0,8000)):'[SELECTOR IKKE FUNDET]');await b.close()}})()"
         return _run(f'node -e "{script}"', timeout=60)
-
     if navn == "browser_get_console_errors":
-        script = f"""
-const {{ chromium }} = require('playwright');
-(async () => {{
-  const browser = await chromium.launch();
-  const page = await browser.newPage();
-  const errors = [];
-  page.on('console', msg => {{ if (msg.type() === 'error') errors.push(msg.text()); }});
-  page.on('pageerror', err => errors.push(err.message));
-  await page.goto('{inp["url"]}', {{ waitUntil: 'networkidle', timeout: 30000 }});
-  console.log(errors.length ? errors.join('\\n') : '[Ingen console-fejl]');
-  await browser.close();
-}})();
-""".strip()
+        script = f"const{{chromium}}=require('playwright');(async()=>{{const b=await chromium.launch();const p=await b.newPage();const e=[];p.on('console',m=>{{if(m.type()==='error')e.push(m.text())}});p.on('pageerror',err=>e.push(err.message));await p.goto('{inp['url']}',{{waitUntil:'networkidle',timeout:30000}});console.log(e.length?e.join('\\n'):'[Ingen console-fejl]');await b.close()}})()"
         return _run(f'node -e "{script}"', timeout=60)
-
     if navn == "browser_get_network_requests":
-        script = f"""
-const {{ chromium }} = require('playwright');
-(async () => {{
-  const browser = await chromium.launch();
-  const page = await browser.newPage();
-  const reqs = [];
-  page.on('request', r => reqs.push(r.method() + ' ' + r.url()));
-  await page.goto('{inp["url"]}', {{ waitUntil: 'networkidle', timeout: 30000 }});
-  console.log(reqs.join('\\n'));
-  await browser.close();
-}})();
-""".strip()
+        script = f"const{{chromium}}=require('playwright');(async()=>{{const b=await chromium.launch();const p=await b.newPage();const r=[];p.on('request',q=>r.push(q.method()+' '+q.url()));await p.goto('{inp['url']}',{{waitUntil:'networkidle',timeout:30000}});console.log(r.join('\\n'));await b.close()}})()"
         return _run(f'node -e "{script}"', timeout=60)
-
     if navn == "browser_screenshot_diff":
         return _run(f"npx pixelmatch {inp['baseline_path']} {inp['url']}", timeout=30)
-
-    if navn == "accessibility_check":
-        return _run(f"{npx} axe {inp['url']}", timeout=60)
-
+    if navn == "accessibility_check": return _run(f"{npx} axe {inp['url']}", timeout=60)
     if navn == "vercel_deploy":
-        flag = "--prod" if inp.get("environment") == "production" else ""
-        return _run(f"vercel deploy {flag}", timeout=300)
-
-    if navn == "vercel_logs":
-        return _run(f"vercel logs {inp.get('deployment_id','')}", timeout=60)
-
+        return _run(f"vercel deploy {'--prod' if inp.get('environment')=='production' else ''}", timeout=300)
+    if navn == "vercel_logs": return _run(f"vercel logs {inp.get('deployment_id','')}", timeout=60)
     if navn == "web_search":
         q = urllib.parse.quote(inp["query"])
         try:
@@ -511,40 +371,28 @@ const {{ chromium }} = require('playwright');
                 hits = [f"- {t.get('Text','')}: {t.get('FirstURL','')}" for t in d.get("RelatedTopics",[])[:5] if t.get("Text")]
                 return "\n".join(hits) or d.get("AbstractText","[Ingen resultater]")
         except Exception as e: return f"[Søgefejl: {e}]"
-
     if navn == "write_finding":
         nu = datetime.now().strftime("%Y-%m-%d %H:%M")
-        _tilfoej(REPO_ROOT/"docs/build/INTELLIGENCE.md",
-                 f"\n## [{nu}] FINDING → {inp['target_agent']}\nFil: {inp['file']}\n{inp['description']}\n")
+        _tilfoej(REPO_ROOT/"docs/build/INTELLIGENCE.md", f"\n## [{nu}] FINDING → {inp['target_agent']}\nFil: {inp['file']}\n{inp['description']}\n")
         return f"✓ Finding → {inp['target_agent']}"
-
     if navn == "write_decision":
         nu = datetime.now().strftime("%Y-%m-%d")
-        _tilfoej(REPO_ROOT/"docs/status/DECISIONS.md",
-                 f"\n## {inp['dec_id']}\n**Status:** {inp['status']}\n**Dato:** {nu}\n{inp['content']}\n")
+        _tilfoej(REPO_ROOT/"docs/status/DECISIONS.md", f"\n## {inp['dec_id']}\n**Status:** {inp['status']}\n**Dato:** {nu}\n{inp['content']}\n")
         return f"✓ {inp['dec_id']} ({inp['status']})"
-
     if navn == "update_progress":
         nu = datetime.now().strftime("%Y-%m-%d %H:%M")
-        _tilfoej(REPO_ROOT/"docs/status/PROGRESS.md",
-                 f"\n[{nu}] {inp['agent_id']} — {inp['task']}: {inp['status']}\n")
+        _tilfoej(REPO_ROOT/"docs/status/PROGRESS.md", f"\n[{nu}] {inp['agent_id']} — {inp['task']}: {inp['status']}\n")
         return f"✓ PROGRESS.md opdateret"
-
     if navn == "update_intelligence":
         nu = datetime.now().strftime("%Y-%m-%d %H:%M")
         _tilfoej(REPO_ROOT/"docs/build/INTELLIGENCE.md", f"\n## [{nu}]\n{inp['learning']}\n")
         return "✓ INTELLIGENCE.md opdateret"
-
     if navn == "notify":
         ikoner = {"info":"ℹ️","success":"✅","warning":"⚠️","error":"❌"}
-        ikon   = ikoner.get(inp.get("level","info"), "ℹ️")
-        print(f"\n{'='*60}\n{ikon} {inp['message']}\n{'='*60}\n", flush=True)
+        print(f"\n{'='*60}\n{ikoner.get(inp.get('level','info'),'ℹ️')} {inp['message']}\n{'='*60}\n", flush=True)
         return "✓ Notifikation sendt"
-
     return f"[UKENDT TOOL: {navn}]"
 
-
-# ── Hoved-loop ─────────────────────────────────────────────────────────────────
 
 def main():
     import argparse
@@ -553,11 +401,10 @@ def main():
     args = p.parse_args()
 
     api_key = os.getenv("ANTHROPIC_API_KEY")
-    if not api_key:
-        log("ANTHROPIC_API_KEY ikke fundet"); sys.exit(1)
+    if not api_key: log("ANTHROPIC_API_KEY ikke fundet"); sys.exit(1)
 
     system_prompt = byg_system_prompt()
-    kontekst      = byg_kontekst()
+    kontekst = byg_kontekst()
 
     if args.dry_run:
         print(f"System prompt: {len(system_prompt)} tegn")
@@ -565,10 +412,9 @@ def main():
         est_tokens = (len(system_prompt) + len(kontekst)) // 3.5
         print(f"Estimeret tokens: ~{int(est_tokens):,} (af 200K window)")
         print(f"Ledig til tool-kald: ~{int(200_000 - est_tokens - MAX_TOKENS):,} tokens")
-        print("[--dry-run: afslutter]")
-        return
+        print("[--dry-run: afslutter]"); return
 
-    klient   = anthropic.Anthropic(api_key=api_key)
+    klient = anthropic.Anthropic(api_key=api_key)
     beskeder = [{"role": "user", "content": kontekst}]
 
     log(f"=== CHAINHUB MABS START | Model: {MODEL} | Tools: {len(TOOLS)} ===")
@@ -576,10 +422,7 @@ def main():
 
     while True:
         beskeder = _trim_beskeder(beskeder)
-
-        output       = ""
-        tool_kald    = []
-        aktuel_tool  = None
+        output = ""; tool_kald = []; aktuel_tool = None
 
         try:
             with klient.messages.stream(
@@ -590,49 +433,38 @@ def main():
                     if not hasattr(event, "type"): continue
                     if event.type == "content_block_start":
                         if getattr(getattr(event, "content_block", None), "type", None) == "tool_use":
-                            cb = event.content_block
-                            aktuel_tool = {"id": cb.id, "name": cb.name, "input": ""}
+                            cb = event.content_block; aktuel_tool = {"id": cb.id, "name": cb.name, "input": ""}
                     elif event.type == "content_block_delta":
                         if hasattr(event.delta, "text"):
-                            print(event.delta.text, end="", flush=True)
-                            output += event.delta.text
+                            print(event.delta.text, end="", flush=True); output += event.delta.text
                         elif hasattr(event.delta, "partial_json") and aktuel_tool:
                             aktuel_tool["input"] += event.delta.partial_json
                     elif event.type == "content_block_stop" and aktuel_tool:
                         try: aktuel_tool["input"] = json.loads(aktuel_tool["input"] or "{}")
                         except json.JSONDecodeError: aktuel_tool["input"] = {}
-                        tool_kald.append(aktuel_tool)
-                        aktuel_tool = None
-
+                        tool_kald.append(aktuel_tool); aktuel_tool = None
         except anthropic.APIError as e:
             log(f"❌ API-FEJL: {e}")
             if "context_length" in str(e).lower() or "too many tokens" in str(e).lower():
                 log("⚡ Context window overskredet — trimmer aggressivt og genprøver")
-                beskeder = [beskeder[0]] + beskeder[-6:]
-                continue
+                beskeder = [beskeder[0]] + beskeder[-6:]; continue
             raise
 
         print(flush=True)
         beskeder.append({"role": "assistant", "content": stream.get_final_message().content})
-
-        if not tool_kald:
-            log("=== MABS AFSLUTTET ===")
-            break
+        if not tool_kald: log("=== MABS AFSLUTTET ==="); break
 
         resultater = []
         for kald in tool_kald:
             log(f"→ {kald['name']}({json.dumps(kald['input'])[:120]})")
-            res = _eksekver_tool(kald["name"], kald["input"])
-            res = _truncer_tool_result(str(res))
+            res = _truncer_tool_result(str(_eksekver_tool(kald["name"], kald["input"])))
             log(f"← {str(res)[:200]}")
             resultater.append({"type":"tool_result","tool_use_id":kald["id"],"content":res})
-
         beskeder.append({"role": "user", "content": resultater})
 
         total_chars = _estimer_besked_chars(beskeder)
         if total_chars > MAX_CONTEXT_CHARS * 0.7:
             log(f"⚠️  Context: {total_chars:,}/{MAX_CONTEXT_CHARS:,} tegn ({total_chars*100//MAX_CONTEXT_CHARS}%)")
-
 
 if __name__ == "__main__":
     main()

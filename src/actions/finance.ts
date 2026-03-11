@@ -1,0 +1,120 @@
+'use server'
+
+import { auth } from '@/lib/auth'
+import { prisma } from '@/lib/db'
+import { canAccessCompany, canAccessModule } from '@/lib/permissions'
+import { z } from 'zod'
+import { revalidatePath } from 'next/cache'
+import type { ActionResult } from '@/types/actions'
+
+const upsertMetricSchema = z.object({
+  companyId: z.string().uuid(),
+  metricType: z.enum(['OMSAETNING', 'EBITDA', 'RESULTAT', 'LIKVIDITET', 'EGENKAPITAL', 'ANDET']),
+  periodType: z.enum(['HELAAR', 'H1', 'H2', 'Q1', 'Q2', 'Q3', 'Q4', 'MAANED']),
+  periodYear: z.coerce.number().int().min(1990).max(2100),
+  value: z.coerce.number(),
+  currency: z.string().default('DKK'),
+  source: z.enum(['REVIDERET', 'UREVIDERET', 'ESTIMAT']).default('UREVIDERET'),
+  notes: z.string().optional(),
+})
+
+export async function upsertFinancialMetric(
+  input: z.infer<typeof upsertMetricSchema>
+): Promise<ActionResult<unknown>> {
+  const session = await auth()
+  if (!session) return { error: 'Ikke autoriseret' }
+
+  const parsed = upsertMetricSchema.safeParse(input)
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Ugyldigt input' }
+
+  const hasFinance = await canAccessModule(session.user.id, 'finance')
+  if (!hasFinance) return { error: 'Ingen adgang til økonomi-modulet' }
+
+  const hasCompany = await canAccessCompany(session.user.id, parsed.data.companyId)
+  if (!hasCompany) return { error: 'Ingen adgang til dette selskab' }
+
+  try {
+    const metric = await prisma.financialMetric.upsert({
+      where: {
+        organization_id_company_id_metric_type_period_type_period_year: {
+          organization_id: session.user.organizationId,
+          company_id: parsed.data.companyId,
+          metric_type: parsed.data.metricType as never,
+          period_type: parsed.data.periodType as never,
+          period_year: parsed.data.periodYear,
+        },
+      },
+      update: {
+        value: parsed.data.value,
+        source: parsed.data.source as never,
+        notes: parsed.data.notes || null,
+      },
+      create: {
+        organization_id: session.user.organizationId,
+        company_id: parsed.data.companyId,
+        metric_type: parsed.data.metricType as never,
+        period_type: parsed.data.periodType as never,
+        period_year: parsed.data.periodYear,
+        value: parsed.data.value,
+        currency: parsed.data.currency,
+        source: parsed.data.source as never,
+        notes: parsed.data.notes || null,
+        created_by: session.user.id,
+      },
+    })
+
+    revalidatePath(`/companies/${parsed.data.companyId}/finance`)
+    return { data: metric }
+  } catch {
+    return { error: 'Nøgletallet kunne ikke gemmes — prøv igen' }
+  }
+}
+
+const dividendSchema = z.object({
+  companyId: z.string().uuid(),
+  periodYear: z.coerce.number().int().min(1990),
+  amount: z.coerce.number().positive(),
+  decidedAt: z.string(),
+  note: z.string().optional(),
+})
+
+export async function createDividendRecord(
+  input: z.infer<typeof dividendSchema>
+): Promise<ActionResult<unknown>> {
+  const session = await auth()
+  if (!session) return { error: 'Ikke autoriseret' }
+
+  const parsed = dividendSchema.safeParse(input)
+  if (!parsed.success) return { error: 'Ugyldigt input' }
+
+  const hasFinance = await canAccessModule(session.user.id, 'finance')
+  if (!hasFinance) return { error: 'Ingen adgang til økonomi-modulet' }
+
+  const hasCompany = await canAccessCompany(session.user.id, parsed.data.companyId)
+  if (!hasCompany) return { error: 'Ingen adgang til dette selskab' }
+
+  try {
+    // Gemmes som FinancialMetric med type EBITDA indtil DividendRecord-tabel er tilgængelig
+    // BUILD-CLARIFICATION: DATABASE-SCHEMA.md nævner udbytte som nøgletal i FinancialMetric
+    // Vi bruger en JSONB-note i FinancialMetric til udbyttebeløbet
+    const metric = await prisma.financialMetric.create({
+      data: {
+        organization_id: session.user.organizationId,
+        company_id: parsed.data.companyId,
+        metric_type: 'ANDET' as never,
+        period_type: 'HELAAR' as never,
+        period_year: parsed.data.periodYear,
+        value: parsed.data.amount,
+        currency: 'DKK',
+        source: 'REVIDERET' as never,
+        notes: `UDBYTTE ${parsed.data.decidedAt}${parsed.data.note ? `: ${parsed.data.note}` : ''}`,
+        created_by: session.user.id,
+      },
+    })
+
+    revalidatePath(`/companies/${parsed.data.companyId}/finance`)
+    return { data: metric }
+  } catch {
+    return { error: 'Udbytteregistreringen kunne ikke gemmes — prøv igen' }
+  }
+}

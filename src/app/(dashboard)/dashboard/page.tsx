@@ -2,7 +2,48 @@ import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { getAccessibleCompanies } from '@/lib/permissions'
-import { Building2, FileText, Briefcase, AlertTriangle } from 'lucide-react'
+import {
+  Building2,
+  FileText,
+  Briefcase,
+  CheckSquare,
+  AlertTriangle,
+  Rocket,
+} from 'lucide-react'
+import Link from 'next/link'
+import { getCompanyStatusLabel, getCompanyStatusStyle } from '@/lib/labels'
+import type { Prisma } from '@prisma/client'
+
+interface UrgencyItem {
+  id: string
+  type: 'FORFALDEN_OPGAVE' | 'KONTRAKT_UDLOEBER' | 'SAG_AFVENTER'
+  title: string
+  subtitle: string
+  href: string
+  daysLabel: string
+  severity: 'RED' | 'AMBER'
+}
+
+type CompanyWithRelations = Prisma.CompanyGetPayload<{
+  include: {
+    _count: {
+      select: {
+        contracts: true
+        cases: true
+      }
+    }
+    company_persons: {
+      include: {
+        person: {
+          select: {
+            first_name: true
+            last_name: true
+          }
+        }
+      }
+    }
+  }
+}>
 
 export default async function DashboardPage() {
   const session = await auth()
@@ -13,149 +54,458 @@ export default async function DashboardPage() {
     session.user.organizationId
   )
 
-  const companies = await prisma.company.findMany({
-    where: {
-      organization_id: session.user.organizationId,
-      id: { in: companyIds },
-      deleted_at: null,
-    },
-    include: {
-      _count: {
-        select: {
-          contracts: { where: { deleted_at: null } },
-          cases: true,
-        },
+  const today = new Date()
+  const fourteenDays = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+  const ninetyDays = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
+
+  const [
+    overdueTasks,
+    urgentContracts,
+    waitingCases,
+    companies,
+    expiringContractsCount,
+    activeCasesCount,
+    totalTasksCount,
+    totalCompanyCount,
+  ] = await Promise.all([
+    // Forfaldne opgaver
+    prisma.task.findMany({
+      where: {
+        organization_id: session.user.organizationId,
+        deleted_at: null,
+        status: { not: 'LUKKET' },
+        due_date: { lt: today },
       },
-    },
-    orderBy: { name: 'asc' },
-  })
+      orderBy: { due_date: 'asc' },
+      take: 5,
+      include: {
+        case: { select: { id: true, title: true } },
+      },
+    }),
 
-  const activeContracts = await prisma.contract.count({
-    where: {
-      organization_id: session.user.organizationId,
-      status: 'AKTIV',
-      deleted_at: null,
-    },
-  })
+    // Kontrakter der udløber inden 14 dage
+    companyIds.length > 0
+      ? prisma.contract.findMany({
+          where: {
+            organization_id: session.user.organizationId,
+            company_id: { in: companyIds },
+            deleted_at: null,
+            status: 'AKTIV',
+            expiry_date: { lte: fourteenDays, gte: today },
+          },
+          orderBy: { expiry_date: 'asc' },
+          take: 5,
+          include: { company: { select: { id: true, name: true } } },
+        })
+      : Promise.resolve([]),
 
-  const activeCases = await prisma.case.count({
-    where: {
-      organization_id: session.user.organizationId,
-      status: { in: ['NY', 'AKTIV'] },
-      deleted_at: null,
-    },
-  })
+    // Sager der afventer handling
+    prisma.case.findMany({
+      where: {
+        organization_id: session.user.organizationId,
+        deleted_at: null,
+        status: { in: ['AFVENTER_EKSTERN', 'AFVENTER_KLIENT'] },
+      },
+      orderBy: { updated_at: 'asc' },
+      take: 3,
+      select: { id: true, title: true, status: true },
+    }),
 
-  const overdueTasks = await prisma.task.count({
-    where: {
-      organization_id: session.user.organizationId,
-      due_date: { lt: new Date() },
-      status: { not: 'LUKKET' },
-      deleted_at: null,
-    },
-  })
+    // Selskabs-grid data
+    companyIds.length > 0
+      ? prisma.company.findMany({
+          where: {
+            organization_id: session.user.organizationId,
+            id: { in: companyIds },
+            deleted_at: null,
+          },
+          include: {
+            _count: {
+              select: {
+                contracts: { where: { deleted_at: null, status: 'AKTIV' } },
+                cases: true,
+              },
+            },
+            company_persons: {
+              where: { end_date: null },
+              include: {
+                person: { select: { first_name: true, last_name: true } },
+              },
+              take: 2,
+            },
+          },
+          orderBy: { name: 'asc' },
+          take: 9,
+        }) as Promise<CompanyWithRelations[]>
+      : Promise.resolve([] as CompanyWithRelations[]),
+
+    // KPI: udløbende kontrakter (90 dage)
+    companyIds.length > 0
+      ? prisma.contract.count({
+          where: {
+            organization_id: session.user.organizationId,
+            company_id: { in: companyIds },
+            deleted_at: null,
+            status: 'AKTIV',
+            expiry_date: { not: null, lte: ninetyDays, gte: today },
+          },
+        })
+      : Promise.resolve(0),
+
+    // KPI: aktive sager
+    prisma.case.count({
+      where: {
+        organization_id: session.user.organizationId,
+        deleted_at: null,
+        status: { in: ['NY', 'AKTIV', 'AFVENTER_EKSTERN', 'AFVENTER_KLIENT'] },
+      },
+    }),
+
+    // KPI: åbne opgaver
+    prisma.task.count({
+      where: {
+        organization_id: session.user.organizationId,
+        deleted_at: null,
+        status: { not: 'LUKKET' },
+      },
+    }),
+
+    // Har org nogen data? (til onboarding panel)
+    prisma.company.count({
+      where: { organization_id: session.user.organizationId, deleted_at: null },
+    }),
+  ])
+
+  // Byg urgency items
+  const urgencyItems: UrgencyItem[] = []
+
+  for (const task of overdueTasks) {
+    const days = Math.ceil(
+      (today.getTime() - (task.due_date?.getTime() ?? 0)) / (1000 * 60 * 60 * 24)
+    )
+    urgencyItems.push({
+      id: `task-${task.id}`,
+      type: 'FORFALDEN_OPGAVE',
+      title: task.title,
+      subtitle: task.case ? `Sag: ${task.case.title}` : 'Opgave',
+      href: `/tasks`,
+      daysLabel: `${days} dag${days !== 1 ? 'e' : ''} forfalden`,
+      severity: 'RED',
+    })
+  }
+
+  for (const contract of urgentContracts) {
+    if (contract.expiry_date) {
+      const days = Math.ceil(
+        (contract.expiry_date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+      )
+      urgencyItems.push({
+        id: `contract-${contract.id}`,
+        type: 'KONTRAKT_UDLOEBER',
+        title: contract.display_name,
+        subtitle: contract.company.name,
+        href: `/contracts/${contract.id}`,
+        daysLabel: `${days} dag${days !== 1 ? 'e' : ''} tilbage`,
+        severity: 'RED',
+      })
+    }
+  }
+
+  for (const c of waitingCases) {
+    urgencyItems.push({
+      id: `case-${c.id}`,
+      type: 'SAG_AFVENTER',
+      title: c.title,
+      subtitle:
+        c.status === 'AFVENTER_KLIENT' ? 'Afventer klient-input' : 'Afventer ekstern part',
+      href: `/cases/${c.id}`,
+      daysLabel: 'Afventer',
+      severity: 'AMBER',
+    })
+  }
+
+  const sortedUrgency = urgencyItems
+    .sort((a, b) => {
+      if (a.severity === 'RED' && b.severity === 'AMBER') return -1
+      if (a.severity === 'AMBER' && b.severity === 'RED') return 1
+      return 0
+    })
+    .slice(0, 10)
+
+  const showOnboarding = totalCompanyCount === 0
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* Overskrift */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+        <h1 className="text-2xl font-bold text-gray-900">
+          Godmorgen, {session.user.name?.split(' ')[0] ?? 'der'}
+        </h1>
         <p className="mt-1 text-sm text-gray-500">
-          Overblik over din portefølje
+          {companies.length} selskab{companies.length !== 1 ? 'er' : ''} i porteføljen
         </p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="Selskaber"
-          value={companies.length}
-          icon={<Building2 className="h-5 w-5 text-blue-600" />}
-        />
-        <StatCard
-          title="Aktive kontrakter"
-          value={activeContracts}
-          icon={<FileText className="h-5 w-5 text-green-600" />}
-        />
-        <StatCard
-          title="Aktive sager"
-          value={activeCases}
-          icon={<Briefcase className="h-5 w-5 text-purple-600" />}
-        />
-        <StatCard
-          title="Forfaldne opgaver"
-          value={overdueTasks}
-          icon={<AlertTriangle className="h-5 w-5 text-red-600" />}
-          warning={overdueTasks > 0}
-        />
+      {/* ONBOARDING PANEL */}
+      {showOnboarding && (
+        <div className="rounded-lg border-2 border-dashed border-blue-200 bg-blue-50 p-6">
+          <div className="flex items-start gap-4">
+            <div className="rounded-full bg-blue-100 p-2 shrink-0">
+              <Rocket className="h-5 w-5 text-blue-600" />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-base font-semibold text-blue-900">
+                Kom godt i gang med ChainHub
+              </h2>
+              <p className="mt-1 text-sm text-blue-700">
+                Få det fulde overblik over din kæde i tre enkle trin.
+              </p>
+              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                {[
+                  { step: 1, label: 'Opret dit første selskab', href: '/companies/new', active: true },
+                  { step: 2, label: 'Tilføj din første kontrakt', href: '/contracts/new', active: false },
+                  { step: 3, label: 'Invitér en kollega', href: '/settings/users', active: false },
+                ].map(({ step, label, href, active }) => (
+                  <Link
+                    key={step}
+                    href={href}
+                    className={`flex items-center gap-3 rounded-md border px-4 py-3 text-sm font-medium transition-colors ${
+                      active
+                        ? 'border-blue-300 bg-white text-blue-700 hover:bg-blue-50'
+                        : 'border-blue-200 bg-white/60 text-blue-500 hover:bg-blue-50'
+                    }`}
+                  >
+                    <span
+                      className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                        active ? 'bg-blue-600 text-white' : 'bg-blue-200 text-blue-700'
+                      }`}
+                    >
+                      {step}
+                    </span>
+                    {label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* URGENCY PANEL */}
+      {sortedUrgency.length > 0 && (
+        <div className="rounded-lg border border-red-100 bg-white shadow-sm overflow-hidden">
+          <div className="flex items-center gap-2 px-5 py-3 bg-red-50 border-b border-red-100">
+            <AlertTriangle className="h-4 w-4 text-red-600" />
+            <h2 className="text-sm font-semibold text-red-900">
+              Kræver din opmærksomhed ({sortedUrgency.length})
+            </h2>
+          </div>
+          <ul className="divide-y divide-gray-100">
+            {sortedUrgency.map((item) => (
+              <li key={item.id}>
+                <Link
+                  href={item.href}
+                  className="flex items-center gap-4 px-5 py-3 hover:bg-gray-50 transition-colors group"
+                >
+                  <div
+                    className={`h-2 w-2 rounded-full shrink-0 ${
+                      item.severity === 'RED' ? 'bg-red-500' : 'bg-amber-400'
+                    }`}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate group-hover:text-blue-700">
+                      {item.title}
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">{item.subtitle}</p>
+                  </div>
+                  <span
+                    className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                      item.severity === 'RED'
+                        ? 'bg-red-50 text-red-700'
+                        : 'bg-amber-50 text-amber-700'
+                    }`}
+                  >
+                    {item.daysLabel}
+                  </span>
+                  <svg
+                    className="h-4 w-4 text-gray-300 group-hover:text-blue-400 shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* KPI-KORT */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="rounded-lg border bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="rounded-md bg-blue-50 p-2">
+              <Building2 className="h-5 w-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Selskaber</p>
+              <p className="text-2xl font-bold text-gray-900">{companies.length}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-lg border bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className={`rounded-md p-2 ${expiringContractsCount > 0 ? 'bg-orange-50' : 'bg-gray-50'}`}>
+              <FileText className={`h-5 w-5 ${expiringContractsCount > 0 ? 'text-orange-600' : 'text-gray-400'}`} />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Udløber (90 dage)</p>
+              <p className={`text-2xl font-bold ${expiringContractsCount > 0 ? 'text-orange-600' : 'text-gray-900'}`}>
+                {expiringContractsCount}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-lg border bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="rounded-md bg-blue-50 p-2">
+              <Briefcase className="h-5 w-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Aktive sager</p>
+              <p className="text-2xl font-bold text-gray-900">{activeCasesCount}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-lg border bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className={`rounded-md p-2 ${overdueTasks.length > 0 ? 'bg-red-50' : 'bg-gray-50'}`}>
+              {overdueTasks.length > 0
+                ? <AlertTriangle className="h-5 w-5 text-red-600" />
+                : <CheckSquare className="h-5 w-5 text-gray-400" />}
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Åbne opgaver</p>
+              <p className={`text-2xl font-bold ${overdueTasks.length > 0 ? 'text-red-600' : 'text-gray-900'}`}>
+                {totalTasksCount}
+              </p>
+              {overdueTasks.length > 0 && (
+                <p className="text-xs text-red-500">{overdueTasks.length} forfaldne</p>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Company list */}
-      <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Selskaber</h2>
-        {companies.length === 0 ? (
-          <div className="rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
-            <Building2 className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-semibold text-gray-900">
-              Ingen selskaber endnu
-            </h3>
-            <p className="mt-1 text-sm text-gray-500">
-              Opret dit første selskab for at komme i gang.
-            </p>
+      {/* SELSKABSGRID */}
+      {companies.length === 0 ? (
+        <div className="rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
+          <Building2 className="mx-auto h-12 w-12 text-gray-400" />
+          <h3 className="mt-2 text-sm font-semibold text-gray-900">Ingen selskaber endnu</h3>
+          <p className="mt-1 text-sm text-gray-500">
+            Opret dit første selskab for at komme i gang.
+          </p>
+          <Link
+            href="/companies/new"
+            className="mt-4 inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            Opret selskab
+          </Link>
+        </div>
+      ) : (
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold text-gray-900">Selskaber</h2>
+            <Link href="/companies" className="text-sm text-blue-600 hover:text-blue-800">
+              Se alle →
+            </Link>
           </div>
-        ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {companies.map((company) => (
-              <a
+              <Link
                 key={company.id}
                 href={`/companies/${company.id}`}
-                className="block rounded-lg border bg-white p-5 shadow-sm transition-shadow hover:shadow-md"
+                className="group rounded-lg border bg-white p-5 shadow-sm hover:border-blue-300 hover:shadow-md transition-all"
               >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-semibold text-gray-900">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 truncate">
                       {company.name}
                     </h3>
                     {company.cvr && (
-                      <p className="text-sm text-gray-500">CVR: {company.cvr}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">CVR: {company.cvr}</p>
                     )}
                   </div>
-                  <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700">
-                    {company.status}
+                  <span
+                    className={`ml-2 flex-shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${getCompanyStatusStyle(company.status ?? '')}`}
+                  >
+                    {getCompanyStatusLabel(company.status ?? '')}
                   </span>
                 </div>
-                <div className="mt-4 flex gap-4 text-sm text-gray-500">
-                  <span>{company._count.contracts} kontrakter</span>
-                  <span>{company._count.cases} sager</span>
+
+                {company.company_persons.length > 0 && (
+                  <div className="mb-3 space-y-0.5">
+                    {company.company_persons.map((cp) => (
+                      <p key={cp.id} className="text-xs text-gray-500 truncate">
+                        <span className="text-gray-400">{cp.role}:</span>{' '}
+                        {cp.person.first_name} {cp.person.last_name}
+                      </p>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <span>
+                    {company._count.contracts} kontrakt{company._count.contracts !== 1 ? 'er' : ''}
+                  </span>
+                  {company._count.cases > 0 && (
+                    <>
+                      <span>·</span>
+                      <span>{company._count.cases} sag{company._count.cases !== 1 ? 'er' : ''}</span>
+                    </>
+                  )}
                 </div>
-              </a>
+              </Link>
             ))}
           </div>
-        )}
-      </div>
-    </div>
-  )
-}
+          {companyIds.length > 9 && (
+            <div className="mt-4 text-center">
+              <Link href="/companies" className="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                Se alle {companyIds.length} selskaber →
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
 
-function StatCard({
-  title,
-  value,
-  icon,
-  warning = false,
-}: {
-  title: string
-  value: number
-  icon: React.ReactNode
-  warning?: boolean
-}) {
-  return (
-    <div className={`rounded-lg border bg-white p-5 shadow-sm ${warning ? 'border-red-200' : ''}`}>
-      <div className="flex items-center gap-3">
-        {icon}
-        <span className="text-sm font-medium text-gray-500">{title}</span>
+      {/* Hurtiglinks */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        {[
+          { href: '/contracts/new', label: 'Ny kontrakt', icon: FileText },
+          { href: '/cases/new', label: 'Ny sag', icon: Briefcase },
+          { href: '/tasks/new', label: 'Ny opgave', icon: CheckSquare },
+          { href: '/companies/new', label: 'Nyt selskab', icon: Building2 },
+        ].map(({ href, label, icon: Icon }) => (
+          <Link
+            key={href}
+            href={href}
+            className="flex items-center gap-3 rounded-lg border bg-white p-4 shadow-sm hover:border-blue-300 hover:bg-blue-50 transition-colors"
+          >
+            <Icon className="h-5 w-5 text-blue-600" />
+            <span className="text-sm font-medium text-gray-700">{label}</span>
+          </Link>
+        ))}
       </div>
-      <p className={`mt-2 text-3xl font-bold ${warning ? 'text-red-600' : 'text-gray-900'}`}>
-        {value}
-      </p>
     </div>
   )
 }
