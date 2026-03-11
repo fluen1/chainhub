@@ -5,7 +5,8 @@ import { Users, Plus } from 'lucide-react'
 import Link from 'next/link'
 import { Suspense } from 'react'
 import { SearchAndFilter } from '@/components/ui/SearchAndFilter'
-import { Pagination, parsePaginationParams } from '@/components/ui/Pagination'
+import { Pagination } from '@/components/ui/Pagination'
+import { parsePaginationParams } from '@/lib/pagination'
 
 const PAGE_SIZE = 20
 
@@ -16,7 +17,6 @@ interface PersonsPageProps {
   }
 }
 
-// Avatar farver baseret på første bogstav
 const AVATAR_COLORS: Record<string, string> = {
   A: 'bg-red-100 text-red-700',
   B: 'bg-orange-100 text-orange-700',
@@ -83,7 +83,6 @@ export default async function PersonsPage({ searchParams }: PersonsPageProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Persondatabase</h1>
@@ -100,43 +99,30 @@ export default async function PersonsPage({ searchParams }: PersonsPageProps) {
         </Link>
       </div>
 
-      {/* Søgning */}
       <Suspense fallback={null}>
         <SearchAndFilter placeholder="Søg på navn eller email..." />
       </Suspense>
 
-      {/* Resultat */}
       {persons.length === 0 ? (
         <div className="rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
           <Users className="mx-auto h-12 w-12 text-gray-400" />
           {q ? (
             <>
-              <h3 className="mt-2 text-sm font-semibold text-gray-900">
-                Ingen personer matcher søgningen
-              </h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Prøv et andet søgeord.
-              </p>
+              <h3 className="mt-2 text-sm font-semibold text-gray-900">Ingen personer matcher søgningen</h3>
+              <p className="mt-1 text-sm text-gray-500">Prøv et andet søgeord.</p>
             </>
           ) : (
             <>
               <h3 className="mt-2 text-sm font-semibold text-gray-900">Ingen personer endnu</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Opret din første kontakt for at komme i gang.
-              </p>
-              <Link
-                href="/persons/new"
-                className="mt-4 inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-              >
-                <Plus className="h-4 w-4" />
-                Opret person
+              <p className="mt-1 text-sm text-gray-500">Opret din første kontakt for at komme i gang.</p>
+              <Link href="/persons/new" className="mt-4 inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+                <Plus className="h-4 w-4" />Opret person
               </Link>
             </>
           )}
         </div>
       ) : (
         <>
-          {/* Card-grid */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {persons.map((person) => {
               const fullName = `${person.first_name} ${person.last_name}`
@@ -150,70 +136,44 @@ export default async function PersonsPage({ searchParams }: PersonsPageProps) {
                   href={`/persons/${person.id}`}
                   className="group rounded-lg border bg-white p-5 shadow-sm hover:border-blue-300 hover:shadow-md transition-all"
                 >
-                  {/* Avatar + navn + primær rolle */}
                   <div className="flex items-start gap-3 mb-3">
-                    <div
-                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${avatarColor}`}
-                    >
+                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${avatarColor}`}>
                       {initials}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 truncate">
-                        {fullName}
-                      </p>
+                      <p className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 truncate">{fullName}</p>
                       {primaryRole && (
-                        <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 mt-1">
-                          {primaryRole}
-                        </span>
+                        <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 mt-1">{primaryRole}</span>
                       )}
                     </div>
                   </div>
 
-                  {/* Kontaktinfo */}
                   <div className="space-y-1 mb-3">
-                    {person.email && (
-                      <p className="text-xs text-gray-500 truncate" title={person.email}>
-                        ✉ {person.email}
-                      </p>
-                    )}
-                    {person.phone && (
-                      <p className="text-xs text-gray-500">
-                        ☎ {person.phone}
-                      </p>
-                    )}
+                    {person.email && <p className="text-xs text-gray-500 truncate" title={person.email}>✉ {person.email}</p>}
+                    {person.phone && <p className="text-xs text-gray-500">☎ {person.phone}</p>}
                   </div>
 
-                  {/* Tilknytninger */}
                   {person.company_persons.length > 0 && (
                     <div className="space-y-0.5 border-t border-gray-100 pt-2">
                       {person.company_persons.map((cp) => (
                         <p key={cp.id} className="text-xs text-gray-400 truncate">
                           {cp.company.name}
-                          {cp.role && cp.role !== primaryRole && (
-                            <span className="text-gray-300"> · {cp.role}</span>
-                          )}
+                          {cp.role && cp.role !== primaryRole && <span className="text-gray-300"> · {cp.role}</span>}
                         </p>
                       ))}
                     </div>
                   )}
 
                   {person.company_persons.length === 0 && (
-                    <p className="text-xs text-gray-300 border-t border-gray-100 pt-2">
-                      Ingen tilknytninger
-                    </p>
+                    <p className="text-xs text-gray-300 border-t border-gray-100 pt-2">Ingen tilknytninger</p>
                   )}
                 </Link>
               )
             })}
           </div>
 
-          {/* Pagination */}
           <Suspense fallback={null}>
-            <Pagination
-              currentPage={page}
-              totalCount={totalCount}
-              pageSize={PAGE_SIZE}
-            />
+            <Pagination currentPage={page} totalCount={totalCount} pageSize={PAGE_SIZE} />
           </Suspense>
         </>
       )}

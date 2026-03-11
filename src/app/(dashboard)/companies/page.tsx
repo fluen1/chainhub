@@ -7,7 +7,8 @@ import Link from 'next/link'
 import { getCompanyStatusLabel, getCompanyStatusStyle } from '@/lib/labels'
 import { Suspense } from 'react'
 import { SearchAndFilter } from '@/components/ui/SearchAndFilter'
-import { Pagination, parsePaginationParams } from '@/components/ui/Pagination'
+import { Pagination } from '@/components/ui/Pagination'
+import { parsePaginationParams } from '@/lib/pagination'
 import type { Prisma } from '@prisma/client'
 
 const PAGE_SIZE = 20
