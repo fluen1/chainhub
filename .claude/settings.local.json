@@ -55,7 +55,9 @@
       "Bash(where.exe gh:*)",
       "Bash(winget install:*)",
       "Bash(grep -E \"\\\\.env\\\\.local|\\\\.env$\" .gitignore)",
-      "mcp__plugin_playwright_playwright__browser_close"
+      "mcp__plugin_playwright_playwright__browser_close",
+      "Read(//c/Users/birke/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.6/**)",
+      "Bash(bash skills/brainstorming/scripts/start-server.sh --project-dir \"C:\\\\Users\\\\birke\\\\OneDrive\\\\Skrivebord\\\\Code\\\\chainhub\")"
     ]
   }
 }
