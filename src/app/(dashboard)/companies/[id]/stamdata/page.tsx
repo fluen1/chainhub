@@ -1,7 +1,6 @@
 import { auth } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
-import { canAccessCompany } from '@/lib/permissions'
 import { EditCompanyForm } from '@/components/companies/EditCompanyForm'
 
 interface CompanyStamdataPageProps {
@@ -12,9 +11,7 @@ export default async function CompanyStamdataPage({ params }: CompanyStamdataPag
   const session = await auth()
   if (!session) redirect('/login')
 
-  const hasAccess = await canAccessCompany(session.user.id, params.id)
-  if (!hasAccess) notFound()
-
+  // Layout already checks canAccessCompany
   const company = await prisma.company.findFirst({
     where: {
       id: params.id,
@@ -25,9 +22,5 @@ export default async function CompanyStamdataPage({ params }: CompanyStamdataPag
 
   if (!company) notFound()
 
-  return (
-    <div className="space-y-6">
-      <EditCompanyForm company={company} />
-    </div>
-  )
+  return <EditCompanyForm company={company} />
 }

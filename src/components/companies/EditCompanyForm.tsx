@@ -1,232 +1,301 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { updateCompany } from '@/actions/companies'
 import { toast } from 'sonner'
+import { Pencil } from 'lucide-react'
 import type { Company } from '@prisma/client'
+import { getCompanyStatusLabel, COMPANY_TYPE_OPTIONS } from '@/lib/labels'
 
 interface EditCompanyFormProps {
   company: Company
 }
 
 export function EditCompanyForm({ company }: EditCompanyFormProps) {
+  const router = useRouter()
   const [editing, setEditing] = useState(false)
   const [loading, setLoading] = useState(false)
+
+  const inputClass =
+    'mt-1 block w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-400'
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setLoading(true)
 
-    const formData = new FormData(e.currentTarget)
-    const result = await updateCompany({
-      companyId: company.id,
-      name: formData.get('name') as string,
-      cvr: formData.get('cvr') as string,
-      companyType: formData.get('companyType') as string,
-      address: formData.get('address') as string,
-      city: formData.get('city') as string,
-      postalCode: formData.get('postalCode') as string,
-      notes: formData.get('notes') as string,
-    })
+    try {
+      const formData = new FormData(e.currentTarget)
+      const result = await updateCompany({
+        companyId: company.id,
+        name: formData.get('name') as string,
+        cvr: formData.get('cvr') as string,
+        companyType: formData.get('companyType') as string,
+        address: formData.get('address') as string,
+        city: formData.get('city') as string,
+        postalCode: formData.get('postalCode') as string,
+        foundedDate: formData.get('foundedDate') as string,
+        notes: formData.get('notes') as string,
+      })
 
-    setLoading(false)
+      if (result.error) {
+        toast.error(result.error)
+        return
+      }
 
-    if (result.error) {
-      toast.error(result.error)
-      return
+      toast.success('Ændringer gemt')
+      setEditing(false)
+      router.refresh()
+    } catch {
+      toast.error('Noget gik galt — prøv igen')
+    } finally {
+      setLoading(false)
     }
-
-    toast.success('Ændringer gemt')
-    setEditing(false)
   }
 
+  // ── View mode ──────────────────────────────────────────────────────────────
   if (!editing) {
     return (
-      <div className="rounded-lg border bg-white p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Stamdata</h2>
+      <div className="mx-auto max-w-2xl">
+        <div className="flex items-center justify-between mb-5">
+          <p className="text-sm text-gray-400">Grundoplysninger og adresse</p>
           <button
             onClick={() => setEditing(true)}
-            className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
           >
+            <Pencil className="h-3.5 w-3.5" />
             Rediger
           </button>
         </div>
-        <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <dt className="text-sm font-medium text-gray-500">Selskabsnavn</dt>
-            <dd className="mt-1 text-sm text-gray-900">{company.name}</dd>
-          </div>
-          <div>
-            <dt className="text-sm font-medium text-gray-500">CVR-nummer</dt>
-            <dd className="mt-1 text-sm text-gray-900">{company.cvr || '—'}</dd>
-          </div>
-          <div>
-            <dt className="text-sm font-medium text-gray-500">Selskabsform</dt>
-            <dd className="mt-1 text-sm text-gray-900">{company.company_type || '—'}</dd>
-          </div>
-          <div>
-            <dt className="text-sm font-medium text-gray-500">Status</dt>
-            <dd className="mt-1 text-sm text-gray-900">{company.status}</dd>
-          </div>
-          <div>
-            <dt className="text-sm font-medium text-gray-500">Adresse</dt>
-            <dd className="mt-1 text-sm text-gray-900">{company.address || '—'}</dd>
-          </div>
-          <div>
-            <dt className="text-sm font-medium text-gray-500">By</dt>
-            <dd className="mt-1 text-sm text-gray-900">
-              {company.postal_code && company.city
-                ? `${company.postal_code} ${company.city}`
-                : company.city || company.postal_code || '—'}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-sm font-medium text-gray-500">Stiftelsesdato</dt>
-            <dd className="mt-1 text-sm text-gray-900">
-              {company.founded_date
+
+        {/* Selskabsinformation */}
+        <div className="rounded-lg border border-gray-200 bg-white p-5 mb-4">
+          <p className="text-xs font-medium text-gray-400 tracking-wide mb-4">Selskabsinformation</p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Selskabsnavn" value={company.name} />
+            <Field label="CVR-nummer" value={company.cvr} mono />
+            <Field label="Selskabsform" value={company.company_type} />
+            <Field label="Status" value={getCompanyStatusLabel(company.status ?? '')} />
+            <Field
+              label="Stiftelsesdato"
+              value={company.founded_date
                 ? new Date(company.founded_date).toLocaleDateString('da-DK')
-                : '—'}
-            </dd>
+                : null}
+            />
           </div>
-          {company.notes && (
-            <div className="sm:col-span-2">
-              <dt className="text-sm font-medium text-gray-500">Interne noter</dt>
-              <dd className="mt-1 text-sm text-gray-900 whitespace-pre-wrap">{company.notes}</dd>
-            </div>
-          )}
-        </dl>
+        </div>
+
+        {/* Adresse */}
+        <div className="rounded-lg border border-gray-200 bg-white p-5 mb-4">
+          <p className="text-xs font-medium text-gray-400 tracking-wide mb-4">Adresse</p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Vejnavn og nummer" value={company.address} span2 />
+            <Field label="Postnummer" value={company.postal_code} mono />
+            <Field label="By" value={company.city} />
+          </div>
+        </div>
+
+        {/* Interne noter */}
+        {company.notes && (
+          <div className="rounded-lg border border-gray-200 bg-white p-5">
+            <p className="text-xs font-medium text-gray-400 tracking-wide mb-2">Interne noter</p>
+            <p className="text-sm text-gray-700 whitespace-pre-wrap">{company.notes}</p>
+          </div>
+        )}
       </div>
     )
   }
 
+  // ── Edit mode ──────────────────────────────────────────────────────────────
   return (
-    <div className="rounded-lg border bg-white p-6 shadow-sm">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">Rediger stamdata</h2>
-      </div>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="sm:col-span-2">
+    <div className="mx-auto max-w-2xl">
+      <p className="text-sm text-gray-400 mb-5">Rediger grundoplysninger og adresse</p>
+
+      <form onSubmit={handleSubmit}>
+        {/* Selskabsinformation */}
+        <div className="rounded-lg border border-gray-200 bg-white p-5 space-y-4 mb-4">
+          <p className="text-xs font-medium text-gray-400 tracking-wide">Selskabsinformation</p>
+
+          <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-              Selskabsnavn *
+              Selskabsnavn <span className="text-red-400">*</span>
             </label>
             <input
               id="name"
               name="name"
               type="text"
               required
+              maxLength={200}
               defaultValue={company.name}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className={inputClass}
             />
           </div>
 
-          <div>
-            <label htmlFor="cvr" className="block text-sm font-medium text-gray-700">
-              CVR-nummer
-            </label>
-            <input
-              id="cvr"
-              name="cvr"
-              type="text"
-              pattern="\d{8}"
-              maxLength={8}
-              defaultValue={company.cvr ?? ''}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              placeholder="12345678"
-            />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="cvr" className="block text-sm font-medium text-gray-700">
+                CVR-nummer
+              </label>
+              <input
+                id="cvr"
+                name="cvr"
+                type="text"
+                inputMode="numeric"
+                pattern="\d{8}"
+                maxLength={8}
+                defaultValue={company.cvr ?? ''}
+                className={inputClass}
+                placeholder="12345678"
+              />
+              <p className="mt-1 text-xs text-gray-400">8 cifre</p>
+            </div>
+
+            <div>
+              <label htmlFor="companyType" className="block text-sm font-medium text-gray-700">
+                Selskabsform
+              </label>
+              <select
+                id="companyType"
+                name="companyType"
+                defaultValue={company.company_type ?? ''}
+                className={inputClass}
+              >
+                <option value="">Vælg...</option>
+                {COMPANY_TYPE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          <div>
-            <label htmlFor="companyType" className="block text-sm font-medium text-gray-700">
-              Selskabsform
-            </label>
-            <select
-              id="companyType"
-              name="companyType"
-              defaultValue={company.company_type ?? ''}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            >
-              <option value="">Vælg...</option>
-              <option value="ApS">ApS</option>
-              <option value="A/S">A/S</option>
-              <option value="I/S">I/S</option>
-              <option value="Holding ApS">Holding ApS</option>
-              <option value="Andet">Andet</option>
-            </select>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="foundedDate" className="block text-sm font-medium text-gray-700">
+                Stiftelsesdato
+              </label>
+              <input
+                id="foundedDate"
+                name="foundedDate"
+                type="date"
+                defaultValue={company.founded_date
+                  ? new Date(company.founded_date).toISOString().split('T')[0]
+                  : ''}
+                className={inputClass}
+              />
+            </div>
           </div>
+        </div>
 
-          <div className="sm:col-span-2">
+        {/* Adresse */}
+        <div className="rounded-lg border border-gray-200 bg-white p-5 space-y-4 mb-4">
+          <p className="text-xs font-medium text-gray-400 tracking-wide">Adresse</p>
+
+          <div>
             <label htmlFor="address" className="block text-sm font-medium text-gray-700">
-              Adresse
+              Vejnavn og nummer
             </label>
             <input
               id="address"
               name="address"
               type="text"
               defaultValue={company.address ?? ''}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className={inputClass}
+              placeholder="Østerbrogade 123"
             />
           </div>
 
-          <div>
-            <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700">
-              Postnummer
-            </label>
-            <input
-              id="postalCode"
-              name="postalCode"
-              type="text"
-              maxLength={4}
-              defaultValue={company.postal_code ?? ''}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700">
+                Postnummer
+              </label>
+              <input
+                id="postalCode"
+                name="postalCode"
+                type="text"
+                inputMode="numeric"
+                pattern="\d{4}"
+                maxLength={4}
+                defaultValue={company.postal_code ?? ''}
+                className={inputClass}
+                placeholder="2100"
+              />
+            </div>
 
-          <div>
-            <label htmlFor="city" className="block text-sm font-medium text-gray-700">
-              By
-            </label>
-            <input
-              id="city"
-              name="city"
-              type="text"
-              defaultValue={company.city ?? ''}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
-
-          <div className="sm:col-span-2">
-            <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
-              Interne noter
-            </label>
-            <textarea
-              id="notes"
-              name="notes"
-              rows={3}
-              defaultValue={company.notes ?? ''}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
+            <div>
+              <label htmlFor="city" className="block text-sm font-medium text-gray-700">
+                By
+              </label>
+              <input
+                id="city"
+                name="city"
+                type="text"
+                defaultValue={company.city ?? ''}
+                className={inputClass}
+                placeholder="København Ø"
+              />
+            </div>
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 pt-2">
+        {/* Interne noter */}
+        <div className="mb-6">
+          <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
+            Interne noter
+          </label>
+          <textarea
+            id="notes"
+            name="notes"
+            rows={2}
+            defaultValue={company.notes ?? ''}
+            className={`${inputClass} mt-1`}
+            placeholder="Valgfrie noter om selskabet..."
+          />
+        </div>
+
+        {/* Actions */}
+        <div className="flex justify-end gap-3">
           <button
             type="button"
             onClick={() => setEditing(false)}
-            className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
           >
             Annullér
           </button>
           <button
             type="submit"
             disabled={loading}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-lg bg-gray-900 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 disabled:opacity-50"
           >
             {loading ? 'Gemmer...' : 'Gem ændringer'}
           </button>
         </div>
       </form>
+    </div>
+  )
+}
+
+// ── Field helper ─────────────────────────────────────────────────────────────
+
+function Field({
+  label,
+  value,
+  mono,
+  span2,
+}: {
+  label: string
+  value: string | null | undefined
+  mono?: boolean
+  span2?: boolean
+}) {
+  return (
+    <div className={span2 ? 'sm:col-span-2' : ''}>
+      <p className="text-xs text-gray-400">{label}</p>
+      <p className={`mt-0.5 text-sm ${value ? 'text-gray-900' : 'text-gray-300'} ${mono ? 'tabular-nums' : ''}`}>
+        {value || '—'}
+      </p>
     </div>
   )
 }

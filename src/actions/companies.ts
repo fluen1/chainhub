@@ -69,7 +69,10 @@ export async function updateCompany(
   if (!session) return { error: 'Ikke autoriseret' }
 
   const parsed = updateCompanySchema.safeParse(input)
-  if (!parsed.success) return { error: 'Ugyldigt input' }
+  if (!parsed.success) {
+    const firstIssue = parsed.error.issues[0]
+    return { error: firstIssue?.message ?? 'Ugyldigt input' }
+  }
 
   const hasAccess = await canAccessCompany(session.user.id, parsed.data.companyId)
   if (!hasAccess) return { error: 'Ingen adgang til dette selskab' }
