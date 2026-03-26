@@ -25,6 +25,12 @@ interface EmployeeListProps {
   activePersons: PersonItem[]
   historicPersons: PersonItem[]
   addButton?: React.ReactNode
+  warningBanner?: React.ReactNode
+  activeLabel?: string
+  historicLabel?: string
+  emptyMessage?: string
+  emptySubMessage?: string
+  entityName?: { singular: string; plural: string }
 }
 
 function EmployeeRow({
@@ -161,7 +167,17 @@ function CollapsibleGroup({
   )
 }
 
-export function EmployeeList({ activePersons, historicPersons, addButton }: EmployeeListProps) {
+export function EmployeeList({
+  activePersons,
+  historicPersons,
+  addButton,
+  warningBanner,
+  activeLabel = 'Aktive',
+  historicLabel = 'Fratrådte',
+  emptyMessage = 'Ingen ansatte endnu',
+  emptySubMessage = 'Tilføj den første medarbejder for dette selskab.',
+  entityName = { singular: 'ansat', plural: 'ansatte' },
+}: EmployeeListProps) {
   const [search, setSearch] = useState('')
   const total = activePersons.length + historicPersons.length
 
@@ -183,7 +199,7 @@ export function EmployeeList({ activePersons, historicPersons, addButton }: Empl
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2 text-sm text-gray-500">
           <span>
-            {total} ansat{total !== 1 ? 'te' : ''}
+            {total} {total !== 1 ? entityName.plural : entityName.singular}
           </span>
           {activePersons.length > 0 && (
             <>
@@ -219,12 +235,15 @@ export function EmployeeList({ activePersons, historicPersons, addButton }: Empl
         </div>
       </div>
 
+      {/* Advarsel (vakante roller, etc.) */}
+      {warningBanner}
+
       {total === 0 ? (
         <div className="rounded-lg border border-dashed border-gray-200 py-16 text-center">
           <Users className="mx-auto h-10 w-10 text-gray-300" />
-          <p className="mt-3 text-sm font-medium text-gray-900">Ingen ansatte endnu</p>
+          <p className="mt-3 text-sm font-medium text-gray-900">{emptyMessage}</p>
           <p className="mt-1 text-sm text-gray-400">
-            Tilføj den første medarbejder for dette selskab.
+            {emptySubMessage}
           </p>
         </div>
       ) : filteredActive.length === 0 && filteredHistoric.length === 0 && search ? (
@@ -238,14 +257,14 @@ export function EmployeeList({ activePersons, historicPersons, addButton }: Empl
       ) : (
         <div className="space-y-2">
           {filteredActive.length > 0 && (
-            <CollapsibleGroup title="Aktive" count={filteredActive.length} defaultOpen={true}>
+            <CollapsibleGroup title={activeLabel} count={filteredActive.length} defaultOpen={true}>
               {filteredActive.map((cp) => (
                 <EmployeeRow key={cp.id} cp={cp} showActions={true} />
               ))}
             </CollapsibleGroup>
           )}
           {filteredHistoric.length > 0 && (
-            <CollapsibleGroup title="Fratrådte" count={filteredHistoric.length} defaultOpen={false}>
+            <CollapsibleGroup title={historicLabel} count={filteredHistoric.length} defaultOpen={false}>
               {filteredHistoric.map((cp) => (
                 <EmployeeRow key={cp.id} cp={cp} showActions={false} />
               ))}
