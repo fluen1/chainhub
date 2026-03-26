@@ -1,24 +1,16 @@
 ﻿# SPEC-TILLÆG v2.1 — ChainHub Udvidelser
 **Dato:** 2026-03-12
-**Grundlag:** Brugerfeedback + UI-audit + DEA-gap-analyse + konkrete observationer
-****Status:** GODKENDT — Fase 0 DEA-challenge gennemført 2026-03-12
+**Grundlag:** Brugerfeedback + UI-audit + gap-analyse + konkrete observationer
+**Status:** GODKENDT (2026-03-12)
 **Placering:** docs/spec/SPEC-TILLAEG-v2.md
-**Læses af:** Alle DEA-agenter + BA-04 (UI) + BA-05 (Feature) + BA-07 (QA)
 
 ---
 
 ## Baggrund
 
-ChainHub v1 blev bygget autonomt af MABS i 6 sprints (31 routes, 48 tests, grøn build).
-Orchestratoren sprang Fase 0 (DEA-challenge) over, hvilket betyder at:
-- Ingen domæneekspert-agent udfordrede spec'en
-- Ingen UX-agent vurderede om UI'et er intuitivt
-- Ingen kommerciel agent prioriterede need-to-have vs. nice-to-have
-- Resultatet er teknisk korrekt men kommercielt og designmæssigt naivt
-
-**Krav til næste MABS-kørsel:**
-Fase 0 SKAL køres. Alle DEA-agenter (inkl. ny DEA-08 UX-agent) SKAL challenge dette dokument
-og de eksisterende spec-dokumenter FØR Sprint 7 starter.
+ChainHub v1 blev bygget i 6 sprints (31 routes, 48 tests, grøn build).
+Resultatet er teknisk korrekt men har brug for UX-, kommerciel og domænegennemgang.
+Denne spec dækker de identificerede forbedringer.
 
 ---
 
@@ -634,18 +626,14 @@ FASE 2 (efter betalende kunder):
 
 ---
 
-## DEL 5: MABS PROCES-ÆNDRINGER
+## DEL 5: PROCES-ÆNDRINGER
 
 ---
 
-### Ny agent: DEA-08 — UX & Designstrateg
+### UX-principper (fra spec-review)
 
 ```
-Persona: Senior UX-designer med erfaring i B2B SaaS for professionelle services.
-
-Primære dokumenter: SPEC-TILLAEG-v2.md, UI-FLOWS.md, kravspec-legalhub.md
-
-Udfordrer specifikt:
+Udfordr specifikt:
   - Er dette skærmbillede intuitivt for en kædeleder der bruger det 20 min om dagen?
   - Kan brugeren besvare "hvad kræver min opmærksomhed?" inden for 3 sekunder?
   - Er der for mange klik til den mest almindelige handling?
@@ -653,38 +641,18 @@ Udfordrer specifikt:
   - Er tomme tilstande motiverende (ikke bare "ingen data")?
   - Er konsistens i designmønstre overholdt på tværs af alle sider?
   - Er farve-semantik korrekt — rød=fare, orange=advarsel, blå=info, grøn=ok?
-
-Typisk indsigelse:
-  "Selskabslisten som tabel er suboptimal for en kædeleder med 7-20 klinikker.
-  Cards med nøgleindikatorer giver hurtigere overblik end en tabel med 5 kolonner.
-  Anbefaler card-grid som default med tabel som alternativ visning."
 ```
 
-### Opdateret agent-aktiveringstabel
+### Sprint 7-9
 
 ```
-DOKUMENT                    DOMÆNEEKSPERT-AGENTER
-──────────────────────────────────────────────────────────────
-SPEC-TILLAEG-v2.md          ALLE 8 DEA'er (inkl. DEA-08 UX)
-kravspec-legalhub.md        Alle 8 DEA'er
-UI-FLOWS.md                 DEA-03, DEA-06, DEA-08
-CONTRACT-TYPES.md           DEA-01, DEA-05, DEA-06, DEA-07
-DATABASE-SCHEMA.md          DEA-04, DEA-07, DEA-08
-roller-og-tilladelser.md    DEA-01, DEA-07, DEA-08
-──────────────────────────────────────────────────────────────
-```
-
-### Sprint 7-9 (forslag — DEA'er challenger dette)
-
-```
-Sprint 7 — UI Foundation + Enum Fix
+Sprint 7 — UI Foundation + Enum Fix ✅ FÆRDIG
   Fix alle enum display-names (global labels.ts)
   Pagination + filtre + søgning på alle lister
   Card-grid for selskaber og personer
   Dashboard urgency panel
   Selskabs-overbliksfane
   Sidebar med roller + counts
-  Agenter: BA-04 (UI) → BA-05 (feature) → DEA-08 (review) → BA-07 (QA)
 
 Sprint 8 — Accountability + Dokumenter
   Besøgsstyring (nyt modul)
@@ -692,7 +660,6 @@ Sprint 8 — Accountability + Dokumenter
   Dokument-upload (Cloudflare R2)
   Kontraktversioner + bilag
   Brugerstyring (/settings/users)
-  Agenter: BA-02 (schema) → BA-05 (feature) → BA-06 (R2) → BA-07 (QA)
 
 Sprint 9 — Polish + Kalender
   Tværgående kalender
@@ -700,17 +667,6 @@ Sprint 9 — Polish + Kalender
   Kanban-visning opgaver
   Global søgning
   Organisation-indstillinger
-  Agenter: BA-04 (UI) → BA-05 (feature) → BA-09 (performance) → BA-07 (QA)
-```
-
-### MASTER-PROMPT ændring (tilføjes)
-
-```
-REGEL — Sprint 7+ starter IKKE uden Fase 0:
-  1. Spec-tillæg (SPEC-TILLAEG-v2.md) SKAL DEA-godkendes
-  2. Alle 8 DEA-agenter (inkl. DEA-08 UX) SKAL challenge dokumentet
-  3. PROGRESS.md markerer FØRST Fase 0 som færdig, DEREFTER Sprint 7
-  4. Orchestrator springer IKKE Fase 0 over baseret på Sprint 1-6 godkendelse
 ```
 
 ---
@@ -718,27 +674,13 @@ REGEL — Sprint 7+ starter IKKE uden Fase 0:
 ## Changelog
 
 ```
+v2.2 (2026-03-12): DEC-F0-001 til DEC-F0-017 implementeret. Status: GODKENDT.
+
 v2.1 (2026-03-12):
   + DEL 0 tilføjet: Konkrete UI-problemer observeret i kørende app
-    - Enum display-names (under_stiftelse, AKTIV_TASK, EJERAFTALE)
-    - Lange lister uden pagination/filtre/søgning
-    - Dashboard mangler urgency panel
-    - Selskabsliste som tabel → card-grid
-    - Selskabsprofil starter med formular → overbliksfane
-    - Ejerskab-advarsel uforståelig
-    - Alle faner mangler intuitivt design
-    - Persondatabase mangler roller/stillinger
-    - Dokumentside kontekstløs
-    - Brugerdefinerede stillingsbetegnelser (fritekst, ikke enum)
-  + DEA-08 UX-agent tilføjet med persona og udfordrings-punkter
-  + Agent-aktiveringstabel opdateret med DEA-08
-  + MASTER-PROMPT-ændring: Fase 0 obligatorisk for Sprint 7+
+  + UX-principper tilføjet
   + Sprint 7 fokuseret på UI foundation FØRST (enum-fix, pagination, cards)
 
 v2.0 (2026-03-12):
   Første udkast — nye moduler + udvidelser + manglende funktionalitet
 ```
-
-
-
-v2.2 (2026-03-12 DEA-godkendt): DEC-F0-001 til DEC-F0-017 implementeret. Status: GODKENDT.

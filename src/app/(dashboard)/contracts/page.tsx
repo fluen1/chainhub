@@ -14,6 +14,8 @@ import { Suspense } from 'react'
 import { SearchAndFilter } from '@/components/ui/SearchAndFilter'
 import { Pagination } from '@/components/ui/Pagination'
 import { parsePaginationParams } from '@/lib/pagination'
+import { GroupToggle } from '@/components/ui/GroupToggle'
+import { CollapsibleSection } from '@/components/ui/CollapsibleSection'
 import type { ContractStatus } from '@prisma/client'
 
 const PAGE_SIZE = 20
@@ -39,6 +41,8 @@ interface ContractsPageProps {
     q?: string
     status?: string
     expiry?: string
+    company?: string
+    view?: string
     page?: string
   }
 }
@@ -51,20 +55,40 @@ export default async function ContractsPage({ searchParams }: ContractsPageProps
   const q = searchParams.q?.trim() ?? ''
   const statusFilter = searchParams.status as ContractStatus | undefined
   const expiryDays = searchParams.expiry ? parseInt(searchParams.expiry) : null
+  const companyFilter = searchParams.company
+  const viewMode = searchParams.view ?? 'grouped'
 
   const companyIds = await getAccessibleCompanies(
     session.user.id,
     session.user.organizationId
   )
 
+  // Hent selskaber til filter-dropdown
+  const companyOptions = companyIds.length > 0
+    ? (await prisma.company.findMany({
+        where: {
+          id: { in: companyIds },
+          organization_id: session.user.organizationId,
+          deleted_at: null,
+        },
+        select: { id: true, name: true },
+        orderBy: { name: 'asc' },
+      })).map((c) => ({ value: c.id, label: c.name }))
+    : []
+
   const today = new Date()
   const expiryLimit = expiryDays
     ? new Date(Date.now() + expiryDays * 24 * 60 * 60 * 1000)
     : null
 
+  // Hvis companyFilter er sat, brug den; ellers brug alle accessible companies
+  const effectiveCompanyIds = companyFilter
+    ? (companyIds.includes(companyFilter) ? [companyFilter] : [])
+    : companyIds
+
   const where = {
     organization_id: session.user.organizationId,
-    ...(companyIds.length > 0 ? { company_id: { in: companyIds } } : { id: 'no-match' }),
+    ...(effectiveCompanyIds.length > 0 ? { company_id: { in: effectiveCompanyIds } } : { id: 'no-match' }),
     deleted_at: null as null,
     ...(q ? { display_name: { contains: q, mode: 'insensitive' as const } } : {}),
     ...(statusFilter ? { status: statusFilter } : {}),
@@ -73,19 +97,20 @@ export default async function ContractsPage({ searchParams }: ContractsPageProps
       : {}),
   }
 
+  const isGrouped = viewMode === 'grouped'
+
   const [allContracts, totalCountRaw] = await Promise.all([
-    companyIds.length > 0
+    effectiveCompanyIds.length > 0
       ? prisma.contract.findMany({
           where,
           include: {
             company: { select: { id: true, name: true } },
           },
           orderBy: { expiry_date: 'asc' },
-          skip,
-          take,
+          ...(isGrouped ? {} : { skip, take }),
         })
       : Promise.resolve([]),
-    companyIds.length > 0
+    effectiveCompanyIds.length > 0
       ? prisma.contract.count({ where })
       : Promise.resolve(0),
   ])
@@ -99,6 +124,53 @@ export default async function ContractsPage({ searchParams }: ContractsPageProps
 
   const fourteenDays = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
   const ninetyDays = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
+
+  type ContractItem = typeof allContracts[number]
+
+  // Gruppér kontrakter efter selskab
+  const groupedContracts: Record<string, { companyName: string; contracts: ContractItem[] }> = {}
+  if (isGrouped) {
+    for (const contract of contracts) {
+      const key = contract.company.id
+      if (!groupedContracts[key]) {
+        groupedContracts[key] = { companyName: contract.company.name, contracts: [] }
+      }
+      groupedContracts[key].contracts.push(contract)
+    }
+  }
+
+  const sortedGroups = Object.entries(groupedContracts).sort(([, a], [, b]) =>
+    a.companyName.localeCompare(b.companyName, 'da')
+  )
+
+  function renderContractRow(contract: ContractItem) {
+    const isExpired = contract.expiry_date && new Date(contract.expiry_date) < today
+    const isUrgent = contract.expiry_date && new Date(contract.expiry_date) <= fourteenDays && !isExpired
+    const isWarning = contract.expiry_date && new Date(contract.expiry_date) <= ninetyDays && !isUrgent && !isExpired
+
+    return (
+      <tr key={contract.id} className={isExpired || isUrgent ? 'bg-red-50 hover:bg-red-100' : isWarning ? 'bg-yellow-50 hover:bg-yellow-100' : 'hover:bg-gray-50'}>
+        <td className="px-6 py-4">
+          <Link href={`/contracts/${contract.id}`} className="text-sm font-medium text-blue-600 hover:text-blue-800">{contract.display_name}</Link>
+          <p className="text-xs text-gray-500 mt-0.5">{getContractTypeLabel(contract.system_type)}</p>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap">
+          <Link href={`/companies/${contract.company.id}`} className="text-sm text-gray-700 hover:text-blue-600">{contract.company.name}</Link>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap">
+          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getContractStatusStyle(contract.status)}`}>{getContractStatusLabel(contract.status)}</span>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500">{getSensitivityLabel(contract.sensitivity)}</td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm">
+          {contract.expiry_date ? (
+            <span className={isExpired || isUrgent ? 'text-red-700 font-medium' : isWarning ? 'text-orange-700' : 'text-gray-500'}>
+              {new Date(contract.expiry_date).toLocaleDateString('da-DK')}
+            </span>
+          ) : (<span className="text-gray-400">Løbende</span>)}
+        </td>
+      </tr>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -118,20 +190,28 @@ export default async function ContractsPage({ searchParams }: ContractsPageProps
         </Link>
       </div>
 
-      <Suspense fallback={null}>
-        <SearchAndFilter
-          placeholder="Søg på kontraktnavn..."
-          filters={[
-            { key: 'status', label: 'Status', options: STATUS_OPTIONS },
-            { key: 'expiry', label: 'Udløber', options: EXPIRY_OPTIONS },
-          ]}
-        />
-      </Suspense>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex-1">
+          <Suspense fallback={null}>
+            <SearchAndFilter
+              placeholder="Søg på kontraktnavn..."
+              filters={[
+                { key: 'company', label: 'Selskab', options: companyOptions },
+                { key: 'status', label: 'Status', options: STATUS_OPTIONS },
+                { key: 'expiry', label: 'Udløber', options: EXPIRY_OPTIONS },
+              ]}
+            />
+          </Suspense>
+        </div>
+        <Suspense fallback={null}>
+          <GroupToggle />
+        </Suspense>
+      </div>
 
       {contracts.length === 0 ? (
         <div className="rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
           <FileText className="mx-auto h-12 w-12 text-gray-400" />
-          {q || statusFilter || expiryDays ? (
+          {q || statusFilter || expiryDays || companyFilter ? (
             <>
               <h3 className="mt-2 text-sm font-semibold text-gray-900">Ingen kontrakter matcher søgningen</h3>
               <p className="mt-1 text-sm text-gray-500">Prøv at ændre filtrene.</p>
@@ -145,6 +225,31 @@ export default async function ContractsPage({ searchParams }: ContractsPageProps
               </Link>
             </>
           )}
+        </div>
+      ) : isGrouped ? (
+        <div className="space-y-4">
+          {sortedGroups.map(([companyId, group]) => (
+            <CollapsibleSection
+              key={companyId}
+              title={group.companyName}
+              count={group.contracts.length}
+            >
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Kontrakt</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Selskab</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Sensitivitet</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Udløber</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 bg-white">
+                  {group.contracts.map((contract) => renderContractRow(contract))}
+                </tbody>
+              </table>
+            </CollapsibleSection>
+          ))}
         </div>
       ) : (
         <>
@@ -160,34 +265,7 @@ export default async function ContractsPage({ searchParams }: ContractsPageProps
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
-                {contracts.map((contract) => {
-                  const isExpired = contract.expiry_date && new Date(contract.expiry_date) < today
-                  const isUrgent = contract.expiry_date && new Date(contract.expiry_date) <= fourteenDays && !isExpired
-                  const isWarning = contract.expiry_date && new Date(contract.expiry_date) <= ninetyDays && !isUrgent && !isExpired
-
-                  return (
-                    <tr key={contract.id} className={isExpired || isUrgent ? 'bg-red-50 hover:bg-red-100' : isWarning ? 'bg-yellow-50 hover:bg-yellow-100' : 'hover:bg-gray-50'}>
-                      <td className="px-6 py-4">
-                        <Link href={`/contracts/${contract.id}`} className="text-sm font-medium text-blue-600 hover:text-blue-800">{contract.display_name}</Link>
-                        <p className="text-xs text-gray-500 mt-0.5">{getContractTypeLabel(contract.system_type)}</p>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <Link href={`/companies/${contract.company.id}`} className="text-sm text-gray-700 hover:text-blue-600">{contract.company.name}</Link>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getContractStatusStyle(contract.status)}`}>{getContractStatusLabel(contract.status)}</span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500">{getSensitivityLabel(contract.sensitivity)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {contract.expiry_date ? (
-                          <span className={isExpired || isUrgent ? 'text-red-700 font-medium' : isWarning ? 'text-orange-700' : 'text-gray-500'}>
-                            {new Date(contract.expiry_date).toLocaleDateString('da-DK')}
-                          </span>
-                        ) : (<span className="text-gray-400">Løbende</span>)}
-                      </td>
-                    </tr>
-                  )
-                })}
+                {contracts.map((contract) => renderContractRow(contract))}
               </tbody>
             </table>
           </div>

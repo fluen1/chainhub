@@ -4,38 +4,10 @@ import { prisma } from '@/lib/db'
 import { canAccessCompany, canAccessSensitivity } from '@/lib/permissions'
 import { FileText, Plus } from 'lucide-react'
 import Link from 'next/link'
-import type { SensitivityLevel } from '@prisma/client'
+import { getContractStatusLabel, getContractStatusStyle, getSensitivityLabel } from '@/lib/labels'
 
 interface Props {
   params: { id: string }
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  UDKAST: 'Kladde',
-  TIL_REVIEW: 'Til review',
-  TIL_UNDERSKRIFT: 'Til underskrift',
-  AKTIV: 'Aktiv',
-  UDLOEBET: 'Udløbet',
-  OPSAGT: 'Opsagt',
-  FORNYET: 'Fornyet',
-  ARKIVERET: 'Arkiveret',
-}
-
-const STATUS_STYLES: Record<string, string> = {
-  UDKAST: 'bg-gray-100 text-gray-700',
-  TIL_REVIEW: 'bg-yellow-50 text-yellow-700',
-  TIL_UNDERSKRIFT: 'bg-blue-50 text-blue-700',
-  AKTIV: 'bg-green-50 text-green-700',
-  UDLOEBET: 'bg-red-50 text-red-700',
-  OPSAGT: 'bg-red-100 text-red-800',
-}
-
-const SENSITIVITY_LABELS: Record<SensitivityLevel, string> = {
-  PUBLIC: 'Offentlig',
-  STANDARD: 'Standard',
-  INTERN: 'Intern',
-  FORTROLIG: 'Fortrolig',
-  STRENGT_FORTROLIG: 'Strengt fortrolig',
 }
 
 export default async function CompanyContractsPage({ params }: Props) {
@@ -124,12 +96,12 @@ export default async function CompanyContractsPage({ params }: Props) {
                       <p className="text-xs text-gray-500 mt-0.5">{contract.system_type}</p>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_STYLES[contract.status] ?? 'bg-gray-100 text-gray-700'}`}>
-                        {STATUS_LABELS[contract.status] ?? contract.status}
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getContractStatusStyle(contract.status)}`}>
+                        {getContractStatusLabel(contract.status)}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500">
-                      {SENSITIVITY_LABELS[contract.sensitivity]}
+                      {getSensitivityLabel(contract.sensitivity)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       {contract.expiry_date ? (

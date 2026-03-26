@@ -1,8 +1,8 @@
 import { z } from 'zod'
 
 export const addOwnerSchema = z.object({
-  companyId: z.string().uuid(),
-  personId: z.string().uuid().optional(),
+  companyId: z.string().min(1),
+  personId: z.string().min(1).optional(),
   // new person fields if no personId
   firstName: z.string().min(1).max(100).optional(),
   lastName: z.string().min(1).max(100).optional(),
@@ -10,18 +10,18 @@ export const addOwnerSchema = z.object({
   ownershipPct: z.coerce.number().min(0.01).max(100),
   ownerType: z.enum(['PERSON', 'HOLDINGSELSKAB', 'ANDET_SELSKAB']),
   acquiredAt: z.string().optional(),
-  contractId: z.string().uuid().optional().or(z.literal('')),
+  contractId: z.string().min(1).optional().or(z.literal('')),
 })
 
 export const updateOwnershipSchema = z.object({
-  ownershipId: z.string().uuid(),
+  ownershipId: z.string().min(1),
   ownershipPct: z.coerce.number().min(0.01).max(100).optional(),
   acquiredAt: z.string().optional(),
-  contractId: z.string().uuid().optional().or(z.literal('')),
+  contractId: z.string().min(1).optional().or(z.literal('')),
 })
 
 export const endOwnershipSchema = z.object({
-  ownershipId: z.string().uuid(),
+  ownershipId: z.string().min(1),
   endDate: z.string(),
 })
 

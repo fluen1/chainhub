@@ -3,24 +3,10 @@ import { redirect, notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { canAccessCompany, canAccessModule } from '@/lib/permissions'
 import { AddMetricForm } from '@/components/finance/AddMetricForm'
+import { getMetricTypeLabel, getPeriodTypeLabel, getMetricSourceLabel } from '@/lib/labels'
 
 interface Props {
   params: { id: string }
-}
-
-const METRIC_LABELS: Record<string, string> = {
-  OMSAETNING: 'Omsætning',
-  EBITDA: 'EBITDA',
-  RESULTAT: 'Resultat',
-  LIKVIDITET: 'Likviditet',
-  EGENKAPITAL: 'Egenkapital',
-  ANDET: 'Andet',
-}
-
-const SOURCE_LABELS: Record<string, string> = {
-  REVIDERET: 'Revideret',
-  UREVIDERET: 'Urevideret',
-  ESTIMAT: 'Estimat',
 }
 
 export default async function CompanyFinancePage({ params }: Props) {
@@ -96,12 +82,12 @@ export default async function CompanyFinancePage({ params }: Props) {
                   {byYear[year].map((m) => (
                     <tr key={m.id} className="hover:bg-gray-50">
                       <td className="px-6 py-3 text-sm text-gray-900">
-                        {METRIC_LABELS[m.metric_type] ?? m.metric_type}
+                        {getMetricTypeLabel(m.metric_type)}
                         {m.notes && (
                           <p className="text-xs text-gray-400 mt-0.5">{m.notes}</p>
                         )}
                       </td>
-                      <td className="px-6 py-3 text-sm text-gray-500">{m.period_type}</td>
+                      <td className="px-6 py-3 text-sm text-gray-500">{getPeriodTypeLabel(m.period_type)}</td>
                       <td className="px-6 py-3 text-right text-sm font-medium text-gray-900">
                         {Number(m.value).toLocaleString('da-DK', { style: 'currency', currency: 'DKK', maximumFractionDigits: 0 })}
                       </td>
@@ -111,7 +97,7 @@ export default async function CompanyFinancePage({ params }: Props) {
                           : m.source === 'ESTIMAT' ? 'bg-yellow-50 text-yellow-700'
                           : 'bg-gray-100 text-gray-600'
                         }`}>
-                          {SOURCE_LABELS[m.source] ?? m.source}
+                          {getMetricSourceLabel(m.source)}
                         </span>
                       </td>
                     </tr>

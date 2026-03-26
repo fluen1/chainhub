@@ -7,6 +7,16 @@
  * BA-04 | Sprint 7
  */
 
+// ─── Selskabsform ─────────────────────────────────────────────────────────────
+
+export const COMPANY_TYPE_OPTIONS = [
+  { value: 'ApS', label: 'ApS' },
+  { value: 'A/S', label: 'A/S' },
+  { value: 'I/S', label: 'I/S' },
+  { value: 'Holding ApS', label: 'Holding ApS' },
+  { value: 'Andet', label: 'Andet' },
+] as const
+
 // ─── Selskabsstatus ───────────────────────────────────────────────────────────
 
 export const COMPANY_STATUS_LABELS: Record<string, string> = {
@@ -177,6 +187,7 @@ export function getUserRoleStyle(role: string): string {
 export const TASK_STATUS_LABELS: Record<string, string> = {
   NY: 'Ny',
   AKTIV: 'Aktiv',
+  AKTIV_TASK: 'Aktiv',
   AFVENTER: 'Afventer',
   LUKKET: 'Lukket',
 }
@@ -238,6 +249,10 @@ export const CASE_STATUS_STYLES: Record<string, string> = {
 
 export function getCaseStatusLabel(status: string): string {
   return CASE_STATUS_LABELS[status] ?? status
+}
+
+export function getCaseStatusStyle(status: string): string {
+  return CASE_STATUS_STYLES[status] ?? 'bg-gray-100 text-gray-700'
 }
 
 // ─── Sagstype ─────────────────────────────────────────────────────────────────
@@ -310,6 +325,114 @@ export const PERIOD_TYPE_LABELS: Record<string, string> = {
 
 export function getPeriodTypeLabel(type: string): string {
   return PERIOD_TYPE_LABELS[type] ?? type
+}
+
+// ─── Ændringstype (ContractVersion) ──────────────────────────────────────────
+
+export const CHANGE_TYPE_LABELS: Record<string, string> = {
+  NY_VERSION: 'Ny version',
+  REDAKTIONEL: 'Redaktionel',
+  MATERIEL: 'Materiel',
+  ALLONGE: 'Allonge',
+}
+
+export const CHANGE_TYPE_STYLES: Record<string, string> = {
+  NY_VERSION: 'bg-gray-100 text-gray-700',
+  REDAKTIONEL: 'bg-blue-50 text-blue-700',
+  MATERIEL: 'bg-orange-50 text-orange-700',
+  ALLONGE: 'bg-purple-50 text-purple-700',
+}
+
+export function getChangeTypeLabel(changeType: string): string {
+  return CHANGE_TYPE_LABELS[changeType] ?? changeType
+}
+
+export function getChangeTypeStyle(changeType: string): string {
+  return CHANGE_TYPE_STYLES[changeType] ?? 'bg-gray-100 text-gray-700'
+}
+
+// ─── Besøgstype ──────────────────────────────────────────────────────────────
+
+export const VISIT_TYPE_LABELS: Record<string, string> = {
+  KVARTALSBESOEG: 'Kvartalsbesøg',
+  OPFOELGNING: 'Opfølgning',
+  AD_HOC: 'Ad hoc',
+  AUDIT: 'Audit',
+  ONBOARDING: 'Onboarding',
+  OVERDRAGELSE: 'Overdragelse',
+}
+
+export const VISIT_STATUS_LABELS: Record<string, string> = {
+  PLANLAGT: 'Planlagt',
+  GENNEMFOERT: 'Gennemført',
+  AFLYST: 'Aflyst',
+}
+
+export const VISIT_STATUS_STYLES: Record<string, string> = {
+  PLANLAGT: 'bg-blue-50 text-blue-700',
+  GENNEMFOERT: 'bg-green-50 text-green-700',
+  AFLYST: 'bg-gray-100 text-gray-500',
+}
+
+export function getVisitTypeLabel(type: string): string {
+  return VISIT_TYPE_LABELS[type] ?? type
+}
+
+export function getVisitStatusLabel(status: string): string {
+  return VISIT_STATUS_LABELS[status] ?? status
+}
+
+export function getVisitStatusStyle(status: string): string {
+  return VISIT_STATUS_STYLES[status] ?? 'bg-gray-100 text-gray-600'
+}
+
+// ─── CompanyPerson roller ────────────────────────────────────────────────────
+
+export const COMPANY_PERSON_ROLE_LABELS: Record<string, string> = {
+  direktoer: 'Direktør',
+  bestyrelsesformand: 'Bestyrelsesformand',
+  bestyrelsesmedlem: 'Bestyrelsesmedlem',
+  tegningsberettiget: 'Tegningsberettiget',
+  revisor: 'Revisor',
+  ansat: 'Ansat',
+  funktionaer: 'Funktionær',
+  'ikke-funktionaer': 'Ikke-funktionær',
+  vikar: 'Vikar',
+  leder: 'Leder/nøglemedarbejder',
+  ekstern_advokat: 'Ekstern advokat',
+  ekstern_raadgiver: 'Ekstern rådgiver',
+  bankkontakt: 'Bankkontakt',
+  forsikringskontakt: 'Forsikringskontakt',
+}
+
+export const GOVERNANCE_ROLES = ['direktoer', 'bestyrelsesformand', 'bestyrelsesmedlem', 'tegningsberettiget', 'revisor'] as const
+
+export const EMPLOYEE_ROLES = ['ansat', 'funktionaer', 'ikke-funktionaer', 'vikar', 'leder'] as const
+
+export function getCompanyPersonRoleLabel(role: string): string {
+  return COMPANY_PERSON_ROLE_LABELS[role] ?? role
+}
+
+// ─── Økonomi kilde ───────────────────────────────────────────────────────────
+
+export const METRIC_SOURCE_LABELS: Record<string, string> = {
+  REVIDERET: 'Revideret',
+  UREVIDERET: 'Urevideret',
+  ESTIMAT: 'Estimat',
+}
+
+export const METRIC_SOURCE_STYLES: Record<string, string> = {
+  REVIDERET: 'text-green-700',
+  UREVIDERET: 'text-gray-500',
+  ESTIMAT: 'text-yellow-600',
+}
+
+export function getMetricSourceLabel(source: string): string {
+  return METRIC_SOURCE_LABELS[source] ?? source
+}
+
+export function getMetricSourceStyle(source: string): string {
+  return METRIC_SOURCE_STYLES[source] ?? 'text-gray-500'
 }
 
 // ─── Hjælpefunktioner ─────────────────────────────────────────────────────────

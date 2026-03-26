@@ -5,43 +5,29 @@ import { canAccessSensitivity } from '@/lib/permissions'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { ContractStatusForm } from '@/components/contracts/ContractStatusForm'
+import { UploadVersionForm } from '@/components/contracts/UploadVersionForm'
+import { FileUpload } from '@/components/documents/FileUpload'
+import { DocumentList } from '@/components/documents/DocumentList'
 import {
   CONTRACT_TYPE_LABELS,
   type ContractSystemTypeKey,
 } from '@/lib/validations/contract'
+import {
+  CHANGE_TYPE_LABELS,
+  CHANGE_TYPE_STYLES,
+  getContractStatusLabel,
+  getContractStatusStyle,
+  getSensitivityLabel,
+} from '@/lib/labels'
 
 interface Props {
   params: { id: string }
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  UDKAST: 'Kladde',
-  TIL_REVIEW: 'Til review',
-  TIL_UNDERSKRIFT: 'Til underskrift',
-  AKTIV: 'Aktiv',
-  UDLOEBET: 'Udløbet',
-  OPSAGT: 'Opsagt',
-  FORNYET: 'Fornyet',
-  ARKIVERET: 'Arkiveret',
-}
-
-const STATUS_STYLES: Record<string, string> = {
-  UDKAST: 'bg-gray-100 text-gray-700',
-  TIL_REVIEW: 'bg-yellow-50 text-yellow-700',
-  TIL_UNDERSKRIFT: 'bg-blue-50 text-blue-700',
-  AKTIV: 'bg-green-50 text-green-700',
-  UDLOEBET: 'bg-red-50 text-red-700',
-  OPSAGT: 'bg-red-100 text-red-800',
-  FORNYET: 'bg-green-100 text-green-800',
-  ARKIVERET: 'bg-gray-50 text-gray-500',
-}
-
-const SENSITIVITY_LABELS: Record<string, string> = {
-  PUBLIC: 'Offentlig',
-  STANDARD: 'Standard',
-  INTERN: 'Intern',
-  FORTROLIG: 'Fortrolig',
-  STRENGT_FORTROLIG: 'Strengt fortrolig',
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
 // Gyldige næste statuser
@@ -72,7 +58,6 @@ export default async function ContractDetailPage({ params }: Props) {
       },
       versions: {
         orderBy: { version_number: 'desc' },
-        take: 5,
       },
     },
   })
@@ -117,6 +102,27 @@ export default async function ContractDetailPage({ params }: Props) {
     })
   }
 
+  // Hent dokumenter knyttet til kontraktens selskab
+  const rawDocuments = await prisma.document.findMany({
+    where: {
+      organization_id: session.user.organizationId,
+      company_id: contract.company.id,
+      deleted_at: null,
+    },
+    orderBy: { uploaded_at: 'desc' },
+    take: 50,
+  })
+
+  const contractDocuments = rawDocuments.map((doc) => ({
+    id: doc.id,
+    title: doc.title,
+    file_name: doc.file_name,
+    file_url: doc.file_url,
+    file_size_bytes: doc.file_size_bytes,
+    file_type: doc.file_type,
+    uploaded_at: doc.uploaded_at.toISOString(),
+  }))
+
   const nextStatuses = NEXT_STATUSES[contract.status] ?? []
   const displayTypeName = CONTRACT_TYPE_LABELS[contract.system_type as ContractSystemTypeKey] ?? contract.system_type
 
@@ -130,8 +136,8 @@ export default async function ContractDetailPage({ params }: Props) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-2xl font-bold text-gray-900">{contract.display_name}</h1>
-            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_STYLES[contract.status] ?? 'bg-gray-100 text-gray-700'}`}>
-              {STATUS_LABELS[contract.status] ?? contract.status}
+            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getContractStatusStyle(contract.status)}`}>
+              {getContractStatusLabel(contract.status)}
             </span>
           </div>
           <p className="mt-0.5 text-sm text-gray-500">
@@ -153,7 +159,7 @@ export default async function ContractDetailPage({ params }: Props) {
               <div>
                 <dt className="text-sm font-medium text-gray-500">Sensitivitet</dt>
                 <dd className="mt-1 text-sm text-gray-900">
-                  {SENSITIVITY_LABELS[contract.sensitivity]}
+                  {getSensitivityLabel(contract.sensitivity)}
                 </dd>
               </div>
               <div>
@@ -248,31 +254,72 @@ export default async function ContractDetailPage({ params }: Props) {
           </div>
 
           {/* Versionshistorik */}
-          {contract.versions.length > 0 && (
-            <div className="rounded-lg border bg-white p-6 shadow-sm">
-              <h2 className="text-base font-semibold text-gray-900 mb-4">Versioner</h2>
+          <div className="rounded-lg border bg-white p-6 shadow-sm">
+            <h2 className="text-base font-semibold text-gray-900 mb-4">
+              Versioner ({contract.versions.length})
+            </h2>
+
+            {contract.versions.length === 0 ? (
+              <p className="text-sm text-gray-500">Ingen versioner uploadet endnu.</p>
+            ) : (
               <ul className="divide-y divide-gray-200">
                 {contract.versions.map((v) => (
-                  <li key={v.id} className="py-3 flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        Version {v.version_number} — {v.file_name}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {new Date(v.uploaded_at).toLocaleDateString('da-DK')}
-                        {v.change_note ? ` · ${v.change_note}` : ''}
-                      </p>
+                  <li key={v.id} className="py-3 flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-medium text-gray-900">
+                          Version {v.version_number}
+                        </p>
+                        <span
+                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${CHANGE_TYPE_STYLES[v.change_type] ?? 'bg-gray-100 text-gray-700'}`}
+                        >
+                          {CHANGE_TYPE_LABELS[v.change_type] ?? v.change_type}
+                        </span>
+                        {v.is_current && (
+                          <span className="inline-flex items-center rounded-full bg-green-50 text-green-700 px-2 py-0.5 text-xs font-medium">
+                            Aktuel
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
+                        <a
+                          href={v.file_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-800 hover:underline truncate"
+                        >
+                          {v.file_name}
+                        </a>
+                        <span>·</span>
+                        <span>{formatFileSize(v.file_size_bytes)}</span>
+                        <span>·</span>
+                        <span>{new Date(v.uploaded_at).toLocaleDateString('da-DK')}</span>
+                      </div>
+                      {v.change_note && (
+                        <p className="mt-1 text-xs text-gray-600">{v.change_note}</p>
+                      )}
                     </div>
-                    {v.is_current && (
-                      <span className="text-xs bg-green-50 text-green-700 rounded-full px-2 py-0.5">
-                        Aktuel
-                      </span>
-                    )}
                   </li>
                 ))}
               </ul>
-            </div>
-          )}
+            )}
+
+            <UploadVersionForm
+              contractId={contract.id}
+              companyId={contract.company.id}
+            />
+          </div>
+
+          {/* Dokumenter */}
+          <div className="rounded-lg border bg-white p-6 shadow-sm">
+            <h2 className="text-base font-semibold text-gray-900 mb-4">Dokumenter</h2>
+            <FileUpload companyId={contract.company.id} className="mb-4" />
+            {contractDocuments.length === 0 ? (
+              <p className="text-sm text-gray-500">Ingen dokumenter tilknyttet endnu.</p>
+            ) : (
+              <DocumentList documents={contractDocuments} />
+            )}
+          </div>
         </div>
 
         {/* Side-panel */}

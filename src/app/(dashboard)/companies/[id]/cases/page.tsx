@@ -4,27 +4,10 @@ import { prisma } from '@/lib/db'
 import { canAccessCompany } from '@/lib/permissions'
 import { Briefcase, Plus } from 'lucide-react'
 import Link from 'next/link'
+import { getCaseStatusLabel, getCaseStatusStyle } from '@/lib/labels'
 
 interface Props {
   params: { id: string }
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  NY: 'Ny',
-  AKTIV: 'Aktiv',
-  AFVENTER_EKSTERN: 'Afventer ekstern',
-  AFVENTER_KLIENT: 'Afventer klient',
-  LUKKET: 'Lukket',
-  ARKIVERET: 'Arkiveret',
-}
-
-const STATUS_STYLES: Record<string, string> = {
-  NY: 'bg-blue-50 text-blue-700',
-  AKTIV: 'bg-green-50 text-green-700',
-  AFVENTER_EKSTERN: 'bg-yellow-50 text-yellow-700',
-  AFVENTER_KLIENT: 'bg-orange-50 text-orange-700',
-  LUKKET: 'bg-gray-100 text-gray-600',
-  ARKIVERET: 'bg-gray-50 text-gray-400',
 }
 
 export default async function CompanyCasesPage({ params }: Props) {
@@ -95,8 +78,8 @@ export default async function CompanyCasesPage({ params }: Props) {
                     {caseItem.case_type} · {new Date(caseItem.created_at).toLocaleDateString('da-DK')}
                   </p>
                 </div>
-                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_STYLES[caseItem.status] ?? 'bg-gray-100 text-gray-700'}`}>
-                  {STATUS_LABELS[caseItem.status] ?? caseItem.status}
+                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getCaseStatusStyle(caseItem.status)}`}>
+                  {getCaseStatusLabel(caseItem.status)}
                 </span>
               </li>
             ))}

@@ -15,7 +15,10 @@ export async function createCompany(
   if (!session) return { error: 'Ikke autoriseret' }
 
   const parsed = createCompanySchema.safeParse(input)
-  if (!parsed.success) return { error: 'Ugyldigt input' }
+  if (!parsed.success) {
+    const firstIssue = parsed.error.issues[0]
+    return { error: firstIssue?.message ?? 'Ugyldigt input' }
+  }
 
   const hasAccess = await canAccessModule(session.user.id, 'settings')
   if (!hasAccess) return { error: 'Du har ikke adgang til at oprette selskaber' }

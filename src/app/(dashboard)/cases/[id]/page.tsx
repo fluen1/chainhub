@@ -5,36 +5,16 @@ import { canAccessCompany } from '@/lib/permissions'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { CaseStatusForm } from '@/components/cases/CaseStatusForm'
+import {
+  getCaseStatusLabel,
+  getCaseStatusStyle,
+  getCaseTypeLabel,
+  getPriorityLabel,
+  getTaskStatusLabel,
+} from '@/lib/labels'
 
 interface Props {
   params: { id: string }
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  NY: 'Ny',
-  AKTIV: 'Aktiv',
-  AFVENTER_EKSTERN: 'Afventer ekstern',
-  AFVENTER_KLIENT: 'Afventer klient',
-  LUKKET: 'Lukket',
-  ARKIVERET: 'Arkiveret',
-}
-
-const STATUS_STYLES: Record<string, string> = {
-  NY: 'bg-blue-50 text-blue-700',
-  AKTIV: 'bg-green-50 text-green-700',
-  AFVENTER_EKSTERN: 'bg-yellow-50 text-yellow-700',
-  AFVENTER_KLIENT: 'bg-orange-50 text-orange-700',
-  LUKKET: 'bg-gray-100 text-gray-600',
-  ARKIVERET: 'bg-gray-50 text-gray-400',
-}
-
-const TYPE_LABELS: Record<string, string> = {
-  TRANSAKTION: 'Transaktion',
-  TVIST: 'Tvist',
-  COMPLIANCE: 'Compliance',
-  KONTRAKT: 'Kontrakt',
-  GOVERNANCE: 'Governance',
-  ANDET: 'Andet',
 }
 
 const NEXT_STATUSES: Record<string, string[]> = {
@@ -43,20 +23,6 @@ const NEXT_STATUSES: Record<string, string[]> = {
   AFVENTER_EKSTERN: ['AKTIV', 'LUKKET'],
   AFVENTER_KLIENT: ['AKTIV', 'LUKKET'],
   LUKKET: ['AKTIV', 'ARKIVERET'],
-}
-
-const PRIORITY_LABELS: Record<string, string> = {
-  LAV: 'Lav',
-  MELLEM: 'Mellem',
-  HOEJ: 'Høj',
-  KRITISK: 'Kritisk',
-}
-
-const TASK_STATUS_LABELS: Record<string, string> = {
-  NY: 'Ny',
-  AKTIV: 'Aktiv',
-  AFVENTER: 'Afventer',
-  LUKKET: 'Lukket',
 }
 
 export default async function CaseDetailPage({ params }: Props) {
@@ -120,14 +86,14 @@ export default async function CaseDetailPage({ params }: Props) {
         <div className="flex-1">
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-2xl font-bold text-gray-900">{caseItem.title}</h1>
-            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_STYLES[caseItem.status] ?? 'bg-gray-100 text-gray-700'}`}>
-              {STATUS_LABELS[caseItem.status] ?? caseItem.status}
+            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getCaseStatusStyle(caseItem.status)}`}>
+              {getCaseStatusLabel(caseItem.status)}
             </span>
           </div>
           <p className="mt-0.5 text-sm text-gray-500">
             {caseNumber && <span className="font-medium text-gray-700">{caseNumber}</span>}
             {caseNumber && ' · '}
-            {TYPE_LABELS[caseItem.case_type] ?? caseItem.case_type}
+            {getCaseTypeLabel(caseItem.case_type)}
             {caseItem.case_subtype && ` → ${caseItem.case_subtype}`}
           </p>
         </div>
@@ -205,11 +171,11 @@ export default async function CaseDetailPage({ params }: Props) {
                         </p>
                         <p className="text-xs text-gray-500">
                           {task.due_date ? new Date(task.due_date).toLocaleDateString('da-DK') : 'Ingen deadline'}
-                          {task.priority && ` · ${PRIORITY_LABELS[task.priority] ?? task.priority}`}
+                          {task.priority && ` · ${getPriorityLabel(task.priority)}`}
                         </p>
                       </div>
                       <span className="text-xs text-gray-500">
-                        {TASK_STATUS_LABELS[task.status] ?? task.status}
+                        {getTaskStatusLabel(task.status)}
                       </span>
                     </li>
                   )

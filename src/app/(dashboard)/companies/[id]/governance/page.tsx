@@ -4,20 +4,15 @@ import { prisma } from '@/lib/db'
 import { canAccessCompany } from '@/lib/permissions'
 import { AddCompanyPersonForm } from '@/components/companies/AddCompanyPersonForm'
 import { CompanyPersonList } from '@/components/companies/CompanyPersonList'
+import { COMPANY_PERSON_ROLE_LABELS, GOVERNANCE_ROLES, getCompanyPersonRoleLabel } from '@/lib/labels'
 
 interface Props {
   params: { id: string }
 }
 
-const GOVERNANCE_ROLES = ['direktoer', 'bestyrelsesformand', 'bestyrelsesmedlem', 'tegningsberettiget', 'revisor']
-
-const ROLE_LABELS: Record<string, string> = {
-  direktoer: 'Direktør',
-  bestyrelsesformand: 'Bestyrelsesformand',
-  bestyrelsesmedlem: 'Bestyrelsesmedlem',
-  tegningsberettiget: 'Tegningsberettiget',
-  revisor: 'Revisor',
-}
+const GOVERNANCE_ROLE_LABELS: Record<string, string> = Object.fromEntries(
+  GOVERNANCE_ROLES.map((r) => [r, COMPANY_PERSON_ROLE_LABELS[r]])
+)
 
 export default async function CompanyGovernancePage({ params }: Props) {
   const session = await auth()
@@ -30,7 +25,7 @@ export default async function CompanyGovernancePage({ params }: Props) {
     where: {
       organization_id: session.user.organizationId,
       company_id: params.id,
-      role: { in: GOVERNANCE_ROLES },
+      role: { in: [...GOVERNANCE_ROLES] },
     },
     include: {
       person: {
@@ -56,7 +51,7 @@ export default async function CompanyGovernancePage({ params }: Props) {
         </div>
         <AddCompanyPersonForm
           companyId={params.id}
-          roleOptions={Object.entries(ROLE_LABELS).map(([value, label]) => ({ value, label }))}
+          roleOptions={Object.entries(GOVERNANCE_ROLE_LABELS).map(([value, label]) => ({ value, label }))}
           formTitle="Tilføj governance-rolle"
         />
       </div>
@@ -65,7 +60,7 @@ export default async function CompanyGovernancePage({ params }: Props) {
       {vacantRoles.length > 0 && (
         <div className="rounded-md bg-red-50 border border-red-200 p-3">
           <p className="text-sm text-red-800">
-            ⚠️ Vakante roller: {vacantRoles.map((r) => ROLE_LABELS[r]).join(', ')}
+            ⚠️ Vakante roller: {vacantRoles.map((r) => getCompanyPersonRoleLabel(r)).join(', ')}
           </p>
         </div>
       )}
@@ -74,7 +69,7 @@ export default async function CompanyGovernancePage({ params }: Props) {
         persons={activePersons}
         title={`Aktive roller (${activePersons.length})`}
         showActions={true}
-        roleLabels={ROLE_LABELS}
+        roleLabels={GOVERNANCE_ROLE_LABELS}
       />
 
       {historicPersons.length > 0 && (
@@ -82,7 +77,7 @@ export default async function CompanyGovernancePage({ params }: Props) {
           persons={historicPersons}
           title={`Tidligere roller (${historicPersons.length})`}
           showActions={false}
-          roleLabels={ROLE_LABELS}
+          roleLabels={GOVERNANCE_ROLE_LABELS}
         />
       )}
     </div>

@@ -1,6 +1,6 @@
 # RUNBOOK.md — ChainHub Operations
 **Version 1.0**
-**Opdateret af:** BA-08 (DevOps-agent), Sprint 6
+**Opdateret:** Sprint 6
 
 ---
 
@@ -159,6 +159,6 @@ pg_dump $DIRECT_URL > backup_$(date +%Y%m%d).sql
 
 ```
 v1.0 — Sprint 6:
-  Initial RUNBOOK oprettet af BA-08 (DevOps-agent)
+  Initial RUNBOOK oprettet.
   Dækker: lokal opsætning, Supabase, Vercel, sprint-gate, secrets-rotation
 ```

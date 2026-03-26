@@ -1,8 +1,7 @@
 # DATABASE-SCHEMA.md
 # ChainHub — Databaseskema
-**Version:** 0.4 — DEA-challenge-rettet
-**Status:** ACCEPTED efter DEA-challenge-runde
-**Læses af:** BA-02 (Schema-agent) — klar til migration
+**Version:** 0.4
+**Status:** ACCEPTED
 
 ---
 

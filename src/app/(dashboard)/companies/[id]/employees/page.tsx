@@ -4,21 +4,15 @@ import { prisma } from '@/lib/db'
 import { canAccessCompany } from '@/lib/permissions'
 import { AddCompanyPersonForm } from '@/components/companies/AddCompanyPersonForm'
 import { CompanyPersonList } from '@/components/companies/CompanyPersonList'
+import { COMPANY_PERSON_ROLE_LABELS, GOVERNANCE_ROLES, EMPLOYEE_ROLES } from '@/lib/labels'
 
 interface Props {
   params: { id: string }
 }
 
-// Governance-roller der IKKE er ansatte
-const GOVERNANCE_ROLES = ['direktoer', 'bestyrelsesformand', 'bestyrelsesmedlem', 'tegningsberettiget', 'revisor']
-
-const ROLE_LABELS: Record<string, string> = {
-  ansat: 'Ansat',
-  funktionaer: 'Funktionær',
-  'ikke-funktionaer': 'Ikke-funktionær',
-  vikar: 'Vikar',
-  leder: 'Leder/nøglemedarbejder',
-}
+const EMPLOYEE_ROLE_LABELS: Record<string, string> = Object.fromEntries(
+  EMPLOYEE_ROLES.map((r) => [r, COMPANY_PERSON_ROLE_LABELS[r]])
+)
 
 export default async function CompanyEmployeesPage({ params }: Props) {
   const session = await auth()
@@ -31,7 +25,7 @@ export default async function CompanyEmployeesPage({ params }: Props) {
     where: {
       organization_id: session.user.organizationId,
       company_id: params.id,
-      role: { notIn: GOVERNANCE_ROLES },
+      role: { notIn: [...GOVERNANCE_ROLES] },
     },
     include: {
       person: {
@@ -56,7 +50,7 @@ export default async function CompanyEmployeesPage({ params }: Props) {
         <AddCompanyPersonForm
           companyId={params.id}
           roleOptions={[
-            ...Object.entries(ROLE_LABELS).map(([value, label]) => ({ value, label })),
+            ...Object.entries(EMPLOYEE_ROLE_LABELS).map(([value, label]) => ({ value, label })),
             { value: 'custom', label: 'Anden stilling (fritekst)' },
           ]}
           formTitle="Tilføj ansat"
@@ -68,7 +62,7 @@ export default async function CompanyEmployeesPage({ params }: Props) {
         persons={activePersons}
         title={`Aktive ansatte (${activePersons.length})`}
         showActions={true}
-        roleLabels={ROLE_LABELS}
+        roleLabels={EMPLOYEE_ROLE_LABELS}
       />
 
       {historicPersons.length > 0 && (
@@ -76,7 +70,7 @@ export default async function CompanyEmployeesPage({ params }: Props) {
           persons={historicPersons}
           title={`Fratrådte (${historicPersons.length})`}
           showActions={false}
-          roleLabels={ROLE_LABELS}
+          roleLabels={EMPLOYEE_ROLE_LABELS}
         />
       )}
     </div>

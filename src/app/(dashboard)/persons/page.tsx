@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
+import { getAccessibleCompanies } from '@/lib/permissions'
 import { Users, Plus } from 'lucide-react'
 import Link from 'next/link'
 import { Suspense } from 'react'
@@ -13,6 +14,7 @@ const PAGE_SIZE = 20
 interface PersonsPageProps {
   searchParams: {
     q?: string
+    company?: string
     page?: string
   }
 }
@@ -47,6 +49,25 @@ export default async function PersonsPage({ searchParams }: PersonsPageProps) {
 
   const { page, skip, take } = parsePaginationParams(searchParams.page, PAGE_SIZE)
   const q = searchParams.q?.trim() ?? ''
+  const companyFilter = searchParams.company
+
+  // Hent accessible companies til filter-dropdown
+  const companyIds = await getAccessibleCompanies(
+    session.user.id,
+    session.user.organizationId
+  )
+
+  const companyOptions = companyIds.length > 0
+    ? (await prisma.company.findMany({
+        where: {
+          id: { in: companyIds },
+          organization_id: session.user.organizationId,
+          deleted_at: null,
+        },
+        select: { id: true, name: true },
+        orderBy: { name: 'asc' },
+      })).map((c) => ({ value: c.id, label: c.name }))
+    : []
 
   const where = {
     organization_id: session.user.organizationId,
@@ -58,6 +79,16 @@ export default async function PersonsPage({ searchParams }: PersonsPageProps) {
             { last_name: { contains: q, mode: 'insensitive' as const } },
             { email: { contains: q, mode: 'insensitive' as const } },
           ],
+        }
+      : {}),
+    ...(companyFilter
+      ? {
+          company_persons: {
+            some: {
+              company_id: companyFilter,
+              end_date: null,
+            },
+          },
         }
       : {}),
   }
@@ -100,7 +131,12 @@ export default async function PersonsPage({ searchParams }: PersonsPageProps) {
       </div>
 
       <Suspense fallback={null}>
-        <SearchAndFilter placeholder="Søg på navn eller email..." />
+        <SearchAndFilter
+          placeholder="Søg på navn eller email..."
+          filters={[
+            { key: 'company', label: 'Selskab', options: companyOptions },
+          ]}
+        />
       </Suspense>
 
       {persons.length === 0 ? (

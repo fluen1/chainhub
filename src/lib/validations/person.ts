@@ -9,7 +9,7 @@ export const createPersonSchema = z.object({
 })
 
 export const updatePersonSchema = createPersonSchema.partial().extend({
-  personId: z.string().uuid(),
+  personId: z.string().min(1),
 })
 
 export type CreatePersonInput = z.infer<typeof createPersonSchema>

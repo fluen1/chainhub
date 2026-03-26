@@ -1,8 +1,6 @@
 # SPRINT-PLAN.md
 # ChainHub — Byggeplan
-**Version 0.4 — QA-R2-rettet**
-**Opdateres af:** BA-01 (Orchestrator)
-**Læses af:** Alle build-agenter inden session start
+**Version 0.5**
 
 ---
 
@@ -10,7 +8,7 @@
 
 ```
 1. Spec godkendes FØR kode skrives
-   Alle DEA-challenge-runder på CONTRACT-TYPES.md og DATABASE-SCHEMA.md
+   Alle challenge-runder på CONTRACT-TYPES.md og DATABASE-SCHEMA.md
    skal være afsluttet (DECISIONS.md: ingen KRITISK tilbage) inden
    Sprint 1 starter.
 
@@ -29,25 +27,9 @@
 
 ---
 
-## Fase 0 — Spec (før kode)
-
-```
-[ ] CONTRACT-TYPES.md godkendt (DEA-challenge-runde gennemført)
-[ ] DATABASE-SCHEMA.md udkast klar
-[ ] DATABASE-SCHEMA.md godkendt (DEA-challenge-runde gennemført)
-[ ] roller-og-tilladelser.md godkendt
-[ ] UI-FLOWS.md udkast klar
-[ ] API-SPEC.md udkast klar
-
-Blokerer: alt i Sprint 1+
-```
-
----
-
 ## Sprint 1 — Fundament
 
 **Mål:** Systemet kan starte, brugere kan logge ind, databasen er klar.
-**Agenter:** BA-02 (Schema), BA-03 (Auth), BA-04 (UI), BA-08 (DevOps)
 
 ```
 [ ] Projektopsætning
@@ -85,7 +67,7 @@ Blokerer: alt i Sprint 1+
 Succeskriterium: Bruger kan registrere sig, logge ind med
 Microsoft og se et tomt dashboard.
 
-Sprint-gate (MABS-regel — ikke-forhandlingsbart):
+Sprint-gate (regel — ikke-forhandlingsbart):
   □ npm install --legacy-peer-deps
   □ npx prisma generate
   □ npx tsc --noEmit
@@ -100,7 +82,6 @@ Sprint-gate (MABS-regel — ikke-forhandlingsbart):
 ## Sprint 2 — Kernobjekter
 
 **Mål:** Selskaber og personer kan oprettes og administreres.
-**Agenter:** BA-04 (UI), BA-05 (Feature), BA-07 (QA), BA-09 (Performance)
 
 ```
 [ ] Selskabsprofil — Skeleton
@@ -133,7 +114,6 @@ Sprint-gate: npm install --legacy-peer-deps → prisma generate → tsc --noEmit
 ## Sprint 3 — Kontraktstyring
 
 **Mål:** Kontrakter kan oprettes, styres og genererer advisering.
-**Agenter:** BA-05 (Feature), BA-06 (Integration — advisering), BA-07 (QA)
 
 ```
 [ ] Kontraktstyring — Skeleton
@@ -169,7 +149,6 @@ Sprint-gate: npm install --legacy-peer-deps → prisma generate → tsc --noEmit
 ## Sprint 4 — Sager og opgaver
 
 **Mål:** Sager og opgaver kan oprettes og styres.
-**Agenter:** BA-05 (Feature), BA-07 (QA)
 
 ```
 [ ] Sagsstyring — Skeleton + Functionality + Polish
@@ -195,7 +174,6 @@ Sprint-gate: npm install --legacy-peer-deps → prisma generate → tsc --noEmit
 ## Sprint 5 — Dashboard og økonomi
 
 **Mål:** Portfolio-overblik og økonomi-modul.
-**Agenter:** BA-05 (Feature), BA-09 (Performance), BA-07 (QA)
 
 ```
 [ ] Portfolio-dashboard
@@ -211,7 +189,7 @@ Sprint-gate: npm install --legacy-peer-deps → prisma generate → tsc --noEmit
     Udbyttenotering
 
 Succeskriterium: Bruger med 10 selskaber ser komplet overblik
-på under 2 sekunder (BA-09 validerer query-tid).
+på under 2 sekunder.
 
 Sprint-gate: npm install --legacy-peer-deps → prisma generate → tsc --noEmit → next build + /dashboard loader under 2s.
 ```
@@ -221,7 +199,6 @@ Sprint-gate: npm install --legacy-peer-deps → prisma generate → tsc --noEmit
 ## Sprint 6 — Produktion og sikkerhed
 
 **Mål:** Systemet er produktionsklart.
-**Agenter:** BA-10 (Test), BA-11 (Pentest), BA-06 (Integration/Stripe), BA-08 (DevOps), BA-07 (QA)
 
 ```
 [ ] Fuld testsuite
@@ -245,7 +222,7 @@ Sprint-gate: npm install --legacy-peer-deps → prisma generate → tsc --noEmit
     Monitoring og alerting
     Backup-strategi
 
-Succeskriterium: BA-11 finder ingen KRITISKE sikkerhedshuller.
+Succeskriterium: Ingen KRITISKE sikkerhedshuller.
 Alle ikke-forhandlingsbare tests er grønne.
 
 Sprint-gate: npm install --legacy-peer-deps → prisma generate → tsc --noEmit → next build + alle E2E tests grønne + alle routes
@@ -257,7 +234,6 @@ loader uden fejl i både dev og production build.
 ## Tidsoversigt
 
 ```
-Fase 0 — Spec          Igangværende
 Sprint 1 — Fundament   ~2 uger
 Sprint 2 — Kernobjekter ~2 uger
 Sprint 3 — Kontrakter  ~2 uger
@@ -273,32 +249,18 @@ Total                  ~10 uger intensivt
 ## Changelog
 
 ```
-v0.4 (QA-R2-rettet):
-  [K1] Sprint-gate udvidet til fuld MABS-gate på alle 6 sprints:
-       npm install --legacy-peer-deps → prisma generate →
-       tsc --noEmit → next build (+ sprint-specifikke routes)
-  [K2] Sprint 1 agentliste: BA-04 (UI) tilføjet.
-       Kilde: MASTER-PROMPT.md Sprint 1-definition.
-  [K3] Sprint 6 agentliste: BA-06 (Integration/Stripe) tilføjet
-       i korrekt rækkefølge. Kilde: MASTER-PROMPT.md Sprint 6-definition.
-  [M1] Changelog-rækkefølge rettet: v0.3 → v0.2 → v0.1 (nyeste øverst).
-  [M2] Versionsnummer tilføjet i dokumentheader.
+v0.5:
+  Oprydning: forældede build-system-referencer fjernet. Fase 0 spec-review sektion fjernet.
+  Indhold uændret.
 
-v0.3 (MABS-læringer):
-  + Sprint-gate tilføjet til alle 6 sprints:
-    npx next build + navngivne routes skal loade uden fejl
-  + Sprint 1 gate uddybet med fire konkrete tjekpunkter
+v0.4:
+  Sprint-gate udvidet til fuld gate på alle 6 sprints.
 
-v0.2 (QA-rettet):
-  [K1] Forældet tabel-navn rettet (linje 68):
-       user_roles → user_role_assignments
-  [K2] Kontraktstatus-flow udbygget til fuld model (linje 131):
-       UDKAST → AKTIV  →
-       UDKAST → TIL_REVIEW → TIL_UNDERSKRIFT → AKTIV →
-       UDLØBET / OPSAGT / FORNYET / ARKIVERET
-       (matcher API-SPEC.md v0.3 updateContractStatus-transitioner)
-  [M1] Filnavn rettet (linje 37):
-       ROLLER-OG-TILLADELSER.md → roller-og-tilladelser.md
+v0.3:
+  Sprint-gate tilføjet til alle 6 sprints.
+
+v0.2:
+  Tabelnavne og kontraktstatus rettet.
 
 v0.1:
   Første udkast

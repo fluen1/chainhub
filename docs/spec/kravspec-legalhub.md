@@ -1,6 +1,6 @@
 # Kravspecifikation: ChainHub — Porteføljestyring for kæder med delejede lokationsselskaber
 
-**Version 2.2 | MABS-rettet**
+**Version 2.3**
 **Målgruppe for produktet:** Kæder/grupper der co-ejer lokationsselskaber med lokale partnere (tandlæge-, optiker-, fysio-, franchise-kæder)
 
 ---
@@ -369,66 +369,20 @@ Test, bugfix, edge cases            6     10
 TOTAL MVP                          82    125 timer
 ```
 
-Faktisk tempo styres af MABS sprint-gate og repair-loops — se `SPRINT-PLAN.md`.
-
----
-
-## 11. Build-sekvens (MABS)
-
-Builds styres ikke manuelt — de eksekveres autonomt af `orchestrator.py` via
-Claude Streaming API med `MASTER-PROMPT.md` som system-prompt og alle MD-filer
-som fælles kontekst.
-
-Autoritativ sprint-definition: **`SPRINT-PLAN.md`**
-
-```
-Sprint 1 — Fundament       BA-02 → BA-03 → BA-04 → BA-08
-Sprint 2 — Kerneobjekter   BA-05 (selskab + person) → BA-09 → BA-07
-Sprint 3 — Kontrakter      BA-05 (kontrakt) → BA-06 (advisering) → BA-07
-Sprint 4 — Sager           BA-05 (sager + opgaver) → BA-07
-Sprint 5 — Dashboard       BA-05 (dashboard + økonomi) → BA-09 → BA-07
-Sprint 6 — Produktion      BA-10 → BA-11 → BA-06 (Stripe) → BA-08 → BA-07
-```
-
-Hvert sprint afsluttes med sprint-gate:
-`npm install → prisma generate → tsc --noEmit → next build`
-Sprint markeres ikke færdigt ved fejl.
-
----
-
-## 12. MABS aktivering
-
-Systemet startes med:
-```bash
-python orchestrator.py
-```
-
-`orchestrator.py` sender automatisk `MASTER-PROMPT.md` som system-prompt
-og alle spec- og build-dokumenter som første user-besked via Claude Streaming API.
-
-Al intelligens bor i MD-dokumenterne. Python er tændingsnøglen.
-
-Autoritativ agent-definition: **`AGENT-ROSTER.md`**
-Autoritativ arkitektur: **`AGENT-ARCHITECTURE.md`**
-
 ---
 
 ## Changelog
 
 ```
-v2.2 (MABS-rettet):
-  [K1] Sektion 10: Overskrift rettet — "i Claude Code" fjernet.
-       Claude Code-temponoter fjernet. MABS-reference til SPRINT-PLAN.md tilføjet.
-  [K2] Sektion 11: "Anbefalet Claude Code sekvens" erstattet med
-       "Build-sekvens (MABS)" — 6 sprints med BA-agenter, sprint-gate regel.
-       Autoritativ kilde delegeret til SPRINT-PLAN.md.
-  [K3] Sektion 12: "Første Claude Code prompt" erstattet med
-       "MABS aktivering" — orchestrator.py kommando, streaming API-model,
-       reference til AGENT-ROSTER.md og AGENT-ARCHITECTURE.md.
-  [M1] Changelog K3: "32 typer" rettet til "33 typer".
-  [M2] Footer opdateret: kravspec er MABS-klar, ikke "klar til review".
+v2.3:
+  Fjernet sektion 11-12 (build-sekvens og aktivering).
+  Fjernet forældede referencer fra sektion 10 og changelog.
 
-v2.1 (QA-rettet):
+v2.2 (opdateret):
+  [K1] Sektion 10: Overskrift rettet.
+  [M1] Changelog K3: "32 typer" rettet til "33 typer".
+
+v2.1 (opdateret):
   [K1] Sektion 4: Rolleliste erstattet med kanoniske SCREAMING_SNAKE_CASE navne
        fra roller-og-tilladelser.md v0.2 — 4 generiske navne → 8 korrekte roller
        (GROUP_OWNER, GROUP_ADMIN, GROUP_LEGAL, GROUP_FINANCE, GROUP_READONLY,
@@ -461,4 +415,4 @@ v1.0:
 
 ---
 
-*kravspec-legalhub.md v2.2 — MABS-klar.*
+*kravspec-legalhub.md v2.3*

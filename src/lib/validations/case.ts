@@ -62,30 +62,30 @@ export const createCaseSchema = z.object({
   title: z.string().min(1, 'Titel er påkrævet').max(255),
   caseType: z.string().min(1, 'Sagstype er påkrævet'),
   caseSubtype: z.string().optional(),
-  companyIds: z.array(z.string().uuid()).min(1, 'Mindst ét selskab skal angives'),
-  assignedTo: z.string().uuid().optional(),
+  companyIds: z.array(z.string().min(1)).min(1, 'Mindst ét selskab skal angives'),
+  assignedTo: z.string().min(1).optional(),
   sensitivity: z.enum(['PUBLIC', 'STANDARD', 'INTERN', 'FORTROLIG', 'STRENGT_FORTROLIG']).default('INTERN'),
   description: z.string().optional(),
   notes: z.string().optional(),
 })
 
 export const updateCaseStatusSchema = z.object({
-  caseId: z.string().uuid(),
+  caseId: z.string().min(1),
   status: z.enum(['NY', 'AKTIV', 'AFVENTER_EKSTERN', 'AFVENTER_KLIENT', 'LUKKET', 'ARKIVERET']),
 })
 
 export const createTaskSchema = z.object({
   title: z.string().min(1, 'Titel er påkrævet').max(255),
   description: z.string().optional(),
-  assignedTo: z.string().uuid().optional(),
+  assignedTo: z.string().min(1).optional(),
   dueDate: z.string().optional(),
   priority: z.enum(['LAV', 'MELLEM', 'HOEJ', 'KRITISK']).default('MELLEM'),
-  caseId: z.string().uuid().optional(),
-  companyId: z.string().uuid().optional(),
+  caseId: z.string().min(1).optional(),
+  companyId: z.string().min(1).optional(),
 })
 
 export const updateTaskStatusSchema = z.object({
-  taskId: z.string().uuid(),
+  taskId: z.string().min(1),
   status: z.enum(['NY', 'AKTIV', 'AFVENTER', 'LUKKET']),
 })
 

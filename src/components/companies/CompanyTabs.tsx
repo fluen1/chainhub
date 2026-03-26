@@ -27,6 +27,7 @@ export function CompanyTabs({ companyId }: CompanyTabsProps) {
     { label: 'Ejerskab', href: `/companies/${companyId}/ownership` },
     { label: 'Governance', href: `/companies/${companyId}/governance` },
     { label: 'Økonomi', href: `/companies/${companyId}/finance` },
+    { label: 'Besøg', href: `/companies/${companyId}/visits` },
     { label: 'Dokumenter', href: `/companies/${companyId}/documents` },
     { label: 'Aktivitetslog', href: `/companies/${companyId}/log` },
   ]

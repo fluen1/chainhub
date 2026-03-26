@@ -11,7 +11,8 @@ import {
   Rocket,
 } from 'lucide-react'
 import Link from 'next/link'
-import { getCompanyStatusLabel, getCompanyStatusStyle } from '@/lib/labels'
+import { getCompanyStatusLabel, getCompanyStatusStyle, getVisitTypeLabel, getCompanyPersonRoleLabel } from '@/lib/labels'
+import { cn } from '@/lib/utils'
 import type { Prisma } from '@prisma/client'
 
 interface UrgencyItem {
@@ -67,6 +68,9 @@ export default async function DashboardPage() {
     activeCasesCount,
     totalTasksCount,
     totalCompanyCount,
+    overdueTasksTotal,
+    overdueTasksByCompany,
+    upcomingVisits,
   ] = await Promise.all([
     // Forfaldne opgaver
     prisma.task.findMany({
@@ -123,7 +127,7 @@ export default async function DashboardPage() {
             _count: {
               select: {
                 contracts: { where: { deleted_at: null, status: 'AKTIV' } },
-                cases: true,
+                cases: { where: { case: { deleted_at: null } } },
               },
             },
             company_persons: {
@@ -174,7 +178,49 @@ export default async function DashboardPage() {
     prisma.company.count({
       where: { organization_id: session.user.organizationId, deleted_at: null },
     }),
+
+    // KPI: total antal forfaldne opgaver (ikke capped)
+    prisma.task.count({
+      where: {
+        organization_id: session.user.organizationId,
+        deleted_at: null,
+        status: { not: 'LUKKET' },
+        due_date: { lt: today },
+      },
+    }),
+
+    // Forfaldne opgaver per selskab
+    prisma.task.groupBy({
+      by: ['company_id'],
+      where: {
+        organization_id: session.user.organizationId,
+        deleted_at: null,
+        status: { not: 'LUKKET' },
+        due_date: { lt: today },
+        company_id: { in: companyIds.length > 0 ? companyIds : ['no-match'] },
+      },
+      _count: true,
+    }),
+
+    // Kommende besøg (næste 5)
+    prisma.visit.findMany({
+      where: {
+        organization_id: session.user.organizationId,
+        deleted_at: null,
+        status: 'PLANLAGT',
+        visit_date: { gte: today },
+      },
+      include: { company: { select: { id: true, name: true } } },
+      orderBy: { visit_date: 'asc' },
+      take: 5,
+    }),
   ])
+
+  // Byg overdue-map per selskab
+  const overdueByCompany: Record<string, number> = {}
+  for (const t of overdueTasksByCompany) {
+    if (t.company_id) overdueByCompany[t.company_id] = t._count
+  }
 
   // Byg urgency items
   const urgencyItems: UrgencyItem[] = []
@@ -187,8 +233,8 @@ export default async function DashboardPage() {
       id: `task-${task.id}`,
       type: 'FORFALDEN_OPGAVE',
       title: task.title,
-      subtitle: task.case ? `Sag: ${task.case.title}` : 'Opgave',
-      href: `/tasks`,
+      subtitle: task.case ? `Sag: ${task.case.title}` : '',
+      href: `/tasks?status=AKTIV_TASK`,
       daysLabel: `${days} dag${days !== 1 ? 'e' : ''} forfalden`,
       severity: 'RED',
     })
@@ -234,15 +280,20 @@ export default async function DashboardPage() {
 
   const showOnboarding = totalCompanyCount === 0
 
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Godmorgen' : hour < 18 ? 'God eftermiddag' : 'God aften'
+
   return (
     <div className="space-y-8">
       {/* Overskrift */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          Godmorgen, {session.user.name?.split(' ')[0] ?? 'der'}
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+          {greeting}, {session.user.name?.split(' ')[0] ?? 'der'}
         </h1>
         <p className="mt-1 text-sm text-gray-500">
-          {companies.length} selskab{companies.length !== 1 ? 'er' : ''} i porteføljen
+          {sortedUrgency.length > 0
+            ? new Date().toLocaleDateString('da-DK', { weekday: 'long', day: 'numeric', month: 'long' })
+            : 'Alt ser godt ud i din portefølje'}
         </p>
       </div>
 
@@ -297,7 +348,7 @@ export default async function DashboardPage() {
           <div className="flex items-center gap-2 px-5 py-3 bg-red-50 border-b border-red-100">
             <AlertTriangle className="h-4 w-4 text-red-600" />
             <h2 className="text-sm font-semibold text-red-900">
-              Kræver din opmærksomhed ({sortedUrgency.length})
+              Du har {sortedUrgency.length} ting der kræver handling
             </h2>
           </div>
           <ul className="divide-y divide-gray-100">
@@ -307,16 +358,22 @@ export default async function DashboardPage() {
                   href={item.href}
                   className="flex items-center gap-4 px-5 py-3 hover:bg-gray-50 transition-colors group"
                 >
-                  <div
-                    className={`h-2 w-2 rounded-full shrink-0 ${
-                      item.severity === 'RED' ? 'bg-red-500' : 'bg-amber-400'
-                    }`}
-                  />
+                  {item.type === 'FORFALDEN_OPGAVE' && (
+                    <CheckSquare className={`h-4 w-4 shrink-0 ${item.severity === 'RED' ? 'text-red-500' : 'text-amber-500'}`} />
+                  )}
+                  {item.type === 'KONTRAKT_UDLOEBER' && (
+                    <FileText className={`h-4 w-4 shrink-0 ${item.severity === 'RED' ? 'text-red-500' : 'text-amber-500'}`} />
+                  )}
+                  {item.type === 'SAG_AFVENTER' && (
+                    <Briefcase className={`h-4 w-4 shrink-0 ${item.severity === 'RED' ? 'text-red-500' : 'text-amber-500'}`} />
+                  )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate group-hover:text-blue-700">
+                    <p className="text-sm font-medium text-gray-900 line-clamp-2 group-hover:text-blue-700">
                       {item.title}
                     </p>
-                    <p className="text-xs text-gray-500 truncate">{item.subtitle}</p>
+                    {item.subtitle && (
+                      <p className="text-xs text-gray-500 truncate">{item.subtitle}</p>
+                    )}
                   </div>
                   <span
                     className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -347,35 +404,69 @@ export default async function DashboardPage() {
         </div>
       )}
 
+      {/* KOMMENDE BESØG */}
+      {upcomingVisits.length > 0 && (
+        <div className="rounded-lg border bg-white shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-3 bg-gray-50 border-b">
+            <h2 className="text-sm font-semibold text-gray-900">Kommende besøg</h2>
+            <Link href="/visits" className="text-xs text-blue-600 hover:text-blue-800">Se alle →</Link>
+          </div>
+          <ul className="divide-y divide-gray-100">
+            {upcomingVisits.map((visit) => (
+              <li key={visit.id}>
+                <Link href={`/visits/${visit.id}`} className="flex items-center justify-between px-5 py-3 hover:bg-gray-50">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{visit.company.name}</p>
+                    <p className="text-xs text-gray-500">{getVisitTypeLabel(visit.visit_type)}</p>
+                  </div>
+                  <span className="text-sm text-gray-500">
+                    {new Date(visit.visit_date).toLocaleDateString('da-DK')}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {/* KPI-KORT */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div className="rounded-lg border bg-white p-5 shadow-sm">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <Link href="/companies" className="rounded-lg border bg-white p-5 shadow-sm hover:border-blue-300 hover:shadow-md transition-all cursor-pointer relative group">
+          <svg className="absolute top-3 right-3 h-4 w-4 text-gray-300 group-hover:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
           <div className="flex items-center gap-3">
             <div className="rounded-md bg-blue-50 p-2">
               <Building2 className="h-5 w-5 text-blue-600" />
             </div>
             <div>
               <p className="text-xs text-gray-500">Selskaber</p>
-              <p className="text-2xl font-bold text-gray-900">{companies.length}</p>
+              <p className="text-2xl font-bold text-gray-900">{totalCompanyCount}</p>
             </div>
           </div>
-        </div>
+        </Link>
 
-        <div className="rounded-lg border bg-white p-5 shadow-sm">
+        <Link href="/contracts?expiry=90" className="rounded-lg border bg-white p-5 shadow-sm hover:border-blue-300 hover:shadow-md transition-all cursor-pointer relative group">
+          <svg className="absolute top-3 right-3 h-4 w-4 text-gray-300 group-hover:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
           <div className="flex items-center gap-3">
             <div className={`rounded-md p-2 ${expiringContractsCount > 0 ? 'bg-orange-50' : 'bg-gray-50'}`}>
               <FileText className={`h-5 w-5 ${expiringContractsCount > 0 ? 'text-orange-600' : 'text-gray-400'}`} />
             </div>
             <div>
-              <p className="text-xs text-gray-500">Udløber (90 dage)</p>
+              <p className="text-xs text-gray-500">Kontrakter der udløber</p>
               <p className={`text-2xl font-bold ${expiringContractsCount > 0 ? 'text-orange-600' : 'text-gray-900'}`}>
                 {expiringContractsCount}
               </p>
             </div>
           </div>
-        </div>
+        </Link>
 
-        <div className="rounded-lg border bg-white p-5 shadow-sm">
+        <Link href="/cases?status=AKTIV" className="rounded-lg border bg-white p-5 shadow-sm hover:border-blue-300 hover:shadow-md transition-all cursor-pointer relative group">
+          <svg className="absolute top-3 right-3 h-4 w-4 text-gray-300 group-hover:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
           <div className="flex items-center gap-3">
             <div className="rounded-md bg-blue-50 p-2">
               <Briefcase className="h-5 w-5 text-blue-600" />
@@ -385,26 +476,29 @@ export default async function DashboardPage() {
               <p className="text-2xl font-bold text-gray-900">{activeCasesCount}</p>
             </div>
           </div>
-        </div>
+        </Link>
 
-        <div className="rounded-lg border bg-white p-5 shadow-sm">
+        <Link href="/tasks" className="rounded-lg border bg-white p-5 shadow-sm hover:border-blue-300 hover:shadow-md transition-all cursor-pointer relative group">
+          <svg className="absolute top-3 right-3 h-4 w-4 text-gray-300 group-hover:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
           <div className="flex items-center gap-3">
-            <div className={`rounded-md p-2 ${overdueTasks.length > 0 ? 'bg-red-50' : 'bg-gray-50'}`}>
-              {overdueTasks.length > 0
+            <div className={`rounded-md p-2 ${overdueTasksTotal > 0 ? 'bg-red-50' : 'bg-gray-50'}`}>
+              {overdueTasksTotal > 0
                 ? <AlertTriangle className="h-5 w-5 text-red-600" />
                 : <CheckSquare className="h-5 w-5 text-gray-400" />}
             </div>
             <div>
               <p className="text-xs text-gray-500">Åbne opgaver</p>
-              <p className={`text-2xl font-bold ${overdueTasks.length > 0 ? 'text-red-600' : 'text-gray-900'}`}>
+              <p className={`text-2xl font-bold ${overdueTasksTotal > 0 ? 'text-red-600' : 'text-gray-900'}`}>
                 {totalTasksCount}
               </p>
-              {overdueTasks.length > 0 && (
-                <p className="text-xs text-red-500">{overdueTasks.length} forfaldne</p>
+              {overdueTasksTotal > 0 && (
+                <p className="text-xs text-red-500">{overdueTasksTotal} forfaldne</p>
               )}
             </div>
           </div>
-        </div>
+        </Link>
       </div>
 
       {/* SELSKABSGRID */}
@@ -426,20 +520,25 @@ export default async function DashboardPage() {
         <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-semibold text-gray-900">Selskaber</h2>
-            <Link href="/companies" className="text-sm text-blue-600 hover:text-blue-800">
-              Se alle →
-            </Link>
+            {companyIds.length > companies.length && (
+              <Link href="/companies" className="text-sm text-blue-600 hover:text-blue-800">
+                Se alle {companyIds.length} selskaber →
+              </Link>
+            )}
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {companies.map((company) => (
               <Link
                 key={company.id}
                 href={`/companies/${company.id}`}
-                className="group rounded-lg border bg-white p-5 shadow-sm hover:border-blue-300 hover:shadow-md transition-all"
+                className={cn(
+                  "group rounded-lg border bg-white p-5 shadow-sm hover:border-blue-300 hover:shadow-md transition-all",
+                  overdueByCompany[company.id] > 0 && "border-l-4 border-l-red-400",
+                )}
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 truncate">
+                    <h3 className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 leading-snug line-clamp-2">
                       {company.name}
                     </h3>
                     {company.cvr && (
@@ -455,30 +554,44 @@ export default async function DashboardPage() {
 
                 {company.company_persons.length > 0 && (
                   <div className="mb-3 space-y-0.5">
-                    {company.company_persons.map((cp) => (
-                      <p key={cp.id} className="text-xs text-gray-500 truncate">
-                        <span className="text-gray-400">{cp.role}:</span>{' '}
-                        {cp.person.first_name} {cp.person.last_name}
-                      </p>
-                    ))}
+                    {company.company_persons.filter((cp) => cp.role === 'direktoer').length > 0
+                      ? company.company_persons
+                          .filter((cp) => cp.role === 'direktoer')
+                          .slice(0, 1)
+                          .map((cp) => (
+                            <p key={cp.id} className="text-xs text-gray-500 truncate">
+                              {cp.person.first_name} {cp.person.last_name}
+                            </p>
+                          ))
+                      : company.company_persons.slice(0, 1).map((cp) => (
+                          <p key={cp.id} className="text-xs text-gray-500 truncate">
+                            <span className="text-gray-400">{getCompanyPersonRoleLabel(cp.role)}:</span>{' '}
+                            {cp.person.first_name} {cp.person.last_name}
+                          </p>
+                        ))
+                    }
                   </div>
                 )}
 
-                <div className="flex items-center gap-2 text-xs text-gray-400">
-                  <span>
+                <div className="flex items-center gap-1.5 flex-wrap text-xs">
+                  <span className="inline-flex items-center rounded-full bg-blue-50 text-blue-700 px-2 py-0.5 font-medium">
                     {company._count.contracts} kontrakt{company._count.contracts !== 1 ? 'er' : ''}
                   </span>
                   {company._count.cases > 0 && (
-                    <>
-                      <span>·</span>
-                      <span>{company._count.cases} sag{company._count.cases !== 1 ? 'er' : ''}</span>
-                    </>
+                    <span className="inline-flex items-center rounded-full bg-orange-50 text-orange-700 px-2 py-0.5 font-medium">
+                      {company._count.cases} sag{company._count.cases !== 1 ? 'er' : ''}
+                    </span>
+                  )}
+                  {overdueByCompany[company.id] > 0 && (
+                    <span className="inline-flex items-center rounded-full bg-red-50 text-red-700 px-2 py-0.5 font-medium">
+                      {overdueByCompany[company.id]} forfaldne
+                    </span>
                   )}
                 </div>
               </Link>
             ))}
           </div>
-          {companyIds.length > 9 && (
+          {companyIds.length > companies.length && (
             <div className="mt-4 text-center">
               <Link href="/companies" className="text-sm text-blue-600 hover:text-blue-800 font-medium">
                 Se alle {companyIds.length} selskaber →
@@ -488,24 +601,6 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {/* Hurtiglinks */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        {[
-          { href: '/contracts/new', label: 'Ny kontrakt', icon: FileText },
-          { href: '/cases/new', label: 'Ny sag', icon: Briefcase },
-          { href: '/tasks/new', label: 'Ny opgave', icon: CheckSquare },
-          { href: '/companies/new', label: 'Nyt selskab', icon: Building2 },
-        ].map(({ href, label, icon: Icon }) => (
-          <Link
-            key={href}
-            href={href}
-            className="flex items-center gap-3 rounded-lg border bg-white p-4 shadow-sm hover:border-blue-300 hover:bg-blue-50 transition-colors"
-          >
-            <Icon className="h-5 w-5 text-blue-600" />
-            <span className="text-sm font-medium text-gray-700">{label}</span>
-          </Link>
-        ))}
-      </div>
     </div>
   )
 }

@@ -3,6 +3,7 @@
 import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useState, Suspense } from 'react'
+import { Building2 } from 'lucide-react'
 
 function LoginForm() {
   const router = useRouter()
@@ -36,12 +37,18 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50/30">
+      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-lg border border-gray-100">
         <div className="text-center">
+          <div className="mx-auto w-12 h-12 flex items-center justify-center rounded-full bg-blue-50 mb-4">
+            <Building2 className="h-6 w-6 text-blue-600" />
+          </div>
           <h1 className="text-2xl font-bold text-gray-900">ChainHub</h1>
           <p className="mt-1 text-sm text-gray-600">
             Log ind på din konto
+          </p>
+          <p className="mt-1 text-xs text-gray-400">
+            Porteføljestyring for kædegrupper
           </p>
         </div>
 
@@ -62,6 +69,7 @@ function LoginForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              autoComplete="email"
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="din@email.dk"
             />
@@ -77,8 +85,9 @@ function LoginForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              autoComplete="current-password"
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="••••••••"
+              placeholder="Din adgangskode"
             />
           </div>
 
@@ -90,6 +99,10 @@ function LoginForm() {
             {loading ? 'Logger ind...' : 'Log ind'}
           </button>
         </form>
+
+        <p className="text-center text-xs text-gray-400 mt-4">
+          Glemt adgangskode? Kontakt din administrator.
+        </p>
       </div>
     </div>
   )
@@ -98,8 +111,8 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md animate-pulse">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50/30">
+        <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-lg border border-gray-100 animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-1/2 mx-auto" />
           <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto" />
           <div className="space-y-4">

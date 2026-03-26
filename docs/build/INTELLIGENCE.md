@@ -1,7 +1,5 @@
-# INTELLIGENCE.md — ChainHub MABS Videnslag
-Automatisk opdateret af orchestrator efter hver repair-cyklus.
-Læses af alle agenter ved repair for at undgå kendte fejl.
-Nyeste læring øverst.
+# INTELLIGENCE.md — ChainHub Videnslag
+Kendte fejlmønstre og learnings. Nyeste øverst.
 ---
 
 ## PERMANENT REGEL: Smoketest er obligatorisk — ikke-forhandlingsbart
@@ -81,7 +79,7 @@ REGLER FOR ALLE GLOBALE LISTER (/contracts, /tasks, /persons, /documents, /cases
      Grupperet visning loader kun collapsed counts, expandér on-demand.
 
 DETTE PRINCIP GÆLDER FOR ALLE SIDER, ALLE FANER, ALLE MODULER.
-Agenter der bygger UI SKAL teste med 50+ records, ikke 7.
+UI SKAL testes med 50+ records, ikke 7.
 ```
 
 ---

@@ -4,49 +4,77 @@ import { prisma } from '@/lib/db'
 import { getAccessibleCompanies } from '@/lib/permissions'
 import { Briefcase, Plus } from 'lucide-react'
 import Link from 'next/link'
+import { Suspense } from 'react'
+import { SearchAndFilter } from '@/components/ui/SearchAndFilter'
+import { Pagination } from '@/components/ui/Pagination'
+import { parsePaginationParams } from '@/lib/pagination'
+import { GroupToggle } from '@/components/ui/GroupToggle'
+import { CollapsibleSection } from '@/components/ui/CollapsibleSection'
+import {
+  CASE_STATUS_LABELS,
+  CASE_TYPE_LABELS,
+  getCaseStatusLabel,
+  getCaseStatusStyle,
+  getCaseTypeLabel,
+} from '@/lib/labels'
+import type { SagsType } from '@prisma/client'
 
-const STATUS_LABELS: Record<string, string> = {
-  NY: 'Ny',
-  AKTIV: 'Aktiv',
-  AFVENTER_EKSTERN: 'Afventer ekstern',
-  AFVENTER_KLIENT: 'Afventer klient',
-  LUKKET: 'Lukket',
-  ARKIVERET: 'Arkiveret',
+const PAGE_SIZE = 20
+
+const STATUS_OPTIONS = Object.entries(CASE_STATUS_LABELS).map(([value, label]) => ({ value, label }))
+const TYPE_OPTIONS = Object.entries(CASE_TYPE_LABELS).map(([value, label]) => ({ value, label }))
+
+interface CasesPageProps {
+  searchParams: {
+    q?: string
+    status?: string
+    type?: string
+    company?: string
+    view?: string
+    page?: string
+  }
 }
 
-const STATUS_STYLES: Record<string, string> = {
-  NY: 'bg-blue-50 text-blue-700',
-  AKTIV: 'bg-green-50 text-green-700',
-  AFVENTER_EKSTERN: 'bg-yellow-50 text-yellow-700',
-  AFVENTER_KLIENT: 'bg-orange-50 text-orange-700',
-  LUKKET: 'bg-gray-100 text-gray-600',
-  ARKIVERET: 'bg-gray-50 text-gray-400',
-}
-
-const TYPE_LABELS: Record<string, string> = {
-  TRANSAKTION: 'Transaktion',
-  TVIST: 'Tvist',
-  COMPLIANCE: 'Compliance',
-  KONTRAKT: 'Kontrakt',
-  GOVERNANCE: 'Governance',
-  ANDET: 'Andet',
-}
-
-export default async function CasesPage() {
+export default async function CasesPage({ searchParams }: CasesPageProps) {
   const session = await auth()
   if (!session) redirect('/login')
+
+  const { page, skip, take } = parsePaginationParams(searchParams.page, PAGE_SIZE)
+  const q = searchParams.q?.trim() ?? ''
+  const statusFilter = searchParams.status
+  const typeFilter = searchParams.type
+  const companyFilter = searchParams.company
+  const viewMode = searchParams.view ?? 'grouped'
 
   const companyIds = await getAccessibleCompanies(
     session.user.id,
     session.user.organizationId
   )
 
-  // Hent sager via CaseCompany-tabellen
-  const caseCompanyLinks = companyIds.length > 0
+  // Hent selskaber til filter-dropdown
+  const companyOptions = companyIds.length > 0
+    ? (await prisma.company.findMany({
+        where: {
+          id: { in: companyIds },
+          organization_id: session.user.organizationId,
+          deleted_at: null,
+        },
+        select: { id: true, name: true },
+        orderBy: { name: 'asc' },
+      })).map((c) => ({ value: c.id, label: c.name }))
+    : []
+
+  // Bestem hvilke selskaber der skal bruges til CaseCompany-opslag
+  const effectiveCompanyIds = companyFilter
+    ? (companyIds.includes(companyFilter) ? [companyFilter] : [])
+    : companyIds
+
+  // Hent sags-id'er via CaseCompany-tabellen
+  const caseCompanyLinks = effectiveCompanyIds.length > 0
     ? await prisma.caseCompany.findMany({
         where: {
           organization_id: session.user.organizationId,
-          company_id: { in: companyIds },
+          company_id: { in: effectiveCompanyIds },
         },
         select: { case_id: true },
         distinct: ['case_id'],
@@ -55,48 +83,239 @@ export default async function CasesPage() {
 
   const caseIds = caseCompanyLinks.map((cc) => cc.case_id)
 
-  const cases = caseIds.length > 0
-    ? await prisma.case.findMany({
-        where: {
-          id: { in: caseIds },
-          organization_id: session.user.organizationId,
-          deleted_at: null,
-        },
+  const filters = [
+    { key: 'company', label: 'Selskab', options: companyOptions },
+    { key: 'status', label: 'Status', options: STATUS_OPTIONS },
+    { key: 'type', label: 'Type', options: TYPE_OPTIONS },
+  ]
+
+  const caseWhere = {
+    id: caseIds.length > 0 ? { in: caseIds } : undefined,
+    organization_id: session.user.organizationId,
+    deleted_at: null as null,
+    ...(q ? { title: { contains: q, mode: 'insensitive' as const } } : {}),
+    ...(statusFilter ? { status: statusFilter as never } : {}),
+    ...(typeFilter ? { case_type: typeFilter as SagsType } : {}),
+  }
+
+  // Ingen tilgængelige selskaber → ingen sager
+  if (caseIds.length === 0) {
+    return (
+      <div className="space-y-6">
+        <CasesHeader />
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex-1">
+            <Suspense fallback={null}>
+              <SearchAndFilter
+                placeholder="Søg på sagsnavn..."
+                filters={filters}
+              />
+            </Suspense>
+          </div>
+          <Suspense fallback={null}>
+            <GroupToggle />
+          </Suspense>
+        </div>
+        <EmptyState hasFilters={false} />
+      </div>
+    )
+  }
+
+  const isGrouped = viewMode === 'grouped'
+
+  const casesQuery = prisma.case.findMany({
+    where: caseWhere,
+    include: {
+      case_companies: {
         include: {
-          case_companies: {
-            include: {
-              company: { select: { id: true, name: true } },
-            },
-          },
-          _count: {
-            select: {
-              tasks: { where: { deleted_at: null, status: { not: 'LUKKET' } } },
-            },
-          },
+          company: { select: { id: true, name: true } },
         },
-        orderBy: { created_at: 'desc' },
-      })
-    : []
+      },
+      _count: {
+        select: {
+          tasks: { where: { deleted_at: null, status: { not: 'LUKKET' } } },
+        },
+      },
+    },
+    orderBy: { created_at: 'desc' },
+    ...(isGrouped ? {} : { skip, take }),
+  })
+  const countQuery = prisma.case.count({ where: caseWhere })
+
+  const [cases, totalCount] = await Promise.all([casesQuery, countQuery])
+
+  const hasFilters = !!(q || statusFilter || typeFilter || companyFilter)
+
+  // Gruppér sager efter selskab (brug første selskab som gruppe-nøgle)
+  const groupedCases: Record<string, { companyName: string; cases: typeof cases }> = {}
+  if (isGrouped) {
+    for (const caseItem of cases) {
+      const primaryCompany = caseItem.case_companies[0]?.company
+      const key = primaryCompany?.id ?? 'unknown'
+      const name = primaryCompany?.name ?? 'Ukendt selskab'
+      if (!groupedCases[key]) {
+        groupedCases[key] = { companyName: name, cases: [] }
+      }
+      groupedCases[key].cases.push(caseItem)
+    }
+  }
+
+  const sortedGroups = Object.entries(groupedCases).sort(([, a], [, b]) =>
+    a.companyName.localeCompare(b.companyName, 'da')
+  )
+
+  function renderCaseRow(caseItem: typeof cases[number]) {
+    return (
+      <tr key={caseItem.id} className="hover:bg-gray-50">
+        <td className="px-6 py-4">
+          <Link
+            href={`/cases/${caseItem.id}`}
+            className="text-sm font-medium text-blue-600 hover:text-blue-800"
+          >
+            {caseItem.title}
+          </Link>
+          {caseItem.description && (
+            <p className="text-xs text-gray-500 mt-0.5">
+              {caseItem.description.split('\n')[0]}
+            </p>
+          )}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+          {getCaseTypeLabel(caseItem.case_type)}
+        </td>
+        <td className="px-6 py-4">
+          <div className="flex flex-wrap gap-1">
+            {caseItem.case_companies.slice(0, 3).map((cc) => (
+              <Link
+                key={cc.company.id}
+                href={`/companies/${cc.company.id}`}
+                className="text-xs text-gray-600 hover:text-blue-600"
+              >
+                {cc.company.name}
+              </Link>
+            ))}
+            {caseItem.case_companies.length > 3 && (
+              <span className="text-xs text-gray-400">
+                +{caseItem.case_companies.length - 3} mere
+              </span>
+            )}
+          </div>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap">
+          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getCaseStatusStyle(caseItem.status)}`}>
+            {getCaseStatusLabel(caseItem.status)}
+          </span>
+        </td>
+        <td className="px-6 py-4 text-right">
+          {caseItem._count.tasks > 0 ? (
+            <span className="inline-flex items-center rounded-full bg-orange-50 px-2.5 py-0.5 text-xs font-medium text-orange-700">
+              {caseItem._count.tasks}
+            </span>
+          ) : (
+            <span className="text-xs text-gray-400">—</span>
+          )}
+        </td>
+      </tr>
+    )
+  }
+
+  const tableHeader = (
+    <thead className="bg-gray-50">
+      <tr>
+        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Sag</th>
+        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Type</th>
+        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Selskab(er)</th>
+        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
+        <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Åbne opgaver</th>
+      </tr>
+    </thead>
+  )
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Sager</h1>
-          <p className="mt-1 text-sm text-gray-500">Alle sager på tværs af selskaber</p>
+      <CasesHeader />
+
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex-1">
+          <Suspense fallback={null}>
+            <SearchAndFilter
+              placeholder="Søg på sagsnavn..."
+              filters={filters}
+            />
+          </Suspense>
         </div>
-        <Link
-          href="/cases/new"
-          className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          <Plus className="h-4 w-4" />
-          Ny sag
-        </Link>
+        <Suspense fallback={null}>
+          <GroupToggle />
+        </Suspense>
       </div>
 
       {cases.length === 0 ? (
-        <div className="rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
-          <Briefcase className="mx-auto h-12 w-12 text-gray-400" />
+        <EmptyState hasFilters={hasFilters} />
+      ) : isGrouped ? (
+        <div className="space-y-4">
+          {sortedGroups.map(([companyId, group]) => (
+            <CollapsibleSection
+              key={companyId}
+              title={group.companyName}
+              count={group.cases.length}
+            >
+              <table className="min-w-full divide-y divide-gray-200">
+                {tableHeader}
+                <tbody className="divide-y divide-gray-200 bg-white">
+                  {group.cases.map((caseItem) => renderCaseRow(caseItem))}
+                </tbody>
+              </table>
+            </CollapsibleSection>
+          ))}
+        </div>
+      ) : (
+        <>
+          <div className="overflow-hidden rounded-lg border bg-white shadow-sm">
+            <table className="min-w-full divide-y divide-gray-200">
+              {tableHeader}
+              <tbody className="divide-y divide-gray-200 bg-white">
+                {cases.map((caseItem) => renderCaseRow(caseItem))}
+              </tbody>
+            </table>
+          </div>
+          <Suspense fallback={null}>
+            <Pagination currentPage={page} totalCount={totalCount} pageSize={PAGE_SIZE} />
+          </Suspense>
+        </>
+      )}
+    </div>
+  )
+}
+
+function CasesHeader() {
+  return (
+    <div className="flex items-center justify-between">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Sager</h1>
+        <p className="mt-1 text-sm text-gray-500">Alle sager på tværs af selskaber</p>
+      </div>
+      <Link
+        href="/cases/new"
+        className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+      >
+        <Plus className="h-4 w-4" />
+        Ny sag
+      </Link>
+    </div>
+  )
+}
+
+function EmptyState({ hasFilters }: { hasFilters: boolean }) {
+  return (
+    <div className="rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
+      <Briefcase className="mx-auto h-12 w-12 text-gray-400" />
+      {hasFilters ? (
+        <>
+          <h3 className="mt-2 text-sm font-semibold text-gray-900">Ingen sager matcher søgningen</h3>
+          <p className="mt-1 text-sm text-gray-500">Prøv at ændre filtrene.</p>
+        </>
+      ) : (
+        <>
           <h3 className="mt-2 text-sm font-semibold text-gray-900">Ingen sager endnu</h3>
           <p className="mt-1 text-sm text-gray-500">Opret din første sag for at komme i gang.</p>
           <Link
@@ -106,75 +325,7 @@ export default async function CasesPage() {
             <Plus className="h-4 w-4" />
             Opret sag
           </Link>
-        </div>
-      ) : (
-        <div className="overflow-hidden rounded-lg border bg-white shadow-sm">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Sag</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Type</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Selskab(er)</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Åbne opgaver</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
-              {cases.map((caseItem) => (
-                <tr key={caseItem.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <Link
-                      href={`/cases/${caseItem.id}`}
-                      className="text-sm font-medium text-blue-600 hover:text-blue-800"
-                    >
-                      {caseItem.title}
-                    </Link>
-                    {caseItem.description && (
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        {caseItem.description.split('\n')[0]}
-                      </p>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {TYPE_LABELS[caseItem.case_type] ?? caseItem.case_type}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-wrap gap-1">
-                      {caseItem.case_companies.slice(0, 3).map((cc) => (
-                        <Link
-                          key={cc.company.id}
-                          href={`/companies/${cc.company.id}`}
-                          className="text-xs text-gray-600 hover:text-blue-600"
-                        >
-                          {cc.company.name}
-                        </Link>
-                      ))}
-                      {caseItem.case_companies.length > 3 && (
-                        <span className="text-xs text-gray-400">
-                          +{caseItem.case_companies.length - 3} mere
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_STYLES[caseItem.status] ?? 'bg-gray-100 text-gray-700'}`}>
-                      {STATUS_LABELS[caseItem.status] ?? caseItem.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    {caseItem._count.tasks > 0 ? (
-                      <span className="inline-flex items-center rounded-full bg-orange-50 px-2.5 py-0.5 text-xs font-medium text-orange-700">
-                        {caseItem._count.tasks}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-gray-400">—</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        </>
       )}
     </div>
   )

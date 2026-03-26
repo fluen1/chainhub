@@ -1,52 +1,115 @@
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
+import { getAccessibleCompanies } from '@/lib/permissions'
 import { CheckSquare, Plus } from 'lucide-react'
 import Link from 'next/link'
 import { TaskStatusButton } from '@/components/tasks/TaskStatusButton'
+import { Suspense } from 'react'
+import { SearchAndFilter } from '@/components/ui/SearchAndFilter'
+import { Pagination } from '@/components/ui/Pagination'
+import { parsePaginationParams } from '@/lib/pagination'
+import {
+  TASK_STATUS_LABELS,
+  PRIORITY_LABELS,
+  getPriorityLabel,
+  getPriorityStyle,
+  getTaskStatusLabel,
+} from '@/lib/labels'
+import type { TaskStatus, Prisma } from '@prisma/client'
 
-const PRIORITY_LABELS: Record<string, string> = {
-  LAV: 'Lav',
-  MELLEM: 'Mellem',
-  HOEJ: 'Høj',
-  KRITISK: 'Kritisk',
+const PAGE_SIZE = 20
+
+const STATUS_OPTIONS = Object.entries(TASK_STATUS_LABELS)
+  .filter(([key]) => key !== 'AKTIV') // AKTIV is alias for AKTIV_TASK, skip duplicate
+  .map(([value, label]) => ({ value, label }))
+
+const PRIORITY_OPTIONS = [
+  { value: 'KRITISK', label: PRIORITY_LABELS['KRITISK'] },
+  { value: 'HOEJ', label: PRIORITY_LABELS['HOEJ'] },
+  { value: 'MELLEM', label: PRIORITY_LABELS['MELLEM'] },
+  { value: 'LAV', label: PRIORITY_LABELS['LAV'] },
+]
+
+interface TasksPageProps {
+  searchParams: {
+    q?: string
+    status?: string
+    priority?: string
+    company?: string
+    page?: string
+  }
 }
 
-const PRIORITY_STYLES: Record<string, string> = {
-  LAV: 'bg-gray-100 text-gray-600',
-  MELLEM: 'bg-blue-50 text-blue-700',
-  HOEJ: 'bg-orange-50 text-orange-700',
-  KRITISK: 'bg-red-100 text-red-700',
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  NY: 'Ny',
-  AKTIV: 'Aktiv',
-  AFVENTER: 'Afventer',
-  LUKKET: 'Lukket',
-}
-
-export default async function TasksPage() {
+export default async function TasksPage({ searchParams }: TasksPageProps) {
   const session = await auth()
   if (!session) redirect('/login')
 
+  const { page, skip, take } = parsePaginationParams(searchParams.page, PAGE_SIZE)
+  const q = searchParams.q?.trim() ?? ''
+  const statusFilter = searchParams.status
+  const priorityFilter = searchParams.priority
+  const companyFilter = searchParams.company
+
   const today = new Date()
 
-  const tasks = await prisma.task.findMany({
-    where: {
-      organization_id: session.user.organizationId,
-      deleted_at: null,
-      status: { not: 'LUKKET' },
-    },
+  // Hent accessible companies til filter-dropdown
+  const companyIds = await getAccessibleCompanies(
+    session.user.id,
+    session.user.organizationId
+  )
+
+  const companyOptions = companyIds.length > 0
+    ? (await prisma.company.findMany({
+        where: {
+          id: { in: companyIds },
+          organization_id: session.user.organizationId,
+          deleted_at: null,
+        },
+        select: { id: true, name: true },
+        orderBy: { name: 'asc' },
+      })).map((c) => ({ value: c.id, label: c.name }))
+    : []
+
+  // Byg where-clause — vis åbne opgaver som default, medmindre brugeren filtrerer på LUKKET
+  const where: Prisma.TaskWhereInput = {
+    organization_id: session.user.organizationId,
+    deleted_at: null,
+    ...(statusFilter
+      ? { status: statusFilter as TaskStatus }
+      : { status: { not: 'LUKKET' as TaskStatus } }),
+    ...(priorityFilter ? { priority: priorityFilter as never } : {}),
+    ...(q ? { title: { contains: q, mode: 'insensitive' as const } } : {}),
+    ...(companyFilter ? { company_id: companyFilter } : {}),
+  }
+
+  const tasksQuery = prisma.task.findMany({
+    where,
     include: {
       assignee: { select: { id: true, name: true } },
       case: { select: { id: true, title: true } },
     },
     orderBy: [{ due_date: 'asc' }, { priority: 'desc' }],
+    skip,
+    take,
   })
+  const countQuery = prisma.task.count({ where })
+
+  const [tasks, totalCount] = await Promise.all([tasksQuery, countQuery])
 
   const overdueTasks = tasks.filter((t) => t.due_date && new Date(t.due_date) < today)
   const upcomingTasks = tasks.filter((t) => !t.due_date || new Date(t.due_date) >= today)
+  const hasFilters = !!(q || statusFilter || priorityFilter || companyFilter)
+
+  const overdueCount = await prisma.task.count({
+    where: {
+      organization_id: session.user.organizationId,
+      deleted_at: null,
+      status: { not: 'LUKKET' },
+      due_date: { lt: today },
+      ...(companyFilter ? { company_id: companyFilter } : {}),
+    },
+  })
 
   return (
     <div className="space-y-6">
@@ -54,10 +117,10 @@ export default async function TasksPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Opgaver</h1>
           <p className="mt-1 text-sm text-gray-500">
-            {tasks.length} åbne opgave{tasks.length !== 1 ? 'r' : ''}
-            {overdueTasks.length > 0 && (
+            {totalCount} opgave{totalCount !== 1 ? 'r' : ''}
+            {overdueCount > 0 && (
               <span className="ml-2 text-red-600 font-medium">
-                · {overdueTasks.length} forfaldne
+                · {overdueCount} forfaldne
               </span>
             )}
           </p>
@@ -71,11 +134,31 @@ export default async function TasksPage() {
         </Link>
       </div>
 
+      <Suspense fallback={null}>
+        <SearchAndFilter
+          placeholder="Søg på opgavenavn..."
+          filters={[
+            { key: 'company', label: 'Selskab', options: companyOptions },
+            { key: 'status', label: 'Status', options: STATUS_OPTIONS },
+            { key: 'priority', label: 'Prioritet', options: PRIORITY_OPTIONS },
+          ]}
+        />
+      </Suspense>
+
       {tasks.length === 0 ? (
         <div className="rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
           <CheckSquare className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-semibold text-gray-900">Ingen åbne opgaver</h3>
-          <p className="mt-1 text-sm text-gray-500">Opret en opgave for at komme i gang.</p>
+          {hasFilters ? (
+            <>
+              <h3 className="mt-2 text-sm font-semibold text-gray-900">Ingen opgaver matcher søgningen</h3>
+              <p className="mt-1 text-sm text-gray-500">Prøv at ændre filtrene.</p>
+            </>
+          ) : (
+            <>
+              <h3 className="mt-2 text-sm font-semibold text-gray-900">Ingen åbne opgaver</h3>
+              <p className="mt-1 text-sm text-gray-500">Opret en opgave for at komme i gang.</p>
+            </>
+          )}
         </div>
       ) : (
         <div className="space-y-6">
@@ -83,7 +166,7 @@ export default async function TasksPage() {
           {overdueTasks.length > 0 && (
             <div>
               <h2 className="text-sm font-semibold text-red-700 mb-3">
-                ⚠️ Forfaldne ({overdueTasks.length})
+                Forfaldne ({overdueTasks.length})
               </h2>
               <TaskList tasks={overdueTasks} today={today} isOverdueSection />
             </div>
@@ -100,6 +183,10 @@ export default async function TasksPage() {
               <TaskList tasks={upcomingTasks} today={today} />
             </div>
           )}
+
+          <Suspense fallback={null}>
+            <Pagination currentPage={page} totalCount={totalCount} pageSize={PAGE_SIZE} />
+          </Suspense>
         </div>
       )}
     </div>
@@ -149,8 +236,8 @@ function TaskList({
                     </span>
                   )}
                   {task.priority && (
-                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${PRIORITY_STYLES[task.priority] ?? 'bg-gray-100 text-gray-600'}`}>
-                      {PRIORITY_LABELS[task.priority] ?? task.priority}
+                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${getPriorityStyle(task.priority)}`}>
+                      {getPriorityLabel(task.priority)}
                     </span>
                   )}
                   {task.assignee && (
@@ -168,7 +255,7 @@ function TaskList({
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <span className="text-xs text-gray-400 hidden sm:block">
-                  {STATUS_LABELS[task.status] ?? task.status}
+                  {getTaskStatusLabel(task.status)}
                 </span>
                 <TaskStatusButton taskId={task.id} currentStatus={task.status} />
               </div>

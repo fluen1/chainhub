@@ -16,6 +16,7 @@ export interface SidebarData {
   overdueTasksCount: number
   personsCount: number
   documentsCount: number
+  visitsCount: number
   userRole: string
   userRoleLabel: string
   userRoleStyle: string
@@ -51,6 +52,7 @@ export async function getSidebarData(
     tasksData,
     personsCount,
     documentsCount,
+    visitsCount,
     recentCompanies,
   ] = await Promise.all([
     prisma.company.count({ where: whereCompanies }),
@@ -86,6 +88,13 @@ export async function getSidebarData(
     prisma.document.count({
       where: { organization_id: organizationId, deleted_at: null },
     }),
+    prisma.visit.count({
+      where: {
+        organization_id: organizationId,
+        deleted_at: null,
+        status: 'PLANLAGT',
+      },
+    }),
     // Senest opdaterede selskaber (proxy for "senest besøgte" — ingen tracking endnu)
     companyIds.length > 0
       ? prisma.company.findMany({
@@ -109,6 +118,7 @@ export async function getSidebarData(
     overdueTasksCount,
     personsCount,
     documentsCount,
+    visitsCount,
     userRole: primaryRole,
     userRoleLabel: getUserRoleLabel(primaryRole),
     userRoleStyle: getUserRoleStyle(primaryRole),

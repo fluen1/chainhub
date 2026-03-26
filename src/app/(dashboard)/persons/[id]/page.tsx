@@ -3,6 +3,7 @@ import { redirect, notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { ArrowLeft, Mail, Phone } from 'lucide-react'
 import Link from 'next/link'
+import { getCompanyPersonRoleLabel } from '@/lib/labels'
 
 interface Props {
   params: { id: string }
@@ -34,18 +35,6 @@ export default async function PersonDetailPage({ params }: Props) {
 
   const activeRoles = person.company_persons.filter((cp) => !cp.end_date)
   const historicRoles = person.company_persons.filter((cp) => cp.end_date)
-
-  const ROLE_LABELS: Record<string, string> = {
-    direktoer: 'Direktør',
-    bestyrelsesformand: 'Bestyrelsesformand',
-    bestyrelsesmedlem: 'Bestyrelsesmedlem',
-    tegningsberettiget: 'Tegningsberettiget',
-    revisor: 'Revisor',
-    ansat: 'Ansat',
-    funktionaer: 'Funktionær',
-    'ikke-funktionaer': 'Ikke-funktionær',
-    vikar: 'Vikar',
-  }
 
   return (
     <div className="space-y-6">
@@ -94,7 +83,7 @@ export default async function PersonDetailPage({ params }: Props) {
                     {cp.company.name}
                   </Link>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    {ROLE_LABELS[cp.role] ?? cp.role}
+                    {getCompanyPersonRoleLabel(cp.role)}
                     {cp.start_date && ` · fra ${new Date(cp.start_date).toLocaleDateString('da-DK')}`}
                   </p>
                 </div>
@@ -124,7 +113,7 @@ export default async function PersonDetailPage({ params }: Props) {
                     {cp.company.name}
                   </Link>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    {ROLE_LABELS[cp.role] ?? cp.role}
+                    {getCompanyPersonRoleLabel(cp.role)}
                     {cp.start_date && ` · ${new Date(cp.start_date).toLocaleDateString('da-DK')}`}
                     {cp.end_date && ` → ${new Date(cp.end_date).toLocaleDateString('da-DK')}`}
                   </p>

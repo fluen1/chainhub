@@ -1,8 +1,7 @@
 # API-SPEC.md
 # ChainHub — API-specifikation
 **Version:** 0.3 — QA-rettet
-**Opdateres af:** BA-05 (Feature-agent), BA-07 (QA-agent)
-**Godkendes af:** Orchestrator + Philip
+**Vedligeholdes af:** Philip
 **Afhænger af:** CONVENTIONS.md, DATABASE-SCHEMA.md, ROLLER-OG-TILLADELSER.md, UI-FLOWS.md
 
 ---
@@ -465,7 +464,7 @@ Guards:
 
 Query-krav:
   - Aggregér counts i én JOIN-query (se CONVENTIONS.md §4 N+1 prevention)
-  - BA-09 (Performance) validerer query-tid < 500ms ved 50 selskaber
+  - Query-tid valideres < 500ms ved 50 selskaber
 ```
 
 ---
@@ -1870,10 +1869,10 @@ v0.3 (QA-rettet):
   [K1] CaseStatus: API-SPEC bruger granulær model
        (NY | AKTIV | AFVENTER_EKSTERN | AFVENTER_KLIENT | LUKKET | ARKIVERET)
        som afviger fra DATABASE-SCHEMA.md v0.2 (ÅBEN | I_GANG | AFVENTER | LUKKET | ANNULLERET).
-       → DATABASE-SCHEMA.md skal opdateres til at matche API-SPEC's model. Blokkerer: BA-02.
+       → DATABASE-SCHEMA.md skal opdateres til at matche API-SPEC's model. Blokkerer: schema-opdatering.
   [K2] ContractStatus UDLØBET: korrekt i API-SPEC (med Ø) — DATABASE-SCHEMA.md bruger
        UDLOBET (uden Ø). DATABASE-SCHEMA.md enum ContractStatus skal rettes til UDLØBET.
-       → Blokkerer: BA-02.
+       → Blokkerer: schema-opdatering.
   [K3] Forældet tabel-navn rettet (4 forekomster):
        user_roles → user_role_assignments
        (registerOrganization, acceptInvitation, updateUserRoles ×2)
@@ -1896,7 +1895,7 @@ v0.3 (QA-rettet):
   [M3] createActivityLogEntry metadata-eksempel: "DRAFT"/"ACTIVE" → "UDKAST"/"AKTIV"
   [M4] updateOrganization: revalidatePath flyttet fra Guards til Side effects
   [M5] AktivitetsEntitet og AktivitetsHandling anvendt i §16 men ikke defineret
-       i DATABASE-SCHEMA.md. → DATABASE-SCHEMA.md skal tilføje disse enums. Blokkerer: BA-02.
+       i DATABASE-SCHEMA.md. → DATABASE-SCHEMA.md skal tilføje disse enums. Blokkerer: schema-opdatering.
 
 v0.2 (QA-rettet):
   + Appendix A fuldstændig erstattet med korrekt SENSITIVITY_MINIMUM
@@ -1920,4 +1919,4 @@ v0.1:
   Første udkast
 ```
 
-*API-SPEC.md v0.3 — klar til BA-05.*
+*API-SPEC.md v0.3*

@@ -1,5 +1,6 @@
 import { Sidebar } from '@/components/layout/sidebar'
 import { Header } from '@/components/layout/header'
+import { MobileNav } from '@/components/layout/MobileNav'
 import { Providers } from '@/components/providers'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
@@ -21,7 +22,15 @@ export default async function DashboardLayout({
   return (
     <Providers>
       <div className="flex h-screen overflow-hidden">
-        <Sidebar
+        {/* Sidebar — skjult på mobil/tablet, synlig på desktop */}
+        <div className="hidden lg:flex">
+          <Sidebar
+            data={sidebarData}
+            userName={session.user.name ?? 'Bruger'}
+          />
+        </div>
+        {/* Mobil-navigation — kun synlig på mobil/tablet */}
+        <MobileNav
           data={sidebarData}
           userName={session.user.name ?? 'Bruger'}
         />

@@ -13,7 +13,7 @@ export const createCompanySchema = z.object({
 })
 
 export const updateCompanySchema = createCompanySchema.partial().extend({
-  companyId: z.string().uuid(),
+  companyId: z.string().min(1),
 })
 
 export type CreateCompanyInput = z.infer<typeof createCompanySchema>

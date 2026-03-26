@@ -93,7 +93,7 @@ export const CONTRACT_TYPE_LABELS: Record<ContractSystemTypeKey, string> = {
 }
 
 export const createContractSchema = z.object({
-  companyId: z.string().uuid(),
+  companyId: z.string().min(1),
   systemType: z.string().min(1),
   displayName: z.string().min(1, 'Kontraktnavn er påkrævet').max(255),
   sensitivity: z.enum(['PUBLIC', 'STANDARD', 'INTERN', 'FORTROLIG', 'STRENGT_FORTROLIG']),
@@ -105,11 +105,11 @@ export const createContractSchema = z.object({
   reminder90Days: z.boolean().optional(),
   reminder30Days: z.boolean().optional(),
   reminder7Days: z.boolean().optional(),
-  parentContractId: z.string().uuid().optional().or(z.literal('')),
+  parentContractId: z.string().min(1).optional().or(z.literal('')),
 })
 
 export const updateContractStatusSchema = z.object({
-  contractId: z.string().uuid(),
+  contractId: z.string().min(1),
   status: z.enum(['UDKAST', 'TIL_REVIEW', 'TIL_UNDERSKRIFT', 'AKTIV', 'UDLOEBET', 'OPSAGT', 'FORNYET', 'ARKIVERET']),
   note: z.string().optional(),
 })

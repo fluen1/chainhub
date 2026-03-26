@@ -3,6 +3,8 @@ import { redirect, notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { canAccessCompany } from '@/lib/permissions'
 import { FolderOpen } from 'lucide-react'
+import { FileUpload } from '@/components/documents/FileUpload'
+import { DocumentList } from '@/components/documents/DocumentList'
 
 interface Props {
   params: { id: string }
@@ -25,46 +27,37 @@ export default async function CompanyDocumentsPage({ params }: Props) {
     take: 100,
   })
 
+  const serialized = documents.map((doc) => ({
+    id: doc.id,
+    title: doc.title,
+    file_name: doc.file_name,
+    file_url: doc.file_url,
+    file_size_bytes: doc.file_size_bytes,
+    file_type: doc.file_type,
+    uploaded_at: doc.uploaded_at.toISOString(),
+  }))
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900">Dokumenter</h2>
-          <p className="text-sm text-gray-500 mt-0.5">Filer og dokumenter tilknyttet dette selskab</p>
-        </div>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-lg font-semibold text-gray-900">Dokumenter</h2>
+        <p className="text-sm text-gray-500 mt-0.5">
+          Filer og dokumenter tilknyttet dette selskab
+        </p>
       </div>
 
-      {documents.length === 0 ? (
+      <FileUpload companyId={params.id} />
+
+      {serialized.length === 0 ? (
         <div className="rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
           <FolderOpen className="mx-auto h-10 w-10 text-gray-400" />
           <h3 className="mt-2 text-sm font-semibold text-gray-900">Ingen dokumenter</h3>
           <p className="mt-1 text-sm text-gray-500">
-            Dokumenthåndtering er tilgængeligt i Sprint 3.
+            Upload dit første dokument ovenfor.
           </p>
         </div>
       ) : (
-        <div className="rounded-lg border bg-white shadow-sm overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Filnavn</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Type</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Uploadet</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
-              {documents.map((doc) => (
-                <tr key={doc.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{doc.file_name}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{doc.file_type}</td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
-                    {new Date(doc.uploaded_at).toLocaleDateString('da-DK')}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DocumentList documents={serialized} />
       )}
     </div>
   )

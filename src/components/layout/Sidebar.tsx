@@ -10,6 +10,7 @@ import {
   CheckSquare,
   Users,
   FolderOpen,
+  MapPin,
   Settings,
   LogOut,
   Clock,
@@ -21,9 +22,10 @@ import type { SidebarData } from '@/lib/sidebar-data'
 interface SidebarProps {
   data: SidebarData
   userName: string
+  onNavigate?: () => void
 }
 
-export function Sidebar({ data, userName }: SidebarProps) {
+export function Sidebar({ data, userName, onNavigate }: SidebarProps) {
   const pathname = usePathname()
 
   const navigation = [
@@ -76,6 +78,13 @@ export function Sidebar({ data, userName }: SidebarProps) {
       count: data.documentsCount,
       urgentCount: null,
     },
+    {
+      name: 'Besøg',
+      href: '/visits',
+      icon: MapPin,
+      count: data.visitsCount,
+      urgentCount: null,
+    },
   ]
 
   const initials = userName
@@ -103,6 +112,7 @@ export function Sidebar({ data, userName }: SidebarProps) {
             <Link
               key={item.name}
               href={item.href}
+              onClick={onNavigate}
               className={cn(
                 'flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors',
                 isActive
@@ -144,6 +154,7 @@ export function Sidebar({ data, userName }: SidebarProps) {
                 <Link
                   key={company.id}
                   href={`/companies/${company.id}`}
+                  onClick={onNavigate}
                   className="block rounded-md px-2 py-1.5 text-xs text-gray-400 hover:bg-gray-800 hover:text-gray-200 truncate transition-colors"
                   title={company.name}
                 >
@@ -159,6 +170,7 @@ export function Sidebar({ data, userName }: SidebarProps) {
       <div className="border-t border-gray-700 px-3 py-3 space-y-1">
         <Link
           href="/settings"
+          onClick={onNavigate}
           className={cn(
             'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
             pathname.startsWith('/settings')

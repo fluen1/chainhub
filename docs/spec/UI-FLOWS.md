@@ -1,8 +1,7 @@
 # UI-FLOWS.md
 # ChainHub — Brugerflows pr. modul
 **Version:** 0.3 — QA-rettet
-**Opdateres af:** BA-04 (UI-agent), BA-05 (Feature-agent)
-**Godkendes af:** Orchestrator + Philip
+**Vedligeholdes af:** Philip
 **Afhænger af:** kravspec-legalhub.md, ROLLER-OG-TILLADELSER.md, DATABASE-SCHEMA.md
 
 ---

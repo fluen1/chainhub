@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: chainhub-db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: chainhub_dev
+      POSTGRES_USER: chainhub
+      POSTGRES_PASSWORD: chainhub
+    volumes:
+      - chainhub_pgdata:/var/lib/postgresql/data
+
+volumes:
+  chainhub_pgdata:

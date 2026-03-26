@@ -288,6 +288,7 @@ model Organization {
   reminders              Reminder[]
   audit_logs             AuditLog[]
   deadlines              Deadline[]
+  visits                 Visit[]
 
   @@index([id])
 }
@@ -309,6 +310,7 @@ model User {
   roles           UserRoleAssignment[]
   created_contracts Contract[]       @relation("ContractCreatedBy")
   assigned_tasks  Task[]             @relation("TaskAssignedTo")
+  visits          Visit[]            @relation("VisitVisitor")
 
   @@unique([organization_id, email])
   @@index([organization_id, deleted_at])
@@ -353,6 +355,7 @@ model Company {
   contracts       Contract[]
   cases           CaseCompany[]
   documents       Document[]
+  visits          Visit[]
 
   @@index([organization_id, deleted_at])
   @@index([organization_id, status])
@@ -800,4 +803,47 @@ model Subscription {
 
   @@index([stripe_customer_id])
   @@index([status])
+}
+
+// ============================================================
+// VISIT MANAGEMENT
+// ============================================================
+
+enum VisitType {
+  KVARTALSBESOEG             @map("KVARTALSBESOEG")
+  OPFOELGNING                @map("OPFOELGNING")
+  AD_HOC
+  AUDIT
+  ONBOARDING
+  OVERDRAGELSE
+}
+
+enum VisitStatus {
+  PLANLAGT
+  GENNEMFOERT              @map("GENNEMFOERT")
+  AFLYST
+}
+
+model Visit {
+  id              String      @id @default(uuid())
+  organization_id String
+  company_id      String
+  visited_by      String
+  visit_date      DateTime
+  visit_type      VisitType
+  status          VisitStatus @default(PLANLAGT)
+  notes           String?
+  summary         String?
+  created_at      DateTime    @default(now())
+  updated_at      DateTime    @updatedAt
+  created_by      String
+  deleted_at      DateTime?
+
+  organization    Organization @relation(fields: [organization_id], references: [id])
+  company         Company      @relation(fields: [company_id], references: [id])
+  visitor         User         @relation("VisitVisitor", fields: [visited_by], references: [id])
+
+  @@index([organization_id, deleted_at])
+  @@index([organization_id, company_id, deleted_at])
+  @@index([organization_id, visit_date])
 }

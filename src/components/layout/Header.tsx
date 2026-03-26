@@ -21,7 +21,7 @@ export function Header() {
   }
 
   return (
-    <header className="flex h-16 items-center justify-between border-b bg-white px-6 gap-4">
+    <header className="flex h-16 items-center justify-between border-b bg-white pl-14 pr-6 lg:px-6 gap-4">
       {/* Global søgning */}
       <form onSubmit={handleSearch} className="flex-1 max-w-md">
         <div className="relative">
