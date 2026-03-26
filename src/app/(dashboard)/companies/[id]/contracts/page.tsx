@@ -1,10 +1,15 @@
 import { auth } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
-import { canAccessCompany, canAccessSensitivity } from '@/lib/permissions'
+import { canAccessSensitivity } from '@/lib/permissions'
 import { FileText, Plus } from 'lucide-react'
 import Link from 'next/link'
-import { getContractStatusLabel, getContractStatusStyle, getSensitivityLabel } from '@/lib/labels'
+import {
+  getContractStatusLabel,
+  getContractStatusStyle,
+  getSensitivityLabel,
+  getContractTypeLabel,
+} from '@/lib/labels'
 
 interface Props {
   params: { id: string }
@@ -14,9 +19,7 @@ export default async function CompanyContractsPage({ params }: Props) {
   const session = await auth()
   if (!session) redirect('/login')
 
-  const hasAccess = await canAccessCompany(session.user.id, params.id)
-  if (!hasAccess) notFound()
-
+  // Layout already checks canAccessCompany
   const allContracts = await prisma.contract.findMany({
     where: {
       organization_id: session.user.organizationId,
@@ -39,17 +42,15 @@ export default async function CompanyContractsPage({ params }: Props) {
   const ninetyDays = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900">Kontrakter</h2>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {contracts.length} kontrakt{contracts.length !== 1 ? 'er' : ''}
-          </p>
-        </div>
+        <p className="text-sm text-gray-400">
+          {contracts.length} kontrakt{contracts.length !== 1 ? 'er' : ''}
+        </p>
         <Link
           href={`/contracts/new?companyId=${params.id}`}
-          className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800"
         >
           <Plus className="h-4 w-4" />
           Ny kontrakt
@@ -57,23 +58,23 @@ export default async function CompanyContractsPage({ params }: Props) {
       </div>
 
       {contracts.length === 0 ? (
-        <div className="rounded-lg border-2 border-dashed border-gray-300 p-10 text-center">
-          <FileText className="mx-auto h-10 w-10 text-gray-400" />
-          <h3 className="mt-2 text-sm font-semibold text-gray-900">Ingen kontrakter endnu</h3>
-          <p className="mt-1 text-sm text-gray-500">Opret den første kontrakt for dette selskab.</p>
+        <div className="rounded-lg border border-dashed border-gray-200 py-16 text-center">
+          <FileText className="mx-auto h-10 w-10 text-gray-300" />
+          <p className="mt-3 text-sm font-medium text-gray-900">Ingen kontrakter endnu</p>
+          <p className="mt-1 text-sm text-gray-400">Opret den første kontrakt for dette selskab.</p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg border bg-white shadow-sm">
+        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Kontrakt</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Sensitivitet</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Udløber</th>
+            <thead>
+              <tr className="bg-gray-50/50">
+                <th className="px-5 py-3 text-left text-xs font-medium text-gray-400 tracking-wide">Kontrakt</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-gray-400 tracking-wide">Status</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-gray-400 tracking-wide hidden sm:table-cell">Sensitivitet</th>
+                <th className="px-5 py-3 text-left text-xs font-medium text-gray-400 tracking-wide">Udløber</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
+            <tbody className="divide-y divide-gray-100">
               {contracts.map((contract) => {
                 const isExpired = contract.expiry_date && new Date(contract.expiry_date) < today
                 const isUrgent = contract.expiry_date && new Date(contract.expiry_date) <= fourteenDays && !isExpired
@@ -82,34 +83,46 @@ export default async function CompanyContractsPage({ params }: Props) {
                 return (
                   <tr
                     key={contract.id}
-                    className={
-                      isExpired || isUrgent ? 'bg-red-50' : isWarning ? 'bg-yellow-50' : 'hover:bg-gray-50'
-                    }
+                    className={`transition-colors ${
+                      isExpired || isUrgent
+                        ? 'bg-red-50/50'
+                        : isWarning
+                          ? 'bg-amber-50/50'
+                          : 'hover:bg-gray-50/50'
+                    }`}
                   >
-                    <td className="px-6 py-4">
+                    <td className="px-5 py-3.5">
                       <Link
                         href={`/contracts/${contract.id}`}
-                        className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                        className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors"
                       >
                         {contract.display_name}
                       </Link>
-                      <p className="text-xs text-gray-500 mt-0.5">{contract.system_type}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {getContractTypeLabel(contract.system_type)}
+                      </p>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getContractStatusStyle(contract.status)}`}>
+                    <td className="px-5 py-3.5 whitespace-nowrap">
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium leading-none ${getContractStatusStyle(contract.status)}`}>
                         {getContractStatusLabel(contract.status)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-500">
+                    <td className="px-5 py-3.5 whitespace-nowrap text-xs text-gray-500 hidden sm:table-cell">
                       {getSensitivityLabel(contract.sensitivity)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <td className="px-5 py-3.5 whitespace-nowrap text-sm tabular-nums">
                       {contract.expiry_date ? (
-                        <span className={isExpired || isUrgent ? 'text-red-700 font-medium' : isWarning ? 'text-orange-700' : 'text-gray-500'}>
+                        <span className={
+                          isExpired || isUrgent
+                            ? 'text-red-600 font-medium'
+                            : isWarning
+                              ? 'text-amber-600'
+                              : 'text-gray-500'
+                        }>
                           {new Date(contract.expiry_date).toLocaleDateString('da-DK')}
                         </span>
                       ) : (
-                        <span className="text-gray-400">Løbende</span>
+                        <span className="text-gray-300">Løbende</span>
                       )}
                     </td>
                   </tr>
