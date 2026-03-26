@@ -54,7 +54,8 @@
       "Bash(gh auth:*)",
       "Bash(where.exe gh:*)",
       "Bash(winget install:*)",
-      "Bash(grep -E \"\\\\.env\\\\.local|\\\\.env$\" .gitignore)"
+      "Bash(grep -E \"\\\\.env\\\\.local|\\\\.env$\" .gitignore)",
+      "mcp__plugin_playwright_playwright__browser_close"
     ]
   }
 }

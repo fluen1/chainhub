@@ -39,17 +39,21 @@ export default async function CompanyLayout({ children, params }: CompanyLayoutP
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-start gap-4">
-        <Link href="/companies" className="mt-1 rounded-md p-1 hover:bg-gray-100">
-          <ArrowLeft className="h-5 w-5 text-gray-500" />
+      <div className="flex items-start gap-3">
+        <Link
+          href="/companies"
+          className="mt-1 rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+          aria-label="Tilbage til selskaber"
+        >
+          <ArrowLeft className="h-5 w-5" />
         </Link>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900 truncate">{company.name}</h1>
+            <h1 className="text-xl font-semibold tracking-tight text-gray-900 truncate">{company.name}</h1>
             <CompanyStatusBadge status={company.status} />
           </div>
-          <p className="mt-0.5 text-sm text-gray-500">
-            {company.cvr ? `CVR: ${company.cvr}` : 'Intet CVR'}
+          <p className="mt-0.5 text-sm text-gray-400">
+            {company.cvr ?? ''}
             {company.company_type ? ` · ${company.company_type}` : ''}
           </p>
         </div>
