@@ -387,6 +387,7 @@ export function getMetricTypeLabel(type: string): string {
 
 export const PERIOD_TYPE_LABELS: Record<string, string> = {
   HELAER: 'Helår',
+  HELAAR: 'Helår',
   H1: '1. halvår',
   H2: '2. halvår',
   Q1: '1. kvartal',
