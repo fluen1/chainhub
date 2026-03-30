@@ -1,59 +1,48 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { Search } from 'lucide-react'
-import { useState, useRef, useEffect, useTransition } from 'react'
+import { Bell } from 'lucide-react'
+import { usePrototype } from '@/components/prototype/PrototypeProvider'
+
+function getGreeting(): string {
+  const hour = new Date().getHours()
+  if (hour < 12) return 'Godmorgen'
+  if (hour < 18) return 'God eftermiddag'
+  return 'God aften'
+}
+
+function getDateString(): string {
+  const days = ['Søndag', 'Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag']
+  const months = ['januar', 'februar', 'marts', 'april', 'maj', 'juni', 'juli', 'august', 'september', 'oktober', 'november', 'december']
+  const now = new Date()
+  return `${days[now.getDay()]} ${now.getDate()}. ${months[now.getMonth()]} ${now.getFullYear()}`
+}
 
 export function PrototypeHeader() {
-  const router = useRouter()
-  const [query, setQuery] = useState('')
-  const [, startTransition] = useTransition()
-  const inputRef = useRef<HTMLInputElement>(null)
-
-  // Ctrl+K fokuserer søgefeltet
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.ctrlKey && e.key === 'k') {
-        e.preventDefault()
-        inputRef.current?.focus()
-      }
-    }
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [])
-
-  function handleSearch(e: React.FormEvent) {
-    e.preventDefault()
-    const q = query.trim()
-    if (q.length >= 1) {
-      startTransition(() => {
-        router.push(`/proto/search?q=${encodeURIComponent(q)}`)
-      })
-    }
-  }
+  const { activeUser } = usePrototype()
+  const firstName = activeUser.name.split(' ')[0]
+  const initials = activeUser.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
 
   return (
-    <header className="flex h-16 items-center border-b border-gray-200 bg-white px-6 gap-4">
-      {/* Global søgning */}
-      <form onSubmit={handleSearch} className="flex-1 max-w-lg">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input
-            ref={inputRef}
-            type="text"
-            placeholder="Søg eller stil et spørgsmål..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 pl-9 text-sm placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
+    <header className="flex items-center justify-between border-b border-gray-200 bg-white px-8 py-4">
+      <div>
+        <h1 className="text-lg font-bold text-slate-900">
+          {getGreeting()}, {firstName}
+        </h1>
+        <p className="text-[13px] text-gray-400 mt-0.5">{getDateString()}</p>
+      </div>
+      <div className="flex items-center gap-3">
+        <input
+          className="w-[260px] rounded-lg border border-gray-200 bg-slate-50 px-3.5 py-2 text-[13px] text-gray-400 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300"
+          placeholder="Søg efter selskaber, kontrakter, personer..."
+          readOnly
+        />
+        <button className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-slate-50 text-gray-400 hover:bg-slate-100 transition-colors">
+          <Bell className="h-4 w-4" />
+          <div className="absolute top-1.5 right-1.5 h-[7px] w-[7px] rounded-full bg-red-500 border-2 border-white" />
+        </button>
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-200 text-xs font-bold text-slate-600">
+          {initials}
         </div>
-      </form>
-
-      {/* Ctrl+K hint */}
-      <div className="shrink-0">
-        <kbd className="rounded border border-gray-200 px-1.5 py-0.5 font-mono text-xs text-gray-400">
-          Ctrl+K
-        </kbd>
       </div>
     </header>
   )
