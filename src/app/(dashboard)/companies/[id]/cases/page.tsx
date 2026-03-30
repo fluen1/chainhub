@@ -49,7 +49,6 @@ export default async function CompanyCasesPage({ params }: Props) {
   return (
     <CaseList
       cases={cases}
-      companyId={params.id}
     />
   )
 }

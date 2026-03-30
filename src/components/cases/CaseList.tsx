@@ -6,7 +6,6 @@ import { Briefcase, Plus, Search, ChevronDown, ChevronRight } from 'lucide-react
 import {
   getCaseTypeLabel,
   getCaseStatusLabel,
-  CASE_TYPE_LABELS,
 } from '@/lib/labels'
 
 interface CaseData {
@@ -23,7 +22,6 @@ interface CaseData {
 
 interface CaseListProps {
   cases: CaseData[]
-  companyId: string
 }
 
 const CASE_TYPE_ORDER = [
@@ -135,7 +133,7 @@ function CollapsibleCaseGroup({
   )
 }
 
-export function CaseList({ cases, companyId }: CaseListProps) {
+export function CaseList({ cases }: CaseListProps) {
   const [search, setSearch] = useState('')
 
   const filtered = search

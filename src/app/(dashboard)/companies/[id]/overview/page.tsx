@@ -165,7 +165,6 @@ export default async function CompanyOverviewPage({ params }: CompanyOverviewPag
   }
 
   // Address as a compact string
-  const addressParts = [company.address, company.postal_code, company.city].filter(Boolean)
   const addressStr = company.address
     ? `${company.address}, ${company.postal_code ?? ''} ${company.city ?? ''}`.trim()
     : null

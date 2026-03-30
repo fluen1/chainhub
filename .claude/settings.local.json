@@ -72,7 +72,9 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(mkdir -p \"C:/Users/birke/OneDrive/Skrivebord/Code/chainhub/src/app/proto/contracts/[id]\")",
-      "Bash(mkdir -p \"C:/Users/birke/OneDrive/Skrivebord/Code/chainhub/src/app/proto/tasks/[id]\")"
+      "Bash(mkdir -p \"C:/Users/birke/OneDrive/Skrivebord/Code/chainhub/src/app/proto/tasks/[id]\")",
+      "Bash(npx eslint:*)",
+      "Bash(git diff:*)"
     ]
   }
 }
