@@ -34,7 +34,7 @@ function statusBadgeClass(status: string): string {
     case 'UDLOEBET': return 'bg-red-100 text-red-700'
     case 'OPSAGT': return 'bg-gray-100 text-gray-600'
     case 'UDKAST': return 'bg-blue-100 text-blue-700'
-    case 'FORNYET': return 'bg-teal-100 text-teal-700'
+    case 'FORNYET': return 'bg-green-100 text-green-700'
     default: return 'bg-gray-100 text-gray-600'
   }
 }
@@ -106,10 +106,10 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
       </Link>
 
       {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm border p-6">
+      <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm p-6">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="space-y-2">
-            <h1 className="text-xl font-bold text-gray-900">{contract.displayName}</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-gray-900">{contract.displayName}</h1>
             <div className="flex items-center gap-2 flex-wrap">
               <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
                 {SYSTEM_TYPE_LABELS[contract.systemType] ?? contract.systemType}
@@ -189,7 +189,7 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
       </div>
 
       {/* Versionshistorik */}
-      <div className="bg-white rounded-lg shadow-sm border p-6">
+      <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm p-6">
         <div className="flex items-center gap-2 mb-4">
           <FileText className="h-4 w-4 text-gray-400" />
           <h2 className="text-sm font-semibold text-gray-900">Versionshistorik</h2>
@@ -198,13 +198,13 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
       </div>
 
       {/* Tilknyttede sager */}
-      <div className="bg-white rounded-lg shadow-sm border p-6">
+      <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm p-6">
         <h2 className="text-sm font-semibold text-gray-900 mb-4">Tilknyttede sager</h2>
         <p className="text-sm text-gray-400 italic">Ingen sager tilknyttet denne kontrakt</p>
       </div>
 
       {/* Dokumenter */}
-      <div className="bg-white rounded-lg shadow-sm border p-6">
+      <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm p-6">
         <h2 className="text-sm font-semibold text-gray-900 mb-4">Dokumenter</h2>
         <p className="text-sm text-gray-400 italic">Ingen dokumenter uploadet endnu</p>
       </div>

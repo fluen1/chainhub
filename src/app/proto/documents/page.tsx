@@ -25,7 +25,7 @@ function ReviewDocRow({ doc }: { doc: MockDocument }) {
   const isHighConfidence = doc.confidenceLevel === 'high' && (doc.attentionFieldCount ?? 0) <= 1
 
   return (
-    <div className="flex items-center justify-between px-5 py-3 border-b last:border-b-0 hover:bg-gray-50 transition-colors">
+    <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50/80 transition-colors">
       <div className="flex items-start gap-3 min-w-0">
         <FileText className="h-4 w-4 text-gray-400 mt-0.5 shrink-0" />
         <div className="min-w-0">
@@ -90,7 +90,7 @@ function ProcessingDocRow({ doc }: { doc: MockDocument }) {
 
 function RecentDocRow({ doc }: { doc: MockDocument }) {
   return (
-    <div className="flex items-center justify-between px-5 py-3 border-b last:border-b-0 hover:bg-gray-50 transition-colors">
+    <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50/80 transition-colors">
       <div className="flex items-center gap-3 min-w-0">
         <FileText className="h-4 w-4 text-gray-300 shrink-0" />
         <div className="min-w-0">
@@ -137,8 +137,8 @@ export default function PrototypeDocumentsPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dokumenter</h1>
+      <div className="border-b border-gray-200/60 pb-6">
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900">Dokumenter</h1>
         <p className="mt-1 text-sm text-gray-500">
           {allDocuments.length} dokumenter · {processingDocs.length} analyseres · {reviewDocs.length} klar til gennemgang
         </p>

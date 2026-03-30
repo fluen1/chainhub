@@ -21,7 +21,7 @@ function statusBadgeClass(status: MockTask['status']): string {
 function priorityBadgeClass(priority: MockTask['priority']): string {
   switch (priority) {
     case 'KRITISK': return 'bg-red-100 text-red-700'
-    case 'HOEJ': return 'bg-orange-100 text-orange-700'
+    case 'HOEJ': return 'bg-amber-100 text-amber-700'
     case 'MELLEM': return 'bg-blue-100 text-blue-700'
     case 'LAV': return 'bg-gray-100 text-gray-600'
     default: return 'bg-gray-100 text-gray-600'
@@ -86,9 +86,9 @@ export default function TaskDetailPage({ params }: { params: { id: string } }) {
       </Link>
 
       {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm border p-6">
+      <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm p-6">
         <div className="space-y-3">
-          <h1 className="text-xl font-bold text-gray-900">{task.title}</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900">{task.title}</h1>
           <div className="flex items-center gap-2 flex-wrap">
             <span className={cn('inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium', statusBadgeClass(task.status))}>
               {task.statusLabel}
@@ -169,7 +169,7 @@ export default function TaskDetailPage({ params }: { params: { id: string } }) {
       </div>
 
       {/* Kommentarer og historik */}
-      <div className="bg-white rounded-lg shadow-sm border p-6">
+      <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm p-6">
         <div className="flex items-center gap-2 mb-4">
           <MessageSquare className="h-4 w-4 text-gray-400" />
           <h2 className="text-sm font-semibold text-gray-900">Kommentarer og historik</h2>

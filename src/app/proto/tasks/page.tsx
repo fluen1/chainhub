@@ -17,7 +17,7 @@ type FilterTab = 'mine' | 'alle' | 'forfaldne' | 'afventer'
 function priorityBadgeClass(priority: MockTask['priority']): string {
   switch (priority) {
     case 'KRITISK': return 'bg-red-100 text-red-700'
-    case 'HOEJ': return 'bg-orange-100 text-orange-700'
+    case 'HOEJ': return 'bg-amber-100 text-amber-700'
     case 'MELLEM': return 'bg-blue-100 text-blue-700'
     case 'LAV': return 'bg-gray-100 text-gray-600'
     default: return 'bg-gray-100 text-gray-600'
@@ -62,7 +62,7 @@ function TaskItem({ task }: TaskItemProps) {
       onClick={() => router.push(`/proto/tasks/${task.id}`)}
       onKeyDown={(e) => { if (e.key === 'Enter') router.push(`/proto/tasks/${task.id}`) }}
       className={cn(
-        'flex items-start gap-4 px-5 py-3 border-l-4 hover:bg-gray-50 transition-colors border-b last:border-b-0 cursor-pointer',
+        'flex items-start gap-4 px-5 py-4 border-l-4 hover:bg-gray-50/80 transition-colors border-b border-gray-100 last:border-b-0 cursor-pointer',
         borderColorForGroup(task.timeGroup),
       )}
     >
@@ -155,8 +155,8 @@ export default function TasksPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       {/* Overskrift */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Opgaver</h1>
+      <div className="border-b border-gray-200/60 pb-6">
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900">Opgaver</h1>
         <p className="mt-1 text-sm text-gray-500">
           {openCount} åbne opgaver · {overdueCount} forfaldne
         </p>
@@ -180,7 +180,7 @@ export default function TasksPage() {
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={cn(
-                'px-3 py-1.5 text-sm rounded-md font-medium transition-colors',
+                'px-4 py-1.5 text-sm rounded-full font-medium transition-colors',
                 activeTab === tab.key
                   ? 'bg-gray-900 text-white'
                   : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50',
@@ -211,8 +211,9 @@ export default function TasksPage() {
 
       {/* Tidsgrupperinger */}
       {filtered.length === 0 ? (
-        <div className="text-sm text-gray-500 text-center py-12 bg-white rounded-lg border">
-          Ingen opgaver
+        <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-xl border border-gray-200/80 shadow-sm">
+          <p className="text-sm font-medium text-gray-500">Ingen opgaver</p>
+          <p className="text-xs text-gray-400 mt-1">Prøv et andet filter</p>
         </div>
       ) : (
         <div className="space-y-4">

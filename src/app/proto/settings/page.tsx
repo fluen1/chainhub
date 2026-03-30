@@ -20,7 +20,7 @@ function ToggleSetting({ label, description, defaultChecked = false }: TogglePro
   }
 
   return (
-    <div className="flex items-center justify-between py-3 border-b last:border-b-0">
+    <div className="flex items-center justify-between py-4 border-b border-gray-100 last:border-b-0">
       <div className="flex-1 min-w-0 pr-4">
         <p className="text-sm font-medium text-gray-900">{label}</p>
         {description && <p className="text-xs text-gray-500 mt-0.5">{description}</p>}
@@ -59,10 +59,13 @@ export default function PrototypeSettingsPage() {
 
   return (
     <div className="max-w-2xl space-y-8">
-      <h1 className="text-2xl font-bold text-gray-900">Indstillinger</h1>
+      <div className="border-b border-gray-200/60 pb-6">
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900">Indstillinger</h1>
+        <p className="mt-1 text-sm text-gray-500">Administrer organisation, roller og notifikationer</p>
+      </div>
 
       {/* Organisation */}
-      <section className="bg-white rounded-lg shadow-sm border">
+      <section className="bg-white rounded-xl border border-gray-200/80 shadow-sm">
         <div className="px-5 py-4 border-b">
           <h2 className="text-sm font-semibold text-gray-900">Organisation</h2>
         </div>
@@ -94,7 +97,7 @@ export default function PrototypeSettingsPage() {
       </section>
 
       {/* Rolle og adgang */}
-      <section className="bg-white rounded-lg shadow-sm border">
+      <section className="bg-white rounded-xl border border-gray-200/80 shadow-sm">
         <div className="px-5 py-4 border-b">
           <h2 className="text-sm font-semibold text-gray-900">Rolle og adgang</h2>
         </div>
@@ -126,7 +129,7 @@ export default function PrototypeSettingsPage() {
       </section>
 
       {/* Notifikationer */}
-      <section className="bg-white rounded-lg shadow-sm border">
+      <section className="bg-white rounded-xl border border-gray-200/80 shadow-sm">
         <div className="px-5 py-4 border-b">
           <h2 className="text-sm font-semibold text-gray-900">Notifikationer</h2>
           <p className="text-xs text-gray-500 mt-0.5">Vælg hvad du vil adviseres om</p>
@@ -166,7 +169,7 @@ export default function PrototypeSettingsPage() {
       </section>
 
       {/* Integrations */}
-      <section className="bg-white rounded-lg shadow-sm border">
+      <section className="bg-white rounded-xl border border-gray-200/80 shadow-sm">
         <div className="px-5 py-4 border-b">
           <h2 className="text-sm font-semibold text-gray-900">Integrationer</h2>
           <p className="text-xs text-gray-500 mt-0.5">Tilslut eksterne systemer</p>

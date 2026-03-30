@@ -104,7 +104,10 @@ function SearchPageInner() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-5">
-      <h1 className="text-2xl font-bold text-gray-900">Søg &amp; Spørg</h1>
+      <div className="border-b border-gray-200/60 pb-6">
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900">Søg &amp; Spørg</h1>
+        <p className="mt-1 text-sm text-gray-500">Søg på selskaber, kontrakter, personer — eller stil et spørgsmål</p>
+      </div>
 
       {/* Context chip */}
       {previousQuery && (
@@ -130,20 +133,20 @@ function SearchPageInner() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Skriv et navn, CVR, eller stil et spørgsmål..."
-          className="w-full text-lg px-5 py-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:border-gray-600 transition-colors"
+          className="w-full text-lg px-6 py-4 border-2 border-gray-200 rounded-2xl shadow-sm focus:outline-none focus:border-slate-400 focus:shadow-md transition-all"
         />
       </div>
 
       {/* Empty state — suggestions */}
       {!isSearching && (
-        <div className="space-y-2">
-          <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">Forslag</p>
-          <div className="space-y-2">
+        <div className="space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-400">Forslag</p>
+          <div className="flex flex-wrap gap-2">
             {suggestions.map((suggestion) => (
               <button
                 key={suggestion}
                 onClick={() => handleSuggestionClick(suggestion)}
-                className="w-full text-left bg-white border border-gray-200 rounded-lg px-4 py-3 hover:bg-gray-50 cursor-pointer text-sm text-gray-700 transition-colors"
+                className="inline-flex items-center bg-white border border-gray-200 rounded-full px-4 py-2 hover:bg-gray-50 hover:border-gray-300 cursor-pointer text-sm text-gray-700 transition-colors shadow-sm"
               >
                 {suggestion}
               </button>
@@ -168,7 +171,7 @@ function SearchPageInner() {
           {/* Direkte matches */}
           {results.directMatches.length > 0 && (
             <div className="space-y-2">
-              <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">Direkte matches</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-400">Direkte matches</p>
 
               {/* Filter tabs */}
               {presentTypes.length > 1 && (
@@ -191,14 +194,14 @@ function SearchPageInner() {
               )}
 
               {/* Match list */}
-              <div className="rounded-lg border bg-white shadow-sm overflow-hidden">
+              <div className="rounded-xl border border-gray-200/80 bg-white shadow-sm overflow-hidden">
                 {filteredMatches.slice(0, 5).map((match) => {
                   const Icon = typeIcons[match.type]
                   return (
                     <Link
                       key={match.id}
                       href={match.href}
-                      className="flex items-center gap-3 px-5 py-3 border-b last:border-b-0 hover:bg-gray-50 transition-colors"
+                      className="flex items-center gap-3 px-5 py-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50/80 transition-colors"
                     >
                       <Icon className="h-4 w-4 text-gray-400 shrink-0" />
                       <div className="flex-1 min-w-0">
@@ -226,26 +229,26 @@ function SearchPageInner() {
           {/* AI-svar */}
           {results.aiAnswer && (
             <div className="space-y-2">
-              <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">AI-svar</p>
-              <div className="border-l-4 border-blue-400 bg-blue-50 rounded-r-lg p-4 space-y-3">
-                <p className="text-sm text-gray-800 leading-relaxed">{results.aiAnswer.text}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-400">AI-svar</p>
+              <div className="border-l-4 border-blue-400 bg-blue-50/80 rounded-r-xl p-5 space-y-4">
+                <p className="text-base text-gray-800 leading-relaxed">{results.aiAnswer.text}</p>
                 {results.aiAnswer.dataPoints.length > 0 && (
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-3">
                     {results.aiAnswer.dataPoints.map((point, idx) => (
-                      <div key={idx} className="bg-white rounded-md px-3 py-2 border">
-                        <p className="text-xs text-gray-400">{point.label}</p>
+                      <div key={idx} className="bg-white rounded-lg px-4 py-3 border border-blue-100/60 shadow-sm">
+                        <p className="text-xs text-gray-400 mb-1">{point.label}</p>
                         {point.href ? (
                           <Link
                             href={point.href}
                             className={cn(
-                              'text-sm hover:underline transition-colors',
+                              'text-sm font-medium hover:underline transition-colors',
                               urgencyColors[point.urgency ?? 'normal']
                             )}
                           >
                             {point.value}
                           </Link>
                         ) : (
-                          <p className={cn('text-sm', urgencyColors[point.urgency ?? 'normal'])}>
+                          <p className={cn('text-sm font-medium', urgencyColors[point.urgency ?? 'normal'])}>
                             {point.value}
                           </p>
                         )}
@@ -260,8 +263,8 @@ function SearchPageInner() {
           {/* Handlings-preview */}
           {results.actionPreview && (
             <div className="space-y-2">
-              <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">Foreslået handling</p>
-              <div className="rounded-lg border bg-white p-4 shadow-sm space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-400">Foreslået handling</p>
+              <div className="rounded-xl border border-gray-200/80 bg-white p-5 shadow-sm space-y-3">
                 <p className="text-sm font-medium text-gray-900">{results.actionPreview.description}</p>
                 <ul className="space-y-1.5">
                   {results.actionPreview.items.map((item, idx) => {
@@ -306,14 +309,14 @@ function SearchPageInner() {
 
           {/* Relaterede spørgsmål */}
           {results.suggestedFollowUps.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-xs text-gray-400 uppercase tracking-wider font-medium">Relaterede spørgsmål</p>
-              <div className="space-y-2">
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-400">Relaterede spørgsmål</p>
+              <div className="flex flex-wrap gap-2">
                 {results.suggestedFollowUps.map((followUp) => (
                   <button
                     key={followUp}
                     onClick={() => handleSuggestionClick(followUp)}
-                    className="w-full text-left bg-white border border-gray-200 rounded-lg px-4 py-3 hover:bg-gray-50 cursor-pointer text-sm text-gray-700 transition-colors"
+                    className="inline-flex items-center bg-white border border-gray-200 rounded-full px-4 py-2 hover:bg-gray-50 hover:border-gray-300 cursor-pointer text-sm text-gray-700 transition-colors shadow-sm"
                   >
                     {followUp}
                   </button>

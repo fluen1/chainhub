@@ -68,8 +68,8 @@ function ContractItem({ contract }: ContractItemProps) {
       onClick={() => isNavigable && router.push(`/proto/contracts/${contract.id}`)}
       onKeyDown={(e) => { if (isNavigable && e.key === 'Enter') router.push(`/proto/contracts/${contract.id}`) }}
       className={cn(
-        'flex items-start gap-4 px-5 py-3 border-l-4 border-b last:border-b-0 transition-colors',
-        isNavigable ? 'hover:bg-gray-50 cursor-pointer' : 'cursor-default',
+        'flex items-start gap-4 px-5 py-4 border-l-4 border-b border-gray-100 last:border-b-0 transition-colors',
+        isNavigable ? 'hover:bg-gray-50/80 cursor-pointer' : 'cursor-default',
         urgencyBorder(contract.urgency),
       )}
     >
@@ -264,7 +264,7 @@ export default function ContractsPage() {
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={cn(
-                'px-3 py-1.5 text-sm rounded-md font-medium transition-colors',
+                'px-4 py-1.5 text-sm rounded-full font-medium transition-colors',
                 activeTab === tab.key
                   ? 'bg-gray-900 text-white'
                   : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50',

@@ -246,22 +246,25 @@ export default function DocumentReviewPage({ params }: { params: { id: string } 
         Dokumenter
       </Link>
 
-      <h1 className="text-lg font-bold text-gray-900 truncate">{doc.fileName}</h1>
+      <div className="border-b border-gray-200/60 pb-4">
+        <h1 className="text-xl font-bold tracking-tight text-gray-900 truncate">{doc.fileName}</h1>
+        <p className="text-sm text-gray-500 mt-1">{doc.companyName} · AI-ekstraktion klar til gennemgang</p>
+      </div>
 
       {/* Split layout */}
-      <div className="grid grid-cols-5 gap-6 h-[calc(100vh-12rem)]">
+      <div className="grid grid-cols-5 gap-6 h-[calc(100vh-14rem)]">
 
         {/* === LEFT PANEL: Mock PDF preview === */}
-        <div className="col-span-3 flex flex-col bg-gray-100 rounded-lg border overflow-hidden">
+        <div className="col-span-3 flex flex-col bg-gray-100 rounded-xl border border-gray-200/80 overflow-hidden shadow-sm">
           {/* PDF header */}
-          <div className="flex items-center justify-between px-4 py-2.5 bg-white border-b">
+          <div className="flex items-center justify-between px-4 py-3 bg-white border-b">
             <span className="text-xs font-medium text-gray-700 truncate">{doc.fileName}</span>
             <span className="text-xs text-gray-400 shrink-0 ml-2">Side 1 af 12</span>
           </div>
 
           {/* PDF content area */}
           <div className="flex-1 overflow-y-auto p-6">
-            <div className="bg-white rounded shadow-sm px-8 py-8 min-h-full space-y-6 text-sm leading-relaxed text-gray-700">
+            <div className="bg-white rounded-lg shadow-sm px-8 py-8 min-h-full space-y-7 text-sm leading-relaxed text-gray-700">
               {mockPdfBlocks.map((block) => {
                 const isHighlighted =
                   hoveredSourceText !== null &&
@@ -269,13 +272,13 @@ export default function DocumentReviewPage({ params }: { params: { id: string } 
 
                 return (
                   <div key={block.id}>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-[0.08em] mb-1.5">
                       {block.paragraph}
                     </p>
                     <p
                       className={cn(
-                        'transition-colors rounded px-1 -mx-1',
-                        isHighlighted ? 'bg-yellow-200' : ''
+                        'transition-colors rounded-sm px-1.5 -mx-1.5 py-0.5',
+                        isHighlighted ? 'bg-yellow-200 ring-1 ring-yellow-300' : ''
                       )}
                     >
                       {block.text}
@@ -288,13 +291,16 @@ export default function DocumentReviewPage({ params }: { params: { id: string } 
         </div>
 
         {/* === RIGHT PANEL: AI extraction === */}
-        <div className="col-span-2 flex flex-col overflow-hidden rounded-lg border bg-white">
+        <div className="col-span-2 flex flex-col overflow-hidden rounded-xl border border-gray-200/80 bg-white shadow-sm">
           {/* Panel header */}
-          <div className="flex items-center gap-2 px-5 py-3 bg-gray-50 border-b">
-            <span className="text-sm font-semibold text-gray-900">AI-ekstraktion</span>
-            <span className="text-xs text-green-600 font-medium">
-              {totalReady}/{totalFields} klar ✓
-            </span>
+          <div className="px-5 py-4 bg-gray-50 border-b">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-gray-900">AI-ekstraktion</span>
+              <span className="inline-flex items-center rounded-full bg-green-100 text-green-700 text-xs font-medium px-2.5 py-1">
+                {totalReady}/{totalFields} klar
+              </span>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Hover på et felt for at se det i dokumentet</p>
           </div>
 
           {/* Scrollable field sections */}
@@ -393,35 +399,37 @@ export default function DocumentReviewPage({ params }: { params: { id: string } 
           </div>
 
           {/* Bottom action bar */}
-          <div className="flex items-center justify-end gap-2 px-4 py-3 bg-white border-t">
+          <div className="flex items-center justify-between gap-3 px-5 py-4 bg-white border-t">
             <button
               onClick={() => toast.info('Dokument afvist (simuleret)')}
-              className="bg-white border border-gray-300 text-gray-700 text-sm px-4 py-1.5 rounded hover:bg-gray-50 transition-colors"
+              className="bg-white border border-gray-300 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors font-medium"
             >
               Afvis
             </button>
-            <button
-              onClick={() => {
-                toast.success('Dokument godkendt')
-                router.push('/proto/documents')
-              }}
-              className="bg-gray-900 text-white text-sm px-4 py-1.5 rounded hover:bg-gray-700 transition-colors"
-            >
-              Godkend
-            </button>
-            <button
-              onClick={() => {
-                if (nextDoc) {
-                  router.push(`/proto/documents/review/${nextDoc.id}`)
-                } else {
-                  toast.info('Ingen flere dokumenter i køen')
-                }
-              }}
-              className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 text-sm px-4 py-1.5 rounded hover:bg-gray-50 transition-colors"
-            >
-              Næste dok
-              <ArrowRight className="h-3.5 w-3.5" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  toast.success('Dokument godkendt')
+                  router.push('/proto/documents')
+                }}
+                className="bg-gray-900 text-white text-sm px-5 py-2 rounded-lg hover:bg-gray-700 transition-colors font-medium"
+              >
+                Godkend
+              </button>
+              <button
+                onClick={() => {
+                  if (nextDoc) {
+                    router.push(`/proto/documents/review/${nextDoc.id}`)
+                  } else {
+                    toast.info('Ingen flere dokumenter i køen')
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 bg-white border border-gray-300 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              >
+                Næste
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
