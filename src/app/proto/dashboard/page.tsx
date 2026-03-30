@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Building2, AlertCircle, TrendingUp, TrendingDown, Calendar, Clock } from 'lucide-react'
+import { Building2, AlertCircle, TrendingUp, TrendingDown, Calendar } from 'lucide-react'
 import { usePrototype } from '@/components/prototype/PrototypeProvider'
 import { InsightCard } from '@/components/prototype/InsightCard'
 import { CoverageBar } from '@/components/ui/CoverageBar'
@@ -105,16 +105,7 @@ export default function DashboardPage() {
     return `${(val / 1_000_000).toFixed(1)}M kr.`
   }
 
-  // Hardcodede recent activity
-  const recentActivity = [
-    { id: 1, text: 'Dokument uploadet: Ejeraftale_Horsens_2026_udkast.pdf', time: 'I dag, 09:15' },
-    { id: 2, text: 'Opgave forfaldne: Forny erhvervsforsikring — Odense', time: 'I dag, 08:00' },
-    { id: 3, text: 'Ny kontrakt oprettet: Klinikdriftsaftale Aalborg', time: 'I gaar' },
-    { id: 4, text: 'Kommentar tilfojet: Sag 24-087 Randers', time: 'I gaar' },
-    { id: 5, text: 'Selskabsdata opdateret: Silkeborg Tandhus', time: '2 dage siden' },
-  ]
-
-  // Hardcodede upcoming visits
+  // Kommende besoeg — vises kun for GROUP_OWNER og GROUP_ADMIN
   const upcomingVisits = [
     { id: 1, company: 'Odense Tandlægehus ApS', date: '3. april 2026', type: 'Tilsynsbesoeg' },
     { id: 2, company: 'Horsens Tandklinik ApS', date: '10. april 2026', type: 'Partnermøde' },
@@ -131,13 +122,13 @@ export default function DashboardPage() {
   ]
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
+    <div className="p-6 max-w-4xl mx-auto space-y-6">
       {/* Hilsen */}
       <h1 className="text-2xl font-bold text-gray-900">
         Godmorgen, {activeUser.name}
       </h1>
 
-      {/* InsightCards (maks 2) */}
+      {/* InsightCards (maks 2 — allerede begraenset af getInsights) */}
       {insights.length > 0 && (
         <div className="space-y-2">
           {insights.map((ins) => (
@@ -146,12 +137,12 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Dynamiske blokke */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* Dynamiske blokke — kun rolle-filtrerede */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* requires_action / urgency_feed */}
         {hasBlock('urgency_feed') && urgencyItems.length > 0 && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
+          <div className="bg-white rounded-lg border border-gray-200 p-5">
             <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
               Kraever handling
             </p>
@@ -173,7 +164,7 @@ export default function DashboardPage() {
 
         {/* portfolio_summary */}
         {hasBlock('portfolio_summary') && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
+          <div className="bg-white rounded-lg border border-gray-200 p-5">
             <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
               Portefoljesundhed
             </p>
@@ -207,7 +198,7 @@ export default function DashboardPage() {
 
         {/* contract_expiry / contract_coverage */}
         {hasBlock('contract_expiry') && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
+          <div className="bg-white rounded-lg border border-gray-200 p-5">
             <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
               Kontraktdaekning
             </p>
@@ -231,7 +222,7 @@ export default function DashboardPage() {
 
         {/* financial_kpi */}
         {hasBlock('financial_kpi') && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
+          <div className="bg-white rounded-lg border border-gray-200 p-5">
             <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
               Oekonomi — Portefolje 2025
             </p>
@@ -268,7 +259,7 @@ export default function DashboardPage() {
 
         {/* task_overview */}
         {hasBlock('task_overview') && overdueTasks.length > 0 && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
+          <div className="bg-white rounded-lg border border-gray-200 p-5">
             <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
               Opgaver
             </p>
@@ -287,8 +278,8 @@ export default function DashboardPage() {
         )}
 
         {/* document_review */}
-        {hasBlock('document_review') && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
+        {hasBlock('document_review') && docsReview.length > 0 && (
+          <div className="bg-white rounded-lg border border-gray-200 p-5">
             <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
               Dokumenter til gennemgang
             </p>
@@ -297,10 +288,12 @@ export default function DashboardPage() {
                 <span className="text-sm text-gray-600">Afventer gennemgang</span>
                 <span className="text-sm font-semibold text-amber-600">{docsReview.length}</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Under behandling</span>
-                <span className="text-sm font-semibold text-blue-600">{docsProcessing.length}</span>
-              </div>
+              {docsProcessing.length > 0 && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Under behandling</span>
+                  <span className="text-sm font-semibold text-blue-600">{docsProcessing.length}</span>
+                </div>
+              )}
               <div className="pt-1">
                 <Link href="/proto/documents?filter=ready_for_review" className="text-xs text-gray-500 hover:text-gray-700 underline">
                   Gennemgaa dokumenter →
@@ -312,7 +305,7 @@ export default function DashboardPage() {
 
         {/* my_companies (COMPANY_MANAGER) */}
         {hasBlock('my_companies') && companies.length > 0 && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
+          <div className="bg-white rounded-lg border border-gray-200 p-5">
             <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
               Dine klinikker
             </p>
@@ -332,86 +325,25 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* compliance_status (hardcoded) */}
-        {hasBlock('ai_insights') && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
+        {/* kommende_besoeg — vises kun for GROUP_OWNER og GROUP_ADMIN */}
+        {(role === 'GROUP_OWNER' || role === 'GROUP_ADMIN') && (
+          <div className="bg-white rounded-lg border border-gray-200 p-5">
             <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
-              Compliance-status
+              Kommende besoeg
             </p>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Aabne sager</span>
-                <span className="text-sm font-semibold text-red-600">2</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Afventer svar</span>
-                <span className="text-sm font-semibold text-amber-600">1</span>
-              </div>
-              <div className="pt-1">
-                <Link href="/proto/cases" className="text-xs text-gray-500 hover:text-gray-700 underline">
-                  Se alle sager →
-                </Link>
-              </div>
-            </div>
+            <ul className="space-y-3">
+              {upcomingVisits.map((visit) => (
+                <li key={visit.id} className="flex items-start gap-2">
+                  <Calendar className="h-4 w-4 text-gray-300 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{visit.company}</p>
+                    <p className="text-xs text-gray-500">{visit.type} · {visit.date}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
-
-        {/* recent_activity (hardcoded) */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
-          <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
-            Seneste aktivitet
-          </p>
-          <ul className="space-y-2">
-            {recentActivity.map((item) => (
-              <li key={item.id} className="flex items-start gap-2">
-                <Clock className="h-3.5 w-3.5 text-gray-300 mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-xs text-gray-700">{item.text}</p>
-                  <p className="text-xs text-gray-400">{item.time}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* upcoming_visits (hardcoded) */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
-          <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
-            Kommende besoeg
-          </p>
-          <ul className="space-y-3">
-            {upcomingVisits.map((visit) => (
-              <li key={visit.id} className="flex items-start gap-2">
-                <Calendar className="h-4 w-4 text-gray-300 mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-sm font-medium text-gray-900">{visit.company}</p>
-                  <p className="text-xs text-gray-500">{visit.type} · {visit.date}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* data_quality (hardcoded) */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
-          <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
-            Datakvalitet
-          </p>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Selskaber med ufuldstaendige data</span>
-              <span className="text-sm font-semibold text-amber-600">3</span>
-            </div>
-            <p className="text-xs text-gray-400">
-              Manglende felter: CVR-adresse, kontaktperson, vedtaegter
-            </p>
-            <div className="pt-1">
-              <Link href="/proto/portfolio" className="text-xs text-gray-500 hover:text-gray-700 underline">
-                Se selskaber →
-              </Link>
-            </div>
-          </div>
-        </div>
 
       </div>
     </div>

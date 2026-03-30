@@ -1,6 +1,5 @@
 'use client'
 
-import { use } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, TrendingUp, TrendingDown, Building2 } from 'lucide-react'
 import { usePrototype } from '@/components/prototype/PrototypeProvider'
@@ -88,12 +87,8 @@ const hardcodedVisits: Record<string, { type: string; date: string; completed?: 
 // Komponent
 // ----------------------------------------------------------------
 
-interface PageProps {
-  params: Promise<{ id: string }>
-}
-
-export default function CompanyDetailPage({ params }: PageProps) {
-  const { id } = use(params)
+export default function CompanyDetailPage({ params }: { params: { id: string } }) {
+  const { id } = params
   const { activeUser, dataScenario } = usePrototype()
   const role = activeUser.role
 

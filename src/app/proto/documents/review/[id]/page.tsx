@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, use } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight, CheckCircle2, XCircle, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
@@ -185,14 +185,8 @@ function HighConfidenceRow({ field, onMouseEnter, onMouseLeave, isHovered }: Fie
   )
 }
 
-interface PageParams {
-  id: string
-}
-
-export default function DocumentReviewPage({ params }: { params: Promise<PageParams> | PageParams }) {
-  // Support both Next.js 14 (sync) and 15 (async) params
-  const resolvedParams = 'then' in params ? use(params) : params
-  const { id } = resolvedParams
+export default function DocumentReviewPage({ params }: { params: { id: string } }) {
+  const { id } = params
 
   const { } = usePrototype()
   const [hoveredFieldId, setHoveredFieldId] = useState<string | null>(null)
