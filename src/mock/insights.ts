@@ -1,0 +1,211 @@
+import type { MockInsight, MockRole, DataScenario } from './types'
+
+export const mockInsights: MockInsight[] = [
+  // ====== DASHBOARD ======
+  {
+    id: 'ins-dash-1',
+    type: 'critical',
+    icon: 'AlertTriangle',
+    title: 'Erhvervsforsikring udløbet — Odense',
+    description: 'Odense Tandlægehus er ikke dækket. Forsikringen udløb for 12 dage siden.',
+    actionLabel: 'Se forsikringskontrakt',
+    actionHref: '/proto/contracts/c-odense-3',
+    roles: ['GROUP_OWNER', 'GROUP_ADMIN', 'GROUP_LEGAL', 'GROUP_FINANCE'],
+    page: 'dashboard',
+  },
+  {
+    id: 'ins-dash-2',
+    type: 'critical',
+    icon: 'FileX',
+    title: 'Ejeraftale mangler — Horsens',
+    description: 'Horsens Tandklinik har ingen ejeraftale 6 måneder efter stiftelse.',
+    actionLabel: 'Opret ejeraftale',
+    actionHref: '/proto/portfolio/company-horsens/contracts',
+    roles: ['GROUP_OWNER', 'GROUP_LEGAL'],
+    page: 'dashboard',
+  },
+  {
+    id: 'ins-dash-3',
+    type: 'critical',
+    icon: 'TrendingDown',
+    title: 'EBITDA faldet 23% — Odense',
+    description: 'Odense Tandlægehus EBITDA er faldet fra 490K til 380K kr. i 2025.',
+    actionLabel: 'Se økonomi',
+    actionHref: '/proto/portfolio/company-odense/finance',
+    roles: ['GROUP_OWNER', 'GROUP_FINANCE'],
+    page: 'dashboard',
+  },
+  {
+    id: 'ins-dash-4',
+    type: 'warning',
+    icon: 'Clock',
+    title: 'Lejekontrakt udløber om 28 dage — Viborg',
+    description: 'Lejekontrakten for Viborg Sct. Mathias Gade skal fornyes inden 27. april.',
+    actionLabel: 'Se lejekontrakt',
+    actionHref: '/proto/contracts/c-viborg-2',
+    roles: ['GROUP_OWNER', 'GROUP_ADMIN', 'GROUP_LEGAL'],
+    page: 'dashboard',
+  },
+  {
+    id: 'ins-dash-5',
+    type: 'warning',
+    icon: 'CalendarX',
+    title: '6 opgaver er forfaldne',
+    description: 'Du har 6 opgaver med overskreden deadline. Kritisk: forsikring og ejeraftale.',
+    actionLabel: 'Se forfaldne opgaver',
+    actionHref: '/proto/tasks?filter=overdue',
+    roles: ['GROUP_OWNER', 'GROUP_ADMIN'],
+    page: 'dashboard',
+  },
+  {
+    id: 'ins-dash-6',
+    type: 'info',
+    icon: 'FileSearch',
+    title: '2 dokumenter afventer gennemgang',
+    description: 'AI har behandlet nye dokumenter. Et dokument har en uoverensstemmelse i ejerandel.',
+    actionLabel: 'Gennemgå dokumenter',
+    actionHref: '/proto/documents?filter=ready_for_review',
+    roles: ['GROUP_LEGAL'],
+    page: 'dashboard',
+  },
+  {
+    id: 'ins-dash-7',
+    type: 'info',
+    icon: 'BarChart2',
+    title: 'Portefølje-total 2025: 83,5M kr. omsætning',
+    description: 'Samlet omsætning op 6,8% ift. 2024. EBITDA-margin 10,3% (markedsgennemsnit: 9,8%).',
+    actionLabel: 'Se finansoverblik',
+    actionHref: '/proto/portfolio?view=finance',
+    roles: ['GROUP_FINANCE'],
+    page: 'dashboard',
+  },
+  {
+    id: 'ins-dash-8',
+    type: 'info',
+    icon: 'Building2',
+    title: 'Du administrerer 3 klinikker',
+    description: 'Odense, Svendborg og Nyborg. Odense har 2 åbne sager og en kritisk forsikringssag.',
+    actionLabel: 'Se dine klinikker',
+    actionHref: '/proto/portfolio',
+    roles: ['COMPANY_MANAGER'],
+    page: 'dashboard',
+  },
+
+  // ====== PORTFOLIO ======
+  {
+    id: 'ins-port-1',
+    type: 'critical',
+    icon: 'AlertOctagon',
+    title: '3 selskaber kræver øjeblikkelig handling',
+    description: 'Odense (forsikring), Horsens (ejeraftale) og Viborg (lejekontrakt) har kritiske fejl.',
+    actionLabel: 'Filtrer kritiske',
+    actionHref: '/proto/portfolio?filter=critical',
+    roles: ['GROUP_OWNER', 'GROUP_ADMIN'],
+    page: 'portfolio',
+  },
+  {
+    id: 'ins-port-2',
+    type: 'coverage',
+    icon: 'ShieldAlert',
+    title: 'Kontraktdækning: 3 selskaber mangler standardkontrakt',
+    description: 'Horsens: ejeraftale. Odense: forsikring. Viborg: lejekontrakt ikke fornyet.',
+    actionLabel: 'Se manglende kontrakter',
+    actionHref: '/proto/contracts?filter=missing',
+    roles: ['GROUP_LEGAL'],
+    page: 'portfolio',
+  },
+  {
+    id: 'ins-port-3',
+    type: 'warning',
+    icon: 'TrendingDown',
+    title: '2 selskaber med negativ økonomiudvikling',
+    description: 'Odense EBITDA -23%, Viborg omsætning -8%. Begge kræver opfølgning.',
+    actionLabel: 'Se økonomianalyse',
+    actionHref: '/proto/portfolio?view=finance',
+    roles: ['GROUP_FINANCE', 'GROUP_OWNER'],
+    page: 'portfolio',
+  },
+
+  // ====== CONTRACTS ======
+  {
+    id: 'ins-cont-1',
+    type: 'critical',
+    icon: 'AlertTriangle',
+    title: '1 kontrakt udløbet, 3 udløber inden 90 dage',
+    description: 'Odense erhvervsforsikring er udløbet. Viborg lejekontrakt udløber om 28 dage.',
+    actionLabel: 'Se udløbende kontrakter',
+    actionHref: '/proto/contracts?filter=expiring',
+    roles: ['GROUP_OWNER', 'GROUP_ADMIN', 'GROUP_LEGAL'],
+    page: 'contracts',
+  },
+  {
+    id: 'ins-cont-2',
+    type: 'coverage',
+    icon: 'FileCheck',
+    title: '19 af 22 selskaber har fuld kontraktdækning',
+    description: '3 selskaber mangler mindst én standardkontrakttype. Klik for at se oversigt.',
+    actionLabel: 'Se dækningsoversigt',
+    actionHref: '/proto/contracts?view=coverage',
+    roles: ['GROUP_LEGAL', 'GROUP_OWNER'],
+    page: 'contracts',
+  },
+
+  // ====== TASKS ======
+  {
+    id: 'ins-task-1',
+    type: 'critical',
+    icon: 'AlertCircle',
+    title: '6 opgaver overskredet deadline',
+    description: 'Inkl. forsikringsfornyelse (Odense) og ejeraftale-udkast (Horsens) som er kritiske.',
+    actionLabel: 'Se forfaldne opgaver',
+    actionHref: '/proto/tasks?filter=overdue',
+    roles: ['GROUP_OWNER', 'GROUP_ADMIN', 'GROUP_LEGAL', 'GROUP_FINANCE'],
+    page: 'tasks',
+  },
+  {
+    id: 'ins-task-2',
+    type: 'warning',
+    icon: 'Hourglass',
+    title: '2 opgaver afventer svar i 14+ dage',
+    description: 'Horsens (advokatsvar) og Odense (revisorgodkendelse) venter uden opdatering.',
+    actionLabel: 'Se afventende opgaver',
+    actionHref: '/proto/tasks?filter=stale',
+    roles: ['GROUP_OWNER', 'GROUP_ADMIN'],
+    page: 'tasks',
+  },
+
+  // ====== DOCUMENTS ======
+  {
+    id: 'ins-doc-1',
+    type: 'warning',
+    icon: 'FileWarning',
+    title: 'Uoverensstemmelse i ejeraftale — Odense',
+    description: 'AI fandt ejerandel 60/40 i dokumentet, men systemet viser 55/45. Kræver verifikation.',
+    actionLabel: 'Gennemgå dokument',
+    actionHref: '/proto/documents/doc-review-1',
+    roles: ['GROUP_LEGAL', 'GROUP_OWNER'],
+    page: 'documents',
+  },
+  {
+    id: 'ins-doc-2',
+    type: 'info',
+    icon: 'Sparkles',
+    title: '2 dokumenter klar til AI-gennemgang',
+    description: 'Odense ejeraftale (høj konfidence) og Viborg tillæg (mellemkonfidence, manglende klausul).',
+    actionLabel: 'Start gennemgang',
+    actionHref: '/proto/documents?filter=ready_for_review',
+    roles: ['GROUP_LEGAL', 'GROUP_ADMIN'],
+    page: 'documents',
+  },
+]
+
+export function getInsights(page: string, role: MockRole, scenario: DataScenario = 'normal'): MockInsight[] {
+  if (scenario === 'empty') return []
+
+  const pageInsights = mockInsights.filter(
+    (ins) => ins.page === page && ins.roles.includes(role)
+  )
+
+  // Maks 2 per side per rolle
+  return pageInsights.slice(0, 2)
+}
