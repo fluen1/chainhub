@@ -74,7 +74,29 @@
       "Bash(mkdir -p \"C:/Users/birke/OneDrive/Skrivebord/Code/chainhub/src/app/proto/contracts/[id]\")",
       "Bash(mkdir -p \"C:/Users/birke/OneDrive/Skrivebord/Code/chainhub/src/app/proto/tasks/[id]\")",
       "Bash(npx eslint:*)",
-      "Bash(git diff:*)"
+      "Bash(git diff:*)",
+      "Bash(for route:*)",
+      "Bash(do echo:*)",
+      "Bash(grep -v \"\\\\.tsx$\")",
+      "Bash(grep -v \"\\\\.ts$\")",
+      "Bash(find /c/Users/birke/OneDrive/Skrivebord/Code/chainhub/src -name mock* -o -name *mock*)",
+      "WebFetch(domain:www.anthropic.com)",
+      "WebFetch(domain:claude-plugins.dev)",
+      "WebFetch(domain:github.com)",
+      "Bash(claude plugins:*)",
+      "Bash(claude plugin:*)",
+      "Bash(find /c/Users/birke/OneDrive/Skrivebord/Code/chainhub -type f -name *dashboard*)",
+      "Bash(bash \"C:\\\\Users\\\\birke\\\\.claude\\\\plugins\\\\cache\\\\claude-plugins-official\\\\superpowers\\\\5.0.6\\\\skills\\\\brainstorming\\\\scripts\\\\start-server.sh\" --project-dir \"C:\\\\Users\\\\birke\\\\OneDrive\\\\Skrivebord\\\\Code\\\\chainhub\")",
+      "Read(//c/Users/birke/.claude/plugins/marketplaces/ui-ux-pro-max-skill/.claude/skills/ui-ux-pro-max/**)",
+      "Bash(python3 scripts/search.py \"B2B SaaS portfolio management dashboard dark mode premium clean card-based\" --design-system -p \"ChainHub\")",
+      "Bash(python scripts/search.py \"B2B SaaS portfolio management dashboard dark mode premium clean card-based\" --design-system -p \"ChainHub\")",
+      "Bash(python scripts/search.py \"dark mode premium SaaS dashboard\" --domain style -n 5)",
+      "Bash(python scripts/search.py \"dark SaaS dashboard B2B premium\" --domain color -n 5)",
+      "Bash(python scripts/search.py \"modern clean professional SaaS\" --domain typography -n 5)",
+      "Bash(python scripts/search.py \"calendar dashboard widget scheduling events\" --domain ux -n 10)",
+      "Bash(python scripts/search.py \"calendar timeline schedule\" --domain product -n 5)",
+      "Bash(python scripts/search.py \"progressive disclosure loading empty states overview detail\" --domain ux -n 10)",
+      "Bash(wc -l C:UsersbirkeOneDriveSkrivebordCodechainhubsrcappprotopage.tsx C:UsersbirkeOneDriveSkrivebordCodechainhubsrcappprotolayout.tsx C:UsersbirkeOneDriveSkrivebordCodechainhubsrcappprotoportfoliopage.tsx C:UsersbirkeOneDriveSkrivebordCodechainhubsrcappprotodashboardpage.tsx C:UsersbirkeOneDriveSkrivebordCodechainhubsrcappprotoportfolio[id]page.tsx C:UsersbirkeOneDriveSkrivebordCodechainhubsrcappprotocontracts[id]page.tsx C:UsersbirkeOneDriveSkrivebordCodechainhubsrcappprototaskspage.tsx C:UsersbirkeOneDriveSkrivebordCodechainhubsrcappprototasks[id]page.tsx C:UsersbirkeOneDriveSkrivebordCodechainhubsrcappprotodocumentspage.tsx C:UsersbirkeOneDriveSkrivebordCodechainhubsrcappprotodocumentsreview[id]page.tsx C:UsersbirkeOneDriveSkrivebordCodechainhubsrcappprotosearchpage.tsx C:UsersbirkeOneDriveSkrivebordCodechainhubsrcappprotosettingspage.tsx C:UsersbirkeOneDriveSkrivebordCodechainhubsrcappprotocontractspage.tsx)"
     ]
   }
 }

@@ -75,3 +75,15 @@ export interface MockSearchResponse {
 export interface PrototypeState {
   activeUser: MockUser; companyCount: number; dataScenario: DataScenario
 }
+
+export interface MockCalendarEvent {
+  id: string
+  date: string // YYYY-MM-DD
+  title: string
+  subtitle: string
+  type: 'expiry' | 'deadline' | 'meeting' | 'case' | 'renewal'
+  companyId?: string
+  companyName?: string
+  aiExtracted: boolean
+  href?: string
+}
