@@ -13,7 +13,7 @@ export default function PrototypeLayout({ children }: { children: React.ReactNod
         <div className="flex flex-1 flex-col overflow-hidden">
           <RoleSwitcher />
           <PrototypeHeader />
-          <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
+          <main className="flex-1 overflow-y-auto bg-slate-50/80 p-6">
             {children}
           </main>
         </div>

@@ -40,7 +40,7 @@ export function InsightCard({ insight }: InsightCardProps) {
   return (
     <div
       className={cn(
-        'border-l-4 rounded-r-lg px-4 py-3 bg-white shadow-sm',
+        'border-l-4 rounded-r-xl px-4 py-3 bg-white shadow-sm',
         colorMap[insight.type],
       )}
     >

@@ -22,7 +22,7 @@ export function CoverageBar({ label, covered, total, className }: CoverageBarPro
       <div className="h-1.5 rounded-full bg-gray-200 overflow-hidden">
         <div
           className={cn(
-            'h-full rounded-full transition-all',
+            'h-full rounded-full transition-all duration-500',
             isComplete ? 'bg-green-500' : 'bg-amber-400',
           )}
           style={{ width: `${pct}%` }}

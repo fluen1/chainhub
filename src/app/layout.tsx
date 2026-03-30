@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Plus_Jakarta_Sans } from 'next/font/google'
 import './globals.css'
 import { Toaster } from 'sonner'
 
-const inter = Inter({ subsets: ['latin'] })
+const font = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-sans' })
 
 export const metadata: Metadata = {
   title: 'ChainHub — Porteføljestyring',
@@ -17,7 +17,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="da">
-      <body className={inter.className}>
+      <body className={`${font.variable} font-sans`}>
         {children}
         <Toaster position="top-right" richColors />
       </body>

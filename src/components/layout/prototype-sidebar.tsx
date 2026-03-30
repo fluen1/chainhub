@@ -53,10 +53,10 @@ export function PrototypeSidebar() {
     .slice(0, 2)
 
   return (
-    <div className="flex h-full w-64 flex-col bg-gray-900">
+    <div className="flex h-full w-64 flex-col bg-slate-950">
       {/* Logo */}
-      <div className="flex h-16 items-center border-b border-gray-800 px-6">
-        <Link href="/proto/dashboard" className="text-xl font-bold text-white">
+      <div className="flex h-16 items-center border-b border-slate-800 px-6">
+        <Link href="/proto/dashboard" className="text-xl font-bold tracking-tight text-white">
           ChainHub
         </Link>
       </div>
@@ -73,10 +73,10 @@ export function PrototypeSidebar() {
               key={item.name}
               href={item.href}
               className={cn(
-                'flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                'flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-all duration-150',
                 isActive
-                  ? 'bg-gray-800 text-white'
-                  : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                  ? 'bg-slate-800/60 backdrop-blur-sm text-white'
+                  : 'text-slate-300 hover:bg-slate-800/40 hover:text-white'
               )}
             >
               <span className="flex items-center gap-3">
@@ -101,14 +101,14 @@ export function PrototypeSidebar() {
       </nav>
 
       {/* Bund: indstillinger + bruger */}
-      <div className="border-t border-gray-700 px-3 py-3 space-y-1">
+      <div className="border-t border-slate-800 px-3 py-3 space-y-1">
         <Link
           href="/proto/settings"
           className={cn(
-            'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+            'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-150',
             pathname.startsWith('/proto/settings')
-              ? 'bg-gray-800 text-white'
-              : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+              ? 'bg-slate-800/60 backdrop-blur-sm text-white'
+              : 'text-slate-300 hover:bg-slate-800/40 hover:text-white'
           )}
         >
           <Settings className="h-5 w-5 shrink-0" />
@@ -117,12 +117,12 @@ export function PrototypeSidebar() {
 
         {/* Bruger-info */}
         <div className="mt-2 flex items-center gap-3 rounded-md px-3 py-2">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-600 text-xs font-bold text-white">
             {initials}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-medium text-white">{activeUser.name}</p>
-            <span className="mt-0.5 inline-flex items-center rounded-full bg-gray-700 px-1.5 py-0.5 text-xs text-gray-300">
+            <p className="truncate text-xs font-medium text-slate-200">{activeUser.name}</p>
+            <span className="mt-0.5 inline-flex items-center rounded-full bg-slate-800 px-1.5 py-0.5 text-xs text-slate-400">
               {activeUser.roleLabel}
             </span>
           </div>
