@@ -260,7 +260,7 @@ function buildUrgencyItems(
 // Hoved-komponent
 // ---------------------------------------------------------------
 export default function DashboardPage() {
-  const { activeUser, dataScenario, companyCount } = usePrototype()
+  const { activeUser, dataScenario } = usePrototype()
   const role = activeUser.role
 
   // Empty state
@@ -383,7 +383,7 @@ export default function DashboardPage() {
                     <div className="text-xs font-medium uppercase tracking-[0.06em] text-gray-400 mb-2">
                       Kræver opmærksomhed
                     </div>
-                    {[...data.criticalCompanies, ...data.warningCompanies].slice(0, 4).map((c, i) => (
+                    {[...data.criticalCompanies, ...data.warningCompanies].slice(0, 4).map((c) => (
                       <CompanyRow
                         key={c.id}
                         initials={getInitials(c.name)}
@@ -544,20 +544,17 @@ export default function DashboardPage() {
             {hasSection('loss_locations') && (
               <div className="rounded-xl border border-gray-200 bg-white p-5">
                 <div className="mb-4 text-sm font-semibold text-slate-900">Lokationer med fald</div>
-                {data.underperforming.map((u, i) => {
-                  const fin = getFinancialByCompany(u.companyId).find((f) => f.year === 2025)
-                  return (
+                {data.underperforming.map((u, idx) => (
                     <CompanyRow
                       key={u.companyId}
                       initials={getInitials(u.companyName)}
                       name={u.companyName}
                       meta={u.reason}
                       status={{ label: 'Fald', type: 'critical' }}
-                      avatarColor={getAvatarColor(i + 4)}
+                      avatarColor={getAvatarColor(idx + 4)}
                       href={`/proto/portfolio/${u.companyId}`}
                     />
-                  )
-                })}
+                ))}
               </div>
             )}
           </div>
