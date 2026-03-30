@@ -57,7 +57,22 @@
       "Bash(grep -E \"\\\\.env\\\\.local|\\\\.env$\" .gitignore)",
       "mcp__plugin_playwright_playwright__browser_close",
       "Read(//c/Users/birke/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.6/**)",
-      "Bash(bash skills/brainstorming/scripts/start-server.sh --project-dir \"C:\\\\Users\\\\birke\\\\OneDrive\\\\Skrivebord\\\\Code\\\\chainhub\")"
+      "Bash(bash skills/brainstorming/scripts/start-server.sh --project-dir \"C:\\\\Users\\\\birke\\\\OneDrive\\\\Skrivebord\\\\Code\\\\chainhub\")",
+      "Bash(curl:*)",
+      "Bash(powershell.exe -Command \"Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue | Select-Object LocalPort,State,OwningProcess\")",
+      "Bash(bash scripts/start-server.sh --project-dir \"C:\\\\Users\\\\birke\\\\OneDrive\\\\Skrivebord\\\\Code\\\\chainhub\")",
+      "Bash(xargs cat:*)",
+      "Skill(commit-commands:commit)",
+      "Bash(cat \"src/app/\\(dashboard\\)/contracts/page.tsx\")",
+      "Bash(cat \"src/app/\\(dashboard\\)/companies/page.tsx\")",
+      "Bash(cat \"src/app/\\(dashboard\\)/dashboard/page.tsx\")",
+      "Bash(cat \"src/app/\\(dashboard\\)/companies/[id]/overview/page.tsx\")",
+      "WebSearch",
+      "Bash(find \"C:/Users/birke/OneDrive/Skrivebord/Code/chainhub/src/app/\\(dashboard\\)\" -name \"page.tsx\" -type f)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(mkdir -p \"C:/Users/birke/OneDrive/Skrivebord/Code/chainhub/src/app/proto/contracts/[id]\")",
+      "Bash(mkdir -p \"C:/Users/birke/OneDrive/Skrivebord/Code/chainhub/src/app/proto/tasks/[id]\")"
     ]
   }
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Building2, AlertCircle, TrendingUp, TrendingDown, FileText, CheckCircle2, Calendar, Clock, Users } from 'lucide-react'
+import { Building2, AlertCircle, TrendingUp, TrendingDown, Calendar, Clock } from 'lucide-react'
 import { usePrototype } from '@/components/prototype/PrototypeProvider'
 import { InsightCard } from '@/components/prototype/InsightCard'
 import { CoverageBar } from '@/components/ui/CoverageBar'

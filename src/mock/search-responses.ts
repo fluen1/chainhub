@@ -298,7 +298,7 @@ const suggestedQueriesByRole: Record<MockRole, Record<string, string[]>> = {
   },
 }
 
-export function searchMock(query: string, _role: MockRole): MockSearchResponse {
+export function searchMock(query: string): MockSearchResponse {
   if (!query.trim()) {
     return { ...defaultFallback, query }
   }

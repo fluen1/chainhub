@@ -96,16 +96,12 @@ function groupContracts(contracts: MockContract[], groupBy: GroupBy): { key: str
 
   for (const c of contracts) {
     let key: string
-    let label: string
     if (groupBy === 'type') {
       key = c.categoryLabel
-      label = c.categoryLabel
     } else if (groupBy === 'selskab') {
       key = c.companyId
-      label = c.companyName
     } else {
       key = c.status
-      label = c.statusLabel
     }
 
     if (!map.has(key)) map.set(key, [])
