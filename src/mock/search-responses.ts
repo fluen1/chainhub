@@ -298,7 +298,8 @@ const suggestedQueriesByRole: Record<MockRole, Record<string, string[]>> = {
   },
 }
 
-export function searchMock(query: string): MockSearchResponse {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function searchMock(query: string, _role?: MockRole): MockSearchResponse {
   if (!query.trim()) {
     return { ...defaultFallback, query }
   }
