@@ -3,7 +3,12 @@ import { Plus_Jakarta_Sans } from 'next/font/google'
 import './globals.css'
 import { Toaster } from 'sonner'
 
-const font = Plus_Jakarta_Sans({ subsets: ['latin'], variable: '--font-sans' })
+const plusJakarta = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  weight: ['300', '400', '500', '600', '700', '800'],
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: 'ChainHub — Porteføljestyring',
@@ -17,7 +22,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="da">
-      <body className={`${font.variable} font-sans`}>
+      <body className={`${plusJakarta.variable} font-sans`}>
         {children}
         <Toaster position="top-right" richColors />
       </body>
