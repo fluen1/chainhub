@@ -1,86 +1,272 @@
 'use client'
 
-import Link from 'next/link'
-import { Building2, AlertCircle, TrendingUp, TrendingDown, Calendar } from 'lucide-react'
+import { Building2 } from 'lucide-react'
 import { usePrototype } from '@/components/prototype/PrototypeProvider'
-import { InsightCard } from '@/components/prototype/InsightCard'
-import { CoverageBar } from '@/components/ui/CoverageBar'
-import { getInsights } from '@/mock/insights'
+import { KpiCard } from '@/components/prototype/KpiCard'
+import { UrgencyList, type UrgencyItem } from '@/components/prototype/UrgencyList'
+import { HealthBar } from '@/components/prototype/HealthBar'
+import { CompanyRow } from '@/components/prototype/CompanyRow'
+import { ProtoCoverageBar } from '@/components/prototype/ProtoCoverageBar'
+import { FinRow } from '@/components/prototype/FinRow'
+import { SectionHeader } from '@/components/prototype/SectionHeader'
+import { CalendarWidget } from '@/components/prototype/CalendarWidget'
 import { getCompanies } from '@/mock/companies'
-import { getOverdueTasks } from '@/mock/tasks'
 import { getExpiringContracts, getContractCoverage } from '@/mock/contracts'
-import { getDocumentsAwaitingReview, getDocumentsProcessing } from '@/mock/documents'
-import { getPortfolioTotals } from '@/mock/financial'
-import { getVisibleDashboardBlocks, filterCompaniesByRole } from '@/mock/helpers'
-import { getUpcomingVisits } from '@/mock/visits'
+import { getOverdueTasks } from '@/mock/tasks'
 import { getOpenCases } from '@/mock/cases'
+import { getPortfolioTotals, getUnderperformingCompanies, getFinancialByCompany } from '@/mock/financial'
+import { filterCompaniesByRole, getDashboardSectionsForRole } from '@/mock/helpers'
 
-// Urgency-farver til venstre border
-function urgencyBorder(urgency: 'critical' | 'warning' | 'normal' | 'none'): string {
-  if (urgency === 'critical') return 'border-l-4 border-l-red-500'
-  if (urgency === 'warning') return 'border-l-4 border-l-amber-400'
-  return 'border-l-4 border-l-gray-200'
+// Farve-palette til firma-avatarer
+const AVATAR_COLORS = [
+  '#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b',
+  '#10b981', '#ef4444', '#6366f1', '#14b8a6',
+]
+
+function getAvatarColor(index: number): string {
+  return AVATAR_COLORS[index % AVATAR_COLORS.length]
 }
 
-function urgencyDot(urgency: 'critical' | 'warning' | 'normal' | 'none'): string {
-  if (urgency === 'critical') return 'bg-red-500'
-  if (urgency === 'warning') return 'bg-amber-400'
-  return 'bg-gray-300'
+function getInitials(name: string): string {
+  return name
+    .split(' ')
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
 }
 
-export default function DashboardPage() {
-  const { activeUser, dataScenario, companyCount } = usePrototype()
-  const role = activeUser.role
+function formatMio(val: number): string {
+  return (val / 1_000_000).toFixed(1)
+}
 
-  const insights = getInsights('dashboard', role, dataScenario)
-  const blocks = getVisibleDashboardBlocks(role)
-  const companies = filterCompaniesByRole(getCompanies(dataScenario, companyCount), role, activeUser.companyIds)
+interface KpiCardDef {
+  label: string
+  value: string | number
+  valueColor?: 'default' | 'warning' | 'danger'
+  trend?: { text: string; direction: 'up' | 'down' | 'neutral' }
+}
 
-  // Data til blokke
-  const overdueTasks = getOverdueTasks()
+// ---------------------------------------------------------------
+// Rollespecifikke KPI-definitioner
+// ---------------------------------------------------------------
+function getKpiCards(role: string, data: ReturnType<typeof buildDashboardData>): KpiCardDef[] {
+  switch (role) {
+    case 'GROUP_OWNER':
+      return [
+        { label: 'Selskaber', value: data.totalCompanies },
+        {
+          label: 'Udløbende kontrakter',
+          value: data.expiringCount,
+          valueColor: 'warning' as const,
+          trend: { text: '90 dage', direction: 'neutral' as const },
+        },
+        { label: 'Aktive sager', value: data.openCaseCount },
+        {
+          label: 'Forfaldne opgaver',
+          value: data.overdueTaskCount,
+          valueColor: data.overdueTaskCount > 0 ? 'danger' as const : 'default' as const,
+        },
+      ]
+    case 'GROUP_LEGAL':
+      return [
+        {
+          label: 'Udløbende kontrakter',
+          value: data.expiringCount,
+          valueColor: 'warning' as const,
+        },
+        { label: 'Aktive tvister', value: data.tvistsCount },
+        { label: 'Kontrakter til gennemgang', value: 8 },
+        { label: 'Kontraktdækning', value: '86%' },
+      ]
+    case 'GROUP_FINANCE':
+      return [
+        {
+          label: 'Omsætning 2025',
+          value: `${formatMio(data.totals2025.totalOmsaetning)}M`,
+          trend: { text: '+5,2%', direction: 'up' as const },
+        },
+        {
+          label: 'EBITDA 2025',
+          value: `${formatMio(data.totals2025.totalEbitda)}M`,
+          trend: { text: '+3,8%', direction: 'up' as const },
+        },
+        {
+          label: 'EBITDA-margin',
+          value: `${(data.totals2025.avgEbitdaMargin * 100).toFixed(1)}%`,
+        },
+        {
+          label: 'Gns. pr. lokation',
+          value: `${formatMio(data.totals2025.totalOmsaetning / Math.max(data.totalCompanies, 1))}M`,
+        },
+      ]
+    case 'GROUP_ADMIN':
+      return [
+        { label: 'Selskaber', value: data.totalCompanies },
+        {
+          label: 'Forfaldne opgaver',
+          value: data.overdueTaskCount,
+          valueColor: data.overdueTaskCount > 0 ? 'danger' as const : 'default' as const,
+        },
+        { label: 'Aktive sager', value: data.openCaseCount },
+        { label: 'Udløbende kontrakter', value: data.expiringCount, valueColor: 'warning' as const },
+      ]
+    default:
+      // COMPANY_MANAGER og fallback
+      return [
+        { label: 'Mine selskaber', value: data.totalCompanies },
+        {
+          label: 'Forfaldne opgaver',
+          value: data.overdueTaskCount,
+          valueColor: data.overdueTaskCount > 0 ? 'danger' as const : 'default' as const,
+        },
+        { label: 'Åbne sager', value: data.openCaseCount },
+      ]
+  }
+}
+
+// ---------------------------------------------------------------
+// Saml al mock-data ét sted
+// ---------------------------------------------------------------
+function buildDashboardData(dataScenario: 'normal' | 'many_warnings' | 'empty', role: string, assignedIds: string[]) {
+  const allCompanies = getCompanies(dataScenario, 22)
+  const companies = filterCompaniesByRole(allCompanies, role as Parameters<typeof filterCompaniesByRole>[1], assignedIds)
+
   const expiringContracts = getExpiringContracts(90)
   const contractCoverage = getContractCoverage()
-  const docsReview = getDocumentsAwaitingReview()
-  const docsProcessing = getDocumentsProcessing()
-  const totals2024 = getPortfolioTotals(2024)
+  const overdueTasks = getOverdueTasks()
+  const openCases = getOpenCases()
   const totals2025 = getPortfolioTotals(2025)
+  const totals2024 = getPortfolioTotals(2024)
+  const underperforming = getUnderperformingCompanies()
 
   const criticalCompanies = companies.filter((c) => c.healthStatus === 'critical')
   const warningCompanies = companies.filter((c) => c.healthStatus === 'warning')
   const healthyCompanies = companies.filter((c) => c.healthStatus === 'healthy')
 
-  // Urgency items: kombiner overdue tasks + udløbende kontrakter (maks 5 total)
-  type UrgencyItem = {
-    id: string
-    urgency: 'critical' | 'warning'
-    title: string
-    subtitle: string
-    href: string
+  const totalCompanies = companies.length || 22
+
+  // Kontraktdækning pr. kategori
+  const coverageItems = [
+    {
+      label: 'Ejeraftale',
+      pct: Math.round(((totalCompanies - contractCoverage.filter((c) => c.missingTypes.includes('EJERAFTALE')).length) / totalCompanies) * 100),
+    },
+    {
+      label: 'Lejekontrakt',
+      pct: Math.round(((totalCompanies - contractCoverage.filter((c) => c.missingTypes.includes('LEJEKONTRAKT')).length) / totalCompanies) * 100),
+    },
+    {
+      label: 'Erhvervsforsikring',
+      pct: Math.round(((totalCompanies - contractCoverage.filter((c) => c.missingTypes.includes('FORSIKRING')).length) / totalCompanies) * 100),
+    },
+    {
+      label: 'Ansættelseskontrakt',
+      pct: Math.round(((totalCompanies - contractCoverage.filter((c) => c.missingTypes.includes('ANSAETTELSESKONTRAKT')).length) / totalCompanies) * 100),
+    },
+  ]
+
+  return {
+    companies,
+    criticalCompanies,
+    warningCompanies,
+    healthyCompanies,
+    expiringContracts,
+    expiringCount: expiringContracts.length,
+    contractCoverage,
+    coverageItems,
+    overdueTasks,
+    overdueTaskCount: overdueTasks.length,
+    openCases,
+    openCaseCount: openCases.filter((c) => c.status !== 'LUKKET').length,
+    tvistsCount: openCases.filter((c) => c.type === 'TVIST').length,
+    totals2025,
+    totals2024,
+    underperforming,
+    totalCompanies,
+  }
+}
+
+// ---------------------------------------------------------------
+// Byg UrgencyList-items (rolle-tilpasset)
+// ---------------------------------------------------------------
+function buildUrgencyItems(
+  role: string,
+  data: ReturnType<typeof buildDashboardData>
+): UrgencyItem[] {
+  const items: UrgencyItem[] = []
+
+  if (role === 'GROUP_FINANCE') {
+    // Økonomi fokus: underperformende lokationer
+    data.underperforming.forEach((u, i) => {
+      items.push({
+        id: `fin-${i}`,
+        name: u.companyName,
+        subtitle: u.reason,
+        days: 'Nu',
+        indicator: 'red',
+        overdue: true,
+        href: `/proto/portfolio/${u.companyId}`,
+      })
+    })
+    // Tilføj udløbende kontrakter med finansiel impact
+    data.expiringContracts.slice(0, 3).forEach((c) => {
+      items.push({
+        id: c.id,
+        name: c.displayName,
+        subtitle: c.companyName,
+        days: c.daysUntilExpiry !== null && c.daysUntilExpiry < 0
+          ? `Udløbet`
+          : `${c.daysUntilExpiry}d`,
+        indicator: c.urgency === 'critical' ? 'red' : 'amber',
+        overdue: c.daysUntilExpiry !== null && c.daysUntilExpiry < 0,
+        href: `/proto/contracts/${c.id}`,
+      })
+    })
+    return items.slice(0, 5)
   }
 
-  const urgencyItems: UrgencyItem[] = [
-    ...overdueTasks.slice(0, 3).map((t) => ({
+  // Standard: overdue tasks + udløbende kontrakter
+  data.overdueTasks.slice(0, 3).forEach((t) => {
+    items.push({
       id: t.id,
-      urgency: (t.priority === 'KRITISK' ? 'critical' : 'warning') as 'critical' | 'warning',
-      title: t.title,
-      subtitle: `Forfaldt ${Math.abs(t.daysUntilDue ?? 0)} dag${Math.abs(t.daysUntilDue ?? 0) === 1 ? '' : 'e'} siden · ${t.companyName}`,
+      name: t.title,
+      subtitle: t.companyName,
+      days: `${Math.abs(t.daysUntilDue ?? 0)}d siden`,
+      indicator: t.priority === 'KRITISK' ? 'red' : 'amber',
+      overdue: true,
       href: `/proto/tasks/${t.id}`,
-    })),
-    ...expiringContracts.slice(0, 2).map((c) => ({
-      id: c.id,
-      urgency: c.urgency as 'critical' | 'warning',
-      title: c.displayName,
-      subtitle: c.daysUntilExpiry !== null && c.daysUntilExpiry < 0
-        ? `Udløbet ${Math.abs(c.daysUntilExpiry)} dage siden · ${c.companyName}`
-        : `Udløber om ${c.daysUntilExpiry} dage · ${c.companyName}`,
-      href: `/proto/contracts/${c.id}`,
-    })),
-  ].slice(0, 5)
+    })
+  })
 
-  // Tomme tilstand
+  data.expiringContracts.slice(0, 2).forEach((c) => {
+    items.push({
+      id: c.id,
+      name: c.displayName,
+      subtitle: c.companyName,
+      days: c.daysUntilExpiry !== null && c.daysUntilExpiry < 0
+        ? `Udløbet`
+        : `${c.daysUntilExpiry}d`,
+      indicator: c.urgency === 'critical' ? 'red' : 'amber',
+      overdue: c.daysUntilExpiry !== null && c.daysUntilExpiry < 0,
+      href: `/proto/contracts/${c.id}`,
+    })
+  })
+
+  return items.slice(0, 5)
+}
+
+// ---------------------------------------------------------------
+// Hoved-komponent
+// ---------------------------------------------------------------
+export default function DashboardPage() {
+  const { activeUser, dataScenario, companyCount } = usePrototype()
+  const role = activeUser.role
+
+  // Empty state
   if (dataScenario === 'empty') {
     return (
-      <div className="p-6 max-w-4xl mx-auto">
+      <div className="p-6 max-w-5xl mx-auto">
         <div className="border-b border-gray-200/60 pb-6 mb-8">
           <h1 className="text-2xl font-bold tracking-tight text-gray-900">
             Godmorgen, {activeUser.name}
@@ -97,350 +283,302 @@ export default function DashboardPage() {
     )
   }
 
-  // Beregn om en blok er synlig
-  function hasBlock(name: string) {
-    return blocks.includes(name)
-  }
+  const data = buildDashboardData(dataScenario, role, activeUser.companyIds)
+  const sections = getDashboardSectionsForRole(role)
+  const urgencyItems = buildUrgencyItems(role, data)
+  const kpiCards = getKpiCards(role, data)
 
-  // Hjælp til trend-pile
-  const omsaetningTrend = totals2025.totalOmsaetning - totals2024.totalOmsaetning
-  const ebitdaTrend = totals2025.totalEbitda - totals2024.totalEbitda
+  const hasSection = (s: string): boolean => (sections as string[]).includes(s)
 
-  function formatMio(val: number): string {
-    return (val / 1_000_000).toFixed(1)
-  }
-
-  // Kommende besoeg — vises kun for GROUP_OWNER og GROUP_ADMIN
-  const upcomingVisits = getUpcomingVisits().slice(0, 4)
-
-  // Aabne sager til compliance-blok (GROUP_LEGAL)
-  const openCases = getOpenCases()
-
-  // Kontraktdaekning pr. kategori (baseret paa coverage data + alle 22 selskaber)
-  const totalCompanies = companies.length || 22
-  const coverageItems = [
-    { label: 'Ejeraftale', covered: totalCompanies - contractCoverage.filter((c) => c.missingTypes.includes('EJERAFTALE')).length },
-    { label: 'Lejekontrakt', covered: totalCompanies - contractCoverage.filter((c) => c.missingTypes.includes('LEJEKONTRAKT')).length },
-    { label: 'Erhvervsforsikring', covered: totalCompanies - contractCoverage.filter((c) => c.missingTypes.includes('FORSIKRING')).length },
-    { label: 'Ansaettelseskontrakt', covered: totalCompanies - contractCoverage.filter((c) => c.missingTypes.includes('ANSAETTELSESKONTRAKT')).length },
-  ]
+  // Greeting
+  const greeting = (() => {
+    switch (role) {
+      case 'GROUP_OWNER': return `${data.totalCompanies} selskaber · ${data.criticalCompanies.length + data.warningCompanies.length > 0 ? `${data.criticalCompanies.length + data.warningCompanies.length} kræver opmærksomhed` : 'Alt ser godt ud'}`
+      case 'GROUP_LEGAL': return `${data.expiringCount} udløbende kontrakter · ${data.openCaseCount} åbne sager`
+      case 'GROUP_FINANCE': return `Portefølje 2025 · ${formatMio(data.totals2025.totalOmsaetning)}M kr. omsætning`
+      case 'GROUP_ADMIN': return `${data.totalCompanies} selskaber · ${data.overdueTaskCount} forfaldne opgaver`
+      default: return `${data.totalCompanies} selskaber`
+    }
+  })()
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-6">
+    <div className="p-6 max-w-5xl mx-auto space-y-5">
       {/* Hilsen */}
-      <div className="border-b border-gray-200/60 pb-6">
+      <div className="border-b border-gray-200/60 pb-5">
         <h1 className="text-2xl font-bold tracking-tight text-gray-900">
           Godmorgen, {activeUser.name}
         </h1>
-        <p className="mt-1 text-sm text-gray-500">
-          {companies.length} selskaber ·{' '}
-          {criticalCompanies.length + warningCompanies.length > 0
-            ? `${criticalCompanies.length + warningCompanies.length} kræver opmærksomhed`
-            : 'Alt ser godt ud'
-          }
-        </p>
+        <p className="mt-1 text-sm text-gray-500">{greeting}</p>
       </div>
 
-      {/* InsightCards (maks 2 — allerede begraenset af getInsights) */}
-      {insights.length > 0 && (
-        <div className="space-y-2">
-          {insights.map((ins) => (
-            <InsightCard key={ins.id} insight={ins} />
+      {/* KPI grid */}
+      {hasSection('kpi') && (
+        <div className={`grid gap-4 ${kpiCards.length === 4 ? 'grid-cols-2 lg:grid-cols-4' : 'grid-cols-2 lg:grid-cols-3'}`}>
+          {kpiCards.map((card, i) => (
+            <KpiCard
+              key={i}
+              label={card.label}
+              value={card.value}
+              valueColor={card.valueColor}
+              trend={card.trend}
+            />
           ))}
         </div>
       )}
 
-      {/* Dynamiske blokke — kun rolle-filtrerede */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Primær content-grid: urgency/top + kalender */}
+      {(hasSection('urgency') || hasSection('top_locations')) && hasSection('calendar') ? (
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-4">
+          {/* Venstre: urgency eller top locations */}
+          <div className="space-y-4">
+            {hasSection('urgency') && urgencyItems.length > 0 && (
+              <UrgencyList
+                title="Kræver handling"
+                items={urgencyItems}
+                viewAllHref="/proto/tasks?filter=overdue"
+              />
+            )}
 
-        {/* requires_action / urgency_feed */}
-        {hasBlock('urgency_feed') && urgencyItems.length > 0 && (
-          <div className="bg-white rounded-xl border-l-4 border-l-red-400 border border-gray-200/80 shadow-sm overflow-hidden">
-            <div className="px-5 pt-5 pb-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-400">
-                Kræver handling
-              </p>
-            </div>
-            <ul>
-              {urgencyItems.map((item) => (
-                <li key={item.id}>
-                  <Link
-                    href={item.href}
-                    className={`block px-5 py-4 hover:bg-gray-50/80 transition-colors border-b border-gray-100 last:border-b-0 ${urgencyBorder(item.urgency)}`}
-                  >
-                    <p className="text-sm font-medium text-gray-900">{item.title}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{item.subtitle}</p>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            {hasSection('top_locations') && (
+              <div className="rounded-xl border border-gray-200 bg-white p-5">
+                <div className="mb-4 text-sm font-semibold text-slate-900">Top lokationer — Omsætning 2025</div>
+                {data.companies
+                  .slice()
+                  .sort((a, b) => {
+                    const fa = getFinancialByCompany(a.id).find((f) => f.year === 2025)
+                    const fb = getFinancialByCompany(b.id).find((f) => f.year === 2025)
+                    return (fb?.omsaetning ?? 0) - (fa?.omsaetning ?? 0)
+                  })
+                  .slice(0, 5)
+                  .map((c, i) => {
+                    const fin = getFinancialByCompany(c.id).find((f) => f.year === 2025)
+                    const omsaetning = fin?.omsaetning ?? 0
+                    const ebitdaMargin = fin && omsaetning > 0 ? ((fin.ebitda ?? 0) / omsaetning * 100).toFixed(1) : '—'
+                    return (
+                      <CompanyRow
+                        key={c.id}
+                        initials={getInitials(c.name)}
+                        name={c.name}
+                        meta={`${formatMio(omsaetning)}M kr. · EBITDA ${ebitdaMargin}%`}
+                        status={{ label: 'Aktiv', type: 'ok' }}
+                        avatarColor={getAvatarColor(i)}
+                        href={`/proto/portfolio/${c.id}`}
+                      />
+                    )
+                  })}
+              </div>
+            )}
+
+            {/* Porteføljesundhed under urgency (GROUP_OWNER, GROUP_ADMIN) */}
+            {hasSection('health') && (
+              <div className="rounded-xl border border-gray-200 bg-white p-5">
+                <div className="mb-1 text-sm font-semibold text-slate-900">Porteføljesundhed</div>
+                <HealthBar
+                  healthy={data.healthyCompanies.length}
+                  warning={data.warningCompanies.length}
+                  critical={data.criticalCompanies.length}
+                />
+                {(data.criticalCompanies.length > 0 || data.warningCompanies.length > 0) && (
+                  <div className="mt-4 space-y-0">
+                    <div className="text-xs font-medium uppercase tracking-[0.06em] text-gray-400 mb-2">
+                      Kræver opmærksomhed
+                    </div>
+                    {[...data.criticalCompanies, ...data.warningCompanies].slice(0, 4).map((c, i) => (
+                      <CompanyRow
+                        key={c.id}
+                        initials={getInitials(c.name)}
+                        name={c.name}
+                        meta={c.healthReasons[0] ?? c.city}
+                        status={{
+                          label: c.healthStatus === 'critical' ? 'Kritisk' : 'Advarsel',
+                          type: c.healthStatus === 'critical' ? 'critical' : 'warning',
+                        }}
+                        avatarColor={c.healthStatus === 'critical' ? '#ef4444' : '#f59e0b'}
+                        href={`/proto/portfolio/${c.id}`}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-        )}
 
-        {/* portfolio_summary */}
-        {hasBlock('portfolio_summary') && (
-          <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm p-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-400 mb-4">
-              Portefoljesundhed
-            </p>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${urgencyDot('critical')}`} />
-                <span className="text-sm text-gray-700 flex-1">Kritiske</span>
-                <span className="text-sm font-semibold text-gray-900">{criticalCompanies.length}</span>
+          {/* Højre: kalender */}
+          {hasSection('calendar') && <CalendarWidget />}
+        </div>
+      ) : hasSection('calendar') ? (
+        // Kun kalender — ingen urgency
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-4">
+          <div />
+          <CalendarWidget />
+        </div>
+      ) : null}
+
+      {/* --- JURIDISK sektion (GROUP_OWNER) --- */}
+      {role === 'GROUP_OWNER' && (
+        <>
+          <SectionHeader title="Juridisk" />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Kontraktdækning */}
+            {hasSection('coverage') && (
+              <div className="rounded-xl border border-gray-200 bg-white p-5">
+                <div className="mb-4 text-sm font-semibold text-slate-900">Kontraktdækning</div>
+                {data.coverageItems.map((item) => (
+                  <ProtoCoverageBar key={item.label} label={item.label} percentage={item.pct} />
+                ))}
               </div>
-              <div className="flex items-center gap-3">
-                <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${urgencyDot('warning')}`} />
-                <span className="text-sm text-gray-700 flex-1">Advarsel</span>
-                <span className="text-sm font-semibold text-gray-900">{warningCompanies.length}</span>
+            )}
+
+            {/* Sager fordelt på type */}
+            {hasSection('cases') && (
+              <div className="rounded-xl border border-gray-200 bg-white p-5">
+                <div className="mb-4 text-sm font-semibold text-slate-900">Sager pr. type</div>
+                <FinRow label="Compliance" value={`${data.openCases.filter((c) => c.type === 'COMPLIANCE').length}`} />
+                <FinRow label="Governance" value={`${data.openCases.filter((c) => c.type === 'GOVERNANCE').length}`} />
+                <FinRow label="Kontrakt" value={`${data.openCases.filter((c) => c.type === 'KONTRAKT').length}`} />
+                <FinRow label="Tvist" value={`${data.openCases.filter((c) => c.type === 'TVIST').length}`} />
               </div>
-              <div className="flex items-center gap-3">
-                <span className="h-2.5 w-2.5 rounded-full shrink-0 bg-green-500" />
-                <span className="text-sm text-gray-700 flex-1">Sunde</span>
-                <span className="text-sm font-semibold text-gray-900">{healthyCompanies.length}</span>
-              </div>
-              <div className="pt-2 border-t border-gray-100">
-                <Link href="/proto/portfolio" className="text-xs text-gray-500 hover:text-gray-700 underline">
-                  Se alle selskaber →
-                </Link>
-              </div>
-            </div>
+            )}
           </div>
-        )}
+        </>
+      )}
 
-        {/* contract_expiry / contract_coverage */}
-        {hasBlock('contract_expiry') && (
-          <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm p-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-400 mb-4">
-              Kontraktdækning
-            </p>
-            <div className="space-y-3">
-              {coverageItems.map((item) => (
-                <CoverageBar
-                  key={item.label}
-                  label={item.label}
-                  covered={item.covered}
-                  total={totalCompanies}
+      {/* --- ØKONOMI sektion (GROUP_OWNER) --- */}
+      {role === 'GROUP_OWNER' && (
+        <>
+          <SectionHeader title="Økonomi" />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {hasSection('finance') && (
+              <div className="rounded-xl border border-gray-200 bg-white p-5">
+                <div className="mb-4 text-sm font-semibold text-slate-900">Nøgletal 2025</div>
+                <FinRow
+                  label="Samlet omsætning"
+                  value={`${formatMio(data.totals2025.totalOmsaetning)}M kr.`}
+                  trend={{ text: '+5,2%', direction: 'up' }}
+                />
+                <FinRow
+                  label="Samlet EBITDA"
+                  value={`${formatMio(data.totals2025.totalEbitda)}M kr.`}
+                  trend={{ text: '+3,8%', direction: 'up' }}
+                />
+                <FinRow
+                  label="EBITDA-margin"
+                  value={`${(data.totals2025.avgEbitdaMargin * 100).toFixed(1)}%`}
+                />
+                <FinRow
+                  label="Gns. pr. lokation"
+                  value={`${formatMio(data.totals2025.totalOmsaetning / Math.max(data.totalCompanies, 1))}M kr.`}
+                />
+              </div>
+            )}
+
+            {hasSection('finance_alerts') && (
+              <div className="rounded-xl border border-gray-200 bg-white p-5">
+                <div className="mb-4 text-sm font-semibold text-slate-900">Opmærksomhedspunkter</div>
+                {data.underperforming.map((u) => (
+                  <FinRow
+                    key={u.companyId}
+                    label={u.companyName.replace(' ApS', '')}
+                    value={u.reason.split('(')[0].trim()}
+                    valueColor="#ef4444"
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* --- GROUP_LEGAL: sager + dækning + docs --- */}
+      {role === 'GROUP_LEGAL' && (
+        <>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {hasSection('cases') && (
+              <div className="rounded-xl border border-gray-200 bg-white p-5">
+                <div className="mb-4 text-sm font-semibold text-slate-900">Sager pr. type</div>
+                <FinRow label="Compliance" value={`${data.openCases.filter((c) => c.type === 'COMPLIANCE').length}`} />
+                <FinRow label="Governance" value={`${data.openCases.filter((c) => c.type === 'GOVERNANCE').length}`} />
+                <FinRow label="Kontrakt" value={`${data.openCases.filter((c) => c.type === 'KONTRAKT').length}`} />
+                <FinRow label="Tvist" value={`${data.openCases.filter((c) => c.type === 'TVIST').length}`} />
+              </div>
+            )}
+
+            {hasSection('coverage') && (
+              <div className="rounded-xl border border-gray-200 bg-white p-5">
+                <div className="mb-4 text-sm font-semibold text-slate-900">Kontraktdækning</div>
+                {data.coverageItems.map((item) => (
+                  <ProtoCoverageBar key={item.label} label={item.label} percentage={item.pct} />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {hasSection('legal_docs') && (
+            <div className="rounded-xl border border-gray-200 bg-white p-5">
+              <div className="mb-4 text-sm font-semibold text-slate-900">Dokumenter til gennemgang</div>
+              <FinRow label="Afventer gennemgang" value="8" valueColor="#d97706" />
+              <FinRow label="Under behandling" value="3" valueColor="#3b82f6" />
+            </div>
+          )}
+        </>
+      )}
+
+      {/* --- GROUP_FINANCE: tabslokationer + fin-kontrakter --- */}
+      {role === 'GROUP_FINANCE' && (
+        <>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {hasSection('finance_alerts') && (
+              <div className="rounded-xl border border-gray-200 bg-white p-5">
+                <div className="mb-4 text-sm font-semibold text-slate-900">Opmærksomhedspunkter</div>
+                {data.underperforming.map((u) => (
+                  <FinRow
+                    key={u.companyId}
+                    label={u.companyName.replace(' ApS', '')}
+                    value={u.reason.split('(')[0].trim()}
+                    valueColor="#ef4444"
+                  />
+                ))}
+              </div>
+            )}
+
+            {hasSection('loss_locations') && (
+              <div className="rounded-xl border border-gray-200 bg-white p-5">
+                <div className="mb-4 text-sm font-semibold text-slate-900">Lokationer med fald</div>
+                {data.underperforming.map((u, i) => {
+                  const fin = getFinancialByCompany(u.companyId).find((f) => f.year === 2025)
+                  return (
+                    <CompanyRow
+                      key={u.companyId}
+                      initials={getInitials(u.companyName)}
+                      name={u.companyName}
+                      meta={u.reason}
+                      status={{ label: 'Fald', type: 'critical' }}
+                      avatarColor={getAvatarColor(i + 4)}
+                      href={`/proto/portfolio/${u.companyId}`}
+                    />
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          {hasSection('finance_contracts') && (
+            <div className="rounded-xl border border-gray-200 bg-white p-5">
+              <div className="mb-4 text-sm font-semibold text-slate-900">Kontrakter med finansiel impact</div>
+              {data.expiringContracts.slice(0, 4).map((c) => (
+                <FinRow
+                  key={c.id}
+                  label={c.displayName}
+                  value={c.daysUntilExpiry !== null && c.daysUntilExpiry < 0
+                    ? 'Udløbet'
+                    : `${c.daysUntilExpiry} dage`}
+                  valueColor={c.urgency === 'critical' ? '#ef4444' : '#d97706'}
                 />
               ))}
             </div>
-            <div className="pt-3 border-t border-gray-100 mt-3">
-              <Link href="/proto/contracts" className="text-xs text-gray-500 hover:text-gray-700 underline">
-                Se kontrakter →
-              </Link>
-            </div>
-          </div>
-        )}
-
-        {/* financial_kpi */}
-        {hasBlock('financial_kpi') && (
-          <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm p-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-400 mb-4">
-              Økonomi — Portefølje 2025
-            </p>
-            <div className="space-y-4">
-              <div>
-                <p className="text-xs text-gray-400 mb-0.5">Samlet omsætning</p>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-3xl font-light tracking-tight tabular-nums text-gray-900">
-                    {formatMio(totals2025.totalOmsaetning)}M
-                  </span>
-                  <span className="text-xs text-gray-500">kr.</span>
-                  {omsaetningTrend >= 0
-                    ? <TrendingUp className="h-4 w-4 text-green-500 ml-1" />
-                    : <TrendingDown className="h-4 w-4 text-red-500 ml-1" />
-                  }
-                </div>
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 mb-0.5">Samlet EBITDA</p>
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-3xl font-light tracking-tight tabular-nums text-gray-900">
-                    {formatMio(totals2025.totalEbitda)}M
-                  </span>
-                  <span className="text-xs text-gray-500">kr.</span>
-                  {ebitdaTrend >= 0
-                    ? <TrendingUp className="h-4 w-4 text-green-500 ml-1" />
-                    : <TrendingDown className="h-4 w-4 text-red-500 ml-1" />
-                  }
-                </div>
-              </div>
-              <div className="pt-3 border-t border-gray-100 flex justify-between items-center">
-                <span className="text-xs text-gray-400">EBITDA-margin</span>
-                <span className="text-sm font-semibold text-gray-900">
-                  {(totals2025.avgEbitdaMargin * 100).toFixed(1)}%
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* task_overview */}
-        {hasBlock('task_overview') && overdueTasks.length > 0 && (
-          <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm p-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-400 mb-4">
-              Opgaver
-            </p>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
-                <span className="text-sm text-gray-700 flex-1">Forfaldne opgaver</span>
-                <span className="text-sm font-semibold text-red-600">{overdueTasks.length}</span>
-              </div>
-              <div className="pt-2 border-t border-gray-100">
-                <Link href="/proto/tasks?filter=overdue" className="text-xs text-gray-500 hover:text-gray-700 underline">
-                  Se forfaldne opgaver →
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* document_review */}
-        {hasBlock('document_review') && docsReview.length > 0 && (
-          <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm p-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-400 mb-4">
-              Dokumenter til gennemgang
-            </p>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Afventer gennemgang</span>
-                <span className="text-sm font-semibold text-amber-600">{docsReview.length}</span>
-              </div>
-              {docsProcessing.length > 0 && (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Under behandling</span>
-                  <span className="text-sm font-semibold text-blue-600">{docsProcessing.length}</span>
-                </div>
-              )}
-              <div className="pt-2 border-t border-gray-100">
-                <Link href="/proto/documents?filter=ready_for_review" className="text-xs text-gray-500 hover:text-gray-700 underline">
-                  Gennemgå dokumenter →
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* my_companies (COMPANY_MANAGER) */}
-        {hasBlock('my_companies') && companies.length > 0 && (
-          <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm overflow-hidden">
-            <div className="px-5 pt-5 pb-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-400">
-                Dine klinikker
-              </p>
-            </div>
-            <ul>
-              {companies.map((c) => (
-                <li key={c.id}>
-                  <Link
-                    href={`/proto/portfolio/${c.id}`}
-                    className={`block px-5 py-4 hover:bg-gray-50/80 transition-colors border-b border-gray-100 last:border-b-0 ${urgencyBorder(c.healthStatus === 'healthy' ? 'normal' : c.healthStatus)}`}
-                  >
-                    <p className="text-sm font-medium text-gray-900">{c.name}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{c.city}</p>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* kommende_besoeg — vises kun for GROUP_OWNER og GROUP_ADMIN */}
-        {(role === 'GROUP_OWNER' || role === 'GROUP_ADMIN') && upcomingVisits.length > 0 && (
-          <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm p-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-400 mb-4">
-              Kommende besoeg
-            </p>
-            <ul className="space-y-3">
-              {upcomingVisits.map((visit) => (
-                <li key={visit.id} className="flex items-start gap-3">
-                  <Calendar className="h-4 w-4 text-gray-300 mt-0.5 shrink-0" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{visit.companyName}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{visit.typeLabel} · {visit.dateLabel}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* compliance_status — GROUP_LEGAL */}
-        {hasBlock('compliance_status') && (
-          <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm p-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-400 mb-4">
-              Compliance-status
-            </p>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Aabne compliance-sager</span>
-                <span className="text-sm font-semibold text-red-600">
-                  {openCases.filter((c) => c.type === 'COMPLIANCE').length}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Governance-sager</span>
-                <span className="text-sm font-semibold text-amber-600">
-                  {openCases.filter((c) => c.type === 'GOVERNANCE').length}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Kontrakt-sager</span>
-                <span className="text-sm font-semibold text-gray-700">
-                  {openCases.filter((c) => c.type === 'KONTRAKT').length}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Tvister</span>
-                <span className="text-sm font-semibold text-gray-700">
-                  {openCases.filter((c) => c.type === 'TVIST').length}
-                </span>
-              </div>
-              <div className="pt-1">
-                <Link href="/proto/cases" className="text-xs text-gray-500 hover:text-gray-700 underline">
-                  Se alle sager →
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* data_quality — GROUP_ADMIN */}
-        {hasBlock('data_quality') && (
-          <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm p-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-400 mb-4">
-              Datakvalitet
-            </p>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Selskaber uden ejeraftale</span>
-                <span className="text-sm font-semibold text-red-600">1</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Selskaber med udloebne kontrakter</span>
-                <span className="text-sm font-semibold text-amber-600">
-                  {expiringContracts.filter((c) => c.daysUntilExpiry !== null && c.daysUntilExpiry < 0).length}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Dokumenter under behandling</span>
-                <span className="text-sm font-semibold text-blue-600">{docsProcessing.length}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Manglende CVR-data</span>
-                <span className="text-sm font-semibold text-gray-700">0</span>
-              </div>
-              <div className="pt-1">
-                <Link href="/proto/portfolio" className="text-xs text-gray-500 hover:text-gray-700 underline">
-                  Se dataoverblik →
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
-
-      </div>
+          )}
+        </>
+      )}
     </div>
   )
 }

@@ -2,6 +2,41 @@ import type { MockCompany, MockRole } from './types'
 import { getFinancialByCompany } from './financial'
 
 // ---------------------------------------------------------------
+// getDashboardSectionsForRole
+// Returnerer dashboard-sektioner i prioriteret rækkefølge pr. rolle.
+// ---------------------------------------------------------------
+export type DashboardSection =
+  | 'kpi'
+  | 'urgency'
+  | 'health'
+  | 'calendar'
+  | 'coverage'
+  | 'cases'
+  | 'finance'
+  | 'finance_alerts'
+  | 'top_locations'
+  | 'loss_locations'
+  | 'finance_contracts'
+  | 'legal_docs'
+
+export function getDashboardSectionsForRole(role: MockRole): DashboardSection[] {
+  switch (role) {
+    case 'GROUP_OWNER':
+      return ['kpi', 'urgency', 'health', 'calendar', 'coverage', 'cases', 'finance', 'finance_alerts']
+    case 'GROUP_LEGAL':
+      return ['kpi', 'urgency', 'cases', 'calendar', 'coverage', 'legal_docs']
+    case 'GROUP_FINANCE':
+      return ['kpi', 'top_locations', 'finance_alerts', 'calendar', 'loss_locations', 'finance_contracts']
+    case 'GROUP_ADMIN':
+      return ['kpi', 'urgency', 'health', 'calendar']
+    case 'COMPANY_MANAGER':
+      return ['kpi', 'urgency', 'calendar']
+    default:
+      return ['kpi', 'urgency', 'calendar']
+  }
+}
+
+// ---------------------------------------------------------------
 // formatMockCurrency — formater tal til kompakt DKK-streng
 // ---------------------------------------------------------------
 function formatMockCurrency(val: number | null | undefined): string {
