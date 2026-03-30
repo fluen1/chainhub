@@ -14,26 +14,34 @@ import {
 import { cn } from '@/lib/utils'
 import { usePrototype } from '@/components/prototype/PrototypeProvider'
 import { getSidebarBadge } from '@/mock/helpers'
-
-const SIDEBAR_DATA = {
-  expiringContracts: 4,
-  underperforming: 2,
-  overdueTasks: 6,
-  processingDocs: 2,
-}
+import { getExpiringContracts } from '@/mock/contracts'
+import { getOverdueTasks } from '@/mock/tasks'
+import { getDocumentsProcessing } from '@/mock/documents'
+import { getCompanies } from '@/mock/companies'
+import { getOpenCases } from '@/mock/cases'
 
 export function PrototypeSidebar() {
   const pathname = usePathname()
-  const { activeUser } = usePrototype()
+  const { activeUser, dataScenario } = usePrototype()
 
   const role = activeUser.role
 
+  // Dynamiske badge-værdier baseret på mock data
+  const companies = getCompanies(dataScenario)
+  const criticalCount = companies.filter((c) => c.healthStatus === 'critical').length
+  const warningCount = companies.filter((c) => c.healthStatus === 'warning').length
+  const overdueTaskCount = getOverdueTasks().length
+  const expiringContractCount = getExpiringContracts(90).length
+  const processingDocsCount = getDocumentsProcessing().length
+  const openCaseCount = getOpenCases().length
+
   const badgeData = {
-    criticalCount: SIDEBAR_DATA.underperforming,
-    warningCount: SIDEBAR_DATA.underperforming,
-    overdueTaskCount: SIDEBAR_DATA.overdueTasks,
-    awaitingDocCount: SIDEBAR_DATA.processingDocs,
-    expiringContractCount: SIDEBAR_DATA.expiringContracts,
+    criticalCount,
+    warningCount,
+    overdueTaskCount,
+    awaitingDocCount: processingDocsCount,
+    expiringContractCount,
+    openCaseCount,
   }
 
   const navigation = [

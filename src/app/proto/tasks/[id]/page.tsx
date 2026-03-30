@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowLeft, MessageSquare, User } from 'lucide-react'
+import { ArrowLeft, MessageSquare, User, CheckCircle2, UserRound, PenLine } from 'lucide-react'
+import { toast } from 'sonner'
 import { usePrototype } from '@/components/prototype/PrototypeProvider'
 import { getTaskById } from '@/mock/tasks'
 import { cn } from '@/lib/utils'
@@ -140,6 +141,31 @@ export default function TaskDetailPage({ params }: { params: { id: string } }) {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Handlingsknapper */}
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={() => toast.success('Handling simuleret i prototype')}
+          className="inline-flex items-center gap-1.5 bg-gray-900 text-white text-sm px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
+        >
+          <CheckCircle2 className="h-4 w-4" />
+          Marker som afsluttet
+        </button>
+        <button
+          onClick={() => toast.success('Handling simuleret i prototype')}
+          className="inline-flex items-center gap-1.5 bg-white border border-gray-300 text-gray-700 text-sm px-4 py-2 rounded-md hover:bg-gray-50 transition-colors"
+        >
+          <UserRound className="h-4 w-4" />
+          Tildel til anden
+        </button>
+        <button
+          onClick={() => toast.success('Handling simuleret i prototype')}
+          className="inline-flex items-center gap-1.5 bg-white border border-gray-300 text-gray-700 text-sm px-4 py-2 rounded-md hover:bg-gray-50 transition-colors"
+        >
+          <PenLine className="h-4 w-4" />
+          Tilføj kommentar
+        </button>
       </div>
 
       {/* Kommentarer og historik */}

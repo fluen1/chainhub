@@ -386,12 +386,58 @@ export function getCompanies(scenario: DataScenario = 'normal', count?: number):
   let companies = [...mockCompanies]
 
   if (scenario === 'many_warnings') {
-    // Eskalér alle healthy til warning for demo-scenariet
-    companies = companies.map((c) =>
-      c.healthStatus === 'healthy'
-        ? { ...c, healthStatus: 'warning' as const, healthReasons: ['Afventer kvartalsopdatering'] }
-        : c
-    )
+    // Dramatisk eskalering: 8 critical + 8 warning — tydeligt anderledes end normal
+    const criticalReasonSets = [
+      ['Ejeraftale mangler — ikke registreret', 'Erhvervsforsikring udlobet'],
+      ['EBITDA faldet 31% i seneste kvartal'],
+      ['Tilsynsbesoeg forsinket 60+ dage', 'Lejekontrakt udlobet'],
+      ['Aarsrapport ikke afleveret — boedevarsel modtaget'],
+      ['Partnerkonflikt eskaleret til juridisk tvist'],
+      ['Ingen ansaettelseskontrakt for 3 medarbejdere'],
+      ['GDPR-brud anmeldt til Datatilsynet'],
+      ['Samlede aabne sager: 5 — kritisk backlog'],
+    ]
+    const warningReasonSets = [
+      ['Samarbejdsaftale udloeber om 45 dage'],
+      ['Revisionspaategning forsinket — 3 uger over frist'],
+      ['1 aaben sag over 60 dage gammel'],
+      ['Budgetafvigelse paa 18% i Q1'],
+      ['Ansaettelseskontrakt for ny medarbejder mangler'],
+      ['Kvartalrapport til partner ikke udsendt'],
+      ['Vedtaegter ikke opdateret efter ejerskifte'],
+      ['Forsikringssum utilstraekkelig iht. ny risikovurdering'],
+    ]
+
+    let criticalIdx = 0
+    let warningIdx = 0
+    // Behold de 3 eksisterende critical — eskaler 5 af healthy til critical
+    // Eskaler 5 warning til critical, eskaler resten af healthy til warning
+    companies = companies.map((c) => {
+      if (c.healthStatus === 'critical') {
+        return c // behold eksisterende critical
+      }
+      if (c.healthStatus === 'warning') {
+        // Eskaler 5 warning til critical
+        if (criticalIdx < 5) {
+          const reasons = criticalReasonSets[criticalIdx % criticalReasonSets.length]
+          criticalIdx++
+          return { ...c, healthStatus: 'critical' as const, healthReasons: reasons }
+        }
+        // Resten forbliver warning men med bedre begrundelse
+        const reasons = warningReasonSets[warningIdx % warningReasonSets.length]
+        warningIdx++
+        return { ...c, healthStatus: 'warning' as const, healthReasons: reasons }
+      }
+      // healthy: de næste 3 bliver critical, resten warning
+      if (criticalIdx < 8) {
+        const reasons = criticalReasonSets[criticalIdx % criticalReasonSets.length]
+        criticalIdx++
+        return { ...c, healthStatus: 'critical' as const, healthReasons: reasons }
+      }
+      const reasons = warningReasonSets[warningIdx % warningReasonSets.length]
+      warningIdx++
+      return { ...c, healthStatus: 'warning' as const, healthReasons: reasons }
+    })
   }
 
   if (count !== undefined) {

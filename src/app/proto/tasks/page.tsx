@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Search } from 'lucide-react'
 import { usePrototype } from '@/components/prototype/PrototypeProvider'
 import { InsightCard } from '@/components/prototype/InsightCard'
@@ -52,11 +53,16 @@ interface TaskItemProps {
 }
 
 function TaskItem({ task }: TaskItemProps) {
+  const router = useRouter()
+
   return (
-    <Link
-      href={`/proto/tasks/${task.id}`}
+    <div
+      role="link"
+      tabIndex={0}
+      onClick={() => router.push(`/proto/tasks/${task.id}`)}
+      onKeyDown={(e) => { if (e.key === 'Enter') router.push(`/proto/tasks/${task.id}`) }}
       className={cn(
-        'flex items-start gap-4 px-5 py-3 border-l-4 hover:bg-gray-50 transition-colors border-b last:border-b-0 block',
+        'flex items-start gap-4 px-5 py-3 border-l-4 hover:bg-gray-50 transition-colors border-b last:border-b-0 cursor-pointer',
         borderColorForGroup(task.timeGroup),
       )}
     >
@@ -83,7 +89,7 @@ function TaskItem({ task }: TaskItemProps) {
           </span>
         </div>
       </div>
-    </Link>
+    </div>
   )
 }
 
@@ -147,7 +153,7 @@ export default function TasksPage() {
   ]
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6">
       {/* Overskrift */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Opgaver</h1>

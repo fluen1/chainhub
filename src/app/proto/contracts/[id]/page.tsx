@@ -1,10 +1,32 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowLeft, FileText } from 'lucide-react'
+import { ArrowLeft, FileText, RefreshCw, Upload, ClipboardList } from 'lucide-react'
+import { toast } from 'sonner'
 import { usePrototype } from '@/components/prototype/PrototypeProvider'
 import { getContractById } from '@/mock/contracts'
 import { cn } from '@/lib/utils'
+
+const SYSTEM_TYPE_LABELS: Record<string, string> = {
+  EJERAFTALE: 'Ejeraftale',
+  LEJEKONTRAKT: 'Lejekontrakt',
+  FORSIKRING: 'Erhvervsforsikring',
+  ANSAETTELSESKONTRAKT: 'Ansættelseskontrakt',
+  SAMARBEJDSAFTALE: 'Samarbejdsaftale',
+  AKTIONAEROVERENSKOMST: 'Aktionæroverenskomst',
+  KREDITAFTALE: 'Kreditaftale',
+  LEVERANDOERKONTRAKT: 'Leverandørkontrakt',
+  SERVICEAFTALE: 'Serviceaftale',
+  TAVSHEDSAFTALE: 'Tavshedspligtaftale',
+}
+
+const SENSITIVITY_LABELS: Record<string, string> = {
+  PUBLIC: 'Offentlig',
+  STANDARD: 'Standard',
+  INTERN: 'Intern',
+  FORTROLIG: 'Fortrolig',
+  STRENGT_FORTROLIG: 'Strengt fortrolig',
+}
 
 function statusBadgeClass(status: string): string {
   switch (status) {
@@ -90,7 +112,7 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
             <h1 className="text-xl font-bold text-gray-900">{contract.displayName}</h1>
             <div className="flex items-center gap-2 flex-wrap">
               <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
-                {contract.systemType}
+                {SYSTEM_TYPE_LABELS[contract.systemType] ?? contract.systemType}
               </span>
               <span className={cn('inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium', statusBadgeClass(contract.status))}>
                 {contract.statusLabel}
@@ -104,7 +126,7 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
               sensitivityBadgeClass(contract.sensitivity),
             )}
           >
-            {contract.sensitivity}
+            {SENSITIVITY_LABELS[contract.sensitivity] ?? contract.sensitivity}
           </span>
         </div>
 
@@ -139,6 +161,31 @@ export default function ContractDetailPage({ params }: { params: { id: string } 
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Handlingsknapper */}
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={() => toast.success('Handling simuleret i prototype')}
+          className="inline-flex items-center gap-1.5 bg-gray-900 text-white text-sm px-4 py-2 rounded-md hover:bg-gray-700 transition-colors"
+        >
+          <RefreshCw className="h-4 w-4" />
+          Forny kontrakt
+        </button>
+        <button
+          onClick={() => toast.success('Handling simuleret i prototype')}
+          className="inline-flex items-center gap-1.5 bg-white border border-gray-300 text-gray-700 text-sm px-4 py-2 rounded-md hover:bg-gray-50 transition-colors"
+        >
+          <Upload className="h-4 w-4" />
+          Upload ny version
+        </button>
+        <button
+          onClick={() => toast.success('Handling simuleret i prototype')}
+          className="inline-flex items-center gap-1.5 bg-white border border-gray-300 text-gray-700 text-sm px-4 py-2 rounded-md hover:bg-gray-50 transition-colors"
+        >
+          <ClipboardList className="h-4 w-4" />
+          Opret opgave
+        </button>
       </div>
 
       {/* Versionshistorik */}

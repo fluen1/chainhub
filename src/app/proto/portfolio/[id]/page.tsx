@@ -11,6 +11,9 @@ import { getContractsByCompany } from '@/mock/contracts'
 import { getFinancialByCompany } from '@/mock/financial'
 import { getDocumentsByCompany } from '@/mock/documents'
 import { getVisibleCompanySections } from '@/mock/helpers'
+import { getPersonsByCompany } from '@/mock/persons'
+import { getCasesByCompany } from '@/mock/cases'
+import { getVisitsByCompany } from '@/mock/visits'
 import type { MockCompany } from '@/mock/types'
 
 // ----------------------------------------------------------------
@@ -58,32 +61,6 @@ function trendPct(trend: number | null): string {
 }
 
 // ----------------------------------------------------------------
-// Hardcoded testdata til sektioner
-// ----------------------------------------------------------------
-
-const hardcodedPersons: Record<string, { name: string; role: string; email: string }[]> = {
-  default: [
-    { name: 'Lars Jensen', role: 'Direktoer', email: 'lars@klinik.dk' },
-    { name: 'Mette Andersen', role: 'Bestyrelsesmedlem', email: 'mette@andersen.dk' },
-    { name: 'Sofie Madsen', role: 'Ansat', email: 'sofie@klinik.dk' },
-  ],
-}
-
-const hardcodedCases: Record<string, { id: string; title: string; status: string; date: string }[]> = {
-  default: [
-    { id: 'sag-1', title: 'Tvist om overtagelsesvilkaar', status: 'Aaben', date: '12. januar 2026' },
-    { id: 'sag-2', title: 'Revisionspaategning under behandling', status: 'Afventer', date: '3. marts 2026' },
-  ],
-}
-
-const hardcodedVisits: Record<string, { type: string; date: string; completed?: boolean }[]> = {
-  default: [
-    { type: 'Tilsynsbesoeg (planlagt)', date: '3. april 2026', completed: false },
-    { type: 'Tilsynsbesoeg (gennemfoert)', date: '15. november 2025', completed: true },
-  ],
-}
-
-// ----------------------------------------------------------------
 // Komponent
 // ----------------------------------------------------------------
 
@@ -115,11 +92,11 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
   const contracts = getContractsByCompany(id)
   const financialMetrics = getFinancialByCompany(id)
   const documents = getDocumentsByCompany(id).slice(0, 3)
+  const persons = getPersonsByCompany(id)
+  const cases = getCasesByCompany(id)
+  const visits = getVisitsByCompany(id)
 
   const healthBadge = statusBadge(company.healthStatus)
-  const persons = hardcodedPersons.default
-  const cases = hardcodedCases.default
-  const visits = hardcodedVisits.default
 
   // Gruppér kontrakter efter kategori
   const contractsByCategory = contracts.reduce<Record<string, typeof contracts>>((acc, c) => {
@@ -147,25 +124,25 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
         className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
       >
         <ArrowLeft className="h-4 w-4" />
-        Portefolje
+        Portefølje
       </Link>
 
       {/* Selskabshoved */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
+      <div className="border-b border-gray-200/60 pb-6">
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">{company.name}</h1>
-            <p className="text-sm text-gray-500 mt-0.5">CVR {company.cvr} · {company.companyType}</p>
+            <h1 className="text-2xl font-bold tracking-tight text-gray-900">{company.name}</h1>
+            <p className="text-sm text-gray-500 mt-1">CVR {company.cvr} · {company.companyType}</p>
             <p className="text-sm text-gray-500 mt-0.5">
               Partner: <span className="font-medium text-gray-700">{company.partnerName}</span>
               {' '}({company.partnerOwnershipPct}% ejerandel)
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <span className={`inline-flex items-center rounded px-2.5 py-1 text-xs font-medium ${companyStatusBadge(company.status)}`}>
+            <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${companyStatusBadge(company.status)}`}>
               {company.status}
             </span>
-            <span className={`inline-flex items-center rounded px-2.5 py-1 text-xs font-medium ${healthBadge.className}`}>
+            <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${healthBadge.className}`}>
               {healthBadge.label}
             </span>
           </div>
@@ -197,7 +174,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
 
       {/* STAMDATA / overview */}
       {hasSection('overview') && (
-        <CollapsibleSection title="Stamdata" count={0} defaultOpen={true}>
+        <CollapsibleSection title="Stamdata" count={6} defaultOpen={true}>
           <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <p className="text-xs text-gray-500">Adresse</p>
@@ -229,7 +206,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
 
       {/* EJERSKAB / ownership */}
       {hasSection('ownership') && (
-        <CollapsibleSection title="Ejerskab" count={0} defaultOpen={true}>
+        <CollapsibleSection title="Ejerskab" count={2} defaultOpen={true}>
           <div className="p-5 space-y-3">
             <div>
               <div className="flex justify-between text-sm mb-1">
@@ -276,25 +253,30 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{category}</p>
                 <ul className="space-y-1">
                   {catContracts.map((contract) => (
-                    <li key={contract.id} className={`rounded px-3 py-2 ${contractUrgencyClass(contract.urgency)}`}>
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm text-gray-900">{contract.displayName}</span>
-                        <span className={`text-xs px-2 py-0.5 rounded font-medium ${
-                          contract.urgency === 'critical' ? 'bg-red-100 text-red-700' :
-                          contract.urgency === 'warning' ? 'bg-amber-100 text-amber-700' :
-                          'bg-gray-100 text-gray-600'
-                        }`}>
-                          {contract.statusLabel}
-                        </span>
-                      </div>
-                      {contract.expiryDate && (
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          {contract.daysUntilExpiry !== null && contract.daysUntilExpiry < 0
-                            ? `Udlobet ${Math.abs(contract.daysUntilExpiry)} dage siden`
-                            : `Udloeber: ${contract.expiryDate}`
-                          }
-                        </p>
-                      )}
+                    <li key={contract.id}>
+                      <Link
+                        href={`/proto/contracts/${contract.id}`}
+                        className={`block rounded px-3 py-2 hover:bg-gray-50 transition-colors ${contractUrgencyClass(contract.urgency)}`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-sm text-gray-900">{contract.displayName}</span>
+                          <span className={`text-xs px-2 py-0.5 rounded font-medium ${
+                            contract.urgency === 'critical' ? 'bg-red-100 text-red-700' :
+                            contract.urgency === 'warning' ? 'bg-amber-100 text-amber-700' :
+                            'bg-gray-100 text-gray-600'
+                          }`}>
+                            {contract.statusLabel}
+                          </span>
+                        </div>
+                        {contract.expiryDate && (
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            {contract.daysUntilExpiry !== null && contract.daysUntilExpiry < 0
+                              ? `Udlobet ${Math.abs(contract.daysUntilExpiry)} dage siden`
+                              : `Udloeber: ${contract.expiryDate}`
+                            }
+                          </p>
+                        )}
+                      </Link>
                     </li>
                   ))}
                 </ul>
@@ -311,7 +293,7 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
 
       {/* OEKONOMI / finance */}
       {hasSection('finance') && (
-        <CollapsibleSection title="Oekonomi" count={0} defaultOpen={true}>
+        <CollapsibleSection title="Økonomi" count={financialMetrics.length} defaultOpen={true}>
           <div className="p-5 space-y-4">
             {[fin2024, fin2025].filter(Boolean).map((fin) => {
               if (!fin) return null
@@ -363,28 +345,24 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
         </CollapsibleSection>
       )}
 
-      {/* GOVERNANCE / governance */}
-      {hasSection('governance') && (
-        <CollapsibleSection title="Governance" count={0} defaultOpen={false}>
-          <div className="p-5">
-            <p className="text-sm text-gray-500">Bestyrelse og generalforsamling — data vises her.</p>
-          </div>
-        </CollapsibleSection>
-      )}
-
       {/* MEDARBEJDERE / employees */}
       {hasSection('employees') && (
         <CollapsibleSection title="Personer" count={persons.length} defaultOpen={true}>
           <div className="divide-y divide-gray-100">
             {persons.map((person, i) => (
-              <div key={i} className="px-5 py-3 flex items-center justify-between">
+              <div key={i} className="px-5 py-4 hover:bg-gray-50/80 transition-colors border-b border-gray-100 last:border-b-0 flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-900">{person.name}</p>
-                  <p className="text-xs text-gray-500">{person.email}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{person.email}</p>
                 </div>
-                <span className="text-xs bg-gray-100 text-gray-600 rounded px-2 py-0.5">{person.role}</span>
+                <span className="text-xs bg-gray-100 text-gray-600 rounded-full px-2.5 py-1 font-medium">{person.role}</span>
               </div>
             ))}
+            <div className="px-5 py-3">
+              <Link href="/proto/persons" className="text-xs text-gray-500 hover:text-gray-700 underline">
+                Se alle personer →
+              </Link>
+            </div>
           </div>
         </CollapsibleSection>
       )}
@@ -393,19 +371,31 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
       {hasSection('cases') && (
         <CollapsibleSection title="Sager" count={cases.length} defaultOpen={true}>
           <div className="divide-y divide-gray-100">
-            {cases.map((c) => (
-              <div key={c.id} className="px-5 py-3 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">{c.title}</p>
-                  <p className="text-xs text-gray-400">{c.date}</p>
+            {cases.length === 0 ? (
+              <p className="px-5 py-4 text-sm text-gray-400">Ingen aktive sager.</p>
+            ) : (
+              cases.map((c) => (
+                <div key={c.id} className="px-5 py-4 hover:bg-gray-50/80 transition-colors border-b border-gray-100 last:border-b-0 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{c.title}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{c.caseNumber} · {c.openedDate}</p>
+                  </div>
+                  <span className={`text-xs rounded-full px-2.5 py-1 font-medium ${
+                    c.status === 'AKTIV' ? 'bg-red-100 text-red-700' :
+                    c.status === 'NY' ? 'bg-blue-100 text-blue-700' :
+                    c.status === 'LUKKET' ? 'bg-gray-100 text-gray-500' :
+                    'bg-amber-100 text-amber-700'
+                  }`}>
+                    {c.statusLabel}
+                  </span>
                 </div>
-                <span className={`text-xs rounded px-2 py-0.5 font-medium ${
-                  c.status === 'Aaben' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
-                }`}>
-                  {c.status}
-                </span>
-              </div>
-            ))}
+              ))
+            )}
+            <div className="px-5 py-3">
+              <Link href="/proto/cases" className="text-xs text-gray-500 hover:text-gray-700 underline">
+                Se alle sager →
+              </Link>
+            </div>
           </div>
         </CollapsibleSection>
       )}
@@ -414,19 +404,25 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
       {hasSection('overview') && (
         <CollapsibleSection title="Besoeg" count={visits.length} defaultOpen={true}>
           <div className="divide-y divide-gray-100">
-            {visits.map((visit, i) => (
-              <div key={i} className="px-5 py-3 flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">{visit.type}</p>
-                  <p className="text-xs text-gray-400">{visit.date}</p>
+            {visits.length === 0 ? (
+              <p className="px-5 py-4 text-sm text-gray-400">Ingen registrerede besøg.</p>
+            ) : (
+              visits.map((visit) => (
+                <div key={visit.id} className="px-5 py-4 hover:bg-gray-50/80 transition-colors border-b border-gray-100 last:border-b-0 flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{visit.typeLabel}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{visit.dateLabel}</p>
+                  </div>
+                  <span className={`text-xs rounded-full px-2.5 py-1 font-medium ${
+                    visit.status === 'GENNEMFOERT' ? 'bg-green-100 text-green-700' :
+                    visit.status === 'AFLYST' ? 'bg-gray-100 text-gray-500' :
+                    'bg-blue-100 text-blue-700'
+                  }`}>
+                    {visit.statusLabel}
+                  </span>
                 </div>
-                <span className={`text-xs rounded px-2 py-0.5 font-medium ${
-                  visit.completed ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
-                }`}>
-                  {visit.completed ? 'Gennemfoert' : 'Planlagt'}
-                </span>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </CollapsibleSection>
       )}
@@ -439,23 +435,32 @@ export default function CompanyDetailPage({ params }: { params: { id: string } }
               <p className="px-5 py-4 text-sm text-gray-400">Ingen dokumenter registreret.</p>
             ) : (
               documents.map((doc) => (
-                <div key={doc.id} className="px-5 py-3 flex items-center justify-between">
+                <Link
+                  key={doc.id}
+                  href={doc.status === 'ready_for_review' ? `/proto/documents/review/${doc.id}` : `/proto/documents`}
+                  className="flex items-center justify-between px-5 py-4 hover:bg-gray-50/80 transition-colors border-b border-gray-100 last:border-b-0"
+                >
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-gray-900 truncate">{doc.fileName}</p>
-                    <p className="text-xs text-gray-400">{doc.uploadedBy} · {doc.uploadedAt.split('T')[0]}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{doc.uploadedBy} · {doc.uploadedAt.split('T')[0]}</p>
                   </div>
-                  <span className={`ml-3 shrink-0 text-xs rounded px-2 py-0.5 font-medium ${
+                  <span className={`ml-3 shrink-0 text-xs rounded-full px-2.5 py-1 font-medium ${
                     doc.status === 'ready_for_review' ? 'bg-amber-100 text-amber-700' :
                     doc.status === 'processing' ? 'bg-blue-100 text-blue-700' :
                     'bg-gray-100 text-gray-600'
                   }`}>
                     {doc.status === 'ready_for_review' ? 'Afventer gennemgang' :
                      doc.status === 'processing' ? 'Behandles' :
-                     doc.status === 'reviewed' ? 'Gennemgaaet' : 'Arkiveret'}
+                     doc.status === 'reviewed' ? 'Gennemgået' : 'Arkiveret'}
                   </span>
-                </div>
+                </Link>
               ))
             )}
+            <div className="px-5 py-3">
+              <Link href="/proto/documents" className="text-xs text-gray-500 hover:text-gray-700 underline">
+                Se alle dokumenter →
+              </Link>
+            </div>
           </div>
         </CollapsibleSection>
       )}

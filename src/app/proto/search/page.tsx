@@ -52,6 +52,7 @@ function SearchPageInner() {
   const [debouncedQuery, setDebouncedQuery] = useState(initialQuery)
   const [previousQuery, setPreviousQuery] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<FilterTab>('alle')
+  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({})
 
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -102,7 +103,7 @@ function SearchPageInner() {
     !results.aiAnswer
 
   return (
-    <div className="space-y-5">
+    <div className="max-w-5xl mx-auto space-y-5">
       <h1 className="text-2xl font-bold text-gray-900">Søg &amp; Spørg</h1>
 
       {/* Context chip */}
@@ -263,17 +264,26 @@ function SearchPageInner() {
               <div className="rounded-lg border bg-white p-4 shadow-sm space-y-3">
                 <p className="text-sm font-medium text-gray-900">{results.actionPreview.description}</p>
                 <ul className="space-y-1.5">
-                  {results.actionPreview.items.map((item, idx) => (
-                    <li key={idx} className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        defaultChecked={item.checked}
-                        className="h-3.5 w-3.5 rounded border-gray-300 text-gray-900"
-                        readOnly
-                      />
-                      <span className="text-xs text-gray-700">{item.label}</span>
-                    </li>
-                  ))}
+                  {results.actionPreview.items.map((item, idx) => {
+                    const key = `${debouncedQuery}-${idx}`
+                    const isChecked = key in checkedItems ? checkedItems[key] : item.checked
+                    return (
+                      <li key={idx} className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => setCheckedItems((prev) => ({ ...prev, [key]: !isChecked }))}
+                          className="h-3.5 w-3.5 rounded border-gray-300 text-gray-900 cursor-pointer"
+                        />
+                        <span
+                          className="text-xs text-gray-700 cursor-pointer"
+                          onClick={() => setCheckedItems((prev) => ({ ...prev, [key]: !isChecked }))}
+                        >
+                          {item.label}
+                        </span>
+                      </li>
+                    )
+                  })}
                 </ul>
                 <div className="flex items-center gap-2 pt-1">
                   <button

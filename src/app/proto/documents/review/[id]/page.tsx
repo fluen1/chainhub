@@ -2,11 +2,12 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { ArrowLeft, ArrowRight, CheckCircle2, XCircle, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { usePrototype } from '@/components/prototype/PrototypeProvider'
 import { CollapsibleSection } from '@/components/ui/CollapsibleSection'
-import { getDocumentById, getExtractedFields } from '@/mock/documents'
+import { getDocumentById, getExtractedFields, getDocumentsAwaitingReview } from '@/mock/documents'
 import { cn } from '@/lib/utils'
 import type { MockExtractedField } from '@/mock/types'
 
@@ -189,10 +190,18 @@ export default function DocumentReviewPage({ params }: { params: { id: string } 
   const { id } = params
 
   const { } = usePrototype()
+  const router = useRouter()
   const [hoveredFieldId, setHoveredFieldId] = useState<string | null>(null)
 
   const doc = getDocumentById(id)
   const fields = getExtractedFields(id)
+
+  // Find næste dokument i review-køen
+  const reviewQueue = getDocumentsAwaitingReview()
+  const currentIndex = reviewQueue.findIndex((d) => d.id === id)
+  const nextDoc = currentIndex >= 0 && currentIndex < reviewQueue.length - 1
+    ? reviewQueue[currentIndex + 1]
+    : null
 
   if (!doc) {
     return (
@@ -392,13 +401,22 @@ export default function DocumentReviewPage({ params }: { params: { id: string } 
               Afvis
             </button>
             <button
-              onClick={() => toast.success('Dokument godkendt (simuleret)')}
+              onClick={() => {
+                toast.success('Dokument godkendt')
+                router.push('/proto/documents')
+              }}
               className="bg-gray-900 text-white text-sm px-4 py-1.5 rounded hover:bg-gray-700 transition-colors"
             >
               Godkend
             </button>
             <button
-              onClick={() => toast.info('Næste dokument ikke tilgængeligt i prototypen')}
+              onClick={() => {
+                if (nextDoc) {
+                  router.push(`/proto/documents/review/${nextDoc.id}`)
+                } else {
+                  toast.info('Ingen flere dokumenter i køen')
+                }
+              }}
               className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 text-sm px-4 py-1.5 rounded hover:bg-gray-50 transition-colors"
             >
               Næste dok

@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Search } from 'lucide-react'
 import { usePrototype } from '@/components/prototype/PrototypeProvider'
 import { InsightCard } from '@/components/prototype/InsightCard'
@@ -29,7 +30,7 @@ function statusBadgeClass(status: MockContract['status']): string {
     case 'UDLOEBET': return 'bg-red-100 text-red-700'
     case 'OPSAGT': return 'bg-gray-100 text-gray-600'
     case 'UDKAST': return 'bg-blue-100 text-blue-700'
-    case 'FORNYET': return 'bg-teal-100 text-teal-700'
+    case 'FORNYET': return 'bg-green-100 text-green-700'
     default: return 'bg-gray-100 text-gray-600'
   }
 }
@@ -55,10 +56,20 @@ interface ContractItemProps {
 }
 
 function ContractItem({ contract }: ContractItemProps) {
+  const router = useRouter()
+
+  // "missing"-kontrakter har ingen detaljeside
+  const isNavigable = !contract.id.startsWith('missing-')
+
   return (
     <div
+      role={isNavigable ? 'link' : undefined}
+      tabIndex={isNavigable ? 0 : undefined}
+      onClick={() => isNavigable && router.push(`/proto/contracts/${contract.id}`)}
+      onKeyDown={(e) => { if (isNavigable && e.key === 'Enter') router.push(`/proto/contracts/${contract.id}`) }}
       className={cn(
-        'flex items-start gap-4 px-5 py-3 border-l-4 hover:bg-gray-50 transition-colors border-b last:border-b-0',
+        'flex items-start gap-4 px-5 py-3 border-l-4 border-b last:border-b-0 transition-colors',
+        isNavigable ? 'hover:bg-gray-50 cursor-pointer' : 'cursor-default',
         urgencyBorder(contract.urgency),
       )}
     >
@@ -70,12 +81,15 @@ function ContractItem({ contract }: ContractItemProps) {
           </span>
         </div>
         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-          <Link
-            href={`/proto/portfolio/${contract.companyId}`}
-            className="text-xs text-blue-600 hover:text-blue-800 hover:underline"
+          <span
+            role="link"
+            tabIndex={0}
+            onClick={(e) => { e.stopPropagation(); router.push(`/proto/portfolio/${contract.companyId}`) }}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); router.push(`/proto/portfolio/${contract.companyId}`) } }}
+            className="text-xs text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
           >
             {contract.companyName}
-          </Link>
+          </span>
           <span className="text-gray-300">·</span>
           <span className={cn('text-xs', expiryColor(contract.urgency))}>
             {expiryLabel(contract.daysUntilExpiry)}
@@ -213,10 +227,10 @@ export default function ContractsPage() {
   ]
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6">
       {/* Overskrift */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Kontrakter</h1>
+      <div className="border-b border-gray-200/60 pb-6">
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900">Kontrakter</h1>
         <p className="mt-1 text-sm text-gray-500">
           {filtered.length} kontrakter · {companyCount} selskaber · {actionCount} kræver handling
         </p>
@@ -232,8 +246,8 @@ export default function ContractsPage() {
       )}
 
       {/* Dækningsoversigt */}
-      <div className="bg-white rounded-lg shadow-sm border p-5">
-        <h2 className="text-sm font-semibold text-gray-700 mb-4">Kontraktdækning pr. type</h2>
+      <div className="bg-white rounded-xl border border-gray-200/80 shadow-sm p-6">
+        <h2 className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-400 mb-4">Kontraktdækning pr. type</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {coverageByType.map(({ label, covered, total }) => (
             <CoverageBar key={label} label={label} covered={covered} total={total} />

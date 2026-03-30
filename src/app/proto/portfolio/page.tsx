@@ -31,7 +31,7 @@ function leftBorder(status: HealthStatus): string {
     case 'warning':
       return 'border-l-4 border-l-amber-400'
     case 'healthy':
-      return 'border-l-4 border-l-green-500'
+      return ''
   }
 }
 
@@ -41,17 +41,17 @@ function CompanyRow({ company, subtitle }: { company: MockCompany; subtitle: str
   return (
     <Link
       href={`/proto/portfolio/${company.id}`}
-      className={`block px-5 py-3 hover:bg-gray-50 transition-colors ${leftBorder(company.healthStatus)}`}
+      className={`block px-5 py-4 hover:bg-gray-50/80 transition-colors border-b border-gray-100 last:border-b-0 ${leftBorder(company.healthStatus)}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm font-medium text-gray-900">{company.name}</span>
-            <span className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${badge.className}`}>
+            <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${badge.className}`}>
               {badge.label}
             </span>
           </div>
-          <p className="text-xs text-gray-600 mt-0.5 truncate">{subtitle}</p>
+          <p className="text-xs text-gray-500 mt-0.5 truncate">{subtitle}</p>
           <p className="text-xs text-gray-400 mt-0.5">{company.city} · CVR {company.cvr}</p>
         </div>
       </div>
@@ -60,13 +60,13 @@ function CompanyRow({ company, subtitle }: { company: MockCompany; subtitle: str
 }
 
 export default function PortfolioPage() {
-  const { activeUser, dataScenario } = usePrototype()
+  const { activeUser, dataScenario, companyCount } = usePrototype()
   const role = activeUser.role
 
   const [search, setSearch] = useState('')
 
   const insights = getInsights('portfolio', role, dataScenario)
-  const allCompanies = filterCompaniesByRole(getCompanies(dataScenario), role, activeUser.companyIds)
+  const allCompanies = filterCompaniesByRole(getCompanies(dataScenario, companyCount), role, activeUser.companyIds)
 
   // Klientsidefiltrering paa navn, CVR og by
   const filtered = allCompanies.filter((c) => {
@@ -87,12 +87,12 @@ export default function PortfolioPage() {
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-5">
       {/* Titel + summarylinje */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Portefolje</h1>
+      <div className="border-b border-gray-200/60 pb-6">
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900">Portefølje</h1>
         <p className="text-sm text-gray-500 mt-1">
           {allCompanies.length} selskaber
           {totalAttention > 0 && (
-            <> &middot; <span className="text-amber-600 font-medium">{totalAttention} kraever opmaerksomhed</span></>
+            <> · <span className="text-amber-600 font-medium">{totalAttention} kræver opmærksomhed</span></>
           )}
         </p>
       </div>
@@ -112,16 +112,17 @@ export default function PortfolioPage() {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Soeg paa navn, CVR eller by..."
-          className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent"
+          placeholder="Søg på navn, CVR eller by..."
+          className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent"
         />
       </div>
 
       {/* Tom state */}
       {filtered.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-          <Building2 className="h-10 w-10 mb-3 text-gray-300" />
-          <p className="text-sm">Ingen selskaber fundet</p>
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <Building2 className="h-16 w-16 text-gray-200 mb-4" />
+          <p className="text-sm font-medium text-gray-500">Ingen selskaber fundet</p>
+          <p className="text-xs text-gray-400 mt-1">Prøv et andet søgeord</p>
         </div>
       )}
 

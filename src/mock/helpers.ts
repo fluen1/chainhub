@@ -1,4 +1,14 @@
 import type { MockCompany, MockRole } from './types'
+import { getFinancialByCompany } from './financial'
+
+// ---------------------------------------------------------------
+// formatMockCurrency — formater tal til kompakt DKK-streng
+// ---------------------------------------------------------------
+function formatMockCurrency(val: number | null | undefined): string {
+  if (val === null || val === undefined) return '—'
+  if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M kr.`
+  return `${(val / 1_000).toFixed(0)}K kr.`
+}
 
 // ---------------------------------------------------------------
 // filterCompaniesByRole
@@ -30,6 +40,8 @@ export function getVisibleDashboardBlocks(role: MockRole): string[] {
     { name: 'financial_kpi', roles: ['GROUP_FINANCE', 'GROUP_OWNER'] },
     { name: 'my_companies', roles: ['COMPANY_MANAGER'] },
     { name: 'ai_insights', roles: ['GROUP_OWNER', 'GROUP_ADMIN', 'GROUP_LEGAL', 'GROUP_FINANCE', 'COMPANY_MANAGER'] },
+    { name: 'compliance_status', roles: ['GROUP_LEGAL'] },
+    { name: 'data_quality', roles: ['GROUP_ADMIN'] },
   ]
 
   return allBlocks
@@ -65,8 +77,11 @@ export function getVisibleCompanySections(role: MockRole): string[] {
 // ---------------------------------------------------------------
 export function getCompanySubtitle(company: MockCompany, role: MockRole): string {
   switch (role) {
-    case 'GROUP_FINANCE':
-      return `CVR ${company.cvr} · ${company.employeeCount} medarbejdere · ${company.contractCount} kontrakter`
+    case 'GROUP_FINANCE': {
+      const financials = getFinancialByCompany(company.id)
+      const latest = financials.find((f) => f.year === 2025) ?? financials[financials.length - 1]
+      return `Omsaetning: ${formatMockCurrency(latest?.omsaetning)} · EBITDA: ${formatMockCurrency(latest?.ebitda)}`
+    }
 
     case 'GROUP_LEGAL':
       return `CVR ${company.cvr} · ${company.contractCount} kontrakter · ${company.openCaseCount > 0 ? `${company.openCaseCount} åbne sager` : 'Ingen åbne sager'}`
