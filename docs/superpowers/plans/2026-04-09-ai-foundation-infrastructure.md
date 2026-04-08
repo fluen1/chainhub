@@ -1,0 +1,2447 @@
+# AI Foundation Infrastructure Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Build the foundational infrastructure for ChainHub's AI extraction system: database schema, feature flags, Claude API client, content loader (PDF), job queue, worker process, and a proof-of-concept extraction job. Produces a working end-to-end pipeline that can extract structured summary data from a test PDF using Anthropic's direct API, with results stored in the database.
+
+**Architecture:** New `src/lib/ai/` module containing: client abstraction with Anthropic Direct implementation, PDF content loader with password detection and magic-byte file-type detection, pg-boss job queue running against existing Supabase Postgres, structured logging via pino, feature flag infrastructure via a new `OrganizationAISettings` Prisma model, and a worker process at `worker/index.ts` running jobs dispatched from Server Actions. All extraction results stored in a new `DocumentExtraction` table with full audit metadata (model name, token usage, cost).
+
+**Tech Stack:** TypeScript 5 strict, Next.js 14, Prisma 5.22, Supabase Postgres, Vitest, Anthropic SDK (`@anthropic-ai/sdk`), pg-boss, `file-type`, `pdf-lib`, `pino`.
+
+---
+
+## Scope
+
+### In scope (this plan)
+- Prisma schema additions: `OrganizationAISettings`, `DocumentExtraction`, `AIFieldCorrection`, `AIMode` enum
+- Feature flag helper: `isAIEnabled(orgId, feature)`
+- Structured logger setup (`pino`)
+- `ClaudeClient` interface + `AnthropicDirectClient` implementation
+- Client factory that selects provider via env var (`AI_PROVIDER=anthropic`)
+- Content loader for PDF only: magic-byte detection via `file-type`, password detection via `pdf-lib`
+- pg-boss queue setup against existing Supabase Postgres
+- Worker process (`worker/index.ts`) with SIGTERM handling
+- Proof-of-concept extraction job (single Claude call, simple JSON summary — no schema yet)
+- End-to-end integration test
+- Developer README at `src/lib/ai/README.md`
+
+### Out of scope (future plans)
+- EJERAFTALE schema + multi-pass extraction pipeline → Plan 2
+- Word/Excel/scan loaders → Plan 2
+- Source verification, sanity checks, cross-validation (Pass 3/4/5) → Plan 2
+- Agreement-based confidence computation → Plan 2
+- Bedrock client implementation → Plan deferred until week 16
+- UI migration (`/proto/` → `/(dashboard)/`) → Separate plans per page
+- Hetzner deployment → Plan deferred until week 16
+- Data provenance field on `Contract` (will be added in Plan 2 when extraction actually populates it)
+
+### Success criteria
+
+At the end of this plan:
+1. `npm run worker` starts a worker process that connects to Supabase Postgres
+2. A test script can enqueue an `extraction.poc` job with a PDF buffer
+3. The worker picks up the job, calls Claude, saves result to `DocumentExtraction` table
+4. All tests pass: `npm test`
+5. Structured logs show every AI call with model, tokens, cost
+
+---
+
+## Prerequisites
+
+Before starting this plan:
+- Anthropic API key available in `.env.local` as `ANTHROPIC_API_KEY` (user confirmed signed up)
+- Existing Supabase Postgres connection working (`DATABASE_URL` + `DIRECT_URL` in `.env.local`)
+- Node 18+ installed
+- Current git branch is clean (no uncommitted changes)
+- `npm install` ran successfully on current package.json
+
+**Verify prerequisites:**
+```bash
+echo $ANTHROPIC_API_KEY | head -c 10  # Should print 'sk-ant-api'
+npx prisma db pull --print | head -5  # Should connect successfully
+npm test 2>&1 | tail -5                # Should pass existing tests
+```
+
+---
+
+## File Structure Overview
+
+### Created files
+
+```
+src/lib/ai/
+├── README.md                           # Developer quick start
+├── feature-flags.ts                    # isAIEnabled helper
+├── logger.ts                           # pino structured logger
+├── queue.ts                            # pg-boss initialization
+├── content-loader.ts                   # PDF loading + file type detection
+├── client/
+│   ├── types.ts                        # ClaudeClient interface + shared types
+│   ├── anthropic-direct.ts             # AnthropicDirectClient implementation
+│   └── index.ts                        # createClaudeClient factory
+└── jobs/
+    └── extract-document-poc.ts         # Proof-of-concept extraction job
+
+worker/
+└── index.ts                            # Worker process entry point
+
+src/__tests__/ai/
+├── feature-flags.test.ts
+├── logger.test.ts
+├── content-loader.test.ts
+├── client.test.ts
+├── queue.integration.test.ts           # Integration (real Postgres)
+└── extract-poc.integration.test.ts     # Integration (real Claude API)
+
+src/__tests__/fixtures/
+└── test-contract.pdf                   # Simple test PDF for integration tests
+
+prisma/migrations/YYYYMMDD_add_ai_foundation/
+└── migration.sql                       # Generated by prisma migrate
+```
+
+### Modified files
+
+- `package.json` — add dependencies + `worker` script
+- `.env.example` — add `ANTHROPIC_API_KEY`, `AI_PROVIDER`, `AI_EXTRACTION_ENABLED`
+- `prisma/schema.prisma` — add `AIMode` enum + 3 models
+- `vitest.config.ts` — add node environment for integration tests
+
+---
+
+## Task 1: Install dependencies and environment setup
+
+**Files:**
+- Modify: `package.json`
+- Modify: `.env.example`
+- Modify: `.env.local` (user action, not committed)
+
+- [ ] **Step 1.1: Install npm dependencies**
+
+Run:
+```bash
+npm install @anthropic-ai/sdk pg-boss file-type pdf-lib pino pino-pretty
+npm install --save-dev @types/node tsx
+```
+
+Expected: packages added to `package.json` dependencies and devDependencies. No errors.
+
+- [ ] **Step 1.2: Add worker script to package.json**
+
+Modify `package.json`, add to `"scripts"`:
+```json
+"worker": "tsx worker/index.ts",
+"worker:dev": "tsx watch worker/index.ts"
+```
+
+- [ ] **Step 1.3: Update .env.example**
+
+Append to `.env.example`:
+```
+# AI / LLM configuration
+ANTHROPIC_API_KEY=sk-ant-api03-...
+AI_PROVIDER=anthropic
+AI_EXTRACTION_ENABLED=false
+AI_LOG_LEVEL=info
+```
+
+- [ ] **Step 1.4: Verify .env.local has ANTHROPIC_API_KEY set**
+
+Run:
+```bash
+grep ANTHROPIC_API_KEY .env.local || echo "MISSING — user must add it"
+```
+
+Expected: the variable is set. If missing, stop and ask user to add it before continuing.
+
+- [ ] **Step 1.5: Commit**
+
+```bash
+git add package.json package-lock.json .env.example
+git commit -m "chore(ai): install dependencies for AI foundation"
+```
+
+---
+
+## Task 2: Prisma schema additions
+
+**Files:**
+- Modify: `prisma/schema.prisma`
+- Create: `prisma/migrations/YYYYMMDD_add_ai_foundation/migration.sql` (generated)
+
+- [ ] **Step 2.1: Add AIMode enum to schema.prisma**
+
+Locate the `enum SensitivityLevel` block in `prisma/schema.prisma`. Below it, add:
+
+```prisma
+enum AIMode {
+  OFF
+  SHADOW
+  BETA
+  LIVE
+}
+```
+
+- [ ] **Step 2.2: Add OrganizationAISettings model**
+
+After the last existing model in `prisma/schema.prisma` (look for the end of the models section), add:
+
+```prisma
+// ============================================================
+// AI INFRASTRUCTURE
+// ============================================================
+
+model OrganizationAISettings {
+  id                        String   @id @default(uuid())
+  organization_id           String   @unique
+  organization              Organization @relation(fields: [organization_id], references: [id])
+
+  ai_mode                   AIMode   @default(OFF)
+  shadow_comparison_enabled Boolean  @default(false)
+  beta_features             String[] @default([])
+  rate_limit_per_day        Int      @default(1000)
+  monthly_cost_cap_usd      Decimal? @db.Decimal(10, 2)
+  kill_switch               Boolean  @default(false)
+
+  created_at                DateTime @default(now())
+  updated_at                DateTime @updatedAt
+
+  @@index([ai_mode])
+}
+```
+
+- [ ] **Step 2.3: Add DocumentExtraction model**
+
+Below `OrganizationAISettings`, add:
+
+```prisma
+model DocumentExtraction {
+  id                   String    @id @default(uuid())
+  document_id          String    @unique
+  document             Document  @relation(fields: [document_id], references: [id])
+  organization_id      String
+
+  // Type detection
+  detected_type        String?
+  type_confidence      Float?
+  type_alternatives    Json?
+
+  // Extraction metadata
+  schema_version       String?
+  prompt_version       String?
+  model_name           String
+  model_temperature    Float?
+
+  // Results
+  extracted_fields     Json      // structured output from Claude
+  extracted_fields_run2 Json?    // second run for agreement (Plan 2)
+  agreement_score      Float?    // 0.0-1.0 (Plan 2)
+
+  // Verification
+  source_verification  Json?     // (Plan 2)
+  sanity_check_results Json?     // (Plan 2)
+  discrepancies        Json?     // (Plan 2)
+
+  // Raw audit
+  raw_response         Json      // full Claude response for audit
+
+  // Cost tracking
+  input_tokens         Int
+  output_tokens        Int
+  total_cost_usd       Decimal   @db.Decimal(10, 4)
+
+  // User decisions (Plan 2)
+  reviewed_by          String?
+  reviewed_at          DateTime?
+  field_decisions      Json?
+
+  // Status
+  extraction_status    String    @default("completed") // completed | failed | requires_manual_review
+
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+
+  @@index([document_id])
+  @@index([organization_id])
+  @@index([detected_type])
+  @@index([reviewed_at])
+  @@index([extraction_status])
+}
+```
+
+- [ ] **Step 2.4: Add AIFieldCorrection model**
+
+Below `DocumentExtraction`, add:
+
+```prisma
+model AIFieldCorrection {
+  id              String   @id @default(uuid())
+  extraction_id   String
+  extraction      DocumentExtraction @relation(fields: [extraction_id], references: [id])
+  organization_id String
+  field_name      String
+  ai_value        Json
+  user_value      Json
+  confidence      Float?
+  schema_version  String?
+  prompt_version  String?
+  corrected_by    String
+  corrected_at    DateTime @default(now())
+
+  @@index([field_name])
+  @@index([schema_version])
+  @@index([organization_id])
+}
+```
+
+- [ ] **Step 2.5: Add Document <-> DocumentExtraction relation**
+
+Find the existing `model Document` block in `prisma/schema.prisma`. Inside it, after the existing relations, add:
+
+```prisma
+  extraction      DocumentExtraction?
+```
+
+Find `model Organization` in the schema. Inside it, add:
+
+```prisma
+  ai_settings     OrganizationAISettings?
+```
+
+Find `model DocumentExtraction` and add:
+
+```prisma
+  corrections     AIFieldCorrection[]
+```
+
+- [ ] **Step 2.6: Format schema file**
+
+Run:
+```bash
+npx prisma format
+```
+
+Expected: schema is reformatted, no errors.
+
+- [ ] **Step 2.7: Generate and apply migration**
+
+Run:
+```bash
+npx prisma migrate dev --name add_ai_foundation
+```
+
+Expected: migration created in `prisma/migrations/YYYYMMDD_add_ai_foundation/`, applied to database, Prisma Client regenerated.
+
+If the migration fails due to an open database connection issue, verify `.env.local` has `DIRECT_URL` (port 5432) set correctly.
+
+- [ ] **Step 2.8: Verify migration applied**
+
+Run:
+```bash
+npx prisma db pull --print | grep -A 5 "DocumentExtraction"
+```
+
+Expected: output shows the new `DocumentExtraction` model fields.
+
+- [ ] **Step 2.9: Commit**
+
+```bash
+git add prisma/schema.prisma prisma/migrations/
+git commit -m "feat(ai): add Prisma models for AI foundation
+
+- AIMode enum (OFF/SHADOW/BETA/LIVE)
+- OrganizationAISettings (feature flags, rate limits, kill switch)
+- DocumentExtraction (extraction results + audit metadata)
+- AIFieldCorrection (user override logging for feedback loop)"
+```
+
+---
+
+## Task 3: Feature flag helper
+
+**Files:**
+- Create: `src/lib/ai/feature-flags.ts`
+- Create: `src/__tests__/ai/feature-flags.test.ts`
+
+- [ ] **Step 3.1: Write the failing test**
+
+Create `src/__tests__/ai/feature-flags.test.ts`:
+
+```typescript
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { isAIEnabled } from '@/lib/ai/feature-flags'
+
+// Mock the Prisma client
+vi.mock('@/lib/db', () => ({
+  prisma: {
+    organizationAISettings: {
+      findUnique: vi.fn(),
+    },
+  },
+}))
+
+import { prisma } from '@/lib/db'
+
+describe('isAIEnabled', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('returns false when global AI_EXTRACTION_ENABLED is false', async () => {
+    const oldEnv = process.env.AI_EXTRACTION_ENABLED
+    process.env.AI_EXTRACTION_ENABLED = 'false'
+
+    const result = await isAIEnabled('org-1', 'extraction')
+
+    expect(result).toBe(false)
+    expect(prisma.organizationAISettings.findUnique).not.toHaveBeenCalled()
+
+    process.env.AI_EXTRACTION_ENABLED = oldEnv
+  })
+
+  it('returns false when organization has no AI settings', async () => {
+    process.env.AI_EXTRACTION_ENABLED = 'true'
+    vi.mocked(prisma.organizationAISettings.findUnique).mockResolvedValue(null)
+
+    const result = await isAIEnabled('org-1', 'extraction')
+
+    expect(result).toBe(false)
+  })
+
+  it('returns false when kill_switch is true', async () => {
+    process.env.AI_EXTRACTION_ENABLED = 'true'
+    vi.mocked(prisma.organizationAISettings.findUnique).mockResolvedValue({
+      id: 's1',
+      organization_id: 'org-1',
+      ai_mode: 'LIVE',
+      shadow_comparison_enabled: false,
+      beta_features: [],
+      rate_limit_per_day: 1000,
+      monthly_cost_cap_usd: null,
+      kill_switch: true,
+      created_at: new Date(),
+      updated_at: new Date(),
+    } as never)
+
+    const result = await isAIEnabled('org-1', 'extraction')
+
+    expect(result).toBe(false)
+  })
+
+  it('returns false when ai_mode is OFF', async () => {
+    process.env.AI_EXTRACTION_ENABLED = 'true'
+    vi.mocked(prisma.organizationAISettings.findUnique).mockResolvedValue({
+      id: 's1',
+      organization_id: 'org-1',
+      ai_mode: 'OFF',
+      shadow_comparison_enabled: false,
+      beta_features: [],
+      rate_limit_per_day: 1000,
+      monthly_cost_cap_usd: null,
+      kill_switch: false,
+      created_at: new Date(),
+      updated_at: new Date(),
+    } as never)
+
+    const result = await isAIEnabled('org-1', 'extraction')
+
+    expect(result).toBe(false)
+  })
+
+  it('returns true when ai_mode is SHADOW and feature is extraction', async () => {
+    process.env.AI_EXTRACTION_ENABLED = 'true'
+    vi.mocked(prisma.organizationAISettings.findUnique).mockResolvedValue({
+      id: 's1',
+      organization_id: 'org-1',
+      ai_mode: 'SHADOW',
+      shadow_comparison_enabled: true,
+      beta_features: [],
+      rate_limit_per_day: 1000,
+      monthly_cost_cap_usd: null,
+      kill_switch: false,
+      created_at: new Date(),
+      updated_at: new Date(),
+    } as never)
+
+    const result = await isAIEnabled('org-1', 'extraction')
+
+    expect(result).toBe(true)
+  })
+
+  it('returns true when ai_mode is BETA and feature is in beta_features', async () => {
+    process.env.AI_EXTRACTION_ENABLED = 'true'
+    vi.mocked(prisma.organizationAISettings.findUnique).mockResolvedValue({
+      id: 's1',
+      organization_id: 'org-1',
+      ai_mode: 'BETA',
+      shadow_comparison_enabled: false,
+      beta_features: ['extraction', 'insights'],
+      rate_limit_per_day: 1000,
+      monthly_cost_cap_usd: null,
+      kill_switch: false,
+      created_at: new Date(),
+      updated_at: new Date(),
+    } as never)
+
+    const result = await isAIEnabled('org-1', 'extraction')
+
+    expect(result).toBe(true)
+  })
+
+  it('returns false when ai_mode is BETA but feature is not in beta_features', async () => {
+    process.env.AI_EXTRACTION_ENABLED = 'true'
+    vi.mocked(prisma.organizationAISettings.findUnique).mockResolvedValue({
+      id: 's1',
+      organization_id: 'org-1',
+      ai_mode: 'BETA',
+      shadow_comparison_enabled: false,
+      beta_features: ['extraction'],
+      rate_limit_per_day: 1000,
+      monthly_cost_cap_usd: null,
+      kill_switch: false,
+      created_at: new Date(),
+      updated_at: new Date(),
+    } as never)
+
+    const result = await isAIEnabled('org-1', 'search_ai')
+
+    expect(result).toBe(false)
+  })
+
+  it('returns true when ai_mode is LIVE', async () => {
+    process.env.AI_EXTRACTION_ENABLED = 'true'
+    vi.mocked(prisma.organizationAISettings.findUnique).mockResolvedValue({
+      id: 's1',
+      organization_id: 'org-1',
+      ai_mode: 'LIVE',
+      shadow_comparison_enabled: false,
+      beta_features: [],
+      rate_limit_per_day: 1000,
+      monthly_cost_cap_usd: null,
+      kill_switch: false,
+      created_at: new Date(),
+      updated_at: new Date(),
+    } as never)
+
+    const result = await isAIEnabled('org-1', 'extraction')
+
+    expect(result).toBe(true)
+  })
+})
+```
+
+- [ ] **Step 3.2: Run test to verify it fails**
+
+Run:
+```bash
+npm test -- feature-flags
+```
+
+Expected: tests fail with module not found: `@/lib/ai/feature-flags`.
+
+- [ ] **Step 3.3: Implement isAIEnabled**
+
+Create `src/lib/ai/feature-flags.ts`:
+
+```typescript
+import { prisma } from '@/lib/db'
+
+export type AIFeature = 'extraction' | 'insights' | 'search_ai' | 'calendar_events'
+
+/**
+ * Check if an AI feature is enabled for a given organization.
+ *
+ * Evaluation order:
+ * 1. Global env flag AI_EXTRACTION_ENABLED must be 'true'
+ * 2. Organization must have AI settings row
+ * 3. kill_switch must be false
+ * 4. ai_mode must be SHADOW, BETA, or LIVE
+ * 5. If BETA, feature must be in beta_features array
+ */
+export async function isAIEnabled(
+  organizationId: string,
+  feature: AIFeature,
+): Promise<boolean> {
+  // Global kill switch via env
+  if (process.env.AI_EXTRACTION_ENABLED !== 'true') {
+    return false
+  }
+
+  const settings = await prisma.organizationAISettings.findUnique({
+    where: { organization_id: organizationId },
+  })
+
+  if (!settings) return false
+  if (settings.kill_switch) return false
+  if (settings.ai_mode === 'OFF') return false
+
+  // SHADOW and LIVE enable all features
+  if (settings.ai_mode === 'SHADOW' || settings.ai_mode === 'LIVE') {
+    return true
+  }
+
+  // BETA requires feature to be in beta_features array
+  if (settings.ai_mode === 'BETA') {
+    return settings.beta_features.includes(feature)
+  }
+
+  return false
+}
+```
+
+- [ ] **Step 3.4: Run test to verify it passes**
+
+Run:
+```bash
+npm test -- feature-flags
+```
+
+Expected: all 8 tests pass.
+
+- [ ] **Step 3.5: Run typecheck**
+
+Run:
+```bash
+npx tsc --noEmit
+```
+
+Expected: no errors.
+
+- [ ] **Step 3.6: Commit**
+
+```bash
+git add src/lib/ai/feature-flags.ts src/__tests__/ai/feature-flags.test.ts
+git commit -m "feat(ai): add isAIEnabled feature flag helper
+
+Checks global env flag + per-org AI settings (mode, kill switch, beta features)
+before allowing any AI call."
+```
+
+---
+
+## Task 4: Structured logger
+
+**Files:**
+- Create: `src/lib/ai/logger.ts`
+- Create: `src/__tests__/ai/logger.test.ts`
+
+- [ ] **Step 4.1: Write the failing test**
+
+Create `src/__tests__/ai/logger.test.ts`:
+
+```typescript
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { createLogger, aiLogger } from '@/lib/ai/logger'
+
+describe('AI logger', () => {
+  it('createLogger returns a pino instance with the given namespace', () => {
+    const logger = createLogger('test-module')
+    expect(logger).toBeDefined()
+    expect(typeof logger.info).toBe('function')
+    expect(typeof logger.error).toBe('function')
+    expect(typeof logger.warn).toBe('function')
+  })
+
+  it('aiLogger is the root logger with module="ai"', () => {
+    expect(aiLogger).toBeDefined()
+    expect(typeof aiLogger.child).toBe('function')
+  })
+
+  it('child loggers inherit from parent and add context', () => {
+    const child = aiLogger.child({ component: 'test' })
+    expect(child).toBeDefined()
+    expect(typeof child.info).toBe('function')
+  })
+
+  it('logger respects AI_LOG_LEVEL env var', () => {
+    const oldLevel = process.env.AI_LOG_LEVEL
+    process.env.AI_LOG_LEVEL = 'debug'
+
+    const logger = createLogger('debug-test')
+    expect(logger.level).toBe('debug')
+
+    process.env.AI_LOG_LEVEL = oldLevel
+  })
+})
+```
+
+- [ ] **Step 4.2: Run test to verify it fails**
+
+Run:
+```bash
+npm test -- logger
+```
+
+Expected: fails with module not found.
+
+- [ ] **Step 4.3: Implement logger**
+
+Create `src/lib/ai/logger.ts`:
+
+```typescript
+import pino from 'pino'
+
+const logLevel = process.env.AI_LOG_LEVEL || 'info'
+
+const baseConfig: pino.LoggerOptions = {
+  level: logLevel,
+  base: { module: 'ai' },
+  timestamp: pino.stdTimeFunctions.isoTime,
+}
+
+// Pretty-print in development
+const transport =
+  process.env.NODE_ENV === 'production'
+    ? undefined
+    : {
+        target: 'pino-pretty',
+        options: {
+          colorize: true,
+          translateTime: 'HH:MM:ss.l',
+          ignore: 'pid,hostname,module',
+        },
+      }
+
+export const aiLogger = pino({
+  ...baseConfig,
+  ...(transport ? { transport } : {}),
+})
+
+/**
+ * Create a logger for a specific module (child of aiLogger).
+ * Usage: const log = createLogger('extraction-job')
+ */
+export function createLogger(namespace: string) {
+  return aiLogger.child({ namespace })
+}
+```
+
+- [ ] **Step 4.4: Run test to verify it passes**
+
+Run:
+```bash
+npm test -- logger
+```
+
+Expected: all 4 tests pass.
+
+- [ ] **Step 4.5: Commit**
+
+```bash
+git add src/lib/ai/logger.ts src/__tests__/ai/logger.test.ts
+git commit -m "feat(ai): add structured logger via pino
+
+Root aiLogger with module='ai' label, createLogger helper for namespaced
+child loggers. Pretty-prints in dev, JSON in prod. Respects AI_LOG_LEVEL."
+```
+
+---
+
+## Task 5: ClaudeClient interface and types
+
+**Files:**
+- Create: `src/lib/ai/client/types.ts`
+
+- [ ] **Step 5.1: Create the types file**
+
+Create `src/lib/ai/client/types.ts`:
+
+```typescript
+/**
+ * Generic interface for Claude API clients.
+ *
+ * Implementations:
+ * - AnthropicDirectClient (dev): direct Anthropic API via @anthropic-ai/sdk
+ * - BedrockClient (prod, Plan deferred): AWS Bedrock Frankfurt
+ */
+
+export type ClaudeModel =
+  | 'claude-sonnet-4-20250514'
+  | 'claude-3-5-haiku-20241022'
+
+export interface ClaudeMessage {
+  role: 'user' | 'assistant'
+  content: string | ClaudeContentBlock[]
+}
+
+export type ClaudeContentBlock =
+  | { type: 'text'; text: string }
+  | { type: 'image'; source: { type: 'base64'; media_type: string; data: string } }
+  | { type: 'document'; source: { type: 'base64'; media_type: 'application/pdf'; data: string } }
+
+export interface ClaudeRequest {
+  model: ClaudeModel
+  max_tokens: number
+  temperature?: number
+  system?: string
+  messages: ClaudeMessage[]
+  tools?: ClaudeTool[]
+  tool_choice?: { type: 'auto' } | { type: 'any' } | { type: 'tool'; name: string }
+}
+
+export interface ClaudeTool {
+  name: string
+  description: string
+  input_schema: Record<string, unknown>  // JSON Schema
+}
+
+export interface ClaudeResponse {
+  id: string
+  model: string
+  stop_reason: 'end_turn' | 'max_tokens' | 'stop_sequence' | 'tool_use'
+  content: ClaudeResponseContent[]
+  usage: {
+    input_tokens: number
+    output_tokens: number
+  }
+}
+
+export type ClaudeResponseContent =
+  | { type: 'text'; text: string }
+  | { type: 'tool_use'; id: string; name: string; input: Record<string, unknown> }
+
+/**
+ * Claude API client abstraction.
+ * Implementations must handle retries, timeouts, and error normalization.
+ */
+export interface ClaudeClient {
+  readonly providerName: 'anthropic' | 'bedrock'
+
+  /**
+   * Send a request to Claude and return the response.
+   * Throws ClaudeClientError on failure.
+   */
+  complete(request: ClaudeRequest): Promise<ClaudeResponse>
+}
+
+export class ClaudeClientError extends Error {
+  constructor(
+    message: string,
+    public readonly cause: unknown,
+    public readonly retryable: boolean,
+  ) {
+    super(message)
+    this.name = 'ClaudeClientError'
+  }
+}
+
+/**
+ * Cost per 1M tokens (USD) for each model. Used for cost tracking.
+ * Source: https://www.anthropic.com/pricing (as of 2026-04-09)
+ */
+export const MODEL_COSTS: Record<ClaudeModel, { input: number; output: number }> = {
+  'claude-sonnet-4-20250514': { input: 3.0, output: 15.0 },
+  'claude-3-5-haiku-20241022': { input: 0.8, output: 4.0 },
+}
+
+export function computeCostUsd(
+  model: ClaudeModel,
+  inputTokens: number,
+  outputTokens: number,
+): number {
+  const costs = MODEL_COSTS[model]
+  return (inputTokens * costs.input + outputTokens * costs.output) / 1_000_000
+}
+```
+
+- [ ] **Step 5.2: Run typecheck**
+
+Run:
+```bash
+npx tsc --noEmit
+```
+
+Expected: no errors.
+
+- [ ] **Step 5.3: Commit**
+
+```bash
+git add src/lib/ai/client/types.ts
+git commit -m "feat(ai): define ClaudeClient interface and shared types
+
+Generic types used by both AnthropicDirect and future Bedrock implementations.
+Includes cost calculation helper for Haiku 3.5 and Sonnet 4."
+```
+
+---
+
+## Task 6: AnthropicDirectClient implementation
+
+**Files:**
+- Create: `src/lib/ai/client/anthropic-direct.ts`
+- Create: `src/__tests__/ai/client.test.ts`
+
+- [ ] **Step 6.1: Write the failing test (unit test with mocked SDK)**
+
+Create `src/__tests__/ai/client.test.ts`:
+
+```typescript
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { AnthropicDirectClient } from '@/lib/ai/client/anthropic-direct'
+import type { ClaudeRequest } from '@/lib/ai/client/types'
+import { ClaudeClientError } from '@/lib/ai/client/types'
+
+// Mock the Anthropic SDK
+const mockCreate = vi.fn()
+vi.mock('@anthropic-ai/sdk', () => {
+  return {
+    default: vi.fn().mockImplementation(() => ({
+      messages: {
+        create: mockCreate,
+      },
+    })),
+  }
+})
+
+describe('AnthropicDirectClient', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('has providerName "anthropic"', () => {
+    const client = new AnthropicDirectClient('sk-test')
+    expect(client.providerName).toBe('anthropic')
+  })
+
+  it('throws if API key is missing', () => {
+    expect(() => new AnthropicDirectClient('')).toThrow('ANTHROPIC_API_KEY is required')
+  })
+
+  it('sends request and returns normalized response', async () => {
+    mockCreate.mockResolvedValue({
+      id: 'msg_123',
+      model: 'claude-sonnet-4-20250514',
+      stop_reason: 'end_turn',
+      content: [{ type: 'text', text: 'Hello back' }],
+      usage: { input_tokens: 10, output_tokens: 5 },
+    })
+
+    const client = new AnthropicDirectClient('sk-test')
+    const request: ClaudeRequest = {
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 100,
+      messages: [{ role: 'user', content: 'Hello' }],
+    }
+
+    const response = await client.complete(request)
+
+    expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 100,
+    }))
+    expect(response.id).toBe('msg_123')
+    expect(response.content).toEqual([{ type: 'text', text: 'Hello back' }])
+    expect(response.usage.input_tokens).toBe(10)
+  })
+
+  it('wraps errors in ClaudeClientError with retryable flag', async () => {
+    const err: Error & { status?: number } = new Error('Rate limited')
+    err.status = 429
+    mockCreate.mockRejectedValue(err)
+
+    const client = new AnthropicDirectClient('sk-test')
+    const request: ClaudeRequest = {
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 100,
+      messages: [{ role: 'user', content: 'Hello' }],
+    }
+
+    await expect(client.complete(request)).rejects.toThrow(ClaudeClientError)
+
+    try {
+      await client.complete(request)
+    } catch (e) {
+      expect(e).toBeInstanceOf(ClaudeClientError)
+      expect((e as ClaudeClientError).retryable).toBe(true)
+    }
+  })
+
+  it('marks 4xx errors (except 429) as non-retryable', async () => {
+    const err: Error & { status?: number } = new Error('Bad request')
+    err.status = 400
+    mockCreate.mockRejectedValue(err)
+
+    const client = new AnthropicDirectClient('sk-test')
+    const request: ClaudeRequest = {
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 100,
+      messages: [{ role: 'user', content: 'Hello' }],
+    }
+
+    try {
+      await client.complete(request)
+    } catch (e) {
+      expect((e as ClaudeClientError).retryable).toBe(false)
+    }
+  })
+
+  it('marks 5xx errors as retryable', async () => {
+    const err: Error & { status?: number } = new Error('Server error')
+    err.status = 500
+    mockCreate.mockRejectedValue(err)
+
+    const client = new AnthropicDirectClient('sk-test')
+    const request: ClaudeRequest = {
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 100,
+      messages: [{ role: 'user', content: 'Hello' }],
+    }
+
+    try {
+      await client.complete(request)
+    } catch (e) {
+      expect((e as ClaudeClientError).retryable).toBe(true)
+    }
+  })
+})
+```
+
+- [ ] **Step 6.2: Run test to verify it fails**
+
+Run:
+```bash
+npm test -- client.test
+```
+
+Expected: fails with module not found.
+
+- [ ] **Step 6.3: Implement AnthropicDirectClient**
+
+Create `src/lib/ai/client/anthropic-direct.ts`:
+
+```typescript
+import Anthropic from '@anthropic-ai/sdk'
+import { createLogger } from '@/lib/ai/logger'
+import type { ClaudeClient, ClaudeRequest, ClaudeResponse } from './types'
+import { ClaudeClientError } from './types'
+
+const log = createLogger('anthropic-direct-client')
+
+export class AnthropicDirectClient implements ClaudeClient {
+  readonly providerName = 'anthropic' as const
+  private client: Anthropic
+
+  constructor(apiKey: string) {
+    if (!apiKey) {
+      throw new Error('ANTHROPIC_API_KEY is required')
+    }
+    this.client = new Anthropic({ apiKey })
+  }
+
+  async complete(request: ClaudeRequest): Promise<ClaudeResponse> {
+    const start = Date.now()
+    log.debug({ model: request.model, max_tokens: request.max_tokens }, 'Claude request')
+
+    try {
+      const response = await this.client.messages.create({
+        model: request.model,
+        max_tokens: request.max_tokens,
+        temperature: request.temperature,
+        system: request.system,
+        messages: request.messages as never,
+        tools: request.tools as never,
+        tool_choice: request.tool_choice as never,
+      })
+
+      const latencyMs = Date.now() - start
+      log.info(
+        {
+          model: response.model,
+          stop_reason: response.stop_reason,
+          input_tokens: response.usage.input_tokens,
+          output_tokens: response.usage.output_tokens,
+          latency_ms: latencyMs,
+        },
+        'Claude response',
+      )
+
+      return {
+        id: response.id,
+        model: response.model,
+        stop_reason: response.stop_reason as ClaudeResponse['stop_reason'],
+        content: response.content as ClaudeResponse['content'],
+        usage: {
+          input_tokens: response.usage.input_tokens,
+          output_tokens: response.usage.output_tokens,
+        },
+      }
+    } catch (err) {
+      const retryable = this.isRetryable(err)
+      const errorMessage = err instanceof Error ? err.message : 'Unknown Claude API error'
+      log.error({ err: errorMessage, retryable }, 'Claude request failed')
+      throw new ClaudeClientError(errorMessage, err, retryable)
+    }
+  }
+
+  private isRetryable(err: unknown): boolean {
+    if (!err || typeof err !== 'object') return false
+    const status = (err as { status?: number }).status
+    if (!status) return true // network errors are retryable
+    // 429 (rate limit) and 5xx are retryable, 4xx are not
+    return status === 429 || status >= 500
+  }
+}
+```
+
+- [ ] **Step 6.4: Run test to verify it passes**
+
+Run:
+```bash
+npm test -- client.test
+```
+
+Expected: all 6 tests pass.
+
+- [ ] **Step 6.5: Run typecheck**
+
+Run:
+```bash
+npx tsc --noEmit
+```
+
+Expected: no errors.
+
+- [ ] **Step 6.6: Commit**
+
+```bash
+git add src/lib/ai/client/anthropic-direct.ts src/__tests__/ai/client.test.ts
+git commit -m "feat(ai): implement AnthropicDirectClient
+
+Wraps @anthropic-ai/sdk with ClaudeClient interface. Normalizes errors
+via ClaudeClientError with retryable flag (429/5xx = retry, 4xx = fail)."
+```
+
+---
+
+## Task 7: Client factory
+
+**Files:**
+- Create: `src/lib/ai/client/index.ts`
+
+- [ ] **Step 7.1: Create factory**
+
+Create `src/lib/ai/client/index.ts`:
+
+```typescript
+import { AnthropicDirectClient } from './anthropic-direct'
+import type { ClaudeClient } from './types'
+
+export type { ClaudeClient, ClaudeRequest, ClaudeResponse, ClaudeModel, ClaudeTool } from './types'
+export { ClaudeClientError, computeCostUsd, MODEL_COSTS } from './types'
+
+/**
+ * Create a Claude client based on the AI_PROVIDER env var.
+ * Defaults to 'anthropic' (Anthropic Direct API).
+ * 'bedrock' support will be added in a later plan.
+ */
+export function createClaudeClient(): ClaudeClient {
+  const provider = process.env.AI_PROVIDER || 'anthropic'
+
+  if (provider === 'anthropic') {
+    const apiKey = process.env.ANTHROPIC_API_KEY
+    if (!apiKey) {
+      throw new Error('ANTHROPIC_API_KEY environment variable is required when AI_PROVIDER=anthropic')
+    }
+    return new AnthropicDirectClient(apiKey)
+  }
+
+  if (provider === 'bedrock') {
+    throw new Error('Bedrock provider not yet implemented (deferred to Plan in week 16)')
+  }
+
+  throw new Error(`Unknown AI_PROVIDER: ${provider}`)
+}
+```
+
+- [ ] **Step 7.2: Run typecheck**
+
+Run:
+```bash
+npx tsc --noEmit
+```
+
+Expected: no errors.
+
+- [ ] **Step 7.3: Commit**
+
+```bash
+git add src/lib/ai/client/index.ts
+git commit -m "feat(ai): add createClaudeClient factory
+
+Selects provider via AI_PROVIDER env var. Only 'anthropic' implemented;
+'bedrock' reserved for production plan."
+```
+
+---
+
+## Task 8: Content loader (PDF detection and loading)
+
+**Files:**
+- Create: `src/lib/ai/content-loader.ts`
+- Create: `src/__tests__/ai/content-loader.test.ts`
+- Create: `src/__tests__/fixtures/test-contract.pdf` (generated in step 8.1)
+
+- [ ] **Step 8.1: Generate a test PDF fixture**
+
+Run:
+```bash
+mkdir -p src/__tests__/fixtures
+node -e "
+const { PDFDocument, rgb } = require('pdf-lib');
+(async () => {
+  const doc = await PDFDocument.create();
+  const page = doc.addPage([595, 842]);
+  page.drawText('TEST EJERAFTALE', { x: 50, y: 800, size: 24 });
+  page.drawText('Kaedegruppen A/S (51%) - Dr. Petersen (49%)', { x: 50, y: 760, size: 14 });
+  page.drawText('Ikrafttraedelse: 1. januar 2026', { x: 50, y: 730, size: 12 });
+  const bytes = await doc.save();
+  require('fs').writeFileSync('src/__tests__/fixtures/test-contract.pdf', Buffer.from(bytes));
+  console.log('Created test PDF:', bytes.length, 'bytes');
+})();
+"
+```
+
+Expected: prints "Created test PDF: N bytes" where N > 1000.
+
+- [ ] **Step 8.2: Write the failing test**
+
+Create `src/__tests__/ai/content-loader.test.ts`:
+
+```typescript
+import { describe, it, expect, beforeAll } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import {
+  detectFileType,
+  isPdfEncrypted,
+  loadForExtraction,
+  ContentLoaderError,
+} from '@/lib/ai/content-loader'
+
+const FIXTURE_PATH = join(__dirname, '..', 'fixtures', 'test-contract.pdf')
+
+describe('content-loader', () => {
+  let pdfBuffer: Buffer
+
+  beforeAll(() => {
+    pdfBuffer = readFileSync(FIXTURE_PATH)
+  })
+
+  describe('detectFileType', () => {
+    it('detects PDF via magic bytes', async () => {
+      const result = await detectFileType(pdfBuffer)
+      expect(result).toEqual({ ext: 'pdf', mime: 'application/pdf' })
+    })
+
+    it('returns null for unknown buffer', async () => {
+      const garbage = Buffer.from('not a real file')
+      const result = await detectFileType(garbage)
+      expect(result).toBeNull()
+    })
+
+    it('ignores filename and uses magic bytes', async () => {
+      // PDF buffer, even if filename says .docx
+      const result = await detectFileType(pdfBuffer)
+      expect(result?.ext).toBe('pdf')
+    })
+  })
+
+  describe('isPdfEncrypted', () => {
+    it('returns false for unencrypted PDF', async () => {
+      const encrypted = await isPdfEncrypted(pdfBuffer)
+      expect(encrypted).toBe(false)
+    })
+  })
+
+  describe('loadForExtraction', () => {
+    it('loads a PDF buffer and returns extraction content', async () => {
+      const result = await loadForExtraction(pdfBuffer, 'test-contract.pdf')
+      expect(result.type).toBe('pdf_binary')
+      expect(result.data).toEqual(pdfBuffer)
+      expect(result.detectedMime).toBe('application/pdf')
+    })
+
+    it('throws ContentLoaderError for unsupported file types', async () => {
+      const textBuffer = Buffer.from('plain text, not a supported file')
+      await expect(
+        loadForExtraction(textBuffer, 'note.txt'),
+      ).rejects.toThrow(ContentLoaderError)
+    })
+
+    it('throws ContentLoaderError for files over 50 MB', async () => {
+      const hugeBuffer = Buffer.alloc(51 * 1024 * 1024)
+      await expect(
+        loadForExtraction(hugeBuffer, 'huge.pdf'),
+      ).rejects.toThrow(ContentLoaderError)
+    })
+  })
+})
+```
+
+- [ ] **Step 8.3: Run test to verify it fails**
+
+Run:
+```bash
+npm test -- content-loader
+```
+
+Expected: fails with module not found.
+
+- [ ] **Step 8.4: Implement content loader**
+
+Create `src/lib/ai/content-loader.ts`:
+
+```typescript
+import { fileTypeFromBuffer } from 'file-type'
+import { PDFDocument } from 'pdf-lib'
+import { createLogger } from './logger'
+
+const log = createLogger('content-loader')
+
+const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024  // 50 MB
+
+export type ExtractionContent =
+  | {
+      type: 'pdf_binary'
+      data: Buffer
+      detectedMime: string
+    }
+  | {
+      type: 'image'
+      data: Buffer
+      detectedMime: 'image/png' | 'image/jpeg'
+    }
+
+export class ContentLoaderError extends Error {
+  constructor(
+    message: string,
+    public readonly reason: 'unsupported_type' | 'file_too_large' | 'encrypted_pdf' | 'corrupt_file',
+  ) {
+    super(message)
+    this.name = 'ContentLoaderError'
+  }
+}
+
+/**
+ * Detect file type from buffer magic bytes.
+ * Never trust filename extensions - users rename files.
+ */
+export async function detectFileType(buffer: Buffer): Promise<{ ext: string; mime: string } | null> {
+  const type = await fileTypeFromBuffer(buffer)
+  if (!type) return null
+  return { ext: type.ext, mime: type.mime }
+}
+
+/**
+ * Check if a PDF is password-protected.
+ * Returns true if encrypted, false if accessible.
+ */
+export async function isPdfEncrypted(buffer: Buffer): Promise<boolean> {
+  try {
+    await PDFDocument.load(buffer, { ignoreEncryption: false })
+    return false
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    if (msg.toLowerCase().includes('encrypted')) {
+      return true
+    }
+    throw err
+  }
+}
+
+/**
+ * Load a file for Claude extraction.
+ * Performs validation:
+ * - File size check (< 50 MB)
+ * - File type detection via magic bytes
+ * - Password-protected PDF detection
+ *
+ * For PDFs, returns the raw buffer for Claude's native PDF API.
+ * For images (Plan 2+), returns base64 for Claude vision.
+ * For Word/Excel (Plan 2+), extracts to text first.
+ *
+ * v1 supports: PDF only.
+ */
+export async function loadForExtraction(
+  buffer: Buffer,
+  filename: string,
+): Promise<ExtractionContent> {
+  // Size check
+  if (buffer.length > MAX_FILE_SIZE_BYTES) {
+    throw new ContentLoaderError(
+      `File too large: ${buffer.length} bytes (max ${MAX_FILE_SIZE_BYTES})`,
+      'file_too_large',
+    )
+  }
+
+  // Type detection
+  const type = await detectFileType(buffer)
+  if (!type) {
+    throw new ContentLoaderError(
+      `Could not detect file type for ${filename}`,
+      'unsupported_type',
+    )
+  }
+
+  log.debug({ filename, detected_ext: type.ext, size: buffer.length }, 'File detected')
+
+  if (type.ext === 'pdf') {
+    // Password-protected check
+    try {
+      const encrypted = await isPdfEncrypted(buffer)
+      if (encrypted) {
+        throw new ContentLoaderError(
+          `PDF is password-protected: ${filename}`,
+          'encrypted_pdf',
+        )
+      }
+    } catch (err) {
+      if (err instanceof ContentLoaderError) throw err
+      throw new ContentLoaderError(
+        `Failed to parse PDF ${filename}: ${err instanceof Error ? err.message : 'unknown'}`,
+        'corrupt_file',
+      )
+    }
+
+    return {
+      type: 'pdf_binary',
+      data: buffer,
+      detectedMime: type.mime,
+    }
+  }
+
+  // Plan 2 will add: Word (docx), Excel (xlsx), images (png/jpg)
+  throw new ContentLoaderError(
+    `Unsupported file type: ${type.ext}. Only PDF supported in v1.`,
+    'unsupported_type',
+  )
+}
+```
+
+- [ ] **Step 8.5: Run test to verify it passes**
+
+Run:
+```bash
+npm test -- content-loader
+```
+
+Expected: all 7 tests pass.
+
+- [ ] **Step 8.6: Add fixtures to gitignore exception**
+
+Verify `src/__tests__/fixtures/test-contract.pdf` is trackable:
+
+```bash
+git check-ignore src/__tests__/fixtures/test-contract.pdf
+```
+
+Expected: exit code 1 (not ignored). If it prints the path, add `!src/__tests__/fixtures/*.pdf` to `.gitignore`.
+
+- [ ] **Step 8.7: Commit**
+
+```bash
+git add src/lib/ai/content-loader.ts src/__tests__/ai/content-loader.test.ts src/__tests__/fixtures/test-contract.pdf
+git commit -m "feat(ai): add content loader for PDF with magic byte detection
+
+- detectFileType via file-type library (never trust filename)
+- isPdfEncrypted via pdf-lib
+- loadForExtraction with size limit (50 MB), type routing, error cases
+- ContentLoaderError with typed reasons (unsupported/too_large/encrypted/corrupt)
+- Test fixture: small valid PDF for integration tests
+
+v1 scope: PDF only. Word/Excel/images deferred to Plan 2."
+```
+
+---
+
+## Task 9: pg-boss queue setup
+
+**Files:**
+- Create: `src/lib/ai/queue.ts`
+- Create: `src/__tests__/ai/queue.integration.test.ts`
+
+- [ ] **Step 9.1: Implement queue module**
+
+Create `src/lib/ai/queue.ts`:
+
+```typescript
+import PgBoss from 'pg-boss'
+import { createLogger } from './logger'
+
+const log = createLogger('queue')
+
+let bossInstance: PgBoss | null = null
+
+/**
+ * Job name constants. Adding a new job type means:
+ * 1. Add a constant here
+ * 2. Add a handler function in src/lib/ai/jobs/
+ * 3. Register the handler in worker/index.ts
+ */
+export const JOB_NAMES = {
+  EXTRACT_DOCUMENT_POC: 'extraction.poc',
+} as const
+
+export type JobName = (typeof JOB_NAMES)[keyof typeof JOB_NAMES]
+
+/**
+ * Initialize the pg-boss queue.
+ * Uses DATABASE_URL from env (must be the pooled URL — pg-boss handles pooling internally).
+ */
+export async function createQueue(): Promise<PgBoss> {
+  if (bossInstance) return bossInstance
+
+  const connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL
+  if (!connectionString) {
+    throw new Error('DIRECT_URL or DATABASE_URL environment variable is required')
+  }
+
+  log.info('Initializing pg-boss queue')
+
+  bossInstance = new PgBoss({
+    connectionString,
+    // pg-boss default schema is 'pgboss'; keep it
+    application_name: 'chainhub-ai-worker',
+    retryLimit: 3,
+    retryBackoff: true,
+    retryDelay: 30, // 30s base delay
+  })
+
+  bossInstance.on('error', (err) => {
+    log.error({ err: err.message }, 'pg-boss error')
+  })
+
+  await bossInstance.start()
+  log.info('pg-boss started')
+  return bossInstance
+}
+
+/**
+ * Stop the pg-boss queue. Call on worker shutdown.
+ */
+export async function stopQueue(): Promise<void> {
+  if (bossInstance) {
+    await bossInstance.stop({ graceful: true, timeout: 30_000 })
+    bossInstance = null
+    log.info('pg-boss stopped')
+  }
+}
+```
+
+- [ ] **Step 9.2: Write integration test**
+
+Create `src/__tests__/ai/queue.integration.test.ts`:
+
+```typescript
+import { describe, it, expect, afterAll, beforeAll } from 'vitest'
+import { createQueue, stopQueue, JOB_NAMES } from '@/lib/ai/queue'
+import type PgBoss from 'pg-boss'
+
+// Skip this test if no DB connection — it requires real Postgres
+const runIntegrationTests = !!process.env.DIRECT_URL || !!process.env.DATABASE_URL
+
+describe.skipIf(!runIntegrationTests)('queue integration', () => {
+  let boss: PgBoss
+
+  beforeAll(async () => {
+    boss = await createQueue()
+  }, 30_000)
+
+  afterAll(async () => {
+    await stopQueue()
+  }, 30_000)
+
+  it('creates queue successfully', () => {
+    expect(boss).toBeDefined()
+  })
+
+  it('can send and receive a job', async () => {
+    const receivedJobs: unknown[] = []
+
+    // Subscribe to a test job type
+    await boss.work('queue-test', async (jobs: Array<{ data: unknown }>) => {
+      for (const job of jobs) {
+        receivedJobs.push(job.data)
+      }
+    })
+
+    // Enqueue a test job
+    const jobId = await boss.send('queue-test', { hello: 'world' })
+    expect(jobId).toBeTruthy()
+
+    // Wait up to 5 seconds for the handler to pick it up
+    const deadline = Date.now() + 5_000
+    while (receivedJobs.length === 0 && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 100))
+    }
+
+    expect(receivedJobs).toHaveLength(1)
+    expect(receivedJobs[0]).toEqual({ hello: 'world' })
+
+    // Clean up the queue
+    await boss.deleteQueue('queue-test')
+  }, 15_000)
+
+  it('exposes JOB_NAMES constants', () => {
+    expect(JOB_NAMES.EXTRACT_DOCUMENT_POC).toBe('extraction.poc')
+  })
+})
+```
+
+- [ ] **Step 9.3: Update vitest config to support node environment for integration tests**
+
+Read `vitest.config.ts`. If the test `environment` is `jsdom`, we need to allow specific tests to opt into `node`. Modify `vitest.config.ts`:
+
+```typescript
+import { defineConfig } from 'vitest/config'
+import react from '@vitejs/plugin-react'
+import { resolve } from 'path'
+
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./src/__tests__/setup.ts'],
+    globals: true,
+    environmentMatchGlobs: [
+      ['src/__tests__/ai/**/*.integration.test.ts', 'node'],
+    ],
+    testTimeout: 30_000,
+  },
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, './src'),
+    },
+  },
+})
+```
+
+- [ ] **Step 9.4: Run integration test**
+
+Run:
+```bash
+npm test -- queue.integration
+```
+
+Expected: tests pass against real Supabase. If DIRECT_URL is not set, tests are skipped.
+
+If the test fails with "schema pgboss not found" or similar, pg-boss will create it automatically on first start. Re-run once.
+
+- [ ] **Step 9.5: Commit**
+
+```bash
+git add src/lib/ai/queue.ts src/__tests__/ai/queue.integration.test.ts vitest.config.ts
+git commit -m "feat(ai): add pg-boss queue initialization
+
+- createQueue() singleton with retry config (3 attempts, exponential backoff)
+- stopQueue() graceful shutdown
+- JOB_NAMES constants for type safety
+- Integration test against real Supabase Postgres
+- vitest.config.ts: opt-in node environment for integration tests"
+```
+
+---
+
+## Task 10: Worker process scaffold
+
+**Files:**
+- Create: `worker/index.ts`
+- Create: `worker/README.md`
+
+- [ ] **Step 10.1: Create worker entry point**
+
+Create `worker/index.ts`:
+
+```typescript
+/**
+ * ChainHub AI worker process.
+ *
+ * Runs as a long-lived process that consumes jobs from pg-boss.
+ * Started via `npm run worker` (or `npm run worker:dev` for hot reload).
+ *
+ * In production, this runs on Hetzner Cloud as a systemd service.
+ */
+
+import { createQueue, stopQueue, JOB_NAMES } from '@/lib/ai/queue'
+import { createLogger } from '@/lib/ai/logger'
+
+const log = createLogger('worker')
+
+async function main() {
+  log.info('Worker starting')
+
+  const boss = await createQueue()
+
+  // Register job handlers
+  // Task 11 will implement the real extraction-poc handler
+  // For now, we register a placeholder that logs what it received
+
+  await boss.work(JOB_NAMES.EXTRACT_DOCUMENT_POC, async (jobs) => {
+    for (const job of jobs) {
+      log.info({ job_id: job.id, data: job.data }, 'Received extraction.poc job (placeholder)')
+      // Real implementation comes in Task 11
+    }
+  })
+
+  log.info({ registered_jobs: Object.values(JOB_NAMES) }, 'Worker ready — waiting for jobs')
+
+  // Graceful shutdown on SIGTERM/SIGINT
+  const shutdown = async (signal: string) => {
+    log.info({ signal }, 'Worker shutting down')
+    await stopQueue()
+    log.info('Worker stopped cleanly')
+    process.exit(0)
+  }
+
+  process.on('SIGTERM', () => {
+    void shutdown('SIGTERM')
+  })
+  process.on('SIGINT', () => {
+    void shutdown('SIGINT')
+  })
+}
+
+main().catch((err) => {
+  log.fatal({ err: err instanceof Error ? err.message : String(err) }, 'Worker crashed')
+  process.exit(1)
+})
+```
+
+- [ ] **Step 10.2: Create worker README**
+
+Create `worker/README.md`:
+
+```markdown
+# ChainHub AI Worker
+
+Long-lived process that consumes jobs from pg-boss and performs AI tasks
+(document extraction, insight regeneration, etc.).
+
+## Development
+
+```bash
+npm run worker:dev    # with tsx watch (auto-reload on file change)
+npm run worker        # one-shot run without auto-reload
+```
+
+Worker connects to the same Supabase Postgres as the Next.js app via
+`DIRECT_URL` (or falls back to `DATABASE_URL`).
+
+## Production
+
+In production (week 16+), this runs on Hetzner Cloud as a systemd service.
+Deployment is covered in a separate plan.
+
+## Adding a new job type
+
+1. Add constant to `src/lib/ai/queue.ts` `JOB_NAMES`
+2. Create handler in `src/lib/ai/jobs/<job-name>.ts`
+3. Register handler in `worker/index.ts` via `boss.work(...)`
+
+## Shutdown
+
+The worker handles SIGTERM and SIGINT for graceful shutdown. Existing jobs
+complete before the worker exits.
+
+## Logs
+
+Structured logs via pino. Set `AI_LOG_LEVEL=debug` for verbose output.
+In production, stdout is captured by systemd journal (`journalctl -u chainhub-worker`).
+```
+
+- [ ] **Step 10.3: Test worker starts and stops cleanly**
+
+Run in one terminal:
+```bash
+npm run worker
+```
+
+Expected output (within 2-3 seconds):
+```
+[INFO] Worker starting
+[INFO] Initializing pg-boss queue
+[INFO] pg-boss started
+[INFO] Worker ready — waiting for jobs
+```
+
+In another terminal or by pressing Ctrl+C:
+```bash
+# Send SIGTERM
+# Or just press Ctrl+C in the worker terminal
+```
+
+Expected: worker logs "Worker shutting down", "pg-boss stopped", "Worker stopped cleanly", then exits with code 0.
+
+- [ ] **Step 10.4: Commit**
+
+```bash
+git add worker/index.ts worker/README.md
+git commit -m "feat(ai): add worker process scaffold
+
+- Connects to pg-boss via createQueue
+- Registers placeholder handler for extraction.poc job
+- Graceful shutdown on SIGTERM/SIGINT
+- Crash handling with exit code 1
+- README with dev instructions and job addition guide"
+```
+
+---
+
+## Task 11: Proof-of-concept extraction job
+
+**Files:**
+- Create: `src/lib/ai/jobs/extract-document-poc.ts`
+- Create: `src/__tests__/ai/extract-poc.integration.test.ts`
+- Modify: `worker/index.ts` (wire real handler)
+
+- [ ] **Step 11.1: Implement PoC extraction job**
+
+Create `src/lib/ai/jobs/extract-document-poc.ts`:
+
+```typescript
+import { prisma } from '@/lib/db'
+import { createClaudeClient, computeCostUsd } from '@/lib/ai/client'
+import { loadForExtraction } from '@/lib/ai/content-loader'
+import { createLogger } from '@/lib/ai/logger'
+
+const log = createLogger('extract-poc')
+
+export interface ExtractDocumentPocPayload {
+  document_id: string
+  organization_id: string
+  file_buffer_base64: string  // PDF contents as base64
+  filename: string
+}
+
+export interface ExtractDocumentPocResult {
+  extraction_id: string
+  summary: string
+  input_tokens: number
+  output_tokens: number
+  cost_usd: number
+}
+
+/**
+ * Proof-of-concept extraction job.
+ *
+ * Loads a PDF, sends it to Claude with a simple summarization prompt,
+ * saves the result to DocumentExtraction, and returns the summary.
+ *
+ * This validates the end-to-end pipeline:
+ * - Content loading
+ * - Claude API call
+ * - Cost tracking
+ * - DB persistence
+ *
+ * It is NOT the production extraction pipeline. Plan 2 will replace this
+ * with multi-pass schema-driven extraction.
+ */
+export async function extractDocumentPoc(
+  payload: ExtractDocumentPocPayload,
+): Promise<ExtractDocumentPocResult> {
+  log.info(
+    { document_id: payload.document_id, filename: payload.filename },
+    'Starting PoC extraction',
+  )
+
+  // 1. Load file content
+  const buffer = Buffer.from(payload.file_buffer_base64, 'base64')
+  const content = await loadForExtraction(buffer, payload.filename)
+
+  if (content.type !== 'pdf_binary') {
+    throw new Error(`PoC only supports PDF. Got: ${content.type}`)
+  }
+
+  // 2. Call Claude with simple summary prompt
+  const client = createClaudeClient()
+  const model = 'claude-3-5-haiku-20241022' as const
+
+  const response = await client.complete({
+    model,
+    max_tokens: 1024,
+    system:
+      'You are analyzing a Danish legal contract. Return a JSON object with keys: summary (1-2 sentences), contract_type_guess (your best guess at contract type), language. No commentary, only JSON.',
+    messages: [
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'document',
+            source: {
+              type: 'base64',
+              media_type: 'application/pdf',
+              data: content.data.toString('base64'),
+            },
+          },
+          {
+            type: 'text',
+            text: 'Analyze this document and return the JSON as instructed.',
+          },
+        ],
+      },
+    ],
+  })
+
+  // 3. Extract text from response
+  const textBlock = response.content.find((b) => b.type === 'text')
+  const rawText = textBlock && textBlock.type === 'text' ? textBlock.text : ''
+
+  // 4. Compute cost
+  const costUsd = computeCostUsd(
+    model,
+    response.usage.input_tokens,
+    response.usage.output_tokens,
+  )
+
+  log.info(
+    {
+      document_id: payload.document_id,
+      input_tokens: response.usage.input_tokens,
+      output_tokens: response.usage.output_tokens,
+      cost_usd: costUsd,
+    },
+    'Claude extraction complete',
+  )
+
+  // 5. Persist to DocumentExtraction
+  const extraction = await prisma.documentExtraction.create({
+    data: {
+      document_id: payload.document_id,
+      organization_id: payload.organization_id,
+      model_name: response.model,
+      model_temperature: 0,
+      extracted_fields: { summary_text: rawText } as never,
+      raw_response: response as never,
+      input_tokens: response.usage.input_tokens,
+      output_tokens: response.usage.output_tokens,
+      total_cost_usd: costUsd,
+      extraction_status: 'completed',
+    },
+  })
+
+  return {
+    extraction_id: extraction.id,
+    summary: rawText,
+    input_tokens: response.usage.input_tokens,
+    output_tokens: response.usage.output_tokens,
+    cost_usd: costUsd,
+  }
+}
+```
+
+- [ ] **Step 11.2: Wire the real handler into worker/index.ts**
+
+Replace the placeholder handler in `worker/index.ts` with:
+
+```typescript
+  await boss.work(JOB_NAMES.EXTRACT_DOCUMENT_POC, async (jobs) => {
+    for (const job of jobs) {
+      const payload = job.data as ExtractDocumentPocPayload
+      log.info({ job_id: job.id, document_id: payload.document_id }, 'Processing extraction.poc')
+      try {
+        const result = await extractDocumentPoc(payload)
+        log.info(
+          { job_id: job.id, extraction_id: result.extraction_id, cost_usd: result.cost_usd },
+          'Extraction.poc completed',
+        )
+      } catch (err) {
+        log.error(
+          { job_id: job.id, err: err instanceof Error ? err.message : String(err) },
+          'Extraction.poc failed',
+        )
+        throw err  // let pg-boss retry
+      }
+    }
+  })
+```
+
+Add the import at the top of `worker/index.ts`:
+
+```typescript
+import { extractDocumentPoc, type ExtractDocumentPocPayload } from '@/lib/ai/jobs/extract-document-poc'
+```
+
+- [ ] **Step 11.3: Write integration test**
+
+Create `src/__tests__/ai/extract-poc.integration.test.ts`:
+
+```typescript
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { prisma } from '@/lib/db'
+import { extractDocumentPoc } from '@/lib/ai/jobs/extract-document-poc'
+
+const FIXTURE_PATH = join(__dirname, '..', 'fixtures', 'test-contract.pdf')
+
+// Only run if ANTHROPIC_API_KEY is set AND DB available
+const runIntegration =
+  !!process.env.ANTHROPIC_API_KEY &&
+  (!!process.env.DIRECT_URL || !!process.env.DATABASE_URL)
+
+describe.skipIf(!runIntegration)('extractDocumentPoc integration', () => {
+  let testDocumentId: string
+  let testOrganizationId: string
+
+  beforeAll(async () => {
+    // Create a test organization and document
+    const org = await prisma.organization.create({
+      data: {
+        name: 'Test AI PoC Org',
+        cvr: '99999999',
+      },
+    })
+    testOrganizationId = org.id
+
+    const doc = await prisma.document.create({
+      data: {
+        organization_id: testOrganizationId,
+        title: 'Test PoC Document',
+        file_url: 'test://poc',
+        file_name: 'test-contract.pdf',
+        file_size_bytes: 1024,
+        file_type: 'application/pdf',
+        uploaded_by: 'system',
+      },
+    })
+    testDocumentId = doc.id
+  }, 30_000)
+
+  afterAll(async () => {
+    // Cleanup
+    await prisma.documentExtraction.deleteMany({ where: { document_id: testDocumentId } })
+    await prisma.document.delete({ where: { id: testDocumentId } })
+    await prisma.organization.delete({ where: { id: testOrganizationId } })
+  }, 30_000)
+
+  it('extracts summary from test PDF and stores in DB', async () => {
+    const pdfBuffer = readFileSync(FIXTURE_PATH)
+
+    const result = await extractDocumentPoc({
+      document_id: testDocumentId,
+      organization_id: testOrganizationId,
+      file_buffer_base64: pdfBuffer.toString('base64'),
+      filename: 'test-contract.pdf',
+    })
+
+    expect(result.extraction_id).toBeTruthy()
+    expect(result.summary.length).toBeGreaterThan(0)
+    expect(result.input_tokens).toBeGreaterThan(0)
+    expect(result.output_tokens).toBeGreaterThan(0)
+    expect(result.cost_usd).toBeGreaterThan(0)
+    expect(result.cost_usd).toBeLessThan(0.05)  // should be cheap for tiny PDF
+
+    // Verify DB record
+    const extraction = await prisma.documentExtraction.findUnique({
+      where: { id: result.extraction_id },
+    })
+    expect(extraction).toBeTruthy()
+    expect(extraction?.document_id).toBe(testDocumentId)
+    expect(extraction?.organization_id).toBe(testOrganizationId)
+    expect(extraction?.model_name).toContain('claude')
+    expect(extraction?.input_tokens).toBe(result.input_tokens)
+    expect(extraction?.extraction_status).toBe('completed')
+  }, 60_000)
+})
+```
+
+- [ ] **Step 11.4: Run integration test**
+
+Run:
+```bash
+npm test -- extract-poc.integration
+```
+
+Expected: test passes. Hits real Anthropic API (small cost, ~$0.001) and real Supabase. Creates test org/doc/extraction rows, verifies them, cleans up.
+
+If ANTHROPIC_API_KEY is not set, test is skipped.
+
+If test fails with "Cannot read property of undefined" on response.content, inspect Claude's raw response — newer models may return different structures. Adjust parsing accordingly.
+
+- [ ] **Step 11.5: Run typecheck**
+
+Run:
+```bash
+npx tsc --noEmit
+```
+
+Expected: no errors.
+
+- [ ] **Step 11.6: Test the full worker flow manually (optional but recommended)**
+
+Create a temporary test script `scripts/test-worker-e2e.ts`:
+
+```typescript
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { createQueue, JOB_NAMES, stopQueue } from '@/lib/ai/queue'
+import { prisma } from '@/lib/db'
+
+async function main() {
+  // Create test org + doc
+  const org = await prisma.organization.create({
+    data: { name: 'E2E Test Org', cvr: '88888888' },
+  })
+  const doc = await prisma.document.create({
+    data: {
+      organization_id: org.id,
+      title: 'E2E Test Doc',
+      file_url: 'test://e2e',
+      file_name: 'test-contract.pdf',
+      file_size_bytes: 1024,
+      file_type: 'application/pdf',
+      uploaded_by: 'system',
+    },
+  })
+
+  const pdfBuffer = readFileSync(
+    join(__dirname, '..', 'src', '__tests__', 'fixtures', 'test-contract.pdf'),
+  )
+
+  const boss = await createQueue()
+  const jobId = await boss.send(JOB_NAMES.EXTRACT_DOCUMENT_POC, {
+    document_id: doc.id,
+    organization_id: org.id,
+    file_buffer_base64: pdfBuffer.toString('base64'),
+    filename: 'test-contract.pdf',
+  })
+
+  console.log('Enqueued job:', jobId)
+  console.log('Now run `npm run worker` in another terminal and watch it process.')
+  console.log('When done, check DocumentExtraction table for:', doc.id)
+
+  await stopQueue()
+  await prisma.$disconnect()
+}
+
+main()
+```
+
+Run:
+```bash
+# Terminal 1
+npm run worker
+
+# Terminal 2
+npx tsx scripts/test-worker-e2e.ts
+```
+
+Expected: Terminal 1 logs the job arriving, calling Claude, saving result, completing. Terminal 2 prints the job ID.
+
+Delete the script after verifying: `rm scripts/test-worker-e2e.ts`
+
+- [ ] **Step 11.7: Commit**
+
+```bash
+git add src/lib/ai/jobs/extract-document-poc.ts worker/index.ts src/__tests__/ai/extract-poc.integration.test.ts
+git commit -m "feat(ai): add proof-of-concept extraction job
+
+End-to-end validation of the AI foundation:
+- Loads PDF via content-loader
+- Calls Claude Haiku 3.5 with simple summary prompt
+- Computes cost from token usage
+- Persists to DocumentExtraction table
+- Wired into worker/index.ts
+
+Plan 2 will replace this with multi-pass schema-driven extraction for
+EJERAFTALE and other contract types."
+```
+
+---
+
+## Task 12: Developer README
+
+**Files:**
+- Create: `src/lib/ai/README.md`
+
+- [ ] **Step 12.1: Create README**
+
+Create `src/lib/ai/README.md`:
+
+```markdown
+# AI Foundation Module
+
+Infrastructure for ChainHub's AI extraction pipeline. Handles:
+- Claude API client abstraction (Anthropic Direct in dev, Bedrock in prod)
+- Content loading from uploaded files (PDF in v1)
+- Job queue via pg-boss
+- Feature flags for gradual rollout
+- Structured logging
+
+## Architecture
+
+```
+┌─────────────────┐
+│ Server Action   │ User uploads file
+└────────┬────────┘
+         │
+         │ enqueue(extract.poc, {...})
+         ▼
+┌─────────────────┐
+│    pg-boss      │ Persistent job queue in Postgres
+└────────┬────────┘
+         │
+         │ worker polls
+         ▼
+┌─────────────────┐      ┌──────────────────┐
+│  Worker process │─────▶│  ClaudeClient    │
+│  (worker/)      │      │  (Anthropic/AWS) │
+└────────┬────────┘      └──────────────────┘
+         │
+         │ save result
+         ▼
+┌─────────────────┐
+│ DocumentExtract │ Audit trail, cost, tokens
+└─────────────────┘
+```
+
+## Quick start
+
+### Running the worker
+
+```bash
+npm run worker:dev    # development with hot reload
+npm run worker        # production-style single run
+```
+
+### Testing
+
+```bash
+npm test                                  # all tests
+npm test -- feature-flags                 # unit tests only
+npm test -- queue.integration             # requires DB
+npm test -- extract-poc.integration       # requires DB + ANTHROPIC_API_KEY
+```
+
+Integration tests are skipped if their required environment variables are missing.
+
+### Adding a new job type
+
+1. Add constant to `queue.ts` `JOB_NAMES`
+2. Create handler in `jobs/<name>.ts` exporting a typed handler function
+3. Register in `worker/index.ts`:
+   ```typescript
+   await boss.work(JOB_NAMES.MY_NEW_JOB, async (jobs) => { ... })
+   ```
+4. Write unit tests for the handler logic (mock external deps)
+5. Write integration test if needed (real DB/API)
+
+### Cost tracking
+
+Every Claude call must log tokens and cost:
+
+```typescript
+import { computeCostUsd } from './client'
+const cost = computeCostUsd('claude-sonnet-4-20250514', input, output)
+// Save to DocumentExtraction.total_cost_usd
+```
+
+### Feature flags
+
+Never make an AI call without checking the flag first:
+
+```typescript
+import { isAIEnabled } from './feature-flags'
+
+if (!await isAIEnabled(orgId, 'extraction')) {
+  return { skipped: true }
+}
+// proceed with extraction
+```
+
+## What's here vs what's coming
+
+### In this module (v1 — Plan 1)
+- ✅ Prisma models (DocumentExtraction, AIFieldCorrection, OrganizationAISettings)
+- ✅ Feature flag infrastructure
+- ✅ Structured logging (pino)
+- ✅ ClaudeClient interface + AnthropicDirect implementation
+- ✅ Content loader for PDF
+- ✅ pg-boss queue
+- ✅ Worker process
+- ✅ Proof-of-concept extraction job
+
+### Coming next (Plan 2)
+- EJERAFTALE schema with production prompt
+- Multi-pass extraction pipeline (type detection + 2x schema + source verification + sanity + cross-validation)
+- Agreement-based confidence computation
+- AIFieldCorrection logging on user overrides
+- Word/Excel/image content loaders
+- Schemas for LEJEKONTRAKT, FORSIKRING, VEDTAEGTER, ANSAETTELSESKONTRAKT, DRIFTSAFTALE
+
+### Coming later (future plans)
+- Bedrock client (week 16)
+- Hetzner deployment (week 16)
+- Insights system (companies, contracts, dashboard)
+- Søg & Spørg AI backend
+- Feedback loop analytics
+```
+
+- [ ] **Step 12.2: Commit**
+
+```bash
+git add src/lib/ai/README.md
+git commit -m "docs(ai): add developer README for AI foundation module
+
+Quick start, architecture diagram, adding new jobs, cost tracking rules,
+what's built vs coming next."
+```
+
+---
+
+## Task 13: Full test suite validation
+
+**Files:**
+- None modified
+
+- [ ] **Step 13.1: Run full test suite**
+
+Run:
+```bash
+npm test
+```
+
+Expected: all tests pass. Includes the original 3 tests plus new ones from this plan:
+- `feature-flags.test.ts` (8 tests)
+- `logger.test.ts` (4 tests)
+- `client.test.ts` (6 tests)
+- `content-loader.test.ts` (7 tests)
+- `queue.integration.test.ts` (3 tests, if DB available)
+- `extract-poc.integration.test.ts` (1 test, if DB + API key available)
+
+If integration tests are skipped, that's fine — they'll run in CI.
+
+- [ ] **Step 13.2: Run typecheck**
+
+Run:
+```bash
+npx tsc --noEmit
+```
+
+Expected: no errors.
+
+- [ ] **Step 13.3: Run lint**
+
+Run:
+```bash
+npm run lint
+```
+
+Expected: no errors. If there are style warnings on the new files, fix them or configure ESLint to ignore known patterns.
+
+- [ ] **Step 13.4: Verify build passes**
+
+Run:
+```bash
+npm run build
+```
+
+Expected: Next.js build succeeds. The worker code is separate from the Next.js bundle and shouldn't affect it.
+
+If build fails because worker code is picked up by Next.js, add `worker/` to a tsconfig exclude or move it entirely outside of `src/`.
+
+- [ ] **Step 13.5: Manual E2E sanity check**
+
+Run the worker manually and observe startup:
+
+```bash
+npm run worker
+```
+
+Expected output (within 3 seconds):
+```
+[HH:MM:SS.ms] INFO: Worker starting
+[HH:MM:SS.ms] INFO: Initializing pg-boss queue
+[HH:MM:SS.ms] INFO: pg-boss started
+[HH:MM:SS.ms] INFO: Worker ready — waiting for jobs
+```
+
+Press Ctrl+C. Expected:
+```
+[HH:MM:SS.ms] INFO: Worker shutting down
+[HH:MM:SS.ms] INFO: pg-boss stopped
+[HH:MM:SS.ms] INFO: Worker stopped cleanly
+```
+
+Exit code 0.
+
+- [ ] **Step 13.6: Commit nothing — this is validation only**
+
+No commit. This task is a final verification checkpoint.
+
+---
+
+## Task 14: Plan completion — push to remote
+
+**Files:**
+- None modified
+
+- [ ] **Step 14.1: Verify commit history is clean**
+
+Run:
+```bash
+git log --oneline master..HEAD
+```
+
+Expected: ~11 commits from this plan, all with "feat(ai):" or "chore(ai):" or "docs(ai):" prefixes.
+
+- [ ] **Step 14.2: Push to remote**
+
+Run:
+```bash
+git push origin master
+```
+
+Expected: commits pushed to GitHub.
+
+- [ ] **Step 14.3: Tag the plan completion (optional)**
+
+Run:
+```bash
+git tag -a ai-foundation-v1 -m "AI Foundation Infrastructure complete (Plan 1)"
+git push origin ai-foundation-v1
+```
+
+This marks the plan as complete and lets you refer back to this state.
+
+---
+
+## Completion checklist
+
+Before declaring this plan complete, verify:
+
+- [ ] All 13 task completion commits are in git log
+- [ ] `npm test` passes (including integration tests where possible)
+- [ ] `npm run build` succeeds
+- [ ] `npx tsc --noEmit` reports no errors
+- [ ] `npm run worker` starts and stops cleanly
+- [ ] Manual E2E test works: enqueue a job → worker processes → DocumentExtraction row created
+- [ ] `src/lib/ai/README.md` is up to date
+- [ ] No uncommitted changes
+
+## What comes next (Plan 2)
+
+After this plan is complete, the next plan will cover:
+
+**Plan 2: EJERAFTALE Multi-Pass Extraction**
+- Word/Excel/image content loaders
+- EJERAFTALE schema with production prompt
+- Pass 1: Type detection
+- Pass 2: Schema extraction (2x for agreement)
+- Pass 3: Source verification
+- Pass 4: Sanity check rules
+- Pass 5: Cross-validation against human_verified data
+- Agreement-based confidence computation
+- AIFieldCorrection logging
+- Gold standard test dataset
+
+**Plan 3: UI Migration — Documents + Contracts + Portfolio**
+- Move `/proto/documents` → `/(dashboard)/documents`
+- Move `/proto/contracts` → `/(dashboard)/contracts`
+- Move `/proto/portfolio` → `/(dashboard)/portfolio`
+- Wire to real Server Actions
+- Permission checks
+- Connect to `DocumentExtraction` data from Plan 1+2
+
+**Plan 4: 5 Additional Contract Schemas**
+- LEJEKONTRAKT, FORSIKRING, VEDTAEGTER, ANSAETTELSESKONTRAKT, DRIFTSAFTALE
