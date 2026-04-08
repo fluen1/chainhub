@@ -1,219 +1,432 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
-import { Upload, FileText, CheckCircle2, Loader2 } from 'lucide-react'
+import {
+  Search,
+  Upload,
+  FileText,
+  CheckCircle2,
+  Loader2,
+  Plus,
+  ChevronUp,
+  Sparkles,
+  AlertCircle,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { usePrototype } from '@/components/prototype/PrototypeProvider'
-import { CollapsibleSection } from '@/components/ui/CollapsibleSection'
-import {
-  getDocuments,
-  getDocumentsAwaitingReview,
-  getDocumentsProcessing,
-} from '@/mock/documents'
+import { getDocuments, getDocumentsAwaitingReview, getDocumentsProcessing } from '@/mock/documents'
 import type { MockDocument } from '@/mock/types'
+import { cn } from '@/lib/utils'
+
+// ---------------------------------------------------------------
+// Status-helpers
+// ---------------------------------------------------------------
+type DocFilter = 'all' | 'review' | 'processing' | 'archived'
+
+function statusStyle(status: MockDocument['status']): string {
+  switch (status) {
+    case 'ready_for_review': return 'bg-violet-50 text-violet-700'
+    case 'processing':       return 'bg-blue-50 text-blue-700'
+    case 'reviewed':         return 'bg-emerald-50 text-emerald-700'
+    case 'archived':         return 'bg-slate-50 text-slate-600'
+  }
+}
+
+function statusLabel(status: MockDocument['status']): string {
+  switch (status) {
+    case 'ready_for_review': return 'Til review'
+    case 'processing':       return 'Analyseres'
+    case 'reviewed':         return 'Godkendt'
+    case 'archived':         return 'Arkiveret'
+  }
+}
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('da-DK', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
+  return new Date(iso).toLocaleDateString('da-DK', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-function ReviewDocRow({ doc }: { doc: MockDocument }) {
-  const isHighConfidence = doc.confidenceLevel === 'high' && (doc.attentionFieldCount ?? 0) <= 1
-
-  return (
-    <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50/80 transition-colors">
-      <div className="flex items-start gap-3 min-w-0">
-        <FileText className="h-4 w-4 text-gray-400 mt-0.5 shrink-0" />
-        <div className="min-w-0">
-          <p className="text-sm font-medium text-gray-900 truncate">{doc.fileName}</p>
-          <p className="text-xs text-gray-500 mt-0.5">
-            {doc.extractedFieldCount ?? 0} felter udtrukket
-            {(doc.attentionFieldCount ?? 0) > 0 && (
-              <span className="ml-2 text-amber-600 font-medium">
-                · {doc.attentionFieldCount} kræver opmærksomhed
-              </span>
-            )}
-          </p>
-        </div>
-      </div>
-      <div className="flex items-center gap-2 shrink-0 ml-4">
-        {isHighConfidence && (
-          <button
-            onClick={() =>
-              toast.success('Dokument godkendt (simuleret)')
-            }
-            className="inline-flex items-center gap-1 bg-gray-900 text-white text-xs px-3 py-1.5 rounded hover:bg-gray-700 transition-colors"
-          >
-            <CheckCircle2 className="h-3 w-3" />
-            Hurtig-godkend
-          </button>
-        )}
-        <Link
-          href={`/proto/documents/review/${doc.id}`}
-          className="inline-flex items-center gap-1 bg-white border border-gray-300 text-gray-700 text-xs px-3 py-1.5 rounded hover:bg-gray-50 transition-colors"
-        >
-          Gennemgå →
-        </Link>
-      </div>
-    </div>
-  )
-}
-
-function ProcessingDocRow({ doc }: { doc: MockDocument }) {
-  const progress = doc.processingProgress ?? 0
-
-  return (
-    <div className="px-5 py-3 border-b last:border-b-0">
-      <div className="flex items-center gap-3">
-        <Loader2 className="h-4 w-4 text-blue-500 animate-spin shrink-0" />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-900 truncate">{doc.fileName}</p>
-          <p className="text-xs text-gray-500 mt-0.5">
-            {doc.processingStage ?? 'Behandler...'} · Typisk 30-45 sek.
-          </p>
-          <div className="mt-2 h-1.5 bg-gray-200 rounded-full overflow-hidden w-full max-w-xs">
-            <div
-              className="h-full bg-blue-500 rounded-full transition-all"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
-        <span className="text-xs text-gray-400 shrink-0">{progress}%</span>
-      </div>
-    </div>
-  )
-}
-
-function RecentDocRow({ doc }: { doc: MockDocument }) {
-  return (
-    <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50/80 transition-colors">
-      <div className="flex items-center gap-3 min-w-0">
-        <FileText className="h-4 w-4 text-gray-300 shrink-0" />
-        <div className="min-w-0">
-          <p className="text-sm text-gray-800 truncate">{doc.fileName}</p>
-          <p className="text-xs text-gray-400 mt-0.5">{doc.companyName}</p>
-        </div>
-      </div>
-      <span className="text-xs text-gray-400 shrink-0 ml-4">{formatDate(doc.uploadedAt)}</span>
-    </div>
-  )
-}
-
-export default function PrototypeDocumentsPage() {
+// ---------------------------------------------------------------
+// Hovedkomponent
+// ---------------------------------------------------------------
+export default function DocumentsPage() {
   const { dataScenario } = usePrototype()
   const [isDragOver, setIsDragOver] = useState(false)
+  const [search, setSearch] = useState('')
+  const [filter, setFilter] = useState<DocFilter>('all')
+  const [showScrollTop, setShowScrollTop] = useState(false)
 
-  const allDocuments = getDocuments(dataScenario)
-  const reviewDocs = getDocumentsAwaitingReview()
-  const processingDocs = getDocumentsProcessing()
-  const recentDocs = allDocuments
-    .filter((d) => d.status === 'reviewed' || d.status === 'archived')
-    .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())
-    .slice(0, 10)
+  // Global drag-drop på siden (ikke bare en drop-zone)
+  useEffect(() => {
+    const onDragOver = (e: DragEvent) => {
+      if (e.dataTransfer?.types.includes('Files')) {
+        e.preventDefault()
+        setIsDragOver(true)
+      }
+    }
+    const onDragLeave = (e: DragEvent) => {
+      if (e.clientX === 0 && e.clientY === 0) setIsDragOver(false)
+    }
+    const onDrop = (e: DragEvent) => {
+      e.preventDefault()
+      setIsDragOver(false)
+      if (e.dataTransfer?.files.length) {
+        toast.info('Upload simuleret — i prototypen behandles dokumenter ikke reelt')
+      }
+    }
+    window.addEventListener('dragover', onDragOver)
+    window.addEventListener('dragleave', onDragLeave)
+    window.addEventListener('drop', onDrop)
+    return () => {
+      window.removeEventListener('dragover', onDragOver)
+      window.removeEventListener('dragleave', onDragLeave)
+      window.removeEventListener('drop', onDrop)
+    }
+  }, [])
 
-  const handleUploadClick = () => {
-    toast.info('Upload simuleret — i prototypen behandles dokumenter ikke reelt')
-  }
+  const allDocuments = useMemo(() => getDocuments(dataScenario), [dataScenario])
+  const reviewDocs = useMemo(() => getDocumentsAwaitingReview(), [])
+  const processingDocs = useMemo(() => getDocumentsProcessing(), [])
+
+  useEffect(() => {
+    const handler = () => setShowScrollTop(window.scrollY > 400)
+    handler()
+    window.addEventListener('scroll', handler, { passive: true })
+    return () => window.removeEventListener('scroll', handler)
+  }, [])
+
+  const counts = useMemo(
+    () => ({
+      review:     allDocuments.filter((d) => d.status === 'ready_for_review').length,
+      processing: allDocuments.filter((d) => d.status === 'processing').length,
+      archived:   allDocuments.filter((d) => d.status === 'reviewed' || d.status === 'archived').length,
+    }),
+    [allDocuments],
+  )
+
+  const filtered = useMemo(() => {
+    return allDocuments
+      .filter((d) => {
+        if (filter === 'review' && d.status !== 'ready_for_review') return false
+        if (filter === 'processing' && d.status !== 'processing') return false
+        if (filter === 'archived' && d.status !== 'reviewed' && d.status !== 'archived') return false
+        if (search.trim()) {
+          const q = search.toLowerCase()
+          return d.fileName.toLowerCase().includes(q) || d.companyName.toLowerCase().includes(q)
+        }
+        return true
+      })
+      .sort((a, b) => {
+        // Prioriter: ready_for_review → processing → reviewed → archived, nyeste først
+        const rank = { ready_for_review: 0, processing: 1, reviewed: 2, archived: 3 }
+        const diff = rank[a.status] - rank[b.status]
+        if (diff !== 0) return diff
+        return new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
+      })
+  }, [allDocuments, search, filter])
 
   if (dataScenario === 'empty') {
     return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">Dokumenter</h1>
-        <div className="rounded-lg border bg-white p-12 text-center shadow-sm">
-          <Upload className="mx-auto h-10 w-10 text-gray-300" />
-          <p className="mt-4 text-sm font-medium text-gray-900">Ingen dokumenter endnu.</p>
-          <p className="mt-1 text-sm text-gray-500">
-            Upload dit første dokument for at komme i gang.
-          </p>
+      <div className="min-h-full bg-slate-50/60 p-8">
+        <div className="max-w-[1280px] mx-auto">
+          <h1 className="text-[20px] font-semibold tracking-tight text-slate-900">Dokumenter</h1>
+          <div className="mt-8 bg-white rounded-xl ring-1 ring-slate-900/[0.06] shadow-[0_1px_2px_rgba(15,23,42,0.04)] p-16 text-center">
+            <Upload className="mx-auto h-10 w-10 text-slate-200 mb-4" />
+            <p className="text-[13px] font-medium text-slate-500">Ingen dokumenter endnu</p>
+            <p className="text-[11px] text-slate-400 mt-1">Upload dit første dokument for at komme i gang.</p>
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="border-b border-gray-200/60 pb-6">
-        <h1 className="text-2xl font-bold tracking-tight text-gray-900">Dokumenter</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          {allDocuments.length} dokumenter · {processingDocs.length} analyseres · {reviewDocs.length} klar til gennemgang
-        </p>
+    <div className="min-h-full bg-slate-50/60 p-8">
+      <div className="max-w-[1280px] mx-auto">
+        {/* Header */}
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-[20px] font-semibold tracking-tight text-slate-900">Dokumenter</h1>
+            <p className="text-[13px] text-slate-500 mt-1">
+              {allDocuments.length} dokumenter
+              {counts.review > 0 && <> · <span className="text-slate-700 font-medium">{counts.review} til review</span></>}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => toast.info('Upload simuleret — i prototypen behandles dokumenter ikke reelt')}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-900 text-white text-[12px] font-medium hover:bg-slate-800 transition-colors shadow-[0_1px_2px_rgba(15,23,42,0.1)]"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Upload dokument
+          </button>
+        </div>
+
+        {/* Filter bar */}
+        <div className="flex items-center gap-2 mb-4">
+          <div className="flex-1 bg-white ring-1 ring-slate-900/[0.06] rounded-lg px-3.5 py-2.5 flex items-center gap-2.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+            <Search className="w-4 h-4 text-slate-400 shrink-0" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Søg filnavn, selskab..."
+              className="flex-1 text-[13px] text-slate-700 placeholder:text-slate-400 bg-transparent outline-none"
+            />
+          </div>
+
+          <FilterPill
+            dot="bg-violet-500"
+            label={`${counts.review} Til review`}
+            active={filter === 'review'}
+            onClick={() => setFilter(filter === 'review' ? 'all' : 'review')}
+          />
+          <FilterPill
+            dot="bg-blue-500"
+            label={`${counts.processing} Analyseres`}
+            active={filter === 'processing'}
+            onClick={() => setFilter(filter === 'processing' ? 'all' : 'processing')}
+          />
+          <FilterPill
+            dot="bg-slate-400"
+            label={`${counts.archived} Godkendt`}
+            active={filter === 'archived'}
+            onClick={() => setFilter(filter === 'archived' ? 'all' : 'archived')}
+          />
+        </div>
+
+        {/* Pinned: Til review (urgency-first — det er det der kræver brugerens handling) */}
+        {reviewDocs.length > 0 && filter === 'all' && (
+          <div className="bg-white rounded-xl ring-1 ring-slate-900/[0.06] shadow-[0_1px_2px_rgba(15,23,42,0.04)] mb-4 overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-3.5 h-3.5 text-violet-500" />
+                <span className="text-[12px] font-semibold text-slate-900">Afventer din review</span>
+                <span className="text-[11px] text-slate-400">({reviewDocs.length})</span>
+              </div>
+              {processingDocs.length > 0 && (
+                <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                  <Loader2 className="w-3 h-3 text-blue-500 animate-spin" />
+                  <span className="tabular-nums">{processingDocs.length} analyseres</span>
+                </div>
+              )}
+            </div>
+            <div className="divide-y divide-slate-50">
+              {reviewDocs.slice(0, 5).map((doc) => {
+                const attentionCount = doc.attentionFieldCount ?? 0
+                return (
+                  <Link
+                    key={doc.id}
+                    href={`/proto/documents/review/${doc.id}`}
+                    className="flex items-center gap-3 px-5 py-2.5 hover:bg-slate-50/60 transition-colors no-underline"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-violet-500 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[12px] font-medium text-slate-900 truncate">{doc.fileName}</div>
+                      <div className="text-[11px] text-slate-400 truncate">
+                        {doc.companyName} · {doc.extractedFieldCount ?? 0} felter udtrukket
+                        {attentionCount > 0 && (
+                          <> · <span className="text-amber-700 font-medium">{attentionCount} kræver opmærksomhed</span></>
+                        )}
+                      </div>
+                    </div>
+                    <span className="text-[11px] text-slate-400 font-medium shrink-0">Gennemgå →</span>
+                  </Link>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Dokument-liste */}
+        <div className="bg-white rounded-xl ring-1 ring-slate-900/[0.06] shadow-[0_1px_2px_rgba(15,23,42,0.04)] [overflow:clip]">
+          <div className="sticky top-0 bg-white z-10 px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+            <div className="text-[12px] font-semibold text-slate-900">
+              {filter === 'all' ? 'Alle dokumenter' : statusLabel(filter === 'review' ? 'ready_for_review' : filter === 'processing' ? 'processing' : 'archived')}
+            </div>
+            <div className="text-[11px] text-slate-400 tabular-nums">{filtered.length}</div>
+          </div>
+
+          {filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <p className="text-[13px] text-slate-500 font-medium">Ingen dokumenter fundet</p>
+              <p className="text-[11px] text-slate-400 mt-1">Prøv et andet søgeord eller filter</p>
+            </div>
+          ) : (
+            <div>
+              {filtered.map((doc, idx) => {
+                const prev = idx > 0 ? filtered[idx - 1] : null
+                const showSeparator = filter === 'all' && prev !== null && prev.status !== doc.status
+                return (
+                  <div key={doc.id}>
+                    {showSeparator && (
+                      <div className="px-5 py-2 bg-slate-50/60 flex items-center gap-2 text-[10px] font-medium text-slate-400 uppercase tracking-[0.1em]">
+                        <span className={cn(
+                          'w-1 h-1 rounded-full',
+                          doc.status === 'ready_for_review' && 'bg-violet-500',
+                          doc.status === 'processing' && 'bg-blue-500',
+                          (doc.status === 'reviewed' || doc.status === 'archived') && 'bg-slate-400',
+                        )} />
+                        {statusLabel(doc.status)}
+                      </div>
+                    )}
+                    <div className="border-b border-slate-100 last:border-b-0">
+                      <DocRow doc={doc} />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {filtered.length > 0 && (
+            <div className="px-5 py-3.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+              <span>
+                {filtered.length === allDocuments.length
+                  ? `${filtered.length} dokumenter · Slut på listen`
+                  : `Viser ${filtered.length} af ${allDocuments.length} dokumenter`}
+              </span>
+              <span className="text-[10px] text-slate-300">● ● ●</span>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Upload zone */}
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={handleUploadClick}
-        onKeyDown={(e) => e.key === 'Enter' && handleUploadClick()}
-        onDragOver={(e) => { e.preventDefault(); setIsDragOver(true) }}
-        onDragLeave={() => setIsDragOver(false)}
-        onDrop={(e) => { e.preventDefault(); setIsDragOver(false); handleUploadClick() }}
-        className={`
-          border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
-          ${isDragOver
-            ? 'border-gray-500 bg-gray-50'
-            : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
-          }
-        `}
+      {/* Global drop overlay */}
+      {isDragOver && (
+        <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center bg-slate-900/5 backdrop-blur-[1px]">
+          <div className="bg-white rounded-2xl ring-2 ring-violet-400 px-8 py-6 shadow-[0_20px_60px_-20px_rgba(15,23,42,0.4)] flex items-center gap-4">
+            <div className="w-10 h-10 rounded-lg bg-violet-50 flex items-center justify-center">
+              <Upload className="w-5 h-5 text-violet-600" />
+            </div>
+            <div>
+              <div className="text-[14px] font-semibold text-slate-900">Slip filerne for at uploade</div>
+              <div className="text-[11px] text-slate-500 mt-0.5">
+                AI-analyse starter automatisk · PDF, DOCX, XLSX
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Scroll-to-top */}
+      <button
+        type="button"
+        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        className={cn(
+          'fixed bottom-6 right-6 w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center shadow-[0_4px_16px_-4px_rgba(15,23,42,0.3)] ring-1 ring-slate-900/10 transition-all duration-200',
+          showScrollTop ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-2 pointer-events-none',
+        )}
+        aria-label="Scroll til toppen"
       >
-        <Upload className="mx-auto h-8 w-8 text-gray-400" />
-        <p className="mt-3 text-sm font-medium text-gray-700">
-          Træk filer hertil — AI-analyse starter automatisk
-        </p>
-        <p className="mt-1 text-xs text-gray-400">
-          PDF, DOCX, XLSX · Maks 10 MB. Du kan fortsætte dit arbejde imens.
-        </p>
+        <ChevronUp className="w-4 h-4" />
+      </button>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------
+// DocRow — en dokument-række i listen
+// ---------------------------------------------------------------
+function DocRow({ doc }: { doc: MockDocument }) {
+  const isReview = doc.status === 'ready_for_review'
+  const isProcessing = doc.status === 'processing'
+  const canQuickApprove = isReview && doc.confidenceLevel === 'high' && (doc.attentionFieldCount ?? 0) <= 1
+
+  return (
+    <div
+      className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50/60 transition-colors"
+      style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 52px' }}
+    >
+      <div className="w-9 h-9 rounded-md bg-slate-50 flex items-center justify-center shrink-0">
+        {isProcessing ? (
+          <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
+        ) : isReview ? (
+          <Sparkles className="w-4 h-4 text-violet-500" />
+        ) : (
+          <FileText className="w-4 h-4 text-slate-400" />
+        )}
       </div>
 
-      {/* Klar til gennemgang */}
-      {reviewDocs.length > 0 && (
-        <CollapsibleSection
-          title="Klar til gennemgang"
-          count={reviewDocs.length}
-          defaultOpen={true}
-        >
-          <div>
-            {reviewDocs.map((doc) => (
-              <ReviewDocRow key={doc.id} doc={doc} />
-            ))}
-          </div>
-        </CollapsibleSection>
-      )}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          {isReview ? (
+            <Link
+              href={`/proto/documents/review/${doc.id}`}
+              className="text-[12px] font-medium text-slate-900 hover:text-slate-950 no-underline truncate"
+            >
+              {doc.fileName}
+            </Link>
+          ) : (
+            <span className="text-[12px] font-medium text-slate-900 truncate">{doc.fileName}</span>
+          )}
+        </div>
+        <div className="text-[11px] text-slate-400 truncate mt-0.5">
+          {doc.companyName}
+          {isReview && doc.extractedFieldCount != null && (
+            <> · {doc.extractedFieldCount} felter udtrukket</>
+          )}
+          {isReview && (doc.attentionFieldCount ?? 0) > 0 && (
+            <> · <span className="text-amber-700 font-medium">{doc.attentionFieldCount} kræver opmærksomhed</span></>
+          )}
+        </div>
+      </div>
 
-      {/* Analyseres nu */}
-      {processingDocs.length > 0 && (
-        <CollapsibleSection
-          title="Analyseres nu"
-          count={processingDocs.length}
-          defaultOpen={true}
-        >
-          <div>
-            {processingDocs.map((doc) => (
-              <ProcessingDocRow key={doc.id} doc={doc} />
-            ))}
-          </div>
-        </CollapsibleSection>
-      )}
+      <div className="flex items-center gap-2 shrink-0">
+        <span className={cn('text-[10px] font-medium px-2 py-0.5 rounded', statusStyle(doc.status))}>
+          {statusLabel(doc.status)}
+        </span>
+        <span className="text-[11px] text-slate-400 tabular-nums hidden sm:inline">{formatDate(doc.uploadedAt)}</span>
 
-      {/* Seneste dokumenter */}
-      {recentDocs.length > 0 && (
-        <CollapsibleSection
-          title="Seneste dokumenter"
-          count={recentDocs.length}
-          defaultOpen={true}
-        >
-          <div>
-            {recentDocs.map((doc) => (
-              <RecentDocRow key={doc.id} doc={doc} />
-            ))}
-          </div>
-        </CollapsibleSection>
-      )}
+        {canQuickApprove && (
+          <button
+            type="button"
+            onClick={() => toast.success('Dokument godkendt (simuleret)')}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-slate-900 text-white text-[11px] font-medium hover:bg-slate-800 transition-colors"
+          >
+            <CheckCircle2 className="w-3 h-3" />
+            Godkend
+          </button>
+        )}
+
+        {isReview && !canQuickApprove && (
+          <Link
+            href={`/proto/documents/review/${doc.id}`}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-white ring-1 ring-slate-900/[0.08] text-slate-700 text-[11px] font-medium hover:bg-slate-50 transition-colors no-underline"
+          >
+            Gennemgå
+          </Link>
+        )}
+      </div>
     </div>
+  )
+}
+
+// ---------------------------------------------------------------
+// Filter pill
+// ---------------------------------------------------------------
+function FilterPill({
+  dot,
+  label,
+  active,
+  onClick,
+}: {
+  dot: string
+  label: string
+  active: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] font-medium transition-colors bg-white ring-1 shadow-[0_1px_2px_rgba(15,23,42,0.04)] shrink-0',
+        active ? 'ring-slate-900/20 text-slate-900' : 'ring-slate-900/[0.06] text-slate-600 hover:text-slate-900',
+      )}
+    >
+      <span className={cn('w-1.5 h-1.5 rounded-full', dot)} />
+      {label}
+    </button>
   )
 }

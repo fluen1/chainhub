@@ -3,10 +3,16 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, ArrowRight, CheckCircle2, XCircle, AlertCircle } from 'lucide-react'
+import {
+  ChevronRight,
+  ArrowRight,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  Sparkles,
+  ChevronDown,
+} from 'lucide-react'
 import { toast } from 'sonner'
-import { usePrototype } from '@/components/prototype/PrototypeProvider'
-import { CollapsibleSection } from '@/components/ui/CollapsibleSection'
 import { getDocumentById, getExtractedFields, getDocumentsAwaitingReview } from '@/mock/documents'
 import { cn } from '@/lib/utils'
 import type { MockExtractedField } from '@/mock/types'
@@ -64,372 +70,511 @@ const mockPdfBlocks = [
 ]
 
 function confidenceDot(level: MockExtractedField['confidenceLevel']): string {
-  switch (level) {
-    case 'high': return 'bg-green-500'
-    case 'medium': return 'bg-amber-400'
-    case 'low': return 'bg-red-500'
-  }
+  if (level === 'high') return 'bg-emerald-500'
+  if (level === 'medium') return 'bg-amber-400'
+  return 'bg-rose-500'
 }
 
 function confidenceLabel(confidence: number): string {
-  return `${Math.round(confidence * 100)}% konfidence`
+  return `${Math.round(confidence * 100)}%`
 }
 
+// ---------------------------------------------------------------
+// Attention field row
+// ---------------------------------------------------------------
 interface FieldRowProps {
   field: MockExtractedField
   onMouseEnter: (id: string) => void
   onMouseLeave: () => void
   isHovered: boolean
+  decided?: boolean
+  onDecide?: (fieldId: string) => void
 }
 
-function AttentionFieldRow({ field, onMouseEnter, onMouseLeave, isHovered }: FieldRowProps) {
+function AttentionFieldRow({ field, onMouseEnter, onMouseLeave, isHovered, decided, onDecide }: FieldRowProps) {
   const isMissingClause = field.discrepancyType === 'missing_clause'
+
+  function decide(label: string) {
+    onDecide?.(field.id)
+    toast.success(`${field.fieldLabel}: ${label}`)
+  }
 
   return (
     <div
       className={cn(
-        'px-5 py-4 border-b last:border-b-0 transition-colors',
-        isHovered ? 'bg-yellow-50' : 'hover:bg-gray-50'
+        'px-5 py-3.5 border-b border-slate-100 last:border-b-0 transition-colors',
+        decided && 'bg-emerald-50/30',
+        isHovered ? 'bg-amber-50' : !decided && 'hover:bg-slate-50/60',
       )}
       onMouseEnter={() => onMouseEnter(field.id)}
       onMouseLeave={onMouseLeave}
     >
       {/* Label + konfidence */}
       <div className="flex items-center gap-2 mb-2">
-        <span className={cn('h-2 w-2 rounded-full shrink-0', confidenceDot(field.confidenceLevel))} />
-        <span className="text-xs font-semibold text-gray-800">{field.fieldLabel}</span>
-        <span className="text-xs text-gray-400">{confidenceLabel(field.confidence)}</span>
+        <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', confidenceDot(field.confidenceLevel))} />
+        <span className="text-[12px] font-semibold text-slate-900">{field.fieldLabel}</span>
+        <span className="text-[10px] text-slate-400 tabular-nums">{confidenceLabel(field.confidence)} konfidence</span>
+        {decided && (
+          <span className="ml-auto flex items-center gap-1 text-[10px] font-medium text-emerald-600">
+            <CheckCircle2 className="w-3 h-3" />
+            Besluttet
+          </span>
+        )}
       </div>
 
       {/* Delta display */}
       {!isMissingClause && (
-        <div className="ml-4 space-y-1 mb-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-400 w-20 shrink-0">AI-fandt:</span>
-            <span className="text-xs font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded">
+        <div className="ml-3.5 space-y-1 mb-3">
+          <div className="flex items-start gap-2">
+            <span className="text-[11px] text-slate-400 w-20 shrink-0 pt-0.5">AI-fandt:</span>
+            <span className="text-[11px] font-medium text-amber-800 bg-amber-50 ring-1 ring-amber-200/60 px-2 py-0.5 rounded">
               {field.extractedValue ?? '(tom)'}
             </span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-400 w-20 shrink-0">I systemet:</span>
-            <span className="text-xs text-gray-600">
-              {field.existingValue ?? '(ikke registreret)'}
-            </span>
+          <div className="flex items-start gap-2">
+            <span className="text-[11px] text-slate-400 w-20 shrink-0 pt-0.5">I systemet:</span>
+            <span className="text-[11px] text-slate-600">{field.existingValue ?? '(ikke registreret)'}</span>
           </div>
         </div>
       )}
 
       {/* Kilde */}
-      <p className="ml-4 text-xs text-gray-400 mb-3">
-        Side {field.sourcePageNumber}, {field.sourceParagraph}
+      <p className="ml-3.5 text-[10px] text-slate-400 mb-3 font-medium tracking-wide">
+        Side {field.sourcePageNumber} · {field.sourceParagraph}
       </p>
 
       {/* Handlingsknapper */}
-      <div className="ml-4 flex flex-wrap gap-2">
-        {!isMissingClause ? (
-          <>
-            <button
-              onClick={() => toast.success(`"${field.fieldLabel}" opdateret til AI-værdi (simuleret)`)}
-              className="bg-gray-900 text-white text-xs px-3 py-1 rounded hover:bg-gray-700 transition-colors"
-            >
-              Brug AI-værdi
-            </button>
-            <button
-              onClick={() => toast.info(`Beholder eksisterende værdi for "${field.fieldLabel}" (simuleret)`)}
-              className="bg-white border border-gray-300 text-gray-700 text-xs px-3 py-1 rounded hover:bg-gray-50 transition-colors"
-            >
-              Behold eksisterende
-            </button>
-            <button
-              onClick={() => toast.info(`Manuel redigering ikke tilgængelig i prototypen`)}
-              className="bg-white border border-gray-300 text-gray-700 text-xs px-3 py-1 rounded hover:bg-gray-50 transition-colors"
-            >
-              Ret manuelt
-            </button>
-          </>
-        ) : (
-          <>
-            <button
-              onClick={() => toast.info(`Tilføj manuelt ikke tilgængeligt i prototypen`)}
-              className="bg-gray-900 text-white text-xs px-3 py-1 rounded hover:bg-gray-700 transition-colors"
-            >
-              Tilføj manuelt
-            </button>
-            <button
-              onClick={() => toast.info(`Manglende klausul accepteret (simuleret)`)}
-              className="bg-white border border-gray-300 text-gray-700 text-xs px-3 py-1 rounded hover:bg-gray-50 transition-colors"
-            >
-              Accepter
-            </button>
-          </>
-        )}
-      </div>
+      {!decided && (
+        <div className="ml-3.5 flex flex-wrap gap-1.5">
+          {!isMissingClause ? (
+            <>
+              <button
+                onClick={() => decide('AI-værdi brugt')}
+                className="bg-slate-900 text-white text-[11px] font-medium px-2.5 py-1 rounded-md hover:bg-slate-800 transition-colors"
+              >
+                Brug AI-værdi
+              </button>
+              <button
+                onClick={() => decide('Beholder eksisterende')}
+                className="bg-white ring-1 ring-slate-900/[0.08] text-slate-700 text-[11px] font-medium px-2.5 py-1 rounded-md hover:bg-slate-50 transition-colors"
+              >
+                Behold eksisterende
+              </button>
+              <button
+                onClick={() => toast.info(`Manuel redigering kommer senere`)}
+                className="text-slate-500 text-[11px] font-medium px-2.5 py-1 rounded-md hover:bg-slate-50 transition-colors"
+              >
+                Ret manuelt
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => decide('Tilføjet manuelt')}
+                className="bg-slate-900 text-white text-[11px] font-medium px-2.5 py-1 rounded-md hover:bg-slate-800 transition-colors"
+              >
+                Tilføj manuelt
+              </button>
+              <button
+                onClick={() => decide('Accepteret som manglende')}
+                className="bg-white ring-1 ring-slate-900/[0.08] text-slate-700 text-[11px] font-medium px-2.5 py-1 rounded-md hover:bg-slate-50 transition-colors"
+              >
+                Accepter
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </div>
   )
 }
 
+// ---------------------------------------------------------------
+// High confidence row (compact)
+// ---------------------------------------------------------------
 function HighConfidenceRow({ field, onMouseEnter, onMouseLeave, isHovered }: FieldRowProps) {
   return (
     <div
       className={cn(
-        'flex items-center gap-3 px-5 py-2.5 border-b last:border-b-0 transition-colors',
-        isHovered ? 'bg-yellow-50' : 'hover:bg-gray-50'
+        'flex items-center gap-2.5 px-5 py-2 border-b border-slate-50 last:border-b-0 transition-colors',
+        isHovered ? 'bg-amber-50' : 'hover:bg-slate-50/60',
       )}
       onMouseEnter={() => onMouseEnter(field.id)}
       onMouseLeave={onMouseLeave}
     >
-      <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0" />
-      <span className="text-xs font-medium text-gray-700 w-36 shrink-0">{field.fieldLabel}</span>
-      <span className="text-xs text-gray-500 flex-1 truncate">{field.extractedValue}</span>
-      <span className="text-xs text-gray-300 shrink-0">Side {field.sourcePageNumber}</span>
+      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+      <span className="text-[11px] font-medium text-slate-700 w-32 shrink-0 truncate">{field.fieldLabel}</span>
+      <span className="text-[11px] text-slate-500 flex-1 truncate">{field.extractedValue}</span>
+      <span className="text-[10px] text-slate-300 shrink-0 tabular-nums">s.{field.sourcePageNumber}</span>
     </div>
   )
 }
 
+// ---------------------------------------------------------------
+// Hovedkomponent
+// ---------------------------------------------------------------
 export default function DocumentReviewPage({ params }: { params: { id: string } }) {
   const { id } = params
-
-  const { } = usePrototype()
   const router = useRouter()
   const [hoveredFieldId, setHoveredFieldId] = useState<string | null>(null)
+  const [showHighConf, setShowHighConf] = useState(true)
+  const [decidedIds, setDecidedIds] = useState<Set<string>>(new Set())
+
+  function markDecided(fieldId: string) {
+    setDecidedIds((prev) => {
+      const next = new Set(prev)
+      next.add(fieldId)
+      return next
+    })
+  }
 
   const doc = getDocumentById(id)
   const fields = getExtractedFields(id)
 
-  // Find næste dokument i review-køen
   const reviewQueue = getDocumentsAwaitingReview()
   const currentIndex = reviewQueue.findIndex((d) => d.id === id)
-  const nextDoc = currentIndex >= 0 && currentIndex < reviewQueue.length - 1
-    ? reviewQueue[currentIndex + 1]
-    : null
+  const nextDoc =
+    currentIndex >= 0 && currentIndex < reviewQueue.length - 1 ? reviewQueue[currentIndex + 1] : null
 
   if (!doc) {
     return (
-      <div className="space-y-4">
-        <Link href="/proto/documents" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900 transition-colors">
-          <ArrowLeft className="h-4 w-4" />
-          Dokumenter
-        </Link>
-        <div className="rounded-lg border bg-white p-12 text-center shadow-sm">
-          <XCircle className="mx-auto h-10 w-10 text-gray-300" />
-          <p className="mt-4 text-sm text-gray-500">Dokument ikke fundet</p>
+      <div className="min-h-full bg-slate-50/60 p-8">
+        <div className="max-w-[1280px] mx-auto">
+          <Link
+            href="/proto/documents"
+            className="inline-flex items-center gap-1 text-[11px] text-slate-400 hover:text-slate-900 no-underline"
+          >
+            <ChevronRight className="w-3 h-3 rotate-180" />
+            Dokumenter
+          </Link>
+          <div className="mt-6 bg-white rounded-xl ring-1 ring-slate-900/[0.06] p-16 text-center">
+            <XCircle className="mx-auto h-10 w-10 text-slate-200 mb-3" />
+            <p className="text-[13px] text-slate-500">Dokument ikke fundet</p>
+          </div>
         </div>
       </div>
     )
   }
 
-  const highConfidenceFields = fields.filter(
-    (f) => f.confidenceLevel === 'high' && !f.hasDiscrepancy
-  )
-  const attentionFields = fields.filter(
-    (f) => f.hasDiscrepancy || f.confidenceLevel !== 'high'
-  )
-  const missingClauseFields = fields.filter(
-    (f) => f.discrepancyType === 'missing_clause'
-  )
+  const highConfidenceFields = fields.filter((f) => f.confidenceLevel === 'high' && !f.hasDiscrepancy)
+  const attentionFields = fields.filter((f) => f.hasDiscrepancy || f.confidenceLevel !== 'high')
+  const missingClauseFields = fields.filter((f) => f.discrepancyType === 'missing_clause')
   const totalReady = highConfidenceFields.length
   const totalFields = fields.length
 
-  // Map hovered field id to source text for highlighting
   const hoveredSourceText = hoveredFieldId
     ? fields.find((f) => f.id === hoveredFieldId)?.sourceText ?? null
     : null
 
   return (
-    <div className="space-y-4">
-      {/* Breadcrumb */}
-      <Link
-        href="/proto/documents"
-        className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900 transition-colors"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Dokumenter
-      </Link>
+    <div className="min-h-full bg-slate-50/60 p-8">
+      <div className="max-w-[1280px] mx-auto flex flex-col h-[calc(100vh-4rem)]">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mb-4">
+          <Link href="/proto/documents" className="hover:text-slate-900 transition-colors no-underline">
+            Dokumenter
+          </Link>
+          <ChevronRight className="w-3 h-3" />
+          <span className="text-slate-700 font-medium truncate">{doc.fileName}</span>
+        </div>
 
-      <div className="border-b border-gray-200/60 pb-4">
-        <h1 className="text-xl font-bold tracking-tight text-gray-900 truncate">{doc.fileName}</h1>
-        <p className="text-sm text-gray-500 mt-1">{doc.companyName} · AI-ekstraktion klar til gennemgang</p>
-      </div>
-
-      {/* Split layout */}
-      <div className="grid grid-cols-5 gap-6 h-[calc(100vh-14rem)]">
-
-        {/* === LEFT PANEL: Mock PDF preview === */}
-        <div className="col-span-3 flex flex-col bg-gray-100 rounded-xl border border-gray-200/80 overflow-hidden shadow-sm">
-          {/* PDF header */}
-          <div className="flex items-center justify-between px-4 py-3 bg-white border-b">
-            <span className="text-xs font-medium text-gray-700 truncate">{doc.fileName}</span>
-            <span className="text-xs text-gray-400 shrink-0 ml-2">Side 1 af 12</span>
-          </div>
-
-          {/* PDF content area */}
-          <div className="flex-1 overflow-y-auto p-6">
-            <div className="bg-white rounded-lg shadow-sm px-8 py-8 min-h-full space-y-7 text-sm leading-relaxed text-gray-700">
-              {mockPdfBlocks.map((block) => {
-                const isHighlighted =
-                  hoveredSourceText !== null &&
-                  block.text.includes(hoveredSourceText.slice(0, 20))
-
-                return (
-                  <div key={block.id}>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-[0.08em] mb-1.5">
-                      {block.paragraph}
-                    </p>
-                    <p
-                      className={cn(
-                        'transition-colors rounded-sm px-1.5 -mx-1.5 py-0.5',
-                        isHighlighted ? 'bg-yellow-200 ring-1 ring-yellow-300' : ''
-                      )}
-                    >
-                      {block.text}
-                    </p>
-                  </div>
-                )
-              })}
+        {/* Header */}
+        <div className="bg-white rounded-xl ring-1 ring-slate-900/[0.06] shadow-[0_1px_2px_rgba(15,23,42,0.04)] p-5 mb-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-[18px] font-semibold tracking-tight text-slate-900 truncate">{doc.fileName}</h1>
+              <div className="flex items-center gap-3 text-[12px] text-slate-500 mt-1">
+                <span>{doc.companyName}</span>
+                <span>·</span>
+                <span className="flex items-center gap-1.5">
+                  <Sparkles className="w-3 h-3 text-violet-500" />
+                  AI-ekstraheret
+                </span>
+                <span>·</span>
+                <span className="tabular-nums">{totalReady}/{totalFields} auto-klar</span>
+              </div>
             </div>
+
+            {/* Queue progress */}
+            {reviewQueue.length > 1 && currentIndex >= 0 && (
+              <div className="shrink-0 text-right">
+                <div className="text-[10px] font-medium text-slate-400 uppercase tracking-[0.08em]">Review-kø</div>
+                <div className="flex items-center gap-1.5 mt-1.5 justify-end">
+                  {reviewQueue.map((_, i) => (
+                    <span
+                      key={i}
+                      className={cn(
+                        'h-1 rounded-full transition-all',
+                        i === currentIndex ? 'bg-slate-900 w-6' : i < currentIndex ? 'bg-slate-300 w-3' : 'bg-slate-200 w-3',
+                      )}
+                    />
+                  ))}
+                </div>
+                <div className="text-[11px] font-medium text-slate-600 mt-1 tabular-nums">
+                  Dokument {currentIndex + 1} af {reviewQueue.length}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* === RIGHT PANEL: AI extraction === */}
-        <div className="col-span-2 flex flex-col overflow-hidden rounded-xl border border-gray-200/80 bg-white shadow-sm">
-          {/* Panel header */}
-          <div className="px-5 py-4 bg-gray-50 border-b">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-gray-900">AI-ekstraktion</span>
-              <span className="inline-flex items-center rounded-full bg-green-100 text-green-700 text-xs font-medium px-2.5 py-1">
-                {totalReady}/{totalFields} klar
-              </span>
+        {/* Split layout */}
+        <div className="grid grid-cols-[1.6fr_1fr] gap-4 flex-1 min-h-0">
+          {/* === LEFT: Mock PDF preview === */}
+          <div className="bg-white rounded-xl ring-1 ring-slate-900/[0.06] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col [overflow:clip]">
+            <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100">
+              <span className="text-[11px] font-medium text-slate-500 truncate">{doc.fileName}</span>
+              <span className="text-[11px] text-slate-400 shrink-0 ml-2 tabular-nums">Side 1 af 12</span>
             </div>
-            <p className="text-xs text-gray-500 mt-1">Hover på et felt for at se det i dokumentet</p>
+            <div className="flex-1 overflow-y-auto bg-slate-50/40 p-6">
+              <div className="bg-white rounded-lg ring-1 ring-slate-200/60 shadow-sm px-10 py-10 space-y-7 text-[13px] leading-relaxed text-slate-700 max-w-[640px] mx-auto">
+                {mockPdfBlocks.map((block) => {
+                  const isHighlighted =
+                    hoveredSourceText !== null && block.text.includes(hoveredSourceText.slice(0, 20))
+                  return (
+                    <div key={block.id}>
+                      <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.1em] mb-1.5">
+                        {block.paragraph}
+                      </p>
+                      <p
+                        className={cn(
+                          'transition-all rounded px-1.5 -mx-1.5 py-0.5',
+                          isHighlighted && 'bg-amber-200/70 ring-1 ring-amber-300',
+                        )}
+                      >
+                        {block.text}
+                      </p>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
           </div>
 
-          {/* Scrollable field sections */}
-          <div className="flex-1 overflow-y-auto">
-
-            {/* Høj konfidence — collapsible, closed by default */}
-            {highConfidenceFields.length > 0 && (
-              <div className="border-b">
-                <CollapsibleSection
-                  title="Høj konfidence (auto)"
-                  count={highConfidenceFields.length}
-                  defaultOpen={false}
-                >
-                  <div>
-                    {highConfidenceFields.map((field) => (
-                      <HighConfidenceRow
-                        key={field.id}
-                        field={field}
-                        isHovered={hoveredFieldId === field.id}
-                        onMouseEnter={setHoveredFieldId}
-                        onMouseLeave={() => setHoveredFieldId(null)}
-                      />
-                    ))}
-                  </div>
-                </CollapsibleSection>
+          {/* === RIGHT: Extraction panel === */}
+          <div className="bg-white rounded-xl ring-1 ring-slate-900/[0.06] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col [overflow:clip]">
+            <div className="px-5 py-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-md bg-violet-50 flex items-center justify-center">
+                  <Sparkles className="w-3.5 h-3.5 text-violet-600" />
+                </div>
+                <span className="text-[12px] font-semibold text-slate-900">AI-ekstraktion</span>
               </div>
-            )}
+              <p className="text-[10px] text-slate-400 mt-1 ml-8">Hover et felt for at se det i dokumentet</p>
+            </div>
 
-            {/* Kræver opmærksomhed — open by default */}
-            {attentionFields.length > 0 && (
-              <div className="border-b">
-                <CollapsibleSection
-                  title={`Kræver opmærksomhed`}
-                  count={attentionFields.length}
-                  defaultOpen={true}
-                >
-                  <div>
-                    {attentionFields.map((field) => (
+            {/* Scrollable sections */}
+            <div className="flex-1 overflow-y-auto">
+              {/* Attention section (open by default) */}
+              {attentionFields.length > 0 && (
+                <div>
+                  <div className="px-5 py-2.5 border-b border-slate-100 flex items-center gap-2 bg-amber-50/30">
+                    <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
+                    <span className="text-[11px] font-semibold text-slate-900">Kræver opmærksomhed</span>
+                    <span className="text-[10px] text-slate-400">({attentionFields.length})</span>
+                  </div>
+                  {attentionFields
+                    .filter((f) => f.discrepancyType !== 'missing_clause')
+                    .map((field) => (
                       <AttentionFieldRow
                         key={field.id}
                         field={field}
                         isHovered={hoveredFieldId === field.id}
                         onMouseEnter={setHoveredFieldId}
                         onMouseLeave={() => setHoveredFieldId(null)}
+                        decided={decidedIds.has(field.id)}
+                        onDecide={markDecided}
                       />
                     ))}
-                  </div>
-                </CollapsibleSection>
-              </div>
-            )}
+                </div>
+              )}
 
-            {/* Manglende klausuler */}
-            {missingClauseFields.length > 0 && (
-              <div className="border-b">
-                <CollapsibleSection
-                  title="Manglende klausuler"
-                  count={missingClauseFields.length}
-                  defaultOpen={true}
-                >
-                  <div>
-                    {missingClauseFields.map((field) => (
-                      <div key={field.id} className="px-5 py-4 border-b last:border-b-0">
-                        <div className="flex items-start gap-2 mb-2">
-                          <AlertCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
-                          <div>
-                            <p className="text-xs font-semibold text-gray-800">{field.fieldLabel}</p>
-                            <p className="text-xs text-gray-500 mt-1">
-                              Klausulen er ikke fundet i dette dokument, men optræder i eksisterende aftale:{' '}
-                              <span className="font-medium">{field.existingValue}</span>
+              {/* Missing clauses */}
+              {missingClauseFields.length > 0 && (
+                <div>
+                  <div className="px-5 py-2.5 border-b border-slate-100 flex items-center gap-2 bg-rose-50/30">
+                    <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
+                    <span className="text-[11px] font-semibold text-slate-900">Manglende klausuler</span>
+                    <span className="text-[10px] text-slate-400">({missingClauseFields.length})</span>
+                  </div>
+                  {missingClauseFields.map((field) => {
+                    const isDecided = decidedIds.has(field.id)
+                    return (
+                      <div
+                        key={field.id}
+                        className={cn(
+                          'px-5 py-3.5 border-b border-slate-100 last:border-b-0',
+                          isDecided && 'bg-emerald-50/30',
+                        )}
+                      >
+                        <div className="flex items-start gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 mt-1.5 shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <p className="text-[12px] font-semibold text-slate-900">{field.fieldLabel}</p>
+                              {isDecided && (
+                                <span className="ml-auto flex items-center gap-1 text-[10px] font-medium text-emerald-600">
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  Besluttet
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                              Klausulen er ikke fundet i dokumentet, men optræder i eksisterende aftale:{' '}
+                              <span className="font-medium text-slate-700">{field.existingValue}</span>
                             </p>
-                            <p className="text-xs text-gray-400 mt-1">
-                              Side {field.sourcePageNumber}, {field.sourceParagraph}
+                            <p className="text-[10px] text-slate-400 mt-1 font-medium tracking-wide">
+                              Side {field.sourcePageNumber} · {field.sourceParagraph}
                             </p>
+                            {!isDecided && (
+                              <div className="mt-2 flex gap-1.5">
+                                <button
+                                  onClick={() => {
+                                    markDecided(field.id)
+                                    toast.success(`${field.fieldLabel}: tilføjet manuelt`)
+                                  }}
+                                  className="bg-slate-900 text-white text-[11px] font-medium px-2.5 py-1 rounded-md hover:bg-slate-800"
+                                >
+                                  Tilføj manuelt
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    markDecided(field.id)
+                                    toast.success(`${field.fieldLabel}: accepteret som manglende`)
+                                  }}
+                                  className="bg-white ring-1 ring-slate-900/[0.08] text-slate-700 text-[11px] font-medium px-2.5 py-1 rounded-md hover:bg-slate-50"
+                                >
+                                  Accepter
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </div>
-                        <div className="ml-6 flex gap-2">
-                          <button
-                            onClick={() => toast.info('Tilføj manuelt ikke tilgængeligt i prototypen')}
-                            className="bg-gray-900 text-white text-xs px-3 py-1 rounded hover:bg-gray-700 transition-colors"
-                          >
-                            Tilføj manuelt
-                          </button>
-                          <button
-                            onClick={() => toast.info('Manglende klausul accepteret (simuleret)')}
-                            className="bg-white border border-gray-300 text-gray-700 text-xs px-3 py-1 rounded hover:bg-gray-50 transition-colors"
-                          >
-                            Accepter
-                          </button>
-                        </div>
                       </div>
-                    ))}
-                  </div>
-                </CollapsibleSection>
-              </div>
-            )}
-          </div>
+                    )
+                  })}
+                </div>
+              )}
 
-          {/* Bottom action bar */}
-          <div className="flex items-center justify-between gap-3 px-5 py-4 bg-white border-t">
-            <button
-              onClick={() => toast.info('Dokument afvist (simuleret)')}
-              className="bg-white border border-gray-300 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-            >
-              Afvis
-            </button>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  toast.success('Dokument godkendt')
-                  router.push('/proto/documents')
-                }}
-                className="bg-gray-900 text-white text-sm px-5 py-2 rounded-lg hover:bg-gray-700 transition-colors font-medium"
-              >
-                Godkend
-              </button>
-              <button
-                onClick={() => {
-                  if (nextDoc) {
-                    router.push(`/proto/documents/review/${nextDoc.id}`)
-                  } else {
-                    toast.info('Ingen flere dokumenter i køen')
-                  }
-                }}
-                className="inline-flex items-center gap-1.5 bg-white border border-gray-300 text-gray-700 text-sm px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-              >
-                Næste
-                <ArrowRight className="h-4 w-4" />
-              </button>
+              {/* High confidence — collapsible */}
+              {highConfidenceFields.length > 0 && (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setShowHighConf(!showHighConf)}
+                    className="w-full px-5 py-2.5 border-b border-slate-100 flex items-center gap-2 bg-emerald-50/20 hover:bg-emerald-50/40 transition-colors text-left"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    <span className="text-[11px] font-semibold text-slate-900">Høj konfidence · auto-godkendt</span>
+                    <span className="text-[10px] text-slate-400">({highConfidenceFields.length})</span>
+                    <ChevronDown className={cn('w-3.5 h-3.5 text-slate-400 ml-auto transition-transform', showHighConf && 'rotate-180')} />
+                  </button>
+                  {showHighConf && (
+                    <div>
+                      {highConfidenceFields.map((field) => (
+                        <HighConfidenceRow
+                          key={field.id}
+                          field={field}
+                          isHovered={hoveredFieldId === field.id}
+                          onMouseEnter={setHoveredFieldId}
+                          onMouseLeave={() => setHoveredFieldId(null)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
+
+            {/* Bottom action bar */}
+            {(() => {
+              const totalNeedsDecision = attentionFields.length
+              const decidedCount = attentionFields.filter((f) => decidedIds.has(f.id)).length
+              const allDecided = totalNeedsDecision === 0 || decidedCount === totalNeedsDecision
+              const progressPct = totalNeedsDecision > 0 ? (decidedCount / totalNeedsDecision) * 100 : 100
+              return (
+                <div className="border-t border-slate-100 bg-slate-50/40">
+                  {/* Progress bar */}
+                  {totalNeedsDecision > 0 && (
+                    <div className="px-4 pt-3 pb-2">
+                      <div className="flex items-center justify-between text-[10px] font-medium text-slate-500 mb-1.5">
+                        <span>Beslutninger</span>
+                        <span className="tabular-nums">
+                          {decidedCount} af {totalNeedsDecision} besluttet
+                        </span>
+                      </div>
+                      <div className="h-1 bg-slate-200 rounded-full overflow-hidden">
+                        <div
+                          className={cn(
+                            'h-full rounded-full transition-all duration-300',
+                            allDecided ? 'bg-emerald-500' : 'bg-slate-900',
+                          )}
+                          style={{ width: `${progressPct}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between gap-2 px-4 py-3">
+                    <button
+                      onClick={() => toast.info('Dokument afvist (simuleret)')}
+                      className="bg-white ring-1 ring-slate-900/[0.08] text-slate-700 text-[12px] font-medium px-3 py-1.5 rounded-md hover:bg-slate-50 transition-colors"
+                    >
+                      Afvis
+                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        disabled={!allDecided}
+                        title={
+                          allDecided
+                            ? 'Godkend dokumentet og fortsæt'
+                            : `Behandl de ${totalNeedsDecision - decidedCount} resterende felter før du kan godkende`
+                        }
+                        onClick={() => {
+                          if (!allDecided) return
+                          toast.success('Dokument godkendt')
+                          router.push('/proto/documents')
+                        }}
+                        className={cn(
+                          'text-[12px] font-medium px-3.5 py-1.5 rounded-md transition-colors',
+                          allDecided
+                            ? 'bg-slate-900 text-white hover:bg-slate-800'
+                            : 'bg-slate-100 text-slate-400 cursor-not-allowed',
+                        )}
+                      >
+                        Godkend
+                      </button>
+                      <button
+                        onClick={() => {
+                          const hasUnsaved = decidedCount > 0 && !allDecided
+                          if (hasUnsaved) {
+                            const ok = window.confirm(
+                              `Du har ${decidedCount} ubehandlede beslutninger på dette dokument.\n\nFortsæt uden at gemme? Dine beslutninger vil blive tabt.`,
+                            )
+                            if (!ok) return
+                          }
+                          if (nextDoc) {
+                            router.push(`/proto/documents/review/${nextDoc.id}`)
+                          } else {
+                            toast.info('Ingen flere dokumenter i køen')
+                          }
+                        }}
+                        className="flex items-center gap-1 bg-white ring-1 ring-slate-900/[0.08] text-slate-700 text-[12px] font-medium px-3 py-1.5 rounded-md hover:bg-slate-50 transition-colors"
+                      >
+                        Næste
+                        <ArrowRight className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                  {/* Helper text under disabled Godkend */}
+                  {!allDecided && totalNeedsDecision > 0 && (
+                    <div className="px-4 pb-3 -mt-1 text-right text-[10px] text-slate-400">
+                      Behandl de {totalNeedsDecision - decidedCount} resterende felter for at godkende
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
           </div>
         </div>
       </div>
