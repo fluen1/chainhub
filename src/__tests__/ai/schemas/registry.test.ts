@@ -3,6 +3,26 @@ import { registerSchema, getSchema, getAllSchemaTypes, hasSchema } from '@/lib/a
 import type { ContractSchema } from '@/lib/ai/schemas/types'
 
 describe('schema registry', () => {
+  it('all 7 schemas are registered', async () => {
+    await import('@/lib/ai/schemas/ejeraftale')
+    await import('@/lib/ai/schemas/lejekontrakt')
+    await import('@/lib/ai/schemas/forsikring')
+    await import('@/lib/ai/schemas/vedtaegter')
+    await import('@/lib/ai/schemas/ansaettelseskontrakt')
+    await import('@/lib/ai/schemas/driftsaftale')
+    await import('@/lib/ai/schemas/minimal')
+
+    const types = getAllSchemaTypes()
+    expect(types).toContain('EJERAFTALE')
+    expect(types).toContain('LEJEKONTRAKT')
+    expect(types).toContain('FORSIKRING')
+    expect(types).toContain('VEDTAEGTER')
+    expect(types).toContain('ANSAETTELSESKONTRAKT')
+    expect(types).toContain('DRIFTSAFTALE')
+    expect(types).toContain('MINIMAL')
+    expect(types.length).toBeGreaterThanOrEqual(7)
+  })
+
   it('registers and retrieves a schema', () => {
     const mockSchema: ContractSchema = {
       contract_type: 'TEST_TYPE',

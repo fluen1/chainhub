@@ -40,8 +40,12 @@ export async function extractDocument(
 
   // Import all schemas to ensure they're registered
   await import('@/lib/ai/schemas/ejeraftale')
+  await import('@/lib/ai/schemas/lejekontrakt')
+  await import('@/lib/ai/schemas/forsikring')
+  await import('@/lib/ai/schemas/vedtaegter')
+  await import('@/lib/ai/schemas/ansaettelseskontrakt')
+  await import('@/lib/ai/schemas/driftsaftale')
   await import('@/lib/ai/schemas/minimal')
-  // Plan 2 Task 13 will add: lejekontrakt, forsikring, vedtaegter, ansaettelseskontrakt, driftsaftale
 
   // Run pipeline
   const result = await runExtractionPipeline(content, {
