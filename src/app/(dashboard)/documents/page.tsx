@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
+import { canAccessModule } from '@/lib/permissions'
 import DocumentsClient from './documents-client'
 import type { DocumentItem, DocStatus, ConfidenceLevel } from './documents-client'
 
@@ -71,6 +72,9 @@ type ExtractionData = {
 export default async function DocumentsPage() {
   const session = await auth()
   if (!session) redirect('/login')
+
+  const hasAccess = await canAccessModule(session.user.id, 'documents')
+  if (!hasAccess) redirect('/dashboard')
 
   const orgId = session.user.organizationId
 
