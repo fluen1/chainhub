@@ -29,7 +29,7 @@ enum ContractStatus {
   TIL_REVIEW
   TIL_UNDERSKRIFT
   AKTIV
-  UDLOEBET       @map("UDLOBET")
+  UDLOEBET        @map("UDLOBET")
   OPSAGT
   FORNYET
   ARKIVERET
@@ -37,21 +37,21 @@ enum ContractStatus {
 
 enum ContractSystemType {
   EJERAFTALE
-  DIREKTOERKONTRAKT          @map("DIREKTOERKONTRAKT")
+  DIREKTOERKONTRAKT            @map("DIREKTOERKONTRAKT")
   OVERDRAGELSESAFTALE
-  AKTIONAERLAAN              @map("AKTIONAERLAAN")
-  PANTSAETNING               @map("PANTSAETNING")
-  VEDTAEGTER                 @map("VEDTAEGTER")
-  ANSAETTELSE_FUNKTIONAER    @map("ANSAETTELSE_FUNKTIONAER")
+  AKTIONAERLAAN                @map("AKTIONAERLAAN")
+  PANTSAETNING                 @map("PANTSAETNING")
+  VEDTAEGTER                   @map("VEDTAEGTER")
+  ANSAETTELSE_FUNKTIONAER      @map("ANSAETTELSE_FUNKTIONAER")
   ANSAETTELSE_IKKE_FUNKTIONAER @map("ANSAETTELSE_IKKE_FUNKTIONAER")
   VIKARAFTALE
   UDDANNELSESAFTALE
-  FRATRAEDELSESAFTALE        @map("FRATRAEDELSESAFTALE")
+  FRATRAEDELSESAFTALE          @map("FRATRAEDELSESAFTALE")
   KONKURRENCEKLAUSUL
-  PERSONALHAANDBOG           @map("PERSONALHAANDBOG")
+  PERSONALHAANDBOG             @map("PERSONALHAANDBOG")
   LEJEKONTRAKT_ERHVERV
   LEASINGAFTALE
-  LEVERANDOERKONTRAKT        @map("LEVERANDOERKONTRAKT")
+  LEVERANDOERKONTRAKT          @map("LEVERANDOERKONTRAKT")
   SAMARBEJDSAFTALE
   NDA
   IT_SYSTEMAFTALE
@@ -65,10 +65,10 @@ enum ContractSystemType {
   INTERN_SERVICEAFTALE
   ROYALTY_LICENS
   OPTIONSAFTALE
-  TILTRAEDELSESDOKUMENT      @map("TILTRAEDELSESDOKUMENT")
+  TILTRAEDELSESDOKUMENT        @map("TILTRAEDELSESDOKUMENT")
   KASSEKREDIT
   CASH_POOL
-  INTERCOMPANY_LAAN          @map("INTERCOMPANY_LAAN")
+  INTERCOMPANY_LAAN            @map("INTERCOMPANY_LAAN")
   SELSKABSGARANTI
 }
 
@@ -105,7 +105,7 @@ enum SagsType {
 }
 
 enum SagsSubtype {
-  VIRKSOMHEDSKOEB            @map("VIRKSOMHEDSKOEB")
+  VIRKSOMHEDSKOEB         @map("VIRKSOMHEDSKOEB")
   VIRKSOMHEDSSALG
   FUSION
   OMSTRUKTURERING
@@ -115,17 +115,17 @@ enum SagsSubtype {
   FORHANDLING_MED_MODPART
   INKASSO
   GDPR
-  ARBEJDSMILJOE              @map("ARBEJDSMILJOE")
-  MYNDIGHEDSPAABUD           @map("MYNDIGHEDSPAABUD")
-  SKATTEMASSIG               @map("SKATTEMASSIG")
+  ARBEJDSMILJOE           @map("ARBEJDSMILJOE")
+  MYNDIGHEDSPAABUD        @map("MYNDIGHEDSPAABUD")
+  SKATTEMASSIG            @map("SKATTEMASSIG")
   FORHANDLING
   OPSIGELSE
   FORNYELSE
   MISLIGHOLDELSE
   GENERALFORSAMLING
-  BESTYRELSESMOEDE           @map("BESTYRELSESMOEDE")
-  VEDTAEGTSAENDRING          @map("VEDTAEGTSAENDRING")
-  DIREKTOERSKIFTE            @map("DIREKTOERSKIFTE")
+  BESTYRELSESMOEDE        @map("BESTYRELSESMOEDE")
+  VEDTAEGTSAENDRING       @map("VEDTAEGTSAENDRING")
+  DIREKTOERSKIFTE         @map("DIREKTOERSKIFTE")
 }
 
 enum CaseStatus {
@@ -139,7 +139,7 @@ enum CaseStatus {
 
 enum TaskStatus {
   NY
-  AKTIV_TASK                 @map("AKTIV")
+  AKTIV_TASK @map("AKTIV")
   AFVENTER
   LUKKET
 }
@@ -166,12 +166,12 @@ enum InsuranceType {
   ARBEJDSSKADE
   TINGSFORSIKRING
   LEDELSESANSVAR
-  ANDET_FORSIKRING           @map("ANDET")
+  ANDET_FORSIKRING @map("ANDET")
 }
 
 enum MeetingType {
-  ORDINAER                   @map("ORDINAER")
-  EKSTRAORDINAER             @map("EKSTRAORDINAER")
+  ORDINAER       @map("ORDINAER")
+  EKSTRAORDINAER @map("EKSTRAORDINAER")
 }
 
 enum OptionType {
@@ -186,23 +186,23 @@ enum GuaranteeType {
 }
 
 enum MetricType {
-  OMSAETNING                 @map("OMSAETNING")
+  OMSAETNING   @map("OMSAETNING")
   EBITDA
   RESULTAT
   LIKVIDITET
   EGENKAPITAL
-  ANDET_METRIC               @map("ANDET")
+  ANDET_METRIC @map("ANDET")
 }
 
 enum PeriodType {
-  HELAAR                     @map("HELAAR")
+  HELAAR @map("HELAAR")
   H1
   H2
   Q1
   Q2
   Q3
   Q4
-  MAANED                     @map("MAANED")
+  MAANED @map("MAANED")
 }
 
 enum MetricSource {
@@ -223,13 +223,13 @@ enum TpMethod {
   COST_PLUS
   TNMM
   PROFIT_SPLIT
-  ANDET_TP                   @map("ANDET")
+  ANDET_TP     @map("ANDET")
 }
 
 enum RelationType {
   REGULERER
-  KRAEVER                    @map("KRAEVER")
-  UDLOESER                   @map("UDLOESER")
+  KRAEVER   @map("KRAEVER")
+  UDLOESER  @map("UDLOESER")
   SUPPLERER
   SIKRER
 }
@@ -246,17 +246,24 @@ enum AktivitetsEntitet {
 enum AktivitetsHandling {
   OPRETTET
   OPDATERET
-  STATUS_AENDRET             @map("STATUS_AENDRET")
+  STATUS_AENDRET @map("STATUS_AENDRET")
   SLETTET
-  TILGAAET                   @map("TILGAAET")
+  TILGAAET       @map("TILGAAET")
   DOWNLOADET
 }
 
 enum Prioritet {
   LAV
   MELLEM
-  HOEJ                       @map("HOEJ")
+  HOEJ    @map("HOEJ")
   KRITISK
+}
+
+enum AIMode {
+  OFF
+  SHADOW
+  BETA
+  LIVE
 }
 
 // ============================================================
@@ -274,21 +281,22 @@ model Organization {
   updated_at      DateTime  @updatedAt
   created_by      String?
 
-  users                  User[]
-  companies              Company[]
-  persons                Person[]
-  contracts              Contract[]
-  cases                  Case[]
-  tasks                  Task[]
-  documents              Document[]
-  user_role_assignments  UserRoleAssignment[]
-  financial_metrics      FinancialMetric[]
-  time_entries           TimeEntry[]
-  subscriptions          Subscription[]
-  reminders              Reminder[]
-  audit_logs             AuditLog[]
-  deadlines              Deadline[]
-  visits                 Visit[]
+  users                 User[]
+  companies             Company[]
+  persons               Person[]
+  contracts             Contract[]
+  cases                 Case[]
+  tasks                 Task[]
+  documents             Document[]
+  user_role_assignments UserRoleAssignment[]
+  financial_metrics     FinancialMetric[]
+  time_entries          TimeEntry[]
+  subscriptions         Subscription[]
+  reminders             Reminder[]
+  audit_logs            AuditLog[]
+  deadlines             Deadline[]
+  visits                Visit[]
+  ai_settings           OrganizationAISettings?
 
   @@index([id])
 }
@@ -306,11 +314,11 @@ model User {
   updated_at      DateTime  @updatedAt
   deleted_at      DateTime?
 
-  organization    Organization       @relation(fields: [organization_id], references: [id])
-  roles           UserRoleAssignment[]
-  created_contracts Contract[]       @relation("ContractCreatedBy")
-  assigned_tasks  Task[]             @relation("TaskAssignedTo")
-  visits          Visit[]            @relation("VisitVisitor")
+  organization      Organization         @relation(fields: [organization_id], references: [id])
+  roles             UserRoleAssignment[]
+  created_contracts Contract[]           @relation("ContractCreatedBy")
+  assigned_tasks    Task[]               @relation("TaskAssignedTo")
+  visits            Visit[]              @relation("VisitVisitor")
 
   @@unique([organization_id, email])
   @@index([organization_id, deleted_at])
@@ -326,8 +334,8 @@ model UserRoleAssignment {
   created_at      DateTime  @default(now())
   created_by      String
 
-  organization    Organization @relation(fields: [organization_id], references: [id])
-  user            User         @relation(fields: [user_id], references: [id])
+  organization Organization @relation(fields: [organization_id], references: [id])
+  user         User         @relation(fields: [user_id], references: [id])
 
   @@index([organization_id, user_id])
 }
@@ -349,7 +357,7 @@ model Company {
   created_by      String
   deleted_at      DateTime?
 
-  organization    Organization     @relation(fields: [organization_id], references: [id])
+  organization    Organization    @relation(fields: [organization_id], references: [id])
   ownerships      Ownership[]
   company_persons CompanyPerson[]
   contracts       Contract[]
@@ -375,9 +383,9 @@ model Ownership {
   created_at       DateTime  @default(now())
   created_by       String
 
-  company          Company   @relation(fields: [company_id], references: [id])
-  owner_person     Person?   @relation(fields: [owner_person_id], references: [id])
-  contract         Contract? @relation(fields: [contract_id], references: [id])
+  company      Company   @relation(fields: [company_id], references: [id])
+  owner_person Person?   @relation(fields: [owner_person_id], references: [id])
+  contract     Contract? @relation(fields: [contract_id], references: [id])
 
   @@index([organization_id, company_id])
 }
@@ -396,11 +404,11 @@ model Person {
   created_by           String
   deleted_at           DateTime?
 
-  organization         Organization    @relation(fields: [organization_id], references: [id])
-  company_persons      CompanyPerson[]
-  contract_parties     ContractParty[]
-  ownerships           Ownership[]
-  case_persons         CasePerson[]
+  organization     Organization    @relation(fields: [organization_id], references: [id])
+  company_persons  CompanyPerson[]
+  contract_parties ContractParty[]
+  ownerships       Ownership[]
+  case_persons     CasePerson[]
 
   @@index([organization_id, deleted_at])
 }
@@ -419,66 +427,66 @@ model CompanyPerson {
   created_at       DateTime  @default(now())
   created_by       String
 
-  company          Company   @relation(fields: [company_id], references: [id])
-  person           Person    @relation(fields: [person_id], references: [id])
-  contract         Contract? @relation(fields: [contract_id], references: [id])
+  company  Company   @relation(fields: [company_id], references: [id])
+  person   Person    @relation(fields: [person_id], references: [id])
+  contract Contract? @relation(fields: [contract_id], references: [id])
 
   @@index([organization_id, company_id])
   @@index([organization_id, person_id])
 }
 
 model Contract {
-  id                    String              @id @default(uuid())
-  organization_id       String
-  company_id            String
-  system_type           ContractSystemType
-  display_name          String
-  status                ContractStatus      @default(UDKAST)
-  sensitivity           SensitivityLevel    @default(STANDARD)
-  deadline_type         DeadlineType        @default(INGEN)
-  version_source        VersionSource       @default(CUSTOM)
-  collective_agreement  String?
-  parent_contract_id    String?
-  triggered_by_id       String?
+  id                   String             @id @default(uuid())
+  organization_id      String
+  company_id           String
+  system_type          ContractSystemType
+  display_name         String
+  status               ContractStatus     @default(UDKAST)
+  sensitivity          SensitivityLevel   @default(STANDARD)
+  deadline_type        DeadlineType       @default(INGEN)
+  version_source       VersionSource      @default(CUSTOM)
+  collective_agreement String?
+  parent_contract_id   String?
+  triggered_by_id      String?
 
-  effective_date        DateTime?
-  expiry_date           DateTime?
-  signed_date           DateTime?
-  notice_period_days    Int?
-  termination_date      DateTime?
-  anciennity_start      DateTime?
+  effective_date     DateTime?
+  expiry_date        DateTime?
+  signed_date        DateTime?
+  notice_period_days Int?
+  termination_date   DateTime?
+  anciennity_start   DateTime?
 
-  reminder_90_days      Boolean             @default(true)
-  reminder_30_days      Boolean             @default(true)
-  reminder_7_days       Boolean             @default(true)
-  reminder_recipients   String[]
+  reminder_90_days    Boolean  @default(true)
+  reminder_30_days    Boolean  @default(true)
+  reminder_7_days     Boolean  @default(true)
+  reminder_recipients String[]
 
-  must_retain_until     DateTime?
+  must_retain_until DateTime?
 
-  type_data             Json?
+  type_data Json?
 
-  notes                 String?
-  created_at            DateTime            @default(now())
-  updated_at            DateTime            @updatedAt
-  created_by            String
-  last_viewed_at        DateTime?
-  last_viewed_by        String?
-  deleted_at            DateTime?
+  notes          String?
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+  created_by     String
+  last_viewed_at DateTime?
+  last_viewed_by String?
+  deleted_at     DateTime?
 
-  organization          Organization        @relation(fields: [organization_id], references: [id])
-  company               Company             @relation(fields: [company_id], references: [id])
-  creator               User                @relation("ContractCreatedBy", fields: [created_by], references: [id])
-  parent_contract       Contract?           @relation("ContractHierarchy", fields: [parent_contract_id], references: [id])
-  child_contracts       Contract[]          @relation("ContractHierarchy")
-  parties               ContractParty[]
-  versions              ContractVersion[]
-  attachments           ContractAttachment[]
-  relations_from        ContractRelation[]  @relation("RelationFrom")
-  relations_to          ContractRelation[]  @relation("RelationTo")
-  case_contracts        CaseContract[]
-  ownerships            Ownership[]
-  company_persons       CompanyPerson[]
-  reminders             Reminder[]
+  organization    Organization         @relation(fields: [organization_id], references: [id])
+  company         Company              @relation(fields: [company_id], references: [id])
+  creator         User                 @relation("ContractCreatedBy", fields: [created_by], references: [id])
+  parent_contract Contract?            @relation("ContractHierarchy", fields: [parent_contract_id], references: [id])
+  child_contracts Contract[]           @relation("ContractHierarchy")
+  parties         ContractParty[]
+  versions        ContractVersion[]
+  attachments     ContractAttachment[]
+  relations_from  ContractRelation[]   @relation("RelationFrom")
+  relations_to    ContractRelation[]   @relation("RelationTo")
+  case_contracts  CaseContract[]
+  ownerships      Ownership[]
+  company_persons CompanyPerson[]
+  reminders       Reminder[]
 
   @@index([organization_id, deleted_at])
   @@index([organization_id, company_id, deleted_at])
@@ -488,54 +496,54 @@ model Contract {
 }
 
 model ContractParty {
-  id               String    @id @default(uuid())
-  organization_id  String
-  contract_id      String
-  person_id        String?
-  is_signer        Boolean   @default(false)
+  id                String   @id @default(uuid())
+  organization_id   String
+  contract_id       String
+  person_id         String?
+  is_signer         Boolean  @default(false)
   counterparty_name String?
-  role_in_contract String?
-  created_at       DateTime  @default(now())
+  role_in_contract  String?
+  created_at        DateTime @default(now())
 
-  contract         Contract  @relation(fields: [contract_id], references: [id])
-  person           Person?   @relation(fields: [person_id], references: [id])
+  contract Contract @relation(fields: [contract_id], references: [id])
+  person   Person?  @relation(fields: [person_id], references: [id])
 
   @@index([organization_id, contract_id])
 }
 
 model ContractVersion {
-  id               String     @id @default(uuid())
-  organization_id  String
-  contract_id      String
-  version_number   Int
-  file_url         String
-  file_name        String
-  file_size_bytes  Int
-  is_current       Boolean    @default(false)
-  change_type      ChangeType @default(NY_VERSION)
-  change_note      String?
-  amends_clause    String?
-  uploaded_at      DateTime   @default(now())
-  uploaded_by      String
+  id              String     @id @default(uuid())
+  organization_id String
+  contract_id     String
+  version_number  Int
+  file_url        String
+  file_name       String
+  file_size_bytes Int
+  is_current      Boolean    @default(false)
+  change_type     ChangeType @default(NY_VERSION)
+  change_note     String?
+  amends_clause   String?
+  uploaded_at     DateTime   @default(now())
+  uploaded_by     String
 
-  contract         Contract   @relation(fields: [contract_id], references: [id])
+  contract Contract @relation(fields: [contract_id], references: [id])
 
   @@index([organization_id, contract_id])
 }
 
 model ContractAttachment {
-  id               String    @id @default(uuid())
-  organization_id  String
-  contract_id      String
-  file_url         String
-  file_name        String
-  file_size_bytes  Int
-  description      String?
-  uploaded_at      DateTime  @default(now())
-  uploaded_by      String
-  deleted_at       DateTime?
+  id              String    @id @default(uuid())
+  organization_id String
+  contract_id     String
+  file_url        String
+  file_name       String
+  file_size_bytes Int
+  description     String?
+  uploaded_at     DateTime  @default(now())
+  uploaded_by     String
+  deleted_at      DateTime?
 
-  contract         Contract  @relation(fields: [contract_id], references: [id])
+  contract Contract @relation(fields: [contract_id], references: [id])
 
   @@index([organization_id, contract_id])
 }
@@ -549,8 +557,8 @@ model ContractRelation {
   created_at       DateTime     @default(now())
   created_by       String
 
-  from_contract    Contract     @relation("RelationFrom", fields: [from_contract_id], references: [id])
-  to_contract      Contract     @relation("RelationTo", fields: [to_contract_id], references: [id])
+  from_contract Contract @relation("RelationFrom", fields: [from_contract_id], references: [id])
+  to_contract   Contract @relation("RelationTo", fields: [to_contract_id], references: [id])
 
   @@unique([from_contract_id, to_contract_id, relation_type])
   @@index([organization_id, from_contract_id])
@@ -558,31 +566,31 @@ model ContractRelation {
 }
 
 model Case {
-  id              String          @id @default(uuid())
+  id              String           @id @default(uuid())
   organization_id String
   case_number     String?
   title           String
   case_type       SagsType
   case_subtype    SagsSubtype?
-  status          CaseStatus      @default(NY)
+  status          CaseStatus       @default(NY)
   sensitivity     SensitivityLevel @default(INTERN)
   description     String?
   responsible_id  String?
   due_date        DateTime?
   closed_at       DateTime?
-  created_at      DateTime        @default(now())
-  updated_at      DateTime        @updatedAt
+  created_at      DateTime         @default(now())
+  updated_at      DateTime         @updatedAt
   created_by      String
   deleted_at      DateTime?
 
-  organization    Organization    @relation(fields: [organization_id], references: [id])
-  case_companies  CaseCompany[]
-  case_contracts  CaseContract[]
-  case_persons    CasePerson[]
-  tasks           Task[]
-  documents       Document[]
-  time_entries    TimeEntry[]
-  deadlines       Deadline[]
+  organization   Organization   @relation(fields: [organization_id], references: [id])
+  case_companies CaseCompany[]
+  case_contracts CaseContract[]
+  case_persons   CasePerson[]
+  tasks          Task[]
+  documents      Document[]
+  time_entries   TimeEntry[]
+  deadlines      Deadline[]
 
   @@index([organization_id, deleted_at])
   @@index([organization_id, status, deleted_at])
@@ -595,8 +603,8 @@ model CaseCompany {
   created_at      DateTime @default(now())
   created_by      String
 
-  case            Case     @relation(fields: [case_id], references: [id])
-  company         Company  @relation(fields: [company_id], references: [id])
+  case    Case    @relation(fields: [case_id], references: [id])
+  company Company @relation(fields: [company_id], references: [id])
 
   @@id([case_id, company_id])
   @@index([organization_id, case_id])
@@ -609,8 +617,8 @@ model CaseContract {
   created_at      DateTime @default(now())
   created_by      String
 
-  case            Case     @relation(fields: [case_id], references: [id])
-  contract        Contract @relation(fields: [contract_id], references: [id])
+  case     Case     @relation(fields: [case_id], references: [id])
+  contract Contract @relation(fields: [contract_id], references: [id])
 
   @@id([case_id, contract_id])
   @@index([organization_id, case_id])
@@ -624,34 +632,34 @@ model CasePerson {
   created_at      DateTime @default(now())
   created_by      String
 
-  case            Case     @relation(fields: [case_id], references: [id])
-  person          Person   @relation(fields: [person_id], references: [id])
+  case   Case   @relation(fields: [case_id], references: [id])
+  person Person @relation(fields: [person_id], references: [id])
 
   @@id([case_id, person_id])
   @@index([organization_id, case_id])
 }
 
 model Task {
-  id              String      @id @default(uuid())
+  id              String     @id @default(uuid())
   organization_id String
   title           String
   description     String?
-  status          TaskStatus  @default(NY)
-  priority        Prioritet   @default(MELLEM)
+  status          TaskStatus @default(NY)
+  priority        Prioritet  @default(MELLEM)
   due_date        DateTime?
   assigned_to     String?
   case_id         String?
   company_id      String?
   contract_id     String?
   completed_at    DateTime?
-  created_at      DateTime    @default(now())
-  updated_at      DateTime    @updatedAt
+  created_at      DateTime   @default(now())
+  updated_at      DateTime   @updatedAt
   created_by      String
   deleted_at      DateTime?
 
-  organization    Organization @relation(fields: [organization_id], references: [id])
-  assignee        User?        @relation("TaskAssignedTo", fields: [assigned_to], references: [id])
-  case            Case?        @relation(fields: [case_id], references: [id])
+  organization Organization @relation(fields: [organization_id], references: [id])
+  assignee     User?        @relation("TaskAssignedTo", fields: [assigned_to], references: [id])
+  case         Case?        @relation(fields: [case_id], references: [id])
 
   @@index([organization_id, deleted_at])
   @@index([organization_id, assigned_to, deleted_at])
@@ -676,8 +684,8 @@ model Deadline {
   created_by         String
   deleted_at         DateTime?
 
-  organization       Organization @relation(fields: [organization_id], references: [id])
-  case               Case?        @relation(fields: [case_id], references: [id])
+  organization Organization @relation(fields: [organization_id], references: [id])
+  case         Case?        @relation(fields: [case_id], references: [id])
 
   @@index([organization_id, deleted_at])
   @@index([organization_id, due_date])
@@ -685,7 +693,7 @@ model Deadline {
 }
 
 model Document {
-  id              String          @id @default(uuid())
+  id              String           @id @default(uuid())
   organization_id String
   company_id      String?
   case_id         String?
@@ -697,15 +705,16 @@ model Document {
   sensitivity     SensitivityLevel @default(STANDARD)
   folder_path     String?
   description     String?
-  uploaded_at     DateTime        @default(now())
+  uploaded_at     DateTime         @default(now())
   uploaded_by     String
   last_viewed_at  DateTime?
   last_viewed_by  String?
   deleted_at      DateTime?
 
-  organization    Organization @relation(fields: [organization_id], references: [id])
-  company         Company?     @relation(fields: [company_id], references: [id])
-  case            Case?        @relation(fields: [case_id], references: [id])
+  organization Organization        @relation(fields: [organization_id], references: [id])
+  company      Company?            @relation(fields: [company_id], references: [id])
+  case         Case?               @relation(fields: [case_id], references: [id])
+  extraction   DocumentExtraction?
 
   @@index([organization_id, deleted_at])
   @@index([organization_id, company_id, deleted_at])
@@ -725,32 +734,32 @@ model FinancialMetric {
   created_at      DateTime     @default(now())
   created_by      String
 
-  organization    Organization @relation(fields: [organization_id], references: [id])
+  organization Organization @relation(fields: [organization_id], references: [id])
 
   @@unique([organization_id, company_id, metric_type, period_type, period_year])
   @@index([organization_id, company_id])
 }
 
 model TimeEntry {
-  id              String    @id @default(uuid())
+  id              String   @id @default(uuid())
   organization_id String
   case_id         String
   user_id         String
   description     String?
   minutes         Int
   date            DateTime
-  billable        Boolean   @default(true)
+  billable        Boolean  @default(true)
   hourly_rate     Int?
-  created_at      DateTime  @default(now())
+  created_at      DateTime @default(now())
 
-  organization    Organization @relation(fields: [organization_id], references: [id])
-  case            Case         @relation(fields: [case_id], references: [id])
+  organization Organization @relation(fields: [organization_id], references: [id])
+  case         Case         @relation(fields: [case_id], references: [id])
 
   @@index([organization_id, case_id])
 }
 
 model AuditLog {
-  id              String           @id @default(uuid())
+  id              String            @id @default(uuid())
   organization_id String
   user_id         String
   action          String
@@ -759,9 +768,9 @@ model AuditLog {
   sensitivity     SensitivityLevel?
   changes         Json?
   ip_address      String?
-  created_at      DateTime         @default(now())
+  created_at      DateTime          @default(now())
 
-  organization    Organization @relation(fields: [organization_id], references: [id])
+  organization Organization @relation(fields: [organization_id], references: [id])
 
   @@index([organization_id, resource_type, resource_id])
   @@index([organization_id, user_id])
@@ -778,8 +787,8 @@ model Reminder {
   recipient_ids   String[]
   created_at      DateTime  @default(now())
 
-  organization    Organization @relation(fields: [organization_id], references: [id])
-  contract        Contract     @relation(fields: [contract_id], references: [id])
+  organization Organization @relation(fields: [organization_id], references: [id])
+  contract     Contract     @relation(fields: [contract_id], references: [id])
 
   @@index([trigger_date, sent_at])
   @@index([organization_id, contract_id])
@@ -799,7 +808,7 @@ model Subscription {
   created_at             DateTime  @default(now())
   updated_at             DateTime  @updatedAt
 
-  organization           Organization @relation(fields: [organization_id], references: [id])
+  organization Organization @relation(fields: [organization_id], references: [id])
 
   @@index([stripe_customer_id])
   @@index([status])
@@ -810,8 +819,8 @@ model Subscription {
 // ============================================================
 
 enum VisitType {
-  KVARTALSBESOEG             @map("KVARTALSBESOEG")
-  OPFOELGNING                @map("OPFOELGNING")
+  KVARTALSBESOEG @map("KVARTALSBESOEG")
+  OPFOELGNING    @map("OPFOELGNING")
   AD_HOC
   AUDIT
   ONBOARDING
@@ -820,7 +829,7 @@ enum VisitType {
 
 enum VisitStatus {
   PLANLAGT
-  GENNEMFOERT              @map("GENNEMFOERT")
+  GENNEMFOERT @map("GENNEMFOERT")
   AFLYST
 }
 
@@ -839,11 +848,99 @@ model Visit {
   created_by      String
   deleted_at      DateTime?
 
-  organization    Organization @relation(fields: [organization_id], references: [id])
-  company         Company      @relation(fields: [company_id], references: [id])
-  visitor         User         @relation("VisitVisitor", fields: [visited_by], references: [id])
+  organization Organization @relation(fields: [organization_id], references: [id])
+  company      Company      @relation(fields: [company_id], references: [id])
+  visitor      User         @relation("VisitVisitor", fields: [visited_by], references: [id])
 
   @@index([organization_id, deleted_at])
   @@index([organization_id, company_id, deleted_at])
   @@index([organization_id, visit_date])
+}
+
+// ============================================================
+// AI INFRASTRUCTURE
+// ============================================================
+
+model OrganizationAISettings {
+  id              String       @id @default(uuid())
+  organization_id String       @unique
+  organization    Organization @relation(fields: [organization_id], references: [id])
+
+  ai_mode                   AIMode   @default(OFF)
+  shadow_comparison_enabled Boolean  @default(false)
+  beta_features             String[] @default([])
+  rate_limit_per_day        Int      @default(1000)
+  monthly_cost_cap_usd      Decimal? @db.Decimal(10, 2)
+  kill_switch               Boolean  @default(false)
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([ai_mode])
+}
+
+model DocumentExtraction {
+  id              String   @id @default(uuid())
+  document_id     String   @unique
+  document        Document @relation(fields: [document_id], references: [id])
+  organization_id String
+
+  detected_type     String?
+  type_confidence   Float?
+  type_alternatives Json?
+
+  schema_version    String?
+  prompt_version    String?
+  model_name        String
+  model_temperature Float?
+
+  extracted_fields      Json
+  extracted_fields_run2 Json?
+  agreement_score       Float?
+
+  source_verification  Json?
+  sanity_check_results Json?
+  discrepancies        Json?
+
+  raw_response Json
+
+  input_tokens   Int
+  output_tokens  Int
+  total_cost_usd Decimal @db.Decimal(10, 4)
+
+  reviewed_by     String?
+  reviewed_at     DateTime?
+  field_decisions Json?
+
+  extraction_status String @default("completed")
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  corrections AIFieldCorrection[]
+
+  @@index([document_id])
+  @@index([organization_id])
+  @@index([detected_type])
+  @@index([reviewed_at])
+  @@index([extraction_status])
+}
+
+model AIFieldCorrection {
+  id              String             @id @default(uuid())
+  extraction_id   String
+  extraction      DocumentExtraction @relation(fields: [extraction_id], references: [id])
+  organization_id String
+  field_name      String
+  ai_value        Json
+  user_value      Json
+  confidence      Float?
+  schema_version  String?
+  prompt_version  String?
+  corrected_by    String
+  corrected_at    DateTime           @default(now())
+
+  @@index([field_name])
+  @@index([schema_version])
+  @@index([organization_id])
 }
