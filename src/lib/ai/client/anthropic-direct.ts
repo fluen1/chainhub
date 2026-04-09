@@ -1,69 +1,56 @@
 import Anthropic from '@anthropic-ai/sdk'
-import type { MessageParam, Tool, ContentBlock } from '@anthropic-ai/sdk/resources'
-import type { ClaudeClient, ClaudeRequest, ClaudeResponse, ClaudeMessage, ClaudeTool } from './types'
+import { createLogger } from '@/lib/ai/logger'
+import type { ClaudeClient, ClaudeRequest, ClaudeResponse } from './types'
 import { ClaudeClientError } from './types'
+
+const log = createLogger('anthropic-direct-client')
 
 export class AnthropicDirectClient implements ClaudeClient {
   readonly providerName = 'anthropic' as const
   private client: Anthropic
 
   constructor(apiKey: string) {
-    if (!apiKey) {
-      throw new Error('ANTHROPIC_API_KEY is required')
-    }
+    if (!apiKey) throw new Error('ANTHROPIC_API_KEY is required')
     this.client = new Anthropic({ apiKey })
   }
 
   async complete(request: ClaudeRequest): Promise<ClaudeResponse> {
+    const start = Date.now()
+    log.debug({ model: request.model, max_tokens: request.max_tokens }, 'Claude request')
     try {
-      const messages = this.normalizeMessages(request.messages)
-      const tools = request.tools ? this.normalizeTools(request.tools) : undefined
-
       const response = await this.client.messages.create({
         model: request.model,
         max_tokens: request.max_tokens,
         temperature: request.temperature,
         system: request.system,
-        messages,
-        tools,
-        tool_choice: request.tool_choice,
+        messages: request.messages as never,
+        tools: request.tools as never,
+        tool_choice: request.tool_choice as never,
       })
-
+      const latencyMs = Date.now() - start
+      log.info({
+        model: response.model, stop_reason: response.stop_reason,
+        input_tokens: response.usage.input_tokens, output_tokens: response.usage.output_tokens,
+        latency_ms: latencyMs,
+      }, 'Claude response')
       return {
-        id: response.id,
-        model: response.model,
-        stop_reason: response.stop_reason as 'end_turn' | 'max_tokens' | 'stop_sequence' | 'tool_use',
+        id: response.id, model: response.model,
+        stop_reason: response.stop_reason as ClaudeResponse['stop_reason'],
         content: response.content as ClaudeResponse['content'],
-        usage: response.usage,
+        usage: { input_tokens: response.usage.input_tokens, output_tokens: response.usage.output_tokens },
       }
-    } catch (error) {
-      const isRetryable = this.isRetryable(error)
-      throw new ClaudeClientError('Failed to complete message', error, isRetryable)
+    } catch (err) {
+      const retryable = this.isRetryable(err)
+      const errorMessage = err instanceof Error ? err.message : 'Unknown Claude API error'
+      log.error({ err: errorMessage, retryable }, 'Claude request failed')
+      throw new ClaudeClientError(errorMessage, err, retryable)
     }
   }
 
-  private normalizeMessages(messages: ClaudeMessage[]): MessageParam[] {
-    return messages.map((msg) => ({
-      role: msg.role,
-      content: msg.content as string | ContentBlock[],
-    }))
-  }
-
-  private normalizeTools(tools: ClaudeTool[]): Tool[] {
-    return tools.map((tool) => ({
-      name: tool.name,
-      description: tool.description,
-      input_schema: tool.input_schema as Tool['input_schema'],
-    }))
-  }
-
-  private isRetryable(error: unknown): boolean {
-    if (error instanceof Error && 'status' in error) {
-      const status = (error as Error & { status?: number }).status
-      if (status === 429) return true
-      if (status && status >= 500) return true
-      if (status && status >= 400 && status < 500) return false
-    }
-    return true
+  private isRetryable(err: unknown): boolean {
+    if (!err || typeof err !== 'object') return false
+    const status = (err as { status?: number }).status
+    if (!status) return true
+    return status === 429 || status >= 500
   }
 }
