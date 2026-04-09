@@ -5,11 +5,10 @@ const log = createLogger('content-loader')
 
 const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024
 
-export type ExtractionContent = {
-  type: 'pdf_binary'
-  data: Buffer
-  detectedMime: string
-}
+export type ExtractionContent =
+  | { type: 'pdf_binary'; data: Buffer; detectedMime: string }
+  | { type: 'text_html'; html: string; detectedMime: string }
+  | { type: 'text_markdown'; markdown: string; detectedMime: string }
 
 export class ContentLoaderError extends Error {
   constructor(
@@ -77,8 +76,43 @@ export async function loadForExtraction(
     return { type: 'pdf_binary', data: buffer, detectedMime: type.mime }
   }
 
+  if (type.ext === 'docx') {
+    const mammoth = await import('mammoth')
+    const uint8 = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength)
+    // mammoth's types expect Buffer but accepts Uint8Array at runtime — cast to satisfy TS
+    const result = await mammoth.convertToHtml({ buffer: uint8 as unknown as Buffer })
+    log.debug({ filename, html_length: result.value.length }, 'Word converted to HTML')
+    return { type: 'text_html', html: result.value, detectedMime: type.mime }
+  }
+
+  if (type.ext === 'xlsx') {
+    const ExcelJS = await import('exceljs')
+    const wb = new ExcelJS.default.Workbook()
+    // exceljs load() accepts ArrayBuffer | Buffer — cast to satisfy strict TS
+    await wb.xlsx.load(buffer as unknown as ArrayBuffer)
+    let markdown = ''
+    wb.eachSheet((sheet) => {
+      markdown += `## ${sheet.name}\n\n`
+      const rows: string[][] = []
+      sheet.eachRow((row) => {
+        const values = (row.values as (string | number | null)[]).slice(1)
+        rows.push(values.map((v) => String(v ?? '')))
+      })
+      if (rows.length > 0) {
+        markdown += '| ' + rows[0].join(' | ') + ' |\n'
+        markdown += '| ' + rows[0].map(() => '---').join(' | ') + ' |\n'
+        for (let i = 1; i < rows.length; i++) {
+          markdown += '| ' + rows[i].join(' | ') + ' |\n'
+        }
+      }
+      markdown += '\n'
+    })
+    log.debug({ filename, markdown_length: markdown.length }, 'Excel converted to Markdown')
+    return { type: 'text_markdown', markdown, detectedMime: type.mime }
+  }
+
   throw new ContentLoaderError(
-    `Unsupported file type: ${type.ext}. Only PDF supported in v1.`,
+    `Unsupported file type: ${type.ext}. Supported: pdf, docx, xlsx.`,
     'unsupported_type',
   )
 }

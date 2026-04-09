@@ -41,6 +41,7 @@ describe('content-loader', () => {
     it('loads a PDF buffer and returns extraction content', async () => {
       const result = await loadForExtraction(pdfBuffer, 'test-contract.pdf')
       expect(result.type).toBe('pdf_binary')
+      if (result.type !== 'pdf_binary') return
       expect(result.data).toEqual(pdfBuffer)
       expect(result.detectedMime).toBe('application/pdf')
     })
