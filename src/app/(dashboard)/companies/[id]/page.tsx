@@ -99,6 +99,7 @@ export default async function CompanyDetailPage({ params }: Props) {
       where: {
         company_id: params.id,
         organization_id: session.user.organizationId,
+        case: { deleted_at: null },
       },
       include: {
         case: true,
@@ -177,7 +178,6 @@ export default async function CompanyDetailPage({ params }: Props) {
   }))
 
   // Opgaver
-  const openTasks = tasks.filter((t) => t.status !== 'LUKKET')
   const mappedTasks: TaskItem[] = tasks.map((t) => ({
     id: t.id,
     title: t.title,
@@ -217,7 +217,6 @@ export default async function CompanyDetailPage({ params }: Props) {
   }))
 
   // Økonomi — aggreger per år
-  const currentYear = new Date().getFullYear()
   const yearMap = new Map<number, FinancialYear>()
   for (const fm of financialMetrics) {
     const year = fm.period_year

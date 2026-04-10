@@ -255,35 +255,6 @@ function KpiBox({
   )
 }
 
-// ---------------------------------------------------------------
-// Activity item — med Tailwind i stedet for inline style
-// ---------------------------------------------------------------
-function ActivityItem({
-  colorClass,
-  text,
-  meta,
-}: {
-  colorClass: string
-  text: string
-  meta: string
-}) {
-  return (
-    <div className="flex gap-2.5 py-2">
-      <div
-        className={cn(
-          'w-1.5 h-1.5 rounded-full mt-[7px] shrink-0',
-          colorClass
-        )}
-      />
-      <div className="min-w-0">
-        <div className="text-[12px] font-medium text-slate-800 leading-snug">
-          {text}
-        </div>
-        <div className="text-[11px] text-slate-400 mt-0.5">{meta}</div>
-      </div>
-    </div>
-  )
-}
 
 // ---------------------------------------------------------------
 // Sorterings-typer og helpers
@@ -939,25 +910,9 @@ export function PortfolioClient({
               </div>
             </PanelCard>
 
-            {/* Activity — placeholder data */}
+            {/* Activity — vises når aktivitetslog er implementeret */}
             <PanelCard title="Seneste aktivitet">
-              <div className="space-y-1">
-                <ActivityItem
-                  colorClass="bg-purple-500"
-                  text="Ejeraftale v3 uploadet"
-                  meta="AI-behandlet · 2t siden"
-                />
-                <ActivityItem
-                  colorClass="bg-blue-500"
-                  text="Driftsbesøg gennemført"
-                  meta="i går"
-                />
-                <ActivityItem
-                  colorClass="bg-green-500"
-                  text="Forsikring fornyet automatisk"
-                  meta="2d siden"
-                />
-              </div>
+              <p className="text-[12px] text-slate-400 py-2">Ingen aktivitet registreret endnu</p>
             </PanelCard>
           </div>
         </div>

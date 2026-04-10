@@ -433,13 +433,9 @@ export default function ContractsClient({
                       <tr
                         id={`row-${c.id}`}
                         className={cn(
-                          'border-b border-slate-100 transition-colors group/row',
+                          'border-b border-slate-100 transition-colors group/row [content-visibility:auto] [contain-intrinsic-size:auto_44px]',
                           isHighlighted ? 'bg-amber-50' : 'hover:bg-slate-50/60',
                         )}
-                        style={{
-                          contentVisibility: 'auto',
-                          containIntrinsicSize: 'auto 44px',
-                        }}
                       >
                         <td className="px-4 py-3">
                           <Link

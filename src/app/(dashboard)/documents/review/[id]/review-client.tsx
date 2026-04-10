@@ -235,7 +235,7 @@ function AttentionFieldRow({
               </button>
               <button
                 disabled={isPending}
-                onClick={() => toast.info('Manuel redigering kommer senere')}
+                onClick={() => decide('manual', 'Ret manuelt')}
                 className="text-slate-500 text-[11px] font-medium px-2.5 py-1 rounded-md hover:bg-slate-50 transition-colors disabled:opacity-50"
               >
                 Ret manuelt
@@ -411,8 +411,9 @@ export default function ReviewClient({ document: doc, reviewQueue }: ReviewClien
   function handleNext() {
     const hasUnsaved = decidedCount > 0 && !allDecided
     if (hasUnsaved) {
+      const remaining = totalNeedsDecision - decidedCount
       const ok = window.confirm(
-        `Du har ${decidedCount} ubehandlede beslutninger på dette dokument.\n\nFortsæt uden at gemme? Dine beslutninger vil blive tabt.`,
+        `Du har ${remaining} ubehandlede felter på dette dokument.\n\nFortsæt uden at færdiggøre? Dine fremskridt gemmes, men review er ikke fuldført.`,
       )
       if (!ok) return
     }

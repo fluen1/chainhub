@@ -7,10 +7,25 @@ import { canAccessCompany } from '@/lib/permissions'
 import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
 import type { Prisma } from '@prisma/client'
+import { z } from 'zod'
+
+const approveSchema = z.string().uuid('Ugyldigt ekstraktions-ID')
+
+const fieldDecisionSchema = z.object({
+  extractionId: z.string().uuid(),
+  fieldName: z.string().min(1),
+  decision: z.enum(['use_ai', 'keep_existing', 'manual', 'accept_missing', 'add_manual']),
+  aiValue: z.unknown(),
+  existingValue: z.unknown(),
+  confidence: z.number().nullable(),
+})
 
 export async function approveDocumentReview(
   extractionId: string
 ): Promise<ActionResult<void>> {
+  const parsed = approveSchema.safeParse(extractionId)
+  if (!parsed.success) return { error: 'Ugyldigt ekstraktions-ID' }
+
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
 
@@ -55,6 +70,9 @@ export async function saveFieldDecision(params: {
   existingValue: unknown
   confidence: number | null
 }): Promise<ActionResult<{ correctionId: string }>> {
+  const parsed = fieldDecisionSchema.safeParse(params)
+  if (!parsed.success) return { error: 'Ugyldige parametre' }
+
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
 

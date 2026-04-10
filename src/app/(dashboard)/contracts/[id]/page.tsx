@@ -168,6 +168,7 @@ export default async function ContractDetailPage({ params }: Props) {
       where: {
         organization_id: orgId,
         document: {
+          organization_id: orgId,
           company_id: contract.company_id,
           deleted_at: null,
         },
