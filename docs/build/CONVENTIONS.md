@@ -58,13 +58,16 @@
 
 ### Filer og mapper
 ```
-Komponenter:        PascalCase          CompanyCard.tsx
+UI-primitives:      kebab-case          fin-row.tsx        (src/components/ui/, src/components/layout/ — shadcn convention)
+Modul-komponenter:  PascalCase          CompanyCard.tsx    (src/components/<modul>/)
 Server Actions:     camelCase           companies.ts
 API routes:         kebab-case mappe    /api/company-cards/route.ts
 Hooks:              camelCase, use-     useCompanyData.ts
 Typer:              PascalCase          CompanyWithContracts.ts
 Migrations:         Prisma auto         20240101_add_contracts
 ```
+
+**Bemærk:** Nye komponenter i `src/components/ui/` og `src/components/layout/` skal bruge kebab-case (fx `fin-row.tsx`, `app-sidebar.tsx`) for at matche shadcn/ui-konventionen og Plan 4A-migrationerne. Eksisterende PascalCase-filer i disse mapper (`CollapsibleSection.tsx`, `Pagination.tsx`, `MobileNav.tsx`) renameres gradvist — ikke nødvendigt i én commit.
 
 ### Variabler og funktioner
 ```typescript
