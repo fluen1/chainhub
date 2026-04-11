@@ -1,6 +1,6 @@
 # PROGRESS.md — ChainHub
 
-Opdateret: Sprint 7 FÆRDIG 2026-03-12
+Opdateret: Plan 4B FÆRDIG 2026-04-11
 
 ## Sprint 1-6 ✅ FÆRDIGE
 - [x] Sprint 1 — Fundament (Next.js 14, Prisma, Auth, Permissions, Dashboard shell)
@@ -98,6 +98,34 @@ Opdateret: Sprint 7 FÆRDIG 2026-03-12
 - [ ] Schema — company_notes (sensitivity!), tasks tasks[] → Company relation
 - [ ] Opgave-udvidelser — deltagere, historik, kommentarer, kilde-badge
 - [ ] Fase 2: Side-for-side UX-gennemgang (32 sider — spec i docs/superpowers/specs/)
+
+## Plan 4A — Atomiske proto-komponenter ✅ (2026-04)
+- [x] 11 komponenter migreret fra proto til `src/components/ui/` + `src/components/layout/`
+- [x] KpiCard, FinRow, CoverageBar, HealthBar, CompanyRow, InsightCard, UrgencyList, CalendarWidget, SectionHeader
+- [x] AppSidebar, AppHeader (kebab-case, shadcn-konvention)
+- [x] Delte UI-typer i `src/types/ui.ts` (CalendarEvent, InlineKpi, SidebarBadge, UrgencyItem m.fl.)
+- [x] Unit tests pr. komponent (Vitest + Testing Library)
+
+## Plan 4B — Dashboard + layout-migration ✅ (2026-04-11)
+- [x] HealthBar empty-state fix + AppHeader SSR-hydration fix (currentDate som prop)
+- [x] `'use client'` fjernet fra pure presentation atoms (FinRow, CoverageBar, CompanyRow, HealthBar)
+- [x] `src/actions/dashboard.ts` — parallel Prisma-batch aggregator (badges, rolle-adaptive KPIs, timeline, heatmap, coverage, portfolio-totals, role priority)
+- [x] HeatmapGrid + TimelineSection komponenter i `src/components/dashboard/`
+- [x] `/dashboard` page omskrevet til Timeline River + rolle-specifikke højrepaneler (606 → ~50 linjer)
+- [x] `(dashboard)/layout.tsx` bruger nu AppSidebar + AppHeader
+- [x] Legacy `sidebar.tsx`, `header.tsx`, `MobileNav.tsx` slettet
+- [x] `buildSidebarBadges()` adapter i `src/lib/sidebar-data.ts`
+- [x] `docs/build/CONVENTIONS.md` — kebab-case regel for ui/ + layout/
+- [x] Scope-leak fix på openCases + expired-contract split + deterministic role priority
+- [x] Build: GRØN, 242 tests passerer, Playwright-audit uden console errors
+
+## Plan 4C — Resterende sider (afventer)
+- [ ] `/tasks` list + `/tasks/[id]` detail-rewrite
+- [ ] `/calendar` full-page (erstatter `/visits`, feeder CalendarWidget på dashboard)
+- [ ] `/search` global søgning
+- [ ] `/settings`
+- [ ] `/companies/[id]` single-page rewrite (erstatter subpages)
+- [ ] Slet `/visits` efter `/calendar` overtager
 
 ## Sprint 9 — Polish + Kalender ❌ AFVENTER SPRINT 8
 - [ ] Tværgående kalender
