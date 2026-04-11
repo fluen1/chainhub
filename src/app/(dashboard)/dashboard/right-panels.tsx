@@ -57,7 +57,10 @@ export function RightPanels({ data, calendarEvents, upcomingEvents, todayISO }: 
     )
   }
 
-  // GROUP_OWNER + default
+  // GROUP_OWNER (og fall-through for GROUP_ADMIN, GROUP_READONLY, COMPANY_MANAGER,
+  // COMPANY_LEGAL, COMPANY_READONLY) — fuld portefølje-visning. Tenant-scope håndteres
+  // i getDashboardData(), så aggregaterne respekterer accessible companies for
+  // COMPANY_*-brugere.
   return (
     <div className="space-y-3">
       <Panel title="Porteføljeoverblik">

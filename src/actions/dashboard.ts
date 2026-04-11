@@ -113,13 +113,6 @@ export async function getDashboardData(
     contractCoverageRaw,
     financialMetrics,
     overdueTasksCount,
-    // contractsCount — ikke brugt p.t., men hentes for fremtidig brug
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _contractsCount,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _casesCount,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _tasksCount,
     documentsCount,
     personsCount,
   ] = await Promise.all([
@@ -281,30 +274,6 @@ export async function getDashboardData(
         deleted_at: null,
         status: { not: 'LUKKET' },
         due_date: { lt: today },
-        company_id: { in: companyIds },
-      },
-    }),
-    prisma.contract.count({
-      where: {
-        organization_id: organizationId,
-        company_id: { in: companyIds },
-        deleted_at: null,
-        status: 'AKTIV',
-      },
-    }),
-    prisma.case.count({
-      where: {
-        organization_id: organizationId,
-        deleted_at: null,
-        status: { in: ['NY', 'AKTIV', 'AFVENTER_EKSTERN', 'AFVENTER_KLIENT'] },
-        case_companies: { some: { company_id: { in: companyIds } } },
-      },
-    }),
-    prisma.task.count({
-      where: {
-        organization_id: organizationId,
-        deleted_at: null,
-        status: { not: 'LUKKET' },
         company_id: { in: companyIds },
       },
     }),
