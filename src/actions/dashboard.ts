@@ -114,8 +114,11 @@ export async function getDashboardData(
     financialMetrics,
     overdueTasksCount,
     // contractsCount — ikke brugt p.t., men hentes for fremtidig brug
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _contractsCount,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _casesCount,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _tasksCount,
     documentsCount,
     personsCount,
