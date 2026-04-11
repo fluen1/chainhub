@@ -69,13 +69,29 @@ export async function getDashboardData(
   const [companyIds, roleRows] = await Promise.all([
     getAccessibleCompanies(userId, organizationId),
     prisma.userRoleAssignment.findMany({
-      where: { user_id: userId },
+      where: { user_id: userId, organization_id: organizationId },
       select: { role: true },
-      take: 1,
     }),
   ])
 
-  const role = roleRows[0]?.role ?? 'GROUP_READONLY'
+  // Vælg rolle med højeste prioritet (deterministisk)
+  const ROLE_PRIORITY: Record<string, number> = {
+    GROUP_OWNER: 100,
+    GROUP_ADMIN: 90,
+    GROUP_LEGAL: 80,
+    GROUP_FINANCE: 80,
+    GROUP_READONLY: 70,
+    COMPANY_MANAGER: 60,
+    COMPANY_LEGAL: 50,
+    COMPANY_READONLY: 40,
+  }
+
+  const role =
+    roleRows.length > 0
+      ? [...roleRows].sort(
+          (a, b) => (ROLE_PRIORITY[b.role] ?? 0) - (ROLE_PRIORITY[a.role] ?? 0)
+        )[0].role
+      : 'GROUP_READONLY'
   const today = new Date()
   const weekEnd = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
   const twoWeekEnd = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
@@ -88,6 +104,7 @@ export async function getDashboardData(
     overdueTasks,
     todayAndFutureTasks,
     expiringContracts,
+    expiredContracts,
     openCases,
     upcomingVisits,
     recentDocuments,
@@ -131,26 +148,42 @@ export async function getDashboardData(
       select: { id: true, title: true, due_date: true, company_id: true },
     }),
 
-    // Udløbende kontrakter (14 dage)
+    // Udløbende kontrakter (næste 14 dage, ikke allerede udløbet)
     prisma.contract.findMany({
       where: {
         organization_id: organizationId,
         company_id: { in: companyIds },
         deleted_at: null,
         status: 'AKTIV',
-        expiry_date: { not: null, lte: twoWeekEnd },
+        expiry_date: { not: null, gte: today, lte: twoWeekEnd },
       },
       orderBy: { expiry_date: 'asc' },
       take: 20,
       include: { company: { select: { id: true, name: true } } },
     }),
 
+    // Allerede udløbne kontrakter (til overdue timeline-sektionen)
+    prisma.contract.findMany({
+      where: {
+        organization_id: organizationId,
+        company_id: { in: companyIds },
+        deleted_at: null,
+        status: 'AKTIV',
+        expiry_date: { not: null, lt: today },
+      },
+      orderBy: { expiry_date: 'desc' },
+      take: 5,
+      include: { company: { select: { id: true, name: true } } },
+    }),
+
     // Åbne sager — bruger `case_companies` (ikke `companies`)
+    // Scope: kun sager tilknyttet selskaber brugeren har adgang til
     prisma.case.findMany({
       where: {
         organization_id: organizationId,
         deleted_at: null,
         status: { in: ['NY', 'AKTIV', 'AFVENTER_EKSTERN', 'AFVENTER_KLIENT'] },
+        case_companies: { some: { company_id: { in: companyIds } } },
       },
       orderBy: { updated_at: 'desc' },
       take: 20,
@@ -261,6 +294,7 @@ export async function getDashboardData(
         organization_id: organizationId,
         deleted_at: null,
         status: { in: ['NY', 'AKTIV', 'AFVENTER_EKSTERN', 'AFVENTER_KLIENT'] },
+        case_companies: { some: { company_id: { in: companyIds } } },
       },
     }),
     prisma.task.count({
@@ -327,6 +361,7 @@ export async function getDashboardData(
     overdueTasks,
     todayAndFutureTasks,
     expiringContracts,
+    expiredContracts,
     openCases,
     upcomingVisits,
     recentDocuments,
@@ -476,6 +511,12 @@ interface TimelineRawData {
     expiry_date: Date | null
     company: { id: string; name: string }
   }>
+  expiredContracts: Array<{
+    id: string
+    display_name: string
+    expiry_date: Date | null
+    company: { id: string; name: string }
+  }>
   openCases: Array<{
     id: string
     title: string
@@ -505,6 +546,7 @@ function buildTimelineSections(data: TimelineRawData): TimelineSectionData[] {
     overdueTasks,
     todayAndFutureTasks,
     expiringContracts,
+    expiredContracts,
     openCases,
     upcomingVisits,
     recentDocuments,
@@ -528,7 +570,7 @@ function buildTimelineSections(data: TimelineRawData): TimelineSectionData[] {
       href: '/tasks',
     })
   }
-  for (const c of expiringContracts.filter((c) => c.expiry_date && c.expiry_date < today).slice(0, 3)) {
+  for (const c of expiredContracts.slice(0, 3)) {
     overdueItems.push({
       id: `contract-${c.id}`,
       letter: firstLetter(c.company.name),
