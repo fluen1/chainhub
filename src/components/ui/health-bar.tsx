@@ -1,5 +1,3 @@
-'use client'
-
 export interface HealthBarProps {
   healthy: number
   warning: number
@@ -7,6 +5,9 @@ export interface HealthBarProps {
 }
 
 export function HealthBar({ healthy, warning, critical }: HealthBarProps) {
+  const total = healthy + warning + critical
+  const isEmpty = total === 0
+
   return (
     <div>
       <div className="flex gap-6 mt-3">
@@ -24,9 +25,15 @@ export function HealthBar({ healthy, warning, critical }: HealthBarProps) {
         </div>
       </div>
       <div className="mt-3 flex gap-[3px] h-2">
-        <div className="rounded bg-green-500" style={{ flex: healthy }} />
-        <div className="rounded bg-amber-500" style={{ flex: warning }} />
-        <div className="rounded bg-red-500" style={{ flex: critical }} />
+        {isEmpty ? (
+          <div className="flex-1 rounded bg-slate-100" />
+        ) : (
+          <>
+            <div className="rounded bg-green-500" style={{ flex: healthy }} />
+            <div className="rounded bg-amber-500" style={{ flex: warning }} />
+            <div className="rounded bg-red-500" style={{ flex: critical }} />
+          </>
+        )}
       </div>
     </div>
   )

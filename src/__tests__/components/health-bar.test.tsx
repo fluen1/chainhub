@@ -27,4 +27,12 @@ describe('HealthBar', () => {
     const zeros = screen.getAllByText('0')
     expect(zeros).toHaveLength(3)
   })
+
+  it('viser en neutral grå bar når alle værdier er 0', () => {
+    const { container } = render(<HealthBar healthy={0} warning={0} critical={0} />)
+    const barRow = container.querySelector('.h-2') as HTMLElement
+    const segments = barRow.querySelectorAll(':scope > div')
+    expect(segments).toHaveLength(1)
+    expect(segments[0]).toHaveClass('bg-slate-100', 'flex-1')
+  })
 })
