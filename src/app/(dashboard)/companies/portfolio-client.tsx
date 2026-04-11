@@ -39,6 +39,12 @@ const CITY_POSITIONS: Record<string, { top: string; left: string }> = {
   Køge:       { top: '47%', left: '69%' },
   Hillerød:   { top: '38%', left: '70%' },
   Helsingør:  { top: '34%', left: '74%' },
+  København:  { top: '42%', left: '72%' },
+}
+
+// Normaliser byer med postdistrikt-suffiks: "København Ø" → "København", "Aarhus C" → "Aarhus"
+function normalizeCity(city: string): string {
+  return city.replace(/\s+[NSØVKC]{1,2}$/, '').trim()
 }
 
 // ---------------------------------------------------------------
@@ -56,7 +62,7 @@ interface CityCluster {
 function groupByCities(companies: PortfolioCompany[]): CityCluster[] {
   const map = new Map<string, PortfolioCompany[]>()
   for (const c of companies) {
-    const city = c.city ?? 'Ukendt'
+    const city = normalizeCity(c.city ?? 'Ukendt')
     if (!map.has(city)) map.set(city, [])
     map.get(city)!.push(c)
   }

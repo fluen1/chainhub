@@ -278,7 +278,7 @@ export default function ContractsClient({
               placeholder="Søg kontrakt, selskab, type..."
               className="flex-1 text-[13px] text-slate-700 placeholder:text-slate-400 bg-transparent outline-none"
             />
-            <kbd className="bg-slate-100 ring-1 ring-slate-200 rounded px-1.5 py-0.5 text-[10px] text-slate-500 font-mono">\u2318K</kbd>
+            <kbd className="bg-slate-100 ring-1 ring-slate-200 rounded px-1.5 py-0.5 text-[10px] text-slate-500 font-mono">⌘K</kbd>
           </div>
 
           <StatusPill
@@ -351,7 +351,7 @@ export default function ContractsClient({
                   className="text-[11px] font-medium text-slate-500 hover:text-slate-900"
                   onClick={() => setStatusFilter('expired')}
                 >
-                  Vis alle {totalAttention} \u2192
+                  Vis alle {totalAttention} →
                 </button>
               )}
             </div>
@@ -408,7 +408,7 @@ export default function ContractsClient({
                   <Th label="Kontrakt"  active={sortKey === 'name'}     dir={sortDir} onClick={() => toggleSort('name')} />
                   <Th label="Selskab"   active={sortKey === 'company'}  dir={sortDir} onClick={() => toggleSort('company')} />
                   <Th label="Kategori"  active={sortKey === 'category'} dir={sortDir} onClick={() => toggleSort('category')} />
-                  <Th label="Udl\u00f8ber"   active={sortKey === 'expiry'}   dir={sortDir} onClick={() => toggleSort('expiry')} />
+                  <Th label="Udløber"   active={sortKey === 'expiry'}   dir={sortDir} onClick={() => toggleSort('expiry')} />
                   <Th label="Status"    active={sortKey === 'status'}   dir={sortDir} onClick={() => toggleSort('status')} />
                 </tr>
               </thead>
@@ -475,7 +475,7 @@ export default function ContractsClient({
             {sorted.length === 0 && (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <p className="text-[13px] text-slate-500 font-medium">Ingen kontrakter fundet</p>
-                <p className="text-[11px] text-slate-400 mt-1">Pr\u00f8v et andet s\u00f8geord eller filter</p>
+                <p className="text-[11px] text-slate-400 mt-1">Prøv et andet søgeord eller filter</p>
               </div>
             )}
 
@@ -487,7 +487,7 @@ export default function ContractsClient({
                     ? `${sorted.length} kontrakter \u00b7 Slut p\u00e5 listen`
                     : `Viser ${sorted.length} af ${contracts.length} kontrakter`}
                 </span>
-                <span className="text-[10px] text-slate-300">\u25cf \u25cf \u25cf</span>
+                <span className="text-[10px] text-slate-300">● ● ●</span>
               </div>
             )}
           </div>
@@ -559,7 +559,7 @@ function MatrixView({
     <div className="bg-white rounded-xl ring-1 ring-slate-900/[0.06] shadow-[0_1px_2px_rgba(15,23,42,0.04)] overflow-hidden">
       <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100">
         <div>
-          <div className="text-[12px] font-semibold text-slate-900">D\u00e6kningsmatrix</div>
+          <div className="text-[12px] font-semibold text-slate-900">Dækningsmatrix</div>
           <div className="text-[11px] text-slate-400 mt-0.5">Obligatoriske kontrakter pr. selskab</div>
         </div>
         <div className="flex items-center bg-slate-50 rounded-lg p-0.5 ring-1 ring-slate-900/[0.06]">
@@ -625,12 +625,12 @@ function MatrixView({
                           cell.status === 'missing' && 'bg-violet-50 hover:bg-violet-100 text-violet-700 ring-1 ring-violet-200',
                         )}
                       >
-                        {cell.status === 'active' && <span className="text-[13px]">\u2713</span>}
+                        {cell.status === 'active' && <span className="text-[13px]">✓</span>}
                         {cell.status === 'expiring' && (
                           <span className="text-[10px] font-semibold tabular-nums">{cell.contract?.daysUntilExpiry}d</span>
                         )}
-                        {cell.status === 'expired' && <span className="text-[13px]">\u2715</span>}
-                        {cell.status === 'missing' && <span className="text-[13px]">\u2298</span>}
+                        {cell.status === 'expired' && <span className="text-[13px]">✕</span>}
+                        {cell.status === 'missing' && <span className="text-[13px]">⊘</span>}
                       </button>
 
                       {/* Popover */}
@@ -649,16 +649,16 @@ function MatrixView({
                               <div className="text-[12px] font-medium text-slate-900">{cell.contract.displayName}</div>
                               <div className="text-[11px] text-slate-500 mt-0.5">
                                 {cell.status === 'expired'
-                                  ? `Udl\u00f8bet ${relativeDate(cell.contract.daysUntilExpiry)}`
+                                  ? `Udløbet ${relativeDate(cell.contract.daysUntilExpiry)}`
                                   : cell.status === 'expiring'
-                                  ? `Udl\u00f8ber ${relativeDate(cell.contract.daysUntilExpiry)}`
+                                  ? `Udløber ${relativeDate(cell.contract.daysUntilExpiry)}`
                                   : 'Aktiv'}
                               </div>
                               <Link
                                 href={`/contracts/${cell.contract.id}`}
                                 className="block mt-3 text-[11px] font-medium text-slate-900 hover:text-slate-700 no-underline"
                               >
-                                \u00c5bn kontrakt \u2192
+                                Åbn kontrakt →
                               </Link>
                             </>
                           ) : (
@@ -688,7 +688,7 @@ function MatrixView({
 
       {shownCompanies.length === 0 && (
         <div className="flex flex-col items-center justify-center py-12 text-center">
-          <p className="text-[13px] text-emerald-600 font-medium">Alt under kontrol \u2713</p>
+          <p className="text-[13px] text-emerald-600 font-medium">Alt under kontrol ✓</p>
           <p className="text-[11px] text-slate-400 mt-1">Ingen selskaber mangler obligatoriske kontrakter</p>
         </div>
       )}
@@ -696,14 +696,14 @@ function MatrixView({
       {/* Legend */}
       <div className="px-5 py-3 border-t border-slate-100 flex items-center gap-5 text-[11px] text-slate-500">
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded bg-emerald-100 text-emerald-700 flex items-center justify-center text-[9px]">\u2713</span>
+          <span className="w-2.5 h-2.5 rounded bg-emerald-100 text-emerald-700 flex items-center justify-center text-[9px]">✓</span>
           Aktiv
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded bg-amber-100" /> Udl\u00f8ber snart
+          <span className="w-2.5 h-2.5 rounded bg-amber-100" /> Udløber snart
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded bg-rose-100" /> Udl\u00f8bet
+          <span className="w-2.5 h-2.5 rounded bg-rose-100" /> Udløbet
         </div>
         <div className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded bg-violet-100 ring-1 ring-violet-200" /> Mangler
