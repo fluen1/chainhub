@@ -7,6 +7,7 @@
 import { prisma } from '@/lib/db'
 import { getAccessibleCompanies } from '@/lib/permissions'
 import { getUserRoleLabel, getUserRoleStyle } from '@/lib/labels'
+import type { SidebarBadge } from '@/types/ui'
 
 export interface SidebarData {
   companiesCount: number
@@ -123,5 +124,23 @@ export async function getSidebarData(
     userRoleLabel: getUserRoleLabel(primaryRole),
     userRoleStyle: getUserRoleStyle(primaryRole),
     recentCompanies,
+  }
+}
+
+/**
+ * Adapter: transformer SidebarData counts → AppSidebarProps.badges record.
+ */
+export function buildSidebarBadges(data: SidebarData): Record<string, SidebarBadge | null> {
+  return {
+    dashboard: null,
+    calendar: data.visitsCount > 0 ? { count: data.visitsCount, urgency: 'neutral' } : null,
+    portfolio: data.companiesCount > 0 ? { count: data.companiesCount, urgency: 'neutral' } : null,
+    contracts: data.contractsCount > 0 ? { count: data.contractsCount, urgency: 'neutral' } : null,
+    cases: data.casesCount > 0 ? { count: data.casesCount, urgency: 'neutral' } : null,
+    tasks: data.overdueTasksCount > 0
+      ? { count: data.overdueTasksCount, urgency: 'critical' }
+      : data.tasksCount > 0 ? { count: data.tasksCount, urgency: 'neutral' } : null,
+    documents: data.documentsCount > 0 ? { count: data.documentsCount, urgency: 'neutral' } : null,
+    persons: data.personsCount > 0 ? { count: data.personsCount, urgency: 'neutral' } : null,
   }
 }

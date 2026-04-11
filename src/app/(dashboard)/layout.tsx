@@ -1,10 +1,10 @@
-import { Sidebar } from '@/components/layout/sidebar'
-import { Header } from '@/components/layout/header'
-import { MobileNav } from '@/components/layout/MobileNav'
+import { AppSidebar } from '@/components/layout/app-sidebar'
+import { AppHeader } from '@/components/layout/app-header'
 import { Providers } from '@/components/providers'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { getSidebarData } from '@/lib/sidebar-data'
+import { getSidebarData, buildSidebarBadges } from '@/lib/sidebar-data'
+import type { InlineKpi } from '@/types/ui'
 
 export default async function DashboardLayout({
   children,
@@ -18,25 +18,36 @@ export default async function DashboardLayout({
     session.user.id,
     session.user.organizationId
   )
+  const badges = buildSidebarBadges(sidebarData)
+
+  // Header inline KPIs — generisk 3-tal for layout-niveau
+  const headerKpis: InlineKpi[] = [
+    { label: 'Selskaber', value: String(sidebarData.companiesCount) },
+    { label: 'Sager', value: String(sidebarData.casesCount) },
+    {
+      label: 'Forfaldne',
+      value: String(sidebarData.overdueTasksCount),
+      color: sidebarData.overdueTasksCount > 0 ? 'red' : undefined,
+    },
+  ]
 
   return (
     <Providers>
       <div className="flex h-screen overflow-hidden">
-        {/* Sidebar — skjult på mobil/tablet, synlig på desktop */}
-        <div className="hidden lg:flex">
-          <Sidebar
-            data={sidebarData}
+        <div className="hidden lg:flex h-full">
+          <AppSidebar
             userName={session.user.name ?? 'Bruger'}
+            userRoleLabel={sidebarData.userRoleLabel}
+            badges={badges}
           />
         </div>
-        {/* Mobil-navigation — kun synlig på mobil/tablet */}
-        <MobileNav
-          data={sidebarData}
-          userName={session.user.name ?? 'Bruger'}
-        />
         <div className="flex flex-1 flex-col overflow-hidden">
-          <Header />
-          <main className="flex-1 overflow-y-auto bg-gray-50 p-6">
+          <AppHeader
+            userName={session.user.name ?? 'Bruger'}
+            kpis={headerKpis}
+            currentDate={new Date()}
+          />
+          <main className="flex-1 overflow-y-auto bg-[#f0f2f5]">
             {children}
           </main>
         </div>
