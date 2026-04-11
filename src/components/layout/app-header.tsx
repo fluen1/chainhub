@@ -1,41 +1,38 @@
-'use client'
-
 import { Bell } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { InlineKpi } from '@/types/ui'
 
-function getGreeting(): string {
-  const hour = new Date().getHours()
+function getGreeting(date: Date): string {
+  const hour = date.getHours()
   if (hour < 12) return 'Godmorgen'
   if (hour < 18) return 'God eftermiddag'
   return 'God aften'
 }
 
-function getDateString(): string {
+function getDateString(date: Date): string {
   const days = ['Søndag', 'Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag']
   const months = ['januar', 'februar', 'marts', 'april', 'maj', 'juni', 'juli', 'august', 'september', 'oktober', 'november', 'december']
-  const now = new Date()
-  return `${days[now.getDay()]} ${now.getDate()}. ${months[now.getMonth()]} ${now.getFullYear()}`
+  return `${days[date.getDay()]} ${date.getDate()}. ${months[date.getMonth()]} ${date.getFullYear()}`
 }
 
 export interface AppHeaderProps {
   userName: string
   kpis: InlineKpi[]
+  currentDate: Date
 }
 
-export function AppHeader({ userName, kpis }: AppHeaderProps) {
+export function AppHeader({ userName, kpis, currentDate }: AppHeaderProps) {
   const firstName = userName.split(' ')[0]
   const initials = userName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
 
   return (
     <header className="flex items-center justify-between border-b border-gray-200 bg-white px-8 h-14 py-0">
-      {/* Venstre: hilsen + dato + divider + inline KPIs */}
       <div className="flex items-center gap-0">
         <div className="pr-5">
           <div className="text-sm font-bold text-slate-900 leading-tight">
-            {getGreeting()}, {firstName}
+            {getGreeting(currentDate)}, {firstName}
           </div>
-          <div className="text-[11px] text-gray-400 leading-tight">{getDateString()}</div>
+          <div className="text-[11px] text-gray-400 leading-tight">{getDateString(currentDate)}</div>
         </div>
 
         <div className="w-px h-8 bg-gray-200 mr-5" />
@@ -59,7 +56,6 @@ export function AppHeader({ userName, kpis }: AppHeaderProps) {
         </div>
       </div>
 
-      {/* Højre: søgning + notifikationer + avatar */}
       <div className="flex items-center gap-3">
         <input
           className="w-[260px] rounded-lg border border-gray-200 bg-slate-50 px-3.5 py-2 text-[13px] text-gray-400 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300"

@@ -10,45 +10,54 @@ const kpis: InlineKpi[] = [
 ]
 
 describe('AppHeader', () => {
-  it('viser hilsen med fornavn', () => {
-    render(<AppHeader userName="Philip Larsen" kpis={kpis} />)
-    expect(screen.getByText(/Philip/)).toBeInTheDocument()
-    // Greeting varierer efter tidspunkt — tjek at én af de tre muligheder er i DOM
-    const greetings = ['Godmorgen', 'God eftermiddag', 'God aften']
-    const found = greetings.some((g) => screen.queryByText(new RegExp(g)) !== null)
-    expect(found).toBe(true)
+  it('viser Godmorgen før kl 12', () => {
+    const date = new Date('2026-04-11T08:30:00')
+    render(<AppHeader userName="Philip Larsen" kpis={kpis} currentDate={date} />)
+    expect(screen.getByText(/Godmorgen, Philip/)).toBeInTheDocument()
   })
 
-  it('viser alle KPIs', () => {
-    render(<AppHeader userName="T" kpis={kpis} />)
+  it('viser God eftermiddag mellem 12-18', () => {
+    const date = new Date('2026-04-11T14:00:00')
+    render(<AppHeader userName="Philip" kpis={[]} currentDate={date} />)
+    expect(screen.getByText(/God eftermiddag/)).toBeInTheDocument()
+  })
+
+  it('viser God aften fra kl 18', () => {
+    const date = new Date('2026-04-11T20:00:00')
+    render(<AppHeader userName="Philip" kpis={[]} currentDate={date} />)
+    expect(screen.getByText(/God aften/)).toBeInTheDocument()
+  })
+
+  it('formaterer dansk dato korrekt', () => {
+    const date = new Date('2026-04-11T10:00:00')
+    render(<AppHeader userName="T" kpis={[]} currentDate={date} />)
+    expect(screen.getByText(/Lørdag 11\. april 2026/)).toBeInTheDocument()
+  })
+
+  it('viser alle KPIs med korrekte farver', () => {
+    const date = new Date('2026-04-11T10:00:00')
+    render(<AppHeader userName="T" kpis={kpis} currentDate={date} />)
     expect(screen.getByText('7')).toBeInTheDocument()
-    expect(screen.getByText('3')).toBeInTheDocument()
-    expect(screen.getByText('12')).toBeInTheDocument()
+    expect(screen.getByText('3')).toHaveClass('text-amber-600')
+    expect(screen.getByText('12')).toHaveClass('text-red-600')
     expect(screen.getByText('Selskaber')).toBeInTheDocument()
   })
 
-  it('farver amber-KPI korrekt', () => {
-    render(<AppHeader userName="T" kpis={kpis} />)
-    expect(screen.getByText('3')).toHaveClass('text-amber-600')
-  })
-
-  it('farver red-KPI korrekt', () => {
-    render(<AppHeader userName="T" kpis={kpis} />)
-    expect(screen.getByText('12')).toHaveClass('text-red-600')
-  })
-
   it('viser initialer fra userName', () => {
-    render(<AppHeader userName="Philip Larsen" kpis={[]} />)
+    const date = new Date('2026-04-11T10:00:00')
+    render(<AppHeader userName="Philip Larsen" kpis={[]} currentDate={date} />)
     expect(screen.getByText('PL')).toBeInTheDocument()
   })
 
   it('viser notifikations-bell med aria-label', () => {
-    render(<AppHeader userName="T" kpis={[]} />)
+    const date = new Date('2026-04-11T10:00:00')
+    render(<AppHeader userName="T" kpis={[]} currentDate={date} />)
     expect(screen.getByLabelText('Notifikationer')).toBeInTheDocument()
   })
 
   it('viser readonly søge-input', () => {
-    render(<AppHeader userName="T" kpis={[]} />)
+    const date = new Date('2026-04-11T10:00:00')
+    render(<AppHeader userName="T" kpis={[]} currentDate={date} />)
     const input = screen.getByPlaceholderText(/Søg efter/)
     expect(input).toHaveAttribute('readOnly')
   })
