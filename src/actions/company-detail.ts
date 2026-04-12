@@ -252,6 +252,23 @@ export async function getCompanyDetailData(
 
   if (!company) return null
 
+  // Resolve owner_company_id → company.name for Ejerskab-sektionen
+  const ownerCompanyIds = Array.from(
+    new Set(
+      ownerships
+        .map((o) => o.owner_company_id)
+        .filter((id): id is string => id !== null)
+    )
+  )
+  const holdingCompanyRows =
+    ownerCompanyIds.length > 0
+      ? await prisma.company.findMany({
+          where: { id: { in: ownerCompanyIds } },
+          select: { id: true, name: true },
+        })
+      : []
+  const holdingCompanyNames = new Map(holdingCompanyRows.map((c) => [c.id, c.name]))
+
   // Health dimensions
   const finance2025Sum = sumFinance(finance2025Raw)
   const finance2024Sum = sumFinance(finance2024Raw)
@@ -291,7 +308,19 @@ export async function getCompanyDetailData(
       alerts = cachedAlerts.filter((a) => a.roles.includes(rolename(role)))
       aiInsight = (aiCacheRow.insight as unknown as AiInsight | null) ?? null
     } else {
-      const snapshot = await buildSnapshot(companyId, organizationId, company)
+      const snapshot = await buildSnapshot({
+        companyId,
+        organizationId,
+        today,
+        company,
+        contractsRaw,
+        casesRaw,
+        finance2025Sum,
+        finance2024Sum,
+        companyPersonsRaw,
+        visitsRaw,
+        documentsRaw,
+      })
       const result = await generateCompanyInsights(snapshot)
       if (result.ok) {
         await prisma.companyInsightsCache.upsert({
@@ -327,7 +356,7 @@ export async function getCompanyDetailData(
 
   // Byg view-data pr. sektion (kun dem der er synlige)
   const ownership = visibleSections.has('ownership')
-    ? buildOwnership(ownerships, ejeraftale, today)
+    ? buildOwnership(ownerships, ejeraftale, today, holdingCompanyNames)
     : null
   const contractsView = visibleSections.has('contracts')
     ? buildContracts(contractsRaw, today, contractsTotal)
@@ -463,18 +492,25 @@ function buildOwnership(
     owner_person: { first_name: string; last_name: string } | null
   }>,
   ejeraftale: { expiry_date: Date | null; status: string } | null,
-  today: Date
+  today: Date,
+  holdingCompanyNames: Map<string, string>
 ): OwnershipData | null {
   if (ownerships.length === 0) return null
 
   let kaedegruppePct = 0
   let maxPersonPct = 0
   let maxPerson: { first_name: string; last_name: string } | null = null
+  let maxCompanyPct = 0
+  let holdingCompanyName: string | null = null
 
   for (const o of ownerships) {
     const pct = Number(o.ownership_pct)
     if (o.owner_company_id) {
       kaedegruppePct += pct
+      if (pct > maxCompanyPct) {
+        maxCompanyPct = pct
+        holdingCompanyName = holdingCompanyNames.get(o.owner_company_id) ?? null
+      }
     }
     if (o.owner_person_id && o.owner_person && pct > maxPersonPct) {
       maxPersonPct = pct
@@ -503,7 +539,7 @@ function buildOwnership(
         }
       : null,
     ejeraftaleStatus,
-    holdingCompanyName: null,
+    holdingCompanyName,
   }
 }
 
@@ -692,12 +728,13 @@ function buildDocuments(
 }
 
 // -----------------------------------------------------------------
-// Snapshot builder (minimal v1)
+// Snapshot builder — bruger allerede-fetchet data fra hoved-batchen
 // -----------------------------------------------------------------
 
-async function buildSnapshot(
-  companyId: string,
-  organizationId: string,
+interface BuildSnapshotParams {
+  companyId: string
+  organizationId: string
+  today: Date
   company: {
     name: string
     cvr: string | null
@@ -706,7 +743,50 @@ async function buildSnapshot(
     founded_date: Date | null
     company_type: string | null
   }
-): Promise<CompanySnapshot> {
+  contractsRaw: Array<{
+    id: string
+    system_type: string
+    status: string
+    expiry_date: Date | null
+  }>
+  casesRaw: Array<{
+    id: string
+    title: string
+    case_type: string
+    status: string
+    created_at: Date
+  }>
+  finance2025Sum: FinanceSum
+  finance2024Sum: FinanceSum
+  companyPersonsRaw: Array<{
+    role: string
+    person: { first_name: string; last_name: string }
+  }>
+  visitsRaw: Array<{ visit_date: Date; status: string }>
+  documentsRaw: Array<{
+    uploaded_at: Date
+    extraction: { extraction_status: string; reviewed_at: Date | null } | null
+  }>
+}
+
+const DAY_MS = 1000 * 60 * 60 * 24
+
+async function buildSnapshot(params: BuildSnapshotParams): Promise<CompanySnapshot> {
+  const {
+    companyId,
+    organizationId,
+    today,
+    company,
+    contractsRaw,
+    casesRaw,
+    finance2025Sum,
+    finance2024Sum,
+    companyPersonsRaw,
+    visitsRaw,
+    documentsRaw,
+  } = params
+
+  // Klynge-kontekst: peers i samme by, top 5 efter 2025 omsaetning
   const peers = await prisma.company.findMany({
     where: {
       organization_id: organizationId,
@@ -731,6 +811,85 @@ async function buildSnapshot(
         })
       : []
 
+  // Kontrakter — top 10 sorteret efter urgency
+  const snapshotContracts = sortContractsByUrgency(contractsRaw.slice(), today)
+    .slice(0, 10)
+    .map((c) => ({
+      id: c.id,
+      type: c.system_type,
+      status: c.status,
+      expiry_date: c.expiry_date ? c.expiry_date.toISOString().slice(0, 10) : null,
+      days_until_expiry: c.expiry_date
+        ? Math.floor((c.expiry_date.getTime() - today.getTime()) / DAY_MS)
+        : null,
+      parties: [] as string[],
+    }))
+
+  // Aabne sager — top 10 sorteret efter urgency
+  const snapshotCases = sortCasesByUrgency(casesRaw.slice())
+    .slice(0, 10)
+    .map((c) => ({
+      id: c.id,
+      title: c.title,
+      type: c.case_type,
+      status: c.status,
+      days_open: Math.floor((today.getTime() - c.created_at.getTime()) / DAY_MS),
+    }))
+
+  // Finance — fra allerede-summerede data
+  let snapshotFinance: CompanySnapshot['finance'] = null
+  if (finance2025Sum.omsaetning !== null && finance2025Sum.ebitda !== null) {
+    const margin_2025 =
+      finance2025Sum.omsaetning > 0 ? finance2025Sum.ebitda / finance2025Sum.omsaetning : 0
+    const margin_2024 =
+      finance2024Sum.omsaetning !== null &&
+      finance2024Sum.omsaetning > 0 &&
+      finance2024Sum.ebitda !== null
+        ? finance2024Sum.ebitda / finance2024Sum.omsaetning
+        : null
+    snapshotFinance = {
+      omsaetning_2025: finance2025Sum.omsaetning,
+      omsaetning_2024: finance2024Sum.omsaetning,
+      ebitda_2025: finance2025Sum.ebitda,
+      ebitda_2024: finance2024Sum.ebitda,
+      margin_2025,
+      margin_2024,
+      margin_delta_pp: margin_2024 !== null ? (margin_2025 - margin_2024) * 100 : null,
+    }
+  }
+
+  // Besoeg — seneste + dage siden + planlagte
+  const lastVisit = visitsRaw[0] ?? null
+  const snapshotVisits = {
+    last_visit_date: lastVisit ? lastVisit.visit_date.toISOString().slice(0, 10) : null,
+    days_since_last: lastVisit
+      ? Math.floor((today.getTime() - lastVisit.visit_date.getTime()) / DAY_MS)
+      : null,
+    planned_count: visitsRaw.filter((v) => v.status === 'PLANLAGT').length,
+  }
+
+  // Personer — op til 10 fra raw (ikke kun key persons, AI skal kunne naevne alle)
+  const snapshotPersons = companyPersonsRaw.slice(0, 10).map((cp) => ({
+    name: `${cp.person.first_name} ${cp.person.last_name}`,
+    role: cp.role,
+  }))
+
+  // Dokumenter — aggregerede counts
+  const recentlyUploaded = documentsRaw.filter(
+    (d) => (today.getTime() - d.uploaded_at.getTime()) / DAY_MS < 7
+  ).length
+  const awaitingReview = documentsRaw.filter(
+    (d) =>
+      d.extraction !== null &&
+      d.extraction.extraction_status === 'completed' &&
+      d.extraction.reviewed_at === null
+  ).length
+  const snapshotDocuments = {
+    total: documentsRaw.length,
+    recently_uploaded: recentlyUploaded,
+    awaiting_review: awaitingReview,
+  }
+
   return {
     company: {
       name: company.name,
@@ -747,11 +906,11 @@ async function buildSnapshot(
         return { name: p.name, omsaetning_2025: metric ? Number(metric.value) : 0 }
       }),
     },
-    contracts: [],
-    cases: [],
-    finance: null,
-    visits: { last_visit_date: null, days_since_last: null, planned_count: 0 },
-    persons: [],
-    documents: { total: 0, recently_uploaded: 0, awaiting_review: 0 },
+    contracts: snapshotContracts,
+    cases: snapshotCases,
+    finance: snapshotFinance,
+    visits: snapshotVisits,
+    persons: snapshotPersons,
+    documents: snapshotDocuments,
   }
 }
