@@ -116,28 +116,26 @@ export async function getDashboardData(
     documentsCount,
     personsCount,
   ] = await Promise.all([
-    // Forfaldne opgaver (overdue section) — ingen `company` relation på Task
+    // Forfaldne opgaver (overdue section) — company_id er nullable, scope via org
     prisma.task.findMany({
       where: {
         organization_id: organizationId,
         deleted_at: null,
         status: { not: 'LUKKET' },
         due_date: { lt: today },
-        company_id: { in: companyIds },
       },
       orderBy: { due_date: 'asc' },
       take: 10,
       select: { id: true, title: true, due_date: true, company_id: true },
     }),
 
-    // Opgaver i dag + denne/næste uge
+    // Opgaver i dag + denne/næste uge — company_id er nullable, scope via org
     prisma.task.findMany({
       where: {
         organization_id: organizationId,
         deleted_at: null,
         status: { not: 'LUKKET' },
         due_date: { gte: today, lte: twoWeekEnd },
-        company_id: { in: companyIds },
       },
       orderBy: { due_date: 'asc' },
       take: 20,
@@ -255,26 +253,25 @@ export async function getDashboardData(
       select: { company_id: true, system_type: true },
     }),
 
-    // Financial totals (2025) — period_type er HELAAR, ikke AAR
+    // Financial totals (seneste helår) — hent alt og filtrer i JS til seneste pr. selskab
     prisma.financialMetric.findMany({
       where: {
         organization_id: organizationId,
         company_id: { in: companyIds },
-        period_year: 2025,
         period_type: 'HELAAR',
         metric_type: { in: ['OMSAETNING', 'EBITDA'] },
       },
-      select: { company_id: true, metric_type: true, value: true },
+      orderBy: { period_year: 'desc' },
+      select: { company_id: true, metric_type: true, value: true, period_year: true },
     }),
 
-    // Badge-counts
+    // Badge-counts — tasks kan mangle company_id, scope via org
     prisma.task.count({
       where: {
         organization_id: organizationId,
         deleted_at: null,
         status: { not: 'LUKKET' },
         due_date: { lt: today },
-        company_id: { in: companyIds },
       },
     }),
     prisma.document.count({
@@ -314,8 +311,10 @@ export async function getDashboardData(
   }
 
   // Byg inline KPIs (role-adaptiv)
-  const omsaetningTotal = sumMetric(financialMetrics, 'OMSAETNING')
-  const ebitdaTotal = sumMetric(financialMetrics, 'EBITDA')
+  // Filtrer til seneste år pr. selskab (data er sorteret desc på period_year)
+  const latestMetrics = filterLatestPerCompany(financialMetrics)
+  const omsaetningTotal = sumMetric(latestMetrics, 'OMSAETNING')
+  const ebitdaTotal = sumMetric(latestMetrics, 'EBITDA')
   const margin = omsaetningTotal > 0 ? ebitdaTotal / omsaetningTotal : 0
 
   const inlineKpis: InlineKpi[] = buildInlineKpis(role, {
@@ -375,9 +374,9 @@ export async function getDashboardData(
     return { label: req.label, pct: Math.round((companiesWithType.size / totalCompanies) * 100) }
   })
 
-  // Underperforming = companies with EBITDA < 0 in 2025
+  // Underperforming = companies with EBITDA < 0 (seneste år)
   const ebitdaByCompany = new Map<string, number>()
-  for (const fm of financialMetrics) {
+  for (const fm of latestMetrics) {
     if (fm.metric_type === 'EBITDA') {
       ebitdaByCompany.set(fm.company_id, Number(fm.value))
     }
@@ -406,6 +405,18 @@ export async function getDashboardData(
 // ---------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------
+
+function filterLatestPerCompany(
+  rows: Array<{ company_id: string; metric_type: string; value: { toString(): string } | number; period_year: number }>
+) {
+  const seen = new Set<string>()
+  return rows.filter((r) => {
+    const key = `${r.company_id}-${r.metric_type}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
 
 function sumMetric(
   rows: Array<{ metric_type: string; value: { toString(): string } | number }>,

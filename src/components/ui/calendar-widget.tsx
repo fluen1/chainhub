@@ -134,7 +134,7 @@ export function CalendarWidget({
       <div className="h-px bg-slate-100 mb-3.5" />
 
       <div className="text-xs font-semibold uppercase tracking-[0.06em] text-gray-400 mb-2.5">
-        Kommende 7 dage
+        Denne måned
       </div>
 
       <div className="space-y-0">
@@ -166,7 +166,7 @@ export function CalendarWidget({
           </div>
         ))}
         {upcoming.length === 0 && (
-          <div className="py-4 text-center text-xs text-gray-400">Ingen events de næste 7 dage</div>
+          <div className="py-4 text-center text-xs text-gray-400">Ingen events denne måned</div>
         )}
       </div>
 
