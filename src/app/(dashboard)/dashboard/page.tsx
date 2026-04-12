@@ -1,4 +1,7 @@
+import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
+
+export const metadata: Metadata = { title: 'Dashboard' }
 import { redirect } from 'next/navigation'
 import { getDashboardData } from '@/actions/dashboard'
 import { TimelineSection } from '@/components/dashboard/timeline-section'

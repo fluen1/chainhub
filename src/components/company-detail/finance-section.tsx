@@ -65,16 +65,16 @@ function DataRow({
 export function FinanceSection({ data }: FinanceSectionProps) {
   if (!data) {
     return (
-      <SectionCard title="Oekonomi 2025">
-        <p className="py-2 text-center text-xs text-slate-400">Ingen oekonomi-data for 2025</p>
+      <SectionCard title="Økonomi 2025">
+        <p className="py-2 text-center text-xs text-slate-400">Ingen økonomi-data registreret for 2025</p>
       </SectionCard>
     )
   }
 
   return (
-    <SectionCard title="Oekonomi 2025" badge={data.statusBadge}>
+    <SectionCard title="Økonomi 2025" badge={data.statusBadge}>
       <DataRow
-        label="Omsaetning"
+        label="Omsætning"
         value={`${data.omsaetning.value_mio.toFixed(1)}M kr.`}
         delta={fmtYoY(data.omsaetning.yoy_pct) ?? undefined}
       />
@@ -92,7 +92,7 @@ export function FinanceSection({ data }: FinanceSectionProps) {
       />
 
       <div className="mt-3">
-        <div className="mb-1 text-[10px] text-slate-400">Omsaetning pr. kvartal</div>
+        <div className="mb-1 text-[10px] text-slate-400">Omsætning pr. kvartal</div>
         <div className="flex h-12 items-end gap-[3px]">
           {data.quarterly.map((q, i) => (
             <div

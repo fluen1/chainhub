@@ -11,7 +11,10 @@ const plusJakarta = Plus_Jakarta_Sans({
 })
 
 export const metadata: Metadata = {
-  title: 'ChainHub — Porteføljestyring',
+  title: {
+    default: 'ChainHub — Porteføljestyring',
+    template: '%s — ChainHub',
+  },
   description: 'Porteføljestyring for kæder med delejede lokationsselskaber',
 }
 

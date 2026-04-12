@@ -1,9 +1,13 @@
+import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
+
+export const metadata: Metadata = { title: 'Sager' }
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { getAccessibleCompanies } from '@/lib/permissions'
-import { Briefcase, Plus } from 'lucide-react'
+import { Briefcase, Plus, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
+import { PageHeader } from '@/components/ui/page-header'
 import { Suspense } from 'react'
 import { SearchAndFilter } from '@/components/ui/SearchAndFilter'
 import { Pagination } from '@/components/ui/Pagination'
@@ -175,8 +179,9 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
             {caseItem.title}
           </Link>
           {caseItem.description && (
-            <p className="text-xs text-gray-500 mt-0.5">
-              {caseItem.description.split('\n')[0]}
+            <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">
+              {caseItem.description.split('\n')[0].slice(0, 80)}
+              {caseItem.description.split('\n')[0].length > 80 ? '…' : ''}
             </p>
           )}
         </td>
@@ -202,9 +207,17 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
           </div>
         </td>
         <td className="px-6 py-4 whitespace-nowrap">
-          <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getCaseStatusStyle(caseItem.status)}`}>
-            {getCaseStatusLabel(caseItem.status)}
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getCaseStatusStyle(caseItem.status)}`}>
+              {getCaseStatusLabel(caseItem.status)}
+            </span>
+            {caseItem.due_date && new Date(caseItem.due_date) < new Date() && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700">
+                <AlertTriangle className="h-3 w-3" />
+                Forfalden
+              </span>
+            )}
+          </div>
         </td>
         <td className="px-6 py-4 text-right">
           {caseItem._count.tasks > 0 ? (
@@ -289,19 +302,12 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
 
 function CasesHeader() {
   return (
-    <div className="flex items-center justify-between">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Sager</h1>
-        <p className="mt-1 text-sm text-gray-500">Alle sager på tværs af selskaber</p>
-      </div>
-      <Link
-        href="/cases/new"
-        className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-      >
-        <Plus className="h-4 w-4" />
-        Ny sag
-      </Link>
-    </div>
+    <PageHeader
+      title="Sager"
+      subtitle="Alle sager på tværs af selskaber"
+      actionLabel="Ny sag"
+      actionHref="/cases/new"
+    />
   )
 }
 

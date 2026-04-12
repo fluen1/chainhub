@@ -1,9 +1,13 @@
+import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
+
+export const metadata: Metadata = { title: 'Personer' }
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { getAccessibleCompanies } from '@/lib/permissions'
-import { Users, Plus } from 'lucide-react'
+import { Users, Plus, Mail, Phone } from 'lucide-react'
 import Link from 'next/link'
+import { PageHeader } from '@/components/ui/page-header'
 import { Suspense } from 'react'
 import { SearchAndFilter } from '@/components/ui/SearchAndFilter'
 import { Pagination } from '@/components/ui/Pagination'
@@ -114,21 +118,12 @@ export default async function PersonsPage({ searchParams }: PersonsPageProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Persondatabase</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            {totalCount} kontakt{totalCount !== 1 ? 'er' : ''} på tværs af alle selskaber
-          </p>
-        </div>
-        <Link
-          href="/persons/new"
-          className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          <Plus className="h-4 w-4" />
-          Ny person
-        </Link>
-      </div>
+      <PageHeader
+        title="Persondatabase"
+        subtitle={`${totalCount} kontakt${totalCount !== 1 ? 'er' : ''} på tværs af alle selskaber`}
+        actionLabel="Ny person"
+        actionHref="/persons/new"
+      />
 
       <Suspense fallback={null}>
         <SearchAndFilter
@@ -185,8 +180,16 @@ export default async function PersonsPage({ searchParams }: PersonsPageProps) {
                   </div>
 
                   <div className="space-y-1 mb-3">
-                    {person.email && <p className="text-xs text-gray-500 truncate" title={person.email}>✉ {person.email}</p>}
-                    {person.phone && <p className="text-xs text-gray-500">☎ {person.phone}</p>}
+                    {person.email && (
+                      <p className="flex items-center gap-1.5 text-xs text-gray-500 truncate" title={person.email}>
+                        <Mail className="h-3 w-3 shrink-0 text-gray-400" />{person.email}
+                      </p>
+                    )}
+                    {person.phone && (
+                      <p className="flex items-center gap-1.5 text-xs text-gray-500">
+                        <Phone className="h-3 w-3 shrink-0 text-gray-400" />{person.phone}
+                      </p>
+                    )}
                   </div>
 
                   {person.company_persons.length > 0 && (

@@ -1,9 +1,13 @@
+import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
+
+export const metadata: Metadata = { title: 'Opgaver' }
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { getAccessibleCompanies } from '@/lib/permissions'
 import { CheckSquare, Plus } from 'lucide-react'
 import Link from 'next/link'
+import { PageHeader } from '@/components/ui/page-header'
 import { TaskStatusButton } from '@/components/tasks/TaskStatusButton'
 import { Suspense } from 'react'
 import { SearchAndFilter } from '@/components/ui/SearchAndFilter'
@@ -113,26 +117,12 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Opgaver</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            {totalCount} opgave{totalCount !== 1 ? 'r' : ''}
-            {overdueCount > 0 && (
-              <span className="ml-2 text-red-600 font-medium">
-                · {overdueCount} forfaldne
-              </span>
-            )}
-          </p>
-        </div>
-        <Link
-          href="/tasks/new"
-          className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          <Plus className="h-4 w-4" />
-          Ny opgave
-        </Link>
-      </div>
+      <PageHeader
+        title="Opgaver"
+        subtitle={`${totalCount} opgave${totalCount !== 1 ? 'r' : ''}${overdueCount > 0 ? ` · ${overdueCount} forfaldne` : ''}`}
+        actionLabel="Ny opgave"
+        actionHref="/tasks/new"
+      />
 
       <Suspense fallback={null}>
         <SearchAndFilter
@@ -165,21 +155,30 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
           {/* Forfaldne */}
           {overdueTasks.length > 0 && (
             <div>
-              <h2 className="text-sm font-semibold text-red-700 mb-3">
-                Forfaldne ({overdueTasks.length})
-              </h2>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-2 h-2 rounded-full bg-red-500" />
+                <h2 className="text-sm font-semibold text-red-700">
+                  Forfaldne ({overdueTasks.length})
+                </h2>
+              </div>
               <TaskList tasks={overdueTasks} today={today} isOverdueSection />
             </div>
+          )}
+
+          {/* Separator */}
+          {overdueTasks.length > 0 && upcomingTasks.length > 0 && (
+            <div className="border-t border-gray-200" />
           )}
 
           {/* Kommende */}
           {upcomingTasks.length > 0 && (
             <div>
-              {overdueTasks.length > 0 && (
-                <h2 className="text-sm font-semibold text-gray-700 mb-3">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-2 h-2 rounded-full bg-green-500" />
+                <h2 className="text-sm font-semibold text-gray-700">
                   Kommende ({upcomingTasks.length})
                 </h2>
-              )}
+              </div>
               <TaskList tasks={upcomingTasks} today={today} />
             </div>
           )}
@@ -222,7 +221,7 @@ function TaskList({
             <li
               key={task.id}
               className={`px-6 py-4 flex items-center justify-between gap-4 ${
-                isOverdueSection ? 'bg-red-50' : 'hover:bg-gray-50'
+                isOverdueSection ? 'bg-red-50/60 border-l-2 border-red-400' : 'hover:bg-gray-50'
               }`}
             >
               <div className="flex-1 min-w-0">

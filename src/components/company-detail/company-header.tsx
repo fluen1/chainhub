@@ -69,7 +69,7 @@ export function CompanyHeader({
               [
                 { key: 'kontrakter', label: 'Kontrakter', tone: healthDimensions.kontrakter },
                 { key: 'sager', label: 'Sager', tone: healthDimensions.sager },
-                { key: 'oekonomi', label: 'Oekonomi', tone: healthDimensions.oekonomi },
+                { key: 'oekonomi', label: 'Økonomi', tone: healthDimensions.oekonomi },
                 { key: 'governance', label: 'Governance', tone: healthDimensions.governance },
               ] as const
             ).map((dim) => (

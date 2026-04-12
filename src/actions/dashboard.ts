@@ -653,9 +653,11 @@ function buildTimelineSections(data: TimelineRawData): TimelineSectionData[] {
     })
   }
 
+  const todayLabel = `I dag — ${today.toLocaleDateString('da-DK', { day: 'numeric', month: 'long' })}`
+
   return [
     { id: 'overdue', label: 'Overskredet', dotType: 'overdue', items: overdueItems },
-    { id: 'today', label: 'I dag', dotType: 'today', items: todayItems },
+    { id: 'today', label: todayLabel, dotType: 'today', items: todayItems },
     { id: 'thisweek', label: 'Denne uge', dotType: 'future', items: thisweekItems },
     { id: 'nextweek', label: 'Næste uge', dotType: 'future', items: nextweekItems },
   ]

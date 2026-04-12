@@ -15,6 +15,8 @@ export interface SidebarData {
   casesCount: number
   tasksCount: number
   overdueTasksCount: number
+  expiringContractsCount: number
+  omsaetningTotal: number
   personsCount: number
   documentsCount: number
   visitsCount: number
@@ -46,11 +48,15 @@ export async function getSidebarData(
     deleted_at: null as null,
   }
 
+  const twoWeekEnd = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+
   const [
     companiesCount,
     contractsCount,
     casesCount,
     tasksData,
+    expiringContractsCount,
+    financialMetrics,
     personsCount,
     documentsCount,
     visitsCount,
@@ -83,6 +89,31 @@ export async function getSidebarData(
       },
       select: { id: true, due_date: true },
     }),
+    // Udløbende kontrakter (næste 14 dage)
+    companyIds.length > 0
+      ? prisma.contract.count({
+          where: {
+            organization_id: organizationId,
+            company_id: { in: companyIds },
+            deleted_at: null,
+            status: 'AKTIV',
+            expiry_date: { not: null, gte: today, lte: twoWeekEnd },
+          },
+        })
+      : Promise.resolve(0),
+    // Omsætning total (2025)
+    companyIds.length > 0
+      ? prisma.financialMetric.findMany({
+          where: {
+            organization_id: organizationId,
+            company_id: { in: companyIds },
+            period_year: 2025,
+            period_type: 'HELAAR',
+            metric_type: 'OMSAETNING',
+          },
+          select: { value: true },
+        })
+      : Promise.resolve([]),
     prisma.person.count({
       where: { organization_id: organizationId, deleted_at: null },
     }),
@@ -107,6 +138,11 @@ export async function getSidebarData(
       : Promise.resolve([]),
   ])
 
+  let omsaetningTotal = 0
+  for (const fm of financialMetrics) {
+    omsaetningTotal += Number(fm.value)
+  }
+
   const overdueTasksCount = tasksData.filter(
     (t) => t.due_date && new Date(t.due_date) < today
   ).length
@@ -117,6 +153,8 @@ export async function getSidebarData(
     casesCount,
     tasksCount: tasksData.length,
     overdueTasksCount,
+    expiringContractsCount,
+    omsaetningTotal,
     personsCount,
     documentsCount,
     visitsCount,

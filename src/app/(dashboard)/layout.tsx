@@ -20,15 +20,22 @@ export default async function DashboardLayout({
   )
   const badges = buildSidebarBadges(sidebarData)
 
-  // Header inline KPIs — generisk 3-tal for layout-niveau
+  // Header inline KPIs — 5 KPIs matchende proto (GROUP_OWNER)
+  const formatMio = (val: number) => `${(val / 1_000_000).toFixed(1)}m`
   const headerKpis: InlineKpi[] = [
     { label: 'Selskaber', value: String(sidebarData.companiesCount) },
+    {
+      label: 'Udløbende',
+      value: String(sidebarData.expiringContractsCount),
+      color: sidebarData.expiringContractsCount > 0 ? 'amber' : undefined,
+    },
     { label: 'Sager', value: String(sidebarData.casesCount) },
     {
       label: 'Forfaldne',
       value: String(sidebarData.overdueTasksCount),
       color: sidebarData.overdueTasksCount > 0 ? 'red' : undefined,
     },
+    { label: 'Omsætning', value: formatMio(sidebarData.omsaetningTotal) },
   ]
 
   return (

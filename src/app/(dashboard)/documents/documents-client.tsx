@@ -6,6 +6,8 @@ import {
   Search,
   Upload,
   FileText,
+  FileSpreadsheet,
+  FileImage,
   CheckCircle2,
   Loader2,
   Plus,
@@ -58,6 +60,20 @@ function statusLabel(status: DocStatus): string {
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('da-DK', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function fileTypeIcon(fileName: string) {
+  const ext = fileName.split('.').pop()?.toLowerCase() ?? ''
+  if (['xlsx', 'xls', 'csv'].includes(ext)) return <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
+  if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext)) return <FileImage className="w-4 h-4 text-sky-500" />
+  if (ext === 'pdf') return <FileText className="w-4 h-4 text-red-500" />
+  if (['doc', 'docx'].includes(ext)) return <FileText className="w-4 h-4 text-blue-500" />
+  return <FileText className="w-4 h-4 text-slate-400" />
+}
+
+function fileExtLabel(fileName: string): string {
+  const ext = fileName.split('.').pop()?.toUpperCase() ?? ''
+  return ext
 }
 
 // ---------------------------------------------------------------
@@ -360,7 +376,7 @@ function DocRow({ doc }: { doc: DocumentItem }) {
         ) : isReview ? (
           <Sparkles className="w-4 h-4 text-violet-500" />
         ) : (
-          <FileText className="w-4 h-4 text-slate-400" />
+          fileTypeIcon(doc.fileName)
         )}
       </div>
 
@@ -376,9 +392,12 @@ function DocRow({ doc }: { doc: DocumentItem }) {
           ) : (
             <span className="text-[12px] font-medium text-slate-900 truncate">{doc.fileName}</span>
           )}
+          <span className="text-[9px] font-medium text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded shrink-0">
+            {fileExtLabel(doc.fileName)}
+          </span>
         </div>
         <div className="text-[11px] text-slate-400 truncate mt-0.5">
-          {doc.companyName}
+          {doc.companyName} · {formatDate(doc.uploadedAt)}
           {isReview && doc.extractedFieldCount > 0 && (
             <> · {doc.extractedFieldCount} felter udtrukket</>
           )}

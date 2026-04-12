@@ -63,9 +63,9 @@ export function RightPanels({ data, calendarEvents, upcomingEvents, todayISO }: 
   // COMPANY_*-brugere.
   return (
     <div className="space-y-3">
-      <Panel title="Porteføljeoverblik">
+      <div className="bg-white border border-gray-200 rounded-lg p-3.5">
         <HeatmapGrid companies={data.heatmap} />
-      </Panel>
+      </div>
       <CalendarWidget events={calendarEvents} upcoming={upcomingEvents} today={todayISO} />
       <Panel title="Kontraktdækning">
         {data.coverage.map((item) => (
@@ -73,13 +73,19 @@ export function RightPanels({ data, calendarEvents, upcomingEvents, todayISO }: 
         ))}
       </Panel>
       <Panel title="Økonomi snapshot">
-        <FinRow label="Omsætning" value={`${formatMio(data.portfolioTotals.totalOmsaetning)}M`} />
-        <FinRow label="EBITDA" value={`${formatMio(data.portfolioTotals.totalEbitda)}M`} />
-        <FinRow
-          label="Underskud lok."
-          value={String(data.underperformingCount)}
-          valueColor={data.underperformingCount > 0 ? '#ef4444' : undefined}
-        />
+        {data.portfolioTotals.totalOmsaetning === 0 && data.portfolioTotals.totalEbitda === 0 ? (
+          <p className="text-xs text-gray-400 text-center py-3">Ingen økonomi-data registreret endnu</p>
+        ) : (
+          <>
+            <FinRow label="Omsætning" value={`${formatMio(data.portfolioTotals.totalOmsaetning)}M`} />
+            <FinRow label="EBITDA" value={`${formatMio(data.portfolioTotals.totalEbitda)}M`} />
+            <FinRow
+              label="Underskud lok."
+              value={String(data.underperformingCount)}
+              valueColor={data.underperformingCount > 0 ? '#ef4444' : undefined}
+            />
+          </>
+        )}
       </Panel>
     </div>
   )

@@ -1,6 +1,9 @@
+import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
+
+export const metadata: Metadata = { title: 'Søg' }
 import { getAccessibleCompanies } from '@/lib/permissions'
 import { Building2, FileText, Briefcase, Users, Search } from 'lucide-react'
 import Link from 'next/link'
@@ -225,13 +228,25 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   return (
     <div className="space-y-6 max-w-3xl">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Søgeresultater</h1>
-        {query && (
-          <p className="mt-1 text-sm text-gray-500">
-            Søger efter: <span className="font-medium text-gray-700">&quot;{query}&quot;</span>
-          </p>
-        )}
+        <h1 className="text-2xl font-bold text-gray-900">Søg</h1>
+        <p className="mt-1 text-sm text-gray-500">
+          Søg på tværs af selskaber, kontrakter, sager og personer
+        </p>
       </div>
+
+      <form action="/search" method="GET">
+        <div className="relative">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <input
+            type="text"
+            name="q"
+            defaultValue={query}
+            autoFocus
+            placeholder="Søg efter selskaber, kontrakter, personer..."
+            className="w-full rounded-lg border border-gray-300 bg-white pl-11 pr-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 shadow-sm"
+          />
+        </div>
+      </form>
 
       <Suspense fallback={
         <div className="space-y-4">

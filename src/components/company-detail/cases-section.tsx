@@ -31,9 +31,9 @@ export function CasesSection({ cases, totalCount }: CasesSectionProps) {
     totalCount > 0 ? { label: `${totalCount} aktive`, tone: 'red' as const } : undefined
 
   return (
-    <SectionCard title="Aabne sager" badge={badge}>
+    <SectionCard title="Åbne sager" badge={badge}>
       {cases.length === 0 ? (
-        <p className="py-2 text-center text-xs text-slate-400">Ingen aabne sager</p>
+        <p className="py-2 text-center text-xs text-slate-400">Ingen åbne sager</p>
       ) : (
         cases.slice(0, 3).map((c) => (
           <Link

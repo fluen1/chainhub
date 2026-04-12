@@ -1,4 +1,7 @@
+import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
+
+export const metadata: Metadata = { title: 'Indstillinger' }
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { canAccessModule } from '@/lib/permissions'
