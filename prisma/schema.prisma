@@ -297,6 +297,7 @@ model Organization {
   deadlines             Deadline[]
   visits                Visit[]
   ai_settings           OrganizationAISettings?
+  company_insights_caches CompanyInsightsCache[]
 
   @@index([id])
 }
@@ -364,6 +365,7 @@ model Company {
   cases           CaseCompany[]
   documents       Document[]
   visits          Visit[]
+  insights_cache  CompanyInsightsCache?
 
   @@index([organization_id, deleted_at])
   @@index([organization_id, status])
@@ -943,4 +945,20 @@ model AIFieldCorrection {
   @@index([field_name])
   @@index([schema_version])
   @@index([organization_id])
+}
+
+model CompanyInsightsCache {
+  id              String   @id @default(uuid())
+  organization_id String
+  company_id      String   @unique
+  alerts          Json
+  insight         Json?
+  model_name      String
+  total_cost_usd  Decimal  @db.Decimal(10, 4)
+  generated_at    DateTime @default(now())
+
+  organization Organization @relation(fields: [organization_id], references: [id])
+  company      Company      @relation(fields: [company_id], references: [id])
+
+  @@index([company_id, generated_at])
 }
