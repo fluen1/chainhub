@@ -105,7 +105,8 @@ async function main() {
   const companies = await Promise.all(
     companyData.map((c) =>
       prisma.company.upsert({
-        where: { id: c.id }, update: {},
+        where: { id: c.id },
+        update: { latitude: c.latitude, longitude: c.longitude },
         create: { ...c, organization_id: org.id, created_by: philip.id },
       })
     )
