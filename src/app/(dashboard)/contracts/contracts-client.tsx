@@ -288,13 +288,19 @@ export default function ContractsClient({
             dot="bg-rose-500"
             label={`${counts.expired} Udløbet`}
             active={statusFilter === 'expired'}
-            onClick={() => setStatusFilter(statusFilter === 'expired' ? 'all' : 'expired')}
+            onClick={() => {
+              setStatusFilter(statusFilter === 'expired' ? 'all' : 'expired')
+              setView('list')
+            }}
           />
           <StatusPill
             dot="bg-amber-500"
             label={`${counts.expiring} Udløber`}
             active={statusFilter === 'expiring'}
-            onClick={() => setStatusFilter(statusFilter === 'expiring' ? 'all' : 'expiring')}
+            onClick={() => {
+              setStatusFilter(statusFilter === 'expiring' ? 'all' : 'expiring')
+              setView('list')
+            }}
           />
           <StatusPill
             dot="bg-violet-500"
@@ -309,7 +315,10 @@ export default function ContractsClient({
             dot="bg-emerald-500"
             label={`${counts.active} Aktive`}
             active={statusFilter === 'active'}
-            onClick={() => setStatusFilter(statusFilter === 'active' ? 'all' : 'active')}
+            onClick={() => {
+              setStatusFilter(statusFilter === 'active' ? 'all' : 'active')
+              setView('list')
+            }}
           />
 
           {/* View toggle */}
