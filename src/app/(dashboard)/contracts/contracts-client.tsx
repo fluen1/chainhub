@@ -136,6 +136,7 @@ export default function ContractsClient({
 }) {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | DerivedStatus | 'missing'>('all')
+  const [showAllUrgency, setShowAllUrgency] = useState(false)
   const [view, setView] = useState<'list' | 'matrix'>('list')
   const [sortKey, setSortKey] = useState<SortKey>('status')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
@@ -222,8 +223,10 @@ export default function ContractsClient({
     for (const m of missingRows) items.push({ kind: 'missing', row: m })
     for (const c of expiring) items.push({ kind: 'contract', contract: c, status: 'expiring' })
 
-    return items.slice(0, 5)
+    return items
   }, [contracts, missingRows])
+
+  const visibleUrgencyItems = showAllUrgency ? urgencyItems : urgencyItems.slice(0, 5)
 
   const totalAttention = counts.expired + counts.expiring + counts.missing
 
@@ -349,14 +352,14 @@ export default function ContractsClient({
                 <button
                   type="button"
                   className="text-[11px] font-medium text-slate-500 hover:text-slate-900"
-                  onClick={() => setStatusFilter('expired')}
+                  onClick={() => setShowAllUrgency(!showAllUrgency)}
                 >
-                  Vis alle {totalAttention} →
+                  {showAllUrgency ? 'Vis færre' : `Vis alle ${totalAttention}`} →
                 </button>
               )}
             </div>
             <div className="divide-y divide-slate-50">
-              {urgencyItems.map((item, idx) => {
+              {visibleUrgencyItems.map((item, idx) => {
                 if (item.kind === 'contract') {
                   const derived = item.status
                   return (
@@ -380,9 +383,10 @@ export default function ContractsClient({
                   )
                 }
                 return (
-                  <div
+                  <Link
                     key={`missing-${item.row.companyId}-${item.row.missingType}-${idx}`}
-                    className="flex items-center gap-3 px-5 py-2.5"
+                    href={`/companies/${item.row.companyId}`}
+                    className="flex items-center gap-3 px-5 py-2.5 hover:bg-slate-50/60 transition-colors no-underline"
                   >
                     <span className="w-1.5 h-1.5 rounded-full bg-violet-500 shrink-0" />
                     <div className="flex-1 min-w-0">
@@ -392,7 +396,7 @@ export default function ContractsClient({
                       <div className="text-[11px] text-slate-400 truncate">{item.row.companyName}</div>
                     </div>
                     <span className="text-[11px] text-slate-500 shrink-0">Ingen</span>
-                  </div>
+                  </Link>
                 )
               })}
             </div>
