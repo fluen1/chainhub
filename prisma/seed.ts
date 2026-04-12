@@ -93,13 +93,13 @@ async function main() {
   // 4. SELSKABER (6 klinikker + 1 holding)
   // ══════════════════════════════════════════════════════════════
   const companyData = [
-    { id: uid(1000), name: 'TandlægeGruppen Holding ApS', cvr: '10000001', company_type: 'ApS', address: 'Bredgade 25', city: 'København K', postal_code: '1260', status: 'aktiv', notes: 'Moderselskab for hele kæden' },
-    { id: uid(1001), name: 'Tandlæge Østerbro ApS', cvr: '87654321', company_type: 'ApS', address: 'Østerbrogade 123', city: 'København Ø', postal_code: '2100', status: 'aktiv' },
-    { id: uid(1002), name: 'Tandlæge Aarhus ApS', cvr: '11223344', company_type: 'ApS', address: 'Frederiksgade 45', city: 'Aarhus C', postal_code: '8000', status: 'aktiv' },
-    { id: uid(1003), name: 'Tandlæge Vesterbro ApS', cvr: '22334455', company_type: 'ApS', address: 'Vesterbrogade 78', city: 'København V', postal_code: '1620', status: 'aktiv' },
-    { id: uid(1004), name: 'Tandlæge Nordhavn ApS', cvr: '33445566', company_type: 'ApS', address: 'Århusgade 88', city: 'København Ø', postal_code: '2150', status: 'under_stiftelse' },
-    { id: uid(1005), name: 'Tandlæge Odense ApS', cvr: '44556677', company_type: 'ApS', address: 'Kongensgade 55', city: 'Odense C', postal_code: '5000', status: 'aktiv' },
-    { id: uid(1006), name: 'Tandlæge Aalborg ApS', cvr: '55667788', company_type: 'ApS', address: 'Boulevarden 33', city: 'Aalborg', postal_code: '9000', status: 'aktiv' },
+    { id: uid(1000), name: 'TandlægeGruppen Holding ApS', cvr: '10000001', company_type: 'ApS', address: 'Bredgade 25', city: 'København K', postal_code: '1260', status: 'aktiv', notes: 'Moderselskab for hele kæden', latitude: 55.6839, longitude: 12.5876 },
+    { id: uid(1001), name: 'Tandlæge Østerbro ApS', cvr: '87654321', company_type: 'ApS', address: 'Østerbrogade 123', city: 'København Ø', postal_code: '2100', status: 'aktiv', latitude: 55.7065, longitude: 12.5773 },
+    { id: uid(1002), name: 'Tandlæge Aarhus ApS', cvr: '11223344', company_type: 'ApS', address: 'Frederiksgade 45', city: 'Aarhus C', postal_code: '8000', status: 'aktiv', latitude: 56.1572, longitude: 10.2107 },
+    { id: uid(1003), name: 'Tandlæge Vesterbro ApS', cvr: '22334455', company_type: 'ApS', address: 'Vesterbrogade 78', city: 'København V', postal_code: '1620', status: 'aktiv', latitude: 55.6713, longitude: 12.5520 },
+    { id: uid(1004), name: 'Tandlæge Nordhavn ApS', cvr: '33445566', company_type: 'ApS', address: 'Århusgade 88', city: 'København Ø', postal_code: '2150', status: 'under_stiftelse', latitude: 55.7157, longitude: 12.5993 },
+    { id: uid(1005), name: 'Tandlæge Odense ApS', cvr: '44556677', company_type: 'ApS', address: 'Kongensgade 55', city: 'Odense C', postal_code: '5000', status: 'aktiv', latitude: 55.3959, longitude: 10.3883 },
+    { id: uid(1006), name: 'Tandlæge Aalborg ApS', cvr: '55667788', company_type: 'ApS', address: 'Boulevarden 33', city: 'Aalborg', postal_code: '9000', status: 'aktiv', latitude: 57.0488, longitude: 9.9217 },
   ]
 
   const companies = await Promise.all(
