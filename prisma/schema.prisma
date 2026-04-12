@@ -350,6 +350,8 @@ model Company {
   address         String?
   city            String?
   postal_code     String?
+  latitude        Float?
+  longitude       Float?
   founded_date    DateTime?
   status          String    @default("aktiv")
   notes           String?
