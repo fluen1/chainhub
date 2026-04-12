@@ -298,6 +298,7 @@ model Organization {
   visits                Visit[]
   ai_settings           OrganizationAISettings?
   company_insights_caches CompanyInsightsCache[]
+  comments              Comment[]
 
   @@index([id])
 }
@@ -320,6 +321,7 @@ model User {
   created_contracts Contract[]           @relation("ContractCreatedBy")
   assigned_tasks    Task[]               @relation("TaskAssignedTo")
   visits            Visit[]              @relation("VisitVisitor")
+  comments          Comment[]            @relation("CommentAuthor")
 
   @@unique([organization_id, email])
   @@index([organization_id, deleted_at])
@@ -664,10 +666,29 @@ model Task {
   organization Organization @relation(fields: [organization_id], references: [id])
   assignee     User?        @relation("TaskAssignedTo", fields: [assigned_to], references: [id])
   case         Case?        @relation(fields: [case_id], references: [id])
+  comments     Comment[]
 
   @@index([organization_id, deleted_at])
   @@index([organization_id, assigned_to, deleted_at])
   @@index([organization_id, due_date])
+}
+
+model Comment {
+  id              String   @id @default(uuid())
+  organization_id String
+  content         String
+  task_id         String?
+  case_id         String?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+  created_by      String
+
+  organization Organization @relation(fields: [organization_id], references: [id])
+  task         Task?        @relation(fields: [task_id], references: [id])
+  author       User         @relation("CommentAuthor", fields: [created_by], references: [id])
+
+  @@index([organization_id, task_id])
+  @@index([organization_id, case_id])
 }
 
 model Deadline {
