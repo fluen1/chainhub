@@ -5,8 +5,20 @@ import { prisma } from '@/lib/db'
 import { canAccessCompany, canAccessModule } from '@/lib/permissions'
 import { createCompanySchema, updateCompanySchema, type CreateCompanyInput, type UpdateCompanyInput } from '@/lib/validations/company'
 import { revalidatePath } from 'next/cache'
+import { z } from 'zod'
 import type { ActionResult } from '@/types/actions'
 import type { Company } from '@prisma/client'
+
+const stamdataSchema = z.object({
+  name: z.string().min(1, 'Navn er paakraevet').max(200, 'Navn maa maks vaere 200 tegn'),
+  cvr: z.string().regex(/^\d{8}$/, 'CVR skal vaere 8 cifre').nullable(),
+  address: z.string().max(200, 'Adresse maa maks vaere 200 tegn').nullable(),
+  city: z.string().max(100, 'By maa maks vaere 100 tegn').nullable(),
+  postal_code: z.string().max(10, 'Postnummer maa maks vaere 10 tegn').nullable(),
+  founded_date: z.string().nullable(),
+})
+
+export type UpdateCompanyStamdataInput = z.infer<typeof stamdataSchema>
 
 export async function createCompany(
   input: CreateCompanyInput
@@ -125,5 +137,45 @@ export async function deleteCompany(
     return { data: undefined }
   } catch {
     return { error: 'Selskabet kunne ikke slettes — prøv igen' }
+  }
+}
+
+export async function updateCompanyStamdata(
+  companyId: string,
+  input: UpdateCompanyStamdataInput
+): Promise<ActionResult<void>> {
+  const session = await auth()
+  if (!session) return { error: 'Ikke autoriseret' }
+
+  const parsed = stamdataSchema.safeParse(input)
+  if (!parsed.success) {
+    const firstIssue = parsed.error.issues[0]
+    return { error: firstIssue?.message ?? 'Ugyldigt input' }
+  }
+
+  const hasAccess = await canAccessCompany(session.user.id, companyId)
+  if (!hasAccess) return { error: 'Ingen adgang til dette selskab' }
+
+  try {
+    await prisma.company.update({
+      where: {
+        id: companyId,
+        organization_id: session.user.organizationId,
+      },
+      data: {
+        name: parsed.data.name,
+        cvr: parsed.data.cvr,
+        address: parsed.data.address,
+        city: parsed.data.city,
+        postal_code: parsed.data.postal_code,
+        founded_date: parsed.data.founded_date ? new Date(parsed.data.founded_date) : null,
+      },
+    })
+
+    revalidatePath(`/companies/${companyId}`)
+    revalidatePath('/companies')
+    return { data: undefined }
+  } catch {
+    return { error: 'Stamdata kunne ikke opdateres — prøv igen' }
   }
 }
