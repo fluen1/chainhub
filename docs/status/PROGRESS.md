@@ -1,6 +1,6 @@
 # PROGRESS.md — ChainHub
 
-Opdateret: Plan 4B FÆRDIG 2026-04-11
+Opdateret: Plan 4C FÆRDIG 2026-04-12
 
 ## Sprint 1-6 ✅ FÆRDIGE
 - [x] Sprint 1 — Fundament (Next.js 14, Prisma, Auth, Permissions, Dashboard shell)
@@ -119,12 +119,27 @@ Opdateret: Plan 4B FÆRDIG 2026-04-11
 - [x] Scope-leak fix på openCases + expired-contract split + deterministic role priority
 - [x] Build: GRØN, 242 tests passerer, Playwright-audit uden console errors
 
-## Plan 4C — Resterende sider (afventer)
+## Plan 4C — Selskabs-detalje single-page ✅ (2026-04-12)
+- [x] 18 tasks via subagent-driven-development (Task 0 Prisma migration → Task 17 Playwright audit)
+- [x] Ny Prisma-model `CompanyInsightsCache` med 24h TTL
+- [x] Pure helpers i `src/lib/company-detail/helpers.ts`: sectionsForRole, pickHighestPriorityRole, deriveHealthDimensions, deriveStatusBadge, sortContractsByUrgency, sortCasesByUrgency, selectKeyPersons
+- [x] 3 nye atoms: AlertBanner (red/amber banner), AiInsightCard (lilla gradient med **bold**-parser), SectionCard wrapper
+- [x] 7 sektion-komponenter: OwnershipSection, ContractsSection, FinanceSection, CasesSection, PersonsSection, VisitsSection, DocumentsSection
+- [x] CompanyHeader Server Component med editStamdataButton ReactNode slot
+- [x] EditStamdataDialog Client Component modal + updateCompanyStamdata action i src/actions/companies.ts
+- [x] AI job `src/lib/ai/jobs/company-insights.ts` — Zod-valideret output, 8s timeout, markdown JSON fence-stripping, cost-tracking
+- [x] Server Action `src/actions/company-detail.ts` — parallel Prisma batch, role-baseret visibleSections, stale-after-24h cache
+- [x] Page rewrite `/companies/[id]` single scroll-view (606 linjer legacy → 106 linjer thin wrapper)
+- [x] 11 subpages slettet + layout.tsx + company-detail-client.tsx + CompanyTabs.tsx
+- [x] 97 nye tests (35 helpers + ~45 components + 5 AI + 2 smoke) — total 339 passed, 4 skipped
+- [x] Build: GRØN (26 routes, `/companies/[id]` 1.53 kB / 107 kB first-load)
+- [x] Playwright audit: alle 7 sektioner renderes, ingen browser console errors, graceful AI degradation bekræftet
+
+## Plan 4D — Resterende sider (afventer)
 - [ ] `/tasks` list + `/tasks/[id]` detail-rewrite
 - [ ] `/calendar` full-page (erstatter `/visits`, feeder CalendarWidget på dashboard)
 - [ ] `/search` global søgning
 - [ ] `/settings`
-- [ ] `/companies/[id]` single-page rewrite (erstatter subpages)
 - [ ] Slet `/visits` efter `/calendar` overtager
 
 ## Sprint 9 — Polish + Kalender ❌ AFVENTER SPRINT 8

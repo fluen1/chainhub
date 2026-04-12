@@ -13,6 +13,18 @@
 `docker-compose.yml` er oprettet med lokal PostgreSQL-opsætning, men kan ikke bruges endnu.
 **Workaround:** Brug Supabase direkte til development. Installér Docker Desktop når offline-dev er nødvendigt.
 
+## BLK-004: Pino logger crasher i Next.js RSC worker
+**Status:** AKTIV — ikke-blokerende (graceful degradation virker)
+**Opdaget:** Plan 4C (2026-04-12), under Playwright audit af `/companies/[id]`
+**Beskrivelse:** `src/lib/ai/client/anthropic-direct.ts` bruger `pino`-logger med thread-stream transport. I Next.js dev-mode Server Components fejler pino's worker-tråd ("Error: the worker has exited") når `log.error()` kaldes inde i Anthropic-clientens catch-block. Det maskerer den oprindelige Anthropic-fejl (`generateCompanyInsights` fanger pino-fejlen i stedet for API-fejlen) og forhindrer enhver AI-call fra RSC-kontekst.
+**Observation:** `getCompanyDetailData()` returnerer graceful-degradation (`alerts: []`, `aiInsight: null`) som specificeret, så `/companies/[id]` renderer fint uden AI Insight-sektionen. Alle 7 grid-sektioner + header + alerts-plads fungerer.
+**Workaround (ikke påkrævet for Plan 4C):** Page renders korrekt uden AI. Side effects fra cache-miss hver request (fejl-retry loop) kan fylde stderr-loggen.
+**Løsningsforslag:**
+1. Skift pino til synkron destination i Next.js-kontekst: `pino({...}, pino.destination({ sync: true }))`
+2. Erstat pino med en RSC-kompatibel logger (console eller custom)
+3. Wrappe `log.error` i try/catch i `AnthropicDirectClient.complete` så pino-fejl ikke overtager
+**Reference:** Next.js issue tracker har flere tråde om pino + App Router + RSC inkompatibilitet.
+
 ## BLK-003: Mobilnavigation fjernet i Plan 4B
 **Status:** AKTIV — ikke-blokerende (desktop fungerer)
 **Opdaget:** Plan 4B (2026-04-11)
