@@ -67,7 +67,8 @@ type DerivedStatus = 'expired' | 'expiring' | 'active'
 
 function deriveStatus(c: ContractItem): DerivedStatus {
   if (c.status === 'UDLOEBET') return 'expired'
-  if (c.status === 'AKTIV' && c.daysUntilExpiry != null && c.daysUntilExpiry >= 0 && c.daysUntilExpiry <= 90)
+  if (c.daysUntilExpiry != null && c.daysUntilExpiry < 0) return 'expired'
+  if (c.status === 'AKTIV' && c.daysUntilExpiry != null && c.daysUntilExpiry <= 90)
     return 'expiring'
   return 'active'
 }
@@ -136,6 +137,7 @@ export default function ContractsClient({
 }) {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | DerivedStatus | 'missing'>('all')
+  const [showUrgency, setShowUrgency] = useState(true)
   const [showAllUrgency, setShowAllUrgency] = useState(false)
   const [view, setView] = useState<'list' | 'matrix'>('list')
   const [sortKey, setSortKey] = useState<SortKey>('status')
@@ -258,7 +260,8 @@ export default function ContractsClient({
             <h1 className="text-[20px] font-semibold tracking-tight text-slate-900">Kontrakter</h1>
             <p className="text-[13px] text-slate-500 mt-1">
               {contracts.length} kontrakter i porteføljen
-              {totalAttention > 0 && <> &middot; <span className="text-slate-700 font-medium">{totalAttention} kræver handling</span></>}
+              {(counts.expired + counts.expiring) > 0 && <> &middot; <span className="text-slate-700 font-medium">{counts.expired + counts.expiring} kræver handling</span></>}
+              {counts.missing > 0 && <> &middot; <span className="text-violet-600 font-medium">{counts.missing} mangler</span></>}
             </p>
           </div>
           <Link
@@ -284,15 +287,17 @@ export default function ContractsClient({
             <kbd className="bg-slate-100 ring-1 ring-slate-200 rounded px-1.5 py-0.5 text-[10px] text-slate-500 font-mono">⌘K</kbd>
           </div>
 
-          <StatusPill
-            dot="bg-rose-500"
-            label={`${counts.expired} Udløbet`}
-            active={statusFilter === 'expired'}
-            onClick={() => {
-              setStatusFilter(statusFilter === 'expired' ? 'all' : 'expired')
-              setView('list')
-            }}
-          />
+          {counts.expired > 0 && (
+            <StatusPill
+              dot="bg-rose-500"
+              label={`${counts.expired} Udløbet`}
+              active={statusFilter === 'expired'}
+              onClick={() => {
+                setStatusFilter(statusFilter === 'expired' ? 'all' : 'expired')
+                setView('list')
+              }}
+            />
+          )}
           <StatusPill
             dot="bg-amber-500"
             label={`${counts.expiring} Udløber`}
@@ -351,23 +356,19 @@ export default function ContractsClient({
         {/* Pinned "Kræver handling" panel */}
         {view === 'list' && urgencyItems.length > 0 && (
           <div className="bg-white rounded-xl ring-1 ring-slate-900/[0.06] shadow-[0_1px_2px_rgba(15,23,42,0.04)] mb-4 overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100">
+            <button
+              type="button"
+              onClick={() => setShowUrgency(!showUrgency)}
+              className="w-full flex items-center justify-between px-5 py-3 border-b border-slate-100 hover:bg-slate-50/40 transition-colors"
+            >
               <div className="flex items-center gap-2">
                 <AlertCircle className="w-3.5 h-3.5 text-slate-400" />
                 <span className="text-[12px] font-semibold text-slate-900">Kræver handling</span>
                 <span className="text-[11px] text-slate-400">({totalAttention})</span>
               </div>
-              {totalAttention > 5 && (
-                <button
-                  type="button"
-                  className="text-[11px] font-medium text-slate-500 hover:text-slate-900"
-                  onClick={() => setShowAllUrgency(!showAllUrgency)}
-                >
-                  {showAllUrgency ? 'Vis færre' : `Vis alle ${totalAttention}`} →
-                </button>
-              )}
-            </div>
-            <div className="divide-y divide-slate-50">
+              <ChevronUp className={cn('w-3.5 h-3.5 text-slate-400 transition-transform', !showUrgency && 'rotate-180')} />
+            </button>
+            {showUrgency && <div className="divide-y divide-slate-50">
               {visibleUrgencyItems.map((item, idx) => {
                 if (item.kind === 'contract') {
                   const derived = item.status
@@ -408,7 +409,18 @@ export default function ContractsClient({
                   </Link>
                 )
               })}
-            </div>
+              {totalAttention > 5 && (
+                <div className="px-5 py-2 border-t border-slate-100">
+                  <button
+                    type="button"
+                    className="text-[11px] font-medium text-slate-500 hover:text-slate-900"
+                    onClick={() => setShowAllUrgency(!showAllUrgency)}
+                  >
+                    {showAllUrgency ? 'Vis færre' : `Vis alle ${totalAttention}`} →
+                  </button>
+                </div>
+              )}
+            </div>}
           </div>
         )}
 
