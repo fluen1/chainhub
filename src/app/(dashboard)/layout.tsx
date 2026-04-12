@@ -54,7 +54,7 @@ export default async function DashboardLayout({
             kpis={headerKpis}
             currentDate={new Date()}
           />
-          <main className="flex-1 overflow-y-auto bg-[#f0f2f5]">
+          <main className="flex-1 overflow-y-auto bg-[#f0f2f5] px-8 py-6">
             {children}
           </main>
         </div>

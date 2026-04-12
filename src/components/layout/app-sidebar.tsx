@@ -12,6 +12,7 @@ import {
   Calendar,
   Users,
   Briefcase,
+  Search,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { SidebarBadge, NavSection } from '@/types/ui'
@@ -74,8 +75,24 @@ export function AppSidebar({ userName, userRoleLabel, badges }: AppSidebarProps)
         </Link>
       </div>
 
+      {/* Søg */}
+      <div className="px-4 pt-4 pb-2">
+        <Link
+          href="/search"
+          className={cn(
+            'flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-all duration-150 no-underline',
+            pathname.startsWith('/search')
+              ? 'bg-blue-500/[0.12] text-white'
+              : 'text-slate-400 hover:bg-white/[0.05] hover:text-slate-200'
+          )}
+        >
+          <Search className={cn('h-[18px] w-[18px]', pathname.startsWith('/search') ? 'text-blue-400' : '')} />
+          Søg
+        </Link>
+      </div>
+
       {/* Navigation sections */}
-      <nav className="flex-1 overflow-y-auto px-4 py-4">
+      <nav className="flex-1 overflow-y-auto px-4 py-2">
         {SECTIONS.map((section) => (
           <div key={section.label} className="mb-5">
             <div className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">

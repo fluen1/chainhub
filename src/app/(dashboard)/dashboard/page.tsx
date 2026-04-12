@@ -20,7 +20,7 @@ export default async function DashboardPage() {
   const upcomingEvents: CalendarEvent[] = []
 
   return (
-    <div className="p-5 h-full">
+    <div className="h-full">
       <div className="grid grid-cols-[1fr_320px] gap-5 max-w-[1400px] mx-auto">
         {/* Venstre: Timeline River */}
         <div className="min-w-0">

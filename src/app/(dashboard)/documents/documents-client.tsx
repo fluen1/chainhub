@@ -162,7 +162,7 @@ export default function DocumentsClient({ documents }: { documents: DocumentItem
   // Tom state
   if (documents.length === 0) {
     return (
-      <div className="min-h-full bg-slate-50/60 p-8">
+      <div className="min-h-full">
         <div className="max-w-[1280px] mx-auto">
           <h1 className="text-[20px] font-semibold tracking-tight text-slate-900">Dokumenter</h1>
           <div className="mt-8 bg-white rounded-xl ring-1 ring-slate-900/[0.06] shadow-[0_1px_2px_rgba(15,23,42,0.04)] p-16 text-center">
@@ -176,7 +176,7 @@ export default function DocumentsClient({ documents }: { documents: DocumentItem
   }
 
   return (
-    <div className="min-h-full bg-slate-50/60 p-8">
+    <div className="min-h-full">
       <div className="max-w-[1280px] mx-auto">
         {/* Header */}
         <div className="mb-6 flex items-start justify-between gap-4">

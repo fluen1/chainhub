@@ -21,9 +21,38 @@ async function SearchResults({ query, userId, organizationId }: {
 }) {
   if (query.length < 2) {
     return (
-      <div className="text-center py-12 text-gray-500">
-        <Search className="mx-auto h-10 w-10 text-gray-300 mb-3" />
-        <p>Skriv mindst 2 tegn for at søge</p>
+      <div className="py-8">
+        <p className="text-sm text-gray-400 mb-6">Skriv mindst 2 tegn for at søge, eller gå direkte til:</p>
+        <div className="grid grid-cols-2 gap-3">
+          <Link href="/companies" className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 hover:border-blue-300 hover:shadow-sm transition-all no-underline">
+            <Building2 className="h-5 w-5 text-gray-400" />
+            <div>
+              <p className="text-sm font-medium text-gray-900">Selskaber</p>
+              <p className="text-xs text-gray-400">CVR, navn, lokation</p>
+            </div>
+          </Link>
+          <Link href="/contracts" className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 hover:border-blue-300 hover:shadow-sm transition-all no-underline">
+            <FileText className="h-5 w-5 text-gray-400" />
+            <div>
+              <p className="text-sm font-medium text-gray-900">Kontrakter</p>
+              <p className="text-xs text-gray-400">Type, status, udløb</p>
+            </div>
+          </Link>
+          <Link href="/cases" className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 hover:border-blue-300 hover:shadow-sm transition-all no-underline">
+            <Briefcase className="h-5 w-5 text-gray-400" />
+            <div>
+              <p className="text-sm font-medium text-gray-900">Sager</p>
+              <p className="text-xs text-gray-400">Tvister, forhandlinger</p>
+            </div>
+          </Link>
+          <Link href="/persons" className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 hover:border-blue-300 hover:shadow-sm transition-all no-underline">
+            <Users className="h-5 w-5 text-gray-400" />
+            <div>
+              <p className="text-sm font-medium text-gray-900">Personer</p>
+              <p className="text-xs text-gray-400">Kontakter, roller</p>
+            </div>
+          </Link>
+        </div>
       </div>
     )
   }
@@ -226,7 +255,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const query = searchParams.q?.trim() ?? ''
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6 max-w-4xl">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Søg</h1>
         <p className="mt-1 text-sm text-gray-500">

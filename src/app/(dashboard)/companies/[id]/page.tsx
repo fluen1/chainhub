@@ -24,7 +24,7 @@ export default async function CompanyDetailPage({ params }: { params: { id: stri
   const readOnly = data.role === 'GROUP_READONLY' || data.role === 'COMPANY_READONLY'
 
   return (
-    <div className="mx-auto max-w-[1100px] p-6">
+    <div className="mx-auto max-w-[1100px]">
       <nav className="mb-4 text-xs text-gray-400">
         <Link href="/companies" className="text-slate-500 no-underline hover:text-blue-600">
           Selskaber
