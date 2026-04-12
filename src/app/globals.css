@@ -67,3 +67,15 @@
     @apply hover:shadow-md hover:-translate-y-px transition-all duration-200;
   }
 }
+
+/* Leaflet dark tooltip theme */
+.leaflet-label-dark {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #94a3b8 !important;
+  font-family: inherit !important;
+}
+.leaflet-label-dark::before {
+  display: none !important;
+}
