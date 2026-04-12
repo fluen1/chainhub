@@ -1,13 +1,13 @@
 import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
-
-export const metadata: Metadata = { title: 'Kontrakter' }
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { getAccessibleCompanies, canAccessModule, canAccessSensitivity } from '@/lib/permissions'
 import ContractsClient from './contracts-client'
 import type { ContractItem, CompanyItem } from './contracts-client'
 import { getContractCategory, CONTRACT_CATEGORY_LABELS, type ContractCategory } from '@/lib/labels'
+
+export const metadata: Metadata = { title: 'Kontrakter' }
 
 // ---------------------------------------------------------------
 // Kort kategori-label til brug i UI (matcher proto-designets chips)

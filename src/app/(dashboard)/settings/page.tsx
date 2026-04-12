@@ -1,7 +1,5 @@
 import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
-
-export const metadata: Metadata = { title: 'Indstillinger' }
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { canAccessModule } from '@/lib/permissions'
@@ -10,6 +8,8 @@ import { cn } from '@/lib/utils'
 import { Settings, Users, ShieldCheck } from 'lucide-react'
 import { CreateUserForm } from '@/components/settings/CreateUserForm'
 import { UserActions } from '@/components/settings/UserActions'
+
+export const metadata: Metadata = { title: 'Indstillinger' }
 
 export default async function SettingsPage() {
   const session = await auth()

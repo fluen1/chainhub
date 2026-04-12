@@ -1,12 +1,12 @@
 import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
-
-export const metadata: Metadata = { title: 'Dokumenter' }
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { canAccessModule } from '@/lib/permissions'
 import DocumentsClient from './documents-client'
 import type { DocumentItem, DocStatus, ConfidenceLevel } from './documents-client'
+
+export const metadata: Metadata = { title: 'Dokumenter' }
 
 // ---------------------------------------------------------------
 // Helpers til at mappe Prisma-data → klient-typer

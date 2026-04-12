@@ -1,11 +1,9 @@
 import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
-
-export const metadata: Metadata = { title: 'Opgaver' }
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { getAccessibleCompanies } from '@/lib/permissions'
-import { CheckSquare, Plus } from 'lucide-react'
+import { CheckSquare } from 'lucide-react'
 import Link from 'next/link'
 import { PageHeader } from '@/components/ui/page-header'
 import { TaskStatusButton } from '@/components/tasks/TaskStatusButton'
@@ -21,6 +19,8 @@ import {
   getTaskStatusLabel,
 } from '@/lib/labels'
 import type { TaskStatus, Prisma } from '@prisma/client'
+
+export const metadata: Metadata = { title: 'Opgaver' }
 
 const PAGE_SIZE = 20
 

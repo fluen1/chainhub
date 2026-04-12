@@ -1,7 +1,5 @@
 import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
-
-export const metadata: Metadata = { title: 'Sager' }
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { getAccessibleCompanies } from '@/lib/permissions'
@@ -22,6 +20,8 @@ import {
   getCaseTypeLabel,
 } from '@/lib/labels'
 import type { SagsType } from '@prisma/client'
+
+export const metadata: Metadata = { title: 'Sager' }
 
 const PAGE_SIZE = 20
 

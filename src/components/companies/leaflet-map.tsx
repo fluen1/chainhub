@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react'
 import { MapContainer, TileLayer, CircleMarker, Tooltip, Popup } from 'react-leaflet'
 import { cn } from '@/lib/utils'
 
@@ -42,12 +43,15 @@ function markerRadius(issueCount: number): number {
 }
 
 export default function LeafletMap({ companies }: LeafletMapProps) {
-  const cityGroups = new Map<string, MapCompany[]>()
-  for (const c of companies) {
-    const key = `${c.latitude.toFixed(2)},${c.longitude.toFixed(2)}`
-    if (!cityGroups.has(key)) cityGroups.set(key, [])
-    cityGroups.get(key)!.push(c)
-  }
+  const cityGroups = useMemo(() => {
+    const map = new Map<string, MapCompany[]>()
+    for (const c of companies) {
+      const key = `${c.latitude.toFixed(2)},${c.longitude.toFixed(2)}`
+      if (!map.has(key)) map.set(key, [])
+      map.get(key)!.push(c)
+    }
+    return map
+  }, [companies])
 
   return (
     <MapContainer

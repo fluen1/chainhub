@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
@@ -55,11 +56,14 @@ export function FullCalendar({ events, year, month, selectedDay, todayISO }: Ful
   const startDow = (firstDayOfMonth.getDay() + 6) % 7
 
   // Group events by date
-  const eventsByDate = new Map<string, CalendarEvent[]>()
-  for (const e of events) {
-    if (!eventsByDate.has(e.date)) eventsByDate.set(e.date, [])
-    eventsByDate.get(e.date)!.push(e)
-  }
+  const eventsByDate = useMemo(() => {
+    const map = new Map<string, CalendarEvent[]>()
+    for (const e of events) {
+      if (!map.has(e.date)) map.set(e.date, [])
+      map.get(e.date)!.push(e)
+    }
+    return map
+  }, [events])
 
   // Selected day events
   const selectedDateStr = selectedDay
@@ -251,17 +255,23 @@ export function FullCalendar({ events, year, month, selectedDay, todayISO }: Ful
   )
 }
 
+const EVENT_TYPE_ROUTES: Record<CalendarEventType, string> = {
+  expiry: '/contracts',
+  deadline: '/tasks',
+  meeting: '/visits',
+  case: '/cases',
+  renewal: '/contracts',
+}
+
+function eventHref(event: CalendarEvent): string {
+  const rawId = event.id.replace(/^(contract|task|visit|case)-/, '')
+  const base = EVENT_TYPE_ROUTES[event.type]
+  return event.type === 'deadline' ? base : `${base}/${rawId}`
+}
+
 function EventCard({ event }: { event: CalendarEvent }) {
   const color = getEventTypeColor(event.type)
-  const href = event.id.startsWith('contract-')
-    ? `/contracts/${event.id.replace('contract-', '')}`
-    : event.id.startsWith('task-')
-      ? '/tasks'
-      : event.id.startsWith('visit-')
-        ? `/visits/${event.id.replace('visit-', '')}`
-        : event.id.startsWith('case-')
-          ? `/cases/${event.id.replace('case-', '')}`
-          : '#'
+  const href = eventHref(event)
 
   return (
     <Link

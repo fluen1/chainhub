@@ -2,13 +2,13 @@ import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
-
-export const metadata: Metadata = { title: 'Søg' }
 import { getAccessibleCompanies } from '@/lib/permissions'
 import { Building2, FileText, Briefcase, Users, Search } from 'lucide-react'
 import Link from 'next/link'
 import { getCompanyStatusLabel, getCompanyStatusStyle, getContractStatusLabel, getContractTypeLabel, getCaseStatusLabel } from '@/lib/labels'
 import { Suspense } from 'react'
+
+export const metadata: Metadata = { title: 'Søg' }
 
 interface SearchPageProps {
   searchParams: { q?: string }

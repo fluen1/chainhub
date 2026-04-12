@@ -1,7 +1,5 @@
 import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
-
-export const metadata: Metadata = { title: 'Personer' }
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { getAccessibleCompanies } from '@/lib/permissions'
@@ -12,6 +10,8 @@ import { Suspense } from 'react'
 import { SearchAndFilter } from '@/components/ui/SearchAndFilter'
 import { Pagination } from '@/components/ui/Pagination'
 import { parsePaginationParams } from '@/lib/pagination'
+
+export const metadata: Metadata = { title: 'Personer' }
 
 const PAGE_SIZE = 20
 

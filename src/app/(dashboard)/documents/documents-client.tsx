@@ -125,11 +125,11 @@ export default function DocumentsClient({ documents }: { documents: DocumentItem
 
   const counts = useMemo(
     () => ({
-      review:     documents.filter((d) => d.status === 'ready_for_review').length,
-      processing: documents.filter((d) => d.status === 'processing').length,
-      archived:   documents.filter((d) => d.status === 'reviewed' || d.status === 'archived').length,
+      review:     reviewDocs.length,
+      processing: processingDocs.length,
+      archived:   documents.length - reviewDocs.length - processingDocs.length,
     }),
-    [documents],
+    [documents, reviewDocs, processingDocs],
   )
 
   const filtered = useMemo(() => {

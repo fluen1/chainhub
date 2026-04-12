@@ -1,12 +1,12 @@
 import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
-
-export const metadata: Metadata = { title: 'Dashboard' }
 import { redirect } from 'next/navigation'
 import { getDashboardData } from '@/actions/dashboard'
 import { getCalendarEvents } from '@/actions/calendar'
 import { TimelineSection } from '@/components/dashboard/timeline-section'
 import { RightPanels } from './right-panels'
+
+export const metadata: Metadata = { title: 'Dashboard' }
 
 export default async function DashboardPage() {
   const session = await auth()

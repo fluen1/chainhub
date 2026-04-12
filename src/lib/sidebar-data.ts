@@ -54,7 +54,8 @@ export async function getSidebarData(
     companiesCount,
     contractsCount,
     casesCount,
-    tasksData,
+    tasksCount,
+    overdueTasksCount,
     expiringContractsCount,
     financialMetrics,
     personsCount,
@@ -81,13 +82,11 @@ export async function getSidebarData(
           },
         })
       : Promise.resolve(0),
-    prisma.task.findMany({
-      where: {
-        organization_id: organizationId,
-        deleted_at: null,
-        status: { not: 'LUKKET' },
-      },
-      select: { id: true, due_date: true },
+    prisma.task.count({
+      where: { organization_id: organizationId, deleted_at: null, status: { not: 'LUKKET' } },
+    }),
+    prisma.task.count({
+      where: { organization_id: organizationId, deleted_at: null, status: { not: 'LUKKET' }, due_date: { lt: today } },
     }),
     // Udløbende kontrakter (næste 14 dage)
     companyIds.length > 0
@@ -111,6 +110,7 @@ export async function getSidebarData(
             metric_type: 'OMSAETNING',
           },
           orderBy: { period_year: 'desc' },
+          take: companyIds.length,
           select: { value: true, company_id: true, period_year: true },
         })
       : Promise.resolve([]),
@@ -147,15 +147,11 @@ export async function getSidebarData(
     omsaetningTotal += Number(fm.value)
   }
 
-  const overdueTasksCount = tasksData.filter(
-    (t) => t.due_date && new Date(t.due_date) < today
-  ).length
-
   return {
     companiesCount,
     contractsCount,
     casesCount,
-    tasksCount: tasksData.length,
+    tasksCount,
     overdueTasksCount,
     expiringContractsCount,
     omsaetningTotal,
