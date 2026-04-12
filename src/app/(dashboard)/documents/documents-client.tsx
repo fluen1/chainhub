@@ -12,10 +12,12 @@ import {
   Loader2,
   Plus,
   ChevronUp,
+  ChevronDown,
   Sparkles,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { FileUpload } from '@/components/documents/FileUpload'
 
 // ---------------------------------------------------------------
 // Typer — afledt af Prisma-data, serialiseret fra server
@@ -80,35 +82,26 @@ function fileExtLabel(fileName: string): string {
 // Hovedkomponent
 // ---------------------------------------------------------------
 export default function DocumentsClient({ documents }: { documents: DocumentItem[] }) {
-  const [isDragOver, setIsDragOver] = useState(false)
+  const [showUpload, setShowUpload] = useState(false)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<DocFilter>('all')
   const [showScrollTop, setShowScrollTop] = useState(false)
 
-  // Global drag-drop på siden
+  // Global drag-drop åbner upload-panelet
   useEffect(() => {
     const onDragOver = (e: DragEvent) => {
       if (e.dataTransfer?.types.includes('Files')) {
         e.preventDefault()
-        setIsDragOver(true)
+        setShowUpload(true)
       }
-    }
-    const onDragLeave = (e: DragEvent) => {
-      if (e.clientX === 0 && e.clientY === 0) setIsDragOver(false)
     }
     const onDrop = (e: DragEvent) => {
       e.preventDefault()
-      setIsDragOver(false)
-      if (e.dataTransfer?.files.length) {
-        toast.info('Upload er under udvikling')
-      }
     }
     window.addEventListener('dragover', onDragOver)
-    window.addEventListener('dragleave', onDragLeave)
     window.addEventListener('drop', onDrop)
     return () => {
       window.removeEventListener('dragover', onDragOver)
-      window.removeEventListener('dragleave', onDragLeave)
       window.removeEventListener('drop', onDrop)
     }
   }, [])
@@ -165,10 +158,9 @@ export default function DocumentsClient({ documents }: { documents: DocumentItem
       <div className="min-h-full">
         <div className="max-w-[1280px] mx-auto">
           <h1 className="text-[20px] font-semibold tracking-tight text-slate-900">Dokumenter</h1>
-          <div className="mt-8 bg-white rounded-xl ring-1 ring-slate-900/[0.06] shadow-[0_1px_2px_rgba(15,23,42,0.04)] p-16 text-center">
-            <Upload className="mx-auto h-10 w-10 text-slate-200 mb-4" />
-            <p className="text-[13px] font-medium text-slate-500">Ingen dokumenter endnu</p>
-            <p className="text-[11px] text-slate-400 mt-1">Upload dit første dokument for at komme i gang.</p>
+          <div className="mt-8 bg-white rounded-xl ring-1 ring-slate-900/[0.06] shadow-[0_1px_2px_rgba(15,23,42,0.04)] p-8">
+            <p className="text-[13px] font-medium text-slate-500 text-center mb-4">Ingen dokumenter endnu — upload dit første dokument</p>
+            <FileUpload />
           </div>
         </div>
       </div>
@@ -189,13 +181,20 @@ export default function DocumentsClient({ documents }: { documents: DocumentItem
           </div>
           <button
             type="button"
-            onClick={() => toast.info('Upload er under udvikling')}
+            onClick={() => setShowUpload(!showUpload)}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-900 text-white text-[12px] font-medium hover:bg-slate-800 transition-colors shadow-[0_1px_2px_rgba(15,23,42,0.1)]"
           >
-            <Plus className="w-3.5 h-3.5" />
-            Upload dokument
+            {showUpload ? <ChevronUp className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+            {showUpload ? 'Skjul upload' : 'Upload dokument'}
           </button>
         </div>
+
+        {/* Upload panel */}
+        {showUpload && (
+          <div className="bg-white rounded-xl ring-1 ring-slate-900/[0.06] shadow-[0_1px_2px_rgba(15,23,42,0.04)] p-5 mb-4">
+            <FileUpload />
+          </div>
+        )}
 
         {/* Filter bar */}
         <div className="flex items-center gap-2 mb-4">
@@ -327,22 +326,6 @@ export default function DocumentsClient({ documents }: { documents: DocumentItem
         </div>
       </div>
 
-      {/* Global drop overlay */}
-      {isDragOver && (
-        <div className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center bg-slate-900/5 backdrop-blur-[1px]">
-          <div className="bg-white rounded-2xl ring-2 ring-violet-400 px-8 py-6 shadow-[0_20px_60px_-20px_rgba(15,23,42,0.4)] flex items-center gap-4">
-            <div className="w-10 h-10 rounded-lg bg-violet-50 flex items-center justify-center">
-              <Upload className="w-5 h-5 text-violet-600" />
-            </div>
-            <div>
-              <div className="text-[14px] font-semibold text-slate-900">Slip filerne for at uploade</div>
-              <div className="text-[11px] text-slate-500 mt-0.5">
-                AI-analyse starter automatisk · PDF, DOCX, XLSX
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Scroll-to-top */}
       <button
