@@ -68,6 +68,11 @@
   }
 }
 
+/* Leaflet: brighten dark tiles for readability */
+.leaflet-tile-pane {
+  filter: brightness(1.6) contrast(0.95);
+}
+
 /* Leaflet dark tooltip theme */
 .leaflet-label-dark {
   background: transparent !important;
