@@ -69,16 +69,9 @@ export function FullCalendar({ events, year, month, selectedDay, todayISO }: Ful
     ? (eventsByDate.get(selectedDateStr) ?? [])
     : null
 
-  // Upcoming 7 days events (when no day selected)
-  const upcoming = !selectedDay
-    ? events
-        .filter((e) => {
-          const eventDate = new Date(e.date)
-          const today = new Date(todayISO)
-          const diff = (eventDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-          return diff >= 0 && diff <= 7
-        })
-        .slice(0, 8)
+  // All events this month sorted by date (when no day selected)
+  const allMonthEvents = !selectedDay
+    ? events.slice(0, 20)
     : null
 
   return (
@@ -154,7 +147,7 @@ export function FullCalendar({ events, year, month, selectedDay, todayISO }: Ful
                     'min-h-[100px] border-b border-r border-gray-50 p-1.5 cursor-pointer transition-colors',
                     isSelected && 'bg-blue-50/60 ring-1 ring-inset ring-blue-200',
                     !isSelected && 'hover:bg-gray-50/60',
-                    isWeekend && !isSelected && 'bg-gray-50/20'
+                    isWeekend && !isSelected && 'bg-gray-50/80'
                   )}
                 >
                   <div
@@ -167,22 +160,22 @@ export function FullCalendar({ events, year, month, selectedDay, todayISO }: Ful
                     {day}
                   </div>
                   <div className="space-y-0.5">
-                    {dayEvents.slice(0, 3).map((e) => (
+                    {dayEvents.slice(0, 2).map((e) => (
                       <div
                         key={e.id}
-                        className="flex items-center gap-1 rounded px-1 py-0.5 text-[10px] font-medium truncate"
+                        className="flex items-center gap-1 rounded px-1 py-0.5 text-[10px] font-medium"
                         style={{
                           backgroundColor: `${getEventTypeColor(e.type)}15`,
                           borderLeft: `2px solid ${getEventTypeColor(e.type)}`,
                           color: getEventTypeColor(e.type),
                         }}
                       >
-                        <span className="truncate">{e.title}</span>
+                        <span className="truncate">{EVENT_TYPE_LABELS[e.type]}: {e.title}</span>
                       </div>
                     ))}
-                    {dayEvents.length > 3 && (
-                      <div className="text-[9px] text-gray-400 px-1">
-                        +{dayEvents.length - 3} mere
+                    {dayEvents.length > 2 && (
+                      <div className="text-[9px] text-gray-400 px-1 font-medium">
+                        +{dayEvents.length - 2} mere
                       </div>
                     )}
                   </div>
@@ -213,18 +206,18 @@ export function FullCalendar({ events, year, month, selectedDay, todayISO }: Ful
                   </div>
                 )}
               </>
-            ) : upcoming !== null ? (
+            ) : allMonthEvents !== null ? (
               <>
                 <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                  Kommende 7 dage
+                  Alle events · {MONTH_NAMES[month - 1].toLowerCase()}
                 </div>
-                {upcoming.length === 0 ? (
+                {allMonthEvents.length === 0 ? (
                   <p className="text-sm text-gray-400 py-4 text-center">
-                    Ingen events de næste 7 dage
+                    Ingen events denne måned
                   </p>
                 ) : (
-                  <div className="space-y-2">
-                    {upcoming.map((e) => (
+                  <div className="space-y-1">
+                    {allMonthEvents.map((e) => (
                       <EventCard key={e.id} event={e} />
                     ))}
                   </div>
@@ -276,20 +269,25 @@ function EventCard({ event }: { event: CalendarEvent }) {
       className="flex items-start gap-3 rounded-lg p-2.5 hover:bg-gray-50 transition-colors no-underline"
     >
       <div
-        className="w-1 h-8 rounded-full shrink-0 mt-0.5"
+        className="w-1 self-stretch rounded-full shrink-0"
         style={{ backgroundColor: color }}
       />
       <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5 mb-0.5">
+          <span
+            className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded"
+            style={{ backgroundColor: `${color}15`, color }}
+          >
+            {EVENT_TYPE_LABELS[event.type]}
+          </span>
+          <span className="text-[10px] text-gray-400">
+            {new Date(event.date).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' })}
+          </span>
+        </div>
         <div className="text-[12px] font-medium text-gray-900 truncate">
           {event.title}
         </div>
         <div className="text-[11px] text-gray-400">{event.subtitle}</div>
-      </div>
-      <div className="text-[10px] text-gray-400 shrink-0">
-        {new Date(event.date).toLocaleDateString('da-DK', {
-          day: 'numeric',
-          month: 'short',
-        })}
       </div>
     </Link>
   )
