@@ -225,9 +225,12 @@ function TaskList({
               }`}
             >
               <div className="flex-1 min-w-0">
-                <p className={`text-sm font-medium ${isOverdueSection ? 'text-red-800' : 'text-gray-900'}`}>
+                <Link
+                  href={`/tasks/${task.id}`}
+                  className={`text-sm font-medium no-underline hover:underline ${isOverdueSection ? 'text-red-800' : 'text-gray-900 hover:text-blue-600'}`}
+                >
                   {task.title}
-                </p>
+                </Link>
                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                   {task.due_date && (
                     <span className={`text-xs ${isOverdue ? 'text-red-600 font-medium' : 'text-gray-500'}`}>

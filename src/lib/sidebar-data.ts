@@ -101,17 +101,17 @@ export async function getSidebarData(
           },
         })
       : Promise.resolve(0),
-    // Omsætning total (2025)
+    // Omsætning total (seneste tilgængelige år)
     companyIds.length > 0
       ? prisma.financialMetric.findMany({
           where: {
             organization_id: organizationId,
             company_id: { in: companyIds },
-            period_year: 2025,
             period_type: 'HELAAR',
             metric_type: 'OMSAETNING',
           },
-          select: { value: true },
+          orderBy: { period_year: 'desc' },
+          select: { value: true, company_id: true, period_year: true },
         })
       : Promise.resolve([]),
     prisma.person.count({
@@ -138,8 +138,12 @@ export async function getSidebarData(
       : Promise.resolve([]),
   ])
 
+  // Filtrer til seneste år pr. selskab (data sorteret desc)
   let omsaetningTotal = 0
+  const seenCompanies = new Set<string>()
   for (const fm of financialMetrics) {
+    if (seenCompanies.has(fm.company_id)) continue
+    seenCompanies.add(fm.company_id)
     omsaetningTotal += Number(fm.value)
   }
 
