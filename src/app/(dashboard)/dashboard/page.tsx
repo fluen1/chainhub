@@ -4,20 +4,27 @@ import { auth } from '@/lib/auth'
 export const metadata: Metadata = { title: 'Dashboard' }
 import { redirect } from 'next/navigation'
 import { getDashboardData } from '@/actions/dashboard'
+import { getCalendarEvents } from '@/actions/calendar'
 import { TimelineSection } from '@/components/dashboard/timeline-section'
 import { RightPanels } from './right-panels'
-import type { CalendarEvent } from '@/types/ui'
 
 export default async function DashboardPage() {
   const session = await auth()
   if (!session) redirect('/login')
 
-  const data = await getDashboardData(session.user.id, session.user.organizationId)
-  const todayISO = new Date().toISOString().slice(0, 10)
+  const now = new Date()
+  const todayISO = now.toISOString().slice(0, 10)
 
-  // For nu: tomme calendar events (populeres i Plan 4C når /calendar er færdig)
-  const calendarEvents: CalendarEvent[] = []
-  const upcomingEvents: CalendarEvent[] = []
+  const [data, calendarEvents] = await Promise.all([
+    getDashboardData(session.user.id, session.user.organizationId),
+    getCalendarEvents(session.user.id, session.user.organizationId, now.getFullYear(), now.getMonth() + 1),
+  ])
+
+  // Kommende 7 dage til widget
+  const upcomingEvents = calendarEvents.filter((e) => {
+    const diff = (new Date(e.date).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+    return diff >= 0 && diff <= 7
+  })
 
   return (
     <div className="h-full">
