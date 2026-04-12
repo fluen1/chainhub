@@ -19,6 +19,7 @@ interface PersonsPageProps {
   searchParams: {
     q?: string
     company?: string
+    view?: string  // 'ansatte' (default) | 'alle'
     page?: string
   }
 }
@@ -54,6 +55,7 @@ export default async function PersonsPage({ searchParams }: PersonsPageProps) {
   const { page, skip, take } = parsePaginationParams(searchParams.page, PAGE_SIZE)
   const q = searchParams.q?.trim() ?? ''
   const companyFilter = searchParams.company
+  const viewFilter = searchParams.view ?? 'ansatte'
 
   // Hent accessible companies til filter-dropdown
   const companyIds = await getAccessibleCompanies(
@@ -73,9 +75,15 @@ export default async function PersonsPage({ searchParams }: PersonsPageProps) {
       })).map((c) => ({ value: c.id, label: c.name }))
     : []
 
+  // Default: vis kun ansatte (har employment_type). "alle" viser alle inkl. eksterne
+  const employeeFilter = viewFilter === 'ansatte'
+    ? { company_persons: { some: { employment_type: { not: null }, end_date: null } } }
+    : {}
+
   const where = {
     organization_id: session.user.organizationId,
     deleted_at: null as null,
+    ...employeeFilter,
     ...(q
       ? {
           OR: [
@@ -119,20 +127,38 @@ export default async function PersonsPage({ searchParams }: PersonsPageProps) {
   return (
     <div className="space-y-6 max-w-[1280px] mx-auto">
       <PageHeader
-        title="Persondatabase"
-        subtitle={`${totalCount} kontakt${totalCount !== 1 ? 'er' : ''} på tværs af alle selskaber`}
+        title="Personale"
+        subtitle={`${totalCount} ${viewFilter === 'ansatte' ? 'ansatte' : 'kontakter'} på tværs af alle selskaber`}
         actionLabel="Ny person"
         actionHref="/persons/new"
       />
 
-      <Suspense fallback={null}>
-        <SearchAndFilter
-          placeholder="Søg på navn eller email..."
-          filters={[
-            { key: 'company', label: 'Selskab', options: companyOptions },
-          ]}
-        />
-      </Suspense>
+      <div className="flex items-center gap-3">
+        <div className="flex-1">
+          <Suspense fallback={null}>
+            <SearchAndFilter
+              placeholder="Søg på navn eller email..."
+              filters={[
+                { key: 'company', label: 'Selskab', options: companyOptions },
+              ]}
+            />
+          </Suspense>
+        </div>
+        <div className="flex items-center bg-white ring-1 ring-gray-200 rounded-lg p-0.5 shadow-sm shrink-0">
+          <Link
+            href={`/persons?view=ansatte${companyFilter ? `&company=${companyFilter}` : ''}${q ? `&q=${q}` : ''}`}
+            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors no-underline ${viewFilter === 'ansatte' ? 'bg-gray-900 text-white' : 'text-gray-600 hover:text-gray-900'}`}
+          >
+            Ansatte
+          </Link>
+          <Link
+            href={`/persons?view=alle${companyFilter ? `&company=${companyFilter}` : ''}${q ? `&q=${q}` : ''}`}
+            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors no-underline ${viewFilter === 'alle' ? 'bg-gray-900 text-white' : 'text-gray-600 hover:text-gray-900'}`}
+          >
+            Alle
+          </Link>
+        </div>
+      </div>
 
       {persons.length === 0 ? (
         <div className="rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
@@ -159,7 +185,8 @@ export default async function PersonsPage({ searchParams }: PersonsPageProps) {
               const fullName = `${person.first_name} ${person.last_name}`
               const avatarColor = getAvatarColor(person.first_name)
               const initials = `${person.first_name[0] ?? ''}${person.last_name[0] ?? ''}`.toUpperCase()
-              const primaryRole = person.company_persons[0]?.role
+              const primaryCp = person.company_persons[0]
+              const primaryRole = primaryCp?.role
 
               return (
                 <Link
@@ -173,9 +200,14 @@ export default async function PersonsPage({ searchParams }: PersonsPageProps) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 truncate">{fullName}</p>
-                      {primaryRole && (
-                        <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 mt-1">{primaryRole}</span>
-                      )}
+                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                        {primaryRole && (
+                          <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">{primaryRole}</span>
+                        )}
+                        {primaryCp?.employment_type && (
+                          <span className="text-[10px] text-gray-400">{primaryCp.employment_type}</span>
+                        )}
+                      </div>
                     </div>
                   </div>
 

@@ -138,12 +138,12 @@ async function main() {
   // 6. COMPANY-PERSON tilknytninger
   // ══════════════════════════════════════════════════════════════
   const cpData = [
-    { id: uid(3001), company_id: uid(1001), person_id: uid(2001), role: 'Direktør', start_date: new Date('2020-01-01') },
-    { id: uid(3002), company_id: uid(1002), person_id: uid(2002), role: 'Direktør', start_date: new Date('2021-06-01') },
-    { id: uid(3003), company_id: uid(1003), person_id: uid(2003), role: 'Direktør', start_date: new Date('2022-03-15') },
-    { id: uid(3004), company_id: uid(1004), person_id: uid(2004), role: 'Direktør', start_date: new Date('2024-09-01') },
-    { id: uid(3005), company_id: uid(1005), person_id: uid(2005), role: 'Direktør', start_date: new Date('2023-01-01') },
-    { id: uid(3006), company_id: uid(1006), person_id: uid(2006), role: 'Direktør', start_date: new Date('2023-08-01') },
+    { id: uid(3001), company_id: uid(1001), person_id: uid(2001), role: 'Direktør', employment_type: 'Funktionær', start_date: new Date('2020-01-01'), anciennity_start: new Date('2020-01-01'), contract_id: uid(5010) },
+    { id: uid(3002), company_id: uid(1002), person_id: uid(2002), role: 'Direktør', employment_type: 'Funktionær', start_date: new Date('2021-06-01'), anciennity_start: new Date('2021-06-01'), contract_id: uid(5011) },
+    { id: uid(3003), company_id: uid(1003), person_id: uid(2003), role: 'Direktør', employment_type: 'Funktionær', start_date: new Date('2022-03-15'), anciennity_start: new Date('2022-03-15') },
+    { id: uid(3004), company_id: uid(1004), person_id: uid(2004), role: 'Direktør', employment_type: 'Funktionær', start_date: new Date('2024-09-01'), anciennity_start: new Date('2024-09-01') },
+    { id: uid(3005), company_id: uid(1005), person_id: uid(2005), role: 'Direktør', employment_type: 'Funktionær', start_date: new Date('2023-01-01'), anciennity_start: new Date('2023-01-01') },
+    { id: uid(3006), company_id: uid(1006), person_id: uid(2006), role: 'Direktør', employment_type: 'Funktionær', start_date: new Date('2023-08-01'), anciennity_start: new Date('2023-08-01') },
     { id: uid(3007), company_id: uid(1000), person_id: uid(2007), role: 'Revisor', start_date: new Date('2020-01-01') },
     { id: uid(3008), company_id: uid(1000), person_id: uid(2008), role: 'Ekstern advokat', start_date: new Date('2020-01-01') },
   ]
@@ -151,7 +151,8 @@ async function main() {
   await Promise.all(
     cpData.map((cp) =>
       prisma.companyPerson.upsert({
-        where: { id: cp.id }, update: {},
+        where: { id: cp.id },
+        update: { employment_type: cp.employment_type ?? null, anciennity_start: cp.anciennity_start ?? null, contract_id: cp.contract_id ?? null },
         create: { ...cp, organization_id: org.id, created_by: philip.id },
       })
     )
