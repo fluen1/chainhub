@@ -8,6 +8,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import type { ActionResult } from '@/types/actions'
 import type { Company } from '@prisma/client'
+import { geocodeAddress } from '@/lib/geocode'
 
 const stamdataSchema = z.object({
   name: z.string().min(1, 'Navn er paakraevet').max(200, 'Navn maa maks vaere 200 tegn'),
@@ -50,6 +51,13 @@ export async function createCompany(
   }
 
   try {
+    // Geocode adresse → koordinater
+    const coords = await geocodeAddress(
+      parsed.data.address || null,
+      parsed.data.city || null,
+      parsed.data.postalCode || null
+    )
+
     const company = await prisma.company.create({
       data: {
         organization_id: session.user.organizationId,
@@ -63,6 +71,8 @@ export async function createCompany(
         status: parsed.data.status || 'aktiv',
         notes: parsed.data.notes || null,
         created_by: session.user.id,
+        latitude: coords?.latitude ?? null,
+        longitude: coords?.longitude ?? null,
       },
     })
 
@@ -157,6 +167,13 @@ export async function updateCompanyStamdata(
   if (!hasAccess) return { error: 'Ingen adgang til dette selskab' }
 
   try {
+    // Re-geocode hvis adresse/by ændres
+    const coords = await geocodeAddress(
+      parsed.data.address,
+      parsed.data.city,
+      parsed.data.postal_code
+    )
+
     await prisma.company.update({
       where: {
         id: companyId,
@@ -169,6 +186,8 @@ export async function updateCompanyStamdata(
         city: parsed.data.city,
         postal_code: parsed.data.postal_code,
         founded_date: parsed.data.founded_date ? new Date(parsed.data.founded_date) : null,
+        latitude: coords?.latitude ?? undefined,
+        longitude: coords?.longitude ?? undefined,
       },
     })
 
