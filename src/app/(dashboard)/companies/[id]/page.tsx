@@ -1,337 +1,116 @@
 import { auth } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
-import { prisma } from '@/lib/db'
-import { canAccessCompany } from '@/lib/permissions'
-import CompanyDetailClient from './company-detail-client'
-import type {
-  CompanyDetailData,
-  ContractItem,
-  CaseItem,
-  TaskItem,
-  PersonItem,
-  VisitItem,
-  DocumentItem,
-  FinancialYear,
-  OwnershipItem,
-  HealthDimension,
-} from './company-detail-client'
-import {
-  getContractStatusLabel,
-  getContractTypeLabel,
-  getCaseStatusLabel,
-  getCaseTypeLabel,
-  getTaskStatusLabel,
-  getPriorityLabel,
-  getCompanyPersonRoleLabel,
-  getVisitTypeLabel,
-  getVisitStatusLabel,
-  formatDate,
-  daysUntil,
-} from '@/lib/labels'
-import type { Decimal } from '@prisma/client/runtime/library'
+import Link from 'next/link'
+import { getCompanyDetailData } from '@/actions/company-detail'
+import { CompanyHeader } from '@/components/company-detail/company-header'
+import { AlertBanner } from '@/components/company-detail/alert-banner'
+import { OwnershipSection } from '@/components/company-detail/ownership-section'
+import { ContractsSection } from '@/components/company-detail/contracts-section'
+import { FinanceSection } from '@/components/company-detail/finance-section'
+import { CasesSection } from '@/components/company-detail/cases-section'
+import { PersonsSection } from '@/components/company-detail/persons-section'
+import { VisitsSection } from '@/components/company-detail/visits-section'
+import { DocumentsSection } from '@/components/company-detail/documents-section'
+import { AiInsightCard } from '@/components/company-detail/ai-insight-card'
+import { EditStamdataDialog } from '@/components/company-detail/edit-stamdata-dialog'
 
-// ---------------------------------------------------------------
-// Hjælpere
-// ---------------------------------------------------------------
-
-function decimalToNumber(val: Decimal | null | undefined): number {
-  if (val == null) return 0
-  return Number(val)
-}
-
-type HealthLevel = 'red' | 'amber' | 'green'
-type HealthStatus = 'critical' | 'warning' | 'healthy'
-
-function deriveHealthStatus(
-  expiredContracts: number,
-  expiringSoon: number,
-  openCases: number,
-): HealthStatus {
-  if (expiredContracts > 0 || openCases >= 2) return 'critical'
-  if (expiringSoon > 0 || openCases === 1) return 'warning'
-  return 'healthy'
-}
-
-// ---------------------------------------------------------------
-// Server Component
-// ---------------------------------------------------------------
-
-interface Props {
-  params: { id: string }
-}
-
-export default async function CompanyDetailPage({ params }: Props) {
+export default async function CompanyDetailPage({ params }: { params: { id: string } }) {
   const session = await auth()
   if (!session) redirect('/login')
 
-  const canAccess = await canAccessCompany(session.user.id, params.id)
-  if (!canAccess) notFound()
+  const data = await getCompanyDetailData(params.id, session.user.id, session.user.organizationId)
+  if (!data) notFound()
 
-  const company = await prisma.company.findFirst({
-    where: {
-      id: params.id,
-      organization_id: session.user.organizationId,
-      deleted_at: null,
-    },
-    include: {
-      ownerships: {
-        include: { owner_person: true },
-      },
-      company_persons: {
-        include: { person: true },
-      },
-    },
-  })
-
-  if (!company) notFound()
-
-  // Hent alt relateret data parallelt
-  const [contracts, caseCompanies, tasks, visits, documents, financialMetrics] = await Promise.all([
-    prisma.contract.findMany({
-      where: {
-        company_id: params.id,
-        organization_id: session.user.organizationId,
-        deleted_at: null,
-      },
-      orderBy: { expiry_date: 'asc' },
-    }),
-    prisma.caseCompany.findMany({
-      where: {
-        company_id: params.id,
-        organization_id: session.user.organizationId,
-        case: { deleted_at: null },
-      },
-      include: {
-        case: true,
-      },
-    }),
-    prisma.task.findMany({
-      where: {
-        company_id: params.id,
-        organization_id: session.user.organizationId,
-        deleted_at: null,
-      },
-      include: { assignee: true },
-      orderBy: { due_date: 'asc' },
-    }),
-    prisma.visit.findMany({
-      where: {
-        company_id: params.id,
-        organization_id: session.user.organizationId,
-        deleted_at: null,
-      },
-      include: { visitor: true },
-      orderBy: { visit_date: 'desc' },
-    }),
-    prisma.document.findMany({
-      where: {
-        company_id: params.id,
-        organization_id: session.user.organizationId,
-        deleted_at: null,
-      },
-      include: { extraction: true },
-      orderBy: { uploaded_at: 'desc' },
-    }),
-    prisma.financialMetric.findMany({
-      where: {
-        company_id: params.id,
-        organization_id: session.user.organizationId,
-      },
-      orderBy: { period_year: 'desc' },
-    }),
-  ])
-
-  // Filtrér sager (ekskludér slettede)
-  const cases = caseCompanies
-    .map((cc) => cc.case)
-    .filter((c) => c.deleted_at === null)
-
-  // Kontrakt-mapping
-  const mappedContracts: ContractItem[] = contracts.map((c) => {
-    const daysLeft = c.expiry_date ? daysUntil(c.expiry_date) : null
-    const isExpired = c.status === 'UDLOEBET'
-    const isExpiring = !isExpired && daysLeft != null && daysLeft >= 0 && daysLeft <= 30
-
-    return {
-      id: c.id,
-      displayName: c.display_name,
-      status: c.status,
-      statusLabel: getContractStatusLabel(c.status),
-      typeLabel: getContractTypeLabel(c.system_type),
-      expiryDate: c.expiry_date ? formatDate(c.expiry_date) : null,
-      daysUntilExpiry: daysLeft,
-      urgency: isExpired ? 'critical' : isExpiring ? 'warning' : 'healthy',
-    }
-  })
-
-  // Sager
-  const openCases = cases.filter((c) => c.status !== 'LUKKET' && c.status !== 'ARKIVERET')
-  const mappedCases: CaseItem[] = cases.map((c) => ({
-    id: c.id,
-    title: c.title,
-    caseNumber: c.case_number ?? '—',
-    type: c.case_type,
-    typeLabel: getCaseTypeLabel(c.case_type),
-    status: c.status,
-    statusLabel: getCaseStatusLabel(c.status),
-    updatedDate: formatDate(c.updated_at),
-  }))
-
-  // Opgaver
-  const mappedTasks: TaskItem[] = tasks.map((t) => ({
-    id: t.id,
-    title: t.title,
-    status: t.status,
-    statusLabel: getTaskStatusLabel(t.status),
-    priority: t.priority,
-    priorityLabel: getPriorityLabel(t.priority),
-    dueDate: t.due_date ? formatDate(t.due_date) : null,
-    assignedToName: t.assignee?.name ?? '—',
-  }))
-
-  // Personer
-  const mappedPersons: PersonItem[] = company.company_persons.map((cp) => ({
-    id: cp.person_id,
-    name: `${cp.person.first_name} ${cp.person.last_name}`,
-    role: getCompanyPersonRoleLabel(cp.role),
-    email: cp.person.email,
-  }))
-
-  // Besøg
-  const mappedVisits: VisitItem[] = visits.map((v) => ({
-    id: v.id,
-    typeLabel: getVisitTypeLabel(v.visit_type),
-    status: v.status,
-    statusLabel: getVisitStatusLabel(v.status),
-    dateLabel: formatDate(v.visit_date),
-    visitorName: v.visitor.name,
-  }))
-
-  // Dokumenter
-  const mappedDocuments: DocumentItem[] = documents.map((d) => ({
-    id: d.id,
-    fileName: d.file_name,
-    uploadedAt: formatDate(d.uploaded_at),
-    hasExtraction: d.extraction !== null,
-    extractionStatus: d.extraction?.extraction_status ?? null,
-  }))
-
-  // Økonomi — aggreger per år
-  const yearMap = new Map<number, FinancialYear>()
-  for (const fm of financialMetrics) {
-    const year = fm.period_year
-    if (!yearMap.has(year)) {
-      yearMap.set(year, { year, omsaetning: null, ebitda: null, resultat: null })
-    }
-    const entry = yearMap.get(year)!
-    const val = decimalToNumber(fm.value)
-    if (fm.metric_type === 'OMSAETNING') entry.omsaetning = val
-    else if (fm.metric_type === 'EBITDA') entry.ebitda = val
-    else if (fm.metric_type === 'RESULTAT') entry.resultat = val
-  }
-  const financialYears = Array.from(yearMap.values()).sort((a, b) => b.year - a.year)
-  const latestYear = financialYears[0] ?? null
-  const previousYear = financialYears[1] ?? null
-
-  // Beregn trend (YoY)
-  function trend(current: number | null, previous: number | null): number | null {
-    if (current == null || previous == null || previous === 0) return null
-    return (current - previous) / Math.abs(previous)
-  }
-  const omsaetningTrend = trend(latestYear?.omsaetning ?? null, previousYear?.omsaetning ?? null)
-  const ebitdaTrend = trend(latestYear?.ebitda ?? null, previousYear?.ebitda ?? null)
-
-  // Ejerskab
-  const mappedOwnerships: OwnershipItem[] = company.ownerships.map((o) => ({
-    id: o.id,
-    ownerName: o.owner_person
-      ? `${o.owner_person.first_name} ${o.owner_person.last_name}`
-      : 'Kædegruppe',
-    ownershipPct: decimalToNumber(o.ownership_pct),
-    isGroup: !o.owner_person_id,
-  }))
-
-  // Health-beregning
-  const expiredContracts = mappedContracts.filter((c) => c.urgency === 'critical')
-  const expiringSoon = mappedContracts.filter((c) => c.urgency === 'warning')
-  const healthStatus = deriveHealthStatus(expiredContracts.length, expiringSoon.length, openCases.length)
-
-  // Health-dimensioner
-  const contractsLevel: HealthLevel =
-    expiredContracts.length > 0 ? 'red' : expiringSoon.length > 0 ? 'amber' : 'green'
-  const casesLevel: HealthLevel =
-    openCases.length >= 2 ? 'red' : openCases.length === 1 ? 'amber' : 'green'
-  const financeLevel: HealthLevel =
-    ebitdaTrend != null && ebitdaTrend < -0.1 ? 'red' : ebitdaTrend != null && ebitdaTrend < 0 ? 'amber' : 'green'
-  const governanceLevel: HealthLevel =
-    cases.some((c) => c.case_type === 'GOVERNANCE' && c.status !== 'LUKKET' && c.status !== 'ARKIVERET')
-      ? 'amber'
-      : 'green'
-
-  const dimensions: HealthDimension[] = [
-    { label: 'Kontrakter', level: contractsLevel, sectionId: 'contracts' },
-    { label: 'Sager', level: casesLevel, sectionId: 'cases' },
-    { label: 'Økonomi', level: financeLevel, sectionId: 'finance' },
-    { label: 'Governance', level: governanceLevel, sectionId: 'activity' },
-  ]
-
-  // AI-anbefaling
-  let aiTitle: string
-  let aiBody: string
-  if (healthStatus === 'healthy') {
-    aiTitle = 'Selskabet er i god stand'
-    const financeSummary = latestYear
-      ? `Omsætning ${formatMio(latestYear.omsaetning ?? 0)}, EBITDA-margin ${latestYear.omsaetning ? (((latestYear.ebitda ?? 0) / latestYear.omsaetning) * 100).toFixed(1) : '0.0'}%.`
-      : ''
-    aiBody = `${company.name} har ingen kritiske forhold. ${financeSummary} Næste planlagte handling: ${visits.length > 0 ? 'driftsbesøg ' + formatDate(visits[0].visit_date) : 'kvartalsrapport'}.`
-  } else {
-    const topIssue = expiredContracts.length > 0
-      ? `${expiredContracts.length} udløbet kontrakt${expiredContracts.length > 1 ? 'er' : ''}`
-      : openCases.length > 0
-        ? `${openCases.length} åben${openCases.length > 1 ? 'e' : ''} sag${openCases.length > 1 ? 'er' : ''}`
-        : 'Forhold kræver opmærksomhed'
-    aiTitle = topIssue
-    aiBody = openCases.length > 0
-      ? `${company.name} har ${openCases.length} åben${openCases.length > 1 ? 'e' : ''} sag${openCases.length > 1 ? 'er' : ''} og ${expiredContracts.length + expiringSoon.length} kontrakt${expiredContracts.length + expiringSoon.length === 1 ? '' : 'er'} der kræver handling. Anbefaling: prioriter ${expiredContracts.length > 0 ? 'fornyelse af udløbne kontrakter' : 'gennemgang af åbne sager'} inden for 7 dage.`
-      : `${topIssue}. Gennemgå sektionerne nedenfor for at tage handling.`
-  }
-
-  // Saml company data
-  const companyData: CompanyDetailData = {
-    id: company.id,
-    name: company.name,
-    cvr: company.cvr ?? '—',
-    city: company.city ?? '—',
-    address: company.address ?? '—',
-    companyType: company.company_type ?? '—',
-    status: company.status,
-    healthStatus,
-    dimensions,
-    aiTitle,
-    aiBody,
-  }
+  const readOnly = data.role === 'GROUP_READONLY' || data.role === 'COMPANY_READONLY'
 
   return (
-    <CompanyDetailClient
-      company={companyData}
-      ownerships={mappedOwnerships}
-      contracts={mappedContracts}
-      cases={mappedCases}
-      tasks={mappedTasks}
-      persons={mappedPersons}
-      visits={mappedVisits}
-      documents={mappedDocuments}
-      latestFinancial={latestYear}
-      previousFinancial={previousYear}
-      omsaetningTrend={omsaetningTrend}
-      ebitdaTrend={ebitdaTrend}
-    />
-  )
-}
+    <div className="mx-auto max-w-[1100px] p-6">
+      <nav className="mb-4 text-xs text-gray-400">
+        <Link href="/companies" className="text-slate-500 no-underline hover:text-blue-600">
+          Selskaber
+        </Link>
+        <span className="mx-2">›</span>
+        <span className="font-medium text-slate-900">{data.company.name}</span>
+      </nav>
 
-// ---------------------------------------------------------------
-// Hjælpefunktion til formatering
-// ---------------------------------------------------------------
-function formatMio(val: number): string {
-  return (val / 1_000_000).toFixed(1) + 'M'
+      <CompanyHeader
+        name={data.company.name}
+        cvr={data.company.cvr}
+        city={data.company.city}
+        status={data.company.status}
+        foundedYear={data.company.founded_date?.getFullYear() ?? null}
+        statusBadge={data.statusBadge}
+        healthDimensions={data.healthDimensions}
+        showHealthDims={data.role !== 'COMPANY_MANAGER' && data.role !== 'COMPANY_READONLY'}
+        editStamdataButton={
+          <EditStamdataDialog
+            companyId={data.company.id}
+            initial={{
+              name: data.company.name,
+              cvr: data.company.cvr,
+              address: data.company.address,
+              city: data.company.city,
+              postal_code: data.company.postal_code,
+              founded_date: data.company.founded_date,
+            }}
+            disabled={readOnly}
+          />
+        }
+        createTaskHref={`/tasks/new?company=${data.company.id}`}
+        readOnly={readOnly}
+      />
+
+      {data.alerts.length > 0 && (
+        <div className="mb-4 flex flex-col gap-2">
+          {data.alerts.slice(0, 3).map((alert, i) => (
+            <AlertBanner
+              key={i}
+              severity={alert.severity}
+              title={alert.title}
+              sub={alert.sub}
+              actionLabel={alert.action_label}
+              actionHref={alert.action_href}
+            />
+          ))}
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 gap-4">
+        {data.visibleSections.has('ownership') && <OwnershipSection data={data.ownership} />}
+        {data.visibleSections.has('contracts') && (
+          <ContractsSection
+            contracts={data.contracts.top}
+            totalCount={data.contracts.totalCount}
+            companyId={data.company.id}
+          />
+        )}
+        {data.visibleSections.has('finance') && <FinanceSection data={data.finance} />}
+        {data.visibleSections.has('cases') && (
+          <CasesSection cases={data.cases.top} totalCount={data.cases.totalCount} />
+        )}
+        {data.visibleSections.has('persons') && (
+          <PersonsSection
+            persons={data.persons.top}
+            totalCount={data.persons.totalCount}
+            companyId={data.company.id}
+          />
+        )}
+        {data.visibleSections.has('visits') && <VisitsSection visits={data.visits} />}
+        {data.visibleSections.has('documents') && (
+          <DocumentsSection
+            documents={data.documents.rows}
+            awaitingReviewCount={data.documents.awaitingReviewCount}
+          />
+        )}
+        {data.visibleSections.has('insight') && data.aiInsight && (
+          <div className="col-span-2">
+            <AiInsightCard
+              headlineMd={data.aiInsight.headline_md}
+              bodyMd={data.aiInsight.body_md}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }
