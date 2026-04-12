@@ -91,6 +91,28 @@ export default async function PersonDetailPage({ params }: Props) {
         </div>
       </div>
 
+      {/* Stamdata */}
+      <div className="rounded-xl border border-gray-200 bg-white p-5 mb-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+          <div>
+            <div className="text-xs text-gray-400 mb-1">Fornavn</div>
+            <div className="text-gray-900 font-medium">{person.first_name}</div>
+          </div>
+          <div>
+            <div className="text-xs text-gray-400 mb-1">Efternavn</div>
+            <div className="text-gray-900 font-medium">{person.last_name}</div>
+          </div>
+          <div>
+            <div className="text-xs text-gray-400 mb-1">Email</div>
+            <div className="text-gray-900">{person.email ?? '—'}</div>
+          </div>
+          <div>
+            <div className="text-xs text-gray-400 mb-1">Telefon</div>
+            <div className="text-gray-900 tabular-nums">{person.phone ?? '—'}</div>
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 gap-4">
         {/* Aktive tilknytninger */}
         <div className="rounded-xl border border-gray-200 bg-white p-5">

@@ -117,7 +117,7 @@ export default async function PersonsPage({ searchParams }: PersonsPageProps) {
   ])
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-[1280px] mx-auto">
       <PageHeader
         title="Persondatabase"
         subtitle={`${totalCount} kontakt${totalCount !== 1 ? 'er' : ''} på tværs af alle selskaber`}
@@ -204,7 +204,7 @@ export default async function PersonsPage({ searchParams }: PersonsPageProps) {
                   )}
 
                   {person.company_persons.length === 0 && (
-                    <p className="text-xs text-gray-300 border-t border-gray-100 pt-2">Ingen tilknytninger</p>
+                    <p className="text-xs text-gray-400 border-t border-gray-100 pt-2">Ingen tilknytninger</p>
                   )}
                 </Link>
               )
