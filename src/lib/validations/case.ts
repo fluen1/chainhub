@@ -86,7 +86,7 @@ export const createTaskSchema = z.object({
 
 export const updateTaskStatusSchema = z.object({
   taskId: z.string().min(1),
-  status: z.enum(['NY', 'AKTIV', 'AFVENTER', 'LUKKET']),
+  status: z.enum(['NY', 'AKTIV_TASK', 'AFVENTER', 'LUKKET']),
 })
 
 export type CreateCaseInput = z.infer<typeof createCaseSchema>
