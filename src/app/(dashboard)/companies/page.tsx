@@ -15,6 +15,8 @@ export interface PortfolioCompany {
   cvr: string | null
   city: string | null
   address: string | null
+  latitude: number | null
+  longitude: number | null
   status: string
   contractCount: number
   openCaseCount: number
@@ -235,6 +237,8 @@ export default async function CompaniesPage() {
       cvr: company.cvr,
       city: company.city,
       address: company.address,
+      latitude: company.latitude,
+      longitude: company.longitude,
       status: company.status,
       contractCount: company._count.contracts,
       openCaseCount: openCases,

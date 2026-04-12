@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import {
   Search,
   Map as MapIcon,
@@ -12,91 +13,21 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { PortfolioCompany, PortfolioTotals } from './page'
+import type { MapCompany } from '@/components/companies/leaflet-map'
 
-// ---------------------------------------------------------------
-// Geografiske positioner (% af kort-areal) — hardcoded for Danmark
-// ---------------------------------------------------------------
-const CITY_POSITIONS: Record<string, { top: string; left: string }> = {
-  Aalborg:    { top: '10%', left: '40%' },
-  Viborg:     { top: '22%', left: '28%' },
-  Holstebro:  { top: '25%', left: '18%' },
-  Randers:    { top: '23%', left: '38%' },
-  Herning:    { top: '30%', left: '22%' },
-  Aarhus:     { top: '28%', left: '42%' },
-  Silkeborg:  { top: '30%', left: '32%' },
-  Horsens:    { top: '36%', left: '38%' },
-  Vejle:      { top: '40%', left: '34%' },
-  Esbjerg:    { top: '46%', left: '14%' },
-  Fredericia: { top: '42%', left: '40%' },
-  Kolding:    { top: '45%', left: '32%' },
-  Haderslev:  { top: '52%', left: '28%' },
-  Odense:     { top: '44%', left: '48%' },
-  Nyborg:     { top: '45%', left: '54%' },
-  Svendborg:  { top: '55%', left: '50%' },
-  Slagelse:   { top: '48%', left: '60%' },
-  Roskilde:   { top: '44%', left: '66%' },
-  Næstved:    { top: '56%', left: '64%' },
-  Køge:       { top: '47%', left: '69%' },
-  Hillerød:   { top: '38%', left: '70%' },
-  Helsingør:  { top: '34%', left: '74%' },
-  København:  { top: '42%', left: '72%' },
-}
-
-// Normaliser byer med postdistrikt-suffiks: "København Ø" → "København", "Aarhus C" → "Aarhus"
-function normalizeCity(city: string): string {
-  return city.replace(/\s+[NSØVKC]{1,2}$/, '').trim()
-}
-
-// ---------------------------------------------------------------
-// By-clustering
-// ---------------------------------------------------------------
-type HealthStatus = PortfolioCompany['healthStatus']
-
-interface CityCluster {
-  city: string
-  companies: PortfolioCompany[]
-  worstStatus: HealthStatus
-  position: { top: string; left: string }
-}
-
-function groupByCities(companies: PortfolioCompany[]): CityCluster[] {
-  const map = new Map<string, PortfolioCompany[]>()
-  for (const c of companies) {
-    const city = normalizeCity(c.city ?? 'Ukendt')
-    if (!map.has(city)) map.set(city, [])
-    map.get(city)!.push(c)
-  }
-
-  const rank = { critical: 0, warning: 1, healthy: 2 }
-
-  return Array.from(map.entries())
-    .map(([city, list]) => {
-      const worstStatus = list.reduce<HealthStatus>((worst, c) => {
-        return rank[c.healthStatus] < rank[worst] ? c.healthStatus : worst
-      }, 'healthy')
-      return {
-        city,
-        companies: list,
-        worstStatus,
-        position: CITY_POSITIONS[city] ?? { top: '50%', left: '50%' },
-      }
-    })
-    .filter((cluster) => CITY_POSITIONS[cluster.city] !== undefined)
-}
+const LeafletMap = dynamic(() => import('@/components/companies/leaflet-map'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center min-h-[560px] rounded-xl bg-[#0f172a]">
+      <div className="text-sm text-slate-500">Indlæser kort...</div>
+    </div>
+  ),
+})
 
 // ---------------------------------------------------------------
 // Farver og labels
 // ---------------------------------------------------------------
-function dotColor(status: HealthStatus): string {
-  switch (status) {
-    case 'critical':
-      return 'bg-rose-500 ring-[3px] ring-rose-500/15'
-    case 'warning':
-      return 'bg-amber-400 ring-[3px] ring-amber-400/15'
-    case 'healthy':
-      return 'bg-emerald-400 ring-[3px] ring-emerald-400/10'
-  }
-}
+type HealthStatus = PortfolioCompany['healthStatus']
 
 function badgeColor(status: HealthStatus): string {
   switch (status) {
@@ -122,77 +53,6 @@ function badgeLabel(status: HealthStatus): string {
 
 function formatMio(val: number): string {
   return (val / 1_000_000).toFixed(1)
-}
-
-// ---------------------------------------------------------------
-// City cluster dot (kortet)
-// ---------------------------------------------------------------
-function CityClusterDot({ cluster }: { cluster: CityCluster }) {
-  const size = 26 + Math.min(cluster.companies.length, 6) * 3
-  const dotCls = dotColor(cluster.worstStatus)
-
-  return (
-    <div
-      className="absolute flex flex-col items-center cursor-pointer group/cluster"
-      style={{
-        top: cluster.position.top,
-        left: cluster.position.left,
-        transform: 'translate(-50%, -50%)',
-      }}
-    >
-      <div className="relative transition-transform duration-200 ease-out group-hover/cluster:scale-[1.08]">
-        <div
-          className={cn(
-            'relative rounded-full flex items-center justify-center text-[10px] font-semibold text-white tabular-nums',
-            dotCls
-          )}
-          style={{ width: size, height: size }}
-        >
-          {cluster.companies.length}
-        </div>
-      </div>
-      <div className="text-[9px] font-medium text-slate-500 mt-2 tracking-wide whitespace-nowrap">
-        {cluster.city}
-      </div>
-
-      {/* Tooltip — hover preview */}
-      <div className="absolute bottom-[calc(100%+10px)] left-1/2 -translate-x-1/2 bg-white rounded-lg p-2.5 min-w-[240px] ring-1 ring-slate-900/5 shadow-[0_12px_32px_-12px_rgba(15,23,42,0.25)] opacity-0 translate-y-1 pointer-events-none group-hover/cluster:opacity-100 group-hover/cluster:translate-y-0 group-hover/cluster:pointer-events-auto transition-all duration-150 z-20">
-        <div className="text-[9px] font-medium text-slate-400 uppercase tracking-[0.08em] mb-1.5 px-1">
-          {cluster.city} · {cluster.companies.length}{' '}
-          {cluster.companies.length === 1 ? 'lokation' : 'lokationer'}
-        </div>
-        {cluster.companies.map((c) => (
-          <Link
-            key={c.id}
-            href={`/companies/${c.id}`}
-            className="flex items-center justify-between gap-3 py-1.5 px-1 no-underline rounded-md hover:bg-slate-50 transition-colors"
-          >
-            <div className="min-w-0 flex-1">
-              <div className="text-[12px] font-medium text-slate-900 truncate">
-                {c.name}
-              </div>
-              <div className="text-[10px] text-slate-500 truncate">
-                {c.partnerName ?? 'Ingen partner'} ·{' '}
-                {c.partnerOwnershipPct != null
-                  ? `${c.partnerOwnershipPct}%`
-                  : '—'}
-              </div>
-            </div>
-            <span
-              className={cn(
-                'text-[9px] font-medium px-1.5 py-0.5 rounded shrink-0',
-                badgeColor(c.healthStatus)
-              )}
-            >
-              {badgeLabel(c.healthStatus)}
-            </span>
-          </Link>
-        ))}
-        {/* Caret */}
-        <div className="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-white" />
-      </div>
-    </div>
-  )
 }
 
 // ---------------------------------------------------------------
@@ -605,7 +465,24 @@ export function PortfolioClient({
     })
   }, [companies, search, healthFilter])
 
-  const clusters = useMemo(() => groupByCities(filtered), [filtered])
+  const mapCompanies: MapCompany[] = useMemo(() => {
+    return filtered
+      .filter((c): c is PortfolioCompany & { latitude: number; longitude: number } =>
+        c.latitude != null && c.longitude != null
+      )
+      .map((c) => ({
+        id: c.id,
+        name: c.name,
+        city: c.city,
+        latitude: c.latitude,
+        longitude: c.longitude,
+        healthStatus: c.healthStatus,
+        openCaseCount: c.openCaseCount,
+        partnerName: c.partnerName,
+        partnerOwnershipPct: c.partnerOwnershipPct,
+      }))
+  }, [filtered])
+
   const sorted = useMemo(
     () => sortCompanies(filtered, sortKey, sortDir),
     [filtered, sortKey, sortDir]
@@ -753,70 +630,14 @@ export function PortfolioClient({
 
           {/* MAP AREA */}
           {view === 'map' && (
-            <div
-              className="relative rounded-xl p-6 min-h-[560px] overflow-hidden ring-1 ring-slate-900/10 shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
-              style={{
-                background:
-                  'linear-gradient(180deg, #0b1220 0%, #0f172a 100%)',
-              }}
-            >
-              {/* Subtil vignette */}
-              <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background:
-                    'radial-gradient(ellipse at 50% 40%, rgba(148,163,184,0.04) 0%, transparent 60%)',
-                }}
-              />
-              {/* Grid pattern */}
-              <div
-                className="absolute inset-0 opacity-[0.025] pointer-events-none"
-                style={{
-                  backgroundImage:
-                    'linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)',
-                  backgroundSize: '48px 48px',
-                }}
-              />
-
-              {/* Danmark-outline (dekorativ) */}
-              <svg
-                viewBox="0 0 400 600"
-                className="absolute inset-5 opacity-[0.08] pointer-events-none"
-                fill="none"
-                stroke="#94a3b8"
-                strokeWidth="1"
-              >
-                {/* Jylland */}
-                <path d="M140,40 C155,30 180,35 190,45 L200,65 C210,80 215,95 210,115 L205,140 C200,160 195,170 200,185 L210,210 C215,225 220,240 215,260 L205,285 C200,300 195,320 185,340 L170,365 C165,380 155,395 145,405 L135,415 C125,425 120,440 118,460 L115,480 C112,500 115,520 125,540 L135,555 C140,560 130,570 120,565 L105,545 C95,530 85,510 80,490 L75,460 C70,440 72,420 80,400 L95,370 C100,355 108,340 105,320 L100,295 C95,275 90,255 95,235 L105,210 C110,190 118,170 115,150 L110,125 C105,105 110,85 120,65 Z" />
-                {/* Fyn */}
-                <path d="M195,425 C210,415 228,420 235,435 C242,450 238,470 228,482 C215,494 200,490 193,478 C186,465 186,440 195,425 Z" />
-                {/* Sjælland */}
-                <path d="M260,390 C285,380 315,388 325,405 L338,430 C345,448 342,470 330,485 L310,505 C298,515 280,518 262,510 L245,500 C232,488 228,470 232,452 L240,425 C244,408 250,396 260,390 Z" />
-              </svg>
-
-              {/* Label */}
-              <div className="relative flex items-center gap-2 text-[10px] font-medium text-slate-500 uppercase tracking-[0.12em]">
-                <span className="w-1 h-1 rounded-full bg-emerald-400" />
-                Danmark · Live
-              </div>
-
-              {/* City clusters */}
-              <div className="absolute inset-5">
-                {clusters.map((cluster) => (
-                  <CityClusterDot key={cluster.city} cluster={cluster} />
-                ))}
-              </div>
-
-              {/* Empty state på kort */}
-              {clusters.length === 0 && (
-                <div className="absolute inset-0 flex items-center justify-center">
+            <div className="relative rounded-xl overflow-hidden ring-1 ring-slate-900/10 shadow-[0_1px_2px_rgba(15,23,42,0.04)] min-h-[560px]">
+              {mapCompanies.length > 0 ? (
+                <LeafletMap companies={mapCompanies} />
+              ) : (
+                <div className="flex items-center justify-center min-h-[560px] bg-[#0f172a] rounded-xl">
                   <div className="text-center">
-                    <p className="text-[13px] text-slate-400 font-medium">
-                      Ingen lokationer fundet
-                    </p>
-                    <p className="text-[11px] text-slate-500 mt-1">
-                      Prøv et andet søgeord eller filter
-                    </p>
+                    <p className="text-[13px] text-slate-400 font-medium">Ingen lokationer fundet</p>
+                    <p className="text-[11px] text-slate-500 mt-1">Prøv et andet søgeord eller filter</p>
                   </div>
                 </div>
               )}
