@@ -1,6 +1,6 @@
 # PROGRESS.md — ChainHub
 
-Opdateret: Plan 4D i praksis lukket + Sprint 8 accountability — 2026-04-18
+Opdateret: Produktions-modenhed session 1+2 leveret — 2026-04-18
 
 ## Sprint 1-6 ✅ FÆRDIGE
 
@@ -172,16 +172,47 @@ Opdateret: Plan 4D i praksis lukket + Sprint 8 accountability — 2026-04-18
 - [x] **`/settings` organisation-form** — name/cvr/chain_structure editerbar via `updateOrganization` server-action + Zod-validering
 - [x] **Tests**: 339 → 378 → 390 passed, 0 failed
 
+## Produktions-modenhed session 1 — 2026-04-18 ✅
+
+Foundation-lag for production deploy. Arkitektur-review scorede 6/10 → 8/10.
+
+- [x] **Pino structured logger** (`src/lib/logger.ts`) + `captureError` + `createLogger` factory
+- [x] **Sentry-integration** (opt-in via DSN) — client/server/edge configs + `instrumentation.ts`
+- [x] **`withActionLogging` wrapper** (`src/lib/action-helpers.ts`) — duration-tracking + uncaught-throw → Sentry
+- [x] **Error boundaries**: `error.tsx` på `/dashboard`, `/companies`, `/tasks` + `global-error.tsx` + reusable `ErrorBoundaryUI`
+- [x] **Calendar pagination caps**: alle 4 `findMany` cappet ved 500/type/måned med warning-log
+- [x] **Prettier + .gitattributes + .editorconfig** — homogen formatering + LF line-endings
+- [x] **Husky + lint-staged pre-commit** — auto-format + ESLint på stagede filer
+- [x] **README rewrite** (37 linjer boilerplate → 160 linjer onboarding)
+- [x] **`docs/DEVELOPER.md`** — Windows/OneDrive trouble-shooting, db push vs migrate, action/sektion patterns
+- [x] **`docs/build/LOGGING-GUIDE.md`** — log-mønstre, levels, PII-regler, retrofit-plan
+
+## Produktions-modenhed session 2 — 2026-04-18 ✅
+
+Schema-modenhed + AuditLog-udvidelse + silent-catch retrofit. 8/10 → ~9/10.
+
+- [x] **`Document.contract_id`** + reverse-relation på Contract — lukker DocumentExtraction-gap (kontrakter kan nu nå AI-data)
+- [x] **`Company.parent_company_id`** — eksplicit holding→datterselskab self-relation. Backfilled for 6 seed-klinikker (TandlægeGruppen Holding ApS som parent)
+- [x] **`recordAuditEvent` helper** (`src/lib/audit.ts`) med 4 unit-tests — standardiserer alle AuditLog-skriv, sluger DB-fejl stille via `captureError`
+- [x] **AuditLog wire-in på 6 nye sites**: Case.status (STATUS_CHANGE), Ownership.update (UPDATE m. before/after), CompanyPerson.add/end (med governance-rolle sensitivity), eksisterende ownership.add/end migreret til ny helper
+- [x] **32 silent-catch retrofits** — alle `catch {}` i `src/actions/` har nu `captureError(err, { namespace, extra })`. Filer: contracts.ts (4), tasks.ts (5), persons.ts (4), companies.ts (4), cases.ts (2), users.ts (4), visits.ts (2), finance.ts (2), contract-versions.ts (1), ownership.ts (3), governance.ts (2)
+- [x] **Tests**: 390 → 394 passed (4 nye audit-helper unit-tests), 0 failed
+
+### DocumentExtraction-feature er nu teknisk muliggjort
+
+Med `Contract.documents` reverse-relation kan en person-detalje nu nå AI-udlæste data via `companyPerson.contract.documents[].extraction.extracted_fields`. Implementering af UI er separat feature-session.
+
 ## Udskudte features (dedikerede sessions)
 
 Disse er bevidst taget ud af scope efter exploration og venter på dedikeret planning.
 
-- **DocumentExtraction-data på persons** — kræver `contract_id`-felt på `Document`-model (mangler i schema), backfill af eksisterende dokumenter, UI-rendering af AI-udlæste felter (løn, opsigelsesvarsel, pension, non-compete). Egen session med schema-migration + datasti `contract → document → extraction`.
+- **DocumentExtraction-UI på persons** — schema-relationen er nu på plads (session 2). Mangler kun UI-rendering af AI-udlæste felter (løn, opsigelsesvarsel, pension, non-compete) på `/persons/[id]`.
 - **TaskParticipant (watchers)** — lavt afkast for små teams der bruger `assigned_to` + digest-emails. Tages når watcher-behovet er reelt.
 - **CompanyNote med sensitivity** — notater pr. selskab med 3-lags sensitivity-permissions. Dedikeret session pga. kompleks adgangskontrol.
 - **R2-produktionsstorage** — pt. lokal storage. Deploy-gated — bliver først relevant ved produktions-launch.
 - **Tech-debt duplicates** — `filterLatestPerCompany`, mobile-nav vs app-sidebar nav, calendar month/day arrays. Piggyback på næste refactor i hvert område.
 - **Dashboard whitespace + sidebar-badge contrast** — kosmetisk polish-sprint.
+- **Produktions-modenhed session 3** — E2E Playwright test-suite + CI, test-coverage op på 80%, accessibility-sweep.
 
 ## Sprint 9 — Polish + Kalender ❌ AFVENTER SPRINT 8
 
