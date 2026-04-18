@@ -3,14 +3,16 @@ import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { getAccessibleCompanies } from '@/lib/permissions'
-import { CheckSquare } from 'lucide-react'
+import { CheckSquare, List, LayoutGrid } from 'lucide-react'
 import Link from 'next/link'
 import { PageHeader } from '@/components/ui/page-header'
 import { TaskStatusButton } from '@/components/tasks/TaskStatusButton'
+import { CollapsibleSection } from '@/components/ui/CollapsibleSection'
 import { Suspense } from 'react'
 import { SearchAndFilter } from '@/components/ui/SearchAndFilter'
 import { Pagination } from '@/components/ui/Pagination'
 import { parsePaginationParams } from '@/lib/pagination'
+import { cn } from '@/lib/utils'
 import {
   TASK_STATUS_LABELS,
   PRIORITY_LABELS,
@@ -18,6 +20,10 @@ import {
   getPriorityStyle,
   getTaskStatusLabel,
 } from '@/lib/labels'
+import {
+  groupTasksByCompany,
+  NO_COMPANY_KEY,
+} from '@/lib/task-detail/helpers'
 import type { TaskStatus, Prisma } from '@prisma/client'
 
 export const metadata: Metadata = { title: 'Opgaver' }
@@ -25,7 +31,7 @@ export const metadata: Metadata = { title: 'Opgaver' }
 const PAGE_SIZE = 20
 
 const STATUS_OPTIONS = Object.entries(TASK_STATUS_LABELS)
-  .filter(([key]) => key !== 'AKTIV') // AKTIV is alias for AKTIV_TASK, skip duplicate
+  .filter(([key]) => key !== 'AKTIV')
   .map(([value, label]) => ({ value, label }))
 
 const PRIORITY_OPTIONS = [
@@ -41,6 +47,7 @@ interface TasksPageProps {
     status?: string
     priority?: string
     company?: string
+    view?: string // 'flat' (default) | 'grouped'
     page?: string
   }
 }
@@ -54,10 +61,10 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
   const statusFilter = searchParams.status
   const priorityFilter = searchParams.priority
   const companyFilter = searchParams.company
+  const viewFilter = searchParams.view === 'grouped' ? 'grouped' : 'flat'
 
   const today = new Date()
 
-  // Hent accessible companies til filter-dropdown
   const companyIds = await getAccessibleCompanies(
     session.user.id,
     session.user.organizationId
@@ -75,7 +82,8 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
       })).map((c) => ({ value: c.id, label: c.name }))
     : []
 
-  // Byg where-clause — vis åbne opgaver som default, medmindre brugeren filtrerer på LUKKET
+  const companyNameLookup = new Map(companyOptions.map((c) => [c.value, c.label]))
+
   const where: Prisma.TaskWhereInput = {
     organization_id: session.user.organizationId,
     deleted_at: null,
@@ -101,8 +109,6 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
 
   const [tasks, totalCount] = await Promise.all([tasksQuery, countQuery])
 
-  const overdueTasks = tasks.filter((t) => t.due_date && new Date(t.due_date) < today)
-  const upcomingTasks = tasks.filter((t) => !t.due_date || new Date(t.due_date) >= today)
   const hasFilters = !!(q || statusFilter || priorityFilter || companyFilter)
 
   const overdueCount = await prisma.task.count({
@@ -115,6 +121,22 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
     },
   })
 
+  const overdueTasks = tasks.filter((t) => t.due_date && new Date(t.due_date) < today)
+  const upcomingTasks = tasks.filter((t) => !t.due_date || new Date(t.due_date) >= today)
+
+  const groupedByCompany =
+    viewFilter === 'grouped' ? groupTasksByCompany(tasks) : null
+
+  function buildToggleHref(nextView: 'flat' | 'grouped'): string {
+    const params = new URLSearchParams()
+    if (q) params.set('q', q)
+    if (statusFilter) params.set('status', statusFilter)
+    if (priorityFilter) params.set('priority', priorityFilter)
+    if (companyFilter) params.set('company', companyFilter)
+    params.set('view', nextView)
+    return `/tasks?${params.toString()}`
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -124,16 +146,45 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
         actionHref="/tasks/new"
       />
 
-      <Suspense fallback={null}>
-        <SearchAndFilter
-          placeholder="Søg på opgavenavn..."
-          filters={[
-            { key: 'company', label: 'Selskab', options: companyOptions },
-            { key: 'status', label: 'Status', options: STATUS_OPTIONS },
-            { key: 'priority', label: 'Prioritet', options: PRIORITY_OPTIONS },
-          ]}
-        />
-      </Suspense>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <Suspense fallback={null}>
+          <SearchAndFilter
+            placeholder="Søg på opgavenavn..."
+            filters={[
+              { key: 'company', label: 'Selskab', options: companyOptions },
+              { key: 'status', label: 'Status', options: STATUS_OPTIONS },
+              { key: 'priority', label: 'Prioritet', options: PRIORITY_OPTIONS },
+            ]}
+          />
+        </Suspense>
+
+        <div className="flex items-center rounded-md border border-gray-200 bg-white shrink-0">
+          <Link
+            href={buildToggleHref('flat')}
+            className={cn(
+              'flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-l-md no-underline',
+              viewFilter === 'flat'
+                ? 'bg-blue-50 text-blue-700'
+                : 'text-gray-500 hover:bg-gray-50'
+            )}
+          >
+            <List className="h-3.5 w-3.5" aria-hidden />
+            Tidslinje
+          </Link>
+          <Link
+            href={buildToggleHref('grouped')}
+            className={cn(
+              'flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-r-md border-l border-gray-200 no-underline',
+              viewFilter === 'grouped'
+                ? 'bg-blue-50 text-blue-700'
+                : 'text-gray-500 hover:bg-gray-50'
+            )}
+          >
+            <LayoutGrid className="h-3.5 w-3.5" aria-hidden />
+            Pr. selskab
+          </Link>
+        </div>
+      </div>
 
       {tasks.length === 0 ? (
         <div className="rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
@@ -150,9 +201,25 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
             </>
           )}
         </div>
+      ) : viewFilter === 'grouped' && groupedByCompany ? (
+        <div className="space-y-3">
+          {Array.from(groupedByCompany.entries()).map(([companyId, tasksForCompany]) => {
+            const name =
+              companyId === NO_COMPANY_KEY
+                ? 'Uden selskab'
+                : companyNameLookup.get(companyId) ?? 'Ukendt selskab'
+            return (
+              <CollapsibleSection key={companyId} title={name} count={tasksForCompany.length}>
+                <TaskList tasks={tasksForCompany} today={today} />
+              </CollapsibleSection>
+            )
+          })}
+          <Suspense fallback={null}>
+            <Pagination currentPage={page} totalCount={totalCount} pageSize={PAGE_SIZE} />
+          </Suspense>
+        </div>
       ) : (
         <div className="space-y-6">
-          {/* Forfaldne */}
           {overdueTasks.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-3">
@@ -165,12 +232,10 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
             </div>
           )}
 
-          {/* Separator */}
           {overdueTasks.length > 0 && upcomingTasks.length > 0 && (
             <div className="border-t border-gray-200" />
           )}
 
-          {/* Kommende */}
           {upcomingTasks.length > 0 && (
             <div>
               <div className="flex items-center gap-2 mb-3">
