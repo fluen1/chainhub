@@ -1,5 +1,6 @@
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import { AppHeader } from '@/components/layout/app-header'
+import { SkipToMain } from '@/components/layout/SkipToMain'
 import { Providers } from '@/components/providers'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
@@ -33,6 +34,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <Providers>
+      <SkipToMain />
       <div className="flex h-screen overflow-hidden">
         <div className="hidden lg:flex h-full">
           <AppSidebar
@@ -47,7 +49,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
             kpis={headerKpis}
             currentDate={new Date()}
           />
-          <main className="flex-1 overflow-y-auto bg-[#f0f2f5] px-8 py-6">{children}</main>
+          <main id="main-content" className="flex-1 overflow-y-auto bg-[#f0f2f5] px-8 py-6">
+            {children}
+          </main>
         </div>
       </div>
     </Providers>
