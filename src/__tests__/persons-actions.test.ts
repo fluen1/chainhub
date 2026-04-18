@@ -73,9 +73,8 @@ describe('updatePerson', () => {
 
   it('happy path opdaterer person', async () => {
     const { prisma } = await import('@/lib/db')
-    vi.mocked(prisma.person.findFirst).mockImplementation(
-      async () => ({ id: 'p-1', organization_id: 'org-1' }) as never
-    )
+    vi.mocked(prisma.person.findFirst).mockImplementation((() =>
+      Promise.resolve({ id: 'p-1', organization_id: 'org-1' })) as never)
     const result = await updatePerson({
       personId: 'p-1',
       firstName: 'Opdateret',
@@ -85,7 +84,7 @@ describe('updatePerson', () => {
 
   it('returnerer fejl hvis person ikke findes', async () => {
     const { prisma } = await import('@/lib/db')
-    vi.mocked(prisma.person.findFirst).mockImplementation(async () => null)
+    vi.mocked(prisma.person.findFirst).mockImplementation((() => Promise.resolve(null)) as never)
     const result = await updatePerson({
       personId: 'nonexistent',
       firstName: 'X',
@@ -99,9 +98,8 @@ describe('deletePerson', () => {
 
   it('happy path soft-sletter', async () => {
     const { prisma } = await import('@/lib/db')
-    vi.mocked(prisma.person.findFirst).mockImplementation(
-      async () => ({ id: 'p-1', organization_id: 'org-1' }) as never
-    )
+    vi.mocked(prisma.person.findFirst).mockImplementation((() =>
+      Promise.resolve({ id: 'p-1', organization_id: 'org-1' })) as never)
     const result = await deletePerson('p-1')
     expect('data' in result).toBe(true)
   })
@@ -115,7 +113,7 @@ describe('deletePerson', () => {
 
   it('afviser hvis aktiv companyPerson eksisterer', async () => {
     const { prisma } = await import('@/lib/db')
-    vi.mocked(prisma.companyPerson.count).mockImplementation(async () => 1)
+    vi.mocked(prisma.companyPerson.count).mockImplementation((() => Promise.resolve(1)) as never)
     const result = await deletePerson('p-1')
     expect('error' in result).toBe(true)
     if ('error' in result) {
@@ -125,7 +123,7 @@ describe('deletePerson', () => {
 
   it('afviser hvis aktiv ownership eksisterer', async () => {
     const { prisma } = await import('@/lib/db')
-    vi.mocked(prisma.ownership.count).mockImplementation(async () => 1)
+    vi.mocked(prisma.ownership.count).mockImplementation((() => Promise.resolve(1)) as never)
     const result = await deletePerson('p-1')
     expect('error' in result).toBe(true)
   })
@@ -136,11 +134,11 @@ describe('searchPersons', () => {
 
   it('returnerer matches for query med 2+ tegn', async () => {
     const { prisma } = await import('@/lib/db')
-    vi.mocked(prisma.person.findMany).mockImplementation(async () => [
-      { id: 'p-1', first_name: 'Anders' } as never,
-    ])
+    vi.mocked(prisma.person.findMany).mockImplementation((() =>
+      Promise.resolve([{ id: 'p-1', first_name: 'Anders' }])) as never)
     const result = await searchPersons('And', 'org-1')
-    if ('data' in result) {
+    expect('data' in result).toBe(true)
+    if ('data' in result && result.data) {
       expect(result.data.length).toBe(1)
     }
   })

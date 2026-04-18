@@ -54,7 +54,8 @@ describe('addCompanyPerson', () => {
 
   it('happy path opretter tilknytning', async () => {
     const { prisma } = await import('@/lib/db')
-    vi.mocked(prisma.companyPerson.findFirst).mockImplementation(async () => null)
+    vi.mocked(prisma.companyPerson.findFirst).mockImplementation((() =>
+      Promise.resolve(null)) as never)
     const result = await addCompanyPerson({
       companyId: VALID_UUID_1,
       personId: VALID_UUID_2,
@@ -65,9 +66,8 @@ describe('addCompanyPerson', () => {
 
   it('afviser anden direktør hvis allerede aktiv', async () => {
     const { prisma } = await import('@/lib/db')
-    vi.mocked(prisma.companyPerson.findFirst).mockImplementation(
-      async () => ({ id: 'existing-director' }) as never
-    )
+    vi.mocked(prisma.companyPerson.findFirst).mockImplementation((() =>
+      Promise.resolve({ id: 'existing-director' })) as never)
     const result = await addCompanyPerson({
       companyId: VALID_UUID_1,
       personId: VALID_UUID_2,
@@ -103,7 +103,8 @@ describe('addCompanyPerson', () => {
 
   it('opretter ny person hvis ingen personId angivet', async () => {
     const { prisma } = await import('@/lib/db')
-    vi.mocked(prisma.companyPerson.findFirst).mockImplementation(async () => null)
+    vi.mocked(prisma.companyPerson.findFirst).mockImplementation((() =>
+      Promise.resolve(null)) as never)
     await addCompanyPerson({
       companyId: VALID_UUID_1,
       firstName: 'Ny',
@@ -116,7 +117,8 @@ describe('addCompanyPerson', () => {
   it('skriver audit-event ved oprettelse', async () => {
     const { prisma } = await import('@/lib/db')
     const audit = await import('@/lib/audit')
-    vi.mocked(prisma.companyPerson.findFirst).mockImplementation(async () => null)
+    vi.mocked(prisma.companyPerson.findFirst).mockImplementation((() =>
+      Promise.resolve(null)) as never)
     await addCompanyPerson({
       companyId: VALID_UUID_1,
       personId: VALID_UUID_2,
@@ -135,15 +137,13 @@ describe('endCompanyPerson', () => {
 
   it('happy path soft-sletter med end_date', async () => {
     const { prisma } = await import('@/lib/db')
-    vi.mocked(prisma.companyPerson.findFirst).mockImplementation(
-      async () =>
-        ({
-          organization_id: 'org-1',
-          company_id: 'c-1',
-          person_id: 'p-1',
-          role: 'direktoer',
-        }) as never
-    )
+    vi.mocked(prisma.companyPerson.findFirst).mockImplementation((() =>
+      Promise.resolve({
+        organization_id: 'org-1',
+        company_id: 'c-1',
+        person_id: 'p-1',
+        role: 'direktoer',
+      })) as never)
     const result = await endCompanyPerson({
       companyPersonId: VALID_UUID_3,
       endDate: '2026-04-18',
@@ -153,15 +153,13 @@ describe('endCompanyPerson', () => {
 
   it('afviser tenant mismatch', async () => {
     const { prisma } = await import('@/lib/db')
-    vi.mocked(prisma.companyPerson.findFirst).mockImplementation(
-      async () =>
-        ({
-          organization_id: 'andet-org',
-          company_id: 'c-1',
-          person_id: 'p-1',
-          role: 'direktoer',
-        }) as never
-    )
+    vi.mocked(prisma.companyPerson.findFirst).mockImplementation((() =>
+      Promise.resolve({
+        organization_id: 'andet-org',
+        company_id: 'c-1',
+        person_id: 'p-1',
+        role: 'direktoer',
+      })) as never)
     const result = await endCompanyPerson({
       companyPersonId: VALID_UUID_3,
       endDate: '2026-04-18',
@@ -171,15 +169,13 @@ describe('endCompanyPerson', () => {
 
   it('afviser uden selskab-adgang', async () => {
     const { prisma } = await import('@/lib/db')
-    vi.mocked(prisma.companyPerson.findFirst).mockImplementation(
-      async () =>
-        ({
-          organization_id: 'org-1',
-          company_id: 'c-1',
-          person_id: 'p-1',
-          role: 'direktoer',
-        }) as never
-    )
+    vi.mocked(prisma.companyPerson.findFirst).mockImplementation((() =>
+      Promise.resolve({
+        organization_id: 'org-1',
+        company_id: 'c-1',
+        person_id: 'p-1',
+        role: 'direktoer',
+      })) as never)
     const perms = await import('@/lib/permissions')
     vi.mocked(perms.canAccessCompany).mockResolvedValueOnce(false)
     const result = await endCompanyPerson({
