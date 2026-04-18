@@ -20,6 +20,7 @@ import {
   getCaseTypeLabel,
 } from '@/lib/labels'
 import type { SagsType } from '@prisma/client'
+import { zodCaseStatus } from '@/lib/zod-enums'
 
 export const metadata: Metadata = { title: 'Sager' }
 
@@ -48,7 +49,8 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
 
   const { page, skip, take } = parsePaginationParams(searchParams.page, PAGE_SIZE)
   const q = searchParams.q?.trim() ?? ''
-  const statusFilter = searchParams.status
+  const parsedStatus = zodCaseStatus.safeParse(searchParams.status)
+  const statusFilter = parsedStatus.success ? parsedStatus.data : undefined
   const typeFilter = searchParams.type
   const companyFilter = searchParams.company
   const viewMode = searchParams.view ?? 'grouped'
@@ -104,7 +106,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
     organization_id: session.user.organizationId,
     deleted_at: null as null,
     ...(q ? { title: { contains: q, mode: 'insensitive' as const } } : {}),
-    ...(statusFilter ? { status: statusFilter as never } : {}),
+    ...(statusFilter ? { status: statusFilter } : {}),
     ...(typeFilter ? { case_type: typeFilter as SagsType } : {}),
   }
 

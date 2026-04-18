@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { updateCaseStatus } from '@/actions/cases'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import { zodCaseStatus } from '@/lib/zod-enums'
 
 interface CaseStatusFormProps {
   caseId: string
@@ -27,11 +28,16 @@ export function CaseStatusForm({ caseId, currentStatus, nextStatuses }: CaseStat
 
   async function handleUpdate() {
     if (!selectedStatus) return
+    const parsedStatus = zodCaseStatus.safeParse(selectedStatus)
+    if (!parsedStatus.success) {
+      toast.error('Ugyldig status')
+      return
+    }
     setLoading(true)
 
     const result = await updateCaseStatus({
       caseId,
-      status: selectedStatus as never,
+      status: parsedStatus.data,
     })
 
     setLoading(false)

@@ -25,7 +25,9 @@ export function UploadVersionForm({ contractId, companyId }: UploadVersionFormPr
   const [isDragging, setIsDragging] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [changeType, setChangeType] = useState('NY_VERSION')
+  const [changeType, setChangeType] = useState<
+    'REDAKTIONEL' | 'MATERIEL' | 'ALLONGE' | 'NY_VERSION'
+  >('NY_VERSION')
   const [changeNote, setChangeNote] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
@@ -190,7 +192,11 @@ export function UploadVersionForm({ contractId, companyId }: UploadVersionFormPr
               <select
                 id="change-type"
                 value={changeType}
-                onChange={(e) => setChangeType(e.target.value)}
+                onChange={(e) =>
+                  setChangeType(
+                    e.target.value as 'REDAKTIONEL' | 'MATERIEL' | 'ALLONGE' | 'NY_VERSION'
+                  )
+                }
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
                 {CHANGE_TYPE_OPTIONS.map((opt) => (

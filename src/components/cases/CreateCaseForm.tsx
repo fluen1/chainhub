@@ -8,6 +8,7 @@ import {
   CASE_SUBTYPE_BY_TYPE,
   type CreateCaseInput,
 } from '@/lib/validations/case'
+import { zodCaseType, zodCaseSubtype } from '@/lib/zod-enums'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -45,10 +46,25 @@ export function CreateCaseForm() {
     setLoading(true)
 
     const formData = new FormData(e.currentTarget)
+
+    const parsedCaseType = zodCaseType.safeParse(formData.get('caseType'))
+    if (!parsedCaseType.success) {
+      setLoading(false)
+      toast.error('Vælg en gyldig sagstype')
+      return
+    }
+    const rawSubtype = (formData.get('caseSubtype') as string) || ''
+    const parsedSubtype = rawSubtype ? zodCaseSubtype.safeParse(rawSubtype) : null
+    if (parsedSubtype && !parsedSubtype.success) {
+      setLoading(false)
+      toast.error('Ugyldig undertype')
+      return
+    }
+
     const input: CreateCaseInput = {
       title: formData.get('title') as string,
-      caseType: formData.get('caseType') as string,
-      caseSubtype: (formData.get('caseSubtype') as string) || undefined,
+      caseType: parsedCaseType.data,
+      caseSubtype: parsedSubtype?.success ? parsedSubtype.data : undefined,
       companyIds: selectedCompanyIds,
       sensitivity: formData.get('sensitivity') as SensitivityValue,
       description: formData.get('description') as string,

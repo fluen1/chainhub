@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { updateContractStatus } from '@/actions/contracts'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import { zodContractStatus } from '@/lib/zod-enums'
 
 interface ContractStatusFormProps {
   contractId: string
@@ -34,11 +35,16 @@ export function ContractStatusForm({
 
   async function handleUpdate() {
     if (!selectedStatus) return
+    const parsedStatus = zodContractStatus.safeParse(selectedStatus)
+    if (!parsedStatus.success) {
+      toast.error('Ugyldig status')
+      return
+    }
     setLoading(true)
 
     const result = await updateContractStatus({
       contractId,
-      status: selectedStatus as never,
+      status: parsedStatus.data,
       note: note || undefined,
     })
 

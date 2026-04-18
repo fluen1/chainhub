@@ -16,10 +16,17 @@ const METRIC_TYPES = [
   { value: 'RESULTAT', label: 'Resultat' },
   { value: 'LIKVIDITET', label: 'Likviditet' },
   { value: 'EGENKAPITAL', label: 'Egenkapital' },
-  { value: 'ANDET', label: 'Andet' },
-]
+  // Prisma identifier er ANDET_METRIC (DB-værdi: ANDET)
+  { value: 'ANDET_METRIC', label: 'Andet' },
+] as const
 
-type MetricTypeValue = 'OMSAETNING' | 'EBITDA' | 'RESULTAT' | 'LIKVIDITET' | 'EGENKAPITAL' | 'ANDET'
+type MetricTypeValue =
+  | 'OMSAETNING'
+  | 'EBITDA'
+  | 'RESULTAT'
+  | 'LIKVIDITET'
+  | 'EGENKAPITAL'
+  | 'ANDET_METRIC'
 type SourceValue = 'REVIDERET' | 'UREVIDERET' | 'ESTIMAT'
 
 export function AddMetricForm({ companyId }: AddMetricFormProps) {

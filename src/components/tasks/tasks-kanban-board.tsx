@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 import { updateTaskStatus } from '@/actions/tasks'
 import { TASK_STATUS_LABELS, getPriorityLabel, getPriorityStyle, formatDate } from '@/lib/labels'
 import type { TaskStatus } from '@prisma/client'
+import { zodTaskStatus } from '@/lib/zod-enums'
 
 export interface KanbanTask {
   id: string
@@ -82,10 +83,16 @@ export function TasksKanbanBoard({ tasks }: TasksKanbanBoardProps) {
     // Optimistisk opdatering — bekræftes af router.refresh() bagefter
     setLocalTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: nextStatus } : t)))
 
+    const parsedStatus = zodTaskStatus.safeParse(nextStatus)
+    if (!parsedStatus.success) {
+      toast.error('Ugyldig status')
+      return
+    }
+
     startTransition(async () => {
       const result = await updateTaskStatus({
         taskId,
-        status: nextStatus as never,
+        status: parsedStatus.data,
       })
       if (result.error) {
         // Rul tilbage ved fejl

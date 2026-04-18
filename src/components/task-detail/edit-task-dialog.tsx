@@ -11,6 +11,7 @@ import {
   updateTaskDueDate,
 } from '@/actions/tasks'
 import { TASK_STATUS_LABELS, PRIORITY_LABELS } from '@/lib/labels'
+import { zodTaskStatus, zodTaskPriority } from '@/lib/zod-enums'
 
 interface EditTaskDialogProps {
   taskId: string
@@ -45,10 +46,22 @@ export function EditTaskDialog({
     const calls: Promise<{ error?: string } | { data: unknown; error?: undefined }>[] = []
 
     if (status !== currentStatus) {
-      calls.push(updateTaskStatus({ taskId, status: status as never }))
+      const parsedStatus = zodTaskStatus.safeParse(status)
+      if (!parsedStatus.success) {
+        toast.error('Ugyldig status')
+        setSaving(false)
+        return
+      }
+      calls.push(updateTaskStatus({ taskId, status: parsedStatus.data }))
     }
     if (priority !== currentPriority) {
-      calls.push(updateTaskPriority({ taskId, priority: priority as never }))
+      const parsedPriority = zodTaskPriority.safeParse(priority)
+      if (!parsedPriority.success) {
+        toast.error('Ugyldig prioritet')
+        setSaving(false)
+        return
+      }
+      calls.push(updateTaskPriority({ taskId, priority: parsedPriority.data }))
     }
     const newAssignee = assigneeId === '' ? null : assigneeId
     if (newAssignee !== currentAssigneeId) {

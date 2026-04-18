@@ -24,6 +24,7 @@ import {
 } from '@/lib/labels'
 import { groupTasksByCompany, NO_COMPANY_KEY } from '@/lib/task-detail/helpers'
 import type { TaskStatus, Prisma } from '@prisma/client'
+import { zodTaskPriority } from '@/lib/zod-enums'
 
 export const metadata: Metadata = { title: 'Opgaver' }
 
@@ -58,7 +59,8 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
   const { page, skip, take } = parsePaginationParams(searchParams.page, PAGE_SIZE)
   const q = searchParams.q?.trim() ?? ''
   const statusFilter = searchParams.status
-  const priorityFilter = searchParams.priority
+  const parsedPriority = zodTaskPriority.safeParse(searchParams.priority)
+  const priorityFilter = parsedPriority.success ? parsedPriority.data : undefined
   const companyFilter = searchParams.company
   const viewFilter: 'flat' | 'grouped' | 'kanban' =
     searchParams.view === 'grouped' ? 'grouped' : searchParams.view === 'kanban' ? 'kanban' : 'flat'
@@ -94,7 +96,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
       : viewFilter === 'kanban'
         ? {}
         : { status: { not: 'LUKKET' as TaskStatus } }),
-    ...(priorityFilter ? { priority: priorityFilter as never } : {}),
+    ...(priorityFilter ? { priority: priorityFilter } : {}),
     ...(q ? { title: { contains: q, mode: 'insensitive' as const } } : {}),
     ...(companyFilter ? { company_id: companyFilter } : {}),
   }

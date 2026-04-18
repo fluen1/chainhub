@@ -10,6 +10,7 @@ import {
   type ContractSystemTypeKey,
   type SensitivityLevelValue,
 } from '@/lib/validations/contract'
+import { zodContractSystemType } from '@/lib/zod-enums'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -65,9 +66,15 @@ export function CreateContractForm() {
     setLoading(true)
 
     const formData = new FormData(e.currentTarget)
+    const parsedSystemType = zodContractSystemType.safeParse(formData.get('systemType'))
+    if (!parsedSystemType.success) {
+      setLoading(false)
+      toast.error('Vælg en gyldig kontrakttype')
+      return
+    }
     const result = await createContract({
       companyId: formData.get('companyId') as string,
-      systemType: formData.get('systemType') as string,
+      systemType: parsedSystemType.data,
       displayName: formData.get('displayName') as string,
       sensitivity: formData.get('sensitivity') as SensitivityLevelValue,
       effectiveDate: formData.get('effectiveDate') as string,

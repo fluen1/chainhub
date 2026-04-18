@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { updateTaskStatus } from '@/actions/tasks'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import { zodTaskStatus } from '@/lib/zod-enums'
 
 interface TaskStatusButtonProps {
   taskId: string
@@ -35,11 +36,16 @@ export function TaskStatusButton({ taskId, currentStatus }: TaskStatusButtonProp
   const actions = STATUS_ACTIONS[currentStatus] ?? []
 
   async function handleClick(nextStatus: string) {
+    const parsedStatus = zodTaskStatus.safeParse(nextStatus)
+    if (!parsedStatus.success) {
+      toast.error('Ugyldig status')
+      return
+    }
     setLoading(true)
 
     const result = await updateTaskStatus({
       taskId,
-      status: nextStatus as never,
+      status: parsedStatus.data,
     })
 
     setLoading(false)
