@@ -1,0 +1,129 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  lint-test:
+    name: Lint + tsc + Vitest
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Format check (Prettier)
+        run: npm run format:check
+
+      - name: Lint (ESLint)
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Unit tests (Vitest)
+        run: npm test
+        env:
+          # Tests med runIf(!!DATABASE_URL) springes over uden DB.
+          # Mock-baserede tests (finance, governance, persons, audit) kører.
+          NODE_ENV: test
+
+  build:
+    name: Production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Build
+        run: npm run build
+        env:
+          # Build kræver ikke DSN — Sentry init er gated by enabled flag
+          NEXTAUTH_SECRET: dummy-build-secret-only-32-chars-min
+          NEXTAUTH_URL: http://localhost:3000
+          DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy?schema=public
+          DIRECT_URL: postgresql://dummy:dummy@localhost:5432/dummy?schema=public
+
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: chainhub
+          POSTGRES_PASSWORD: chainhub
+          POSTGRES_DB: chainhub_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Push schema + seed
+        run: |
+          npx prisma db push --skip-generate
+          npx prisma db seed
+        env:
+          DATABASE_URL: postgresql://chainhub:chainhub@localhost:5432/chainhub_e2e
+          DIRECT_URL: postgresql://chainhub:chainhub@localhost:5432/chainhub_e2e
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        run: npx playwright test
+        env:
+          E2E_DATABASE_URL: postgresql://chainhub:chainhub@localhost:5432/chainhub_e2e
+          E2E_PORT: 3010
+          NEXTAUTH_SECRET: e2e-test-secret-min-32-chars-long-x
+          NEXTAUTH_URL: http://localhost:3010
+          CI: 'true'
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

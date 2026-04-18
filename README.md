@@ -1,5 +1,7 @@
 # ChainHub
 
+[![CI](https://github.com/fluen1/chainhub/actions/workflows/ci.yml/badge.svg)](https://github.com/fluen1/chainhub/actions/workflows/ci.yml)
+
 B2B SaaS til kædegruppers porteføljestyring — kontraktstyring, governance, sagshåndtering, økonomi og personrelationer i ét dashboard. Bygget til kæder (tandlæge-, optiker-, fysio-, franchise-) der co-ejer lokationsselskaber med lokale partnere.
 
 **Perspektivet er ALTID hovedkontorets.** Se [CLAUDE.md](CLAUDE.md) for full kernemodel.
