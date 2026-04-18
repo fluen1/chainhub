@@ -16,11 +16,15 @@ function shortName(name: string): string {
     .replace(/^Tandlæge /, '')
 }
 
+const MAX_HEATMAP_CELLS = 15
+
 export function HeatmapGrid({ companies }: HeatmapGridProps) {
-  const sorted = [...companies].sort((a, b) => {
-    const order = { critical: 0, warning: 1, healthy: 2 }
-    return order[a.healthStatus] - order[b.healthStatus]
-  })
+  const sorted = [...companies]
+    .sort((a, b) => {
+      const order = { critical: 0, warning: 1, healthy: 2 }
+      return order[a.healthStatus] - order[b.healthStatus]
+    })
+    .slice(0, MAX_HEATMAP_CELLS)
 
   if (sorted.length === 0) {
     return <p className="text-center text-xs text-gray-400 py-4">Ingen selskaber</p>
@@ -55,7 +59,7 @@ export function HeatmapGrid({ companies }: HeatmapGridProps) {
               )}
             >
               <div className="text-[11px] font-bold leading-tight">
-                {c.openCaseCount}
+                {c.openCaseCount > 0 ? c.openCaseCount : '·'}
               </div>
               <div className="text-[8px] leading-tight truncate">{shortName(c.name)}</div>
             </Link>

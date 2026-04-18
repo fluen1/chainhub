@@ -55,10 +55,10 @@ describe('AppHeader', () => {
     expect(screen.getByLabelText('Notifikationer')).toBeInTheDocument()
   })
 
-  it('viser readonly søge-input', () => {
+  it('viser link til global søgning', () => {
     const date = new Date('2026-04-11T10:00:00')
     render(<AppHeader userName="T" kpis={[]} currentDate={date} />)
-    const input = screen.getByPlaceholderText(/Søg efter/)
-    expect(input).toHaveAttribute('readOnly')
+    const searchLink = screen.getByRole('link', { name: /Søg efter/ })
+    expect(searchLink).toHaveAttribute('href', '/search')
   })
 })

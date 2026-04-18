@@ -10,7 +10,7 @@ const rows: CaseRow[] = [
 describe('CasesSection', () => {
   it('viser tom-state ved 0 sager', () => {
     render(<CasesSection cases={[]} totalCount={0} />)
-    expect(screen.getByText('Ingen aabne sager')).toBeInTheDocument()
+    expect(screen.getByText('Ingen åbne sager')).toBeInTheDocument()
   })
 
   it('viser badge med antal aktive', () => {

@@ -19,10 +19,12 @@ describe('HeatmapGrid', () => {
 
   it('sorterer critical først', () => {
     render(<HeatmapGrid companies={companies} />)
-    const links = screen.getAllByRole('link')
-    expect(links[0]).toHaveAttribute('href', '/companies/c1')
-    expect(links[1]).toHaveAttribute('href', '/companies/c2')
-    expect(links[2]).toHaveAttribute('href', '/companies/c3')
+    const cellLinks = screen
+      .getAllByRole('link')
+      .filter((l) => l.getAttribute('href')?.startsWith('/companies/') && l.getAttribute('href') !== '/companies')
+    expect(cellLinks[0]).toHaveAttribute('href', '/companies/c1')
+    expect(cellLinks[1]).toHaveAttribute('href', '/companies/c2')
+    expect(cellLinks[2]).toHaveAttribute('href', '/companies/c3')
   })
 
   it('viser openCaseCount når > 0, ellers dot', () => {
@@ -45,6 +47,9 @@ describe('HeatmapGrid', () => {
       openCaseCount: 0,
     }))
     render(<HeatmapGrid companies={many} />)
-    expect(screen.getAllByRole('link')).toHaveLength(15)
+    const cellLinks = screen
+      .getAllByRole('link')
+      .filter((l) => l.getAttribute('href')?.startsWith('/companies/') && l.getAttribute('href') !== '/companies')
+    expect(cellLinks).toHaveLength(15)
   })
 })

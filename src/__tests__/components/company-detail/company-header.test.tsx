@@ -40,7 +40,7 @@ describe('CompanyHeader', () => {
     render(<CompanyHeader {...baseProps} />)
     expect(screen.getByText('Kontrakter')).toBeInTheDocument()
     expect(screen.getByText('Sager')).toBeInTheDocument()
-    expect(screen.getByText('Oekonomi')).toBeInTheDocument()
+    expect(screen.getByText('Økonomi')).toBeInTheDocument()
     expect(screen.getByText('Governance')).toBeInTheDocument()
   })
 

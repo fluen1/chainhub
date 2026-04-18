@@ -47,7 +47,7 @@ describe('CalendarWidget', () => {
 
   it('viser tom-state hvis upcoming er tomt', () => {
     render(<CalendarWidget events={[]} upcoming={[]} today="2026-04-11" />)
-    expect(screen.getByText('Ingen events de næste 7 dage')).toBeInTheDocument()
+    expect(screen.getByText('Ingen events denne måned')).toBeInTheDocument()
   })
 
   it('link peger på fullCalendarHref', () => {

@@ -19,7 +19,7 @@ const healthy: FinanceData = {
 describe('FinanceSection', () => {
   it('viser tom-state naar data er null', () => {
     render(<FinanceSection data={null} />)
-    expect(screen.getByText('Ingen oekonomi-data for 2025')).toBeInTheDocument()
+    expect(screen.getByText('Ingen økonomi-data registreret for 2025')).toBeInTheDocument()
   })
 
   it('viser 4 data-rows med formatterede vaerdier', () => {
