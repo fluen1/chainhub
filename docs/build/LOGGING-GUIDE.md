@@ -108,14 +108,14 @@ ERROR action:createTask captured error ... (+ Sentry event)
 
 ## Log-levels
 
-| Level | Hvornår? |
-|---|---|
-| `trace` | Meget detaljeret; kun ved deep debugging |
-| `debug` | Dev-mode default; normal flow-tracking |
-| `info` | Prod-mode default; betydningsfulde success-events |
-| `warn` | Noget gik uventet men app kan fortsætte (fx pagination cap ramt) |
-| `error` | Exception fanget — brugeren kan se en fejl |
-| `fatal` | App-niveau fejl, kræver restart/intervention |
+| Level   | Hvornår?                                                         |
+| ------- | ---------------------------------------------------------------- |
+| `trace` | Meget detaljeret; kun ved deep debugging                         |
+| `debug` | Dev-mode default; normal flow-tracking                           |
+| `info`  | Prod-mode default; betydningsfulde success-events                |
+| `warn`  | Noget gik uventet men app kan fortsætte (fx pagination cap ramt) |
+| `error` | Exception fanget — brugeren kan se en fejl                       |
+| `fatal` | App-niveau fejl, kræver restart/intervention                     |
 
 Filter via env: `LOG_LEVEL=warn` viser kun `warn`+ i logs.
 
@@ -154,9 +154,9 @@ log.error({ err, userId }, 'organization update failed')
 ### Dårlig
 
 ```typescript
-log.info('user did thing')                    // ingen kontekst
-log.info({ user }, 'updated')                 // kan lække password_hash
-console.log('debug', someObject)              // ikke struktureret
+log.info('user did thing') // ingen kontekst
+log.info({ user }, 'updated') // kan lække password_hash
+console.log('debug', someObject) // ikke struktureret
 ```
 
 ---

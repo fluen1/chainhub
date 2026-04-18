@@ -141,21 +141,21 @@ Husky + lint-staged kører Prettier + ESLint på stagede filer automatisk. Insta
 
 ## Dokumentation
 
-| Sti                                                                       | Indhold                                                          |
-| ------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| [CLAUDE.md](CLAUDE.md)                                                    | Projekt-overblik + kritiske regler for AI-assistenter            |
-| [docs/DEVELOPER.md](docs/DEVELOPER.md)                                    | Onboarding, trouble-shooting, workflow-guides                    |
-| [docs/build/CONVENTIONS.md](docs/build/CONVENTIONS.md)                    | Kode-konventioner, mønstre, navngivning                          |
-| [docs/build/LOGGING-GUIDE.md](docs/build/LOGGING-GUIDE.md)                | Hvordan man wrapper actions med struktureret logging             |
-| [docs/build/SPRINT-PLAN.md](docs/build/SPRINT-PLAN.md)                    | Sprint-rækkefølge og mål                                         |
-| [docs/spec/DATABASE-SCHEMA.md](docs/spec/DATABASE-SCHEMA.md)              | Schema + design-principper                                       |
-| [docs/spec/CONTRACT-TYPES.md](docs/spec/CONTRACT-TYPES.md)                | 34 kontrakttyper + metadata                                      |
-| [docs/spec/roller-og-tilladelser.md](docs/spec/roller-og-tilladelser.md)  | RBAC-model                                                       |
-| [docs/spec/UI-FLOWS.md](docs/spec/UI-FLOWS.md)                            | 12 brugerflows                                                   |
-| [docs/status/PROGRESS.md](docs/status/PROGRESS.md)                        | Sprint-status                                                    |
-| [docs/status/DECISIONS.md](docs/status/DECISIONS.md)                      | Arkitekturbeslutninger                                           |
-| [docs/status/BLOCKERS.md](docs/status/BLOCKERS.md)                        | Kendte blockers                                                  |
-| [docs/ops/RUNBOOK.md](docs/ops/RUNBOOK.md)                                | Produktions-runbook                                              |
+| Sti                                                                      | Indhold                                               |
+| ------------------------------------------------------------------------ | ----------------------------------------------------- |
+| [CLAUDE.md](CLAUDE.md)                                                   | Projekt-overblik + kritiske regler for AI-assistenter |
+| [docs/DEVELOPER.md](docs/DEVELOPER.md)                                   | Onboarding, trouble-shooting, workflow-guides         |
+| [docs/build/CONVENTIONS.md](docs/build/CONVENTIONS.md)                   | Kode-konventioner, mønstre, navngivning               |
+| [docs/build/LOGGING-GUIDE.md](docs/build/LOGGING-GUIDE.md)               | Hvordan man wrapper actions med struktureret logging  |
+| [docs/build/SPRINT-PLAN.md](docs/build/SPRINT-PLAN.md)                   | Sprint-rækkefølge og mål                              |
+| [docs/spec/DATABASE-SCHEMA.md](docs/spec/DATABASE-SCHEMA.md)             | Schema + design-principper                            |
+| [docs/spec/CONTRACT-TYPES.md](docs/spec/CONTRACT-TYPES.md)               | 34 kontrakttyper + metadata                           |
+| [docs/spec/roller-og-tilladelser.md](docs/spec/roller-og-tilladelser.md) | RBAC-model                                            |
+| [docs/spec/UI-FLOWS.md](docs/spec/UI-FLOWS.md)                           | 12 brugerflows                                        |
+| [docs/status/PROGRESS.md](docs/status/PROGRESS.md)                       | Sprint-status                                         |
+| [docs/status/DECISIONS.md](docs/status/DECISIONS.md)                     | Arkitekturbeslutninger                                |
+| [docs/status/BLOCKERS.md](docs/status/BLOCKERS.md)                       | Kendte blockers                                       |
+| [docs/ops/RUNBOOK.md](docs/ops/RUNBOOK.md)                               | Produktions-runbook                                   |
 
 ---
 

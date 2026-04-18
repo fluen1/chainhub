@@ -11,10 +11,13 @@ Projekt-dir ligger under OneDrive på den primære udviklers maskine. Det giver 
 1. **`.next`-build mapper fejler** med `EINVAL: invalid argument, readlink` når OneDrive synkroniserer mid-build. Fix: `rm -rf .next` før `npx next build` eller `npm run dev`. Tilføj evt. `.next` til OneDrive-ignore-regler.
 
 2. **Prisma DLL-genereringsfejl** på Windows:
+
    ```
    EPERM: operation not permitted, rename '.../query_engine-windows.dll.node'
    ```
+
    Skyldes at dev-server eller en anden proces holder DLL'en låst. Fix:
+
    ```bash
    # stop dev-server først
    rm -f node_modules/.prisma/client/query_engine-windows.dll.node*
@@ -51,11 +54,11 @@ npx prisma db seed
 
 Seed-brugere:
 
-| Email | Rolle | Password |
-|---|---|---|
-| philip@chainhub.dk | GROUP_OWNER | password123 |
-| maria@tandlaegegruppen.dk | GROUP_LEGAL | password123 |
-| thomas@tandlaegegruppen.dk | GROUP_ADMIN | password123 |
+| Email                      | Rolle         | Password    |
+| -------------------------- | ------------- | ----------- |
+| philip@chainhub.dk         | GROUP_OWNER   | password123 |
+| maria@tandlaegegruppen.dk  | GROUP_LEGAL   | password123 |
+| thomas@tandlaegegruppen.dk | GROUP_ADMIN   | password123 |
 | torben@tandlaegegruppen.dk | GROUP_FINANCE | password123 |
 
 Seed-organisation: `TandlægeGruppen A/S` med 7 selskaber, 18 kontrakter, 4 sager, 10 opgaver, 8 dokumenter, 10 personer.

@@ -8,7 +8,7 @@ import type { CalendarEvent } from '@/types/ui'
 // Cap på antal events pr. type for at undgå OOM / timeouts ved store kæder.
 // 500 events/type/måned er rigeligt for 50 lokationer × 10 events/måned.
 // Hvis en type rammer capped, logges en warning.
-export const CALENDAR_MAX_EVENTS_PER_TYPE = 500
+const CALENDAR_MAX_EVENTS_PER_TYPE = 500
 
 const log = createLogger('action:calendar')
 
