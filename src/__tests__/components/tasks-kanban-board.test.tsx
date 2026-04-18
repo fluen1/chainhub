@@ -91,8 +91,8 @@ describe('TasksKanbanBoard', () => {
       />
     )
     expect(screen.getByText('Kritisk')).toBeInTheDocument()
-    // Dansk dato-format vil have '20' og '2026' i sig
-    expect(screen.getByText(/20\.4\.2026|20\.04\.2026/)).toBeInTheDocument()
+    // Dansk dato-format via formatDate: "20. apr. 2026"
+    expect(screen.getByText(/20\. apr\. 2026/)).toBeInTheDocument()
   })
 
   it('viser assignee og case-link', () => {
