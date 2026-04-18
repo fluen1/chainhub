@@ -4,25 +4,36 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { canAccessCompany, canAccessSensitivity } from '@/lib/permissions'
 import { revalidatePath } from 'next/cache'
+import { z } from 'zod'
 import type { ActionResult } from '@/types/actions'
 import type { ContractVersion } from '@prisma/client'
 import { captureError } from '@/lib/logger'
+import { zodChangeType } from '@/lib/zod-enums'
 
-export async function createContractVersion(input: {
-  contractId: string
-  fileUrl: string
-  fileName: string
-  fileSizeBytes: number
-  changeType: string
-  changeNote?: string
-}): Promise<ActionResult<ContractVersion>> {
+const createContractVersionSchema = z.object({
+  contractId: z.string().min(1),
+  fileUrl: z.string().min(1),
+  fileName: z.string().min(1),
+  fileSizeBytes: z.number().int().nonnegative(),
+  changeType: zodChangeType,
+  changeNote: z.string().optional(),
+})
+
+type CreateContractVersionInput = z.infer<typeof createContractVersionSchema>
+
+export async function createContractVersion(
+  input: CreateContractVersionInput
+): Promise<ActionResult<ContractVersion>> {
+  const parsed = createContractVersionSchema.safeParse(input)
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Ugyldigt input' }
+  const data = parsed.data
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
 
   // Find contract + verify access
   const contract = await prisma.contract.findFirst({
     where: {
-      id: input.contractId,
+      id: data.contractId,
       organization_id: session.user.organizationId,
       deleted_at: null,
     },
@@ -38,7 +49,7 @@ export async function createContractVersion(input: {
   // Get next version number
   const latestVersion = await prisma.contractVersion.findFirst({
     where: {
-      contract_id: input.contractId,
+      contract_id: data.contractId,
       organization_id: session.user.organizationId,
     },
     orderBy: { version_number: 'desc' },
@@ -50,7 +61,7 @@ export async function createContractVersion(input: {
     const version = await prisma.$transaction(async (tx) => {
       // Unmark previous current version
       await tx.contractVersion.updateMany({
-        where: { contract_id: input.contractId, is_current: true },
+        where: { contract_id: data.contractId, is_current: true },
         data: { is_current: false },
       })
 
@@ -58,14 +69,14 @@ export async function createContractVersion(input: {
       return tx.contractVersion.create({
         data: {
           organization_id: session.user.organizationId,
-          contract_id: input.contractId,
+          contract_id: data.contractId,
           version_number: nextVersionNumber,
-          file_url: input.fileUrl,
-          file_name: input.fileName,
-          file_size_bytes: input.fileSizeBytes,
+          file_url: data.fileUrl,
+          file_name: data.fileName,
+          file_size_bytes: data.fileSizeBytes,
           is_current: true,
-          change_type: input.changeType as never,
-          change_note: input.changeNote || null,
+          change_type: data.changeType,
+          change_note: data.changeNote || null,
           uploaded_by: session.user.id,
         },
       })
@@ -80,19 +91,19 @@ export async function createContractVersion(input: {
         resource_type: 'contract_version',
         resource_id: version.id,
         changes: {
-          contractId: input.contractId,
+          contractId: data.contractId,
           versionNumber: nextVersionNumber,
-          changeType: input.changeType,
+          changeType: data.changeType,
         },
       },
     })
 
-    revalidatePath(`/contracts/${input.contractId}`)
+    revalidatePath(`/contracts/${data.contractId}`)
     return { data: version }
   } catch (err) {
     captureError(err, {
       namespace: 'action:createContractVersion',
-      extra: { contractId: input.contractId, changeType: input.changeType },
+      extra: { contractId: data.contractId, changeType: data.changeType },
     })
     return { error: 'Versionen kunne ikke oprettes — prøv igen' }
   }

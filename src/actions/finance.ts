@@ -7,15 +7,16 @@ import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
 import { captureError } from '@/lib/logger'
+import { zodMetricType, zodPeriodType, zodMetricSource } from '@/lib/zod-enums'
 
 const upsertMetricSchema = z.object({
   companyId: z.string().uuid(),
-  metricType: z.enum(['OMSAETNING', 'EBITDA', 'RESULTAT', 'LIKVIDITET', 'EGENKAPITAL', 'ANDET']),
-  periodType: z.enum(['HELAAR', 'H1', 'H2', 'Q1', 'Q2', 'Q3', 'Q4', 'MAANED']),
+  metricType: zodMetricType,
+  periodType: zodPeriodType,
   periodYear: z.coerce.number().int().min(1990).max(2100),
   value: z.coerce.number(),
   currency: z.string().default('DKK'),
-  source: z.enum(['REVIDERET', 'UREVIDERET', 'ESTIMAT']).default('UREVIDERET'),
+  source: zodMetricSource.default('UREVIDERET'),
   notes: z.string().optional(),
 })
 
@@ -40,25 +41,25 @@ export async function upsertFinancialMetric(
         organization_id_company_id_metric_type_period_type_period_year: {
           organization_id: session.user.organizationId,
           company_id: parsed.data.companyId,
-          metric_type: parsed.data.metricType as never,
-          period_type: parsed.data.periodType as never,
+          metric_type: parsed.data.metricType,
+          period_type: parsed.data.periodType,
           period_year: parsed.data.periodYear,
         },
       },
       update: {
         value: parsed.data.value,
-        source: parsed.data.source as never,
+        source: parsed.data.source,
         notes: parsed.data.notes || null,
       },
       create: {
         organization_id: session.user.organizationId,
         company_id: parsed.data.companyId,
-        metric_type: parsed.data.metricType as never,
-        period_type: parsed.data.periodType as never,
+        metric_type: parsed.data.metricType,
+        period_type: parsed.data.periodType,
         period_year: parsed.data.periodYear,
         value: parsed.data.value,
         currency: parsed.data.currency,
-        source: parsed.data.source as never,
+        source: parsed.data.source,
         notes: parsed.data.notes || null,
         created_by: session.user.id,
       },
@@ -110,12 +111,12 @@ export async function createDividendRecord(
       data: {
         organization_id: session.user.organizationId,
         company_id: parsed.data.companyId,
-        metric_type: 'ANDET' as never,
-        period_type: 'HELAAR' as never,
+        metric_type: 'ANDET_METRIC',
+        period_type: 'HELAAR',
         period_year: parsed.data.periodYear,
         value: parsed.data.amount,
         currency: 'DKK',
-        source: 'REVIDERET' as never,
+        source: 'REVIDERET',
         notes: `UDBYTTE ${parsed.data.decidedAt}${parsed.data.note ? `: ${parsed.data.note}` : ''}`,
         created_by: session.user.id,
       },

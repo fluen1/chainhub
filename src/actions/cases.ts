@@ -68,8 +68,8 @@ export async function createCase(input: CreateCaseInput): Promise<ActionResult<C
       data: {
         organization_id: session.user.organizationId,
         title: parsed.data.title,
-        case_type: parsed.data.caseType as never,
-        case_subtype: (parsed.data.caseSubtype as never) ?? null,
+        case_type: parsed.data.caseType,
+        case_subtype: parsed.data.caseSubtype ?? null,
         status: 'NY',
         sensitivity: parsed.data.sensitivity,
         description: descriptionWithNumber || null,

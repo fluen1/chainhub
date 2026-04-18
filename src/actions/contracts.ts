@@ -61,7 +61,7 @@ export async function createContract(input: CreateContractInput): Promise<Action
       data: {
         organization_id: session.user.organizationId,
         company_id: parsed.data.companyId,
-        system_type: parsed.data.systemType as never,
+        system_type: parsed.data.systemType,
         display_name: parsed.data.displayName,
         sensitivity: parsed.data.sensitivity,
         status: parsed.data.status ?? 'UDKAST',

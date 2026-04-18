@@ -7,24 +7,18 @@ import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
 import { z } from 'zod'
 import { captureError } from '@/lib/logger'
+import { zodVisitType, zodVisitStatus } from '@/lib/zod-enums'
 
 const createVisitSchema = z.object({
   companyId: z.string().uuid(),
   visitDate: z.string(),
-  visitType: z.enum([
-    'KVARTALSBESOEG',
-    'OPFOELGNING',
-    'AD_HOC',
-    'AUDIT',
-    'ONBOARDING',
-    'OVERDRAGELSE',
-  ]),
+  visitType: zodVisitType,
   notes: z.string().optional(),
 })
 
 const updateVisitSchema = z.object({
   visitId: z.string().uuid(),
-  status: z.enum(['PLANLAGT', 'GENNEMFOERT', 'AFLYST']).optional(),
+  status: zodVisitStatus.optional(),
   notes: z.string().optional(),
   summary: z.string().optional(),
 })
@@ -49,7 +43,7 @@ export async function createVisit(input: CreateVisitInput): Promise<ActionResult
         company_id: parsed.data.companyId,
         visited_by: session.user.id,
         visit_date: new Date(parsed.data.visitDate),
-        visit_type: parsed.data.visitType as never,
+        visit_type: parsed.data.visitType,
         status: 'PLANLAGT',
         notes: parsed.data.notes || null,
         created_by: session.user.id,
@@ -92,7 +86,7 @@ export async function updateVisit(input: UpdateVisitInput): Promise<ActionResult
     const updated = await prisma.visit.update({
       where: { id: parsed.data.visitId },
       data: {
-        ...(parsed.data.status ? { status: parsed.data.status as never } : {}),
+        ...(parsed.data.status ? { status: parsed.data.status } : {}),
         ...(parsed.data.notes !== undefined ? { notes: parsed.data.notes } : {}),
         ...(parsed.data.summary !== undefined ? { summary: parsed.data.summary } : {}),
       },

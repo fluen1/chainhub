@@ -40,7 +40,7 @@ export async function createTask(input: CreateTaskInput): Promise<ActionResult<T
         description: parsed.data.description || null,
         assigned_to: parsed.data.assignedTo || null,
         due_date: parsed.data.dueDate ? new Date(parsed.data.dueDate) : null,
-        priority: parsed.data.priority as never,
+        priority: parsed.data.priority,
         status: 'NY',
         case_id: parsed.data.caseId || null,
         company_id: parsed.data.companyId || null,
@@ -84,7 +84,7 @@ export async function updateTaskStatus(input: UpdateTaskStatusInput): Promise<Ac
     const updated = await prisma.$transaction(async (tx) => {
       const next = await tx.task.update({
         where: { id: parsed.data.taskId },
-        data: { status: parsed.data.status as never },
+        data: { status: parsed.data.status },
       })
       await tx.taskHistory.create({
         data: {
@@ -135,7 +135,7 @@ export async function updateTaskPriority(
     const updated = await prisma.$transaction(async (tx) => {
       const next = await tx.task.update({
         where: { id: task.id },
-        data: { priority: parsed.data.priority as never },
+        data: { priority: parsed.data.priority },
       })
       await tx.taskHistory.create({
         data: {
