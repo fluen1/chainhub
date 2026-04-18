@@ -25,7 +25,10 @@ export const metadata: Metadata = { title: 'Sager' }
 
 const PAGE_SIZE = 20
 
-const STATUS_OPTIONS = Object.entries(CASE_STATUS_LABELS).map(([value, label]) => ({ value, label }))
+const STATUS_OPTIONS = Object.entries(CASE_STATUS_LABELS).map(([value, label]) => ({
+  value,
+  label,
+}))
 const TYPE_OPTIONS = Object.entries(CASE_TYPE_LABELS).map(([value, label]) => ({ value, label }))
 
 interface CasesPageProps {
@@ -50,40 +53,43 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
   const companyFilter = searchParams.company
   const viewMode = searchParams.view ?? 'grouped'
 
-  const companyIds = await getAccessibleCompanies(
-    session.user.id,
-    session.user.organizationId
-  )
+  const companyIds = await getAccessibleCompanies(session.user.id, session.user.organizationId)
 
   // Hent selskaber til filter-dropdown
-  const companyOptions = companyIds.length > 0
-    ? (await prisma.company.findMany({
-        where: {
-          id: { in: companyIds },
-          organization_id: session.user.organizationId,
-          deleted_at: null,
-        },
-        select: { id: true, name: true },
-        orderBy: { name: 'asc' },
-      })).map((c) => ({ value: c.id, label: c.name }))
-    : []
+  const companyOptions =
+    companyIds.length > 0
+      ? (
+          await prisma.company.findMany({
+            where: {
+              id: { in: companyIds },
+              organization_id: session.user.organizationId,
+              deleted_at: null,
+            },
+            select: { id: true, name: true },
+            orderBy: { name: 'asc' },
+          })
+        ).map((c) => ({ value: c.id, label: c.name }))
+      : []
 
   // Bestem hvilke selskaber der skal bruges til CaseCompany-opslag
   const effectiveCompanyIds = companyFilter
-    ? (companyIds.includes(companyFilter) ? [companyFilter] : [])
+    ? companyIds.includes(companyFilter)
+      ? [companyFilter]
+      : []
     : companyIds
 
   // Hent sags-id'er via CaseCompany-tabellen
-  const caseCompanyLinks = effectiveCompanyIds.length > 0
-    ? await prisma.caseCompany.findMany({
-        where: {
-          organization_id: session.user.organizationId,
-          company_id: { in: effectiveCompanyIds },
-        },
-        select: { case_id: true },
-        distinct: ['case_id'],
-      })
-    : []
+  const caseCompanyLinks =
+    effectiveCompanyIds.length > 0
+      ? await prisma.caseCompany.findMany({
+          where: {
+            organization_id: session.user.organizationId,
+            company_id: { in: effectiveCompanyIds },
+          },
+          select: { case_id: true },
+          distinct: ['case_id'],
+        })
+      : []
 
   const caseIds = caseCompanyLinks.map((cc) => cc.case_id)
 
@@ -110,10 +116,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
         <div className="flex items-center justify-between gap-4">
           <div className="flex-1">
             <Suspense fallback={null}>
-              <SearchAndFilter
-                placeholder="Søg på sagsnavn..."
-                filters={filters}
-              />
+              <SearchAndFilter placeholder="Søg på sagsnavn..." filters={filters} />
             </Suspense>
           </div>
           <Suspense fallback={null}>
@@ -168,7 +171,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
     a.companyName.localeCompare(b.companyName, 'da')
   )
 
-  function renderCaseRow(caseItem: typeof cases[number]) {
+  function renderCaseRow(caseItem: (typeof cases)[number]) {
     return (
       <tr key={caseItem.id} className="hover:bg-gray-50">
         <td className="px-6 py-4">
@@ -208,7 +211,9 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
         </td>
         <td className="px-6 py-4 whitespace-nowrap">
           <div className="flex items-center gap-1.5">
-            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getCaseStatusStyle(caseItem.status)}`}>
+            <span
+              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getCaseStatusStyle(caseItem.status)}`}
+            >
               {getCaseStatusLabel(caseItem.status)}
             </span>
             {caseItem.due_date && new Date(caseItem.due_date) < new Date() && (
@@ -235,11 +240,21 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
   const tableHeader = (
     <thead className="bg-gray-50">
       <tr>
-        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Sag</th>
-        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Type</th>
-        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Selskab(er)</th>
-        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
-        <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Åbne opgaver</th>
+        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+          Sag
+        </th>
+        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+          Type
+        </th>
+        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+          Selskab(er)
+        </th>
+        <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+          Status
+        </th>
+        <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
+          Åbne opgaver
+        </th>
       </tr>
     </thead>
   )
@@ -251,10 +266,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
       <div className="flex items-center justify-between gap-4">
         <div className="flex-1">
           <Suspense fallback={null}>
-            <SearchAndFilter
-              placeholder="Søg på sagsnavn..."
-              filters={filters}
-            />
+            <SearchAndFilter placeholder="Søg på sagsnavn..." filters={filters} />
           </Suspense>
         </div>
         <Suspense fallback={null}>
@@ -317,7 +329,9 @@ function EmptyState({ hasFilters }: { hasFilters: boolean }) {
       <Briefcase className="mx-auto h-12 w-12 text-gray-400" />
       {hasFilters ? (
         <>
-          <h3 className="mt-2 text-sm font-semibold text-gray-900">Ingen sager matcher søgningen</h3>
+          <h3 className="mt-2 text-sm font-semibold text-gray-900">
+            Ingen sager matcher søgningen
+          </h3>
           <p className="mt-1 text-sm text-gray-500">Prøv at ændre filtrene.</p>
         </>
       ) : (

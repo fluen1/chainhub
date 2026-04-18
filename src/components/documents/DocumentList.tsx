@@ -47,9 +47,7 @@ export function DocumentList({ documents }: DocumentListProps) {
   const router = useRouter()
 
   const handleDelete = async (doc: DocumentItem) => {
-    const confirmed = window.confirm(
-      `Er du sikker på, at du vil slette "${doc.title}"?`
-    )
+    const confirmed = window.confirm(`Er du sikker på, at du vil slette "${doc.title}"?`)
     if (!confirmed) return
 
     setDeletingId(doc.id)
@@ -64,9 +62,7 @@ export function DocumentList({ documents }: DocumentListProps) {
   }
 
   if (documents.length === 0) {
-    return (
-      <p className="text-sm text-gray-500">Ingen dokumenter endnu.</p>
-    )
+    return <p className="text-sm text-gray-500">Ingen dokumenter endnu.</p>
   }
 
   return (
@@ -81,9 +77,7 @@ export function DocumentList({ documents }: DocumentListProps) {
             <div className="flex items-center gap-3 min-w-0">
               <Icon className="h-5 w-5 shrink-0 text-gray-400" />
               <div className="min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
-                  {doc.title}
-                </p>
+                <p className="text-sm font-medium text-gray-900 truncate">{doc.title}</p>
                 <p className="text-xs text-gray-500">
                   {doc.file_name} · {getFileTypeLabel(doc.file_type)} ·{' '}
                   {formatFileSize(doc.file_size_bytes)} ·{' '}

@@ -9,10 +9,7 @@ export default async function NewVisitPage() {
   const session = await auth()
   if (!session) redirect('/login')
 
-  const companyIds = await getAccessibleCompanies(
-    session.user.id,
-    session.user.organizationId
-  )
+  const companyIds = await getAccessibleCompanies(session.user.id, session.user.organizationId)
 
   const companies =
     companyIds.length > 0
@@ -28,13 +25,7 @@ export default async function NewVisitPage() {
       : []
 
   return (
-    <Suspense
-      fallback={
-        <div className="p-8 text-center text-sm text-gray-500">
-          Indlæser...
-        </div>
-      }
-    >
+    <Suspense fallback={<div className="p-8 text-center text-sm text-gray-500">Indlæser...</div>}>
       <CreateVisitForm companies={companies} />
     </Suspense>
   )

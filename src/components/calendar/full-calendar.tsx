@@ -43,17 +43,60 @@ const EVENT_TYPE_ICONS: Record<CalendarEventType, typeof Clock> = {
 }
 
 // Tailwind-only farver — ingen inline hex
-const EVENT_TYPE_STYLES: Record<CalendarEventType, { bg: string; text: string; badge: string; bar: string; borderL: string }> = {
-  expiry:   { bg: 'bg-red-50',    text: 'text-red-700',    badge: 'bg-red-100 text-red-700',    bar: 'bg-red-500',    borderL: 'border-l-red-500' },
-  deadline: { bg: 'bg-amber-50',  text: 'text-amber-700',  badge: 'bg-amber-100 text-amber-700',  bar: 'bg-amber-500',  borderL: 'border-l-amber-500' },
-  meeting:  { bg: 'bg-blue-50',   text: 'text-blue-700',   badge: 'bg-blue-100 text-blue-700',   bar: 'bg-blue-500',   borderL: 'border-l-blue-500' },
-  case:     { bg: 'bg-violet-50', text: 'text-violet-700', badge: 'bg-violet-100 text-violet-700', bar: 'bg-violet-500', borderL: 'border-l-violet-500' },
-  renewal:  { bg: 'bg-emerald-50', text: 'text-emerald-700', badge: 'bg-emerald-100 text-emerald-700', bar: 'bg-emerald-500', borderL: 'border-l-emerald-500' },
+const EVENT_TYPE_STYLES: Record<
+  CalendarEventType,
+  { bg: string; text: string; badge: string; bar: string; borderL: string }
+> = {
+  expiry: {
+    bg: 'bg-red-50',
+    text: 'text-red-700',
+    badge: 'bg-red-100 text-red-700',
+    bar: 'bg-red-500',
+    borderL: 'border-l-red-500',
+  },
+  deadline: {
+    bg: 'bg-amber-50',
+    text: 'text-amber-700',
+    badge: 'bg-amber-100 text-amber-700',
+    bar: 'bg-amber-500',
+    borderL: 'border-l-amber-500',
+  },
+  meeting: {
+    bg: 'bg-blue-50',
+    text: 'text-blue-700',
+    badge: 'bg-blue-100 text-blue-700',
+    bar: 'bg-blue-500',
+    borderL: 'border-l-blue-500',
+  },
+  case: {
+    bg: 'bg-violet-50',
+    text: 'text-violet-700',
+    badge: 'bg-violet-100 text-violet-700',
+    bar: 'bg-violet-500',
+    borderL: 'border-l-violet-500',
+  },
+  renewal: {
+    bg: 'bg-emerald-50',
+    text: 'text-emerald-700',
+    badge: 'bg-emerald-100 text-emerald-700',
+    bar: 'bg-emerald-500',
+    borderL: 'border-l-emerald-500',
+  },
 }
 
 const MONTH_NAMES = [
-  'Januar', 'Februar', 'Marts', 'April', 'Maj', 'Juni',
-  'Juli', 'August', 'September', 'Oktober', 'November', 'December',
+  'Januar',
+  'Februar',
+  'Marts',
+  'April',
+  'Maj',
+  'Juni',
+  'Juli',
+  'August',
+  'September',
+  'Oktober',
+  'November',
+  'December',
 ]
 const DAY_NAMES = ['Ma', 'Ti', 'On', 'To', 'Fr', 'Lø', 'Sø']
 
@@ -65,7 +108,7 @@ function buildUrl(
   pathname: string,
   monthStr: string,
   hiddenTypes: Set<CalendarEventType>,
-  day?: number | null,
+  day?: number | null
 ) {
   const params = new URLSearchParams()
   params.set('month', monthStr)
@@ -95,7 +138,11 @@ export function FullCalendar({ events, year, month, selectedDay, todayISO }: Ful
   const hiddenTypes = useMemo(() => {
     const hideParam = searchParams.get('hide')
     if (!hideParam) return new Set<CalendarEventType>()
-    return new Set(hideParam.split(',').filter((t): t is CalendarEventType => ALL_EVENT_TYPES.includes(t as CalendarEventType)))
+    return new Set(
+      hideParam
+        .split(',')
+        .filter((t): t is CalendarEventType => ALL_EVENT_TYPES.includes(t as CalendarEventType))
+    )
   }, [searchParams])
 
   const [quickAddMode, setQuickAddMode] = useState<'task' | null>(null)
@@ -155,17 +202,15 @@ export function FullCalendar({ events, year, month, selectedDay, todayISO }: Ful
   }, [filteredEvents])
 
   // Selected day
-  const selectedDateStr = selectedDay
-    ? `${monthStr}-${String(selectedDay).padStart(2, '0')}`
-    : null
-  const selectedEvents = selectedDateStr
-    ? (eventsByDate.get(selectedDateStr) ?? [])
-    : null
+  const selectedDateStr = selectedDay ? `${monthStr}-${String(selectedDay).padStart(2, '0')}` : null
+  const selectedEvents = selectedDateStr ? (eventsByDate.get(selectedDateStr) ?? []) : null
 
   const MAX_SIDEBAR_EVENTS = 20
   const allMonthEvents = !selectedDay ? filteredEvents : null
   const visibleMonthEvents = allMonthEvents?.slice(0, MAX_SIDEBAR_EVENTS) ?? []
-  const hiddenEventCount = allMonthEvents ? Math.max(0, allMonthEvents.length - MAX_SIDEBAR_EVENTS) : 0
+  const hiddenEventCount = allMonthEvents
+    ? Math.max(0, allMonthEvents.length - MAX_SIDEBAR_EVENTS)
+    : 0
 
   // Quick-add inline task
   async function handleQuickAddTask(formData: FormData) {
@@ -199,9 +244,7 @@ export function FullCalendar({ events, year, month, selectedDay, todayISO }: Ful
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
           <h1 className="text-xl font-bold text-gray-900">Kalender</h1>
-          <p className="mt-0.5 text-sm text-gray-500">
-            Kontrakter, sager, besøg og frister samlet
-          </p>
+          <p className="mt-0.5 text-sm text-gray-500">Kontrakter, sager, besøg og frister samlet</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -326,7 +369,9 @@ export function FullCalendar({ events, year, month, selectedDay, todayISO }: Ful
                             key={e.id}
                             className={cn(
                               'flex items-center gap-1 rounded px-1 py-0.5 text-xs font-medium border-l-2',
-                              s.bg, s.text, s.borderL
+                              s.bg,
+                              s.text,
+                              s.borderL
                             )}
                           >
                             <Icon className="h-3 w-3 shrink-0" />
@@ -346,7 +391,10 @@ export function FullCalendar({ events, year, month, selectedDay, todayISO }: Ful
                         {dayEvents.slice(0, 4).map((e) => (
                           <div
                             key={e.id}
-                            className={cn('w-1.5 h-1.5 rounded-full', EVENT_TYPE_STYLES[e.type].bar)}
+                            className={cn(
+                              'w-1.5 h-1.5 rounded-full',
+                              EVENT_TYPE_STYLES[e.type].bar
+                            )}
                           />
                         ))}
                         {dayEvents.length > 4 && (
@@ -379,9 +427,7 @@ export function FullCalendar({ events, year, month, selectedDay, todayISO }: Ful
                   </button>
                 </div>
                 {selectedEvents.length === 0 ? (
-                  <p className="text-sm text-gray-400 py-4 text-center">
-                    Ingen events denne dag
-                  </p>
+                  <p className="text-sm text-gray-400 py-4 text-center">Ingen events denne dag</p>
                 ) : (
                   <div className="space-y-1.5">
                     {selectedEvents.map((e) => (
@@ -392,10 +438,7 @@ export function FullCalendar({ events, year, month, selectedDay, todayISO }: Ful
                 {/* Quick-add inline */}
                 <div className="mt-4 pt-3 border-t border-gray-100">
                   {quickAddMode === 'task' ? (
-                    <form
-                      action={handleQuickAddTask}
-                      className="space-y-2"
-                    >
+                    <form action={handleQuickAddTask} className="space-y-2">
                       <label className="block text-xs font-medium text-gray-700">
                         Ny opgave — {selectedDay}. {MONTH_NAMES[month - 1].toLowerCase()}
                       </label>
@@ -518,7 +561,12 @@ function EventCard({ event }: { event: CalendarEvent }) {
       <div className={cn('w-1 self-stretch rounded-full shrink-0', styles.bar)} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 mb-0.5">
-          <span className={cn('flex items-center gap-1 text-xs font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded', styles.badge)}>
+          <span
+            className={cn(
+              'flex items-center gap-1 text-xs font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded',
+              styles.badge
+            )}
+          >
             <Icon className="h-3 w-3" />
             {EVENT_TYPE_LABELS[event.type]}
           </span>

@@ -33,23 +33,23 @@ const SECTIONS: NavSection[] = [
     label: 'Overblik',
     items: [
       { name: 'Dashboard', href: '/dashboard', iconName: 'LayoutDashboard', badgeKey: 'dashboard' },
-      { name: 'Kalender',  href: '/calendar',  iconName: 'Calendar',        badgeKey: 'calendar' },
+      { name: 'Kalender', href: '/calendar', iconName: 'Calendar', badgeKey: 'calendar' },
     ],
   },
   {
     label: 'Portefølje',
     items: [
-      { name: 'Selskaber',  href: '/companies', iconName: 'Building2',   badgeKey: 'portfolio' },
-      { name: 'Kontrakter', href: '/contracts', iconName: 'FileText',    badgeKey: 'contracts' },
-      { name: 'Sager',      href: '/cases',     iconName: 'Briefcase',   badgeKey: 'cases' },
-      { name: 'Opgaver',    href: '/tasks',     iconName: 'CheckSquare', badgeKey: 'tasks' },
+      { name: 'Selskaber', href: '/companies', iconName: 'Building2', badgeKey: 'portfolio' },
+      { name: 'Kontrakter', href: '/contracts', iconName: 'FileText', badgeKey: 'contracts' },
+      { name: 'Sager', href: '/cases', iconName: 'Briefcase', badgeKey: 'cases' },
+      { name: 'Opgaver', href: '/tasks', iconName: 'CheckSquare', badgeKey: 'tasks' },
     ],
   },
   {
     label: 'Ressourcer',
     items: [
       { name: 'Dokumenter', href: '/documents', iconName: 'FolderOpen', badgeKey: 'documents' },
-      { name: 'Personer',   href: '/persons',   iconName: 'Users',      badgeKey: 'persons' },
+      { name: 'Personer', href: '/persons', iconName: 'Users', badgeKey: 'persons' },
     ],
   },
 ]
@@ -63,7 +63,12 @@ export interface AppSidebarProps {
 export function AppSidebar({ userName, userRoleLabel, badges }: AppSidebarProps) {
   const pathname = usePathname() ?? ''
 
-  const initials = userName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
+  const initials = userName
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
 
   return (
     <div className="flex h-full w-60 flex-col bg-[#0f172a]">
@@ -86,7 +91,12 @@ export function AppSidebar({ userName, userRoleLabel, badges }: AppSidebarProps)
               : 'text-slate-400 hover:bg-white/[0.05] hover:text-slate-200'
           )}
         >
-          <Search className={cn('h-[18px] w-[18px]', pathname.startsWith('/search') ? 'text-blue-400' : '')} />
+          <Search
+            className={cn(
+              'h-[18px] w-[18px]',
+              pathname.startsWith('/search') ? 'text-blue-400' : ''
+            )}
+          />
           Søg
         </Link>
       </div>

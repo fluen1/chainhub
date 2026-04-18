@@ -3,10 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Briefcase, Plus, Search, ChevronDown, ChevronRight } from 'lucide-react'
-import {
-  getCaseTypeLabel,
-  getCaseStatusLabel,
-} from '@/lib/labels'
+import { getCaseTypeLabel, getCaseStatusLabel } from '@/lib/labels'
 
 interface CaseData {
   id: string
@@ -35,37 +32,43 @@ const CASE_TYPE_ORDER = [
 
 function getStatusColor(status: string): string {
   switch (status) {
-    case 'NY': return 'text-gray-600'
-    case 'AKTIV': return 'text-blue-700'
+    case 'NY':
+      return 'text-gray-600'
+    case 'AKTIV':
+      return 'text-blue-700'
     case 'AFVENTER_EKSTERN':
-    case 'AFVENTER_KLIENT': return 'text-amber-600'
-    case 'LUKKET': return 'text-green-700'
-    case 'ARKIVERET': return 'text-gray-400'
-    default: return 'text-gray-600'
+    case 'AFVENTER_KLIENT':
+      return 'text-amber-600'
+    case 'LUKKET':
+      return 'text-green-700'
+    case 'ARKIVERET':
+      return 'text-gray-400'
+    default:
+      return 'text-gray-600'
   }
 }
 
-function getDueDateInfo(dueDate: Date | string | null): { label: string; colorClass: string } | null {
+function getDueDateInfo(
+  dueDate: Date | string | null
+): { label: string; colorClass: string } | null {
   if (!dueDate) return null
   const d = new Date(dueDate)
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const days = Math.ceil((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
 
-  if (days < 0) return { label: `${Math.abs(days)} dag${Math.abs(days) !== 1 ? 'e' : ''} forsinket`, colorClass: 'text-red-600 font-medium' }
+  if (days < 0)
+    return {
+      label: `${Math.abs(days)} dag${Math.abs(days) !== 1 ? 'e' : ''} forsinket`,
+      colorClass: 'text-red-600 font-medium',
+    }
   if (days === 0) return { label: 'Frist i dag', colorClass: 'text-red-600 font-medium' }
   if (days <= 14) return { label: `${days} dage tilbage`, colorClass: 'text-red-600 font-medium' }
   if (days <= 90) return { label: d.toLocaleDateString('da-DK'), colorClass: 'text-amber-600' }
   return { label: d.toLocaleDateString('da-DK'), colorClass: 'text-gray-500' }
 }
 
-function CollapsibleCaseGroup({
-  caseType,
-  cases,
-}: {
-  caseType: string
-  cases: CaseData[]
-}) {
+function CollapsibleCaseGroup({ caseType, cases }: { caseType: string; cases: CaseData[] }) {
   const [isOpen, setIsOpen] = useState(true)
 
   return (
@@ -91,9 +94,7 @@ function CollapsibleCaseGroup({
           {cases.map((caseItem) => {
             const dueDateInfo = getDueDateInfo(caseItem.due_date)
             const hasOverdueBorder = caseItem.due_date && new Date(caseItem.due_date) < new Date()
-            const accentClass = hasOverdueBorder
-              ? 'border-l-[3px] border-l-red-400 -ml-px'
-              : ''
+            const accentClass = hasOverdueBorder ? 'border-l-[3px] border-l-red-400 -ml-px' : ''
 
             return (
               <Link
@@ -102,9 +103,7 @@ function CollapsibleCaseGroup({
                 className={`flex items-center justify-between px-3 py-2.5 border-b border-gray-100 hover:bg-gray-50/50 transition-colors ${accentClass}`}
               >
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {caseItem.title}
-                  </p>
+                  <p className="text-sm font-medium text-gray-900 truncate">{caseItem.title}</p>
                   <p className="text-xs text-gray-400 mt-0.5">
                     {getCaseTypeLabel(caseItem.case_type)}
                     {' · '}
@@ -115,13 +114,16 @@ function CollapsibleCaseGroup({
                       <>
                         {' · '}
                         <span className="text-gray-500">
-                          {caseItem._count.tasks} {caseItem._count.tasks !== 1 ? 'åbne opgaver' : 'åben opgave'}
+                          {caseItem._count.tasks}{' '}
+                          {caseItem._count.tasks !== 1 ? 'åbne opgaver' : 'åben opgave'}
                         </span>
                       </>
                     )}
                   </p>
                 </div>
-                <div className={`text-sm tabular-nums shrink-0 ml-4 ${dueDateInfo ? dueDateInfo.colorClass : 'text-gray-300'}`}>
+                <div
+                  className={`text-sm tabular-nums shrink-0 ml-4 ${dueDateInfo ? dueDateInfo.colorClass : 'text-gray-300'}`}
+                >
                   {dueDateInfo ? dueDateInfo.label : '—'}
                 </div>
               </Link>
@@ -137,29 +139,24 @@ export function CaseList({ cases }: CaseListProps) {
   const [search, setSearch] = useState('')
 
   const filtered = search
-    ? cases.filter((c) =>
-        c.title.toLowerCase().includes(search.toLowerCase())
-      )
+    ? cases.filter((c) => c.title.toLowerCase().includes(search.toLowerCase()))
     : cases
 
   // Grupper sager efter sagstype
-  const grouped = CASE_TYPE_ORDER.reduce<Partial<Record<string, CaseData[]>>>(
-    (acc, caseType) => {
-      const typeCases = filtered.filter((c) => c.case_type === caseType)
-      if (typeCases.length > 0) {
-        // Sortér: sager med frist først (tidligst), derefter oprettelsesdato
-        typeCases.sort((a, b) => {
-          const aDue = a.due_date ? new Date(a.due_date).getTime() : Infinity
-          const bDue = b.due_date ? new Date(b.due_date).getTime() : Infinity
-          if (aDue !== bDue) return aDue - bDue
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        })
-        acc[caseType] = typeCases
-      }
-      return acc
-    },
-    {}
-  )
+  const grouped = CASE_TYPE_ORDER.reduce<Partial<Record<string, CaseData[]>>>((acc, caseType) => {
+    const typeCases = filtered.filter((c) => c.case_type === caseType)
+    if (typeCases.length > 0) {
+      // Sortér: sager med frist først (tidligst), derefter oprettelsesdato
+      typeCases.sort((a, b) => {
+        const aDue = a.due_date ? new Date(a.due_date).getTime() : Infinity
+        const bDue = b.due_date ? new Date(b.due_date).getTime() : Infinity
+        if (aDue !== bDue) return aDue - bDue
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      })
+      acc[caseType] = typeCases
+    }
+    return acc
+  }, {})
 
   const uniqueTypes = Object.keys(grouped).length
   const activeCases = cases.filter((c) => c.status === 'AKTIV' || c.status === 'NY').length
@@ -179,9 +176,7 @@ export function CaseList({ cases }: CaseListProps) {
         <div className="rounded-lg border border-dashed border-gray-200 py-16 text-center">
           <Briefcase className="mx-auto h-10 w-10 text-gray-300" />
           <p className="mt-3 text-sm font-medium text-gray-900">Ingen sager endnu</p>
-          <p className="mt-1 text-sm text-gray-400">
-            Opret den første sag for dette selskab.
-          </p>
+          <p className="mt-1 text-sm text-gray-400">Opret den første sag for dette selskab.</p>
         </div>
       </div>
     )
@@ -234,22 +229,14 @@ export function CaseList({ cases }: CaseListProps) {
         <div className="rounded-lg border border-dashed border-gray-200 py-12 text-center">
           <Search className="mx-auto h-8 w-8 text-gray-300" />
           <p className="mt-3 text-sm font-medium text-gray-900">Ingen resultater</p>
-          <p className="mt-1 text-sm text-gray-400">
-            Ingen sager matcher &ldquo;{search}&rdquo;
-          </p>
+          <p className="mt-1 text-sm text-gray-400">Ingen sager matcher &ldquo;{search}&rdquo;</p>
         </div>
       ) : (
         <div className="space-y-2">
           {CASE_TYPE_ORDER.map((caseType) => {
             const typeCases = grouped[caseType]
             if (!typeCases) return null
-            return (
-              <CollapsibleCaseGroup
-                key={caseType}
-                caseType={caseType}
-                cases={typeCases}
-              />
-            )
+            return <CollapsibleCaseGroup key={caseType} caseType={caseType} cases={typeCases} />
           })}
         </div>
       )}

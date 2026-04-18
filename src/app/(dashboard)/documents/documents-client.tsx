@@ -43,26 +43,36 @@ type DocFilter = 'all' | 'review' | 'processing' | 'archived'
 // ---------------------------------------------------------------
 function statusStyle(status: DocStatus): string {
   switch (status) {
-    case 'ready_for_review': return 'bg-violet-50 text-violet-700'
-    case 'processing':       return 'bg-blue-50 text-blue-700'
-    case 'reviewed':         return 'bg-emerald-50 text-emerald-700'
-    case 'archived':         return 'bg-slate-50 text-slate-600'
+    case 'ready_for_review':
+      return 'bg-violet-50 text-violet-700'
+    case 'processing':
+      return 'bg-blue-50 text-blue-700'
+    case 'reviewed':
+      return 'bg-emerald-50 text-emerald-700'
+    case 'archived':
+      return 'bg-slate-50 text-slate-600'
   }
 }
 
 function statusLabel(status: DocStatus): string {
   switch (status) {
-    case 'ready_for_review': return 'Til review'
-    case 'processing':       return 'Analyseres'
-    case 'reviewed':         return 'Godkendt'
-    case 'archived':         return 'Arkiveret'
+    case 'ready_for_review':
+      return 'Til review'
+    case 'processing':
+      return 'Analyseres'
+    case 'reviewed':
+      return 'Godkendt'
+    case 'archived':
+      return 'Arkiveret'
   }
 }
 
 function fileTypeIcon(fileName: string) {
   const ext = fileName.split('.').pop()?.toLowerCase() ?? ''
-  if (['xlsx', 'xls', 'csv'].includes(ext)) return <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
-  if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext)) return <FileImage className="w-4 h-4 text-sky-500" />
+  if (['xlsx', 'xls', 'csv'].includes(ext))
+    return <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
+  if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext))
+    return <FileImage className="w-4 h-4 text-sky-500" />
   if (ext === 'pdf') return <FileText className="w-4 h-4 text-red-500" />
   if (['doc', 'docx'].includes(ext)) return <FileText className="w-4 h-4 text-blue-500" />
   return <FileText className="w-4 h-4 text-slate-400" />
@@ -111,20 +121,20 @@ export default function DocumentsClient({ documents }: { documents: DocumentItem
 
   const reviewDocs = useMemo(
     () => documents.filter((d) => d.status === 'ready_for_review'),
-    [documents],
+    [documents]
   )
   const processingDocs = useMemo(
     () => documents.filter((d) => d.status === 'processing'),
-    [documents],
+    [documents]
   )
 
   const counts = useMemo(
     () => ({
-      review:     reviewDocs.length,
+      review: reviewDocs.length,
       processing: processingDocs.length,
-      archived:   documents.length - reviewDocs.length - processingDocs.length,
+      archived: documents.length - reviewDocs.length - processingDocs.length,
     }),
-    [documents, reviewDocs, processingDocs],
+    [documents, reviewDocs, processingDocs]
   )
 
   const filtered = useMemo(() => {
@@ -132,7 +142,8 @@ export default function DocumentsClient({ documents }: { documents: DocumentItem
       .filter((d) => {
         if (filter === 'review' && d.status !== 'ready_for_review') return false
         if (filter === 'processing' && d.status !== 'processing') return false
-        if (filter === 'archived' && d.status !== 'reviewed' && d.status !== 'archived') return false
+        if (filter === 'archived' && d.status !== 'reviewed' && d.status !== 'archived')
+          return false
         if (search.trim()) {
           const q = search.toLowerCase()
           return d.fileName.toLowerCase().includes(q) || d.companyName.toLowerCase().includes(q)
@@ -154,7 +165,9 @@ export default function DocumentsClient({ documents }: { documents: DocumentItem
         <div className="max-w-[1280px] mx-auto">
           <h1 className="text-[20px] font-semibold tracking-tight text-slate-900">Dokumenter</h1>
           <div className="mt-8 bg-white rounded-xl ring-1 ring-slate-900/[0.06] shadow-[0_1px_2px_rgba(15,23,42,0.04)] p-8">
-            <p className="text-[13px] font-medium text-slate-500 text-center mb-4">Ingen dokumenter endnu — upload dit første dokument</p>
+            <p className="text-[13px] font-medium text-slate-500 text-center mb-4">
+              Ingen dokumenter endnu — upload dit første dokument
+            </p>
             <FileUpload />
           </div>
         </div>
@@ -171,7 +184,12 @@ export default function DocumentsClient({ documents }: { documents: DocumentItem
             <h1 className="text-[20px] font-semibold tracking-tight text-slate-900">Dokumenter</h1>
             <p className="text-[13px] text-slate-500 mt-1">
               {documents.length} dokumenter
-              {counts.review > 0 && <> · <span className="text-slate-700 font-medium">{counts.review} til review</span></>}
+              {counts.review > 0 && (
+                <>
+                  {' '}
+                  · <span className="text-slate-700 font-medium">{counts.review} til review</span>
+                </>
+              )}
             </p>
           </div>
           <button
@@ -230,7 +248,9 @@ export default function DocumentsClient({ documents }: { documents: DocumentItem
             <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-3.5 h-3.5 text-violet-500" />
-                <span className="text-[12px] font-semibold text-slate-900">Afventer din review</span>
+                <span className="text-[12px] font-semibold text-slate-900">
+                  Afventer din review
+                </span>
                 <span className="text-[11px] text-slate-400">({reviewDocs.length})</span>
               </div>
               {processingDocs.length > 0 && (
@@ -251,15 +271,25 @@ export default function DocumentsClient({ documents }: { documents: DocumentItem
                   >
                     <Sparkles className="w-3.5 h-3.5 text-violet-500 shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="text-[12px] font-medium text-slate-900 truncate">{doc.fileName}</div>
+                      <div className="text-[12px] font-medium text-slate-900 truncate">
+                        {doc.fileName}
+                      </div>
                       <div className="text-[11px] text-slate-400 truncate">
                         {doc.companyName} · {doc.extractedFieldCount} felter udtrukket
                         {attentionCount > 0 && (
-                          <> · <span className="text-amber-700 font-medium">{attentionCount} kræver opmærksomhed</span></>
+                          <>
+                            {' '}
+                            ·{' '}
+                            <span className="text-amber-700 font-medium">
+                              {attentionCount} kræver opmærksomhed
+                            </span>
+                          </>
                         )}
                       </div>
                     </div>
-                    <span className="text-[11px] text-slate-400 font-medium shrink-0">Gennemgå →</span>
+                    <span className="text-[11px] text-slate-400 font-medium shrink-0">
+                      Gennemgå →
+                    </span>
                   </Link>
                 )
               })}
@@ -271,7 +301,15 @@ export default function DocumentsClient({ documents }: { documents: DocumentItem
         <div className="bg-white rounded-xl ring-1 ring-slate-900/[0.06] shadow-[0_1px_2px_rgba(15,23,42,0.04)] [overflow:clip]">
           <div className="sticky top-0 bg-white z-10 px-5 py-3 border-b border-slate-100 flex items-center justify-between">
             <div className="text-[12px] font-semibold text-slate-900">
-              {filter === 'all' ? 'Alle dokumenter' : statusLabel(filter === 'review' ? 'ready_for_review' : filter === 'processing' ? 'processing' : 'archived')}
+              {filter === 'all'
+                ? 'Alle dokumenter'
+                : statusLabel(
+                    filter === 'review'
+                      ? 'ready_for_review'
+                      : filter === 'processing'
+                        ? 'processing'
+                        : 'archived'
+                  )}
             </div>
             <div className="text-[11px] text-slate-400 tabular-nums">{filtered.length}</div>
           </div>
@@ -285,17 +323,21 @@ export default function DocumentsClient({ documents }: { documents: DocumentItem
             <div>
               {filtered.map((doc, idx) => {
                 const prev = idx > 0 ? filtered[idx - 1] : null
-                const showSeparator = filter === 'all' && prev !== null && prev.status !== doc.status
+                const showSeparator =
+                  filter === 'all' && prev !== null && prev.status !== doc.status
                 return (
                   <div key={doc.id}>
                     {showSeparator && (
                       <div className="px-5 py-2 bg-slate-50/60 flex items-center gap-2 text-[10px] font-medium text-slate-400 uppercase tracking-[0.1em]">
-                        <span className={cn(
-                          'w-1 h-1 rounded-full',
-                          doc.status === 'ready_for_review' && 'bg-violet-500',
-                          doc.status === 'processing' && 'bg-blue-500',
-                          (doc.status === 'reviewed' || doc.status === 'archived') && 'bg-slate-400',
-                        )} />
+                        <span
+                          className={cn(
+                            'w-1 h-1 rounded-full',
+                            doc.status === 'ready_for_review' && 'bg-violet-500',
+                            doc.status === 'processing' && 'bg-blue-500',
+                            (doc.status === 'reviewed' || doc.status === 'archived') &&
+                              'bg-slate-400'
+                          )}
+                        />
                         {statusLabel(doc.status)}
                       </div>
                     )}
@@ -321,14 +363,15 @@ export default function DocumentsClient({ documents }: { documents: DocumentItem
         </div>
       </div>
 
-
       {/* Scroll-to-top */}
       <button
         type="button"
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         className={cn(
           'fixed bottom-6 right-6 w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center shadow-[0_4px_16px_-4px_rgba(15,23,42,0.3)] ring-1 ring-slate-900/10 transition-all duration-200',
-          showScrollTop ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-2 pointer-events-none',
+          showScrollTop
+            ? 'opacity-100 translate-y-0 pointer-events-auto'
+            : 'opacity-0 translate-y-2 pointer-events-none'
         )}
         aria-label="Scroll til toppen"
       >
@@ -380,16 +423,26 @@ function DocRow({ doc }: { doc: DocumentItem }) {
             <> · {doc.extractedFieldCount} felter udtrukket</>
           )}
           {isReview && doc.attentionFieldCount > 0 && (
-            <> · <span className="text-amber-700 font-medium">{doc.attentionFieldCount} kræver opmærksomhed</span></>
+            <>
+              {' '}
+              ·{' '}
+              <span className="text-amber-700 font-medium">
+                {doc.attentionFieldCount} kræver opmærksomhed
+              </span>
+            </>
           )}
         </div>
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
-        <span className={cn('text-[10px] font-medium px-2 py-0.5 rounded', statusStyle(doc.status))}>
+        <span
+          className={cn('text-[10px] font-medium px-2 py-0.5 rounded', statusStyle(doc.status))}
+        >
           {statusLabel(doc.status)}
         </span>
-        <span className="text-[11px] text-slate-400 tabular-nums hidden sm:inline">{formatDate(doc.uploadedAt)}</span>
+        <span className="text-[11px] text-slate-400 tabular-nums hidden sm:inline">
+          {formatDate(doc.uploadedAt)}
+        </span>
 
         {canQuickApprove && (
           <button
@@ -435,7 +488,9 @@ function FilterPill({
       onClick={onClick}
       className={cn(
         'flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] font-medium transition-colors bg-white ring-1 shadow-[0_1px_2px_rgba(15,23,42,0.04)] shrink-0',
-        active ? 'ring-slate-900/20 text-slate-900' : 'ring-slate-900/[0.06] text-slate-600 hover:text-slate-900',
+        active
+          ? 'ring-slate-900/20 text-slate-900'
+          : 'ring-slate-900/[0.06] text-slate-600 hover:text-slate-900'
       )}
     >
       <span className={cn('w-1.5 h-1.5 rounded-full', dot)} />

@@ -2,7 +2,11 @@ import { z } from 'zod'
 
 export const createCompanySchema = z.object({
   name: z.string().min(1, 'Selskabsnavn er påkrævet').max(200),
-  cvr: z.string().regex(/^\d{8}$/, 'CVR skal være 8 cifre').optional().or(z.literal('')),
+  cvr: z
+    .string()
+    .regex(/^\d{8}$/, 'CVR skal være 8 cifre')
+    .optional()
+    .or(z.literal('')),
   companyType: z.string().optional(),
   address: z.string().optional(),
   city: z.string().optional(),

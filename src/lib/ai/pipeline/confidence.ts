@@ -1,4 +1,10 @@
-import type { ExtractedField, AgreementResult, SourceVerificationResult, SanityCheckResult, FieldConfidence } from './types'
+import type {
+  ExtractedField,
+  AgreementResult,
+  SourceVerificationResult,
+  SanityCheckResult,
+  FieldConfidence,
+} from './types'
 
 /**
  * Compares extraction results from two runs to detect field-level agreement.
@@ -6,7 +12,7 @@ import type { ExtractedField, AgreementResult, SourceVerificationResult, SanityC
  */
 export function compareRuns(
   run1: Record<string, ExtractedField>,
-  run2: Record<string, ExtractedField>,
+  run2: Record<string, ExtractedField>
 ): AgreementResult[] {
   const results: AgreementResult[] = []
   const allFields = Array.from(new Set([...Object.keys(run1), ...Object.keys(run2)]))
@@ -48,7 +54,7 @@ export function computeFieldConfidence(
   agreement: AgreementResult | undefined,
   sourceVerification: SourceVerificationResult | undefined,
   sanityCheck: SanityCheckResult | undefined,
-  claudeConfidence: number,
+  claudeConfidence: number
 ): FieldConfidence {
   let confidence = 0
   const components = { agreement: 0, source_verified: 0, sanity_passed: 0, claude_self: 0 }
@@ -91,14 +97,14 @@ export function computeAllFieldConfidences(
   fields: Record<string, ExtractedField>,
   agreements: AgreementResult[],
   sourceVerifications: SourceVerificationResult[],
-  sanityChecks: SanityCheckResult[],
+  sanityChecks: SanityCheckResult[]
 ): FieldConfidence[] {
   return Object.entries(fields)
     .filter(([name]) => name !== 'additional_findings' && name !== 'extraction_warnings')
     .map(([name, field]) => {
-      const agreement = agreements.find(a => a.field_name === name)
-      const source = sourceVerifications.find(s => s.field_name === name)
-      const sanity = sanityChecks.find(s => s.field_name === name)
+      const agreement = agreements.find((a) => a.field_name === name)
+      const source = sourceVerifications.find((s) => s.field_name === name)
+      const sanity = sanityChecks.find((s) => s.field_name === name)
       return computeFieldConfidence(name, agreement, source, sanity, field.claude_confidence)
     })
 }

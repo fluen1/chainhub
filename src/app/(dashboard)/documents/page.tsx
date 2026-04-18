@@ -48,10 +48,7 @@ function countAttentionFields(extraction: ExtractionData | null): number {
     if (field && typeof field === 'object' && !Array.isArray(field)) {
       const f = field as Record<string, unknown>
       // Tæl felter med lav confidence eller discrepancy
-      if (
-        (typeof f.confidence === 'number' && f.confidence < 0.7) ||
-        f.hasDiscrepancy === true
-      ) {
+      if ((typeof f.confidence === 'number' && f.confidence < 0.7) || f.hasDiscrepancy === true) {
         count++
       }
     }

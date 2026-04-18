@@ -79,7 +79,9 @@ export function AddMetricForm({ companyId }: AddMetricFormProps) {
                     className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                   >
                     {METRIC_TYPES.map((m) => (
-                      <option key={m.value} value={m.value}>{m.label}</option>
+                      <option key={m.value} value={m.value}>
+                        {m.label}
+                      </option>
                     ))}
                   </select>
                 </div>

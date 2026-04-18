@@ -29,9 +29,7 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
   ARKIVERET: [],
 }
 
-export async function createContract(
-  input: CreateContractInput
-): Promise<ActionResult<Contract>> {
+export async function createContract(input: CreateContractInput): Promise<ActionResult<Contract>> {
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
 
@@ -41,16 +39,15 @@ export async function createContract(
   const hasCompanyAccess = await canAccessCompany(session.user.id, parsed.data.companyId)
   if (!hasCompanyAccess) return { error: 'Ingen adgang til dette selskab' }
 
-  const hasSensitivityAccess = await canAccessSensitivity(
-    session.user.id,
-    parsed.data.sensitivity
-  )
+  const hasSensitivityAccess = await canAccessSensitivity(session.user.id, parsed.data.sensitivity)
   if (!hasSensitivityAccess) return { error: 'Du har ikke adgang til dette sensitivitetsniveau' }
 
   // Tjek minimum-sensitivitet for system_type
   const minimumSensitivity = SENSITIVITY_MINIMUM[parsed.data.systemType as ContractSystemTypeKey]
   if (minimumSensitivity) {
-    if (!meetsMinimumSensitivity(parsed.data.sensitivity, minimumSensitivity as SensitivityLevelValue)) {
+    if (
+      !meetsMinimumSensitivity(parsed.data.sensitivity, minimumSensitivity as SensitivityLevelValue)
+    ) {
       return {
         error: `${parsed.data.displayName || parsed.data.systemType} kræver minimum sensitivitetsniveau ${minimumSensitivity}`,
       }
@@ -79,7 +76,10 @@ export async function createContract(
     })
 
     // Audit log for sensitive contracts
-    if (parsed.data.sensitivity === 'STRENGT_FORTROLIG' || parsed.data.sensitivity === 'FORTROLIG') {
+    if (
+      parsed.data.sensitivity === 'STRENGT_FORTROLIG' ||
+      parsed.data.sensitivity === 'FORTROLIG'
+    ) {
       await prisma.auditLog.create({
         data: {
           organization_id: session.user.organizationId,

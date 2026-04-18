@@ -17,7 +17,12 @@ export default async function DashboardPage() {
 
   const [data, calendarEvents] = await Promise.all([
     getDashboardData(session.user.id, session.user.organizationId),
-    getCalendarEvents(session.user.id, session.user.organizationId, now.getFullYear(), now.getMonth() + 1),
+    getCalendarEvents(
+      session.user.id,
+      session.user.organizationId,
+      now.getFullYear(),
+      now.getMonth() + 1
+    ),
   ])
 
   // Alle events denne måned til widget (sorteret, max 6)

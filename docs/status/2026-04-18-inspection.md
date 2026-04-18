@@ -7,6 +7,7 @@ Efter commit af 3 WIP-commits (labels, persons HR, kalender) kørte jeg dev-serv
 ## Fund
 
 ### Grønt
+
 - `/login` → `/dashboard` loginflow virker
 - `/dashboard` renderer urgency, KPI-header, heatmap uden fejl
 - `/persons?layout=tabel` — NY tabel-toggle virker, 6 resultater, avatar-initialer, rolle-filter har alle 14 enum-options
@@ -20,6 +21,7 @@ Efter commit af 3 WIP-commits (labels, persons HR, kalender) kørte jeg dev-serv
 - Header KPIs: Selskaber 7 · Udløbende 0 · Sager 4 · Forfaldne 6 · Omsætning 28.6m
 
 ### Gult
+
 - **Pre-existing test-failures (8)**: Ikke forårsaget af WIP. Tests ude af synk med UI-tekst:
   - `finance-section.test.tsx` — forventer "Ingen oekonomi-data for 2025", UI viser "Ingen økonomi-data registreret for 2025"
   - `heatmap-grid.test.tsx` — 3 failures på sort-order, openCaseCount dot, cap ved 15
@@ -31,11 +33,13 @@ Efter commit af 3 WIP-commits (labels, persons HR, kalender) kørte jeg dev-serv
 - **Seed-data for HR**: kun DIREKTØR-roller. Ingen MEDARBEJDER/FUNKTIONÆR/VIKAR til at teste rolle-filter visuelt. Kan kræve seed-udvidelse.
 
 ### Rødt
+
 - Ingen.
 
 ## Plan 4D — næste skridt
 
 `/tasks` + `/tasks/[id]` rewrite er den mest værdifulde næste opgave:
+
 - Dækker Plan 4D-item OG resterende Sprint 8 backend (task_comments, task_history, task_participants)
 - Høj daglig brugsværdi (6 forfaldne opgaver lige nu)
 - Single-page-mønster fra `/companies/[id]` kan genbruges

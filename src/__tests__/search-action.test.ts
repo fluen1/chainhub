@@ -21,9 +21,7 @@ describe.runIf(!!process.env.DATABASE_URL)('runSearch', () => {
     const result = await runSearch('Østerbro', seedUserId, seedOrgId)
     expect(result).not.toBeNull()
     expect(result!.companies.length).toBeGreaterThanOrEqual(1)
-    expect(
-      result!.companies.some((c) => c.name.toLowerCase().includes('østerbro'))
-    ).toBe(true)
+    expect(result!.companies.some((c) => c.name.toLowerCase().includes('østerbro'))).toBe(true)
   })
 
   it('finder opgaver ved titel-søgning', async () => {

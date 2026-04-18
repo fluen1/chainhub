@@ -27,7 +27,7 @@ function getFirstDayOfWeek(year: number, month: number) {
 function formatEventDate(dateStr: string, today: string): string {
   if (dateStr === today) return 'I dag'
   const d = new Date(dateStr)
-  return `${d.getDate()}. ${['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'][d.getMonth()]}`
+  return `${d.getDate()}. ${['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'][d.getMonth()]}`
 }
 
 export interface CalendarWidgetProps {
@@ -66,34 +66,72 @@ export function CalendarWidget({
     return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}` === today
   }
 
-  const monthNames = ['Januar', 'Februar', 'Marts', 'April', 'Maj', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'December']
+  const monthNames = [
+    'Januar',
+    'Februar',
+    'Marts',
+    'April',
+    'Maj',
+    'Juni',
+    'Juli',
+    'August',
+    'September',
+    'Oktober',
+    'November',
+    'December',
+  ]
 
   function prevMonth() {
-    if (month === 1) { setYear(year - 1); setMonth(12) }
-    else setMonth(month - 1)
+    if (month === 1) {
+      setYear(year - 1)
+      setMonth(12)
+    } else setMonth(month - 1)
   }
 
   function nextMonth() {
-    if (month === 12) { setYear(year + 1); setMonth(1) }
-    else setMonth(month + 1)
+    if (month === 12) {
+      setYear(year + 1)
+      setMonth(1)
+    } else setMonth(month + 1)
   }
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-5">
       <div className="flex items-center justify-between mb-4">
-        <div className="text-sm font-semibold text-slate-900">{monthNames[month - 1]} {year}</div>
+        <div className="text-sm font-semibold text-slate-900">
+          {monthNames[month - 1]} {year}
+        </div>
         <div className="flex gap-1">
-          <button type="button" onClick={prevMonth} aria-label="Forrige måned" className="flex h-7 w-7 items-center justify-center rounded-md border border-gray-200 text-xs text-slate-500 hover:bg-slate-50 transition-colors">‹</button>
-          <button type="button" onClick={nextMonth} aria-label="Næste måned" className="flex h-7 w-7 items-center justify-center rounded-md border border-gray-200 text-xs text-slate-500 hover:bg-slate-50 transition-colors">›</button>
+          <button
+            type="button"
+            onClick={prevMonth}
+            aria-label="Forrige måned"
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-gray-200 text-xs text-slate-500 hover:bg-slate-50 transition-colors"
+          >
+            ‹
+          </button>
+          <button
+            type="button"
+            onClick={nextMonth}
+            aria-label="Næste måned"
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-gray-200 text-xs text-slate-500 hover:bg-slate-50 transition-colors"
+          >
+            ›
+          </button>
         </div>
       </div>
 
       <div className="grid grid-cols-7 gap-0.5 mb-4">
         {WEEKDAYS.map((d) => (
-          <div key={d} className="py-1 text-center text-[11px] font-medium text-gray-400">{d}</div>
+          <div key={d} className="py-1 text-center text-[11px] font-medium text-gray-400">
+            {d}
+          </div>
         ))}
         {prevDays.map((d) => (
-          <div key={`prev-${d}`} className="py-1.5 text-center text-[13px] text-gray-300 rounded-lg">
+          <div
+            key={`prev-${d}`}
+            className="py-1.5 text-center text-[13px] text-gray-300 rounded-lg"
+          >
             {d}
             <div className="flex justify-center gap-0.5 mt-0.5 min-h-[6px]" />
           </div>
@@ -124,7 +162,10 @@ export function CalendarWidget({
           )
         })}
         {nextDays.map((d) => (
-          <div key={`next-${d}`} className="py-1.5 text-center text-[13px] text-gray-300 rounded-lg">
+          <div
+            key={`next-${d}`}
+            className="py-1.5 text-center text-[13px] text-gray-300 rounded-lg"
+          >
             {d}
             <div className="flex justify-center gap-0.5 mt-0.5 min-h-[6px]" />
           </div>
@@ -139,7 +180,10 @@ export function CalendarWidget({
 
       <div className="space-y-0">
         {upcoming.map((ev) => (
-          <div key={ev.id} className="flex items-start gap-2.5 border-b border-slate-50/80 py-2 last:border-none">
+          <div
+            key={ev.id}
+            className="flex items-start gap-2.5 border-b border-slate-50/80 py-2 last:border-none"
+          >
             <div
               className="mt-0.5 w-1 min-h-[28px] self-stretch rounded-full"
               style={{ backgroundColor: getEventTypeColor(ev.type) }}
@@ -180,7 +224,10 @@ export function CalendarWidget({
       </div>
 
       <div className="mt-3 text-center">
-        <Link href={fullCalendarHref} className="text-xs font-medium text-blue-500 hover:text-blue-600 transition-colors">
+        <Link
+          href={fullCalendarHref}
+          className="text-xs font-medium text-blue-500 hover:text-blue-600 transition-colors"
+        >
           Åbn fuld kalender →
         </Link>
       </div>

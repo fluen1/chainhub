@@ -30,7 +30,7 @@ export async function updateOrganization(
       where: { id: session.user.organizationId },
       data: {
         name: parsed.data.name,
-        cvr: parsed.data.cvr === '' ? null : parsed.data.cvr ?? null,
+        cvr: parsed.data.cvr === '' ? null : (parsed.data.cvr ?? null),
         chain_structure: parsed.data.chain_structure,
       },
     })

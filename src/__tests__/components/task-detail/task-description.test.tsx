@@ -5,9 +5,7 @@ import { TaskDescription } from '@/components/task-detail/task-description'
 describe('TaskDescription', () => {
   it('viser beskrivelsen', () => {
     render(<TaskDescription description="Kontrakten skal genforhandles inden d. 1. juni." />)
-    expect(
-      screen.getByText('Kontrakten skal genforhandles inden d. 1. juni.')
-    ).toBeInTheDocument()
+    expect(screen.getByText('Kontrakten skal genforhandles inden d. 1. juni.')).toBeInTheDocument()
   })
 
   it('viser tom-state naar description er null', () => {

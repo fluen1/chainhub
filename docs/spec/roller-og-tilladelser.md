@@ -1,4 +1,5 @@
 # Adgangs- og rollemodel — ChainHub
+
 **Version 0.3 — QA-R2-rettet**
 
 ---
@@ -6,6 +7,7 @@
 ## Overordnet princip
 
 Adgang styres på **tre uafhængige lag** der kombineres:
+
 1. **Scope** — hvilke selskaber kan brugeren se?
 2. **Modul-adgang** — hvilke moduler har brugeren adgang til?
 3. **Data-sensitivitet** — hvilke følsomhedsniveauer må brugeren se?
@@ -16,11 +18,11 @@ En bruger får adgang til data der er inden for ALLE tre lag på én gang.
 
 ## Lag 1: Scope — Hvilke selskaber?
 
-| Scope-type | Beskrivelse | Typisk bruger |
-|---|---|---|
-| `ALL` | Ser alle selskaber i gruppen | Gruppe-ejer, juridisk ansvarlig |
-| `ASSIGNED` | Ser kun tildelte selskaber | Klinikchef med ansvar for 2 klinikker |
-| `OWN` | Ser kun ét bestemt selskab | Lokal direktør |
+| Scope-type | Beskrivelse                  | Typisk bruger                         |
+| ---------- | ---------------------------- | ------------------------------------- |
+| `ALL`      | Ser alle selskaber i gruppen | Gruppe-ejer, juridisk ansvarlig       |
+| `ASSIGNED` | Ser kun tildelte selskaber   | Klinikchef med ansvar for 2 klinikker |
+| `OWN`      | Ser kun ét bestemt selskab   | Lokal direktør                        |
 
 ---
 
@@ -28,27 +30,28 @@ En bruger får adgang til data der er inden for ALLE tre lag på én gang.
 
 ### Gruppe-niveau roller
 
-| Rolle | Scope | Beskrivelse |
-|---|---|---|
-| `GROUP_OWNER` | ALL | Fuld adgang til alt inkl. fakturering, brugerstyring |
-| `GROUP_ADMIN` | ALL | Fuld adgang, ingen fakturering |
-| `GROUP_LEGAL` | ALL | Kontrakter + sager på tværs — ingen økonomi |
-| `GROUP_FINANCE` | ALL | Økonomi-overblik på tværs — ingen kontrakter |
-| `GROUP_READONLY` | ALL | Kun se — typisk revisor eller ekstern rådgiver |
+| Rolle            | Scope | Beskrivelse                                          |
+| ---------------- | ----- | ---------------------------------------------------- |
+| `GROUP_OWNER`    | ALL   | Fuld adgang til alt inkl. fakturering, brugerstyring |
+| `GROUP_ADMIN`    | ALL   | Fuld adgang, ingen fakturering                       |
+| `GROUP_LEGAL`    | ALL   | Kontrakter + sager på tværs — ingen økonomi          |
+| `GROUP_FINANCE`  | ALL   | Økonomi-overblik på tværs — ingen kontrakter         |
+| `GROUP_READONLY` | ALL   | Kun se — typisk revisor eller ekstern rådgiver       |
 
 ### Selskabs-niveau roller
 
-| Rolle | Scope | Beskrivelse |
-|---|---|---|
-| `COMPANY_MANAGER` | ASSIGNED/OWN | Fuld adgang til tildelte selskaber |
-| `COMPANY_LEGAL` | ASSIGNED/OWN | Kontrakter + sager for tildelte selskaber |
-| `COMPANY_READONLY` | ASSIGNED/OWN | Kun se for tildelte selskaber |
+| Rolle              | Scope        | Beskrivelse                               |
+| ------------------ | ------------ | ----------------------------------------- |
+| `COMPANY_MANAGER`  | ASSIGNED/OWN | Fuld adgang til tildelte selskaber        |
+| `COMPANY_LEGAL`    | ASSIGNED/OWN | Kontrakter + sager for tildelte selskaber |
+| `COMPANY_READONLY` | ASSIGNED/OWN | Kun se for tildelte selskaber             |
 
 ### Person/ekstern adgang (fase 2 — ikke MVP)
-| Rolle | Scope | Beskrivelse |
-|---|---|---|
-| `EXTERNAL_PARTNER` | OWN | Tandlæge-medejer ser sin klinik (begrænset) |
-| `EXTERNAL_EMPLOYEE` | OWN | Ansat ser egne dokumenter |
+
+| Rolle               | Scope | Beskrivelse                                 |
+| ------------------- | ----- | ------------------------------------------- |
+| `EXTERNAL_PARTNER`  | OWN   | Tandlæge-medejer ser sin klinik (begrænset) |
+| `EXTERNAL_EMPLOYEE` | OWN   | Ansat ser egne dokumenter                   |
 
 ---
 
@@ -56,13 +59,13 @@ En bruger får adgang til data der er inden for ALLE tre lag på én gang.
 
 Alle records i systemet tildeles ét af disse niveauer:
 
-| Niveau | Kode | Eksempler | Synlig for |
-|---|---|---|---|
+| Niveau             | Kode                | Eksempler                                                          | Synlig for                                  |
+| ------------------ | ------------------- | ------------------------------------------------------------------ | ------------------------------------------- |
 | Strengt fortroligt | `STRENGT_FORTROLIG` | Ejeraftale, aktionæroverenskomst, M&A-dokumenter, direktørkontrakt | `GROUP_OWNER`, `GROUP_ADMIN`, `GROUP_LEGAL` |
-| Fortroligt | `FORTROLIG` | Bestyrelsesreferater, økonominøgletal | Alle gruppe-roller + `COMPANY_MANAGER` |
-| Internt | `INTERN` | Lejekontrakt, leverandøraftaler, sager | Alle med adgang til det pågældende selskab |
-| Normalt | `STANDARD` | Ansættelseskontrakter, opgaver, kontaktinfo | Alle med selskabsadgang |
-| Offentligt | `PUBLIC` | Stamdata (CVR, adresse, selskabsnavn) | Alle brugere |
+| Fortroligt         | `FORTROLIG`         | Bestyrelsesreferater, økonominøgletal                              | Alle gruppe-roller + `COMPANY_MANAGER`      |
+| Internt            | `INTERN`            | Lejekontrakt, leverandøraftaler, sager                             | Alle med adgang til det pågældende selskab  |
+| Normalt            | `STANDARD`          | Ansættelseskontrakter, opgaver, kontaktinfo                        | Alle med selskabsadgang                     |
+| Offentligt         | `PUBLIC`            | Stamdata (CVR, adresse, selskabsnavn)                              | Alle brugere                                |
 
 ---
 
@@ -88,6 +91,7 @@ COMPANY_READONLY        ❌          ❌       ✅       ✅      ✅
 ## Konkrete eksempler fra tandlægekæden
 
 ### Eksempel A: Juridisk ansvarlig i gruppen (Philip)
+
 ```
 Rolle:  GROUP_LEGAL
 Scope:  ALL
@@ -98,6 +102,7 @@ Ser ikke: Økonomi-nøgletal (hører under GROUP_FINANCE)
 ```
 
 ### Eksempel B: CFO / økonomiansvarlig
+
 ```
 Rolle:  GROUP_FINANCE
 Scope:  ALL
@@ -107,6 +112,7 @@ Ser ikke: Ejeraftaler, direktørkontrakter, M&A-dokumenter (STRENGT_FORTROLIG)
 ```
 
 ### Eksempel C: Klinikchef (ansvarlig for 2 klinikker)
+
 ```
 Rolle:  COMPANY_MANAGER
 Scope:  ASSIGNED (Klinik Østerbro + Klinik Aarhus)
@@ -116,6 +122,7 @@ Ser ikke: Ejeraftaler, andre klinikers data
 ```
 
 ### Eksempel D: Ekstern revisor
+
 ```
 Rolle:  GROUP_READONLY
 Scope:  ALL

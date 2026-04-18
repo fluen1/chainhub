@@ -33,7 +33,9 @@ describe('AlertBanner', () => {
   })
 
   it('action-link peger paa actionHref', () => {
-    render(<AlertBanner severity="critical" title="t" sub="s" actionLabel="Go" actionHref="/cases/123" />)
+    render(
+      <AlertBanner severity="critical" title="t" sub="s" actionLabel="Go" actionHref="/cases/123" />
+    )
     const link = screen.getByRole('link', { name: 'Go' })
     expect(link).toHaveAttribute('href', '/cases/123')
   })

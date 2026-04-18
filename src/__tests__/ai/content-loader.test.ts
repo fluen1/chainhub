@@ -48,16 +48,12 @@ describe('content-loader', () => {
 
     it('throws ContentLoaderError for unsupported file types', async () => {
       const textBuffer = Buffer.from('plain text, not a supported file')
-      await expect(
-        loadForExtraction(textBuffer, 'note.txt'),
-      ).rejects.toThrow(ContentLoaderError)
+      await expect(loadForExtraction(textBuffer, 'note.txt')).rejects.toThrow(ContentLoaderError)
     })
 
     it('throws ContentLoaderError for files over 50 MB', async () => {
       const hugeBuffer = Buffer.alloc(51 * 1024 * 1024)
-      await expect(
-        loadForExtraction(hugeBuffer, 'huge.pdf'),
-      ).rejects.toThrow(ContentLoaderError)
+      await expect(loadForExtraction(hugeBuffer, 'huge.pdf')).rejects.toThrow(ContentLoaderError)
     })
   })
 })

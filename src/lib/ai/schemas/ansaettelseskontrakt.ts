@@ -5,7 +5,7 @@ import { registerSchema } from './registry'
 // Hjælpefunktion til at wrappe et felt i ExtractedFieldValue-struktur
 function extractedField(
   description: string,
-  valueSchema: Record<string, unknown>,
+  valueSchema: Record<string, unknown>
 ): Record<string, unknown> {
   return {
     type: 'object' as const,
@@ -43,35 +43,32 @@ const ansaettelseskontraktSchema: ContractSchema = {
     input_schema: {
       type: 'object',
       properties: {
-        employee_name: extractedField(
-          'Medarbejderens fulde navn',
-          { type: 'string', description: 'Medarbejderens fulde navn' },
-        ),
+        employee_name: extractedField('Medarbejderens fulde navn', {
+          type: 'string',
+          description: 'Medarbejderens fulde navn',
+        }),
 
-        position_title: extractedField(
-          'Stillingsbetegnelse / jobtitel. Null hvis ikke angivet.',
-          {
-            type: ['string', 'null'] as unknown as 'string',
-            description: 'Stillingsbetegnelse som angivet i kontrakten',
-          },
-        ),
+        position_title: extractedField('Stillingsbetegnelse / jobtitel. Null hvis ikke angivet.', {
+          type: ['string', 'null'] as unknown as 'string',
+          description: 'Stillingsbetegnelse som angivet i kontrakten',
+        }),
 
-        employer_name: extractedField(
-          'Arbejdsgiverens fulde navn (person eller selskab)',
-          { type: 'string', description: 'Arbejdsgiverens fulde navn' },
-        ),
+        employer_name: extractedField('Arbejdsgiverens fulde navn (person eller selskab)', {
+          type: 'string',
+          description: 'Arbejdsgiverens fulde navn',
+        }),
 
-        start_date: extractedField(
-          'Ansættelsens startdato (ISO 8601 format: YYYY-MM-DD)',
-          { type: 'string', description: 'Dato i format YYYY-MM-DD' },
-        ),
+        start_date: extractedField('Ansættelsens startdato (ISO 8601 format: YYYY-MM-DD)', {
+          type: 'string',
+          description: 'Dato i format YYYY-MM-DD',
+        }),
 
         end_date: extractedField(
           'Ansættelsens slutdato ved tidsbegrænset ansættelse (ISO 8601 format: YYYY-MM-DD). Null hvis tidsubestemt.',
           {
             type: ['string', 'null'] as unknown as 'string',
             description: 'Dato i format YYYY-MM-DD, eller null hvis tidsubestemt',
-          },
+          }
         ),
 
         salary_monthly_dkk: extractedField(
@@ -80,7 +77,7 @@ const ansaettelseskontraktSchema: ContractSchema = {
             type: ['number', 'null'] as unknown as 'number',
             description: 'Månedlig grundløn i DKK (positivt tal)',
             minimum: 0,
-          },
+          }
         ),
 
         notice_employee_months: extractedField(
@@ -89,7 +86,7 @@ const ansaettelseskontraktSchema: ContractSchema = {
             type: ['number', 'null'] as unknown as 'number',
             description: 'Opsigelsesvarsel fra medarbejder i måneder',
             minimum: 0,
-          },
+          }
         ),
 
         notice_employer_months: extractedField(
@@ -98,7 +95,7 @@ const ansaettelseskontraktSchema: ContractSchema = {
             type: ['number', 'null'] as unknown as 'number',
             description: 'Opsigelsesvarsel fra arbejdsgiver i måneder',
             minimum: 0,
-          },
+          }
         ),
 
         working_hours_weekly: extractedField(
@@ -108,7 +105,7 @@ const ansaettelseskontraktSchema: ContractSchema = {
             description: 'Ugentlig arbejdstid i timer (0-60)',
             minimum: 0,
             maximum: 60,
-          },
+          }
         ),
 
         vacation_days: extractedField(
@@ -118,7 +115,7 @@ const ansaettelseskontraktSchema: ContractSchema = {
             description: 'Feriedage pr. år (0-60)',
             minimum: 0,
             maximum: 60,
-          },
+          }
         ),
 
         non_compete: extractedField(
@@ -136,7 +133,7 @@ const ansaettelseskontraktSchema: ContractSchema = {
               },
             },
             required: ['present', 'duration_months'],
-          },
+          }
         ),
 
         pension_pct: extractedField(
@@ -146,7 +143,7 @@ const ansaettelseskontraktSchema: ContractSchema = {
             description: 'Pensionsbidrag i procent (0-100)',
             minimum: 0,
             maximum: 100,
-          },
+          }
         ),
 
         ...COMMON_TOOL_PROPERTIES,
@@ -265,7 +262,8 @@ Dokumenter er på dansk. Returner feltværdier på dansk hvor relevant. Enum-væ
 ## Yderligere fund
 Brug additional_findings til at rapportere usædvanlige klausuler, særlige betingelser (bonus, firmabil, aktieoptioner mv.) eller bemærkelsesværdige observationer. Brug extraction_warnings til at rapportere problemer med ekstrationsqualiteten.`,
 
-  user_prompt_prefix: 'Analyser denne ansættelseskontrakt og ekstraher alle felter via extract_ansaettelseskontrakt tool.',
+  user_prompt_prefix:
+    'Analyser denne ansættelseskontrakt og ekstraher alle felter via extract_ansaettelseskontrakt tool.',
 
   extraction_model: 'claude-sonnet-4-20250514',
 
@@ -303,7 +301,8 @@ Brug additional_findings til at rapportere usædvanlige klausuler, særlige beti
     },
     {
       extracted_field: 'non_compete',
-      description: 'Verificér at konkurrenceklausulens varighed er lovlig iht. dansk ret (maks 12 måneder for funktionærer)',
+      description:
+        'Verificér at konkurrenceklausulens varighed er lovlig iht. dansk ret (maks 12 måneder for funktionærer)',
     },
     {
       extracted_field: 'notice_employer_months',

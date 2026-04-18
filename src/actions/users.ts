@@ -43,9 +43,7 @@ export async function getOrganizationUsers(): Promise<ActionResult<UserWithRoles
   }
 }
 
-export async function createUser(
-  input: CreateUserInput
-): Promise<ActionResult<User>> {
+export async function createUser(input: CreateUserInput): Promise<ActionResult<User>> {
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
 
@@ -108,15 +106,18 @@ export async function createUser(
   }
 }
 
-export async function updateUserRole(
-  input: UpdateUserRoleInput
-): Promise<ActionResult<void>> {
+export async function updateUserRole(input: UpdateUserRoleInput): Promise<ActionResult<void>> {
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
 
   const parsed = updateUserRoleSchema.safeParse(input)
   if (!parsed.success) {
-    console.error('updateUserRole validation error:', JSON.stringify(parsed.error.issues), 'input:', JSON.stringify(input))
+    console.error(
+      'updateUserRole validation error:',
+      JSON.stringify(parsed.error.issues),
+      'input:',
+      JSON.stringify(input)
+    )
     return { error: 'Ugyldigt input' }
   }
 
@@ -168,9 +169,7 @@ export async function updateUserRole(
   }
 }
 
-export async function toggleUserActive(
-  userId: string
-): Promise<ActionResult<void>> {
+export async function toggleUserActive(userId: string): Promise<ActionResult<void>> {
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
 

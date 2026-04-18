@@ -10,7 +10,9 @@ export function createClaudeClient(): ClaudeClient {
   if (provider === 'anthropic') {
     const apiKey = process.env.ANTHROPIC_API_KEY
     if (!apiKey) {
-      throw new Error('ANTHROPIC_API_KEY environment variable is required when AI_PROVIDER=anthropic')
+      throw new Error(
+        'ANTHROPIC_API_KEY environment variable is required when AI_PROVIDER=anthropic'
+      )
     }
     return new AnthropicDirectClient(apiKey)
   }

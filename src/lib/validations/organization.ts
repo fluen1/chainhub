@@ -1,10 +1,7 @@
 import { z } from 'zod'
 
 export const updateOrganizationSchema = z.object({
-  name: z
-    .string()
-    .min(1, 'Navn er påkrævet')
-    .max(255, 'Navn kan højst være 255 tegn'),
+  name: z.string().min(1, 'Navn er påkrævet').max(255, 'Navn kan højst være 255 tegn'),
   cvr: z
     .string()
     .trim()

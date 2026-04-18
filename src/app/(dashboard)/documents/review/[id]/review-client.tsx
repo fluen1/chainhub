@@ -151,7 +151,10 @@ function AttentionFieldRow({
   const [isPending, startTransition] = useTransition()
   const isMissingClause = field.discrepancyType === 'missing_clause'
 
-  function decide(decision: 'use_ai' | 'keep_existing' | 'manual' | 'accept_missing' | 'add_manual', label: string) {
+  function decide(
+    decision: 'use_ai' | 'keep_existing' | 'manual' | 'accept_missing' | 'add_manual',
+    label: string
+  ) {
     startTransition(async () => {
       const result = await saveFieldDecision({
         extractionId,
@@ -175,16 +178,20 @@ function AttentionFieldRow({
       className={cn(
         'px-5 py-3.5 border-b border-slate-100 last:border-b-0 transition-colors',
         decided && 'bg-emerald-50/30',
-        isHovered ? 'bg-amber-50' : !decided && 'hover:bg-slate-50/60',
+        isHovered ? 'bg-amber-50' : !decided && 'hover:bg-slate-50/60'
       )}
       onMouseEnter={() => onMouseEnter(field.id)}
       onMouseLeave={onMouseLeave}
     >
       {/* Label + konfidence */}
       <div className="flex items-center gap-2 mb-2">
-        <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', confidenceDot(field.confidenceLevel))} />
+        <span
+          className={cn('w-1.5 h-1.5 rounded-full shrink-0', confidenceDot(field.confidenceLevel))}
+        />
         <span className="text-[12px] font-semibold text-slate-900">{field.fieldLabel}</span>
-        <span className="text-[10px] text-slate-400 tabular-nums">{confidenceLabel(field.confidence)} konfidence</span>
+        <span className="text-[10px] text-slate-400 tabular-nums">
+          {confidenceLabel(field.confidence)} konfidence
+        </span>
         {decided && (
           <span className="ml-auto flex items-center gap-1 text-[10px] font-medium text-emerald-600">
             <CheckCircle2 className="w-3 h-3" />
@@ -204,7 +211,9 @@ function AttentionFieldRow({
           </div>
           <div className="flex items-start gap-2">
             <span className="text-[11px] text-slate-400 w-20 shrink-0 pt-0.5">I systemet:</span>
-            <span className="text-[11px] text-slate-600">{field.existingValue ?? '(ikke registreret)'}</span>
+            <span className="text-[11px] text-slate-600">
+              {field.existingValue ?? '(ikke registreret)'}
+            </span>
           </div>
         </div>
       )}
@@ -278,15 +287,19 @@ function HighConfidenceRow({
     <div
       className={cn(
         'flex items-center gap-2.5 px-5 py-2 border-b border-slate-50 last:border-b-0 transition-colors',
-        isHovered ? 'bg-amber-50' : 'hover:bg-slate-50/60',
+        isHovered ? 'bg-amber-50' : 'hover:bg-slate-50/60'
       )}
       onMouseEnter={() => onMouseEnter(field.id)}
       onMouseLeave={onMouseLeave}
     >
       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-      <span className="text-[11px] font-medium text-slate-700 w-32 shrink-0 truncate">{field.fieldLabel}</span>
+      <span className="text-[11px] font-medium text-slate-700 w-32 shrink-0 truncate">
+        {field.fieldLabel}
+      </span>
       <span className="text-[11px] text-slate-500 flex-1 truncate">{field.extractedValue}</span>
-      <span className="text-[10px] text-slate-300 shrink-0 tabular-nums">s.{field.sourcePageNumber}</span>
+      <span className="text-[10px] text-slate-300 shrink-0 tabular-nums">
+        s.{field.sourcePageNumber}
+      </span>
     </div>
   )
 }
@@ -298,9 +311,7 @@ export default function ReviewClient({ document: doc, reviewQueue }: ReviewClien
   const router = useRouter()
   const [hoveredFieldId, setHoveredFieldId] = useState<string | null>(null)
   const [showHighConf, setShowHighConf] = useState(true)
-  const [decidedIds, setDecidedIds] = useState<Set<string>>(
-    () => new Set(doc.decidedFieldNames)
-  )
+  const [decidedIds, setDecidedIds] = useState<Set<string>>(() => new Set(doc.decidedFieldNames))
   const [isApproving, startApprove] = useTransition()
 
   function markDecided(fieldId: string) {
@@ -380,14 +391,16 @@ export default function ReviewClient({ document: doc, reviewQueue }: ReviewClien
   }
 
   const { fields } = doc
-  const highConfidenceFields = fields.filter((f) => f.confidenceLevel === 'high' && !f.hasDiscrepancy)
+  const highConfidenceFields = fields.filter(
+    (f) => f.confidenceLevel === 'high' && !f.hasDiscrepancy
+  )
   const attentionFields = fields.filter((f) => f.hasDiscrepancy || f.confidenceLevel !== 'high')
   const missingClauseFields = fields.filter((f) => f.discrepancyType === 'missing_clause')
   const totalReady = highConfidenceFields.length
   const totalFields = fields.length
 
   const hoveredSourceText = hoveredFieldId
-    ? fields.find((f) => f.id === hoveredFieldId)?.sourceText ?? null
+    ? (fields.find((f) => f.id === hoveredFieldId)?.sourceText ?? null)
     : null
 
   const totalNeedsDecision = attentionFields.length
@@ -413,7 +426,7 @@ export default function ReviewClient({ document: doc, reviewQueue }: ReviewClien
     if (hasUnsaved) {
       const remaining = totalNeedsDecision - decidedCount
       const ok = window.confirm(
-        `Du har ${remaining} ubehandlede felter på dette dokument.\n\nFortsæt uden at færdiggøre? Dine fremskridt gemmes, men review er ikke fuldført.`,
+        `Du har ${remaining} ubehandlede felter på dette dokument.\n\nFortsæt uden at færdiggøre? Dine fremskridt gemmes, men review er ikke fuldført.`
       )
       if (!ok) return
     }
@@ -440,7 +453,9 @@ export default function ReviewClient({ document: doc, reviewQueue }: ReviewClien
         <div className="bg-white rounded-xl ring-1 ring-slate-900/[0.06] shadow-[0_1px_2px_rgba(15,23,42,0.04)] p-5 mb-4">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
-              <h1 className="text-[18px] font-semibold tracking-tight text-slate-900 truncate">{doc.fileName}</h1>
+              <h1 className="text-[18px] font-semibold tracking-tight text-slate-900 truncate">
+                {doc.fileName}
+              </h1>
               <div className="flex items-center gap-3 text-[12px] text-slate-500 mt-1">
                 <span>{doc.companyName}</span>
                 <span>·</span>
@@ -449,21 +464,29 @@ export default function ReviewClient({ document: doc, reviewQueue }: ReviewClien
                   AI-ekstraheret
                 </span>
                 <span>·</span>
-                <span className="tabular-nums">{totalReady}/{totalFields} auto-klar</span>
+                <span className="tabular-nums">
+                  {totalReady}/{totalFields} auto-klar
+                </span>
               </div>
             </div>
 
             {/* Queue progress */}
             {reviewQueue.length > 1 && currentIndex >= 0 && (
               <div className="shrink-0 text-right">
-                <div className="text-[10px] font-medium text-slate-400 uppercase tracking-[0.08em]">Review-kø</div>
+                <div className="text-[10px] font-medium text-slate-400 uppercase tracking-[0.08em]">
+                  Review-kø
+                </div>
                 <div className="flex items-center gap-1.5 mt-1.5 justify-end">
                   {reviewQueue.map((_, i) => (
                     <span
                       key={i}
                       className={cn(
                         'h-1 rounded-full transition-all',
-                        i === currentIndex ? 'bg-slate-900 w-6' : i < currentIndex ? 'bg-slate-300 w-3' : 'bg-slate-200 w-3',
+                        i === currentIndex
+                          ? 'bg-slate-900 w-6'
+                          : i < currentIndex
+                            ? 'bg-slate-300 w-3'
+                            : 'bg-slate-200 w-3'
                       )}
                     />
                   ))}
@@ -481,14 +504,19 @@ export default function ReviewClient({ document: doc, reviewQueue }: ReviewClien
           {/* === LEFT: Mock PDF preview === */}
           <div className="bg-white rounded-xl ring-1 ring-slate-900/[0.06] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col [overflow:clip]">
             <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100">
-              <span className="text-[11px] font-medium text-slate-500 truncate">{doc.fileName}</span>
-              <span className="text-[11px] text-slate-400 shrink-0 ml-2 tabular-nums">Side 1 af 12</span>
+              <span className="text-[11px] font-medium text-slate-500 truncate">
+                {doc.fileName}
+              </span>
+              <span className="text-[11px] text-slate-400 shrink-0 ml-2 tabular-nums">
+                Side 1 af 12
+              </span>
             </div>
             <div className="flex-1 overflow-y-auto bg-slate-50/40 p-6">
               <div className="bg-white rounded-lg ring-1 ring-slate-200/60 shadow-sm px-10 py-10 space-y-7 text-[13px] leading-relaxed text-slate-700 max-w-[640px] mx-auto">
                 {mockPdfBlocks.map((block) => {
                   const isHighlighted =
-                    hoveredSourceText !== null && block.text.includes(hoveredSourceText.slice(0, 20))
+                    hoveredSourceText !== null &&
+                    block.text.includes(hoveredSourceText.slice(0, 20))
                   return (
                     <div key={block.id}>
                       <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.1em] mb-1.5">
@@ -497,7 +525,7 @@ export default function ReviewClient({ document: doc, reviewQueue }: ReviewClien
                       <p
                         className={cn(
                           'transition-all rounded px-1.5 -mx-1.5 py-0.5',
-                          isHighlighted && 'bg-amber-200/70 ring-1 ring-amber-300',
+                          isHighlighted && 'bg-amber-200/70 ring-1 ring-amber-300'
                         )}
                       >
                         {block.text}
@@ -518,7 +546,9 @@ export default function ReviewClient({ document: doc, reviewQueue }: ReviewClien
                 </div>
                 <span className="text-[12px] font-semibold text-slate-900">AI-ekstraktion</span>
               </div>
-              <p className="text-[10px] text-slate-400 mt-1 ml-8">Hover et felt for at se det i dokumentet</p>
+              <p className="text-[10px] text-slate-400 mt-1 ml-8">
+                Hover et felt for at se det i dokumentet
+              </p>
             </div>
 
             {/* Scrollable sections */}
@@ -528,7 +558,9 @@ export default function ReviewClient({ document: doc, reviewQueue }: ReviewClien
                 <div>
                   <div className="px-5 py-2.5 border-b border-slate-100 flex items-center gap-2 bg-amber-50/30">
                     <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
-                    <span className="text-[11px] font-semibold text-slate-900">Kræver opmærksomhed</span>
+                    <span className="text-[11px] font-semibold text-slate-900">
+                      Kræver opmærksomhed
+                    </span>
                     <span className="text-[10px] text-slate-400">({attentionFields.length})</span>
                   </div>
                   {attentionFields
@@ -553,8 +585,12 @@ export default function ReviewClient({ document: doc, reviewQueue }: ReviewClien
                 <div>
                   <div className="px-5 py-2.5 border-b border-slate-100 flex items-center gap-2 bg-rose-50/30">
                     <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
-                    <span className="text-[11px] font-semibold text-slate-900">Manglende klausuler</span>
-                    <span className="text-[10px] text-slate-400">({missingClauseFields.length})</span>
+                    <span className="text-[11px] font-semibold text-slate-900">
+                      Manglende klausuler
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      ({missingClauseFields.length})
+                    </span>
                   </div>
                   {missingClauseFields.map((field) => {
                     const isDecided = decidedIds.has(field.id)
@@ -580,9 +616,18 @@ export default function ReviewClient({ document: doc, reviewQueue }: ReviewClien
                     className="w-full px-5 py-2.5 border-b border-slate-100 flex items-center gap-2 bg-emerald-50/20 hover:bg-emerald-50/40 transition-colors text-left"
                   >
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                    <span className="text-[11px] font-semibold text-slate-900">Høj konfidence · auto-godkendt</span>
-                    <span className="text-[10px] text-slate-400">({highConfidenceFields.length})</span>
-                    <ChevronDown className={cn('w-3.5 h-3.5 text-slate-400 ml-auto transition-transform', showHighConf && 'rotate-180')} />
+                    <span className="text-[11px] font-semibold text-slate-900">
+                      Høj konfidence · auto-godkendt
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      ({highConfidenceFields.length})
+                    </span>
+                    <ChevronDown
+                      className={cn(
+                        'w-3.5 h-3.5 text-slate-400 ml-auto transition-transform',
+                        showHighConf && 'rotate-180'
+                      )}
+                    />
                   </button>
                   {showHighConf && (
                     <div>
@@ -623,7 +668,7 @@ export default function ReviewClient({ document: doc, reviewQueue }: ReviewClien
                     <div
                       className={cn(
                         'h-full rounded-full transition-all duration-300',
-                        allDecided ? 'bg-emerald-500' : 'bg-slate-900',
+                        allDecided ? 'bg-emerald-500' : 'bg-slate-900'
                       )}
                       style={{ width: `${progressPct}%` }}
                     />
@@ -651,7 +696,7 @@ export default function ReviewClient({ document: doc, reviewQueue }: ReviewClien
                       'text-[12px] font-medium px-3.5 py-1.5 rounded-md transition-colors',
                       allDecided && !isApproving
                         ? 'bg-slate-900 text-white hover:bg-slate-800'
-                        : 'bg-slate-100 text-slate-400 cursor-not-allowed',
+                        : 'bg-slate-100 text-slate-400 cursor-not-allowed'
                     )}
                   >
                     {isApproving ? 'Godkender...' : 'Godkend'}
@@ -718,7 +763,7 @@ function MissingClauseRow({
     <div
       className={cn(
         'px-5 py-3.5 border-b border-slate-100 last:border-b-0',
-        isDecided && 'bg-emerald-50/30',
+        isDecided && 'bg-emerald-50/30'
       )}
     >
       <div className="flex items-start gap-2">

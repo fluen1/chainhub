@@ -29,7 +29,11 @@ function formatRelativeDate(iso: string): string {
   if (hours < 24) return `${hours} time${hours === 1 ? '' : 'r'} siden`
   const days = Math.floor(hours / 24)
   if (days < 7) return `${days} dag${days === 1 ? '' : 'e'} siden`
-  return new Date(iso).toLocaleDateString('da-DK', { day: 'numeric', month: 'short', year: 'numeric' })
+  return new Date(iso).toLocaleDateString('da-DK', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
 }
 
 export function CommentSection({ taskId, comments, currentUserId }: CommentSectionProps) {
@@ -66,9 +70,7 @@ export function CommentSection({ taskId, comments, currentUserId }: CommentSecti
     <div>
       <div className="mb-4 flex items-center gap-2">
         <MessageSquare className="h-4 w-4 text-gray-400" />
-        <h2 className="text-sm font-semibold text-gray-900">
-          Kommentarer ({comments.length})
-        </h2>
+        <h2 className="text-sm font-semibold text-gray-900">Kommentarer ({comments.length})</h2>
       </div>
 
       {/* New comment form */}
@@ -100,7 +102,12 @@ export function CommentSection({ taskId, comments, currentUserId }: CommentSecti
         <div className="space-y-3">
           {comments.map((c) => {
             const isOwn = c.authorId === currentUserId
-            const initials = c.authorName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
+            const initials = c.authorName
+              .split(' ')
+              .map((n) => n[0])
+              .join('')
+              .toUpperCase()
+              .slice(0, 2)
 
             return (
               <div key={c.id} className="rounded-xl border border-gray-200 bg-white p-4">
@@ -112,7 +119,9 @@ export function CommentSection({ taskId, comments, currentUserId }: CommentSecti
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-gray-900">{c.authorName}</span>
-                        <span className="text-xs text-gray-400">{formatRelativeDate(c.createdAt)}</span>
+                        <span className="text-xs text-gray-400">
+                          {formatRelativeDate(c.createdAt)}
+                        </span>
                       </div>
                       {isOwn && (
                         <button
@@ -122,7 +131,11 @@ export function CommentSection({ taskId, comments, currentUserId }: CommentSecti
                           className="p-1 text-gray-300 transition-colors hover:text-red-500"
                           aria-label="Slet kommentar"
                         >
-                          {deletingId === c.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                          {deletingId === c.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3.5 w-3.5" />
+                          )}
                         </button>
                       )}
                     </div>

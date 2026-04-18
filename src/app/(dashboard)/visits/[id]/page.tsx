@@ -4,11 +4,7 @@ import { prisma } from '@/lib/db'
 import { canAccessCompany } from '@/lib/permissions'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
-import {
-  getVisitTypeLabel,
-  getVisitStatusLabel,
-  getVisitStatusStyle,
-} from '@/lib/labels'
+import { getVisitTypeLabel, getVisitStatusLabel, getVisitStatusStyle } from '@/lib/labels'
 import { VisitStatusForm } from '@/components/visits/VisitStatusForm'
 import { VisitNotesForm } from '@/components/visits/VisitNotesForm'
 
@@ -45,9 +41,7 @@ export default async function VisitDetailPage({ params }: Props) {
         </Link>
         <div className="flex-1">
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl font-bold text-gray-900">
-              Besøg hos {visit.company.name}
-            </h1>
+            <h1 className="text-2xl font-bold text-gray-900">Besøg hos {visit.company.name}</h1>
             <span
               className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getVisitStatusStyle(visit.status)}`}
             >
@@ -70,9 +64,7 @@ export default async function VisitDetailPage({ params }: Props) {
         <div className="lg:col-span-2 space-y-6">
           {/* Besøgsdetaljer */}
           <div className="rounded-lg border bg-white p-6 shadow-sm">
-            <h2 className="text-base font-semibold text-gray-900 mb-4">
-              Besøgsdetaljer
-            </h2>
+            <h2 className="text-base font-semibold text-gray-900 mb-4">Besøgsdetaljer</h2>
             <dl className="grid grid-cols-2 gap-4">
               <div>
                 <dt className="text-sm font-medium text-gray-500">Selskab</dt>
@@ -86,9 +78,7 @@ export default async function VisitDetailPage({ params }: Props) {
                 </dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">
-                  Besøgsdato
-                </dt>
+                <dt className="text-sm font-medium text-gray-500">Besøgsdato</dt>
                 <dd className="mt-1 text-sm text-gray-900">
                   {new Date(visit.visit_date).toLocaleDateString('da-DK')}
                 </dd>
@@ -100,12 +90,8 @@ export default async function VisitDetailPage({ params }: Props) {
                 </dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">
-                  Besøgt af
-                </dt>
-                <dd className="mt-1 text-sm text-gray-900">
-                  {visit.visitor.name}
-                </dd>
+                <dt className="text-sm font-medium text-gray-500">Besøgt af</dt>
+                <dd className="mt-1 text-sm text-gray-900">{visit.visitor.name}</dd>
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-500">Oprettet</dt>
@@ -127,15 +113,10 @@ export default async function VisitDetailPage({ params }: Props) {
 
         {/* Side-panel */}
         <div className="space-y-6">
-          <VisitStatusForm
-            visitId={visit.id}
-            currentStatus={visit.status}
-          />
+          <VisitStatusForm visitId={visit.id} currentStatus={visit.status} />
 
           <div className="rounded-lg border bg-white p-4 shadow-sm">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">
-              Hurtige handlinger
-            </h3>
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">Hurtige handlinger</h3>
             <div className="space-y-2">
               <Link
                 href={`/companies/${visit.company.id}`}

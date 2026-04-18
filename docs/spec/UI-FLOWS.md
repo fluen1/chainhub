@@ -1,5 +1,7 @@
 # UI-FLOWS.md
+
 # ChainHub — Brugerflows pr. modul
+
 **Version:** 0.3 — QA-rettet
 **Vedligeholdes af:** Philip
 **Afhænger af:** kravspec-legalhub.md, ROLLER-OG-TILLADELSER.md, DATABASE-SCHEMA.md
@@ -98,19 +100,19 @@ Trin 4 — Tilslut Microsoft 365 (valgfrit)
 ```
 Trin 5 — Opret første selskab (guidet wizard)
   Skærmbillede:  3-trins wizard: Stamdata → Ejerskab → Governance
-  
+
   Trin 5a — Stamdata
     Felter:      Selskabsnavn, CVR, selskabsform (ApS/A/S/I/S)
                  Adresse (gade, postnr, by)
                  Stiftelsesdato, regnskabsår-start (måned)
                  Status (default: Aktiv)
     System:      CVR-opslag (valgfrit — hent data fra CVR-API hvis tilgængeligt)
-  
+
   Trin 5b — Ejerskab
     Felter:      Tilføj ejer: søg person i systemet ELLER opret ny
                  Pr. ejer: ejerandel %, ejertype (person/selskab), dato for erhvervelse
     Validering:  Advar hvis total ejerandel ≠ 100 % (ikke blokerende — kan gemmes)
-  
+
   Trin 5c — Governance
     Felter:      Direktør: søg/opret person + startdato
                  Bestyrelsesformand: søg/opret person + startdato (valgfrit)
@@ -271,7 +273,7 @@ Siden har seks faner: **Stamdata · Ejerskab · Governance · Ansatte · Dokumen
 
 ```
 Trin 1 — Formular (slide-over)
-  Felter:        Selskabsnavn* 
+  Felter:        Selskabsnavn*
                  CVR* (8 cifre)
                  Selskabsform* (ApS / A/S / I/S / Holding ApS / Andet)
                  Adresse (gade*, postnr*, by*)
@@ -401,7 +403,7 @@ Trin 2 — Tilføj ansat
 
 Trin 3 — Registrér fratræden
   Handling:      Klik [Registrér fratræden] på ansat
-  Formular:      Slutdato * 
+  Formular:      Slutdato *
   System:        Sæt Employment.end_date
                  Status ændres automatisk til "Fratrådt"
                  Aktivitetslog
@@ -546,7 +548,7 @@ Trin 3 — Parter og underskrivere (trin 3/3)
 Skærmbillede:  Header: Titel + status-badge + type
                Panel venstre: Stamdata (alle felter fra opret)
                Panel højre: Relaterede records (parter, underskrivere, sag, dokument)
-               
+
 Faner:         Detaljer | Dokumenter | Versionshistorik | Aktivitetslog
 ```
 
@@ -778,7 +780,7 @@ Fil-liste:     Navn | Type | Upload-dato | Uploadet af | Størrelse | Tilknytnin
 
 ```
 Trigger:       Klik "Upload" (eller drag-and-drop til mappe)
-Dialog:        Vælg mappe * 
+Dialog:        Vælg mappe *
                Fil * (PDF / DOCX / XLSX — max 50 MB)
                Tilknyt til: Kontrakt / Sag / Person (valgfrit)
                Sensitivitetsniveau (default: INTERN)
@@ -994,6 +996,7 @@ Principet bag valget:
 ### Tomme tilstande (empty states)
 
 Alle lister og tabeller har en tom tilstand med:
+
 - Ikon + kort beskrivelse
 - Primær CTA: opret-knap (hvis bruger har adgang) ELLER "Kontakt din administrator"
 
@@ -1115,4 +1118,4 @@ v0.1:
   Første udkast
 ```
 
-*UI-FLOWS.md v0.3 — QA-rettet.*
+_UI-FLOWS.md v0.3 — QA-rettet._

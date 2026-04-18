@@ -4,9 +4,28 @@ import { CalendarWidget } from '@/components/ui/calendar-widget'
 import type { CalendarEvent } from '@/types/ui'
 
 const events: CalendarEvent[] = [
-  { id: 'e1', date: '2026-04-11', title: 'Udløb lejekontrakt', subtitle: 'Tandlæge Østerbro', type: 'expiry' },
-  { id: 'e2', date: '2026-04-15', title: 'Bestyrelsesmøde', subtitle: 'TandlægeGruppen', type: 'meeting' },
-  { id: 'e3', date: '2026-04-20', title: 'Sagsfrist', subtitle: 'Lejeforhandling', type: 'deadline', aiExtracted: true },
+  {
+    id: 'e1',
+    date: '2026-04-11',
+    title: 'Udløb lejekontrakt',
+    subtitle: 'Tandlæge Østerbro',
+    type: 'expiry',
+  },
+  {
+    id: 'e2',
+    date: '2026-04-15',
+    title: 'Bestyrelsesmøde',
+    subtitle: 'TandlægeGruppen',
+    type: 'meeting',
+  },
+  {
+    id: 'e3',
+    date: '2026-04-20',
+    title: 'Sagsfrist',
+    subtitle: 'Lejeforhandling',
+    type: 'deadline',
+    aiExtracted: true,
+  },
 ]
 
 const upcoming: CalendarEvent[] = [events[0], events[1]]
@@ -51,7 +70,14 @@ describe('CalendarWidget', () => {
   })
 
   it('link peger på fullCalendarHref', () => {
-    render(<CalendarWidget events={events} upcoming={upcoming} today="2026-04-11" fullCalendarHref="/calendar" />)
+    render(
+      <CalendarWidget
+        events={events}
+        upcoming={upcoming}
+        today="2026-04-11"
+        fullCalendarHref="/calendar"
+      />
+    )
     const link = screen.getByRole('link', { name: /Åbn fuld kalender/ })
     expect(link).toHaveAttribute('href', '/calendar')
   })

@@ -89,9 +89,7 @@ export async function getOverdueTasks(
     id: t.id,
     title: t.title,
     dueDate: t.due_date!,
-    daysOverdue: Math.ceil(
-      (today.getTime() - t.due_date!.getTime()) / (1000 * 60 * 60 * 24)
-    ),
+    daysOverdue: Math.ceil((today.getTime() - t.due_date!.getTime()) / (1000 * 60 * 60 * 24)),
     caseTitle: t.case?.title ?? null,
   }))
 }
@@ -120,9 +118,7 @@ export async function getUpcomingTasks(
     id: t.id,
     title: t.title,
     dueDate: t.due_date!,
-    daysUntilDue: Math.ceil(
-      (t.due_date!.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-    ),
+    daysUntilDue: Math.ceil((t.due_date!.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)),
     caseTitle: t.case?.title ?? null,
   }))
 }

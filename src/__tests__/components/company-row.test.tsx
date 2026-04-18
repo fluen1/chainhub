@@ -21,7 +21,10 @@ describe('CompanyRow', () => {
   it('viser status badge med grøn farve for ok', () => {
     render(
       <CompanyRow
-        initials="X" name="Test" meta="t" avatarColor="#000"
+        initials="X"
+        name="Test"
+        meta="t"
+        avatarColor="#000"
         status={{ label: 'Aktiv', type: 'ok' }}
       />
     )
@@ -31,7 +34,10 @@ describe('CompanyRow', () => {
   it('wrapper i <a> når href er angivet', () => {
     render(
       <CompanyRow
-        initials="X" name="Klikbar" meta="t" avatarColor="#000"
+        initials="X"
+        name="Klikbar"
+        meta="t"
+        avatarColor="#000"
         status={{ label: 'Aktiv', type: 'ok' }}
         href="/companies/123"
       />
@@ -43,7 +49,10 @@ describe('CompanyRow', () => {
   it('anvender avatarColor som inline backgroundColor', () => {
     render(
       <CompanyRow
-        initials="AB" name="T" meta="t" avatarColor="#ef4444"
+        initials="AB"
+        name="T"
+        meta="t"
+        avatarColor="#ef4444"
         status={{ label: 'Kritisk', type: 'critical' }}
       />
     )

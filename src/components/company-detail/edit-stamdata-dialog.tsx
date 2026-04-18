@@ -72,11 +72,28 @@ export function EditStamdataDialog({ companyId, initial, disabled }: EditStamdat
           >
             <h2 className="mb-4 text-lg font-bold text-slate-900">Rediger stamdata</h2>
             <div className="space-y-3">
-              <Field label="Navn" value={form.name} onChange={(v) => setForm({ ...form, name: v })} />
-              <Field label="CVR" value={form.cvr} onChange={(v) => setForm({ ...form, cvr: v })} placeholder="8 cifre" />
-              <Field label="Adresse" value={form.address} onChange={(v) => setForm({ ...form, address: v })} />
+              <Field
+                label="Navn"
+                value={form.name}
+                onChange={(v) => setForm({ ...form, name: v })}
+              />
+              <Field
+                label="CVR"
+                value={form.cvr}
+                onChange={(v) => setForm({ ...form, cvr: v })}
+                placeholder="8 cifre"
+              />
+              <Field
+                label="Adresse"
+                value={form.address}
+                onChange={(v) => setForm({ ...form, address: v })}
+              />
               <Field label="By" value={form.city} onChange={(v) => setForm({ ...form, city: v })} />
-              <Field label="Postnummer" value={form.postal_code} onChange={(v) => setForm({ ...form, postal_code: v })} />
+              <Field
+                label="Postnummer"
+                value={form.postal_code}
+                onChange={(v) => setForm({ ...form, postal_code: v })}
+              />
               <Field
                 label="Stiftelsesdato"
                 type="date"

@@ -3,10 +3,7 @@
 import { prisma } from '@/lib/db'
 import { getAccessibleCompanies } from '@/lib/permissions'
 import { formatMio } from '@/lib/labels'
-import type {
-  InlineKpi,
-  SidebarBadge,
-} from '@/types/ui'
+import type { InlineKpi, SidebarBadge } from '@/types/ui'
 
 // ---------------------------------------------------------------
 // Typer
@@ -89,9 +86,8 @@ export async function getDashboardData(
 
   const role =
     roleRows.length > 0
-      ? [...roleRows].sort(
-          (a, b) => (ROLE_PRIORITY[b.role] ?? 0) - (ROLE_PRIORITY[a.role] ?? 0)
-        )[0].role
+      ? [...roleRows].sort((a, b) => (ROLE_PRIORITY[b.role] ?? 0) - (ROLE_PRIORITY[a.role] ?? 0))[0]
+          .role
       : 'GROUP_READONLY'
   const today = new Date()
   const weekEnd = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
@@ -302,9 +298,13 @@ export async function getDashboardData(
   // Byg badges
   const badges: Record<string, SidebarBadge | null> = {
     dashboard: null,
-    calendar: upcomingVisits.length > 0 ? { count: upcomingVisits.length, urgency: 'neutral' } : null,
+    calendar:
+      upcomingVisits.length > 0 ? { count: upcomingVisits.length, urgency: 'neutral' } : null,
     portfolio: companies.length > 0 ? { count: companies.length, urgency: 'neutral' } : null,
-    contracts: expiringContracts.length > 0 ? { count: expiringContracts.length, urgency: 'critical' } : null,
+    contracts:
+      expiringContracts.length > 0
+        ? { count: expiringContracts.length, urgency: 'critical' }
+        : null,
     cases: openCases.length > 0 ? { count: openCases.length, urgency: 'neutral' } : null,
     tasks: overdueTasksCount > 0 ? { count: overdueTasksCount, urgency: 'critical' } : null,
     documents: documentsCount > 0 ? { count: documentsCount, urgency: 'neutral' } : null,
@@ -408,7 +408,12 @@ export async function getDashboardData(
 // ---------------------------------------------------------------
 
 function filterLatestPerCompany(
-  rows: Array<{ company_id: string; metric_type: string; value: { toString(): string } | number; period_year: number }>
+  rows: Array<{
+    company_id: string
+    metric_type: string
+    value: { toString(): string } | number
+    period_year: number
+  }>
 ) {
   const seen = new Set<string>()
   return rows.filter((r) => {
@@ -452,9 +457,17 @@ function buildInlineKpis(
 ): InlineKpi[] {
   if (role === 'GROUP_LEGAL') {
     return [
-      { label: 'Udløbende', value: String(data.expiringCount), color: data.expiringCount > 0 ? 'amber' : undefined },
+      {
+        label: 'Udløbende',
+        value: String(data.expiringCount),
+        color: data.expiringCount > 0 ? 'amber' : undefined,
+      },
       { label: 'Sager', value: String(data.openCasesCount) },
-      { label: 'Forfaldne', value: String(data.overdueCount), color: data.overdueCount > 0 ? 'red' : undefined },
+      {
+        label: 'Forfaldne',
+        value: String(data.overdueCount),
+        color: data.overdueCount > 0 ? 'red' : undefined,
+      },
     ]
   }
   if (role === 'GROUP_FINANCE') {
@@ -462,15 +475,27 @@ function buildInlineKpis(
       { label: 'Omsætning', value: `${formatMio(data.omsaetningTotal)}m` },
       { label: 'EBITDA', value: `${formatMio(data.ebitdaTotal)}m` },
       { label: 'Margin', value: `${(data.margin * 100).toFixed(1)}%` },
-      { label: 'Forfaldne', value: String(data.overdueCount), color: data.overdueCount > 0 ? 'red' : undefined },
+      {
+        label: 'Forfaldne',
+        value: String(data.overdueCount),
+        color: data.overdueCount > 0 ? 'red' : undefined,
+      },
     ]
   }
   // GROUP_OWNER and default
   return [
     { label: 'Selskaber', value: String(data.companiesCount) },
-    { label: 'Udløbende', value: String(data.expiringCount), color: data.expiringCount > 0 ? 'amber' : undefined },
+    {
+      label: 'Udløbende',
+      value: String(data.expiringCount),
+      color: data.expiringCount > 0 ? 'amber' : undefined,
+    },
     { label: 'Sager', value: String(data.openCasesCount) },
-    { label: 'Forfaldne', value: String(data.overdueCount), color: data.overdueCount > 0 ? 'red' : undefined },
+    {
+      label: 'Forfaldne',
+      value: String(data.overdueCount),
+      color: data.overdueCount > 0 ? 'red' : undefined,
+    },
   ]
 }
 
@@ -483,8 +508,18 @@ function relativeDays(from: Date, to: Date): number {
 }
 
 interface TimelineRawData {
-  overdueTasks: Array<{ id: string; title: string; due_date: Date | null; company_id: string | null }>
-  todayAndFutureTasks: Array<{ id: string; title: string; due_date: Date | null; company_id: string | null }>
+  overdueTasks: Array<{
+    id: string
+    title: string
+    due_date: Date | null
+    company_id: string | null
+  }>
+  todayAndFutureTasks: Array<{
+    id: string
+    title: string
+    due_date: Date | null
+    company_id: string | null
+  }>
   expiringContracts: Array<{
     id: string
     display_name: string
@@ -569,7 +604,9 @@ function buildTimelineSections(data: TimelineRawData): TimelineSectionData[] {
   const todayEnd = new Date(today)
   todayEnd.setHours(23, 59, 59, 999)
 
-  for (const v of upcomingVisits.filter((v) => v.visit_date >= todayStart && v.visit_date <= todayEnd).slice(0, 5)) {
+  for (const v of upcomingVisits
+    .filter((v) => v.visit_date >= todayStart && v.visit_date <= todayEnd)
+    .slice(0, 5)) {
     const time = v.visit_date.toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' })
     todayItems.push({
       id: `visit-${v.id}`,
@@ -610,7 +647,9 @@ function buildTimelineSections(data: TimelineRawData): TimelineSectionData[] {
 
   // This week (dag efter i dag → weekEnd)
   const thisweekItems: TimelineItem[] = []
-  for (const v of upcomingVisits.filter((v) => v.visit_date > todayEnd && v.visit_date <= weekEnd).slice(0, 3)) {
+  for (const v of upcomingVisits
+    .filter((v) => v.visit_date > todayEnd && v.visit_date <= weekEnd)
+    .slice(0, 3)) {
     thisweekItems.push({
       id: `visit-week-${v.id}`,
       letter: firstLetter(v.company.name),
@@ -637,7 +676,9 @@ function buildTimelineSections(data: TimelineRawData): TimelineSectionData[] {
 
   // Next week (weekEnd → +7 days)
   const nextweekItems: TimelineItem[] = []
-  for (const c of expiringContracts.filter((c) => c.expiry_date && c.expiry_date > weekEnd).slice(0, 3)) {
+  for (const c of expiringContracts
+    .filter((c) => c.expiry_date && c.expiry_date > weekEnd)
+    .slice(0, 3)) {
     nextweekItems.push({
       id: `contract-next-${c.id}`,
       letter: firstLetter(c.company.name),

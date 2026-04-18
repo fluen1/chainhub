@@ -108,12 +108,8 @@ export function FileUpload({ companyId, caseId, className }: FileUploadProps) {
             <div className="flex items-center gap-3 min-w-0">
               <FileIcon className="h-8 w-8 shrink-0 text-gray-400" />
               <div className="min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
-                  {selectedFile.name}
-                </p>
-                <p className="text-xs text-gray-500">
-                  {formatFileSize(selectedFile.size)}
-                </p>
+                <p className="text-sm font-medium text-gray-900 truncate">{selectedFile.name}</p>
+                <p className="text-xs text-gray-500">{formatFileSize(selectedFile.size)}</p>
               </div>
             </div>
             <button
@@ -133,9 +129,7 @@ export function FileUpload({ companyId, caseId, className }: FileUploadProps) {
             <p className="mt-2 text-sm font-medium text-gray-700">
               Træk fil hertil eller klik for at vælge
             </p>
-            <p className="mt-1 text-xs text-gray-500">
-              PDF, DOCX, PNG eller JPG — maks 10 MB
-            </p>
+            <p className="mt-1 text-xs text-gray-500">PDF, DOCX, PNG eller JPG — maks 10 MB</p>
           </div>
         )}
       </div>

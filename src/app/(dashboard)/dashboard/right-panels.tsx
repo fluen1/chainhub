@@ -42,7 +42,10 @@ export function RightPanels({ data, calendarEvents, upcomingEvents, todayISO }: 
         <Panel title="Nøgletal 2025">
           <FinRow label="Omsætning" value={`${formatMio(data.portfolioTotals.totalOmsaetning)}M`} />
           <FinRow label="EBITDA" value={`${formatMio(data.portfolioTotals.totalEbitda)}M`} />
-          <FinRow label="Margin" value={`${(data.portfolioTotals.avgEbitdaMargin * 100).toFixed(1)}%`} />
+          <FinRow
+            label="Margin"
+            value={`${(data.portfolioTotals.avgEbitdaMargin * 100).toFixed(1)}%`}
+          />
           <FinRow
             label="Underskud lok."
             value={String(data.underperformingCount)}
@@ -71,10 +74,15 @@ export function RightPanels({ data, calendarEvents, upcomingEvents, todayISO }: 
       </Panel>
       <Panel title="Økonomi snapshot">
         {data.portfolioTotals.totalOmsaetning === 0 && data.portfolioTotals.totalEbitda === 0 ? (
-          <p className="text-xs text-gray-400 text-center py-3">Ingen økonomi-data registreret endnu</p>
+          <p className="text-xs text-gray-400 text-center py-3">
+            Ingen økonomi-data registreret endnu
+          </p>
         ) : (
           <>
-            <FinRow label="Omsætning" value={`${formatMio(data.portfolioTotals.totalOmsaetning)}M`} />
+            <FinRow
+              label="Omsætning"
+              value={`${formatMio(data.portfolioTotals.totalOmsaetning)}M`}
+            />
             <FinRow label="EBITDA" value={`${formatMio(data.portfolioTotals.totalEbitda)}M`} />
             <FinRow
               label="Underskud lok."

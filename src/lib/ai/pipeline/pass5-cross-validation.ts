@@ -7,9 +7,12 @@ const log = createLogger('pass5-cross-validation')
 // tracking which will be added when the review UI is wired to real data.
 export async function crossValidate(
   documentId: string,
-  extractedFields: Record<string, { value: unknown }>,
+  extractedFields: Record<string, { value: unknown }>
 ): Promise<CrossValidationResult[]> {
-  log.debug({ document_id: documentId, field_count: Object.keys(extractedFields).length }, 'Cross-validation (stub)')
+  log.debug(
+    { document_id: documentId, field_count: Object.keys(extractedFields).length },
+    'Cross-validation (stub)'
+  )
   // Return empty — no cross-validation in v1 until data provenance tracking is implemented
   return []
 }

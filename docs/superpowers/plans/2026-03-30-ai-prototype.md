@@ -74,6 +74,7 @@ src/
 ```
 
 ### Why `(prototype)` route group?
+
 **VIGTIGT: Next.js route group konflikt.** Både `(dashboard)` og `(prototype)` er route groups uden URL-segment. Det betyder at `/dashboard` ville konflikte mellem `(dashboard)/dashboard/page.tsx` og `(prototype)/dashboard/page.tsx`.
 
 **Loesning:** Prototypen bruger et URL-prefix `/proto/`. Alle prototype-routes lever under `/proto/dashboard`, `/proto/portfolio`, osv. Dette undgaar konflikter med det eksisterende system og goer det tydeligt hvornaar man er i prototype-mode.
@@ -81,6 +82,7 @@ src/
 Alternativt kan den eksisterende `(dashboard)` omdoebes midlertidigt, men det er mere invasivt. URL-prefix er den sikre loesning.
 
 **Opdateret sitemap:**
+
 ```
 /proto/dashboard              — Overblik (rolle-tilpasset)
 /proto/portfolio              — Portefoelje-listen
@@ -100,6 +102,7 @@ Alternativt kan den eksisterende `(dashboard)` omdoebes midlertidigt, men det er
 ## Task 1: Mock Types og Basis-typer
 
 **Files:**
+
 - Create: `src/mock/types.ts`
 
 - [ ] **Step 1: Opret mock types**
@@ -285,6 +288,7 @@ git commit -m "feat(prototype): tilfoej mock types til AI-prototype"
 ## Task 2: Mock Users
 
 **Files:**
+
 - Create: `src/mock/users.ts`
 
 - [ ] **Step 1: Opret mock users**
@@ -357,11 +361,13 @@ git commit -m "feat(prototype): tilfoej mock users med 5 roller"
 ## Task 3: Mock Companies
 
 **Files:**
+
 - Create: `src/mock/companies.ts`
 
 - [ ] **Step 1: Opret 22 mock selskaber med varieret sundhed**
 
 Opret filen `src/mock/companies.ts` med 22 selskaber. Foelgende regler:
+
 - 3 selskaber har `healthStatus: 'critical'` (Odense, Horsens, Viborg) med specifikke `healthReasons`
 - 4 selskaber har `healthStatus: 'warning'` med mildere issues
 - 15 selskaber har `healthStatus: 'healthy'`
@@ -371,6 +377,7 @@ Opret filen `src/mock/companies.ts` med 22 selskaber. Foelgende regler:
 - `contractCount` varierer 4-14, `openCaseCount` 0-3, `employeeCount` 2-8
 
 Eksporter ogsaa:
+
 ```typescript
 export function getCompanies(scenario: DataScenario, companyCount: number): MockCompany[]
 // 'normal' returnerer companyCount selskaber med default sundhed
@@ -396,11 +403,13 @@ git commit -m "feat(prototype): tilfoej 22 mock selskaber med sundhedsstatus"
 ## Task 4: Mock Contracts
 
 **Files:**
+
 - Create: `src/mock/contracts.ts`
 
 - [ ] **Step 1: Opret 142 mock kontrakter**
 
 Opret filen `src/mock/contracts.ts` med kontrakter fordelt paa 22 selskaber. Regler:
+
 - 6 kategorier: Ejerskab, Ansaettelse, Lokaler, Kommercielle, Forsikring, Strukturaftaler
 - Brug `CONTRACT_CATEGORY_MAP` fra `src/lib/labels.ts` til at mappe systemType -> kategori
 - 4 kontrakter har `status: 'UDLOEBET'` med `urgency: 'critical'`
@@ -410,13 +419,25 @@ Opret filen `src/mock/contracts.ts` med kontrakter fordelt paa 22 selskaber. Reg
 - `daysUntilExpiry` beregnes fra mock-datoer
 
 Eksporter:
+
 ```typescript
 export function getContracts(scenario: DataScenario): MockContract[]
 export function getContractsByCompany(companyId: string): MockContract[]
 export function getContractById(id: string): MockContract | undefined
-export function getContractCoverage(): { type: string; typeLabel: string; covered: number; total: number; pct: number }[]
+export function getContractCoverage(): {
+  type: string
+  typeLabel: string
+  covered: number
+  total: number
+  pct: number
+}[]
 export function getExpiringContracts(withinDays: number): MockContract[]
-export function getMissingContracts(): { companyId: string; companyName: string; missingType: string; missingTypeLabel: string }[]
+export function getMissingContracts(): {
+  companyId: string
+  companyName: string
+  missingType: string
+  missingTypeLabel: string
+}[]
 ```
 
 - [ ] **Step 2: Commit**
@@ -431,11 +452,13 @@ git commit -m "feat(prototype): tilfoej 142 mock kontrakter med urgency og daekn
 ## Task 5: Mock Tasks
 
 **Files:**
+
 - Create: `src/mock/tasks.ts`
 
 - [ ] **Step 1: Opret 34 mock opgaver**
 
 Opret `src/mock/tasks.ts` med opgaver. Regler:
+
 - 6 opgaver er forfaldne (`timeGroup: 'overdue'`, `daysUntilDue` negativ)
 - 4 opgaver forfalder denne uge
 - 8 opgaver naeste uge
@@ -447,6 +470,7 @@ Opret `src/mock/tasks.ts` med opgaver. Regler:
 - Prioriteter varierer: 2 KRITISK, 6 HOEJ, 16 MELLEM, 10 LAV
 
 Eksporter:
+
 ```typescript
 export function getTasks(scenario: DataScenario): MockTask[]
 export function getTasksByCompany(companyId: string): MockTask[]
@@ -468,11 +492,13 @@ git commit -m "feat(prototype): tilfoej 34 mock opgaver med tidsgruppering"
 ## Task 6: Mock Documents med AI-ekstraktion
 
 **Files:**
+
 - Create: `src/mock/documents.ts`
 
 - [ ] **Step 1: Opret mock dokumenter og AI-ekstraktioner**
 
 Opret `src/mock/documents.ts`. Regler:
+
 - 47 dokumenter totalt
 - 2 har `status: 'processing'` med `processingStage` og `processingProgress`
 - 2 har `status: 'ready_for_review'` — et med hoej confidence (alle felter >95%), et med 2 felter der kraever opmaarksomhed
@@ -486,6 +512,7 @@ Opret `src/mock/documents.ts`. Regler:
   - Source text referencer (sidenummer, paragraf)
 
 Eksporter:
+
 ```typescript
 export function getDocuments(scenario: DataScenario): MockDocument[]
 export function getDocumentsByCompany(companyId: string): MockDocument[]
@@ -507,11 +534,13 @@ git commit -m "feat(prototype): tilfoej mock dokumenter med AI-ekstraktion felte
 ## Task 7: Mock Financial Data
 
 **Files:**
+
 - Create: `src/mock/financial.ts`
 
 - [ ] **Step 1: Opret mock financial data**
 
 Opret `src/mock/financial.ts` med oekonomi-data for alle 22 selskaber. Regler:
+
 - Data for 2024 og 2025 (2 aar)
 - Odense har EBITDA-fald paa 23% (fra 490K til 380K) — dette bruges i direktoerens dashboard
 - Viborg har omsaetningsfald paa 8%
@@ -519,11 +548,21 @@ Opret `src/mock/financial.ts` med oekonomi-data for alle 22 selskaber. Regler:
 - Beloeb er realistiske for tandklinikker (omsaetning 2-6M, EBITDA 200K-800K)
 
 Eksporter:
+
 ```typescript
 export function getFinancialMetrics(scenario: DataScenario): MockFinancialMetric[]
 export function getFinancialByCompany(companyId: string): MockFinancialMetric[]
-export function getUnderperformingCompanies(): { companyId: string; companyName: string; metric: string; change: number }[]
-export function getPortfolioTotals(year: number): { omsaetning: number; ebitda: number; resultat: number }
+export function getUnderperformingCompanies(): {
+  companyId: string
+  companyName: string
+  metric: string
+  change: number
+}[]
+export function getPortfolioTotals(year: number): {
+  omsaetning: number
+  ebitda: number
+  resultat: number
+}
 ```
 
 - [ ] **Step 2: Commit**
@@ -538,28 +577,31 @@ git commit -m "feat(prototype): tilfoej mock oekonomi-data med trends"
 ## Task 8: Mock Insights (rolle-tilpassede)
 
 **Files:**
+
 - Create: `src/mock/insights.ts`
 
 - [ ] **Step 1: Opret rolle-tilpassede indsigter**
 
 Opret `src/mock/insights.ts`. Regler:
+
 - Maks 2 indsigter per side per rolle (jf. design spec)
 - Hver indsigt har `actionLabel` og `actionHref`
 - Alle indsigter bruger Lucide icon-navne
 
 Indsigter for **Overblik-siden** (`page: 'dashboard'`):
 
-| Rolle | Indsigt 1 | Indsigt 2 |
-|-------|-----------|-----------|
-| GROUP_OWNER | "EBITDA faldet 23% i Odense (Q4-Q1)" → /proto/portfolio/company-odense | "Ejeraftale-fornyelse: Lars Jensen, 6 uger" → /proto/portfolio/company-horsens |
-| GROUP_LEGAL | "4 kontrakter udloebet — vis og planlaeg fornyelse" → /proto/contracts?filter=expired | "Kontraktdaekning: 86% — 3 lokationer mangler" → /proto/contracts?filter=missing |
-| GROUP_FINANCE | "Samlet omsaetning Q1: 48.2M DKK (op 4%)" → /proto/portfolio | "2 lokationer underpraeesterer" → /proto/portfolio?filter=underperforming |
-| GROUP_ADMIN | "6 opgaver er forfaldne" → /proto/tasks?filter=overdue | "Datakvalitet: 3 selskaber med ufuldstaendige stamdata" → /proto/portfolio?filter=incomplete |
-| COMPANY_MANAGER | "2 opgaver forfaldne paa dine lokationer" → /proto/tasks?filter=mine | "Lejekontrakt udloeber om 42 dage" → /proto/contracts |
+| Rolle           | Indsigt 1                                                                             | Indsigt 2                                                                                    |
+| --------------- | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| GROUP_OWNER     | "EBITDA faldet 23% i Odense (Q4-Q1)" → /proto/portfolio/company-odense                | "Ejeraftale-fornyelse: Lars Jensen, 6 uger" → /proto/portfolio/company-horsens               |
+| GROUP_LEGAL     | "4 kontrakter udloebet — vis og planlaeg fornyelse" → /proto/contracts?filter=expired | "Kontraktdaekning: 86% — 3 lokationer mangler" → /proto/contracts?filter=missing             |
+| GROUP_FINANCE   | "Samlet omsaetning Q1: 48.2M DKK (op 4%)" → /proto/portfolio                          | "2 lokationer underpraeesterer" → /proto/portfolio?filter=underperforming                    |
+| GROUP_ADMIN     | "6 opgaver er forfaldne" → /proto/tasks?filter=overdue                                | "Datakvalitet: 3 selskaber med ufuldstaendige stamdata" → /proto/portfolio?filter=incomplete |
+| COMPANY_MANAGER | "2 opgaver forfaldne paa dine lokationer" → /proto/tasks?filter=mine                  | "Lejekontrakt udloeber om 42 dage" → /proto/contracts                                        |
 
 Tilsvarende for **Kontrakter**, **Opgaver**, **Portefoelje** og **Dokumenter** sider.
 
 Eksporter:
+
 ```typescript
 export function getInsights(page: string, role: MockRole, scenario: DataScenario): MockInsight[]
 ```
@@ -576,11 +618,13 @@ git commit -m "feat(prototype): tilfoej rolle-tilpassede indsigter for alle side
 ## Task 9: Mock Search Responses
 
 **Files:**
+
 - Create: `src/mock/search-responses.ts`
 
 - [ ] **Step 1: Opret mock soegeresultater og AI-svar**
 
 Opret `src/mock/search-responses.ts` med foruddefinerede svar. Regler:
+
 - Mindst 8 foruddefinerede queries der daeekker alle 3 interaktionstyper
 - Fuzzy matching: "horsens" matcher "Horsens Tandklinik"
 - Default fallback for ukendte queries: vis direkte matches baseret paa keyword
@@ -597,6 +641,7 @@ Foruddefinerede queries:
 8. `"12345678"` → type: search, CVR-match til Horsens Tandklinik
 
 Eksporter:
+
 ```typescript
 export function searchMock(query: string, role: MockRole): MockSearchResponse
 export function getSuggestedQueries(role: MockRole, currentPage: string): string[]
@@ -614,13 +659,21 @@ git commit -m "feat(prototype): tilfoej mock soegeresultater og AI-svar"
 ## Task 10: Mock Helpers (filtrering og aggregering)
 
 **Files:**
+
 - Create: `src/mock/helpers.ts`
 
 - [ ] **Step 1: Opret filtreringsfunktioner**
 
 ```typescript
 // src/mock/helpers.ts
-import type { MockRole, MockCompany, MockContract, MockTask, MockInsight, DataScenario } from './types'
+import type {
+  MockRole,
+  MockCompany,
+  MockContract,
+  MockTask,
+  MockInsight,
+  DataScenario,
+} from './types'
 
 /**
  * Filtrer selskaber baseret paa rolle.
@@ -671,12 +724,7 @@ export function getVisibleDashboardBlocks(role: MockRole): string[] {
       'recent_activity',
       'document_inbox',
     ],
-    GROUP_FINANCE: [
-      'requires_action',
-      'financial_overview',
-      'recent_activity',
-      'document_inbox',
-    ],
+    GROUP_FINANCE: ['requires_action', 'financial_overview', 'recent_activity', 'document_inbox'],
     GROUP_ADMIN: [
       'requires_action',
       'portfolio_health',
@@ -685,11 +733,7 @@ export function getVisibleDashboardBlocks(role: MockRole): string[] {
       'recent_activity',
       'document_inbox',
     ],
-    COMPANY_MANAGER: [
-      'requires_action',
-      'recent_activity',
-      'document_inbox',
-    ],
+    COMPANY_MANAGER: ['requires_action', 'recent_activity', 'document_inbox'],
   }
 
   // Returner i den faste raekkefoelge defineret i allBlocks
@@ -750,7 +794,12 @@ export function getCompanySubtitle(company: MockCompany, role: MockRole): string
 export function getSidebarBadge(
   navItem: string,
   role: MockRole,
-  data: { expiringContracts: number; underperforming: number; overdueTasks: number; processingDocs: number }
+  data: {
+    expiringContracts: number
+    underperforming: number
+    overdueTasks: number
+    processingDocs: number
+  }
 ): string | null {
   switch (navItem) {
     case 'contracts':
@@ -787,6 +836,7 @@ git commit -m "feat(prototype): tilfoej mock helpers til rolle-filtrering"
 ## Task 11: PrototypeProvider (React Context)
 
 **Files:**
+
 - Create: `src/components/prototype/PrototypeProvider.tsx`
 
 - [ ] **Step 1: Opret PrototypeProvider**
@@ -851,6 +901,7 @@ git commit -m "feat(prototype): tilfoej PrototypeProvider context"
 ## Task 12: RoleSwitcher komponent
 
 **Files:**
+
 - Create: `src/components/prototype/RoleSwitcher.tsx`
 
 - [ ] **Step 1: Opret RoleSwitcher**
@@ -952,6 +1003,7 @@ git commit -m "feat(prototype): tilfoej RoleSwitcher komponent"
 ## Task 13: InsightCard komponent
 
 **Files:**
+
 - Create: `src/components/prototype/InsightCard.tsx`
 
 - [ ] **Step 1: Opret InsightCard**
@@ -1052,6 +1104,7 @@ git commit -m "feat(prototype): tilfoej InsightCard komponent"
 ## Task 14: CoverageBar komponent
 
 **Files:**
+
 - Create: `src/components/ui/CoverageBar.tsx`
 
 - [ ] **Step 1: Opret CoverageBar**
@@ -1106,11 +1159,13 @@ git commit -m "feat(prototype): tilfoej CoverageBar UI-komponent"
 ## Task 15: Prototype Sidebar
 
 **Files:**
+
 - Create: `src/components/layout/prototype-sidebar.tsx`
 
 - [ ] **Step 1: Opret prototype sidebar med 6 items**
 
 Opret `src/components/layout/prototype-sidebar.tsx`. Baseret paa eksisterende `sidebar.tsx` men med:
+
 - 6 navigation items: Overblik (/proto/dashboard), Portefoelje (/proto/portfolio), Kontrakter (/proto/contracts), Opgaver (/proto/tasks), Dokumenter (/proto/documents), Soeg & Spoerg (/proto/search)
 - Rolle-tilpassede urgency badges via `getSidebarBadge()` fra mock helpers
 - Brug `usePrototype()` til at laese aktiv bruger
@@ -1120,6 +1175,7 @@ Opret `src/components/layout/prototype-sidebar.tsx`. Baseret paa eksisterende `s
 - Fjern "Senest besoegt" sektionen (erstattet af intelligent navigation)
 
 Brug de korrekte Lucide icons:
+
 - Overblik: `LayoutDashboard`
 - Portefoelje: `Building2`
 - Kontrakter: `FileText`
@@ -1140,11 +1196,13 @@ git commit -m "feat(prototype): tilfoej prototype sidebar med 6 items og rolle-b
 ## Task 16: Prototype Header med Soeg & Spoerg
 
 **Files:**
+
 - Create: `src/components/layout/prototype-header.tsx`
 
 - [ ] **Step 1: Opret prototype header**
 
 Opret `src/components/layout/prototype-header.tsx`. Baseret paa eksisterende `header.tsx` men med:
+
 - Soegefelt med placeholder: "Soeg eller stil et spoergsmaal..."
 - Ctrl+K hint til hoejre for feltet: `<kbd>Ctrl</kbd> + <kbd>K</kbd>`
 - Ved submit: navigerer til `/proto/search?q=...`
@@ -1163,6 +1221,7 @@ git commit -m "feat(prototype): tilfoej prototype header med Soeg & Spoerg felt"
 ## Task 17: Prototype Layout
 
 **Files:**
+
 - Create: `src/app/proto/layout.tsx`
 
 - [ ] **Step 1: Opret prototype layout**
@@ -1215,6 +1274,7 @@ git commit -m "feat(prototype): tilfoej prototype layout med RoleSwitcher"
 ## Task 18: Overblik-side (Dashboard)
 
 **Files:**
+
 - Create: `src/app/proto/dashboard/page.tsx`
 
 - [ ] **Step 1: Opret Overblik-side**
@@ -1222,6 +1282,7 @@ git commit -m "feat(prototype): tilfoej prototype layout med RoleSwitcher"
 Opret `src/app/proto/dashboard/page.tsx` som en client component der bruger `usePrototype()`.
 
 Siden skal:
+
 1. Vise "Godmorgen, [navn]" greeting
 2. Hente synlige blokke via `getVisibleDashboardBlocks(role)`
 3. Hente indsigter via `getInsights('dashboard', role, scenario)`
@@ -1257,6 +1318,7 @@ git commit -m "feat(prototype): tilfoej Overblik-side med rolle-tilpassede blokk
 ## Task 19: Portefoelje-liste
 
 **Files:**
+
 - Create: `src/app/proto/portfolio/page.tsx`
 
 - [ ] **Step 1: Opret Portefoelje-liste**
@@ -1264,6 +1326,7 @@ git commit -m "feat(prototype): tilfoej Overblik-side med rolle-tilpassede blokk
 Opret `src/app/proto/portfolio/page.tsx` som en client component.
 
 Siden skal:
+
 1. Hente selskaber via `getCompanies(scenario, companyCount)` filtreret med `filterCompaniesByRole()`
 2. Vise 2 indsigter oeeverst via InsightCard
 3. Gruppere i 2 collapsible sektioner:
@@ -1290,6 +1353,7 @@ git commit -m "feat(prototype): tilfoej Portefoelje-liste med sundhedsstatus"
 ## Task 20: Selskabs-detaljeside
 
 **Files:**
+
 - Create: `src/app/proto/portfolio/[id]/page.tsx`
 
 - [ ] **Step 1: Opret selskabs-detalje**
@@ -1297,6 +1361,7 @@ git commit -m "feat(prototype): tilfoej Portefoelje-liste med sundhedsstatus"
 Opret `src/app/proto/portfolio/[id]/page.tsx` som en client component.
 
 Siden skal:
+
 1. Hente selskab via `getCompanyById(id)`
 2. Hente synlige sektioner via `getVisibleCompanySections(role)`
 3. Vise breadcrumb: "← Portefoelje"
@@ -1325,6 +1390,7 @@ git commit -m "feat(prototype): tilfoej selskabs-detaljeside med rolle-filtrered
 ## Task 21: Kontrakter kryds-portefoelje view
 
 **Files:**
+
 - Create: `src/app/proto/contracts/page.tsx`
 
 - [ ] **Step 1: Opret Kontrakter-side**
@@ -1332,6 +1398,7 @@ git commit -m "feat(prototype): tilfoej selskabs-detaljeside med rolle-filtrered
 Opret `src/app/proto/contracts/page.tsx` som en client component.
 
 Siden skal:
+
 1. Vise 2 rolle-tilpassede InsightCards oeeverst
 2. Summary-linje: "142 kontrakter · 22 selskaber · 7 kraever handling"
 3. Filter-tabs: `Alle | Udloeber snart | Manglende | Nyligt aendrede`
@@ -1358,11 +1425,13 @@ git commit -m "feat(prototype): tilfoej Kontrakter kryds-portefoelje view"
 ## Task 22: Kontrakt-detalje
 
 **Files:**
+
 - Create: `src/app/proto/contracts/[id]/page.tsx`
 
 - [ ] **Step 1: Opret kontrakt-detalje**
 
 Simpel detalje-side med:
+
 - Breadcrumb: "← Kontrakter"
 - Kontrakt header (navn, type, status-badge, kategori)
 - Selskab-link
@@ -1382,6 +1451,7 @@ git commit -m "feat(prototype): tilfoej kontrakt-detaljeside"
 ## Task 23: Opgaver kryds-portefoelje view
 
 **Files:**
+
 - Create: `src/app/proto/tasks/page.tsx`
 
 - [ ] **Step 1: Opret Opgaver-side**
@@ -1389,6 +1459,7 @@ git commit -m "feat(prototype): tilfoej kontrakt-detaljeside"
 Opret `src/app/proto/tasks/page.tsx` som en client component.
 
 Siden skal:
+
 1. Vise 2 rolle-tilpassede InsightCards
 2. Summary-linje: "34 aabne opgaver · 6 forfaldne"
 3. Filter-tabs: `Mine | Alle | Forfaldne | Afventer`
@@ -1421,6 +1492,7 @@ git commit -m "feat(prototype): tilfoej Opgaver kryds-portefoelje view med tidsg
 ## Task 24: Opgave-detalje
 
 **Files:**
+
 - Create: `src/app/proto/tasks/[id]/page.tsx`
 
 - [ ] **Step 1: Opret opgave-detalje**
@@ -1439,6 +1511,7 @@ git commit -m "feat(prototype): tilfoej opgave-detaljeside"
 ## Task 25: Dokumenter-side (Upload + AI hub)
 
 **Files:**
+
 - Create: `src/app/proto/documents/page.tsx`
 
 - [ ] **Step 1: Opret Dokumenter-side**
@@ -1446,6 +1519,7 @@ git commit -m "feat(prototype): tilfoej opgave-detaljeside"
 Opret `src/app/proto/documents/page.tsx` som en client component.
 
 Siden skal:
+
 1. Summary-linje: "47 dokumenter · 2 analyseres · 1 klar til gennemgang"
 2. Upload-zone oeeverst (drag-and-drop styling med stiplet border)
    - Tekst: "Traek filer hertil — AI-analyse starter automatisk. Du kan fortsaette dit arbejde imens."
@@ -1470,6 +1544,7 @@ git commit -m "feat(prototype): tilfoej Dokumenter-side med upload og AI-hub"
 ## Task 26: Dokument-gennemgang (split-panel)
 
 **Files:**
+
 - Create: `src/app/proto/documents/review/[id]/page.tsx`
 
 - [ ] **Step 1: Opret dokument-gennemgangs view**
@@ -1477,6 +1552,7 @@ git commit -m "feat(prototype): tilfoej Dokumenter-side med upload og AI-hub"
 Opret `src/app/proto/documents/review/[id]/page.tsx` som en client component.
 
 Siden skal:
+
 1. Split-panel layout: 60% venstre (dokument), 40% hoejre (ekstraktion)
    - `grid grid-cols-5` → venstre `col-span-3`, hoejre `col-span-2`
 2. **Venstre panel**: Mock PDF preview
@@ -1508,6 +1584,7 @@ git commit -m "feat(prototype): tilfoej dokument-gennemgangs view med split-pane
 ## Task 27: Soeg & Spoerg side
 
 **Files:**
+
 - Create: `src/app/proto/search/page.tsx`
 
 - [ ] **Step 1: Opret Soeg & Spoerg side**
@@ -1515,6 +1592,7 @@ git commit -m "feat(prototype): tilfoej dokument-gennemgangs view med split-pane
 Opret `src/app/proto/search/page.tsx` som en client component.
 
 Siden skal:
+
 1. Stort soegefelt oeeverst med placeholder "Skriv et navn, CVR, eller stil et spoergsmaal..."
 2. Naar feltet er tomt: vis foreslaaede spoergsmaal fra `getSuggestedQueries(role, 'search')`
    - Maerket som "Forslag" med lille label
@@ -1544,6 +1622,7 @@ git commit -m "feat(prototype): tilfoej Soeg & Spoerg side med dual output"
 ## Task 28: Settings placeholder
 
 **Files:**
+
 - Create: `src/app/proto/settings/page.tsx`
 
 - [ ] **Step 1: Opret settings placeholder**
@@ -1581,11 +1660,13 @@ git commit -m "feat(prototype): tilfoej settings placeholder"
 ## Task 29: Environment Variable + Routing
 
 **Files:**
+
 - Modify: `.env.local`
 
 - [ ] **Step 1: Tilfoej prototype mode flag**
 
 Tilfoej til `.env.local`:
+
 ```
 NEXT_PUBLIC_PROTOTYPE_MODE=true
 ```
@@ -1593,6 +1674,7 @@ NEXT_PUBLIC_PROTOTYPE_MODE=true
 - [ ] **Step 2: Tilfoej redirect fra proto-rod til prototype dashboard**
 
 Opret `src/app/proto/page.tsx`:
+
 ```typescript
 import { redirect } from 'next/navigation'
 
@@ -1617,6 +1699,7 @@ git commit -m "feat(prototype): tilfoej prototype routing og environment flag"
 Run: `npm run dev`
 
 Test hvert af de 11 endpoints:
+
 1. `/proto/dashboard` — Overblik med rolle-blokke
 2. `/proto/portfolio` — Portefoelje-listen med sundhedsstatus
 3. `/proto/portfolio/company-odense` — Selskabs-detalje med sektioner
@@ -1664,6 +1747,7 @@ Task 30:     Integration test (afhaenger af alt)
 ```
 
 **Parallelle grupper:**
+
 - Gruppe 1 (mock data): Tasks 1-9
 - Gruppe 2 (komponenter): Tasks 11-14
 - Gruppe 3 (layout): Tasks 15-17

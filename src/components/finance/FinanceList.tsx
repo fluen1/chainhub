@@ -26,9 +26,10 @@ interface FinanceListProps {
 }
 
 function formatCurrency(value: number | string | { toNumber?: () => number }): string {
-  const num = typeof value === 'object' && value !== null && 'toNumber' in value
-    ? (value as { toNumber: () => number }).toNumber()
-    : Number(value)
+  const num =
+    typeof value === 'object' && value !== null && 'toNumber' in value
+      ? (value as { toNumber: () => number }).toNumber()
+      : Number(value)
   return num.toLocaleString('da-DK', {
     style: 'currency',
     currency: 'DKK',
@@ -82,9 +83,7 @@ function CollapsibleYear({
                   <span className={getMetricSourceStyle(m.source)}>
                     {getMetricSourceLabel(m.source)}
                   </span>
-                  {m.notes && (
-                    <span> · {m.notes}</span>
-                  )}
+                  {m.notes && <span> · {m.notes}</span>}
                 </p>
               </div>
               <div className="text-sm font-semibold text-gray-900 tabular-nums shrink-0 ml-4">
@@ -109,13 +108,9 @@ export function FinanceList({ metrics, years, addButton }: FinanceListProps) {
       {/* Summary + tilføj */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2 text-sm text-gray-500">
-          <span>
-            {metrics.length} nøgletal
-          </span>
+          <span>{metrics.length} nøgletal</span>
           <span className="text-gray-300">·</span>
-          <span>
-            {years.length} år
-          </span>
+          <span>{years.length} år</span>
         </div>
         {addButton}
       </div>

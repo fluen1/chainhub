@@ -111,11 +111,7 @@ export async function runSearch(
         organization_id: orgId,
         id: { in: companyIds },
         deleted_at: null,
-        OR: [
-          { name: insensitive },
-          { cvr: insensitive },
-          { city: insensitive },
-        ],
+        OR: [{ name: insensitive }, { cvr: insensitive }, { city: insensitive }],
       },
       select: { id: true, name: true, cvr: true, city: true, status: true },
       take: RESULTS_PER_TYPE,
@@ -129,10 +125,7 @@ export async function runSearch(
         company_id: { in: companyIds },
         deleted_at: null,
         ...(sensitivityFilter ? { sensitivity: sensitivityFilter } : {}),
-        OR: [
-          { display_name: insensitive },
-          { notes: insensitive },
-        ],
+        OR: [{ display_name: insensitive }, { notes: insensitive }],
       },
       include: { company: { select: { id: true, name: true } } },
       take: RESULTS_PER_TYPE,
@@ -145,11 +138,7 @@ export async function runSearch(
         organization_id: orgId,
         deleted_at: null,
         ...(sensitivityFilter ? { sensitivity: sensitivityFilter } : {}),
-        OR: [
-          { title: insensitive },
-          { description: insensitive },
-          { case_number: insensitive },
-        ],
+        OR: [{ title: insensitive }, { description: insensitive }, { case_number: insensitive }],
         case_companies: { some: { company_id: { in: companyIds } } },
       },
       select: { id: true, title: true, case_type: true, status: true },
@@ -185,16 +174,10 @@ export async function runSearch(
       where: {
         organization_id: orgId,
         deleted_at: null,
-        OR: [
-          { title: insensitive },
-          { description: insensitive },
-        ],
+        OR: [{ title: insensitive }, { description: insensitive }],
         AND: [
           {
-            OR: [
-              { company_id: null },
-              { company_id: { in: companyIds } },
-            ],
+            OR: [{ company_id: null }, { company_id: { in: companyIds } }],
           },
         ],
       },
@@ -215,17 +198,10 @@ export async function runSearch(
         organization_id: orgId,
         deleted_at: null,
         ...(sensitivityFilter ? { sensitivity: sensitivityFilter } : {}),
-        OR: [
-          { title: insensitive },
-          { file_name: insensitive },
-          { description: insensitive },
-        ],
+        OR: [{ title: insensitive }, { file_name: insensitive }, { description: insensitive }],
         AND: [
           {
-            OR: [
-              { company_id: null },
-              { company_id: { in: companyIds } },
-            ],
+            OR: [{ company_id: null }, { company_id: { in: companyIds } }],
           },
         ],
       },

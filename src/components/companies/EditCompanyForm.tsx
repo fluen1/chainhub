@@ -70,7 +70,9 @@ export function EditCompanyForm({ company }: EditCompanyFormProps) {
 
         {/* Selskabsinformation */}
         <div className="rounded-lg border border-gray-200 bg-white p-5 mb-4">
-          <p className="text-xs font-medium text-gray-400 tracking-wide mb-4">Selskabsinformation</p>
+          <p className="text-xs font-medium text-gray-400 tracking-wide mb-4">
+            Selskabsinformation
+          </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Selskabsnavn" value={company.name} />
             <Field label="CVR-nummer" value={company.cvr} mono />
@@ -78,9 +80,11 @@ export function EditCompanyForm({ company }: EditCompanyFormProps) {
             <Field label="Status" value={getCompanyStatusLabel(company.status ?? '')} />
             <Field
               label="Stiftelsesdato"
-              value={company.founded_date
-                ? new Date(company.founded_date).toLocaleDateString('da-DK')
-                : null}
+              value={
+                company.founded_date
+                  ? new Date(company.founded_date).toLocaleDateString('da-DK')
+                  : null
+              }
             />
           </div>
         </div>
@@ -179,9 +183,11 @@ export function EditCompanyForm({ company }: EditCompanyFormProps) {
                 id="foundedDate"
                 name="foundedDate"
                 type="date"
-                defaultValue={company.founded_date
-                  ? new Date(company.founded_date).toISOString().split('T')[0]
-                  : ''}
+                defaultValue={
+                  company.founded_date
+                    ? new Date(company.founded_date).toISOString().split('T')[0]
+                    : ''
+                }
                 className={inputClass}
               />
             </div>
@@ -293,7 +299,9 @@ function Field({
   return (
     <div className={span2 ? 'sm:col-span-2' : ''}>
       <p className="text-xs text-gray-400">{label}</p>
-      <p className={`mt-0.5 text-sm ${value ? 'text-gray-900' : 'text-gray-300'} ${mono ? 'tabular-nums' : ''}`}>
+      <p
+        className={`mt-0.5 text-sm ${value ? 'text-gray-900' : 'text-gray-300'} ${mono ? 'tabular-nums' : ''}`}
+      >
         {value || '—'}
       </p>
     </div>

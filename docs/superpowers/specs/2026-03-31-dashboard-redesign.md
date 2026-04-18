@@ -12,14 +12,14 @@ Redesign af ChainHub prototype-dashboardet med nyt visuelt designsystem og rolle
 
 ## Designprincipper
 
-| Princip | Implementering |
-|---------|----------------|
-| Light mode, mørk sidebar | Baggrund `#f0f2f5`, kort `#fff` med `border: 1px solid #e5e7eb`, sidebar `#0f172a` |
-| Card-based layout | Alt indhold i hvide kort med `border-radius: 12px` og subtle hover shadow |
-| Blå accent | Primær accent `#3b82f6`, aktive sidebar items, links, primær CTA |
-| Whitespace heavy | Generøs padding (20px kort, 28-32px dashboard area), gap 16px mellem kort |
-| Status-farver | Rød `#ef4444` (kritisk/udløbet), amber `#f59e0b` (advarsel/snart), grøn `#22c55e` (sund/ok), blå `#3b82f6` (info/planlagt) |
-| Konsistente komponenter | Genbrugte patterns: KPI-kort, urgency-liste, company-row, coverage-bar, fin-row |
+| Princip                  | Implementering                                                                                                             |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| Light mode, mørk sidebar | Baggrund `#f0f2f5`, kort `#fff` med `border: 1px solid #e5e7eb`, sidebar `#0f172a`                                         |
+| Card-based layout        | Alt indhold i hvide kort med `border-radius: 12px` og subtle hover shadow                                                  |
+| Blå accent               | Primær accent `#3b82f6`, aktive sidebar items, links, primær CTA                                                           |
+| Whitespace heavy         | Generøs padding (20px kort, 28-32px dashboard area), gap 16px mellem kort                                                  |
+| Status-farver            | Rød `#ef4444` (kritisk/udløbet), amber `#f59e0b` (advarsel/snart), grøn `#22c55e` (sund/ok), blå `#3b82f6` (info/planlagt) |
+| Konsistente komponenter  | Genbrugte patterns: KPI-kort, urgency-liste, company-row, coverage-bar, fin-row                                            |
 
 ## Typografi
 
@@ -30,23 +30,23 @@ Redesign af ChainHub prototype-dashboardet med nyt visuelt designsystem og rolle
 
 ## Farvepalet
 
-| Token | Hex | Brug |
-|-------|-----|------|
-| `--bg` | `#f0f2f5` | Side-baggrund |
-| `--card` | `#ffffff` | Kort-baggrund |
-| `--card-border` | `#e5e7eb` | Kort-border |
-| `--card-divider` | `#f1f5f9` | Interne dividers i kort |
-| `--sidebar` | `#0f172a` | Sidebar-baggrund |
-| `--sidebar-active` | `rgba(59,130,246,0.12)` | Aktivt sidebar-item |
-| `--text-primary` | `#0f172a` | Headings, KPI-tal |
-| `--text-body` | `#1e293b` | Body text, navne |
-| `--text-secondary` | `#64748b` | Labels, metadata |
-| `--text-muted` | `#94a3b8` | Subtitles, placeholders |
-| `--accent` | `#3b82f6` | Primær accent, links, aktive states |
-| `--success` | `#22c55e` / `#16a34a` | Sund, positiv, 100% |
-| `--warning` | `#f59e0b` / `#d97706` | Advarsel, snart, lav dækning |
-| `--danger` | `#ef4444` / `#dc2626` | Kritisk, udløbet, forfaldne |
-| `--purple` | `#8b5cf6` | Sager, AI-ekstraherede events |
+| Token              | Hex                     | Brug                                |
+| ------------------ | ----------------------- | ----------------------------------- |
+| `--bg`             | `#f0f2f5`               | Side-baggrund                       |
+| `--card`           | `#ffffff`               | Kort-baggrund                       |
+| `--card-border`    | `#e5e7eb`               | Kort-border                         |
+| `--card-divider`   | `#f1f5f9`               | Interne dividers i kort             |
+| `--sidebar`        | `#0f172a`               | Sidebar-baggrund                    |
+| `--sidebar-active` | `rgba(59,130,246,0.12)` | Aktivt sidebar-item                 |
+| `--text-primary`   | `#0f172a`               | Headings, KPI-tal                   |
+| `--text-body`      | `#1e293b`               | Body text, navne                    |
+| `--text-secondary` | `#64748b`               | Labels, metadata                    |
+| `--text-muted`     | `#94a3b8`               | Subtitles, placeholders             |
+| `--accent`         | `#3b82f6`               | Primær accent, links, aktive states |
+| `--success`        | `#22c55e` / `#16a34a`   | Sund, positiv, 100%                 |
+| `--warning`        | `#f59e0b` / `#d97706`   | Advarsel, snart, lav dækning        |
+| `--danger`         | `#ef4444` / `#dc2626`   | Kritisk, udløbet, forfaldne         |
+| `--purple`         | `#8b5cf6`               | Sager, AI-ekstraherede events       |
 
 ## Layout-struktur
 
@@ -124,6 +124,7 @@ Ser **kun økonomi-relevante blokke:**
 Placering: Højre kolonne, ved siden af urgency + portefølje.
 
 **Elementer:**
+
 - Måneds-header med navigation (‹ ›)
 - 7×6 grid med dag-numre
 - Farvede dots under datoer med events (max 2-3 dots per dag)
@@ -132,6 +133,7 @@ Placering: Højre kolonne, ved siden af urgency + portefølje.
 - "Åbn fuld kalender →" link
 
 **AI-populering:**
+
 - Events markeret med lilla "AI" badge når de er automatisk ekstraheret fra uploadede dokumenter
 - AI scanner kontrakter for: udløbsdatoer, fornyelsesfrister, opsigelsesperioder, betalingsfrister
 - Brugeren kan manuelt tilføje events (besøg, møder)
@@ -139,6 +141,7 @@ Placering: Højre kolonne, ved siden af urgency + portefølje.
 ### Fuld kalenderside (nyt sidebar-punkt)
 
 Selvstændig side med:
+
 - Dag/uge/måned-visning
 - Filtrering på event-type (kontrakter, besøg, sager, deadlines)
 - Klik på event → navigér til relevant kontrakt/sag/selskab
@@ -146,13 +149,13 @@ Selvstændig side med:
 
 **Farve-koding for event-typer:**
 
-| Farve | Dot | Type | Eksempel |
-|-------|-----|------|----------|
-| Rød | `#ef4444` | Udløb/overskredet | Kontrakt udløbet, forfaldne opgaver |
-| Amber | `#f59e0b` | Frist/snart | Opsigelsesfrist, udløber inden 14d |
-| Blå | `#3b82f6` | Besøg/møde | Driftsbesøg, genforhandlingsmøde |
-| Lilla | `#8b5cf6` | Sag/juridisk | Sagsfrist, indsigelsesdeadline |
-| Grøn | `#22c55e` | Fornyelse/positiv | Automatisk fornyelse, underskrift |
+| Farve | Dot       | Type              | Eksempel                            |
+| ----- | --------- | ----------------- | ----------------------------------- |
+| Rød   | `#ef4444` | Udløb/overskredet | Kontrakt udløbet, forfaldne opgaver |
+| Amber | `#f59e0b` | Frist/snart       | Opsigelsesfrist, udløber inden 14d  |
+| Blå   | `#3b82f6` | Besøg/møde        | Driftsbesøg, genforhandlingsmøde    |
+| Lilla | `#8b5cf6` | Sag/juridisk      | Sagsfrist, indsigelsesdeadline      |
+| Grøn  | `#22c55e` | Fornyelse/positiv | Automatisk fornyelse, underskrift   |
 
 ## Lokationsside (360° overblik)
 
@@ -166,16 +169,16 @@ Detaljeret design af lokationssiden specificeres separat.
 
 ## Komponenter (genbrugelige)
 
-| Komponent | Brug | Nøgle-props |
-|-----------|------|-------------|
-| `KpiCard` | KPI-grid | label, value, trend (up/down/neutral), valueColor |
-| `UrgencyList` | Handlingspunkter | items med indicator-farve, navn, sub, days |
-| `HealthBar` | Porteføljesundhed | counts (sund/advarsel/kritisk) |
-| `CompanyRow` | Selskabslister | avatar, name, cvr/meta, status-badge |
-| `CoverageBar` | Kontraktdækning | label, percentage, fill-farve |
-| `FinRow` | Økonomital | label, value, valueColor |
-| `CalendarWidget` | Dashboard-kalender | events[], selectedDate |
-| `SectionHeader` | Rolle-sektioner | title |
+| Komponent        | Brug               | Nøgle-props                                       |
+| ---------------- | ------------------ | ------------------------------------------------- |
+| `KpiCard`        | KPI-grid           | label, value, trend (up/down/neutral), valueColor |
+| `UrgencyList`    | Handlingspunkter   | items med indicator-farve, navn, sub, days        |
+| `HealthBar`      | Porteføljesundhed  | counts (sund/advarsel/kritisk)                    |
+| `CompanyRow`     | Selskabslister     | avatar, name, cvr/meta, status-badge              |
+| `CoverageBar`    | Kontraktdækning    | label, percentage, fill-farve                     |
+| `FinRow`         | Økonomital         | label, value, valueColor                          |
+| `CalendarWidget` | Dashboard-kalender | events[], selectedDate                            |
+| `SectionHeader`  | Rolle-sektioner    | title                                             |
 
 ## Sidebar-struktur
 

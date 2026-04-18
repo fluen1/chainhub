@@ -1,5 +1,7 @@
 # DATABASE-SCHEMA.md
+
 # ChainHub — Databaseskema
+
 **Version:** 0.4
 **Status:** ACCEPTED
 
@@ -276,6 +278,7 @@ enum Prioritet {
 ## Kerntabeller
 
 ### organizations
+
 ```prisma
 model Organization {
   id                String    @id @default(uuid())
@@ -305,6 +308,7 @@ model Organization {
 ```
 
 ### users
+
 ```prisma
 model User {
   id                String    @id @default(uuid())
@@ -329,6 +333,7 @@ model User {
 ```
 
 ### user_role_assignments
+
 ```prisma
 model UserRoleAssignment {
   id                String    @id @default(uuid())
@@ -352,6 +357,7 @@ model UserRoleAssignment {
 ## Selskab og ejerskab
 
 ### companies
+
 ```prisma
 model Company {
   id                String    @id @default(uuid())
@@ -384,6 +390,7 @@ model Company {
 ```
 
 ### ownerships
+
 ```prisma
 // Ejerskab: hvem ejer hvad i et selskab
 model Ownership {
@@ -413,6 +420,7 @@ model Ownership {
 ## Persons
 
 ### persons
+
 ```prisma
 // Global kontaktbog — én person kan have roller i flere selskaber
 model Person {
@@ -440,6 +448,7 @@ model Person {
 ```
 
 ### company_persons
+
 ```prisma
 // En persons rolle i et bestemt selskab
 model CompanyPerson {
@@ -471,6 +480,7 @@ model CompanyPerson {
 ## Kontrakter
 
 ### contracts
+
 ```prisma
 model Contract {
   id                    String              @id @default(uuid())
@@ -537,6 +547,7 @@ model Contract {
 ```
 
 ### contract_parties
+
 ```prisma
 model ContractParty {
   id                String    @id @default(uuid())
@@ -556,6 +567,7 @@ model ContractParty {
 ```
 
 ### contract_versions
+
 ```prisma
 model ContractVersion {
   id                String    @id @default(uuid())
@@ -579,6 +591,7 @@ model ContractVersion {
 ```
 
 ### contract_attachments
+
 ```prisma
 // Bilag — adskilt fra versioner
 model ContractAttachment {
@@ -600,6 +613,7 @@ model ContractAttachment {
 ```
 
 ### contract_relations
+
 ```prisma
 // Eksplicitte relationer mellem kontrakter
 model ContractRelation {
@@ -625,6 +639,7 @@ model ContractRelation {
 ## Sager og opgaver
 
 ### cases
+
 ```prisma
 model Case {
   id                String      @id @default(uuid())
@@ -659,6 +674,7 @@ model Case {
 ```
 
 ### case_companies / case_contracts / case_persons
+
 ```prisma
 model CaseCompany {
   organization_id String
@@ -699,6 +715,7 @@ model CasePerson {
 ```
 
 ### tasks
+
 ```prisma
 model Task {
   id                String      @id @default(uuid())
@@ -727,6 +744,7 @@ model Task {
 ```
 
 ### deadlines
+
 ```prisma
 // Juridiske frister — adskilt fra opgaver (Tasks er arbejdsopgaver)
 model Deadline {
@@ -761,6 +779,7 @@ model Deadline {
 ## Dokumenter og økonomi
 
 ### documents
+
 ```prisma
 model Document {
   id                String          @id @default(uuid())
@@ -791,6 +810,7 @@ model Document {
 ```
 
 ### financial_metrics
+
 ```prisma
 // Økonomi-overblik (light) — ikke et regnskabssystem
 model FinancialMetric {
@@ -816,6 +836,7 @@ model FinancialMetric {
 ```
 
 ### time_entries
+
 ```prisma
 model TimeEntry {
   id                String    @id @default(uuid())
@@ -837,6 +858,7 @@ model TimeEntry {
 ```
 
 ### audit_log
+
 ```prisma
 // Obligatorisk for STRENGT_FORTROLIG og FORTROLIG adgange
 model AuditLog {
@@ -862,6 +884,7 @@ model AuditLog {
 ## Advisering
 
 ### reminders
+
 ```prisma
 // Genererede adviserings-records — køres af cron job
 model Reminder {
@@ -886,6 +909,7 @@ model Reminder {
 ## Stripe (billing)
 
 ### subscriptions
+
 ```prisma
 model Subscription {
   id                    String    @id @default(uuid())

@@ -23,9 +23,7 @@ describe('Tenant isolation — organization_id filter', () => {
       { id: '3', organization_id: 'org-a', name: 'Contract A2' },
     ]
 
-    const tenantARecords = allRecords.filter(
-      (r) => r.organization_id === 'org-a'
-    )
+    const tenantARecords = allRecords.filter((r) => r.organization_id === 'org-a')
 
     expect(tenantARecords).toHaveLength(2)
     expect(tenantARecords.every((r) => r.organization_id === 'org-a')).toBe(true)
@@ -38,8 +36,7 @@ describe('Tenant isolation — organization_id filter', () => {
     const tenantBOrgId = 'org-b'
 
     // Korrekt query ville filtrere på BEGGE id og organization_id
-    const queryResult =
-      tenantACompany.organization_id === tenantBOrgId ? tenantACompany : null
+    const queryResult = tenantACompany.organization_id === tenantBOrgId ? tenantACompany : null
 
     expect(queryResult).toBeNull()
   })

@@ -20,7 +20,7 @@ interface PersonsPageProps {
   searchParams: {
     q?: string
     company?: string
-    view?: string  // 'ansatte' (default) | 'alle'
+    view?: string // 'ansatte' (default) | 'alle'
     layout?: string // 'kort' (default) | 'tabel'
     role?: string
     page?: string
@@ -63,27 +63,28 @@ export default async function PersonsPage({ searchParams }: PersonsPageProps) {
   const roleFilter = searchParams.role
 
   // Hent accessible companies til filter-dropdown
-  const companyIds = await getAccessibleCompanies(
-    session.user.id,
-    session.user.organizationId
-  )
+  const companyIds = await getAccessibleCompanies(session.user.id, session.user.organizationId)
 
-  const companyOptions = companyIds.length > 0
-    ? (await prisma.company.findMany({
-        where: {
-          id: { in: companyIds },
-          organization_id: session.user.organizationId,
-          deleted_at: null,
-        },
-        select: { id: true, name: true },
-        orderBy: { name: 'asc' },
-      })).map((c) => ({ value: c.id, label: c.name }))
-    : []
+  const companyOptions =
+    companyIds.length > 0
+      ? (
+          await prisma.company.findMany({
+            where: {
+              id: { in: companyIds },
+              organization_id: session.user.organizationId,
+              deleted_at: null,
+            },
+            select: { id: true, name: true },
+            orderBy: { name: 'asc' },
+          })
+        ).map((c) => ({ value: c.id, label: c.name }))
+      : []
 
   // Default: vis kun ansatte (har employment_type). "alle" viser alle inkl. eksterne
-  const employeeFilter = viewFilter === 'ansatte'
-    ? { company_persons: { some: { employment_type: { not: null }, end_date: null } } }
-    : {}
+  const employeeFilter =
+    viewFilter === 'ansatte'
+      ? { company_persons: { some: { employment_type: { not: null }, end_date: null } } }
+      : {}
 
   const where = {
     organization_id: session.user.organizationId,
@@ -158,7 +159,10 @@ export default async function PersonsPage({ searchParams }: PersonsPageProps) {
                 {
                   key: 'role',
                   label: 'Rolle',
-                  options: Object.entries(COMPANY_PERSON_ROLE_LABELS).map(([value, label]) => ({ value, label })),
+                  options: Object.entries(COMPANY_PERSON_ROLE_LABELS).map(([value, label]) => ({
+                    value,
+                    label,
+                  })),
                 },
               ]}
             />
@@ -203,15 +207,23 @@ export default async function PersonsPage({ searchParams }: PersonsPageProps) {
           <Users className="mx-auto h-12 w-12 text-gray-400" />
           {q ? (
             <>
-              <h3 className="mt-2 text-sm font-semibold text-gray-900">Ingen personer matcher søgningen</h3>
+              <h3 className="mt-2 text-sm font-semibold text-gray-900">
+                Ingen personer matcher søgningen
+              </h3>
               <p className="mt-1 text-sm text-gray-500">Prøv et andet søgeord.</p>
             </>
           ) : (
             <>
               <h3 className="mt-2 text-sm font-semibold text-gray-900">Ingen personer endnu</h3>
-              <p className="mt-1 text-sm text-gray-500">Opret din første kontakt for at komme i gang.</p>
-              <Link href="/persons/new" className="mt-4 inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
-                <Plus className="h-4 w-4" />Opret person
+              <p className="mt-1 text-sm text-gray-500">
+                Opret din første kontakt for at komme i gang.
+              </p>
+              <Link
+                href="/persons/new"
+                className="mt-4 inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              >
+                <Plus className="h-4 w-4" />
+                Opret person
               </Link>
             </>
           )}
@@ -223,32 +235,54 @@ export default async function PersonsPage({ searchParams }: PersonsPageProps) {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50/60">
-                    <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-500">Navn</th>
-                    <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-500">Email</th>
-                    <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-500">Telefon</th>
-                    <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-500">Rolle</th>
-                    <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-500">Selskab</th>
+                    <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-500">
+                      Navn
+                    </th>
+                    <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-500">
+                      Email
+                    </th>
+                    <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-500">
+                      Telefon
+                    </th>
+                    <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-500">
+                      Rolle
+                    </th>
+                    <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-500">
+                      Selskab
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {persons.map((person) => {
                     const fullName = `${person.first_name} ${person.last_name}`
                     const avatarColor = getAvatarColor(person.first_name)
-                    const initials = `${person.first_name[0] ?? ''}${person.last_name[0] ?? ''}`.toUpperCase()
+                    const initials =
+                      `${person.first_name[0] ?? ''}${person.last_name[0] ?? ''}`.toUpperCase()
                     const primaryCp = person.company_persons[0]
 
                     return (
                       <tr key={person.id} className="hover:bg-gray-50/50 transition-colors">
                         <td className="px-4 py-2.5">
-                          <Link href={`/persons/${person.id}`} className="flex items-center gap-2.5 no-underline group">
-                            <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold ${avatarColor}`}>
+                          <Link
+                            href={`/persons/${person.id}`}
+                            className="flex items-center gap-2.5 no-underline group"
+                          >
+                            <div
+                              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold ${avatarColor}`}
+                            >
                               {initials}
                             </div>
-                            <span className="font-medium text-gray-900 group-hover:text-blue-600 truncate">{fullName}</span>
+                            <span className="font-medium text-gray-900 group-hover:text-blue-600 truncate">
+                              {fullName}
+                            </span>
                           </Link>
                         </td>
-                        <td className="px-4 py-2.5 text-gray-600 truncate max-w-[200px]">{person.email ?? '—'}</td>
-                        <td className="px-4 py-2.5 text-gray-600 tabular-nums">{person.phone ?? '—'}</td>
+                        <td className="px-4 py-2.5 text-gray-600 truncate max-w-[200px]">
+                          {person.email ?? '—'}
+                        </td>
+                        <td className="px-4 py-2.5 text-gray-600 tabular-nums">
+                          {person.phone ?? '—'}
+                        </td>
                         <td className="px-4 py-2.5">
                           {primaryCp?.role ? (
                             <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
@@ -272,7 +306,8 @@ export default async function PersonsPage({ searchParams }: PersonsPageProps) {
               {persons.map((person) => {
                 const fullName = `${person.first_name} ${person.last_name}`
                 const avatarColor = getAvatarColor(person.first_name)
-                const initials = `${person.first_name[0] ?? ''}${person.last_name[0] ?? ''}`.toUpperCase()
+                const initials =
+                  `${person.first_name[0] ?? ''}${person.last_name[0] ?? ''}`.toUpperCase()
                 const primaryCp = person.company_persons[0]
                 const primaryRole = primaryCp?.role
 
@@ -283,17 +318,25 @@ export default async function PersonsPage({ searchParams }: PersonsPageProps) {
                     className="group rounded-lg border bg-white p-5 shadow-sm hover:border-blue-300 hover:shadow-md transition-all"
                   >
                     <div className="flex items-start gap-3 mb-3">
-                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${avatarColor}`}>
+                      <div
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${avatarColor}`}
+                      >
                         {initials}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 truncate">{fullName}</p>
+                        <p className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 truncate">
+                          {fullName}
+                        </p>
                         <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                           {primaryRole && (
-                            <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">{getCompanyPersonRoleLabel(primaryRole)}</span>
+                            <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+                              {getCompanyPersonRoleLabel(primaryRole)}
+                            </span>
                           )}
                           {primaryCp?.employment_type && (
-                            <span className="text-[10px] text-gray-400">{primaryCp.employment_type}</span>
+                            <span className="text-[10px] text-gray-400">
+                              {primaryCp.employment_type}
+                            </span>
                           )}
                         </div>
                       </div>
@@ -301,13 +344,18 @@ export default async function PersonsPage({ searchParams }: PersonsPageProps) {
 
                     <div className="space-y-1 mb-3">
                       {person.email && (
-                        <p className="flex items-center gap-1.5 text-xs text-gray-500 truncate" title={person.email}>
-                          <Mail className="h-3 w-3 shrink-0 text-gray-400" />{person.email}
+                        <p
+                          className="flex items-center gap-1.5 text-xs text-gray-500 truncate"
+                          title={person.email}
+                        >
+                          <Mail className="h-3 w-3 shrink-0 text-gray-400" />
+                          {person.email}
                         </p>
                       )}
                       {person.phone && (
                         <p className="flex items-center gap-1.5 text-xs text-gray-500">
-                          <Phone className="h-3 w-3 shrink-0 text-gray-400" />{person.phone}
+                          <Phone className="h-3 w-3 shrink-0 text-gray-400" />
+                          {person.phone}
                         </p>
                       )}
                     </div>
@@ -317,14 +365,21 @@ export default async function PersonsPage({ searchParams }: PersonsPageProps) {
                         {person.company_persons.map((cp) => (
                           <p key={cp.id} className="text-xs text-gray-400 truncate">
                             {cp.company.name}
-                            {cp.role && cp.role !== primaryRole && <span className="text-gray-300"> · {getCompanyPersonRoleLabel(cp.role)}</span>}
+                            {cp.role && cp.role !== primaryRole && (
+                              <span className="text-gray-300">
+                                {' '}
+                                · {getCompanyPersonRoleLabel(cp.role)}
+                              </span>
+                            )}
                           </p>
                         ))}
                       </div>
                     )}
 
                     {person.company_persons.length === 0 && (
-                      <p className="text-xs text-gray-400 border-t border-gray-100 pt-2">Ingen tilknytninger</p>
+                      <p className="text-xs text-gray-400 border-t border-gray-100 pt-2">
+                        Ingen tilknytninger
+                      </p>
                     )}
                   </Link>
                 )

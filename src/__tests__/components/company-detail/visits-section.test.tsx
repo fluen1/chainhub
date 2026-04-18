@@ -3,8 +3,18 @@ import { render, screen } from '@testing-library/react'
 import { VisitsSection, type VisitRow } from '@/components/company-detail/visits-section'
 
 const rows: VisitRow[] = [
-  { id: '1', typeLabel: 'Driftsbesoeg', meta: 'Planlagt 1. apr 2026', badge: { label: 'Planlagt', tone: 'blue' } },
-  { id: '2', typeLabel: 'Kvartalsgennemgang Q4', meta: 'Gennemfoert 15. jan 2026', badge: { label: 'Gennemfoert', tone: 'green' } },
+  {
+    id: '1',
+    typeLabel: 'Driftsbesoeg',
+    meta: 'Planlagt 1. apr 2026',
+    badge: { label: 'Planlagt', tone: 'blue' },
+  },
+  {
+    id: '2',
+    typeLabel: 'Kvartalsgennemgang Q4',
+    meta: 'Gennemfoert 15. jan 2026',
+    badge: { label: 'Gennemfoert', tone: 'green' },
+  },
 ]
 
 describe('VisitsSection', () => {

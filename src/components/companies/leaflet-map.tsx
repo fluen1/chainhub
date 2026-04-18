@@ -70,13 +70,10 @@ export default function LeafletMap({ companies }: LeafletMapProps) {
       {Array.from(cityGroups.entries()).map(([key, group]) => {
         const first = group[0]
         const totalIssues = group.reduce((sum, c) => sum + c.openCaseCount, 0)
-        const worstStatus = group.reduce<'critical' | 'warning' | 'healthy'>(
-          (worst, c) => {
-            const rank = { critical: 0, warning: 1, healthy: 2 }
-            return rank[c.healthStatus] < rank[worst] ? c.healthStatus : worst
-          },
-          'healthy'
-        )
+        const worstStatus = group.reduce<'critical' | 'warning' | 'healthy'>((worst, c) => {
+          const rank = { critical: 0, warning: 1, healthy: 2 }
+          return rank[c.healthStatus] < rank[worst] ? c.healthStatus : worst
+        }, 'healthy')
         const cityName = first.city?.replace(/\s+[NSØVKC]{1,2}$/, '').trim() ?? 'Ukendt'
 
         return (
@@ -106,13 +103,20 @@ export default function LeafletMap({ companies }: LeafletMapProps) {
                     className="flex items-center justify-between gap-2 py-1.5 no-underline hover:bg-slate-50 rounded px-1 -mx-1"
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="text-[12px] font-medium text-slate-900 truncate">{c.name}</div>
+                      <div className="text-[12px] font-medium text-slate-900 truncate">
+                        {c.name}
+                      </div>
                       <div className="text-[10px] text-slate-500">
                         {c.partnerName ?? 'Ingen partner'}
                         {c.partnerOwnershipPct != null && ` · ${c.partnerOwnershipPct}%`}
                       </div>
                     </div>
-                    <span className={cn('text-[9px] font-medium px-1.5 py-0.5 rounded shrink-0', BADGE_STYLES[c.healthStatus])}>
+                    <span
+                      className={cn(
+                        'text-[9px] font-medium px-1.5 py-0.5 rounded shrink-0',
+                        BADGE_STYLES[c.healthStatus]
+                      )}
+                    >
                       {BADGE_LABELS[c.healthStatus]}
                     </span>
                   </a>

@@ -61,12 +61,8 @@ export function CreateCompanyForm() {
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>
-            <h1 className="text-xl font-semibold tracking-tight text-gray-900">
-              Opret selskab
-            </h1>
-            <p className="text-sm text-gray-400">
-              Tilføj et nyt lokationsselskab til porteføljen
-            </p>
+            <h1 className="text-xl font-semibold tracking-tight text-gray-900">Opret selskab</h1>
+            <p className="text-sm text-gray-400">Tilføj et nyt lokationsselskab til porteføljen</p>
           </div>
         </div>
       </div>
@@ -74,9 +70,7 @@ export function CreateCompanyForm() {
       <form onSubmit={handleSubmit}>
         {/* Selskabsinformation */}
         <div className="rounded-lg border border-gray-200 bg-white p-5 space-y-4">
-          <p className="text-xs font-medium text-gray-400 tracking-wide">
-            Selskabsinformation
-          </p>
+          <p className="text-xs font-medium text-gray-400 tracking-wide">Selskabsinformation</p>
 
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700">
@@ -115,11 +109,7 @@ export function CreateCompanyForm() {
               <label htmlFor="companyType" className="block text-sm font-medium text-gray-700">
                 Selskabsform
               </label>
-              <select
-                id="companyType"
-                name="companyType"
-                className={inputClass}
-              >
+              <select id="companyType" name="companyType" className={inputClass}>
                 <option value="">Vælg...</option>
                 {COMPANY_TYPE_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -135,21 +125,14 @@ export function CreateCompanyForm() {
               <label htmlFor="foundedDate" className="block text-sm font-medium text-gray-700">
                 Stiftelsesdato
               </label>
-              <input
-                id="foundedDate"
-                name="foundedDate"
-                type="date"
-                className={inputClass}
-              />
+              <input id="foundedDate" name="foundedDate" type="date" className={inputClass} />
             </div>
           </div>
         </div>
 
         {/* Adresse */}
         <div className="mt-4 rounded-lg border border-gray-200 bg-white p-5 space-y-4">
-          <p className="text-xs font-medium text-gray-400 tracking-wide">
-            Adresse
-          </p>
+          <p className="text-xs font-medium text-gray-400 tracking-wide">Adresse</p>
 
           <div>
             <label htmlFor="address" className="block text-sm font-medium text-gray-700">

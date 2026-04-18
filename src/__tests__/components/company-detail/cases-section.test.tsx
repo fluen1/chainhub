@@ -3,8 +3,22 @@ import { render, screen } from '@testing-library/react'
 import { CasesSection, type CaseRow } from '@/components/company-detail/cases-section'
 
 const rows: CaseRow[] = [
-  { id: '1', iconLetter: 'C', iconTone: 'red', title: 'Compliance-sag', meta: 'Oprettet 12. feb · Eskaleret', badge: { label: 'Aktiv', tone: 'red' } },
-  { id: '2', iconLetter: 'G', iconTone: 'amber', title: 'Governance', meta: 'Oprettet 1. mar', badge: { label: 'Afventer', tone: 'amber' } },
+  {
+    id: '1',
+    iconLetter: 'C',
+    iconTone: 'red',
+    title: 'Compliance-sag',
+    meta: 'Oprettet 12. feb · Eskaleret',
+    badge: { label: 'Aktiv', tone: 'red' },
+  },
+  {
+    id: '2',
+    iconLetter: 'G',
+    iconTone: 'amber',
+    title: 'Governance',
+    meta: 'Oprettet 1. mar',
+    badge: { label: 'Afventer', tone: 'amber' },
+  },
 ]
 
 describe('CasesSection', () => {

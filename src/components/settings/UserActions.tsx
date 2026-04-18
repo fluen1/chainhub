@@ -50,9 +50,7 @@ export function UserActions({
 
   function toggleCompany(companyId: string) {
     setSelectedCompanyIds((prev) =>
-      prev.includes(companyId)
-        ? prev.filter((id) => id !== companyId)
-        : [...prev, companyId]
+      prev.includes(companyId) ? prev.filter((id) => id !== companyId) : [...prev, companyId]
     )
   }
 
@@ -173,11 +171,7 @@ export function UserActions({
               : 'border border-green-300 text-green-700 hover:bg-green-50'
           )}
         >
-          {toggling
-            ? 'Ændrer...'
-            : active
-              ? 'Deaktivér'
-              : 'Aktivér'}
+          {toggling ? 'Ændrer...' : active ? 'Deaktivér' : 'Aktivér'}
         </button>
       )}
     </div>

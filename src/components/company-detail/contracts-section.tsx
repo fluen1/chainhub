@@ -67,7 +67,10 @@ export function ContractsSection({ contracts, totalCount, companyId }: Contracts
               <div className="text-[11px] text-slate-400">{c.meta}</div>
             </div>
             <span
-              className={cn('whitespace-nowrap rounded-md px-2 py-[3px] text-[10px] font-bold', BADGE_TONES[c.badge.tone])}
+              className={cn(
+                'whitespace-nowrap rounded-md px-2 py-[3px] text-[10px] font-bold',
+                BADGE_TONES[c.badge.tone]
+              )}
             >
               {c.badge.label}
             </span>

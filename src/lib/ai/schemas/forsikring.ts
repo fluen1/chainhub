@@ -5,7 +5,7 @@ import { registerSchema } from './registry'
 // Hjælpefunktion til at wrappe et felt i ExtractedFieldValue-struktur
 function extractedField(
   description: string,
-  valueSchema: Record<string, unknown>,
+  valueSchema: Record<string, unknown>
 ): Record<string, unknown> {
   return {
     type: 'object' as const,
@@ -43,30 +43,27 @@ const forsikringSchema: ContractSchema = {
     input_schema: {
       type: 'object',
       properties: {
-        insurer: extractedField(
-          'Forsikringsselskabets navn (fx Tryg, Alm. Brand, Topdanmark)',
-          { type: 'string', description: 'Forsikringsselskabets fulde navn' },
-        ),
+        insurer: extractedField('Forsikringsselskabets navn (fx Tryg, Alm. Brand, Topdanmark)', {
+          type: 'string',
+          description: 'Forsikringsselskabets fulde navn',
+        }),
 
-        policy_number: extractedField(
-          'Policenummer / aftalenummer. Null hvis ikke angivet.',
-          {
-            type: ['string', 'null'] as unknown as 'string',
-            description: 'Policenummer som angivet i dokumentet',
-          },
-        ),
+        policy_number: extractedField('Policenummer / aftalenummer. Null hvis ikke angivet.', {
+          type: ['string', 'null'] as unknown as 'string',
+          description: 'Policenummer som angivet i dokumentet',
+        }),
 
-        insured_party: extractedField(
-          'Den forsikrede parts fulde navn (person eller selskab)',
-          { type: 'string', description: 'Den forsikredes fulde navn' },
-        ),
+        insured_party: extractedField('Den forsikrede parts fulde navn (person eller selskab)', {
+          type: 'string',
+          description: 'Den forsikredes fulde navn',
+        }),
 
         coverage_type: extractedField(
           'Dækningstype (fx erhvervsansvar, produktansvar, bygningsforsikring, tingsforsikring). Null hvis ikke specificeret.',
           {
             type: ['string', 'null'] as unknown as 'string',
             description: 'Beskrivelse af forsikringens dækningstype',
-          },
+          }
         ),
 
         coverage_amount_dkk: extractedField(
@@ -75,7 +72,7 @@ const forsikringSchema: ContractSchema = {
             type: ['number', 'null'] as unknown as 'number',
             description: 'Forsikringssum i DKK (positivt tal)',
             minimum: 0,
-          },
+          }
         ),
 
         premium_annual_dkk: extractedField(
@@ -84,12 +81,12 @@ const forsikringSchema: ContractSchema = {
             type: ['number', 'null'] as unknown as 'number',
             description: 'Årlig præmie i DKK (positivt tal)',
             minimum: 0,
-          },
+          }
         ),
 
         effective_date: extractedField(
           'Ikrafttrædelsesdato for policen (ISO 8601 format: YYYY-MM-DD)',
-          { type: 'string', description: 'Dato i format YYYY-MM-DD' },
+          { type: 'string', description: 'Dato i format YYYY-MM-DD' }
         ),
 
         expiry_date: extractedField(
@@ -97,7 +94,7 @@ const forsikringSchema: ContractSchema = {
           {
             type: ['string', 'null'] as unknown as 'string',
             description: 'Dato i format YYYY-MM-DD, eller null hvis løbende',
-          },
+          }
         ),
 
         deductible_dkk: extractedField(
@@ -106,7 +103,7 @@ const forsikringSchema: ContractSchema = {
             type: ['number', 'null'] as unknown as 'number',
             description: 'Selvrisiko i DKK (0 eller positivt tal)',
             minimum: 0,
-          },
+          }
         ),
 
         exclusions: extractedField(
@@ -117,16 +114,14 @@ const forsikringSchema: ContractSchema = {
               type: 'string',
               description: 'Beskrivelse af en enkelt undtagelse',
             },
-          },
+          }
         ),
 
-        auto_renewal: extractedField(
-          'Fornyes policen automatisk? Null hvis ikke angivet.',
-          {
-            type: ['boolean', 'null'] as unknown as 'boolean',
-            description: 'True hvis automatisk fornyelse, false hvis manuel fornyelse, null hvis ikke angivet',
-          },
-        ),
+        auto_renewal: extractedField('Fornyes policen automatisk? Null hvis ikke angivet.', {
+          type: ['boolean', 'null'] as unknown as 'boolean',
+          description:
+            'True hvis automatisk fornyelse, false hvis manuel fornyelse, null hvis ikke angivet',
+        }),
 
         ...COMMON_TOOL_PROPERTIES,
       },
@@ -235,7 +230,8 @@ Dokumenter er på dansk. Returner feltværdier på dansk hvor relevant (fx beskr
 ## Yderligere fund
 Brug additional_findings til at rapportere usædvanlige klausuler, særlige betingelser eller bemærkelsesværdige observationer der ikke er dækket af de definerede felter. Brug extraction_warnings til at rapportere problemer med ekstrationsqualiteten.`,
 
-  user_prompt_prefix: 'Analyser denne forsikringspolice og ekstraher alle felter via extract_forsikring tool.',
+  user_prompt_prefix:
+    'Analyser denne forsikringspolice og ekstraher alle felter via extract_forsikring tool.',
 
   extraction_model: 'claude-sonnet-4-20250514',
 
@@ -275,7 +271,8 @@ Brug additional_findings til at rapportere usædvanlige klausuler, særlige beti
     },
     {
       extracted_field: 'effective_date',
-      description: 'Verificér at ikrafttrædelsesdato ikke er efter eventuel udløbsdato (expiry_date)',
+      description:
+        'Verificér at ikrafttrædelsesdato ikke er efter eventuel udløbsdato (expiry_date)',
     },
     {
       extracted_field: 'coverage_amount_dkk',

@@ -49,7 +49,15 @@ export interface InlineKpi {
 export interface NavItem {
   name: string
   href: string
-  iconName: 'LayoutDashboard' | 'Building2' | 'FileText' | 'CheckSquare' | 'FolderOpen' | 'Calendar' | 'Users' | 'Briefcase'
+  iconName:
+    | 'LayoutDashboard'
+    | 'Building2'
+    | 'FileText'
+    | 'CheckSquare'
+    | 'FolderOpen'
+    | 'Calendar'
+    | 'Users'
+    | 'Briefcase'
   badgeKey: string
 }
 
@@ -61,10 +69,15 @@ export interface NavSection {
 // Hjælper: map CalendarEventType → hex-farve (bruges af widget + kalender-side)
 export function getEventTypeColor(type: CalendarEventType): string {
   switch (type) {
-    case 'expiry':   return '#ef4444'
-    case 'deadline': return '#f59e0b'
-    case 'meeting':  return '#3b82f6'
-    case 'case':     return '#8b5cf6'
-    case 'renewal':  return '#22c55e'
+    case 'expiry':
+      return '#ef4444'
+    case 'deadline':
+      return '#f59e0b'
+    case 'meeting':
+      return '#3b82f6'
+    case 'case':
+      return '#8b5cf6'
+    case 'renewal':
+      return '#22c55e'
   }
 }

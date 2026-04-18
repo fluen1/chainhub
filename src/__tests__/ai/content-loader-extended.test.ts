@@ -18,7 +18,7 @@ describe('content-loader — Word og Excel', () => {
       expect(result.type).toBe('text_markdown')
       if (result.type !== 'text_markdown') return
       expect(result.detectedMime).toBe(
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       )
       expect(result.markdown).toContain('## Ejerforhold')
     })
@@ -54,7 +54,7 @@ describe('content-loader — Word og Excel', () => {
       expect(result.type).toBe('text_html')
       if (result.type !== 'text_html') return
       expect(result.detectedMime).toBe(
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
       )
       expect(result.html.length).toBeGreaterThan(0)
     })

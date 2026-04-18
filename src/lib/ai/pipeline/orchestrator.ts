@@ -15,7 +15,7 @@ const log = createLogger('pipeline-orchestrator')
 
 export async function runExtractionPipeline(
   content: ExtractionContent,
-  options: PipelineOptions,
+  options: PipelineOptions
 ): Promise<PipelineResult> {
   const client = createClaudeClient()
   const startTime = Date.now()
@@ -40,7 +40,9 @@ export async function runExtractionPipeline(
   // Get schema (or MINIMAL fallback)
   const schema = getSchema(typeResult.detected_type) ?? getSchema('MINIMAL')
   if (!schema) {
-    throw new Error(`No schema found for type ${typeResult.detected_type} and MINIMAL not registered`)
+    throw new Error(
+      `No schema found for type ${typeResult.detected_type} and MINIMAL not registered`
+    )
   }
   log.info({ type: schema.contract_type, schema_version: schema.schema_version }, 'Using schema')
 
@@ -55,7 +57,7 @@ export async function runExtractionPipeline(
     log.info('Pass 2b: Schema extraction (run 2, temperature=0.4)')
     run2 = await extractWithSchema(content, schema, client, { temperature: 0.4 })
     agreement = compareRuns(run1.fields, run2.fields)
-    const agreeCount = agreement.filter(a => a.values_match).length
+    const agreeCount = agreement.filter((a) => a.values_match).length
     log.info({ total_fields: agreement.length, agreed: agreeCount }, 'Agreement computed')
   }
 
@@ -74,7 +76,10 @@ export async function runExtractionPipeline(
 
   // Compute confidence per field
   const fieldConfidences = computeAllFieldConfidences(
-    run1.fields, agreement, sourceVerification, sanityChecks,
+    run1.fields,
+    agreement,
+    sourceVerification,
+    sanityChecks
   )
 
   // Aggregate findings and warnings
@@ -83,18 +88,26 @@ export async function runExtractionPipeline(
 
   // Total cost
   const totalInputTokens = typeResult.input_tokens + run1.input_tokens + (run2?.input_tokens ?? 0)
-  const totalOutputTokens = typeResult.output_tokens + run1.output_tokens + (run2?.output_tokens ?? 0)
-  const totalCost = computeCostUsd(schema.extraction_model as ClaudeModel, totalInputTokens, totalOutputTokens)
+  const totalOutputTokens =
+    typeResult.output_tokens + run1.output_tokens + (run2?.output_tokens ?? 0)
+  const totalCost = computeCostUsd(
+    schema.extraction_model as ClaudeModel,
+    totalInputTokens,
+    totalOutputTokens
+  )
 
   const durationMs = Date.now() - startTime
-  log.info({
-    type: schema.contract_type,
-    total_fields: Object.keys(run1.fields).length,
-    total_cost: totalCost,
-    duration_ms: durationMs,
-    input_tokens: totalInputTokens,
-    output_tokens: totalOutputTokens,
-  }, 'Pipeline complete')
+  log.info(
+    {
+      type: schema.contract_type,
+      total_fields: Object.keys(run1.fields).length,
+      total_cost: totalCost,
+      duration_ms: durationMs,
+      input_tokens: totalInputTokens,
+      output_tokens: totalOutputTokens,
+    },
+    'Pipeline complete'
+  )
 
   return {
     type_detection: typeResult,

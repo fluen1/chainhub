@@ -11,11 +11,7 @@ const SENSITIVITY_ORDER: SensitivityLevel[] = [
 ]
 
 // Roles that can see STRENGT_FORTROLIG
-const STRENGT_FORTROLIG_ROLES: UserRole[] = [
-  'GROUP_OWNER',
-  'GROUP_ADMIN',
-  'GROUP_LEGAL',
-]
+const STRENGT_FORTROLIG_ROLES: UserRole[] = ['GROUP_OWNER', 'GROUP_ADMIN', 'GROUP_LEGAL']
 
 // Roles that can see FORTROLIG
 const FORTROLIG_ROLES: UserRole[] = [
@@ -48,10 +44,7 @@ async function getUserRoles(userId: string): Promise<
   return assignments
 }
 
-export async function canAccessCompany(
-  userId: string,
-  companyId: string
-): Promise<boolean> {
+export async function canAccessCompany(userId: string, companyId: string): Promise<boolean> {
   const roles = await getUserRoles(userId)
 
   for (const assignment of roles) {
@@ -121,10 +114,7 @@ export async function getAccessibleCompanies(
   return Array.from(companyIds)
 }
 
-export async function canAccessModule(
-  userId: string,
-  module: string
-): Promise<boolean> {
+export async function canAccessModule(userId: string, module: string): Promise<boolean> {
   const roles = await getUserRoles(userId)
   const userRoles = roles.map((r) => r.role)
 

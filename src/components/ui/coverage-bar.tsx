@@ -6,11 +6,8 @@ export interface CoverageBarProps {
 }
 
 export function CoverageBar({ label, percentage }: CoverageBarProps) {
-  const fillColor = percentage >= 100
-    ? 'bg-green-500'
-    : percentage >= 75
-      ? 'bg-blue-500'
-      : 'bg-amber-500'
+  const fillColor =
+    percentage >= 100 ? 'bg-green-500' : percentage >= 75 ? 'bg-blue-500' : 'bg-amber-500'
 
   return (
     <div className="flex items-center gap-3 mb-3.5">

@@ -13,6 +13,7 @@
 ## Scope
 
 ### In scope (this plan — 6 priority pages)
+
 1. `/documents` (list) — shows real documents with AI review status from DocumentExtraction
 2. `/documents/review/[id]` — split-panel AI review wired to real DocumentExtraction data
 3. `/contracts` (list + matrix) — shows real contracts with urgency + coverage matrix
@@ -21,6 +22,7 @@
 6. `/portfolio/[id]` (detail) — shows real company with AI insights
 
 ### Out of scope (future plans)
+
 - `/dashboard` — separate plan
 - `/tasks`, `/tasks/[id]` — separate plan
 - `/calendar` — separate plan
@@ -29,6 +31,7 @@
 - Sidebar/header redesign — separate plan
 
 ### Prerequisites
+
 - Plan 1 + Plan 2 completed (AI infrastructure in place)
 - Existing Server Actions working (companies, contracts, documents)
 - NextAuth configured with session.user.organizationId
@@ -40,19 +43,25 @@
 Every page migration follows this pattern:
 
 ### Step 1: Understand the proto page
+
 Read `src/app/proto/[module]/page.tsx`. Note:
+
 - What mock data it imports (e.g., `getCompanies` from `@/mock/companies`)
 - What components it renders
 - What interactivity it has (useState, filters, toggles)
 
 ### Step 2: Understand the production page
+
 Read `src/app/(dashboard)/[module]/page.tsx`. Note:
+
 - How it fetches data (Server Action or direct Prisma)
 - What session/permission checks exist
 - What shared components it uses (Pagination, SearchAndFilter, etc.)
 
 ### Step 3: Create the new page
+
 Combine proto's visual design with production's data layer:
+
 - Keep proto's JSX structure and Tailwind classes
 - Replace mock imports with Prisma queries or Server Action calls
 - Add `getServerSession` for auth
@@ -61,13 +70,16 @@ Combine proto's visual design with production's data layer:
 - Client Components only for interactive parts (filters, toggles, modals)
 
 ### Step 4: Handle AI data
+
 For pages that show AI results:
+
 - Query `DocumentExtraction` alongside the main entity
 - If extraction exists → show AI hero cards, confidence levels
 - If no extraction → show fallback (no AI card, just regular data)
 - Graceful degradation is critical: pages must work WITHOUT AI data
 
 ### Step 5: Clean up
+
 - Delete old production page (or rename as backup)
 - Update any imports/links that pointed to old page
 - Verify navigation works
@@ -79,12 +91,14 @@ For pages that show AI results:
 ### Task 1: Documents list page
 
 **Files:**
+
 - Read: `src/app/proto/documents/page.tsx` (proto design)
 - Read: `src/app/(dashboard)/documents/page.tsx` (current production)
 - Read: `src/actions/documents.ts` (existing actions)
 - Modify: `src/app/(dashboard)/documents/page.tsx` (replace with proto design + real data)
 
 **Migration steps:**
+
 - [ ] Read proto page and note all mock imports
 - [ ] Read production page and note data fetching pattern
 - [ ] Read `src/actions/documents.ts` for available functions
@@ -102,11 +116,13 @@ For pages that show AI results:
 ### Task 2: Document review page
 
 **Files:**
+
 - Read: `src/app/proto/documents/review/[id]/page.tsx`
 - Modify: `src/app/(dashboard)/documents/[id]/page.tsx` (or create review route)
 - Read: `src/actions/documents.ts`
 
 **Migration steps:**
+
 - [ ] Read proto review page (split-panel, confidence levels, decision tracking)
 - [ ] This page needs DocumentExtraction data: `prisma.documentExtraction.findUnique({ where: { document_id } })`
 - [ ] The `extracted_fields` JSON contains the structured extraction from the pipeline
@@ -121,12 +137,14 @@ For pages that show AI results:
 ### Task 3: Contracts list page
 
 **Files:**
+
 - Read: `src/app/proto/contracts/page.tsx`
 - Read: `src/app/(dashboard)/contracts/page.tsx`
 - Read: `src/actions/contracts.ts`
 - Modify: `src/app/(dashboard)/contracts/page.tsx`
 
 **Migration steps:**
+
 - [ ] Read proto page (pinned urgency + flat table + coverage matrix)
 - [ ] Replace `getContracts(dataScenario)` → Prisma query with org_id + deleted_at filter
 - [ ] Derive urgency status from real contract fields (status, expiry_date)
@@ -139,11 +157,13 @@ For pages that show AI results:
 ### Task 4: Contract detail page
 
 **Files:**
+
 - Read: `src/app/proto/contracts/[id]/page.tsx`
 - Read: `src/app/(dashboard)/contracts/[id]/page.tsx` (if exists)
 - Modify: `src/app/(dashboard)/contracts/[id]/page.tsx`
 
 **Migration steps:**
+
 - [ ] Read proto page (AI key terms hero, sidebar nav, 4 sections)
 - [ ] Fetch contract: `prisma.contract.findUnique({ where: { id, organization_id }, include: { company: true, parties: true, versions: true } })`
 - [ ] Fetch DocumentExtraction for this contract's document (if linked)
@@ -158,11 +178,13 @@ For pages that show AI results:
 ### Task 5: Portfolio list page (selskaber)
 
 **Files:**
+
 - Read: `src/app/proto/portfolio/page.tsx`
 - Read: `src/app/(dashboard)/companies/page.tsx`
 - Modify: `src/app/(dashboard)/companies/page.tsx`
 
 **Migration steps:**
+
 - [ ] Read proto page (geo map + list toggle + filter pills)
 - [ ] Replace `getCompanies()` → `prisma.company.findMany({ where: { organization_id, deleted_at: null }, include: { _count: { select: { contracts: true, cases: true } } } })`
 - [ ] Derive health status from real data (expired contracts, open cases, EBITDA trends)
@@ -175,11 +197,13 @@ For pages that show AI results:
 ### Task 6: Portfolio detail page (selskab)
 
 **Files:**
+
 - Read: `src/app/proto/portfolio/[id]/page.tsx`
 - Read: `src/app/(dashboard)/companies/[id]/page.tsx` (main tabs page)
 - Modify: `src/app/(dashboard)/companies/[id]/page.tsx`
 
 **Migration steps:**
+
 - [ ] Read proto page (sticky sidebar, AI insight hero, 9 sections)
 - [ ] This is the most complex migration — the existing production page has multiple tabs
 - [ ] Approach: replace the main overview tab with proto design, keep existing tab structure
@@ -206,6 +230,7 @@ For pages that show AI results:
 ## Important patterns to follow
 
 ### Auth pattern (existing in codebase)
+
 ```typescript
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -221,6 +246,7 @@ export default async function Page() {
 ```
 
 ### Permission pattern
+
 ```typescript
 import { canAccessCompany, canAccessModule } from '@/lib/permissions'
 
@@ -234,6 +260,7 @@ if (!canAccess) notFound()
 ```
 
 ### Mixed Server/Client Components
+
 ```typescript
 // page.tsx (Server Component — fetches data)
 export default async function ContractsPage() {
@@ -251,6 +278,7 @@ export function ContractsClient({ contracts }: { contracts: Contract[] }) {
 ```
 
 ### AI data graceful degradation
+
 ```typescript
 // Fetch extraction alongside document
 const document = await prisma.document.findUnique({

@@ -13,7 +13,20 @@ function getGreeting(date: Date): string {
 
 function getDateString(date: Date): string {
   const days = ['Søndag', 'Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag']
-  const months = ['januar', 'februar', 'marts', 'april', 'maj', 'juni', 'juli', 'august', 'september', 'oktober', 'november', 'december']
+  const months = [
+    'januar',
+    'februar',
+    'marts',
+    'april',
+    'maj',
+    'juni',
+    'juli',
+    'august',
+    'september',
+    'oktober',
+    'november',
+    'december',
+  ]
   return `${days[date.getDay()]} ${date.getDate()}. ${months[date.getMonth()]} ${date.getFullYear()}`
 }
 
@@ -25,7 +38,12 @@ export interface AppHeaderProps {
 
 export function AppHeader({ userName, kpis, currentDate }: AppHeaderProps) {
   const firstName = userName.split(' ')[0]
-  const initials = userName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
+  const initials = userName
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
 
   return (
     <header className="flex items-center justify-between border-b border-gray-200 bg-white px-4 lg:px-8 h-16 py-0">
@@ -35,7 +53,9 @@ export function AppHeader({ userName, kpis, currentDate }: AppHeaderProps) {
           <div className="text-sm font-bold text-slate-900 leading-tight">
             {getGreeting(currentDate)}, {firstName}
           </div>
-          <div className="text-[11px] text-gray-400 leading-tight">{getDateString(currentDate)}</div>
+          <div className="text-[11px] text-gray-400 leading-tight">
+            {getDateString(currentDate)}
+          </div>
         </div>
 
         <div className="hidden lg:block w-px h-9 bg-gray-200 mr-6" />
@@ -48,7 +68,7 @@ export function AppHeader({ userName, kpis, currentDate }: AppHeaderProps) {
                   'text-lg font-bold tabular-nums leading-tight',
                   kpi.color === 'red' && 'text-red-600',
                   kpi.color === 'amber' && 'text-amber-600',
-                  !kpi.color && 'text-slate-900',
+                  !kpi.color && 'text-slate-900'
                 )}
               >
                 {kpi.value}
@@ -66,7 +86,11 @@ export function AppHeader({ userName, kpis, currentDate }: AppHeaderProps) {
         >
           Søg efter selskaber, kontrakter, perso...
         </Link>
-        <button type="button" aria-label="Notifikationer" className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-slate-50 text-gray-400 hover:bg-slate-100 transition-colors">
+        <button
+          type="button"
+          aria-label="Notifikationer"
+          className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-slate-50 text-gray-400 hover:bg-slate-100 transition-colors"
+        >
           <Bell className="h-4 w-4" />
           <div className="absolute top-1.5 right-1.5 h-[7px] w-[7px] rounded-full bg-red-500 border-2 border-white" />
         </button>

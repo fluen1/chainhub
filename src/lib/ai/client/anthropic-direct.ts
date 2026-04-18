@@ -28,16 +28,25 @@ export class AnthropicDirectClient implements ClaudeClient {
         tool_choice: request.tool_choice as never,
       })
       const latencyMs = Date.now() - start
-      log.info({
-        model: response.model, stop_reason: response.stop_reason,
-        input_tokens: response.usage.input_tokens, output_tokens: response.usage.output_tokens,
-        latency_ms: latencyMs,
-      }, 'Claude response')
+      log.info(
+        {
+          model: response.model,
+          stop_reason: response.stop_reason,
+          input_tokens: response.usage.input_tokens,
+          output_tokens: response.usage.output_tokens,
+          latency_ms: latencyMs,
+        },
+        'Claude response'
+      )
       return {
-        id: response.id, model: response.model,
+        id: response.id,
+        model: response.model,
         stop_reason: response.stop_reason as ClaudeResponse['stop_reason'],
         content: response.content as ClaudeResponse['content'],
-        usage: { input_tokens: response.usage.input_tokens, output_tokens: response.usage.output_tokens },
+        usage: {
+          input_tokens: response.usage.input_tokens,
+          output_tokens: response.usage.output_tokens,
+        },
       }
     } catch (err) {
       const retryable = this.isRetryable(err)

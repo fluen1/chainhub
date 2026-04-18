@@ -20,15 +20,15 @@ describe('pickHighestPriorityRole', () => {
   })
 
   it('vaelger GROUP_OWNER over GROUP_LEGAL naar begge er til stede', () => {
-    expect(
-      pickHighestPriorityRole([{ role: 'GROUP_LEGAL' }, { role: 'GROUP_OWNER' }])
-    ).toBe('GROUP_OWNER')
+    expect(pickHighestPriorityRole([{ role: 'GROUP_LEGAL' }, { role: 'GROUP_OWNER' }])).toBe(
+      'GROUP_OWNER'
+    )
   })
 
   it('haandterer ukendt rolle som laveste prioritet', () => {
-    expect(
-      pickHighestPriorityRole([{ role: 'UKENDT_ROLLE' }, { role: 'COMPANY_READONLY' }])
-    ).toBe('COMPANY_READONLY')
+    expect(pickHighestPriorityRole([{ role: 'UKENDT_ROLLE' }, { role: 'COMPANY_READONLY' }])).toBe(
+      'COMPANY_READONLY'
+    )
   })
 })
 
@@ -177,7 +177,7 @@ describe('deriveHealthDimensions', () => {
   it('oekonomi: amber ved YoY omsaetning-fald over 10%', () => {
     const result = deriveHealthDimensions({
       ...baseInput,
-      finance2025: { ebitda: 100000, margin: 0.10, omsaetning: 800000 },
+      finance2025: { ebitda: 100000, margin: 0.1, omsaetning: 800000 },
       finance2024: { omsaetning: 1000000 },
     })
     expect(result.oekonomi).toBe('amber')

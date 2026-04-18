@@ -1,5 +1,7 @@
 # CONTRACT-TYPES.md
+
 # ChainHub — Kontrakttyper og metadata
+
 **Version 0.5 — DEA-challenge-rettet**
 **Status: ACCEPTED efter DEA-challenge-runde**
 
@@ -101,13 +103,14 @@ UDKAST → TIL_REVIEW → TIL_UNDERSKRIFT → AKTIV
 
 ## LAG 1 — Universelle typer
 
-*Tilgængelige for alle brugere uanset virksomhedstype.*
+_Tilgængelige for alle brugere uanset virksomhedstype._
 
 ---
 
 ### KATEGORI A: Ejerskab og selskabsret
 
 #### KT-01: Ejeraftale
+
 **system_type:** `EJERAFTALE`
 **Sensitivitet:** `STRENGT_FORTROLIG` · **Deadline:** `ABSOLUT`
 **Display navn eksempel:** "Ejeraftale", "Aktionæroverenskomst", "Anpartshaveroverenskomst"
@@ -126,6 +129,7 @@ good_leaver_definition  TEXT
 ```
 
 #### KT-02: Direktørkontrakt
+
 **system_type:** `DIREKTØRKONTRAKT`
 **Sensitivitet:** `STRENGT_FORTROLIG` · **Deadline:** `OPERATIONEL`
 **Note:** Direktøren er IKKE funktionær — selskabsretlig, ikke ansættelsesretlig.
@@ -140,6 +144,7 @@ severance_months        INTEGER
 ```
 
 #### KT-03: Overdragelsesaftale (anparter/aktier)
+
 **system_type:** `OVERDRAGELSESAFTALE`
 **Sensitivitet:** `STRENGT_FORTROLIG` · **Deadline:** `ABSOLUT`
 **Display navn eksempel:** "SPA", "Anpartsoverdragelse", "Share Purchase Agreement"
@@ -154,6 +159,7 @@ earn_out                BOOLEAN
 ```
 
 #### KT-04: Aktionærlåneaftale
+
 **system_type:** `AKTIONÆRLÅN`
 **Sensitivitet:** `STRENGT_FORTROLIG` · **Deadline:** `ABSOLUT`
 **Kritisk:** GF-vedtagelse af markedsrente hvert år (LL § 16E).
@@ -167,6 +173,7 @@ subordination           BOOLEAN
 ```
 
 #### KT-05: Pantsætningsaftale
+
 **system_type:** `PANTSÆTNING`
 **Sensitivitet:** `STRENGT_FORTROLIG`
 
@@ -178,6 +185,7 @@ pledge_release_date     DATE NULL
 ```
 
 #### KT-06: Vedtægter
+
 **system_type:** `VEDTÆGTER`
 **Sensitivitet:** `INTERN`
 **Note:** Skal synkroniseres med KT-01 ved enhver ændring.
@@ -193,6 +201,7 @@ share_classes           TEXT[]
 ### KATEGORI B: Ansættelse og personale
 
 #### KT-07: Ansættelseskontrakt — Funktionær
+
 **system_type:** `ANSÆTTELSE_FUNKTIONÆR`
 **Sensitivitet:** `FORTROLIG`
 **Display navn eksempel:** "Ansættelseskontrakt", "Funktionærkontrakt"
@@ -209,6 +218,7 @@ version_source          ENUM        BRANCHESTANDARD | INTERNT | EKSTERNT_STANDAR
 identificerer kontrakter der skal markeres ved overenskomstfornyelse.
 
 #### KT-08: Ansættelseskontrakt — Ikke-funktionær
+
 **system_type:** `ANSÆTTELSE_IKKE_FUNKTIONÆR`
 **Sensitivitet:** `FORTROLIG`
 
@@ -219,6 +229,7 @@ anciennity_start        DATE
 ```
 
 #### KT-09: Vikaraftale
+
 **system_type:** `VIKARAFTALE`
 **Sensitivitet:** `STANDARD`
 
@@ -230,6 +241,7 @@ hourly_rate             INTEGER
 ```
 
 #### KT-10: Uddannelsesaftale (elev/EUD)
+
 **system_type:** `UDDANNELSESAFTALE`
 **Sensitivitet:** `STANDARD` · **Deadline:** `ABSOLUT`
 **Kritisk:** Prøvetid 2 uger → herefter fuld uddannelsesbeskyttelse.
@@ -242,6 +254,7 @@ probation_end_date      DATE        ABSOLUT — 2 uger
 ```
 
 #### KT-11: Fratrædelsesaftale
+
 **system_type:** `FRATRÆDELSESAFTALE`
 **Sensitivitet:** `FORTROLIG` · **Deadline:** `ABSOLUT`
 **Kritisk:** Fortrydelsesret 14 dage (ansættelsesbevisloven § 5a).
@@ -254,6 +267,7 @@ ll_7u_applicable        BOOLEAN
 ```
 
 #### KT-12: Konkurrenceklausulaftale
+
 **system_type:** `KONKURRENCEKLAUSUL`
 **Sensitivitet:** `FORTROLIG` · **Deadline:** `ABSOLUT`
 **Kritisk:** Manglende månedlig kompensation → klausul bortfalder (FUL § 18c).
@@ -269,6 +283,7 @@ customer_clause         BOOLEAN
 ```
 
 #### KT-13: Personalehåndbog
+
 **system_type:** `PERSONALEHÅNDBOG`
 **Sensitivitet:** `INTERN`
 **Note:** Styrende dokument med kontraktuel status via inkorporering i ansættelseskontrakter.
@@ -285,6 +300,7 @@ next_review_date        DATE
 ### KATEGORI C: Lokaler og udstyr
 
 #### KT-14: Lejekontrakt — Erhverv
+
 **system_type:** `LEJEKONTRAKT_ERHVERV`
 **Sensitivitet:** `INTERN` · **Deadline:** `ABSOLUT`
 **Kritisk:** Automatisk forlængelse ved manglende opsigelse (typisk 3-5 år).
@@ -300,6 +316,7 @@ deposit_months          INTEGER NULL
 ```
 
 #### KT-15: Leasingaftale
+
 **system_type:** `LEASINGAFTALE`
 **Sensitivitet:** `INTERN` · **Deadline:** `ABSOLUT`
 **Display navn eksempel:** "Leasingaftale — Udstyr", "Billeasing", "IT-leasing"
@@ -319,6 +336,7 @@ termination_window_days INTEGER     dage inden udløb til opsigelse
 ### KATEGORI D: Kommercielle aftaler
 
 #### KT-16: Leverandørkontrakt
+
 **system_type:** `LEVERANDØRKONTRAKT`
 **Sensitivitet:** `INTERN`
 **Display navn eksempel:** "Leverandørkontrakt", "Konsulentaftale",
@@ -338,6 +356,7 @@ annual_cost             INTEGER NULL
 reminder sættes til `expiry_date − auto_renewal_days − 14`.
 
 #### KT-17: Samarbejdsaftale
+
 **system_type:** `SAMARBEJDSAFTALE`
 **Sensitivitet:** `FORTROLIG`
 **Display navn eksempel:** "Samarbejdsaftale", "Partnerskabsaftale", "Konsortieaftale"
@@ -349,6 +368,7 @@ revenue_share_pct       DECIMAL NULL
 ```
 
 #### KT-18: Fortrolighedsaftale (NDA)
+
 **system_type:** `NDA`
 **Sensitivitet:** `FORTROLIG`
 
@@ -359,6 +379,7 @@ purpose                 TEXT
 ```
 
 #### KT-19: IT-/Systemaftale
+
 **system_type:** `IT_SYSTEMAFTALE`
 **Sensitivitet:** `INTERN` · **Deadline:** `ABSOLUT`
 **Display navn eksempel:** "Journalsystemaftale", "ERP-aftale",
@@ -373,6 +394,7 @@ data_portability_terms  TEXT NULL
 ```
 
 #### KT-20: Databehandleraftale (DBA)
+
 **system_type:** `DBA`
 **Sensitivitet:** `INTERN`
 **Note:** Aldrig standalone — altid bilag til primær aftale (KT-16, KT-19, KT-17).
@@ -390,6 +412,7 @@ transfer_basis          TEXT NULL   SCCs / adequacy / andet
 ### KATEGORI E: Forsikring og governance
 
 #### KT-21: Forsikringsaftale
+
 **system_type:** `FORSIKRING`
 **Sensitivitet:** `INTERN`
 
@@ -403,6 +426,7 @@ coverage_amount         INTEGER
 ```
 
 #### KT-22: Generalforsamlingsreferat
+
 **system_type:** `GF_REFERAT`
 **Sensitivitet:** `FORTROLIG`
 
@@ -414,6 +438,7 @@ quorum_met              BOOLEAN
 ```
 
 #### KT-23: Bestyrelsesreferat
+
 **system_type:** `BESTYRELSESREFERAT`
 **Sensitivitet:** `FORTROLIG`
 
@@ -424,6 +449,7 @@ resolutions             TEXT[]
 ```
 
 #### KT-24: Forretningsorden for bestyrelse
+
 **system_type:** `FORRETNINGSORDEN`
 **Sensitivitet:** `FORTROLIG`
 **Note:** Selvstændig livscyklus — opdateres uafhængigt af ejeraftalen.
@@ -435,6 +461,7 @@ quorum_requirement      TEXT
 ```
 
 #### KT-25: Direktionsinstruks
+
 **system_type:** `DIREKTIONSINSTRUKS`
 **Sensitivitet:** `FORTROLIG`
 **Note:** Opdateres ved direktørskifte — ikke kun ved ejeraftalerevision.
@@ -446,6 +473,7 @@ signing_authority       TEXT
 ```
 
 #### KT-26: Virksomhedsoverdragelsesaftale (VOA)
+
 **system_type:** `VOA`
 **Sensitivitet:** `STRENGT_FORTROLIG` · **Deadline:** `ABSOLUT`
 **Note:** Overdragelse af drift — ikke anparter. Udløser medarbejderrettigheder (VOA-loven).
@@ -461,12 +489,13 @@ completion_date         DATE
 
 ## LAG 2 — Strukturtyper (kæde / co-ownership)
 
-*Aktiveres i onboarding når bruger angiver kædestruktur med delejede selskaber.*
-*Alle navne er bruger-definerede via `display_name`.*
+_Aktiveres i onboarding når bruger angiver kædestruktur med delejede selskaber._
+_Alle navne er bruger-definerede via `display_name`._
 
 ---
 
 #### KT-27: Intern serviceaftale
+
 **system_type:** `INTERN_SERVICEAFTALE`
 **Sensitivitet:** `STRENGT_FORTROLIG`
 **Display navn eksempel:** "Tilrådighedsaftale", "Management Fee-aftale",
@@ -487,6 +516,7 @@ tp_document_id          UUID NULL   reference til uploaded TP-dokumentation
 ```
 
 #### KT-28: Royalty- / Licensaftale
+
 **system_type:** `ROYALTY_LICENS`
 **Sensitivitet:** `STRENGT_FORTROLIG`
 **Display navn eksempel:** "Royaltyaftale", "Brandlicensaftale", "Konceptlicens"
@@ -504,6 +534,7 @@ tp_document_id          UUID NULL   reference til uploaded TP-dokumentation
 ```
 
 #### KT-29: Optionsaftale (andele)
+
 **system_type:** `OPTIONSAFTALE`
 **Sensitivitet:** `STRENGT_FORTROLIG` · **Deadline:** `ABSOLUT`
 **Display navn eksempel:** "Optionsaftale", "Købsoptionsaftale", "Partner-option"
@@ -523,6 +554,7 @@ trigger_event           TEXT NULL     hvad aktiverer optionen
 ```
 
 #### KT-30: Tiltrædelsesdokument til ejeraftale
+
 **system_type:** `TILTRÆDELSESDOKUMENT`
 **Sensitivitet:** `STRENGT_FORTROLIG`
 **Display navn eksempel:** "Tiltrædelsesdokument", "Accession Agreement"
@@ -536,6 +568,7 @@ accession_date          DATE
 ```
 
 #### KT-31: Kassekreditaftale / Bankfacilitet
+
 **system_type:** `KASSEKREDIT`
 **Sensitivitet:** `FORTROLIG` · **Deadline:** `ABSOLUT`
 **Display navn eksempel:** "Kassekreditaftale", "Driftskredit", "Bankfacilitet"
@@ -548,6 +581,7 @@ covenants               TEXT[] NULL
 ```
 
 #### KT-32: Cash pool-aftale
+
 **system_type:** `CASH_POOL`
 **Sensitivitet:** `STRENGT_FORTROLIG`
 **Display navn eksempel:** "Cash Pool-aftale", "Koncernkontoaftale"
@@ -563,6 +597,7 @@ sweep_frequency         TEXT        daglig / ugentlig / månedlig
 ```
 
 #### KT-33: Intercompany-lån
+
 **system_type:** `INTERCOMPANY_LÅN`
 **Sensitivitet:** `STRENGT_FORTROLIG` · **Deadline:** `ABSOLUT`
 **Display navn eksempel:** "Koncernlån", "Intercompany-lån", "Datterselskabslån"
@@ -690,7 +725,7 @@ INTERN_SERVICEAFTALE
 
 ## Lovpligtig opbevaringsperiode per system_type (DEC-001)
 
-*Auto-beregnet af systemet. Brugeren kan forlænge men aldrig forkorte.*
+_Auto-beregnet af systemet. Brugeren kan forlænge men aldrig forkorte._
 
 ```
 PERMANENT (så længe selskabet eksisterer):

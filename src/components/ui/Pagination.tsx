@@ -11,12 +11,7 @@ interface PaginationProps {
   className?: string
 }
 
-export function Pagination({
-  currentPage,
-  totalCount,
-  pageSize = 20,
-  className,
-}: PaginationProps) {
+export function Pagination({ currentPage, totalCount, pageSize = 20, className }: PaginationProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()

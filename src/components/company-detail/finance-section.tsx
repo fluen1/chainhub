@@ -66,7 +66,9 @@ export function FinanceSection({ data }: FinanceSectionProps) {
   if (!data) {
     return (
       <SectionCard title="Økonomi 2025">
-        <p className="py-2 text-center text-xs text-slate-400">Ingen økonomi-data registreret for 2025</p>
+        <p className="py-2 text-center text-xs text-slate-400">
+          Ingen økonomi-data registreret for 2025
+        </p>
       </SectionCard>
     )
   }

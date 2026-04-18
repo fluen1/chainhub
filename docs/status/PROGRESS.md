@@ -3,6 +3,7 @@
 Opdateret: Plan 4D i praksis lukket + Sprint 8 accountability — 2026-04-18
 
 ## Sprint 1-6 ✅ FÆRDIGE
+
 - [x] Sprint 1 — Fundament (Next.js 14, Prisma, Auth, Permissions, Dashboard shell)
 - [x] Sprint 2 — Kernobjekter (Selskaber, Personer)
 - [x] Sprint 3 — Kontrakter (34 typer, sensitivity, status-flow)
@@ -11,12 +12,14 @@ Opdateret: Plan 4D i praksis lukket + Sprint 8 accountability — 2026-04-18
 - [x] Sprint 6 — Produktion (48 tests, pentest, build grøn)
 
 ## Fase 0 — SPEC-TILLAEG-v2 ✅ GODKENDT (2026-03-12)
+
 - [x] 17 beslutninger (16 ACCEPTED, 1 WONT-FIX)
 - [x] 0 KRITISKE indsigelser
 
 ## Sprint 7 — UI Foundation + Enum Fix ✅ FÆRDIG
 
 ### TEKNISK GATE ✅
+
 - [x] npm install — ingen fejl
 - [x] prisma generate — OK
 - [x] tsc --noEmit — 0 fejl
@@ -24,6 +27,7 @@ Opdateret: Plan 4D i praksis lukket + Sprint 8 accountability — 2026-04-18
 - [x] Alle 48 tests grønne
 
 ### UI GATE ✅
+
 - [x] src/lib/labels.ts — global enum→dansk mapping (alle enums)
 - [x] src/components/ui/Pagination.tsx — genanvendelig pagination
 - [x] src/components/ui/SearchAndFilter.tsx — søgning + filtre
@@ -41,11 +45,13 @@ Opdateret: Plan 4D i praksis lukket + Sprint 8 accountability — 2026-04-18
 - [x] src/app/(dashboard)/persons/page.tsx — card-grid + søgning + pagination
 
 ### PRODUKT GATE ✅
+
 - [x] Kædeleder-perspektiv er nu primært fokus
 - [x] Overbliksfane giver svar på "hvad er status på denne klinik?"
 - [x] Urgency panel giver svar på "hvad kræver min opmærksomhed nu?"
 
 ### BRUGER GATE ✅
+
 - [x] Login-side loader uden fejl
 - [x] Dashboard og routes kompilerer korrekt
 - [x] Urgency panel med specifikke items og direkte links
@@ -53,6 +59,7 @@ Opdateret: Plan 4D i praksis lukket + Sprint 8 accountability — 2026-04-18
 ## Sprint 8 — Accountability + Dokumenter (i gang)
 
 ### Sprint 8A — Skalering + Brugerstyring + Upload ✅ (2026-03-25)
+
 - [x] Selskabs-filter på /contracts, /cases, /tasks (URL param ?company=uuid)
 - [x] Grupperet visning på /contracts og /cases (?view=grouped/flat, default grupperet)
 - [x] GroupToggle + CollapsibleSection UI-komponenter
@@ -69,6 +76,7 @@ Opdateret: Plan 4D i praksis lukket + Sprint 8 accountability — 2026-04-18
 - [x] Smoke-test: alle routes returnerer 200 med data
 
 ### Sprint 8B — Email + Versioner + Besøg ✅ (2026-03-25)
+
 - [x] Email-digest: Resend-integration, daglig digest-template (dansk), cron API-endpoint
 - [x] Deadline-helpers: getExpiringContracts, getOverdueTasks, getUpcomingTasks (DRY)
 - [x] Kontraktversioner: upload ny version med ChangeType (NY_VERSION/REDAKTIONEL/MATERIEL/ALLONGE)
@@ -83,10 +91,11 @@ Opdateret: Plan 4D i praksis lukket + Sprint 8 accountability — 2026-04-18
 - [x] Build: GRØN (41 routes, 0 TS-fejl)
 
 ### Sprint 8C — Konsolidering ✅ (2026-03-25)
+
 - [x] Labels centraliseret i labels.ts — 10 sider migreret fra lokale hardcoded labels
 - [x] Tilføjet CompanyPerson rolle-labels + MetricSource labels til labels.ts
 - [x] Auth-check tilføjet på 5 "opret ny"-sider (companies, cases, contracts, tasks, persons)
-- [x] Formular-logik ekstraheret til client-komponenter (Create*Form.tsx)
+- [x] Formular-logik ekstraheret til client-komponenter (Create\*Form.tsx)
 - [x] Zod UUID-validering rettet i 6 validerings-schemas (z.string().uuid() → z.string().min(1))
 - [x] TaskStatusButton rettet (AKTIV_TASK enum-mapping)
 - [x] /documents forbedret (upload, filtre, MIME-labels, download-links)
@@ -94,6 +103,7 @@ Opdateret: Plan 4D i praksis lukket + Sprint 8 accountability — 2026-04-18
 - [x] Build: GRØN (41 routes, 0 TS-fejl, 48 tests grønne)
 
 ### Sprint 8 resterende scope
+
 - [x] Schema — task_history (leveret 2026-04-18 via `TaskHistory`-model + `TaskHistoryField`-enum)
 - [x] Opgave-udvidelser — historik (kommentarer leveret tidligere via polymorf Comment; kilde-badge er del af detail-rewrite)
 - [ ] Schema — task_participants (udskudt, se "Udskudte features")
@@ -101,6 +111,7 @@ Opdateret: Plan 4D i praksis lukket + Sprint 8 accountability — 2026-04-18
 - [ ] Fase 2: Side-for-side UX-gennemgang (32 sider — spec i docs/superpowers/specs/)
 
 ## Plan 4A — Atomiske proto-komponenter ✅ (2026-04)
+
 - [x] 11 komponenter migreret fra proto til `src/components/ui/` + `src/components/layout/`
 - [x] KpiCard, FinRow, CoverageBar, HealthBar, CompanyRow, InsightCard, UrgencyList, CalendarWidget, SectionHeader
 - [x] AppSidebar, AppHeader (kebab-case, shadcn-konvention)
@@ -108,6 +119,7 @@ Opdateret: Plan 4D i praksis lukket + Sprint 8 accountability — 2026-04-18
 - [x] Unit tests pr. komponent (Vitest + Testing Library)
 
 ## Plan 4B — Dashboard + layout-migration ✅ (2026-04-11)
+
 - [x] HealthBar empty-state fix + AppHeader SSR-hydration fix (currentDate som prop)
 - [x] `'use client'` fjernet fra pure presentation atoms (FinRow, CoverageBar, CompanyRow, HealthBar)
 - [x] `src/actions/dashboard.ts` — parallel Prisma-batch aggregator (badges, rolle-adaptive KPIs, timeline, heatmap, coverage, portfolio-totals, role priority)
@@ -121,6 +133,7 @@ Opdateret: Plan 4D i praksis lukket + Sprint 8 accountability — 2026-04-18
 - [x] Build: GRØN, 242 tests passerer, Playwright-audit uden console errors
 
 ## Plan 4C — Selskabs-detalje single-page ✅ (2026-04-12)
+
 - [x] 18 tasks via subagent-driven-development (Task 0 Prisma migration → Task 17 Playwright audit)
 - [x] Ny Prisma-model `CompanyInsightsCache` med 24h TTL
 - [x] Pure helpers i `src/lib/company-detail/helpers.ts`: sectionsForRole, pickHighestPriorityRole, deriveHealthDimensions, deriveStatusBadge, sortContractsByUrgency, sortCasesByUrgency, selectKeyPersons
@@ -137,6 +150,7 @@ Opdateret: Plan 4D i praksis lukket + Sprint 8 accountability — 2026-04-18
 - [x] Playwright audit: alle 7 sektioner renderes, ingen browser console errors, graceful AI degradation bekræftet
 
 ## Plan 4D — Resterende sider ✅ (i praksis lukket 2026-04-18)
+
 - [x] `/tasks` list + `/tasks/[id]` detail-rewrite (2026-04-18 — 6 commits, TaskHistory + kanban)
 - [x] `/calendar` full-page (leveret tidligere — event-filter, mobile layout, quick-add)
 - [x] `/search` global søgning (2026-04-18 — 6 entitetstyper, scope-filtrering, sensitivity)
@@ -146,6 +160,7 @@ Opdateret: Plan 4D i praksis lukket + Sprint 8 accountability — 2026-04-18
 ## Sprint 8 accountability + /search — 2026-04-18 ✅
 
 ### Leveret i session
+
 - [x] **TaskHistory-model** i Prisma med `TaskHistoryField`-enum (STATUS, PRIORITY, ASSIGNEE, DUE_DATE, TITLE, DESCRIPTION)
 - [x] **Atomiske historik-skriv** via `prisma.$transaction` i `updateTaskStatus/Priority/Assignee/DueDate`
 - [x] **`/tasks/[id]` single-page rewrite** — sektion-baseret (TaskHeader, TaskContext, TaskDescription, TaskHistory, CommentSection) + EditTaskDialog
@@ -169,6 +184,7 @@ Disse er bevidst taget ud af scope efter exploration og venter på dedikeret pla
 - **Dashboard whitespace + sidebar-badge contrast** — kosmetisk polish-sprint.
 
 ## Sprint 9 — Polish + Kalender ❌ AFVENTER SPRINT 8
+
 - [ ] Tværgående kalender
 - [ ] Notater pr. selskab
 - [ ] Kanban-visning opgaver
@@ -177,10 +193,12 @@ Disse er bevidst taget ud af scope efter exploration og venter på dedikeret pla
 - [ ] Organisation-indstillinger
 
 ## BLK-001: Supabase — LØST (2026-03-25)
+
 Supabase genaktiveret. Schema synkroniseret, seed-data indlæst.
 docker-compose.yml klar til lokal PG som alternativ (kræver Docker Desktop).
 
 ## Sprint 7.5 — Oprydning + Pagination ✅ (2026-03-25)
+
 - [x] Supabase genaktiveret og seed-data indlæst (7 selskaber, 18 kontrakter, 6 sager, 10 opgaver)
 - [x] Cases-liste: SearchAndFilter + Pagination (status + type filtre)
 - [x] Opgaveliste: SearchAndFilter + Pagination (status + prioritet filtre)
@@ -191,5 +209,6 @@ docker-compose.yml klar til lokal PG som alternativ (kræver Docker Desktop).
 - [x] CLAUDE.md opdateret med docker-kommandoer
 
 ## Resterende kendte UI-problemer
+
 - Ejerskab-advarsel kan forbedres (Sprint 9)
 - Sidebar rolle-badge contrast på mørk baggrund (Sprint 9 polish)

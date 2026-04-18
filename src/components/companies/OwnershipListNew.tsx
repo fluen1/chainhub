@@ -81,9 +81,7 @@ function OwnershipRow({
         )}
         <p className="text-xs text-gray-400 mt-0.5">
           {ownership.owner_person ? 'Person' : 'Selskab'}
-          {ownership.owner_person?.email && (
-            <span> · {ownership.owner_person.email}</span>
-          )}
+          {ownership.owner_person?.email && <span> · {ownership.owner_person.email}</span>}
           {dateLabel && <span> · {dateLabel}</span>}
           {endDateLabel && <span> · {endDateLabel}</span>}
         </p>
@@ -162,11 +160,7 @@ function CollapsibleGroup({
           {count}
         </span>
       </button>
-      {isOpen && (
-        <div className="border-l border-gray-200">
-          {children}
-        </div>
-      )}
+      {isOpen && <div className="border-l border-gray-200">{children}</div>}
     </div>
   )
 }
@@ -191,7 +185,9 @@ export function OwnershipListNew({
           {activeOwnerships.length > 0 && (
             <>
               <span className="text-gray-300">·</span>
-              <span className={pctWarning ? 'text-amber-600 font-medium' : 'text-green-700 font-medium'}>
+              <span
+                className={pctWarning ? 'text-amber-600 font-medium' : 'text-green-700 font-medium'}
+              >
                 {totalPct.toFixed(0)}% af 100%
               </span>
             </>
@@ -199,9 +195,7 @@ export function OwnershipListNew({
           {historicOwnerships.length > 0 && (
             <>
               <span className="text-gray-300">·</span>
-              <span>
-                {historicOwnerships.length} tidligere
-              </span>
+              <span>{historicOwnerships.length} tidligere</span>
             </>
           )}
         </div>
@@ -220,21 +214,27 @@ export function OwnershipListNew({
         <div className="rounded-lg border border-dashed border-gray-200 py-16 text-center">
           <Users className="mx-auto h-10 w-10 text-gray-300" />
           <p className="mt-3 text-sm font-medium text-gray-900">Ingen ejere registreret endnu</p>
-          <p className="mt-1 text-sm text-gray-400">
-            Tilføj den første ejer for dette selskab.
-          </p>
+          <p className="mt-1 text-sm text-gray-400">Tilføj den første ejer for dette selskab.</p>
         </div>
       ) : (
         <div className="space-y-2">
           {activeOwnerships.length > 0 && (
-            <CollapsibleGroup title="Aktive ejere" count={activeOwnerships.length} defaultOpen={true}>
+            <CollapsibleGroup
+              title="Aktive ejere"
+              count={activeOwnerships.length}
+              defaultOpen={true}
+            >
               {activeOwnerships.map((o) => (
                 <OwnershipRow key={o.id} ownership={o} showActions={true} />
               ))}
             </CollapsibleGroup>
           )}
           {historicOwnerships.length > 0 && (
-            <CollapsibleGroup title="Tidligere ejere" count={historicOwnerships.length} defaultOpen={false}>
+            <CollapsibleGroup
+              title="Tidligere ejere"
+              count={historicOwnerships.length}
+              defaultOpen={false}
+            >
               {historicOwnerships.map((o) => (
                 <OwnershipRow key={o.id} ownership={o} showActions={false} />
               ))}

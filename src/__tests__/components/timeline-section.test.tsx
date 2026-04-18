@@ -8,8 +8,25 @@ const section: TimelineSectionData = {
   label: 'Overskredet',
   dotType: 'overdue',
   items: [
-    { id: 't1', letter: 'N', color: 'red', title: 'Ejeraftale Nordklinik', subtitle: 'Nordklinik · 3d over', time: '3d over', href: '/contracts/c1' },
-    { id: 't2', letter: 'S', color: 'purple', title: 'Dokument', subtitle: 'Sundby · AI', aiExtracted: true, time: 'Ny', href: '/documents' },
+    {
+      id: 't1',
+      letter: 'N',
+      color: 'red',
+      title: 'Ejeraftale Nordklinik',
+      subtitle: 'Nordklinik · 3d over',
+      time: '3d over',
+      href: '/contracts/c1',
+    },
+    {
+      id: 't2',
+      letter: 'S',
+      color: 'purple',
+      title: 'Dokument',
+      subtitle: 'Sundby · AI',
+      aiExtracted: true,
+      time: 'Ny',
+      href: '/documents',
+    },
   ],
 }
 

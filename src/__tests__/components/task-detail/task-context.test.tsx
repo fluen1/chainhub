@@ -14,8 +14,14 @@ describe('TaskContext', () => {
     )
     const companyLink = screen.getByRole('link', { name: 'Tandlæge Østerbro ApS' })
     expect(companyLink).toHaveAttribute('href', '/companies/c1')
-    expect(screen.getByRole('link', { name: 'Opkøb af Nordhavn' })).toHaveAttribute('href', '/cases/ca1')
-    expect(screen.getByRole('link', { name: 'Direktørkontrakt' })).toHaveAttribute('href', '/contracts/ct1')
+    expect(screen.getByRole('link', { name: 'Opkøb af Nordhavn' })).toHaveAttribute(
+      'href',
+      '/cases/ca1'
+    )
+    expect(screen.getByRole('link', { name: 'Direktørkontrakt' })).toHaveAttribute(
+      'href',
+      '/contracts/ct1'
+    )
     expect(screen.getByText('Philip Larsen')).toBeInTheDocument()
   })
 

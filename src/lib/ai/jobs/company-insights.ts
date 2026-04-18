@@ -169,11 +169,7 @@ export async function generateCompanyInsights(
       }
     }
 
-    const costUsd = computeCostUsd(
-      MODEL,
-      response.usage.input_tokens,
-      response.usage.output_tokens,
-    )
+    const costUsd = computeCostUsd(MODEL, response.usage.input_tokens, response.usage.output_tokens)
 
     return {
       ok: true,

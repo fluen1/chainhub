@@ -5,7 +5,7 @@ import { registerSchema } from './registry'
 // Hjælpefunktion til at wrappe et felt i ExtractedFieldValue-struktur
 function extractedField(
   description: string,
-  valueSchema: Record<string, unknown>,
+  valueSchema: Record<string, unknown>
 ): Record<string, unknown> {
   return {
     type: 'object' as const,
@@ -43,25 +43,22 @@ const vedtaegterSchema: ContractSchema = {
     input_schema: {
       type: 'object',
       properties: {
-        company_name: extractedField(
-          'Selskabets fulde navn som registreret i vedtægterne',
-          { type: 'string', description: 'Selskabets fulde navn' },
-        ),
+        company_name: extractedField('Selskabets fulde navn som registreret i vedtægterne', {
+          type: 'string',
+          description: 'Selskabets fulde navn',
+        }),
 
-        cvr_number: extractedField(
-          'CVR-nummer (8 cifre). Null hvis ikke angivet i vedtægterne.',
-          {
-            type: ['string', 'null'] as unknown as 'string',
-            description: 'CVR-nummer som 8-cifret string',
-          },
-        ),
+        cvr_number: extractedField('CVR-nummer (8 cifre). Null hvis ikke angivet i vedtægterne.', {
+          type: ['string', 'null'] as unknown as 'string',
+          description: 'CVR-nummer som 8-cifret string',
+        }),
 
         registered_address: extractedField(
           'Selskabets registrerede hjemsted (by eller adresse). Null hvis ikke specificeret.',
           {
             type: ['string', 'null'] as unknown as 'string',
             description: 'Hjemsted eller registreret adresse',
-          },
+          }
         ),
 
         business_purpose: extractedField(
@@ -69,7 +66,7 @@ const vedtaegterSchema: ContractSchema = {
           {
             type: ['string', 'null'] as unknown as 'string',
             description: 'Beskrivelse af selskabets formål',
-          },
+          }
         ),
 
         share_capital_dkk: extractedField(
@@ -78,7 +75,7 @@ const vedtaegterSchema: ContractSchema = {
             type: ['number', 'null'] as unknown as 'number',
             description: 'Selskabskapital i DKK (positivt tal)',
             minimum: 0,
-          },
+          }
         ),
 
         share_classes: extractedField(
@@ -86,7 +83,7 @@ const vedtaegterSchema: ContractSchema = {
           {
             type: ['string', 'null'] as unknown as 'string',
             description: 'Beskrivelse af anpartsklasser og særlige rettigheder',
-          },
+          }
         ),
 
         board_size: extractedField(
@@ -96,7 +93,7 @@ const vedtaegterSchema: ContractSchema = {
             description: 'Antal bestyrelsesmedlemmer (1-15)',
             minimum: 1,
             maximum: 15,
-          },
+          }
         ),
 
         board_appointment_rules: extractedField(
@@ -104,7 +101,7 @@ const vedtaegterSchema: ContractSchema = {
           {
             type: ['string', 'null'] as unknown as 'string',
             description: 'Beskrivelse af bestyrelsesudpegningsregler',
-          },
+          }
         ),
 
         general_meeting_rules: extractedField(
@@ -112,7 +109,7 @@ const vedtaegterSchema: ContractSchema = {
           {
             type: ['string', 'null'] as unknown as 'string',
             description: 'Beskrivelse af generalforsamlingsregler',
-          },
+          }
         ),
 
         dissolution_rules: extractedField(
@@ -120,7 +117,7 @@ const vedtaegterSchema: ContractSchema = {
           {
             type: ['string', 'null'] as unknown as 'string',
             description: 'Beskrivelse af opløsningsregler',
-          },
+          }
         ),
 
         ...COMMON_TOOL_PROPERTIES,
@@ -221,7 +218,8 @@ Dokumenter er på dansk. Returner feltværdier på dansk hvor relevant (fx beskr
 ## Yderligere fund
 Brug additional_findings til at rapportere usædvanlige klausuler, ændringer fra standardvedtægter eller bemærkelsesværdige observationer der ikke er dækket af de definerede felter. Brug extraction_warnings til at rapportere problemer med ekstrationsqualiteten.`,
 
-  user_prompt_prefix: 'Analyser disse selskabsvedtægter og ekstraher alle felter via extract_vedtaegter tool.',
+  user_prompt_prefix:
+    'Analyser disse selskabsvedtægter og ekstraher alle felter via extract_vedtaegter tool.',
 
   extraction_model: 'claude-sonnet-4-20250514',
 

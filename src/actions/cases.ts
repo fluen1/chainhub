@@ -38,9 +38,7 @@ async function generateCaseNumber(organizationId: string): Promise<string> {
   return `CAS-${year}-${String(count + 1).padStart(4, '0')}`
 }
 
-export async function createCase(
-  input: CreateCaseInput
-): Promise<ActionResult<Case>> {
+export async function createCase(input: CreateCaseInput): Promise<ActionResult<Case>> {
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
 
@@ -60,17 +58,16 @@ export async function createCase(
     const caseNumber = await generateCaseNumber(session.user.organizationId)
 
     // Sagsnummeret gemmes i description-feltet med prefix
-    const descriptionWithNumber = [
-      caseNumber,
-      parsed.data.description ?? '',
-    ].filter(Boolean).join('\n')
+    const descriptionWithNumber = [caseNumber, parsed.data.description ?? '']
+      .filter(Boolean)
+      .join('\n')
 
     const newCase = await prisma.case.create({
       data: {
         organization_id: session.user.organizationId,
         title: parsed.data.title,
         case_type: parsed.data.caseType as never,
-        case_subtype: parsed.data.caseSubtype as never ?? null,
+        case_subtype: (parsed.data.caseSubtype as never) ?? null,
         status: 'NY',
         sensitivity: parsed.data.sensitivity,
         description: descriptionWithNumber || null,
@@ -94,18 +91,14 @@ export async function createCase(
     )
 
     revalidatePath('/cases')
-    parsed.data.companyIds.forEach((cId) =>
-      revalidatePath(`/companies/${cId}/cases`)
-    )
+    parsed.data.companyIds.forEach((cId) => revalidatePath(`/companies/${cId}/cases`))
     return { data: newCase }
   } catch {
     return { error: 'Sagen kunne ikke oprettes — prøv igen' }
   }
 }
 
-export async function updateCaseStatus(
-  input: UpdateCaseStatusInput
-): Promise<ActionResult<Case>> {
+export async function updateCaseStatus(input: UpdateCaseStatusInput): Promise<ActionResult<Case>> {
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
 

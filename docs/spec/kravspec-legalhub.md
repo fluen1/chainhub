@@ -10,6 +10,7 @@
 Et web-baseret SaaS-system der giver kædegruppen **ét samlet overblik** over alle delejede selskaber (lokationer) — med fuld kontrol over governance-lag, kontrakter, økonomi og personrelationer. Tænk: "HoldCo command center."
 
 Analogien der definerer arkitekturen:
+
 ```
 McDonald's Corp.     →  Kædegruppen (brugerne af systemet)
 McDonald's lokation  →  Klinikselskabet (ApS med CVR)
@@ -97,13 +98,13 @@ EXTERNAL_EMPLOYEE  Ansat ser egne dokumenter
 
 Alle records tildeles ét af disse `SensitivityLevel`-enum-værdier:
 
-| Niveau | Kode | Eksempler |
-|---|---|---|
-| Strengt fortroligt | `STRENGT_FORTROLIG` | Ejeraftale, aktionæroverenskomst, M&A-dokumenter |
-| Fortroligt | `FORTROLIG` | Direktørkontrakt, bestyrelsesreferater, økonominøgletal |
-| Internt | `INTERN` | Lejekontrakt, leverandøraftaler, sager |
-| Normalt | `STANDARD` | Ansættelseskontrakter, opgaver, kontaktinfo |
-| Offentligt | `PUBLIC` | Stamdata (CVR, adresse, selskabsnavn) |
+| Niveau             | Kode                | Eksempler                                               |
+| ------------------ | ------------------- | ------------------------------------------------------- |
+| Strengt fortroligt | `STRENGT_FORTROLIG` | Ejeraftale, aktionæroverenskomst, M&A-dokumenter        |
+| Fortroligt         | `FORTROLIG`         | Direktørkontrakt, bestyrelsesreferater, økonominøgletal |
+| Internt            | `INTERN`            | Lejekontrakt, leverandøraftaler, sager                  |
+| Normalt            | `STANDARD`          | Ansættelseskontrakter, opgaver, kontaktinfo             |
+| Offentligt         | `PUBLIC`            | Stamdata (CVR, adresse, selskabsnavn)                   |
 
 ---
 
@@ -132,17 +133,20 @@ Gruppens overblik over **alle selskaber på én gang.**
 Hvert selskab har en struktureret profil:
 
 **Stamdata-fane:**
+
 - Selskabsnavn, CVR, selskabsform (ApS/A/S/I/S)
 - Adresse, stiftelsesdato, regnskabsår
 - Status: Aktiv / Under stiftelse / Under afvikling / Solgt
 - Interne noter og tags
 
 **Ejerskab-fane:**
+
 - Liste over ejere med: navn, ejerandel %, ejertype (person/selskab), dato for erhvervelse
 - Reference til ejeraftale-dokument
 - Historik: tidligere ejere og ændringer
 
 **Governance-fane:**
+
 - Roller i selskabet:
   ```
   Direktør              → Person + startdato + direktørkontrakt-reference
@@ -154,11 +158,13 @@ Hvert selskab har en struktureret profil:
 - Advarsel hvis rolle er vakant eller person-kontrakt udløber
 
 **Ansatte-fane:**
+
 - Liste over klinikansatte med: navn, rolle/stilling, ansættelsestype, startdato, kontrakt-reference
 - Filtrer: aktive / fratrådte / vikarer
 - Ikke fuld HR-system — kontaktregister med kontrakt-tilknytning
 
 **Aktivitetslog:**
+
 - Alle handlinger på selskabet med dato og bruger
 
 ---
@@ -180,6 +186,7 @@ Hvert selskab har en struktureret profil:
 Alle kontrakter organiseret pr. selskab og tilgængelige globalt.
 
 **Kontrakttyper (`ContractSystemType`-enum — fuld liste):**
+
 ```
 -- Lag 1: Universelle
 EJERAFTALE              DIREKTØRKONTRAKT        OVERDRAGELSESAFTALE
@@ -199,6 +206,7 @@ INTERCOMPANY_LÅN
 ```
 
 **Pr. kontrakt:**
+
 - Titel, type (`system_type`), `display_name` (brugerens eget navn), status, parter (tilknyttet personer/selskaber i systemet)
 - Startdato, udløbsdato, opsigelsesvarsel
 - Upload fil (PDF/DOCX) — preview i browser
@@ -208,11 +216,13 @@ INTERCOMPANY_LÅN
 - Sensitivitetsniveau (`STANDARD` som default)
 
 **Kontraktstatus-flow (`ContractStatus`-enum):**
+
 ```
 UDKAST → TIL_REVIEW → TIL_UNDERSKRIFT → AKTIV → UDLOBET / OPSAGT / FORNYET / ARKIVERET
 ```
 
 **Globalt kontraktoverblik:**
+
 - Se alle kontrakter på tværs af selskaber
 - Filter: type, status, udløber inden for 30/60/90 dage
 - Rød markering: udløbet eller udløber inden for 14 dage
@@ -224,6 +234,7 @@ UDKAST → TIL_REVIEW → TIL_UNDERSKRIFT → AKTIV → UDLOBET / OPSAGT / FORNY
 Sager er strukturerede arbejdsopgaver/processer tilknyttet ét eller flere selskaber.
 
 **Sagstyper (`SagsType`-enum) med undertyper (`SagsSubtype`-enum):**
+
 ```
 TRANSAKTION   → VIRKSOMHEDSKØB, VIRKSOMHEDSSALG, FUSION, OMSTRUKTURERING, STIFTELSE
 TVIST         → RETSSAG, VOLDGIFT, FORHANDLING_MED_MODPART, INKASSO
@@ -234,6 +245,7 @@ ANDET         → (ingen subtype — fritekst i beskrivelse)
 ```
 
 **Pr. sag:**
+
 - Titel, type (`case_type`), undertype (`case_subtype`), status, ansvarlig (intern bruger), tilknyttede selskaber/personer
 - Beskrivelse og løbende noter
 - Frister med advisering
@@ -245,6 +257,7 @@ ANDET         → (ingen subtype — fritekst i beskrivelse)
 - **Outlook email-sync:** Pin en email til sagen via BCC til sagsemail
 
 **Sagsstatus (`CaseStatus`-enum):**
+
 ```
 ÅBEN → I_GANG → AFVENTER → LUKKET / ANNULLERET
 ```
@@ -319,11 +332,11 @@ Ikke et regnskabssystem — et overblagsmodul til intern styring.
 
 ## 8. Planer & priser
 
-| Plan | Seats | Selskaber | Vejl. pris | Funktioner |
-|---|---|---|---|---|
-| Starter | 1–3 | Op til 5 | 299 kr/seat/md | Alle kernemoduler |
-| Business | 4–10 | Op til 20 | 399 kr/seat/md | + M365-sync, tidsreg. |
-| Enterprise | 10+ | Ubegrænset | Kontakt | + custom onboarding, SLA |
+| Plan       | Seats | Selskaber  | Vejl. pris     | Funktioner               |
+| ---------- | ----- | ---------- | -------------- | ------------------------ |
+| Starter    | 1–3   | Op til 5   | 299 kr/seat/md | Alle kernemoduler        |
+| Business   | 4–10  | Op til 20  | 399 kr/seat/md | + M365-sync, tidsreg.    |
+| Enterprise | 10+   | Ubegrænset | Kontakt        | + custom onboarding, SLA |
 
 - 14 dages gratis trial — intet kort krævet
 - Stripe Billing med automatisk seat-metering
@@ -415,4 +428,4 @@ v1.0:
 
 ---
 
-*kravspec-legalhub.md v2.3*
+_kravspec-legalhub.md v2.3_

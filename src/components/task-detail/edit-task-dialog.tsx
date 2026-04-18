@@ -10,10 +10,7 @@ import {
   updateTaskAssignee,
   updateTaskDueDate,
 } from '@/actions/tasks'
-import {
-  TASK_STATUS_LABELS,
-  PRIORITY_LABELS,
-} from '@/lib/labels'
+import { TASK_STATUS_LABELS, PRIORITY_LABELS } from '@/lib/labels'
 
 interface EditTaskDialogProps {
   taskId: string

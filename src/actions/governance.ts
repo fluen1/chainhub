@@ -56,7 +56,9 @@ export async function addCompanyPerson(
         },
       })
       if (existingDirector) {
-        return { error: 'Selskabet har allerede en aktiv direktør. Afregistrér den nuværende først.' }
+        return {
+          error: 'Selskabet har allerede en aktiv direktør. Afregistrér den nuværende først.',
+        }
       }
     }
 

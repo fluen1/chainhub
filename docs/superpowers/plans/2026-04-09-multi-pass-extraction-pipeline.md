@@ -13,6 +13,7 @@
 ## Scope
 
 ### In scope
+
 - Extend content loader: Word (via mammoth HTML) + Excel (via exceljs Markdown tables)
 - Schema infrastructure: types, registry, base validation
 - 6 contract schemas with prompt templates: EJERAFTALE, LEJEKONTRAKT, FORSIKRING, VEDTAEGTER, ANSAETTELSESKONTRAKT, DRIFTSAFTALE
@@ -29,6 +30,7 @@
 - AIFieldCorrection logging helpers
 
 ### Out of scope
+
 - Bedrock client (Plan deferred to week 16)
 - UI migration (separate plans)
 - Insights system (Plan 4)
@@ -37,6 +39,7 @@
 - Hetzner deployment
 
 ### Dependencies
+
 - Plan 1 completed (all infrastructure in place)
 - ANTHROPIC_API_KEY in .env.local
 - Test PDF fixture at `src/__tests__/fixtures/test-contract.pdf`
@@ -103,107 +106,116 @@ src/__tests__/ai/
 ## Contract Schema Field Definitions
 
 ### EJERAFTALE (ownership agreement) — 12 fields
-| Field | Type | Legal-critical | Description |
-|---|---|---|---|
-| parties | array<{name, party_type, capital_pct, voting_pct, ownership_type, notes}> | YES | Aftaleparter med ejerandele |
-| effective_date | date | YES | Ikrafttrædelsesdato |
-| expiry_date | date | YES | Udløbsdato (null = løbende) |
-| termination_notice_months | number | YES | Opsigelsesvarsel i måneder |
-| non_compete | {present, duration_months, geographic_scope} | YES | Konkurrenceklausul |
-| pre_emption_right | {present, description} | YES | Forkøbsret |
-| exit_clause | {present, description} | YES | Udtrædelsesklausul |
-| drag_along | boolean | NO | Medsalgspligt |
-| tag_along | boolean | NO | Medsalgsret |
-| dividend_policy | string | NO | Udbyttepolitik |
-| board_composition | string | NO | Bestyrelsessammensætning |
-| dispute_resolution | string | NO | Tvistløsningsklausul |
+
+| Field                     | Type                                                                      | Legal-critical | Description                 |
+| ------------------------- | ------------------------------------------------------------------------- | -------------- | --------------------------- |
+| parties                   | array<{name, party_type, capital_pct, voting_pct, ownership_type, notes}> | YES            | Aftaleparter med ejerandele |
+| effective_date            | date                                                                      | YES            | Ikrafttrædelsesdato         |
+| expiry_date               | date                                                                      | YES            | Udløbsdato (null = løbende) |
+| termination_notice_months | number                                                                    | YES            | Opsigelsesvarsel i måneder  |
+| non_compete               | {present, duration_months, geographic_scope}                              | YES            | Konkurrenceklausul          |
+| pre_emption_right         | {present, description}                                                    | YES            | Forkøbsret                  |
+| exit_clause               | {present, description}                                                    | YES            | Udtrædelsesklausul          |
+| drag_along                | boolean                                                                   | NO             | Medsalgspligt               |
+| tag_along                 | boolean                                                                   | NO             | Medsalgsret                 |
+| dividend_policy           | string                                                                    | NO             | Udbyttepolitik              |
+| board_composition         | string                                                                    | NO             | Bestyrelsessammensætning    |
+| dispute_resolution        | string                                                                    | NO             | Tvistløsningsklausul        |
 
 ### LEJEKONTRAKT (lease) — 12 fields
-| Field | Type | Legal-critical | Description |
-|---|---|---|---|
-| parties | array<{name, role}> | YES | Udlejer og lejer |
-| property_address | string | YES | Lejemålets adresse |
-| effective_date | date | YES | Ikrafttrædelse |
-| expiry_date | date | YES | Udløb |
-| rent_monthly_dkk | number | YES | Månedlig leje i DKK |
-| rent_adjustment | string | YES | Reguleringsklausul (nettoprisindeks etc.) |
-| deposit_dkk | number | NO | Depositum |
-| notice_period_months | number | YES | Opsigelsesvarsel |
-| permitted_use | string | NO | Tilladt anvendelse |
-| sublease_allowed | boolean | NO | Fremlejeadgang |
-| maintenance_responsibility | string | NO | Vedligeholdelsesansvar |
-| renewal_clause | string | NO | Forlængelsesklausul |
+
+| Field                      | Type                | Legal-critical | Description                               |
+| -------------------------- | ------------------- | -------------- | ----------------------------------------- |
+| parties                    | array<{name, role}> | YES            | Udlejer og lejer                          |
+| property_address           | string              | YES            | Lejemålets adresse                        |
+| effective_date             | date                | YES            | Ikrafttrædelse                            |
+| expiry_date                | date                | YES            | Udløb                                     |
+| rent_monthly_dkk           | number              | YES            | Månedlig leje i DKK                       |
+| rent_adjustment            | string              | YES            | Reguleringsklausul (nettoprisindeks etc.) |
+| deposit_dkk                | number              | NO             | Depositum                                 |
+| notice_period_months       | number              | YES            | Opsigelsesvarsel                          |
+| permitted_use              | string              | NO             | Tilladt anvendelse                        |
+| sublease_allowed           | boolean             | NO             | Fremlejeadgang                            |
+| maintenance_responsibility | string              | NO             | Vedligeholdelsesansvar                    |
+| renewal_clause             | string              | NO             | Forlængelsesklausul                       |
 
 ### FORSIKRING (insurance) — 11 fields
-| Field | Type | Legal-critical | Description |
-|---|---|---|---|
-| insurer | string | YES | Forsikringsselskab |
-| policy_number | string | NO | Policenummer |
-| insured_party | string | YES | Forsikringstager |
-| coverage_type | string | YES | Dækningstype |
-| coverage_amount_dkk | number | YES | Forsikringssum |
-| premium_annual_dkk | number | NO | Årlig præmie |
-| effective_date | date | YES | Ikrafttrædelse |
-| expiry_date | date | YES | Udløb |
-| deductible_dkk | number | NO | Selvrisiko |
-| exclusions | string[] | YES | Undtagelser |
-| auto_renewal | boolean | NO | Automatisk fornyelse |
+
+| Field               | Type     | Legal-critical | Description          |
+| ------------------- | -------- | -------------- | -------------------- |
+| insurer             | string   | YES            | Forsikringsselskab   |
+| policy_number       | string   | NO             | Policenummer         |
+| insured_party       | string   | YES            | Forsikringstager     |
+| coverage_type       | string   | YES            | Dækningstype         |
+| coverage_amount_dkk | number   | YES            | Forsikringssum       |
+| premium_annual_dkk  | number   | NO             | Årlig præmie         |
+| effective_date      | date     | YES            | Ikrafttrædelse       |
+| expiry_date         | date     | YES            | Udløb                |
+| deductible_dkk      | number   | NO             | Selvrisiko           |
+| exclusions          | string[] | YES            | Undtagelser          |
+| auto_renewal        | boolean  | NO             | Automatisk fornyelse |
 
 ### VEDTAEGTER (bylaws) — 10 fields
-| Field | Type | Legal-critical | Description |
-|---|---|---|---|
-| company_name | string | YES | Selskabsnavn |
-| cvr_number | string | YES | CVR-nummer |
-| registered_address | string | NO | Hjemstedsadresse |
-| business_purpose | string | NO | Formål |
-| share_capital_dkk | number | YES | Selskabskapital |
-| share_classes | string | NO | Aktieklasser |
-| board_size | number | NO | Bestyrelsesmedlemmer |
-| board_appointment_rules | string | NO | Udpegningsregler |
-| general_meeting_rules | string | NO | Generalforsamlingsregler |
-| dissolution_rules | string | NO | Opløsningsregler |
+
+| Field                   | Type   | Legal-critical | Description              |
+| ----------------------- | ------ | -------------- | ------------------------ |
+| company_name            | string | YES            | Selskabsnavn             |
+| cvr_number              | string | YES            | CVR-nummer               |
+| registered_address      | string | NO             | Hjemstedsadresse         |
+| business_purpose        | string | NO             | Formål                   |
+| share_capital_dkk       | number | YES            | Selskabskapital          |
+| share_classes           | string | NO             | Aktieklasser             |
+| board_size              | number | NO             | Bestyrelsesmedlemmer     |
+| board_appointment_rules | string | NO             | Udpegningsregler         |
+| general_meeting_rules   | string | NO             | Generalforsamlingsregler |
+| dissolution_rules       | string | NO             | Opløsningsregler         |
 
 ### ANSAETTELSESKONTRAKT (employment) — 12 fields
-| Field | Type | Legal-critical | Description |
-|---|---|---|---|
-| employee_name | string | YES | Medarbejderens navn |
-| position_title | string | NO | Stillingsbetegnelse |
-| employer_name | string | YES | Arbejdsgiver |
-| start_date | date | YES | Tiltrædelsesdato |
-| end_date | date | NO | Udløb (null = fastansættelse) |
-| salary_monthly_dkk | number | YES | Månedlig løn |
-| notice_employee_months | number | YES | Opsigelsesvarsel medarbejder |
-| notice_employer_months | number | YES | Opsigelsesvarsel arbejdsgiver |
-| working_hours_weekly | number | NO | Ugentlig arbejdstid |
-| vacation_days | number | NO | Feriedage |
-| non_compete | {present, duration_months} | YES | Konkurrenceklausul |
-| pension_pct | number | NO | Pensionsbidrag |
+
+| Field                  | Type                       | Legal-critical | Description                   |
+| ---------------------- | -------------------------- | -------------- | ----------------------------- |
+| employee_name          | string                     | YES            | Medarbejderens navn           |
+| position_title         | string                     | NO             | Stillingsbetegnelse           |
+| employer_name          | string                     | YES            | Arbejdsgiver                  |
+| start_date             | date                       | YES            | Tiltrædelsesdato              |
+| end_date               | date                       | NO             | Udløb (null = fastansættelse) |
+| salary_monthly_dkk     | number                     | YES            | Månedlig løn                  |
+| notice_employee_months | number                     | YES            | Opsigelsesvarsel medarbejder  |
+| notice_employer_months | number                     | YES            | Opsigelsesvarsel arbejdsgiver |
+| working_hours_weekly   | number                     | NO             | Ugentlig arbejdstid           |
+| vacation_days          | number                     | NO             | Feriedage                     |
+| non_compete            | {present, duration_months} | YES            | Konkurrenceklausul            |
+| pension_pct            | number                     | NO             | Pensionsbidrag                |
 
 ### DRIFTSAFTALE (operations agreement) — 10 fields
-| Field | Type | Legal-critical | Description |
-|---|---|---|---|
-| parties | array<{name, role}> | YES | Aftaleparter |
-| effective_date | date | YES | Ikrafttrædelse |
-| expiry_date | date | YES | Udløb |
-| scope_of_services | string | YES | Ydelsesomfang |
-| fee_structure | string | YES | Honorarmodel |
-| payment_terms | string | NO | Betalingsvilkår |
-| notice_period_months | number | YES | Opsigelsesvarsel |
-| performance_metrics | string | NO | KPI'er |
-| liability_cap_dkk | number | NO | Ansvarsbegrænsning |
-| termination_clause | string | YES | Ophørsklausul |
+
+| Field                | Type                | Legal-critical | Description        |
+| -------------------- | ------------------- | -------------- | ------------------ |
+| parties              | array<{name, role}> | YES            | Aftaleparter       |
+| effective_date       | date                | YES            | Ikrafttrædelse     |
+| expiry_date          | date                | YES            | Udløb              |
+| scope_of_services    | string              | YES            | Ydelsesomfang      |
+| fee_structure        | string              | YES            | Honorarmodel       |
+| payment_terms        | string              | NO             | Betalingsvilkår    |
+| notice_period_months | number              | YES            | Opsigelsesvarsel   |
+| performance_metrics  | string              | NO             | KPI'er             |
+| liability_cap_dkk    | number              | NO             | Ansvarsbegrænsning |
+| termination_clause   | string              | YES            | Ophørsklausul      |
 
 ### MINIMAL (unknown types) — 5 fields
-| Field | Type | Legal-critical | Description |
-|---|---|---|---|
-| parties | array<{name, role}> | YES | Parter |
-| effective_date | date | YES | Dato |
-| key_amounts | array<{label, amount_dkk}> | NO | Nøglebeløb |
-| summary | string | NO | Sammenfatning (1-3 sætninger) |
-| detected_clauses | string[] | NO | Fundne klausuler (fri tekst) |
+
+| Field            | Type                       | Legal-critical | Description                   |
+| ---------------- | -------------------------- | -------------- | ----------------------------- |
+| parties          | array<{name, role}>        | YES            | Parter                        |
+| effective_date   | date                       | YES            | Dato                          |
+| key_amounts      | array<{label, amount_dkk}> | NO             | Nøglebeløb                    |
+| summary          | string                     | NO             | Sammenfatning (1-3 sætninger) |
+| detected_clauses | string[]                   | NO             | Fundne klausuler (fri tekst)  |
 
 ### Common fields on ALL schemas
+
 These are added to every schema automatically:
+
 - `additional_findings: array<{finding, source_page, importance}>` — anything Claude finds outside schema fields
 - `extraction_warnings: array<{warning, severity}>` — unusual structures, ambiguities, concerns
 
@@ -214,6 +226,7 @@ These are added to every schema automatically:
 ### Task 1: Install additional dependencies + extend content loader
 
 **Files:**
+
 - Modify: `package.json`
 - Modify: `src/lib/ai/content-loader.ts`
 - Create: `src/__tests__/ai/content-loader-extended.test.ts`
@@ -288,7 +301,9 @@ const hasXlsx = existsSync(XLSX_PATH)
 
 describe.skipIf(!hasDocx)('content-loader Word', () => {
   let buffer: Buffer
-  beforeAll(() => { buffer = readFileSync(DOCX_PATH) })
+  beforeAll(() => {
+    buffer = readFileSync(DOCX_PATH)
+  })
 
   it('loads .docx and returns text_html content', async () => {
     const result = await loadForExtraction(buffer, 'test.docx')
@@ -301,7 +316,9 @@ describe.skipIf(!hasDocx)('content-loader Word', () => {
 
 describe.skipIf(!hasXlsx)('content-loader Excel', () => {
   let buffer: Buffer
-  beforeAll(() => { buffer = readFileSync(XLSX_PATH) })
+  beforeAll(() => {
+    buffer = readFileSync(XLSX_PATH)
+  })
 
   it('loads .xlsx and returns text_markdown content', async () => {
     const result = await loadForExtraction(buffer, 'test.xlsx')
@@ -317,12 +334,14 @@ describe.skipIf(!hasXlsx)('content-loader Excel', () => {
 - [ ] **Step 1.5: Extend content-loader.ts**
 
 Update the `ExtractionContent` type to add:
+
 ```typescript
 | { type: 'text_html'; html: string; detectedMime: string }
 | { type: 'text_markdown'; markdown: string; detectedMime: string }
 ```
 
 Add Word handler in `loadForExtraction`:
+
 ```typescript
 if (type.ext === 'docx') {
   const mammoth = await import('mammoth')
@@ -332,6 +351,7 @@ if (type.ext === 'docx') {
 ```
 
 Add Excel handler:
+
 ```typescript
 if (type.ext === 'xlsx') {
   const ExcelJS = await import('exceljs')
@@ -343,7 +363,7 @@ if (type.ext === 'xlsx') {
     const rows: string[][] = []
     sheet.eachRow((row, rowNumber) => {
       const values = (row.values as (string | number | null)[]).slice(1) // skip index 0
-      rows.push(values.map(v => String(v ?? '')))
+      rows.push(values.map((v) => String(v ?? '')))
     })
     if (rows.length > 0) {
       // header
@@ -378,6 +398,7 @@ git commit -m "feat(ai): extend content loader for Word and Excel
 ### Task 2: Schema infrastructure
 
 **Files:**
+
 - Create: `src/lib/ai/schemas/types.ts`
 - Create: `src/lib/ai/schemas/registry.ts`
 - Create: `src/__tests__/ai/schemas/registry.test.ts`
@@ -434,7 +455,8 @@ export interface ContractSchema {
 export const COMMON_TOOL_PROPERTIES = {
   additional_findings: {
     type: 'array' as const,
-    description: 'Anything found in the document that is NOT covered by the other fields. Report unusual clauses, missing standard elements, or noteworthy observations.',
+    description:
+      'Anything found in the document that is NOT covered by the other fields. Report unusual clauses, missing standard elements, or noteworthy observations.',
     items: {
       type: 'object' as const,
       properties: {
@@ -447,7 +469,8 @@ export const COMMON_TOOL_PROPERTIES = {
   },
   extraction_warnings: {
     type: 'array' as const,
-    description: 'Warnings about quality or reliability of the extraction. Report ambiguities, unusual document structure, low-confidence areas, or missing expected sections.',
+    description:
+      'Warnings about quality or reliability of the extraction. Report ambiguities, unusual document structure, low-confidence areas, or missing expected sections.',
     items: {
       type: 'object' as const,
       properties: {
@@ -550,6 +573,7 @@ git commit -m "feat(ai): add schema infrastructure (types + registry)
 ### Task 3: EJERAFTALE schema
 
 **Files:**
+
 - Create: `src/lib/ai/schemas/ejeraftale.ts`
 
 - [ ] **Step 3.1: Create EJERAFTALE schema**
@@ -563,6 +587,7 @@ Create `src/lib/ai/schemas/ejeraftale.ts`. This is a large file (~200-300 lines)
 5. Self-registration via `registerSchema()`
 
 The schema file should:
+
 - Import `registerSchema` from `./registry`
 - Import types from `./types`
 - Import `COMMON_TOOL_PROPERTIES` from `./types`
@@ -570,6 +595,7 @@ The schema file should:
 - Call `registerSchema(schema)` at module level
 
 Key points for the system prompt:
+
 - Role: "Du er ekspert i danske ejeraftaler med erfaring i selskabsret"
 - Context: "Du ekstraherer felter for ChainHub, et portfolio management system"
 - Anti-hallucination: "Hvis du ikke finder et felt, returnér null. GÆT ALDRIG."
@@ -610,6 +636,7 @@ Sanity rules: ownership sums to 100%, dates valid, at least 2 parties."
 ### Task 4: Pass 1 — Type detection
 
 **Files:**
+
 - Create: `src/lib/ai/pipeline/types.ts`
 - Create: `src/lib/ai/pipeline/pass1-type-detection.ts`
 - Create: `src/__tests__/ai/pipeline/pass1.test.ts`
@@ -674,10 +701,10 @@ export interface FieldConfidence {
   field_name: string
   confidence: number // 0.0 - 1.0 computed
   components: {
-    agreement: number       // 0.0 or 0.4
+    agreement: number // 0.0 or 0.4
     source_verified: number // 0.0 or 0.3
-    sanity_passed: number   // 0.0 or 0.2
-    claude_self: number     // 0.0 - 0.1
+    sanity_passed: number // 0.0 or 0.2
+    claude_self: number // 0.0 - 0.1
   }
 }
 
@@ -716,7 +743,7 @@ export interface PipelineOptions {
   document_id: string
   organization_id: string
   skip_agreement: boolean // skip second run (for manual type selection)
-  forced_type?: string    // bypass Pass 1, use this type directly
+  forced_type?: string // bypass Pass 1, use this type directly
 }
 ```
 
@@ -725,12 +752,14 @@ export interface PipelineOptions {
 Create `src/lib/ai/pipeline/pass1-type-detection.ts`:
 
 The implementation should:
+
 1. Take a content buffer (ExtractionContent from content-loader)
 2. Call Claude Haiku with a classification prompt listing all known schema types
 3. Parse the response to get `{type, confidence, alternatives}`
 4. Return TypeDetectionResult
 
 The classification prompt should:
+
 - List all registered schema types from the registry
 - Ask Claude to classify into one of them
 - Return top 3 with confidence scores
@@ -739,6 +768,7 @@ The classification prompt should:
 - [ ] **Step 4.3: Write unit test (mock Claude client)**
 
 Create `src/__tests__/ai/pipeline/pass1.test.ts` that mocks the Claude client and verifies:
+
 - Correct type returned for a clear ejeraftale
 - Low confidence returned for ambiguous docs
 - Alternatives provided
@@ -762,6 +792,7 @@ Uses tool_use for structured response."
 ### Task 5: Pass 2 — Schema extraction (single run)
 
 **Files:**
+
 - Create: `src/lib/ai/pipeline/pass2-schema-extraction.ts`
 - Create: `src/__tests__/ai/pipeline/pass2.test.ts`
 
@@ -770,6 +801,7 @@ Uses tool_use for structured response."
 Create `src/lib/ai/pipeline/pass2-schema-extraction.ts`:
 
 The implementation should:
+
 1. Take ExtractionContent + ContractSchema
 2. Build Claude request with: schema's system_prompt, document content, schema's tool_definition
 3. Call Claude Sonnet 4 with tool_use
@@ -785,6 +817,7 @@ For HTML/Markdown content: send as `{type: 'text', text: content}`.
 - [ ] **Step 5.2: Write unit test**
 
 Test with mocked Claude client:
+
 - Correct fields extracted from mock response
 - additional_findings and extraction_warnings parsed
 - Token usage tracked
@@ -808,6 +841,7 @@ Supports PDF (vision), HTML (Word), and Markdown (Excel) content."
 ### Task 6: Agreement-based confidence
 
 **Files:**
+
 - Create: `src/lib/ai/pipeline/confidence.ts`
 - Create: `src/__tests__/ai/pipeline/confidence.test.ts`
 
@@ -816,11 +850,17 @@ Supports PDF (vision), HTML (Word), and Markdown (Excel) content."
 Create `src/lib/ai/pipeline/confidence.ts`:
 
 ```typescript
-import type { ExtractedField, AgreementResult, SourceVerificationResult, SanityCheckResult, FieldConfidence } from './types'
+import type {
+  ExtractedField,
+  AgreementResult,
+  SourceVerificationResult,
+  SanityCheckResult,
+  FieldConfidence,
+} from './types'
 
 export function compareRuns(
   run1: Record<string, ExtractedField>,
-  run2: Record<string, ExtractedField>,
+  run2: Record<string, ExtractedField>
 ): AgreementResult[] {
   const results: AgreementResult[] = []
   for (const fieldName of Object.keys(run1)) {
@@ -849,7 +889,7 @@ export function computeFieldConfidence(
   agreement: AgreementResult | undefined,
   sourceVerification: SourceVerificationResult | undefined,
   sanityCheck: SanityCheckResult | undefined,
-  claudeConfidence: number,
+  claudeConfidence: number
 ): FieldConfidence {
   let confidence = 0
   const components = {
@@ -893,6 +933,7 @@ export function computeFieldConfidence(
 - [ ] **Step 6.2: Write comprehensive tests**
 
 Test cases:
+
 - Full agreement + verified + sanity passed + high claude confidence → ~0.95-1.0
 - No agreement + verified + sanity passed → ~0.55-0.60
 - Agreement + not verified + sanity failed → ~0.45
@@ -916,12 +957,14 @@ Not relying on Claude's self-reported confidence as primary signal."
 ### Task 7: Pass 3 — Source verification
 
 **Files:**
+
 - Create: `src/lib/ai/pipeline/pass3-source-verification.ts`
 - Create: `src/__tests__/ai/pipeline/pass3.test.ts`
 
 - [ ] **Step 7.1: Implement source verification**
 
 Uses `fastest-levenshtein` for fuzzy string matching. For each extracted field with source_text:
+
 1. Load the document text for the referenced page
 2. Sliding window match of source_text against page content
 3. If best match score >= 0.85, mark as verified
@@ -951,6 +994,7 @@ PDF page-level verification deferred (needs text extraction per page)."
 ### Task 8: Pass 4 — Sanity checks + Pass 5 — Cross-validation
 
 **Files:**
+
 - Create: `src/lib/ai/pipeline/pass4-sanity-checks.ts`
 - Create: `src/lib/ai/pipeline/pass5-cross-validation.ts`
 - Create: `src/__tests__/ai/pipeline/pass4.test.ts`
@@ -966,7 +1010,7 @@ import type { SanityCheckResult, ExtractedField } from './types'
 
 export function runSanityChecks(
   fields: Record<string, ExtractedField>,
-  rules: SanityRule[],
+  rules: SanityRule[]
 ): SanityCheckResult[] {
   const results: SanityCheckResult[] = []
   for (const rule of rules) {
@@ -1001,7 +1045,7 @@ import type { CrossValidationResult } from './types'
 
 export async function crossValidate(
   documentId: string,
-  extractedFields: Record<string, { value: unknown }>,
+  extractedFields: Record<string, { value: unknown }>
 ): Promise<CrossValidationResult[]> {
   // Find the document's company
   const doc = await prisma.document.findUnique({
@@ -1039,6 +1083,7 @@ Both produce typed results consumed by confidence computation."
 ### Task 9: Minimal extraction schema
 
 **Files:**
+
 - Create: `src/lib/ai/schemas/minimal.ts`
 
 - [ ] **Step 9.1: Create minimal schema**
@@ -1060,6 +1105,7 @@ Fallback when document type is unknown or has no dedicated schema."
 ### Task 10: Pipeline orchestrator
 
 **Files:**
+
 - Create: `src/lib/ai/pipeline/orchestrator.ts`
 - Create: `src/__tests__/ai/pipeline/orchestrator.test.ts`
 
@@ -1155,6 +1201,7 @@ additional_findings and extraction_warnings, tracks total cost."
 ### Task 11: Production extraction job + wire to worker
 
 **Files:**
+
 - Create: `src/lib/ai/jobs/extract-document.ts`
 - Modify: `src/lib/ai/queue.ts` (add EXTRACT_DOCUMENT job name)
 - Modify: `worker/index.ts` (register new job, deprecate PoC)
@@ -1164,6 +1211,7 @@ additional_findings and extraction_warnings, tracks total cost."
 Create `src/lib/ai/jobs/extract-document.ts`:
 
 The job should:
+
 1. Accept payload: `{ document_id, organization_id, file_buffer_base64, filename, forced_type? }`
 2. Check `isAIEnabled(organization_id, 'extraction')` — skip if disabled
 3. Load content via `loadForExtraction`
@@ -1174,6 +1222,7 @@ The job should:
 - [ ] **Step 11.2: Add EXTRACT_DOCUMENT to queue**
 
 In `src/lib/ai/queue.ts`, add:
+
 ```typescript
 EXTRACT_DOCUMENT: 'extraction.full',
 ```
@@ -1181,6 +1230,7 @@ EXTRACT_DOCUMENT: 'extraction.full',
 - [ ] **Step 11.3: Update worker to use production job**
 
 In `worker/index.ts`:
+
 - Keep PoC handler but mark as deprecated in comment
 - Add new handler for `EXTRACT_DOCUMENT`
 - Import from `extract-document.ts`
@@ -1201,6 +1251,7 @@ Worker registers both PoC (deprecated) and production job."
 ### Task 12: Feedback helpers
 
 **Files:**
+
 - Create: `src/lib/ai/feedback.ts`
 - Create: `src/__tests__/ai/feedback.test.ts`
 
@@ -1237,11 +1288,14 @@ export async function logFieldCorrection(params: {
     },
   })
 
-  log.info({
-    extraction_id: params.extraction_id,
-    field_name: params.field_name,
-    confidence: params.confidence,
-  }, 'Field correction logged')
+  log.info(
+    {
+      extraction_id: params.extraction_id,
+      field_name: params.field_name,
+      confidence: params.confidence,
+    },
+    'Field correction logged'
+  )
 }
 ```
 
@@ -1262,6 +1316,7 @@ Tracks extraction_id, field_name, ai vs user value, confidence, schema version."
 ### Task 13: 5 remaining contract schemas
 
 **Files:**
+
 - Create: `src/lib/ai/schemas/lejekontrakt.ts`
 - Create: `src/lib/ai/schemas/forsikring.ts`
 - Create: `src/lib/ai/schemas/vedtaegter.ts`
@@ -1271,6 +1326,7 @@ Tracks extraction_id, field_name, ai vs user value, confidence, schema version."
 - [ ] **Step 13.1: Create all 5 schemas**
 
 Each schema follows the same structure as EJERAFTALE (Task 3):
+
 - Tool definition with type-specific fields + COMMON_TOOL_PROPERTIES
 - Field metadata
 - Danish system prompt (adapted for each type)
@@ -1280,6 +1336,7 @@ Each schema follows the same structure as EJERAFTALE (Task 3):
 Use the field definitions from the table at the top of this plan.
 
 Sanity rules per type:
+
 - **LEJEKONTRAKT:** rent > 0, deposit >= 0, notice_period > 0
 - **FORSIKRING:** coverage_amount > 0, premium > 0, expiry after effective
 - **VEDTAEGTER:** share_capital > 0, board_size > 0
@@ -1331,6 +1388,7 @@ Each with Danish prompt, sanity rules, and self-registration.
 ### Task 14: Full validation + push
 
 **Files:**
+
 - None modified
 
 - [ ] **Step 14.1: Run full test suite**

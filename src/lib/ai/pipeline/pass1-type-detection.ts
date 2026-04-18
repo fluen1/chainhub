@@ -8,11 +8,11 @@ const log = createLogger('pass1-type-detection')
 
 export async function detectDocumentType(
   content: ExtractionContent,
-  client: ClaudeClient,
+  client: ClaudeClient
 ): Promise<TypeDetectionResult> {
-  const knownTypes = getAllSchemaTypes().filter(t => t !== 'MINIMAL')
+  const knownTypes = getAllSchemaTypes().filter((t) => t !== 'MINIMAL')
 
-  const typeListStr = knownTypes.map(t => `- ${t}`).join('\n')
+  const typeListStr = knownTypes.map((t) => `- ${t}`).join('\n')
 
   // Byg beskedindhold baseret på indholdstype
   const messageContent = buildMessageContent(content)
@@ -71,7 +71,7 @@ Returnér via classify_document tool.`,
   })
 
   // Parse tool_use svar
-  const toolUse = response.content.find(b => b.type === 'tool_use')
+  const toolUse = response.content.find((b) => b.type === 'tool_use')
   if (!toolUse || toolUse.type !== 'tool_use') {
     log.error('No tool_use block in type detection response')
     return {
@@ -93,11 +93,14 @@ Returnér via classify_document tool.`,
   // Konvertér UNKNOWN til MINIMAL (minimal schema bruges som fallback)
   const detectedType = input.detected_type === 'UNKNOWN' ? 'MINIMAL' : input.detected_type
 
-  log.info({
-    detected_type: detectedType,
-    confidence: input.confidence,
-    alternatives: input.alternatives?.length ?? 0,
-  }, 'Type detection complete')
+  log.info(
+    {
+      detected_type: detectedType,
+      confidence: input.confidence,
+      alternatives: input.alternatives?.length ?? 0,
+    },
+    'Type detection complete'
+  )
 
   return {
     detected_type: detectedType,

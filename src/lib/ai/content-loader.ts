@@ -13,14 +13,16 @@ export type ExtractionContent =
 export class ContentLoaderError extends Error {
   constructor(
     message: string,
-    public readonly reason: 'unsupported_type' | 'file_too_large' | 'encrypted_pdf' | 'corrupt_file',
+    public readonly reason: 'unsupported_type' | 'file_too_large' | 'encrypted_pdf' | 'corrupt_file'
   ) {
     super(message)
     this.name = 'ContentLoaderError'
   }
 }
 
-export async function detectFileType(buffer: Buffer): Promise<{ ext: string; mime: string } | null> {
+export async function detectFileType(
+  buffer: Buffer
+): Promise<{ ext: string; mime: string } | null> {
   const { fileTypeFromBuffer } = await import('file-type')
   // file-type requires a true Uint8Array — Buffer may be treated as plain object in jsdom
   const uint8 = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength)
@@ -44,12 +46,12 @@ export async function isPdfEncrypted(buffer: Buffer): Promise<boolean> {
 
 export async function loadForExtraction(
   buffer: Buffer,
-  filename: string,
+  filename: string
 ): Promise<ExtractionContent> {
   if (buffer.length > MAX_FILE_SIZE_BYTES) {
     throw new ContentLoaderError(
       `File too large: ${buffer.length} bytes (max ${MAX_FILE_SIZE_BYTES})`,
-      'file_too_large',
+      'file_too_large'
     )
   }
 
@@ -70,7 +72,7 @@ export async function loadForExtraction(
       if (err instanceof ContentLoaderError) throw err
       throw new ContentLoaderError(
         `Failed to parse PDF ${filename}: ${err instanceof Error ? err.message : 'unknown'}`,
-        'corrupt_file',
+        'corrupt_file'
       )
     }
     return { type: 'pdf_binary', data: buffer, detectedMime: type.mime }
@@ -113,6 +115,6 @@ export async function loadForExtraction(
 
   throw new ContentLoaderError(
     `Unsupported file type: ${type.ext}. Supported: pdf, docx, xlsx.`,
-    'unsupported_type',
+    'unsupported_type'
   )
 }

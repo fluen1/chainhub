@@ -49,7 +49,10 @@ import { runExtractionPipeline } from '@/lib/ai/pipeline/orchestrator'
 import { getSchema } from '@/lib/ai/schemas/registry'
 import { detectDocumentType } from '@/lib/ai/pipeline/pass1-type-detection'
 import { extractWithSchema } from '@/lib/ai/pipeline/pass2-schema-extraction'
-import { verifySourceAttribution, extractDocumentText } from '@/lib/ai/pipeline/pass3-source-verification'
+import {
+  verifySourceAttribution,
+  extractDocumentText,
+} from '@/lib/ai/pipeline/pass3-source-verification'
 import { runSanityChecks } from '@/lib/ai/pipeline/pass4-sanity-checks'
 import { crossValidate } from '@/lib/ai/pipeline/pass5-cross-validation'
 import { compareRuns, computeAllFieldConfidences } from '@/lib/ai/pipeline/confidence'
@@ -70,8 +73,18 @@ const mockSchema = {
 
 const mockRun1 = {
   fields: {
-    company_name: { value: 'Test ApS', claude_confidence: 0.9, source_page: 1, source_text: 'Test ApS' },
-    ownership_percentage: { value: 51, claude_confidence: 0.85, source_page: 2, source_text: '51%' },
+    company_name: {
+      value: 'Test ApS',
+      claude_confidence: 0.9,
+      source_page: 1,
+      source_text: 'Test ApS',
+    },
+    ownership_percentage: {
+      value: 51,
+      claude_confidence: 0.85,
+      source_page: 2,
+      source_text: '51%',
+    },
   },
   additional_findings: [{ finding: 'Found penalty clause', source_page: 3, importance: 'high' }],
   extraction_warnings: [{ warning: 'Signature page missing', severity: 'low' }],
@@ -83,8 +96,18 @@ const mockRun1 = {
 
 const mockRun2 = {
   fields: {
-    company_name: { value: 'Test ApS', claude_confidence: 0.88, source_page: 1, source_text: 'Test ApS' },
-    ownership_percentage: { value: 51, claude_confidence: 0.82, source_page: 2, source_text: '51%' },
+    company_name: {
+      value: 'Test ApS',
+      claude_confidence: 0.88,
+      source_page: 1,
+      source_text: 'Test ApS',
+    },
+    ownership_percentage: {
+      value: 51,
+      claude_confidence: 0.82,
+      source_page: 2,
+      source_text: '51%',
+    },
   },
   additional_findings: [],
   extraction_warnings: [],
@@ -95,7 +118,12 @@ const mockRun2 = {
 }
 
 const mockAgreement = [
-  { field_name: 'company_name', run1_value: 'Test ApS', run2_value: 'Test ApS', values_match: true },
+  {
+    field_name: 'company_name',
+    run1_value: 'Test ApS',
+    run2_value: 'Test ApS',
+    values_match: true,
+  },
   { field_name: 'ownership_percentage', run1_value: 51, run2_value: 51, values_match: true },
 ]
 
@@ -113,8 +141,16 @@ const mockCrossValidation = [
 ]
 
 const mockFieldConfidences = [
-  { field_name: 'company_name', confidence: 0.95, components: { agreement: 0.4, source_verified: 0.3, sanity_passed: 0.2, claude_self: 0.09 } },
-  { field_name: 'ownership_percentage', confidence: 0.9, components: { agreement: 0.4, source_verified: 0.3, sanity_passed: 0.2, claude_self: 0.085 } },
+  {
+    field_name: 'company_name',
+    confidence: 0.95,
+    components: { agreement: 0.4, source_verified: 0.3, sanity_passed: 0.2, claude_self: 0.09 },
+  },
+  {
+    field_name: 'ownership_percentage',
+    confidence: 0.9,
+    components: { agreement: 0.4, source_verified: 0.3, sanity_passed: 0.2, claude_self: 0.085 },
+  },
 ]
 
 const testContent: ExtractionContent = {
@@ -159,18 +195,40 @@ describe('Pipeline Orchestrator', () => {
     vi.mocked(detectDocumentType).mockReset()
     vi.mocked(detectDocumentType).mockImplementation(async () => {
       callOrder.push('pass1')
-      return { detected_type: 'EJERAFTALE', confidence: 0.93, alternatives: [], model_used: 'claude-3-5-haiku-20241022', input_tokens: 500, output_tokens: 50 }
+      return {
+        detected_type: 'EJERAFTALE',
+        confidence: 0.93,
+        alternatives: [],
+        model_used: 'claude-3-5-haiku-20241022',
+        input_tokens: 500,
+        output_tokens: 50,
+      }
     })
     vi.mocked(extractWithSchema).mockReset()
     vi.mocked(extractWithSchema)
-      .mockImplementationOnce(async () => { callOrder.push('pass2a'); return mockRun1 as never })
-      .mockImplementationOnce(async () => { callOrder.push('pass2b'); return mockRun2 as never })
+      .mockImplementationOnce(async () => {
+        callOrder.push('pass2a')
+        return mockRun1 as never
+      })
+      .mockImplementationOnce(async () => {
+        callOrder.push('pass2b')
+        return mockRun2 as never
+      })
     vi.mocked(verifySourceAttribution).mockReset()
-    vi.mocked(verifySourceAttribution).mockImplementation(() => { callOrder.push('pass3'); return mockSourceVerification })
+    vi.mocked(verifySourceAttribution).mockImplementation(() => {
+      callOrder.push('pass3')
+      return mockSourceVerification
+    })
     vi.mocked(runSanityChecks).mockReset()
-    vi.mocked(runSanityChecks).mockImplementation(() => { callOrder.push('pass4'); return mockSanityChecks })
+    vi.mocked(runSanityChecks).mockImplementation(() => {
+      callOrder.push('pass4')
+      return mockSanityChecks
+    })
     vi.mocked(crossValidate).mockReset()
-    vi.mocked(crossValidate).mockImplementation(async () => { callOrder.push('pass5'); return mockCrossValidation })
+    vi.mocked(crossValidate).mockImplementation(async () => {
+      callOrder.push('pass5')
+      return mockCrossValidation
+    })
 
     await runExtractionPipeline(testContent, baseOptions)
 
@@ -250,7 +308,7 @@ describe('Pipeline Orchestrator', () => {
     })
 
     await expect(runExtractionPipeline(testContent, baseOptions)).rejects.toThrow(
-      'No schema found for type UNKNOWN_TYPE and MINIMAL not registered',
+      'No schema found for type UNKNOWN_TYPE and MINIMAL not registered'
     )
   })
 

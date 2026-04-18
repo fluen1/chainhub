@@ -1,8 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import {
-  generateCompanyInsights,
-  type CompanySnapshot,
-} from '@/lib/ai/jobs/company-insights'
+import { generateCompanyInsights, type CompanySnapshot } from '@/lib/ai/jobs/company-insights'
 
 vi.mock('@/lib/ai/client', () => ({
   createClaudeClient: vi.fn(),

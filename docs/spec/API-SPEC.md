@@ -1,5 +1,7 @@
 # API-SPEC.md
+
 # ChainHub — API-specifikation
+
 **Version:** 0.3 — QA-rettet
 **Vedligeholdes af:** Philip
 **Afhænger af:** CONVENTIONS.md, DATABASE-SCHEMA.md, ROLLER-OG-TILLADELSER.md, UI-FLOWS.md
@@ -30,9 +32,7 @@ Alt andet er Server Actions — aldrig API routes til CRUD.
 Alle Server Actions returnerer denne type:
 
 ```typescript
-type ActionResult<T> =
-  | { data: T; error?: never }
-  | { error: string; data?: never }
+type ActionResult<T> = { data: T; error?: never } | { error: string; data?: never }
 ```
 
 ### Obligatorisk action-skabelon
@@ -650,14 +650,14 @@ Bruges i addOwner, addCompanyRole, addEmployee m.fl.
 
 ```typescript
 type PersonInput = {
-  name:         string   // min 1, max 200
-  email?:       string
-  phone?:       string
-  address?:     string
-  cprNote?:     boolean  // true = "CPR forefindes i fysisk mappe" — CPR gemmes ALDRIG
-  cvr?:         string   // hvis personen repræsenterer selskab
-  tags?:        PersonTag[]  // TANDLÆGE | DIREKTØR | BESTYRELSESMEDLEM | ANSAT | LEVERANDØR | RÅDGIVER | ANDET
-  notes?:       string
+  name: string // min 1, max 200
+  email?: string
+  phone?: string
+  address?: string
+  cprNote?: boolean // true = "CPR forefindes i fysisk mappe" — CPR gemmes ALDRIG
+  cvr?: string // hvis personen repræsenterer selskab
+  tags?: PersonTag[] // TANDLÆGE | DIREKTØR | BESTYRELSESMEDLEM | ANSAT | LEVERANDØR | RÅDGIVER | ANDET
+  notes?: string
 }
 ```
 
@@ -684,14 +684,12 @@ Side effects:
 ### `updatePerson`
 
 ```typescript
-Input:
-  personId:  string
-  // Alle PersonInput-felter — valgfrie (partial)
+Input: personId: string
+// Alle PersonInput-felter — valgfrie (partial)
 
 Output: ActionResult<Person>
 
-Guards:
-  - Person.organization_id === session.organizationId
+Guards: -Person.organization_id === session.organizationId
 ```
 
 ---
@@ -1765,40 +1763,40 @@ Håndhæves i `createContract` og `updateContract`.
 // /src/lib/contractSensitivity.ts
 export const SENSITIVITY_MINIMUM: Record<ContractSystemType, SensitivityLevel> = {
   // Lag 1 — Universelle
-  EJERAFTALE:                   'STRENGT_FORTROLIG',
-  DIREKTØRKONTRAKT:             'STRENGT_FORTROLIG',
-  OVERDRAGELSESAFTALE:          'STRENGT_FORTROLIG',
-  AKTIONÆRLÅN:                  'STRENGT_FORTROLIG',
-  PANTSÆTNING:                  'STRENGT_FORTROLIG',
-  VEDTÆGTER:                    'INTERN',
-  ANSÆTTELSE_FUNKTIONÆR:        'FORTROLIG',
-  ANSÆTTELSE_IKKE_FUNKTIONÆR:   'FORTROLIG',
-  VIKARAFTALE:                  'STANDARD',
-  UDDANNELSESAFTALE:            'STANDARD',
-  FRATRÆDELSESAFTALE:           'FORTROLIG',
-  KONKURRENCEKLAUSUL:           'FORTROLIG',
-  PERSONALEHÅNDBOG:             'INTERN',
-  LEJEKONTRAKT_ERHVERV:         'INTERN',
-  LEASINGAFTALE:                'INTERN',
-  LEVERANDØRKONTRAKT:           'INTERN',
-  SAMARBEJDSAFTALE:             'FORTROLIG',
-  NDA:                          'FORTROLIG',
-  IT_SYSTEMAFTALE:              'INTERN',
-  DBA:                          'INTERN',
-  FORSIKRING:                   'INTERN',
-  GF_REFERAT:                   'FORTROLIG',
-  BESTYRELSESREFERAT:           'FORTROLIG',
-  FORRETNINGSORDEN:             'FORTROLIG',
-  DIREKTIONSINSTRUKS:           'FORTROLIG',
-  VOA:                          'STRENGT_FORTROLIG',
+  EJERAFTALE: 'STRENGT_FORTROLIG',
+  DIREKTØRKONTRAKT: 'STRENGT_FORTROLIG',
+  OVERDRAGELSESAFTALE: 'STRENGT_FORTROLIG',
+  AKTIONÆRLÅN: 'STRENGT_FORTROLIG',
+  PANTSÆTNING: 'STRENGT_FORTROLIG',
+  VEDTÆGTER: 'INTERN',
+  ANSÆTTELSE_FUNKTIONÆR: 'FORTROLIG',
+  ANSÆTTELSE_IKKE_FUNKTIONÆR: 'FORTROLIG',
+  VIKARAFTALE: 'STANDARD',
+  UDDANNELSESAFTALE: 'STANDARD',
+  FRATRÆDELSESAFTALE: 'FORTROLIG',
+  KONKURRENCEKLAUSUL: 'FORTROLIG',
+  PERSONALEHÅNDBOG: 'INTERN',
+  LEJEKONTRAKT_ERHVERV: 'INTERN',
+  LEASINGAFTALE: 'INTERN',
+  LEVERANDØRKONTRAKT: 'INTERN',
+  SAMARBEJDSAFTALE: 'FORTROLIG',
+  NDA: 'FORTROLIG',
+  IT_SYSTEMAFTALE: 'INTERN',
+  DBA: 'INTERN',
+  FORSIKRING: 'INTERN',
+  GF_REFERAT: 'FORTROLIG',
+  BESTYRELSESREFERAT: 'FORTROLIG',
+  FORRETNINGSORDEN: 'FORTROLIG',
+  DIREKTIONSINSTRUKS: 'FORTROLIG',
+  VOA: 'STRENGT_FORTROLIG',
   // Lag 2 — Strukturtyper (kun hvis Organisation.chain_structure = true)
-  INTERN_SERVICEAFTALE:         'STRENGT_FORTROLIG',
-  ROYALTY_LICENS:               'STRENGT_FORTROLIG',
-  OPTIONSAFTALE:                'STRENGT_FORTROLIG',
-  TILTRÆDELSESDOKUMENT:         'STRENGT_FORTROLIG',
-  KASSEKREDIT:                  'FORTROLIG',
-  CASH_POOL:                    'STRENGT_FORTROLIG',
-  INTERCOMPANY_LÅN:             'STRENGT_FORTROLIG',
+  INTERN_SERVICEAFTALE: 'STRENGT_FORTROLIG',
+  ROYALTY_LICENS: 'STRENGT_FORTROLIG',
+  OPTIONSAFTALE: 'STRENGT_FORTROLIG',
+  TILTRÆDELSESDOKUMENT: 'STRENGT_FORTROLIG',
+  KASSEKREDIT: 'FORTROLIG',
+  CASH_POOL: 'STRENGT_FORTROLIG',
+  INTERCOMPANY_LÅN: 'STRENGT_FORTROLIG',
 }
 ```
 
@@ -1841,13 +1839,15 @@ Implementeres som én samlet Server Action.
 
 ```typescript
 export async function globalSearch(
-  query: string  // min 2 tegn
-): Promise<ActionResult<{
-  companies:  Array<{ id: string; name: string; cvr: string }>
-  persons:    Array<{ id: string; name: string; email?: string }>
-  contracts:  Array<{ id: string; displayName: string; companyName: string }>
-  cases:      Array<{ id: string; caseNumber: string; title: string }>
-}>>
+  query: string // min 2 tegn
+): Promise<
+  ActionResult<{
+    companies: Array<{ id: string; name: string; cvr: string }>
+    persons: Array<{ id: string; name: string; email?: string }>
+    contracts: Array<{ id: string; displayName: string; companyName: string }>
+    cases: Array<{ id: string; caseNumber: string; title: string }>
+  }>
+>
 ```
 
 ```sql
@@ -1919,4 +1919,4 @@ v0.1:
   Første udkast
 ```
 
-*API-SPEC.md v0.3*
+_API-SPEC.md v0.3_

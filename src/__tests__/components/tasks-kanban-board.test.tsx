@@ -72,11 +72,7 @@ describe('TasksKanbanBoard', () => {
   })
 
   it('gør kort draggable og klikbart som link', () => {
-    render(
-      <TasksKanbanBoard
-        tasks={[makeTask({ id: 't1', title: 'Træk mig', status: 'NY' })]}
-      />
-    )
+    render(<TasksKanbanBoard tasks={[makeTask({ id: 't1', title: 'Træk mig', status: 'NY' })]} />)
     const link = screen.getByRole('link', { name: 'Træk mig' })
     expect(link).toHaveAttribute('href', '/tasks/t1')
   })

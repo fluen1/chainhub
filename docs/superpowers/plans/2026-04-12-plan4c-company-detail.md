@@ -17,6 +17,7 @@
 ## Scope
 
 ### In scope
+
 - New Prisma model `CompanyInsightsCache` + migration
 - Pure helpers: `sectionsForRole`, `pickHighestPriorityRole`, `deriveHealthDimensions`, `deriveStatusBadge`, `sortContractsByUrgency`, `sortCasesByUrgency`, `selectKeyPersons`
 - New atomic components: `AlertBanner`, `AiInsightCard`, `SectionCard`
@@ -29,6 +30,7 @@
 - Deletion of 11 subpage folders + `company-detail-client.tsx` + `layout.tsx` + `src/components/companies/CompanyTabs.tsx`
 
 ### Out of scope (Plan 4D or later)
+
 - `/tasks`, `/calendar`, `/search`, `/settings` rewrites
 - Dashboard Indsigter section (Plan 4B's dashboard stays as-is)
 - Dismiss functionality on alerts or insight (proto has no dismiss affordance)
@@ -36,6 +38,7 @@
 - AI insights for pages other than `/companies/[id]`
 
 ### Key design decisions
+
 1. **Role filtering is server-side.** `getCompanyDetailData()` computes `visibleSections` from the user's highest-priority role and skips Prisma queries for sections that will not render. No `display: none` CSS hiding.
 2. **AI cache is synchronous.** First visit after 24h cache expiry awaits a less-than-8s AI call before rendering. Graceful degradation: AI failure renders alerts empty, insight null, page still works.
 3. **One AI call returns both alerts AND insight.** Halves the prompt token overhead vs two calls. Cached as one row in `CompanyInsightsCache`.
@@ -50,6 +53,7 @@
 **Why first:** All downstream tasks that touch the AI cache (Task 14, Task 15) depend on this model being generated. Migration must land before any Prisma client regeneration.
 
 **Files:**
+
 - Modify: `prisma/schema.prisma`
 - Create: new migration folder under `prisma/migrations/` (created by `prisma migrate dev`)
 
@@ -78,11 +82,13 @@ model CompanyInsightsCache {
 - [ ] **Step 0.2: Add back-relations**
 
 Find `model Organization` and add inside its block:
+
 ```prisma
   company_insights_caches CompanyInsightsCache[]
 ```
 
 Find `model Company` and add inside its block:
+
 ```prisma
   insights_cache CompanyInsightsCache?
 ```
@@ -125,6 +131,7 @@ _Full plan (approximately 2300 lines) follows below. Each task includes its own 
 ## Task 1: Pure helpers
 
 **Files:**
+
 - Create: `src/lib/company-detail/helpers.ts`
 - Create: `src/__tests__/company-detail/helpers.test.ts`
 
@@ -165,7 +172,7 @@ Bestyrelsesmedlem, Klinisk leder, Klinikchef, Stedfortraeder
 **Health dimension rules:**
 
 - **Kontrakter**: red if any aktiv contract has `expiry_date < today`, amber if any has `expiry_date` in `[today, today+30d)`, else green
-- **Sager**: red if any open case has status NY or AKTIV, amber if only AFVENTER_* cases, else green
+- **Sager**: red if any open case has status NY or AKTIV, amber if only AFVENTER\_\* cases, else green
 - **Oekonomi**: red if `ebitda < 0`, amber if `margin < 5%` or YoY omsaetning drop `> 10%`, else green (null if no 2025 data)
 - **Governance**: red if last visit older than 365 days or no visits ever, amber if 180-365 days, else green
 
@@ -228,6 +235,7 @@ Due to plan length, full code for each component task lives in the spec at `docs
 ### Task 2: AlertBanner component
 
 **Files:**
+
 - Create: `src/components/company-detail/alert-banner.tsx`
 - Create: `src/__tests__/components/company-detail/alert-banner.test.tsx`
 
@@ -253,6 +261,7 @@ git commit -m "feat(company-detail): add AlertBanner component for Plan 4C"
 ### Task 3: AiInsightCard component
 
 **Files:**
+
 - Create: `src/components/company-detail/ai-insight-card.tsx`
 - Create: `src/__tests__/components/company-detail/ai-insight-card.test.tsx`
 
@@ -280,6 +289,7 @@ git commit -m "feat(company-detail): add AiInsightCard for full-width AI insight
 ### Task 4: SectionCard wrapper
 
 **Files:**
+
 - Create: `src/components/company-detail/section-card.tsx`
 - Create: `src/__tests__/components/company-detail/section-card.test.tsx`
 
@@ -305,6 +315,7 @@ git commit -m "feat(company-detail): add SectionCard wrapper"
 ### Task 5: OwnershipSection
 
 **Files:**
+
 - Create: `src/components/company-detail/ownership-section.tsx`
 - Create: `src/__tests__/components/company-detail/ownership-section.test.tsx`
 
@@ -330,6 +341,7 @@ git commit -m "feat(company-detail): add OwnershipSection (sektion 1)"
 ### Task 6: ContractsSection
 
 **Files:**
+
 - Create: `src/components/company-detail/contracts-section.tsx`
 - Create: `src/__tests__/components/company-detail/contracts-section.test.tsx`
 
@@ -355,6 +367,7 @@ git commit -m "feat(company-detail): add ContractsSection (sektion 2)"
 ### Task 7: FinanceSection
 
 **Files:**
+
 - Create: `src/components/company-detail/finance-section.tsx`
 - Create: `src/__tests__/components/company-detail/finance-section.test.tsx`
 
@@ -380,6 +393,7 @@ git commit -m "feat(company-detail): add FinanceSection (sektion 3)"
 ### Task 8: CasesSection
 
 **Files:**
+
 - Create: `src/components/company-detail/cases-section.tsx`
 - Create: `src/__tests__/components/company-detail/cases-section.test.tsx`
 
@@ -405,6 +419,7 @@ git commit -m "feat(company-detail): add CasesSection (sektion 4)"
 ### Task 9: PersonsSection
 
 **Files:**
+
 - Create: `src/components/company-detail/persons-section.tsx`
 - Create: `src/__tests__/components/company-detail/persons-section.test.tsx`
 
@@ -430,6 +445,7 @@ git commit -m "feat(company-detail): add PersonsSection (sektion 5)"
 ### Task 10: VisitsSection
 
 **Files:**
+
 - Create: `src/components/company-detail/visits-section.tsx`
 - Create: `src/__tests__/components/company-detail/visits-section.test.tsx`
 
@@ -455,6 +471,7 @@ git commit -m "feat(company-detail): add VisitsSection (sektion 6)"
 ### Task 11: DocumentsSection
 
 **Files:**
+
 - Create: `src/components/company-detail/documents-section.tsx`
 - Create: `src/__tests__/components/company-detail/documents-section.test.tsx`
 
@@ -480,6 +497,7 @@ git commit -m "feat(company-detail): add DocumentsSection (sektion 7)"
 ## Task 12: CompanyHeader
 
 **Files:**
+
 - Create: `src/components/company-detail/company-header.tsx`
 - Create: `src/__tests__/components/company-detail/company-header.test.tsx`
 
@@ -488,6 +506,7 @@ git commit -m "feat(company-detail): add DocumentsSection (sektion 7)"
 The `editStamdataButton` is a slot (ReactNode) so `page.tsx` can pass the `EditStamdataDialog` trigger in without the header needing to import the Client Component (keeps header as a Server Component).
 
 **Visual rules per spec section 5:**
+
 - grid `grid-template-columns: 1fr auto`
 - left: name + status-badge inline, meta-row as flex-wrap gap list (CVR, city, status, founded year), health-dimensions row (4 dots when `showHealthDims`)
 - right: quick-actions column, "Opret opgave" link (disabled when `readOnly`), edit-stamdata slot
@@ -512,6 +531,7 @@ git commit -m "feat(company-detail): add CompanyHeader with slot for edit dialog
 ## Task 13: EditStamdataDialog + updateCompanyStamdata action
 
 **Files:**
+
 - Create: `src/components/company-detail/edit-stamdata-dialog.tsx`
 - Modify: `src/actions/companies.ts` (add `updateCompanyStamdata`)
 - Create: `src/__tests__/components/company-detail/edit-stamdata-dialog.test.tsx`
@@ -519,6 +539,7 @@ git commit -m "feat(company-detail): add CompanyHeader with slot for edit dialog
 **Action:** Zod-validated server action `updateCompanyStamdata(companyId, input)` where input has name/cvr/address/city/postal_code/founded_date (ISO date string). Returns `ActionResult<void>`. Validates CVR as 8 digits when not null. Checks access via `canAccessCompany(session.user.id, companyId)` (or `getAccessibleCompanies` if canAccessCompany is not exported — check `src/lib/permissions/index.ts`). Calls `prisma.company.update()` with `organization_id` in where clause for tenant safety. Calls `revalidatePath(/companies/{companyId})`.
 
 **Component (Client Component, uses `useState` + `useTransition`):**
+
 - Trigger button "Rediger stamdata" (receives `disabled` prop for readOnly)
 - Modal with form fields: navn, CVR, adresse, by, postnummer, stiftelsesdato
 - Modal uses role="dialog" aria-modal overlay clickable to dismiss
@@ -562,15 +583,18 @@ git commit -m "feat(company-detail): add EditStamdataDialog + updateCompanyStamd
 ## Task 14: AI job — company-insights
 
 **Files:**
+
 - Create: `src/lib/ai/jobs/company-insights.ts`
 - Create: `src/__tests__/ai/company-insights.test.ts`
 
 **Exports:**
+
 - `CompanySnapshot` interface (input shape per spec section 8)
 - `CompanyAlert`, `AiInsight`, `CompanyInsightsResult` types + matching Zod schemas
 - `generateCompanyInsights(snapshot): Promise<GenerateInsightsOutcome>` where outcome is `{ ok: true, data, cost_usd, model_name }` or `{ ok: false, error }`
 
 **Implementation:**
+
 - Uses `createClaudeClient()` from `@/lib/ai/client`
 - System prompt per spec section 8 (dansk, JSON output requirements, anti-bias rules, coverage language)
 - User message is `JSON.stringify(snapshot, null, 2)`
@@ -656,10 +680,12 @@ returnerer { ok: false, error }."
 ## Task 15: Server Action — company-detail
 
 **Files:**
+
 - Create: `src/actions/company-detail.ts`
 - Create: `src/__tests__/company-detail-actions.test.ts`
 
 **Exports:**
+
 - Types: `CompanyDetailData`, `OwnershipData`, `ContractViewRow`, `FinanceViewData`, `CaseViewRow`, `PersonViewRow`, `VisitViewRow`, `DocumentViewRow` (all the view-shapes that section components consume)
 - `getCompanyDetailData(companyId, userId, organizationId): Promise<CompanyDetailData | null>` — returns null when user has no access to the company
 
@@ -675,6 +701,7 @@ returnerer { ok: false, error }."
 8. Return full `CompanyDetailData`
 
 **Internal helpers (in same file):**
+
 - `sumFinance(metrics)` — aggregates FinancialMetric rows into `{ omsaetning, ebitda, resultat }` nulls when absent
 - `buildOwnership(ownerships, ejeraftaleContract, today)` — computes kaedegruppePct/localPartner/ejeraftaleStatus/holdingCompanyName per spec. For now `holdingCompanyName` returns null (follow-up task).
 - `buildContracts(contractsRaw, today, totalCount)` — applies `sortContractsByUrgency`, slices top 3, maps to ContractViewRow
@@ -725,7 +752,12 @@ And for contracts:
 
 ```ts
 prisma.contract.findMany({
-  where: { company_id: companyId, organization_id: organizationId, deleted_at: null, status: 'AKTIV' },
+  where: {
+    company_id: companyId,
+    organization_id: organizationId,
+    deleted_at: null,
+    status: 'AKTIV',
+  },
   take: 20,
 })
 ```
@@ -781,6 +813,7 @@ degradation ved fejl. Returnerer null ved manglende adgang."
 ## Task 16: Page rewrite + delete subpages
 
 **Files:**
+
 - Rewrite: `src/app/(dashboard)/companies/[id]/page.tsx`
 - Delete: `src/app/(dashboard)/companies/[id]/layout.tsx`
 - Delete: `src/app/(dashboard)/companies/[id]/company-detail-client.tsx`
@@ -1033,6 +1066,7 @@ Expected: 307 (redirect to /login).
 Open Playwright MCP. Log in as `philip@chainhub.dk / password123`. Navigate to `/companies` portfolio list, click first company to open `/companies/{id}`.
 
 Verify:
+
 - Company header renders with name, status badge, meta-row (CVR, city, status, founded year), 4 health-dimensions dots
 - Alert banners render at top if AI has generated any (may be empty on first visit — this is acceptable)
 - Content grid shows 2 columns with all 8 sections for Philip (GROUP_OWNER)
@@ -1046,6 +1080,7 @@ If AI section shows as gracefully degraded (empty) on first visit, this is expec
 - [ ] **Step 17.7:** Role-switch smoke test (optional).
 
 Log out, log in as `maria@tandlaegegruppen.dk / password123` (GROUP_LEGAL). Navigate to same company. Verify:
+
 - Only 5 sections visible: Ejerskab, Kontrakter, Aabne sager, Seneste dokumenter, AI Insight
 - Finance, Persons, Visits sections NOT rendered
 
@@ -1094,6 +1129,7 @@ Otherwise skip.
 ## What comes next
 
 **Plan 4D scope (to be brainstormed separately):**
+
 - `/tasks` list + `/tasks/[id]` detail rewrite
 - `/calendar` full page (replaces `/visits`, feeds CalendarWidget on dashboard)
 - `/search` global search

@@ -7,18 +7,11 @@ import { getSidebarData, buildSidebarBadges } from '@/lib/sidebar-data'
 import type { InlineKpi } from '@/types/ui'
 import { formatMio } from '@/lib/labels'
 
-export default async function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
   if (!session) redirect('/login')
 
-  const sidebarData = await getSidebarData(
-    session.user.id,
-    session.user.organizationId
-  )
+  const sidebarData = await getSidebarData(session.user.id, session.user.organizationId)
   const badges = buildSidebarBadges(sidebarData)
 
   // Header inline KPIs — 5 KPIs matchende proto (GROUP_OWNER)
@@ -54,9 +47,7 @@ export default async function DashboardLayout({
             kpis={headerKpis}
             currentDate={new Date()}
           />
-          <main className="flex-1 overflow-y-auto bg-[#f0f2f5] px-8 py-6">
-            {children}
-          </main>
+          <main className="flex-1 overflow-y-auto bg-[#f0f2f5] px-8 py-6">{children}</main>
         </div>
       </div>
     </Providers>

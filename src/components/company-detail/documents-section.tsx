@@ -50,7 +50,10 @@ export function DocumentsSection({ documents, awaitingReviewCount }: DocumentsSe
               <div className="text-[11px] text-slate-400">{d.meta}</div>
             </div>
             <span
-              className={cn('whitespace-nowrap rounded-md px-2 py-[3px] text-[10px] font-bold', BADGE_TONES[d.badge.tone])}
+              className={cn(
+                'whitespace-nowrap rounded-md px-2 py-[3px] text-[10px] font-bold',
+                BADGE_TONES[d.badge.tone]
+              )}
             >
               {d.badge.label}
             </span>

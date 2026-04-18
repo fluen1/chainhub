@@ -21,10 +21,7 @@ import {
   getPriorityStyle,
   getTaskStatusLabel,
 } from '@/lib/labels'
-import {
-  groupTasksByCompany,
-  NO_COMPANY_KEY,
-} from '@/lib/task-detail/helpers'
+import { groupTasksByCompany, NO_COMPANY_KEY } from '@/lib/task-detail/helpers'
 import type { TaskStatus, Prisma } from '@prisma/client'
 
 export const metadata: Metadata = { title: 'Opgaver' }
@@ -63,30 +60,26 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
   const priorityFilter = searchParams.priority
   const companyFilter = searchParams.company
   const viewFilter: 'flat' | 'grouped' | 'kanban' =
-    searchParams.view === 'grouped'
-      ? 'grouped'
-      : searchParams.view === 'kanban'
-      ? 'kanban'
-      : 'flat'
+    searchParams.view === 'grouped' ? 'grouped' : searchParams.view === 'kanban' ? 'kanban' : 'flat'
 
   const today = new Date()
 
-  const companyIds = await getAccessibleCompanies(
-    session.user.id,
-    session.user.organizationId
-  )
+  const companyIds = await getAccessibleCompanies(session.user.id, session.user.organizationId)
 
-  const companyOptions = companyIds.length > 0
-    ? (await prisma.company.findMany({
-        where: {
-          id: { in: companyIds },
-          organization_id: session.user.organizationId,
-          deleted_at: null,
-        },
-        select: { id: true, name: true },
-        orderBy: { name: 'asc' },
-      })).map((c) => ({ value: c.id, label: c.name }))
-    : []
+  const companyOptions =
+    companyIds.length > 0
+      ? (
+          await prisma.company.findMany({
+            where: {
+              id: { in: companyIds },
+              organization_id: session.user.organizationId,
+              deleted_at: null,
+            },
+            select: { id: true, name: true },
+            orderBy: { name: 'asc' },
+          })
+        ).map((c) => ({ value: c.id, label: c.name }))
+      : []
 
   const companyNameLookup = new Map(companyOptions.map((c) => [c.value, c.label]))
 
@@ -98,8 +91,8 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
     ...(statusFilter
       ? { status: statusFilter as TaskStatus }
       : viewFilter === 'kanban'
-      ? {}
-      : { status: { not: 'LUKKET' as TaskStatus } }),
+        ? {}
+        : { status: { not: 'LUKKET' as TaskStatus } }),
     ...(priorityFilter ? { priority: priorityFilter as never } : {}),
     ...(q ? { title: { contains: q, mode: 'insensitive' as const } } : {}),
     ...(companyFilter ? { company_id: companyFilter } : {}),
@@ -134,8 +127,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
   const overdueTasks = tasks.filter((t) => t.due_date && new Date(t.due_date) < today)
   const upcomingTasks = tasks.filter((t) => !t.due_date || new Date(t.due_date) >= today)
 
-  const groupedByCompany =
-    viewFilter === 'grouped' ? groupTasksByCompany(tasks) : null
+  const groupedByCompany = viewFilter === 'grouped' ? groupTasksByCompany(tasks) : null
 
   function buildToggleHref(nextView: 'flat' | 'grouped' | 'kanban'): string {
     const params = new URLSearchParams()
@@ -187,9 +179,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
             href={buildToggleHref('flat')}
             className={cn(
               'flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-l-md no-underline',
-              viewFilter === 'flat'
-                ? 'bg-blue-50 text-blue-700'
-                : 'text-gray-500 hover:bg-gray-50'
+              viewFilter === 'flat' ? 'bg-blue-50 text-blue-700' : 'text-gray-500 hover:bg-gray-50'
             )}
           >
             <List className="h-3.5 w-3.5" aria-hidden />
@@ -227,7 +217,9 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
           <CheckSquare className="mx-auto h-12 w-12 text-gray-400" />
           {hasFilters ? (
             <>
-              <h3 className="mt-2 text-sm font-semibold text-gray-900">Ingen opgaver matcher søgningen</h3>
+              <h3 className="mt-2 text-sm font-semibold text-gray-900">
+                Ingen opgaver matcher søgningen
+              </h3>
               <p className="mt-1 text-sm text-gray-500">Prøv at ændre filtrene.</p>
             </>
           ) : (
@@ -245,7 +237,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
             const name =
               companyId === NO_COMPANY_KEY
                 ? 'Uden selskab'
-                : companyNameLookup.get(companyId) ?? 'Ukendt selskab'
+                : (companyNameLookup.get(companyId) ?? 'Ukendt selskab')
             return (
               <CollapsibleSection key={companyId} title={name} count={tasksForCompany.length}>
                 <TaskList tasks={tasksForCompany} today={today} />
@@ -336,12 +328,16 @@ function TaskList({
                 </Link>
                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                   {task.due_date && (
-                    <span className={`text-xs ${isOverdue ? 'text-red-600 font-medium' : 'text-gray-500'}`}>
+                    <span
+                      className={`text-xs ${isOverdue ? 'text-red-600 font-medium' : 'text-gray-500'}`}
+                    >
                       {new Date(task.due_date).toLocaleDateString('da-DK')}
                     </span>
                   )}
                   {task.priority && (
-                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${getPriorityStyle(task.priority)}`}>
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${getPriorityStyle(task.priority)}`}
+                    >
                       {getPriorityLabel(task.priority)}
                     </span>
                   )}

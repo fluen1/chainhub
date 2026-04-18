@@ -16,10 +16,7 @@ interface ExtractedFieldJson {
   source_text?: string
 }
 
-function mapExtractedFields(
-  extractedFields: unknown,
-  discrepancies: unknown
-): ReviewField[] {
+function mapExtractedFields(extractedFields: unknown, discrepancies: unknown): ReviewField[] {
   if (!extractedFields || typeof extractedFields !== 'object' || Array.isArray(extractedFields)) {
     return []
   }
@@ -31,9 +28,10 @@ function mapExtractedFields(
       : {}
 
   return Object.entries(record).map(([key, raw]) => {
-    const field = (raw && typeof raw === 'object' && !Array.isArray(raw))
-      ? (raw as ExtractedFieldJson)
-      : ({} as ExtractedFieldJson)
+    const field =
+      raw && typeof raw === 'object' && !Array.isArray(raw)
+        ? (raw as ExtractedFieldJson)
+        : ({} as ExtractedFieldJson)
 
     const confidence = typeof field.confidence === 'number' ? field.confidence : 0
     const confidenceLevel: 'high' | 'medium' | 'low' =
@@ -51,9 +49,7 @@ function mapExtractedFields(
       ? (discObj.type as 'value_mismatch' | 'missing_clause' | 'new_data' | undefined)
       : undefined
 
-    const existingValue = discObj
-      ? (discObj.existing_value as string | null) ?? null
-      : null
+    const existingValue = discObj ? ((discObj.existing_value as string | null) ?? null) : null
 
     return {
       id: key,
@@ -84,11 +80,7 @@ function formatFieldLabel(key: string): string {
 // ---------------------------------------------------------------
 // Server Component
 // ---------------------------------------------------------------
-export default async function DocumentReviewPage({
-  params,
-}: {
-  params: { id: string }
-}) {
+export default async function DocumentReviewPage({ params }: { params: { id: string } }) {
   const session = await auth()
   if (!session) redirect('/login')
 
@@ -167,10 +159,5 @@ export default async function DocumentReviewPage({
     decidedFieldNames,
   }
 
-  return (
-    <ReviewClient
-      document={reviewDoc}
-      reviewQueue={reviewQueue}
-    />
-  )
+  return <ReviewClient document={reviewDoc} reviewQueue={reviewQueue} />
 }

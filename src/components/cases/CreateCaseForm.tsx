@@ -107,7 +107,9 @@ export function CreateCaseForm() {
               >
                 <option value="">Vælg type...</option>
                 {CASE_TYPES.map((t) => (
-                  <option key={t} value={t}>{CASE_TYPE_LABELS[t]}</option>
+                  <option key={t} value={t}>
+                    {CASE_TYPE_LABELS[t]}
+                  </option>
                 ))}
               </select>
             </div>
@@ -129,7 +131,9 @@ export function CreateCaseForm() {
                   {selectedType === 'ANDET' ? 'Ingen undertype' : 'Vælg undertype...'}
                 </option>
                 {subtypes.map((s) => (
-                  <option key={s.value} value={s.value}>{s.label}</option>
+                  <option key={s.value} value={s.value}>
+                    {s.label}
+                  </option>
                 ))}
               </select>
             </div>
@@ -177,7 +181,9 @@ export function CreateCaseForm() {
         </div>
 
         <div className="space-y-4 border-t pt-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-900">Beskrivelse</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-900">
+            Beskrivelse
+          </h2>
           <div>
             <label className="block text-sm font-medium text-gray-700">Beskrivelse</label>
             <textarea

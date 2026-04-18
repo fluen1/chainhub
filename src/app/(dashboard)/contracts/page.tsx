@@ -80,9 +80,8 @@ export default async function ContractsPage() {
 
   const contracts: ContractItem[] = accessibleContracts.map((c) => {
     const expiryMs = c.expiry_date ? new Date(c.expiry_date).getTime() : null
-    const daysUntilExpiry = expiryMs != null
-      ? Math.ceil((expiryMs - now) / (1000 * 60 * 60 * 24))
-      : null
+    const daysUntilExpiry =
+      expiryMs != null ? Math.ceil((expiryMs - now) / (1000 * 60 * 60 * 24)) : null
 
     return {
       id: c.id,

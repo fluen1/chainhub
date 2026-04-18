@@ -36,9 +36,7 @@ export function CreateUserForm({ companies }: CreateUserFormProps) {
 
   function toggleCompany(companyId: string) {
     setSelectedCompanyIds((prev) =>
-      prev.includes(companyId)
-        ? prev.filter((id) => id !== companyId)
-        : [...prev, companyId]
+      prev.includes(companyId) ? prev.filter((id) => id !== companyId) : [...prev, companyId]
     )
   }
 

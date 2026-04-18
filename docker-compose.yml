@@ -4,7 +4,7 @@ services:
     container_name: chainhub-db
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - '5432:5432'
     environment:
       POSTGRES_DB: chainhub_dev
       POSTGRES_USER: chainhub

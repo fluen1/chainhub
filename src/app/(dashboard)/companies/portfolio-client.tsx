@@ -3,14 +3,7 @@
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import {
-  Search,
-  Map as MapIcon,
-  List as ListIcon,
-  Plus,
-  ArrowUp,
-  ArrowDown,
-} from 'lucide-react'
+import { Search, Map as MapIcon, List as ListIcon, Plus, ArrowUp, ArrowDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatMio } from '@/lib/labels'
 import type { PortfolioCompany, PortfolioTotals } from './page'
@@ -118,7 +111,6 @@ function KpiBox({
   )
 }
 
-
 // ---------------------------------------------------------------
 // Sorterings-typer og helpers
 // ---------------------------------------------------------------
@@ -191,11 +183,7 @@ function HealthPill({
   onClick: () => void
 }) {
   const dotCls =
-    status === 'critical'
-      ? 'bg-rose-500'
-      : status === 'warning'
-        ? 'bg-amber-400'
-        : 'bg-emerald-400'
+    status === 'critical' ? 'bg-rose-500' : status === 'warning' ? 'bg-amber-400' : 'bg-emerald-400'
 
   return (
     <button
@@ -239,18 +227,11 @@ function Th({
       onClick={onClick}
     >
       <span
-        className={cn(
-          'inline-flex items-center gap-1',
-          align === 'right' && 'flex-row-reverse'
-        )}
+        className={cn('inline-flex items-center gap-1', align === 'right' && 'flex-row-reverse')}
       >
         <span className={cn(active && 'text-slate-900')}>{label}</span>
         {active &&
-          (dir === 'asc' ? (
-            <ArrowUp className="w-3 h-3" />
-          ) : (
-            <ArrowDown className="w-3 h-3" />
-          ))}
+          (dir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />)}
       </span>
     </th>
   )
@@ -357,23 +338,15 @@ function CompanyListView({
                   )}
                 </td>
                 <td className="px-4 py-3 text-slate-600">{c.city ?? '—'}</td>
-                <td className="px-4 py-3 text-slate-600">
-                  {c.partnerName ?? '—'}
-                </td>
+                <td className="px-4 py-3 text-slate-600">{c.partnerName ?? '—'}</td>
                 <td className="px-4 py-3 text-slate-600 text-right tabular-nums">
-                  {c.groupOwnershipPct != null
-                    ? `${c.groupOwnershipPct}%`
-                    : '—'}
+                  {c.groupOwnershipPct != null ? `${c.groupOwnershipPct}%` : '—'}
                 </td>
                 <td className="px-4 py-3 text-slate-900 font-medium text-right tabular-nums">
-                  {c.revenue != null && c.revenue > 0
-                    ? `${formatMio(c.revenue)}M`
-                    : '—'}
+                  {c.revenue != null && c.revenue > 0 ? `${formatMio(c.revenue)}M` : '—'}
                 </td>
                 <td className="px-4 py-3 text-slate-600 text-right tabular-nums">
-                  {c.ebitdaMargin != null
-                    ? `${(c.ebitdaMargin * 100).toFixed(1)}%`
-                    : '—'}
+                  {c.ebitdaMargin != null ? `${(c.ebitdaMargin * 100).toFixed(1)}%` : '—'}
                 </td>
                 <td className="px-4 py-3 text-slate-600 text-right tabular-nums">
                   {c.contractCount}
@@ -381,9 +354,7 @@ function CompanyListView({
                 <td className="px-4 py-3 text-right tabular-nums">
                   <span
                     className={cn(
-                      c.openCaseCount > 0
-                        ? 'text-rose-600 font-medium'
-                        : 'text-slate-400'
+                      c.openCaseCount > 0 ? 'text-rose-600 font-medium' : 'text-slate-400'
                     )}
                   >
                     {c.openCaseCount}
@@ -414,12 +385,8 @@ function CompanyListView({
       </div>
       {companies.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 text-center">
-          <p className="text-[13px] text-slate-500 font-medium">
-            Ingen lokationer fundet
-          </p>
-          <p className="text-[11px] text-slate-400 mt-1">
-            Prøv et andet søgeord eller filter
-          </p>
+          <p className="text-[13px] text-slate-500 font-medium">Ingen lokationer fundet</p>
+          <p className="text-[11px] text-slate-400 mt-1">Prøv et andet søgeord eller filter</p>
         </div>
       )}
     </div>
@@ -439,9 +406,9 @@ export function PortfolioClient({
   canCreate: boolean
 }) {
   const [search, setSearch] = useState('')
-  const [healthFilter, setHealthFilter] = useState<
-    'all' | 'critical' | 'warning' | 'healthy'
-  >('all')
+  const [healthFilter, setHealthFilter] = useState<'all' | 'critical' | 'warning' | 'healthy'>(
+    'all'
+  )
   const [view, setView] = useState<'map' | 'list'>('map')
   const [sortKey, setSortKey] = useState<SortKey>('name')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
@@ -464,8 +431,9 @@ export function PortfolioClient({
 
   const mapCompanies: MapCompany[] = useMemo(() => {
     return filtered
-      .filter((c): c is PortfolioCompany & { latitude: number; longitude: number } =>
-        c.latitude != null && c.longitude != null
+      .filter(
+        (c): c is PortfolioCompany & { latitude: number; longitude: number } =>
+          c.latitude != null && c.longitude != null
       )
       .map((c) => ({
         id: c.id,
@@ -521,9 +489,7 @@ export function PortfolioClient({
         {/* Header */}
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-[20px] font-semibold tracking-tight text-slate-900">
-              Selskaber
-            </h1>
+            <h1 className="text-[20px] font-semibold tracking-tight text-slate-900">Selskaber</h1>
             <p className="text-[13px] text-slate-500 mt-1">
               {totals.locationCount} lokationer i porteføljen
               {totals.attentionCount > 0 && (
@@ -565,31 +531,19 @@ export function PortfolioClient({
               status="critical"
               label={`${counts.critical} Kritisk`}
               active={healthFilter === 'critical'}
-              onClick={() =>
-                setHealthFilter(
-                  healthFilter === 'critical' ? 'all' : 'critical'
-                )
-              }
+              onClick={() => setHealthFilter(healthFilter === 'critical' ? 'all' : 'critical')}
             />
             <HealthPill
               status="warning"
               label={`${counts.warning} Advarsel`}
               active={healthFilter === 'warning'}
-              onClick={() =>
-                setHealthFilter(
-                  healthFilter === 'warning' ? 'all' : 'warning'
-                )
-              }
+              onClick={() => setHealthFilter(healthFilter === 'warning' ? 'all' : 'warning')}
             />
             <HealthPill
               status="healthy"
               label={`${counts.healthy} Sunde`}
               active={healthFilter === 'healthy'}
-              onClick={() =>
-                setHealthFilter(
-                  healthFilter === 'healthy' ? 'all' : 'healthy'
-                )
-              }
+              onClick={() => setHealthFilter(healthFilter === 'healthy' ? 'all' : 'healthy')}
             />
 
             {/* View toggle */}
@@ -599,9 +553,7 @@ export function PortfolioClient({
                 onClick={() => setView('map')}
                 className={cn(
                   'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium transition-colors',
-                  view === 'map'
-                    ? 'bg-slate-900 text-white'
-                    : 'text-slate-600 hover:text-slate-900'
+                  view === 'map' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'
                 )}
                 aria-label="Vis som kort"
               >
@@ -633,8 +585,12 @@ export function PortfolioClient({
               ) : (
                 <div className="flex items-center justify-center min-h-[560px] bg-[#0f172a] rounded-xl">
                   <div className="text-center">
-                    <p className="text-[13px] text-slate-400 font-medium">Ingen lokationer fundet</p>
-                    <p className="text-[11px] text-slate-500 mt-1">Prøv et andet søgeord eller filter</p>
+                    <p className="text-[13px] text-slate-400 font-medium">
+                      Ingen lokationer fundet
+                    </p>
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      Prøv et andet søgeord eller filter
+                    </p>
                   </div>
                 </div>
               )}
@@ -656,22 +612,11 @@ export function PortfolioClient({
             {/* KPIs */}
             <PanelCard title="Portefølje">
               <div className="grid grid-cols-2 gap-2.5">
-                <KpiBox
-                  label="Lokationer"
-                  value={String(totals.locationCount)}
-                />
-                <KpiBox
-                  label="Kræver handling"
-                  value={String(totals.attentionCount)}
-                  danger
-                />
+                <KpiBox label="Lokationer" value={String(totals.locationCount)} />
+                <KpiBox label="Kræver handling" value={String(totals.attentionCount)} danger />
                 <KpiBox
                   label="Omsætning"
-                  value={
-                    totals.totalRevenue != null
-                      ? `${formatMio(totals.totalRevenue)}M`
-                      : '—'
-                  }
+                  value={totals.totalRevenue != null ? `${formatMio(totals.totalRevenue)}M` : '—'}
                 />
                 <KpiBox
                   label="EBITDA margin"
@@ -697,9 +642,7 @@ export function PortfolioClient({
                       <span
                         className={cn(
                           'absolute -left-0.5 top-0 bottom-0 w-[3px] rounded-full',
-                          item.status === 'critical'
-                            ? 'bg-rose-500'
-                            : 'bg-amber-400'
+                          item.status === 'critical' ? 'bg-rose-500' : 'bg-amber-400'
                         )}
                       />
                       <div
@@ -717,9 +660,7 @@ export function PortfolioClient({
                       <div className="text-[12px] font-medium text-slate-900 truncate">
                         {item.title}
                       </div>
-                      <div className="text-[10px] text-slate-500 truncate">
-                        {item.sub}
-                      </div>
+                      <div className="text-[10px] text-slate-500 truncate">{item.sub}</div>
                     </div>
                     <div className="text-[10px] text-slate-400 font-medium whitespace-nowrap tabular-nums">
                       {item.time}
@@ -727,9 +668,7 @@ export function PortfolioClient({
                   </Link>
                 ))}
                 {urgencyItems.length === 0 && (
-                  <p className="text-[12px] text-slate-400 py-2">
-                    Alt under kontrol
-                  </p>
+                  <p className="text-[12px] text-slate-400 py-2">Alt under kontrol</p>
                 )}
               </div>
             </PanelCard>

@@ -42,7 +42,9 @@ export function OwnershipSection({ data }: OwnershipSectionProps) {
       <DataRow label="Kaedegruppe-andel" value={`${data.kaedegruppePct}%`} />
       <DataRow
         label="Lokal partner"
-        value={data.localPartner ? `${data.localPartner.name} (${data.localPartner.pct}%)` : 'Ingen'}
+        value={
+          data.localPartner ? `${data.localPartner.name} (${data.localPartner.pct}%)` : 'Ingen'
+        }
       />
       <DataRow
         label="Ejeraftale"

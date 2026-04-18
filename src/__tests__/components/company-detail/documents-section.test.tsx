@@ -3,8 +3,20 @@ import { render, screen } from '@testing-library/react'
 import { DocumentsSection, type DocumentRow } from '@/components/company-detail/documents-section'
 
 const rows: DocumentRow[] = [
-  { id: '1', isAiExtracted: true, fileName: 'Ejeraftale v3.pdf', meta: 'Uploadet i dag · AI-behandlet', badge: { label: 'Til review', tone: 'purple' } },
-  { id: '2', isAiExtracted: false, fileName: 'Aarsregnskab 2025.pdf', meta: 'Uploadet 20. mar 2026', badge: { label: 'Arkiveret', tone: 'green' } },
+  {
+    id: '1',
+    isAiExtracted: true,
+    fileName: 'Ejeraftale v3.pdf',
+    meta: 'Uploadet i dag · AI-behandlet',
+    badge: { label: 'Til review', tone: 'purple' },
+  },
+  {
+    id: '2',
+    isAiExtracted: false,
+    fileName: 'Aarsregnskab 2025.pdf',
+    meta: 'Uploadet 20. mar 2026',
+    badge: { label: 'Arkiveret', tone: 'green' },
+  },
 ]
 
 describe('DocumentsSection', () => {

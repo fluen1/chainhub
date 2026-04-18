@@ -22,7 +22,10 @@ export function UrgencyList({ title, items, viewAllHref }: UrgencyListProps) {
       </div>
       <div className="space-y-0">
         {items.map((item) => (
-          <div key={item.id} className="flex items-center gap-3 border-b border-slate-50 py-2.5 last:border-none">
+          <div
+            key={item.id}
+            className="flex items-center gap-3 border-b border-slate-50 py-2.5 last:border-none"
+          >
             <div
               className={cn(
                 'w-1 self-stretch rounded-full',

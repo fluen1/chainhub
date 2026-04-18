@@ -43,7 +43,13 @@ export function CreateVisitForm({ companies }: CreateVisitFormProps) {
     const result = await createVisit({
       companyId,
       visitDate,
-      visitType: visitType as 'KVARTALSBESOEG' | 'OPFOELGNING' | 'AD_HOC' | 'AUDIT' | 'ONBOARDING' | 'OVERDRAGELSE',
+      visitType: visitType as
+        | 'KVARTALSBESOEG'
+        | 'OPFOELGNING'
+        | 'AD_HOC'
+        | 'AUDIT'
+        | 'ONBOARDING'
+        | 'OVERDRAGELSE',
       notes: notes || undefined,
     })
 
@@ -67,15 +73,10 @@ export function CreateVisitForm({ companies }: CreateVisitFormProps) {
         <h1 className="text-2xl font-bold text-gray-900">Planlæg besøg</h1>
       </div>
 
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-6 rounded-lg border bg-white p-6 shadow-sm"
-      >
+      <form onSubmit={handleSubmit} className="space-y-6 rounded-lg border bg-white p-6 shadow-sm">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Selskab *
-            </label>
+            <label className="block text-sm font-medium text-gray-700">Selskab *</label>
             <select
               name="companyId"
               required
@@ -92,9 +93,7 @@ export function CreateVisitForm({ companies }: CreateVisitFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Besøgsdato *
-            </label>
+            <label className="block text-sm font-medium text-gray-700">Besøgsdato *</label>
             <input
               name="visitDate"
               type="date"
@@ -105,9 +104,7 @@ export function CreateVisitForm({ companies }: CreateVisitFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Besøgstype *
-            </label>
+            <label className="block text-sm font-medium text-gray-700">Besøgstype *</label>
             <select
               name="visitType"
               required
@@ -123,9 +120,7 @@ export function CreateVisitForm({ companies }: CreateVisitFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Noter
-            </label>
+            <label className="block text-sm font-medium text-gray-700">Noter</label>
             <textarea
               name="notes"
               rows={4}

@@ -26,12 +26,7 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
     }
   }
 
-  const events = await getCalendarEvents(
-    session.user.id,
-    session.user.organizationId,
-    year,
-    month
-  )
+  const events = await getCalendarEvents(session.user.id, session.user.organizationId, year, month)
 
   const selectedDay = searchParams.day ? parseInt(searchParams.day, 10) : null
 

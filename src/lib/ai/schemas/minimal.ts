@@ -17,7 +17,14 @@ const minimalSchema: ContractSchema = {
         parties: {
           type: 'object',
           properties: {
-            value: { type: 'array', items: { type: 'object', properties: { name: { type: 'string' }, role: { type: 'string' } }, required: ['name'] } },
+            value: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: { name: { type: 'string' }, role: { type: 'string' } },
+                required: ['name'],
+              },
+            },
             claude_confidence: { type: 'number' },
             source_page: { type: 'number' },
             source_text: { type: 'string' },
@@ -35,7 +42,13 @@ const minimalSchema: ContractSchema = {
         key_amounts: {
           type: 'object',
           properties: {
-            value: { type: 'array', items: { type: 'object', properties: { label: { type: 'string' }, amount_dkk: { type: 'number' } } } },
+            value: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: { label: { type: 'string' }, amount_dkk: { type: 'number' } },
+              },
+            },
             claude_confidence: { type: 'number' },
             source_page: { type: 'number' },
             source_text: { type: 'string' },
@@ -53,7 +66,11 @@ const minimalSchema: ContractSchema = {
         detected_clauses: {
           type: 'object',
           properties: {
-            value: { type: 'array', items: { type: 'string' }, description: 'Fundne klausuler som fri tekst' },
+            value: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Fundne klausuler som fri tekst',
+            },
             claude_confidence: { type: 'number' },
             source_page: { type: 'number' },
             source_text: { type: 'string' },
@@ -73,7 +90,8 @@ const minimalSchema: ContractSchema = {
   },
 
   system_prompt: `Du analyserer et dansk juridisk dokument af ukendt type. Ekstraher hvad du kan finde: parter, datoer, beløb, og en kort sammenfatning. Rapporter fundne klausuler som fri tekst. Hvis du ikke kan finde et felt, returner null.`,
-  user_prompt_prefix: 'Analyser dette dokument og ekstraher grundlæggende information via extract_minimal tool.',
+  user_prompt_prefix:
+    'Analyser dette dokument og ekstraher grundlæggende information via extract_minimal tool.',
 
   sanity_rules: [], // no specific rules for minimal
   cross_validation_rules: [],

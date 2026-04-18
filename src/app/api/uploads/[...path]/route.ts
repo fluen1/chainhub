@@ -11,10 +11,7 @@ const CONTENT_TYPES: Record<string, string> = {
   jpeg: 'image/jpeg',
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { path: string[] } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { path: string[] } }) {
   const session = await auth()
   if (!session) {
     return NextResponse.json({ error: 'Ikke autoriseret' }, { status: 401 })

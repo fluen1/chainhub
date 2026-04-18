@@ -1,6 +1,6 @@
 # INTELLIGENCE.md — ChainHub Videnslag
-Kendte fejlmønstre og learnings. Nyeste øverst.
----
+
+## Kendte fejlmønstre og learnings. Nyeste øverst.
 
 ## PERMANENT REGEL: Smoketest er obligatorisk — ikke-forhandlingsbart
 
@@ -87,6 +87,7 @@ UI SKAL testes med 50+ records, ikke 7.
 ## Kendte fejlmønstre
 
 ### 'use client' og server-side utility-funktioner (KRITISK — Sprint 7 læring)
+
 Next.js App Router: Server Components kan IKKE importere funktioner fra
 filer markeret med 'use client'. Selvom funktionen er en ren utility
 (ingen React hooks), fejler importen med "is not a function" runtime-fejl.
@@ -95,40 +96,53 @@ filer markeret med 'use client'. Selvom funktionen er en ren utility
 Kun React-komponenter med hooks hører til `'use client'` filer.
 
 ### Interaktive kommandoer hænger — stdin er lukket (KRITISK)
+
 Brug ALTID non-interaktive flags: `npx --yes`, `npm init --yes`.
 
 ### Supabase + Prisma — forbindelsesopsætning (KRITISK)
+
 url = Pooled (port 6543, ?pgbouncer=true), directUrl = Direct (port 5432).
 
 ### Prisma Æ/Ø/Å-encoding (KRITISK)
+
 Brug altid ASCII + @map(). Se DATABASE-SCHEMA.md.
 
 ### Repair-loop divergens
+
 Når TS-fejl STIGER, STOP. Ret kilden først.
 
 ### Garblede enum-værdier ved write_file
+
 Verificér med file_encoding_check umiddelbart efter write_file på schema.prisma.
 
 ### Dependency-regel
+
 Ny import → pakke i package.json i samme handling.
 
 ### Prisma v7 breaking change
+
 Pinned til prisma@5 og @prisma/client@5.
 
 ### useSearchParams() kræver Suspense
+
 Pak komponent i `<Suspense fallback={null}>`.
 
 ### ESLint i next build
+
 Ubrugte imports i test-filer fejler. Fjern dem.
 
 ### [Sprint 7] CompanyGetPayload type-assertion
+
 Dynamisk where → brug `as Promise<CompanyGetPayload<{...}>>`.
 
 ### [Sprint 7] Company schema mangler tasks[] relation
+
 Brug separat `prisma.task.count()` for opgave-count.
 
 ### [Sprint 7] CaseCompany mangler deleted_at
+
 Filtrer via `case: { deleted_at: null }` i nested where.
 
 ### [Sprint 7] Windows CRLF line endings
+
 Brug `l.trimEnd()` ved string-matching.

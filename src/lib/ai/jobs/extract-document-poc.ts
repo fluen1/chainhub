@@ -21,11 +21,11 @@ export interface ExtractDocumentPocResult {
 }
 
 export async function extractDocumentPoc(
-  payload: ExtractDocumentPocPayload,
+  payload: ExtractDocumentPocPayload
 ): Promise<ExtractDocumentPocResult> {
   log.info(
     { document_id: payload.document_id, filename: payload.filename },
-    'Starting PoC extraction',
+    'Starting PoC extraction'
   )
 
   const buffer = Buffer.from(payload.file_buffer_base64, 'base64')
@@ -67,11 +67,7 @@ export async function extractDocumentPoc(
   const textBlock = response.content.find((b) => b.type === 'text')
   const rawText = textBlock && textBlock.type === 'text' ? textBlock.text : ''
 
-  const costUsd = computeCostUsd(
-    model,
-    response.usage.input_tokens,
-    response.usage.output_tokens,
-  )
+  const costUsd = computeCostUsd(model, response.usage.input_tokens, response.usage.output_tokens)
 
   log.info(
     {
@@ -80,7 +76,7 @@ export async function extractDocumentPoc(
       output_tokens: response.usage.output_tokens,
       cost_usd: costUsd,
     },
-    'Claude extraction complete',
+    'Claude extraction complete'
   )
 
   const extraction = await prisma.documentExtraction.create({

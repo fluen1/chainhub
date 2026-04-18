@@ -29,17 +29,18 @@ Giv hovedkontoret et hurtigt overblik over alle kontrakter for ét selskab, orga
 
 Kontrakter grupperes efter de 5 kategorier fra CONTRACT-TYPES.md:
 
-| Kategori | ContractSystemType-værdier |
-|----------|---------------------------|
-| Ejerskab og selskabsret | EJERAFTALE, DIREKTOERKONTRAKT, OVERDRAGELSESAFTALE, AKTIONAERLAAN, PANTSAETNING, VEDTAEGTER |
-| Ansættelse og personale | ANSAETTELSE_FUNKTIONAER, ANSAETTELSE_IKKE_FUNKTIONAER, VIKARAFTALE, UDDANNELSESAFTALE, FRATROEDELSESAFTALE, KONKURRENCEKLAUSUL, PERSONALHAANDBOG |
-| Lokaler og udstyr | LEJEKONTRAKT_ERHVERV, LEASINGAFTALE |
-| Kommercielle aftaler | LEVERANDOERKONTRAKT, SAMARBEJDSAFTALE, NDA, IT_SYSTEMAFTALE, DBA, VOA |
-| Forsikring og governance | FORSIKRING, GF_REFERAT, BESTYRELSESREFERAT, FORRETNINGSORDEN, DIREKTIONSINSTRUKS |
+| Kategori                 | ContractSystemType-værdier                                                                                                                       |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Ejerskab og selskabsret  | EJERAFTALE, DIREKTOERKONTRAKT, OVERDRAGELSESAFTALE, AKTIONAERLAAN, PANTSAETNING, VEDTAEGTER                                                      |
+| Ansættelse og personale  | ANSAETTELSE_FUNKTIONAER, ANSAETTELSE_IKKE_FUNKTIONAER, VIKARAFTALE, UDDANNELSESAFTALE, FRATROEDELSESAFTALE, KONKURRENCEKLAUSUL, PERSONALHAANDBOG |
+| Lokaler og udstyr        | LEJEKONTRAKT_ERHVERV, LEASINGAFTALE                                                                                                              |
+| Kommercielle aftaler     | LEVERANDOERKONTRAKT, SAMARBEJDSAFTALE, NDA, IT_SYSTEMAFTALE, DBA, VOA                                                                            |
+| Forsikring og governance | FORSIKRING, GF_REFERAT, BESTYRELSESREFERAT, FORRETNINGSORDEN, DIREKTIONSINSTRUKS                                                                 |
 
 Lag 2-typer (INTERN_SERVICEAFTALE, ROYALTY_LICENS, OPTIONSAFTALE, TILTRAEDELSESDOKUMENT, KASSEKREDIT, CASH_POOL, INTERCOMPANY_LAAN, SELSKABSGARANTI) grupperes under "Strukturaftaler" hvis de findes.
 
 **Regler:**
+
 - Tomme kategorier skjules
 - Kategorier sorteres i ovenstående rækkefølge (fast)
 - Inden for hver kategori: kontrakter med udløbsdato først (tidligst først), derefter løbende kontrakter alfabetisk
@@ -62,13 +63,13 @@ Den eksisterende `CollapsibleSection`-komponent genbruges med `title`, `count`, 
 
 ### Urgency-visning
 
-| Tilstand | Border-accent | Dato-farve | Alert-banner |
-|----------|--------------|------------|-------------|
-| Udløbet (< i dag) | `border-l-red-400` | `text-red-600 font-medium` | Ja (rød) |
-| Urgent (≤14 dage) | `border-l-red-400` | `text-red-600 font-medium` | Ja (rød) |
-| Advarsel (15-90 dage) | `border-l-amber-400` | `text-amber-600` | Nej |
-| OK (>90 dage) | Ingen | `text-gray-500` | Nej |
-| Løbende (ingen dato) | Ingen | `text-gray-300` | Nej |
+| Tilstand              | Border-accent        | Dato-farve                 | Alert-banner |
+| --------------------- | -------------------- | -------------------------- | ------------ |
+| Udløbet (< i dag)     | `border-l-red-400`   | `text-red-600 font-medium` | Ja (rød)     |
+| Urgent (≤14 dage)     | `border-l-red-400`   | `text-red-600 font-medium` | Ja (rød)     |
+| Advarsel (15-90 dage) | `border-l-amber-400` | `text-amber-600`           | Nej          |
+| OK (>90 dage)         | Ingen                | `text-gray-500`            | Nej          |
+| Løbende (ingen dato)  | Ingen                | `text-gray-300`            | Nej          |
 
 Alert-banneret vises kun for udløbne/urgente kontrakter (≤14 dage), placeret mellem summary-bar og grupperingerne.
 
@@ -109,29 +110,29 @@ Centreret med `border-dashed border-gray-200`, som nuværende.
 
 ## 12-punkt tjekliste
 
-| # | Punkt | Status |
-|---|-------|--------|
-| 1 | Formål + brugerforventninger | ✅ Overblik over selskabets kontrakter, grupperet |
-| 2 | Auth + permissions | ✅ Layout checker canAccessCompany, sensitivity-filtrering beholdes |
-| 3 | Labels | ✅ Alt via labels.ts (getContractTypeLabel, getContractStatusLabel) |
-| 4 | Søgning + filtrering | ✅ Client-side tekstsøgning tilføjet |
-| 5 | Tom state | ✅ Meningsfuld besked + handlingsanvisning |
-| 6 | Fejlhåndtering | ✅ Dansk, via ActionResult-mønster |
-| 7 | Visuelt hierarki | ✅ Urgency-alerts → grupper → rækker |
-| 8 | Interaktivitet | ✅ Hele rækken klikbar, hover-state, collapsible grupper |
-| 9 | Responsivt | ✅ Listeformat skalerer bedre end tabel på mobile |
-| 10 | Konsistens | ✅ Matcher /contracts og /cases grupperet mønster |
-| 11 | Skalerbarhed | ✅ Collapsible grupper + søgning fungerer ved 50+ kontrakter |
-| 12 | Rolle-bevidsthed | ✅ Server-side sensitivity-filtrering, "Ny kontrakt" vises for alle (action checker permissions) |
+| #   | Punkt                        | Status                                                                                           |
+| --- | ---------------------------- | ------------------------------------------------------------------------------------------------ |
+| 1   | Formål + brugerforventninger | ✅ Overblik over selskabets kontrakter, grupperet                                                |
+| 2   | Auth + permissions           | ✅ Layout checker canAccessCompany, sensitivity-filtrering beholdes                              |
+| 3   | Labels                       | ✅ Alt via labels.ts (getContractTypeLabel, getContractStatusLabel)                              |
+| 4   | Søgning + filtrering         | ✅ Client-side tekstsøgning tilføjet                                                             |
+| 5   | Tom state                    | ✅ Meningsfuld besked + handlingsanvisning                                                       |
+| 6   | Fejlhåndtering               | ✅ Dansk, via ActionResult-mønster                                                               |
+| 7   | Visuelt hierarki             | ✅ Urgency-alerts → grupper → rækker                                                             |
+| 8   | Interaktivitet               | ✅ Hele rækken klikbar, hover-state, collapsible grupper                                         |
+| 9   | Responsivt                   | ✅ Listeformat skalerer bedre end tabel på mobile                                                |
+| 10  | Konsistens                   | ✅ Matcher /contracts og /cases grupperet mønster                                                |
+| 11  | Skalerbarhed                 | ✅ Collapsible grupper + søgning fungerer ved 50+ kontrakter                                     |
+| 12  | Rolle-bevidsthed             | ✅ Server-side sensitivity-filtrering, "Ny kontrakt" vises for alle (action checker permissions) |
 
 ---
 
 ## Filer der ændres
 
-| Fil | Ændring |
-|-----|---------|
-| `src/app/(dashboard)/companies/[id]/contracts/page.tsx` | Komplet redesign: gruppering, nyt layout |
-| `src/lib/labels.ts` | Tilføj `CONTRACT_CATEGORY_MAP` og `getContractCategoryLabel()` |
-| `src/components/contracts/ContractList.tsx` | Ny client-komponent med søgning + grupperet visning |
+| Fil                                                     | Ændring                                                        |
+| ------------------------------------------------------- | -------------------------------------------------------------- |
+| `src/app/(dashboard)/companies/[id]/contracts/page.tsx` | Komplet redesign: gruppering, nyt layout                       |
+| `src/lib/labels.ts`                                     | Tilføj `CONTRACT_CATEGORY_MAP` og `getContractCategoryLabel()` |
+| `src/components/contracts/ContractList.tsx`             | Ny client-komponent med søgning + grupperet visning            |
 
 Ingen nye dependencies. Ingen schema-ændringer.

@@ -1,4 +1,5 @@
 ﻿# SPEC-TILLÆG v2.1 — ChainHub Udvidelser
+
 **Dato:** 2026-03-12
 **Grundlag:** Brugerfeedback + UI-audit + gap-analyse + konkrete observationer
 **Status:** GODKENDT (2026-03-12)
@@ -25,6 +26,7 @@ Disse er observeret direkte i den kørende applikation og SKAL rettes.
 **Berørte sider:** Kontrakter, sager, opgaver, personer, dokumenter, og faner under selskab.
 
 **Problem:** Alle lister renderer som `<table>` med ubegrænset rækkeantal og uden:
+
 - Pagination (side 1/2/3 eller "vis mere")
 - Filtrering (type, status, klinik, tidsperiode)
 - Søgning (fritekst i listen)
@@ -32,6 +34,7 @@ Disse er observeret direkte i den kørende applikation og SKAL rettes.
 - Visnings-toggle (tabel vs. kort-grid vs. kompakt)
 
 **Krav:** ALLE lister i systemet SKAL have:
+
 ```
 1. Pagination: Max 20 rækker pr. side. "Viser 1-20 af 47" + sidetal.
 2. Søgning: Fritekst-søgefelt over listen (filtrer klient-side for <100 records).
@@ -45,17 +48,20 @@ Disse er observeret direkte i den kørende applikation og SKAL rettes.
 ### 0.2 Problem: Rå enum-værdier i UI
 
 **Observeret:**
+
 - Selskabslisten viser `under_stiftelse` (med underscore) i status-badge
 - Opgavesiden viser `AKTIV_TASK` i stedet for "Aktiv"
 - Kontrakttyper viser `EJERAFTALE`, `DIREKTOERKONTRAKT` i stedet for danske navne
 
 **Årsag:**
+
 - Selskabslisten bruger `{company.status}` direkte i stedet for `CompanyStatusBadge`-komponenten
 - Prisma enum `AKTIV_TASK @map("AKTIV")` giver TypeScript-værdien `AKTIV_TASK`,
   men `STATUS_LABELS` mapper kun `AKTIV` → `Aktiv`
 - Kontrakttyper har ingen display-name mapping overhovedet
 
 **Krav — GLOBAL REGEL:**
+
 ```
 Ingen rå enum-værdi, database-værdi eller SCREAMING_SNAKE_CASE tekst
 må nogensinde vises til brugeren.
@@ -81,6 +87,7 @@ Alle komponenter SKAL bruge denne utility — aldrig inline labels.
 En kædeleder der åbner systemet om morgenen skal besvares: "Hvad kræver min opmærksomhed?"
 
 **Krav — ny dashboard-struktur:**
+
 ```
 TOP: "KRÆVER OPMÆRKSOMHED" (urgency panel)
   Prioriteret liste — maks 10 items, sorteret efter kritikalitet:
@@ -107,6 +114,7 @@ BUND: SELSKABSGRID (cards i stedet for tabel)
 **Observeret:** Tabel med navn, CVR, status, kontrakter, sager. Viser `under_stiftelse` råt.
 
 **Krav:**
+
 ```
 Erstat tabel med CARD-GRID (responsive 2-3 kolonner):
   Hvert kort:
@@ -131,6 +139,7 @@ Erstat tabel med CARD-GRID (responsive 2-3 kolonner):
 Det er ikke det en kædeleder har brug for — de vil se status og handlinger.
 
 **Krav — ny fane-rækkefølge + "Overblik" som default:**
+
 ```
 FANER (ny rækkefølge):
   1. Overblik (NY — default ved åbning)
@@ -175,6 +184,7 @@ FANER (ny rækkefølge):
 **Problem:** Seed-data har kun personlige ejere. Holdingselskabet der ejer de øvrige 55% er ikke registreret. Advarslen er teknisk korrekt men uforståelig.
 
 **Krav:**
+
 ```
 Erstat med kontekstuel besked:
   "Registrerede ejere udgør 45% af selskabet.
@@ -197,6 +207,7 @@ Understøt selskab-som-ejer (owner_company_id — eksisterer i schema, mangler i
 filtrering, søgning, eller visuel hierarki. De er funktionelle men ikke intuitive.
 
 **Generelle krav til ALLE faner under selskab:**
+
 ```
 1. Header med count + CTA:
    "Ansatte (8)" + [+ Tilføj ansat]
@@ -219,6 +230,7 @@ filtrering, søgning, eller visuel hierarki. De er funktionelle men ikke intuiti
 ```
 
 **Ansatte-fanen specifikt:**
+
 ```
 Vis rolle/stilling tydeligt (Direktør, Tandplejer, Klinikassistent etc.)
 Vis tilknyttet kontrakt: "Ansættelseskontrakt ✓" / "Ingen kontrakt ⚠"
@@ -235,6 +247,7 @@ Brugerdefinerede stillingsbetegnelser (fritekst — ikke enum)
 om hvad personen er — direktør, funktionæransat, revisor, advokat.
 
 **Krav:**
+
 ```
 PERSONLISTE — udvidet visning:
   Card-grid ELLER tabel med:
@@ -269,6 +282,7 @@ Stillingsbetegnelser:
 Når man har 50+ dokumenter fordelt på 7 selskaber er det ubrugeligt.
 
 **Krav:**
+
 ```
 DOKUMENTOVERSIGT — grupperet visning:
   Default: Grupperet pr. selskab
@@ -313,10 +327,12 @@ UPLOAD (mangler helt — NEED-TO-HAVE):
 **Adgang:** GROUP_OWNER, GROUP_ADMIN, GROUP_LEGAL, COMPANY_MANAGER
 
 #### Formål
+
 HQ-medarbejdere besøger klinikker/lokationer regelmæssigt. Systemet skal dokumentere
 hvad der blev gennemgået, hvem der deltog, og hvilke handlingspunkter der kom ud af det.
 
 #### Datamodel (nye tabeller)
+
 ```
 visits
   id                  UUID PK
@@ -342,6 +358,7 @@ visit_participants
 ```
 
 #### UI-flows
+
 ```
 BESØGSLISTE (/visits):
   Card-grid eller tabel: Klinik | Type | Dato | Deltagere | Åbne handlingspunkter | Status
@@ -368,6 +385,7 @@ SELSKABSPROFIL — "Besøg" sektion i overbliksfanen:
 **Kobling:** Udvider eksisterende Task-model
 
 #### Nye kolonner til `tasks`
+
 ```
   source_type         TEXT?    -- 'BESOEG' / 'SAG' / 'MOEDE' / 'STANDALONE'
   source_id           UUID?    -- FK → visits / cases
@@ -377,6 +395,7 @@ SELSKABSPROFIL — "Besøg" sektion i overbliksfanen:
 ```
 
 #### Nye tabeller
+
 ```
 task_participants    -- flere deltagere pr. opgave
   id, organization_id, task_id, user_id, role ('ANSVARLIG'/'DELTAGER'/'OBSERVATOER')
@@ -389,6 +408,7 @@ task_history         -- fuld historik pr. opgave
 ```
 
 #### UI-ændringer
+
 ```
 OPGAVELISTE:
   Tilføj kolonner: Kilde (ikon), deltagere (avatarer), aftalt med
@@ -410,6 +430,7 @@ OPGAVEDETALJE:
 **URL:** `/calendar`
 
 #### UI
+
 ```
 Måned / uge / dagvisning med farvekodede events:
   🔴 Forfaldne + kritiske frister
@@ -435,12 +456,14 @@ Datakilder (aggregerer — ingen separat tabel):
 **URL:** Integreret i selskabsprofil
 
 #### Datamodel
+
 ```
 company_notes
   id, organization_id, company_id, content, pinned, created_at, created_by, updated_at, deleted_at
 ```
 
 #### UI
+
 ```
 SELSKABSPROFIL — ny fane "Notater" (eller sektion i overbliksfane):
   Kronologisk feed (nyeste øverst)

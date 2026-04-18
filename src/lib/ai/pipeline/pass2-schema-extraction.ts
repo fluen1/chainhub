@@ -14,7 +14,7 @@ export async function extractWithSchema(
   content: ExtractionContent,
   schema: ContractSchema,
   client: ClaudeClient,
-  options: ExtractionOptions = {},
+  options: ExtractionOptions = {}
 ): Promise<SchemaExtractionResult> {
   const temperature = options.temperature ?? 0.2
 
@@ -32,14 +32,16 @@ export async function extractWithSchema(
   })
 
   // Find tool_use i svaret
-  const toolUse = response.content.find(b => b.type === 'tool_use')
+  const toolUse = response.content.find((b) => b.type === 'tool_use')
 
   if (!toolUse || toolUse.type !== 'tool_use') {
     log.error({ schema: schema.contract_type }, 'Intet tool_use i extraction-svar')
     return {
       fields: {},
       additional_findings: [],
-      extraction_warnings: [{ warning: 'Claude returnerede ikke struktureret output', severity: 'high' }],
+      extraction_warnings: [
+        { warning: 'Claude returnerede ikke struktureret output', severity: 'high' },
+      ],
       model_used: response.model,
       input_tokens: response.usage.input_tokens,
       output_tokens: response.usage.output_tokens,
@@ -58,13 +60,23 @@ export async function extractWithSchema(
     const raw = rawFields[fieldName]
     if (raw == null) {
       // Feltet ikke fundet af Claude
-      fields[fieldName] = { value: null, claude_confidence: 0, source_page: null, source_text: null }
+      fields[fieldName] = {
+        value: null,
+        claude_confidence: 0,
+        source_page: null,
+        source_text: null,
+      }
       continue
     }
 
     if (typeof raw === 'object' && raw !== null && 'value' in raw) {
       // Feltet er pakket i {value, claude_confidence, source_page, source_text}
-      const wrapped = raw as { value: unknown; claude_confidence?: number; source_page?: number; source_text?: string }
+      const wrapped = raw as {
+        value: unknown
+        claude_confidence?: number
+        source_page?: number
+        source_text?: string
+      }
       fields[fieldName] = {
         value: wrapped.value ?? null,
         claude_confidence: wrapped.claude_confidence ?? 0.5,
@@ -73,26 +85,34 @@ export async function extractWithSchema(
       }
     } else {
       // Felt returneret direkte uden wrapper (fallback)
-      fields[fieldName] = { value: raw, claude_confidence: 0.5, source_page: null, source_text: null }
+      fields[fieldName] = {
+        value: raw,
+        claude_confidence: 0.5,
+        source_page: null,
+        source_text: null,
+      }
     }
   }
 
   // Udtræk fælles felter
   const additional_findings = Array.isArray(rawFields.additional_findings)
-    ? rawFields.additional_findings as SchemaExtractionResult['additional_findings']
+    ? (rawFields.additional_findings as SchemaExtractionResult['additional_findings'])
     : []
   const extraction_warnings = Array.isArray(rawFields.extraction_warnings)
-    ? rawFields.extraction_warnings as SchemaExtractionResult['extraction_warnings']
+    ? (rawFields.extraction_warnings as SchemaExtractionResult['extraction_warnings'])
     : []
 
-  log.info({
-    schema: schema.contract_type,
-    field_count: Object.keys(fields).length,
-    findings: additional_findings.length,
-    warnings: extraction_warnings.length,
-    input_tokens: response.usage.input_tokens,
-    output_tokens: response.usage.output_tokens,
-  }, 'Schema-extraction fuldført')
+  log.info(
+    {
+      schema: schema.contract_type,
+      field_count: Object.keys(fields).length,
+      findings: additional_findings.length,
+      warnings: extraction_warnings.length,
+      input_tokens: response.usage.input_tokens,
+      output_tokens: response.usage.output_tokens,
+    },
+    'Schema-extraction fuldført'
+  )
 
   return {
     fields,
@@ -107,7 +127,7 @@ export async function extractWithSchema(
 
 function buildContent(
   content: ExtractionContent,
-  userPromptPrefix: string,
+  userPromptPrefix: string
 ): string | ClaudeContentBlock[] {
   if (content.type === 'pdf_binary') {
     return [

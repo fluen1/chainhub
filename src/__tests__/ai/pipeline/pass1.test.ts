@@ -5,7 +5,9 @@ import type { ExtractionContent } from '@/lib/ai/content-loader'
 
 // Registrér mindst ét schema så getAllSchemaTypes returnerer noget
 beforeAll(async () => {
-  try { await import('@/lib/ai/schemas/ejeraftale') } catch {}
+  try {
+    await import('@/lib/ai/schemas/ejeraftale')
+  } catch {}
 })
 
 function mockClient(response: Partial<ClaudeResponse>): ClaudeClient {
@@ -23,9 +25,7 @@ function mockClient(response: Partial<ClaudeResponse>): ClaudeClient {
           input: {
             detected_type: 'EJERAFTALE',
             confidence: 0.92,
-            alternatives: [
-              { type: 'VEDTAEGTER', confidence: 0.05 },
-            ],
+            alternatives: [{ type: 'VEDTAEGTER', confidence: 0.05 }],
           },
         },
       ],
@@ -60,10 +60,14 @@ describe('Pass 1: Type detection', () => {
         id: 'msg_test',
         model: 'claude-3-5-haiku-20241022',
         stop_reason: 'tool_use',
-        content: [{
-          type: 'tool_use', id: 'tu_1', name: 'classify_document',
-          input: { detected_type: 'UNKNOWN', confidence: 0.3, alternatives: [] },
-        }],
+        content: [
+          {
+            type: 'tool_use',
+            id: 'tu_1',
+            name: 'classify_document',
+            input: { detected_type: 'UNKNOWN', confidence: 0.3, alternatives: [] },
+          },
+        ],
         usage: { input_tokens: 100, output_tokens: 30 },
       }),
     }

@@ -28,11 +28,14 @@ export async function logFieldCorrection(params: {
     },
   })
 
-  log.info({
-    extraction_id: params.extraction_id,
-    field_name: params.field_name,
-    confidence: params.confidence,
-  }, 'Field correction logged')
+  log.info(
+    {
+      extraction_id: params.extraction_id,
+      field_name: params.field_name,
+      confidence: params.confidence,
+    },
+    'Field correction logged'
+  )
 
   return correction.id
 }

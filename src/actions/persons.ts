@@ -13,9 +13,7 @@ import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
 import type { Person } from '@prisma/client'
 
-export async function createPerson(
-  input: CreatePersonInput
-): Promise<ActionResult<Person>> {
+export async function createPerson(input: CreatePersonInput): Promise<ActionResult<Person>> {
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
 
@@ -58,9 +56,7 @@ export async function createPerson(
   }
 }
 
-export async function updatePerson(
-  input: UpdatePersonInput
-): Promise<ActionResult<Person>> {
+export async function updatePerson(input: UpdatePersonInput): Promise<ActionResult<Person>> {
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
 
@@ -97,9 +93,7 @@ export async function updatePerson(
   }
 }
 
-export async function deletePerson(
-  personId: string
-): Promise<ActionResult<void>> {
+export async function deletePerson(personId: string): Promise<ActionResult<void>> {
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
 

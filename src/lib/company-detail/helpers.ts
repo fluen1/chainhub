@@ -43,13 +43,31 @@ const ROLE_PRIORITY: Record<string, number> = {
 
 // Proto's roleConfig mapped til ChainHub's rolle-navne
 const SECTIONS_BY_ROLE: Record<string, SectionKey[]> = {
-  GROUP_OWNER:      ['ownership', 'contracts', 'finance', 'cases', 'persons', 'visits', 'documents', 'insight'],
-  GROUP_ADMIN:      ['ownership', 'persons', 'visits', 'documents'],
-  GROUP_LEGAL:      ['ownership', 'contracts', 'cases', 'documents', 'insight'],
-  COMPANY_LEGAL:    ['ownership', 'contracts', 'cases', 'documents', 'insight'],
-  GROUP_FINANCE:    ['contracts', 'finance', 'insight'],
-  COMPANY_MANAGER:  ['persons', 'visits'],
-  GROUP_READONLY:   ['ownership', 'contracts', 'finance', 'cases', 'persons', 'visits', 'documents', 'insight'],
+  GROUP_OWNER: [
+    'ownership',
+    'contracts',
+    'finance',
+    'cases',
+    'persons',
+    'visits',
+    'documents',
+    'insight',
+  ],
+  GROUP_ADMIN: ['ownership', 'persons', 'visits', 'documents'],
+  GROUP_LEGAL: ['ownership', 'contracts', 'cases', 'documents', 'insight'],
+  COMPANY_LEGAL: ['ownership', 'contracts', 'cases', 'documents', 'insight'],
+  GROUP_FINANCE: ['contracts', 'finance', 'insight'],
+  COMPANY_MANAGER: ['persons', 'visits'],
+  GROUP_READONLY: [
+    'ownership',
+    'contracts',
+    'finance',
+    'cases',
+    'persons',
+    'visits',
+    'documents',
+    'insight',
+  ],
   COMPANY_READONLY: ['persons', 'visits'],
 }
 
@@ -101,9 +119,7 @@ export function deriveHealthDimensions(input: HealthDimensionsInput): HealthDime
 
   // Kontrakter
   const in30days = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)
-  const hasExpired = activeContracts.some(
-    (c) => c.expiry_date !== null && c.expiry_date < today
-  )
+  const hasExpired = activeContracts.some((c) => c.expiry_date !== null && c.expiry_date < today)
   const hasExpiringSoon = activeContracts.some(
     (c) => c.expiry_date !== null && c.expiry_date >= today && c.expiry_date < in30days
   )
@@ -130,7 +146,9 @@ export function deriveHealthDimensions(input: HealthDimensionsInput): HealthDime
   // Governance
   let governance: DimSeverity = 'red'
   if (lastVisitDate) {
-    const daysSince = Math.floor((today.getTime() - lastVisitDate.getTime()) / (1000 * 60 * 60 * 24))
+    const daysSince = Math.floor(
+      (today.getTime() - lastVisitDate.getTime()) / (1000 * 60 * 60 * 24)
+    )
     if (daysSince < 180) governance = 'green'
     else if (daysSince < 365) governance = 'amber'
   }
@@ -171,7 +189,9 @@ export function sortContractsByUrgency<T extends { expiry_date: Date | null }>(
   })
 }
 
-export function sortCasesByUrgency<T extends { status: string; created_at: Date }>(cases: T[]): T[] {
+export function sortCasesByUrgency<T extends { status: string; created_at: Date }>(
+  cases: T[]
+): T[] {
   const statusRank: Record<string, number> = { NY: 0, AKTIV: 1 }
   return [...cases].sort((a, b) => {
     const aRank = statusRank[a.status] ?? (a.status.startsWith('AFVENTER_') ? 2 : 3)

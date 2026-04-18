@@ -3,6 +3,7 @@
 ## Mål
 
 En funktionel MVP som en kædeleder kan bruge dagligt til at:
+
 1. Overvåge sine klinikker/selskaber
 2. Holde styr på kontrakter og deadlines
 3. Spore sager og opgaver
@@ -13,6 +14,7 @@ En funktionel MVP som en kædeleder kan bruge dagligt til at:
 ## Status: Hvad virker allerede (Sprint 1-7)
 
 **Fungerende moduler:**
+
 - Auth (login, session, JWT, middleware)
 - Dashboard (urgency panel, onboarding, company cards)
 - Selskaber (CRUD, 10 tabs, overview, stamdata, ejerskab)
@@ -25,6 +27,7 @@ En funktionel MVP som en kædeleder kan bruge dagligt til at:
 - Pagination + filtre (selskaber, kontrakter, personer)
 
 **Hvad mangler for en brugbar MVP:**
+
 - Database skal genaktiveres (Supabase paused)
 - Pagination på cases og tasks lister
 - Seed-data for demo/test
@@ -35,23 +38,27 @@ En funktionel MVP som en kædeleder kan bruge dagligt til at:
 ## MVP Sprint Plan
 
 ### MVP-A: Database + Data (forudsætning)
+
 - [ ] Genaktiver Supabase projekt ELLER opsæt lokal PostgreSQL
 - [ ] Kør `prisma db push` / `prisma migrate dev`
 - [ ] Kør `prisma db seed` med realistisk demo-data
 - [ ] Verificér at alle sider loader med data
 
 ### MVP-B: Manglende pagination + polish
+
 - [ ] Cases-liste: tilføj Pagination + SearchAndFilter
 - [ ] Tasks-liste: tilføj Pagination + SearchAndFilter
 - [ ] Verificér alle CRUD-flows end-to-end (opret → vis → rediger → slet)
 
 ### MVP-C: Brugerstyring (minimal)
+
 - [ ] `/settings/users` side — list brugere i organisationen
 - [ ] Opret bruger (email, navn, rolle, company_ids)
 - [ ] Server actions: `createUser`, `updateUser`, `deleteUser`
 - [ ] Zod-validering + permissions (kun GROUP_OWNER/GROUP_ADMIN)
 
 ### MVP-D: Seed + Demo
+
 - [ ] Realistisk seed-script med:
   - 1 organisation ("Tandlægegruppen Danmark")
   - 5-8 selskaber (klinikker)
@@ -63,6 +70,7 @@ En funktionel MVP som en kædeleder kan bruge dagligt til at:
 - [ ] Login credentials i `.env.example` kommentar
 
 ### MVP-E: Smoke Test
+
 - [ ] Login → Dashboard loader med data
 - [ ] Urgency panel viser forfaldne items
 - [ ] Selskabsliste → klik → tabs virker
@@ -85,9 +93,9 @@ En funktionel MVP som en kædeleder kan bruge dagligt til at:
 
 ## Kendte Risici
 
-| Risiko | Mitigation |
-|--------|------------|
-| Supabase paused | Genaktiver eller brug lokal PG |
-| Ingen seed-data | Opret realistisk seed-script |
-| Manglende brugerstyring | MVP-C dækker minimum |
-| Ingen fil-upload | Post-MVP — kontrakter virker uden bilag |
+| Risiko                  | Mitigation                              |
+| ----------------------- | --------------------------------------- |
+| Supabase paused         | Genaktiver eller brug lokal PG          |
+| Ingen seed-data         | Opret realistisk seed-script            |
+| Manglende brugerstyring | MVP-C dækker minimum                    |
+| Ingen fil-upload        | Post-MVP — kontrakter virker uden bilag |

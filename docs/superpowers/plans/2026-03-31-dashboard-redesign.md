@@ -15,35 +15,38 @@
 ## File Structure
 
 ### New files
-| Path | Responsibility |
-|------|----------------|
-| `src/components/prototype/CalendarWidget.tsx` | Kompakt månedskalender med dots og event-liste |
-| `src/components/prototype/KpiCard.tsx` | Genbrugelig KPI-kort komponent |
-| `src/components/prototype/UrgencyList.tsx` | Genbrugelig urgency/handlingsliste |
-| `src/components/prototype/HealthBar.tsx` | Porteføljesundhed counts + bar |
-| `src/components/prototype/CompanyRow.tsx` | Selskabs-row med avatar, info, status |
-| `src/components/prototype/CoverageBar.tsx` | Kontraktdækning progress-bar (erstatter eksisterende `src/components/ui/CoverageBar.tsx` pattern) |
-| `src/components/prototype/FinRow.tsx` | Finansiel nøgletal-row |
-| `src/components/prototype/SectionHeader.tsx` | Sektions-overskrift med linje |
-| `src/mock/calendar.ts` | Mock kalender-events med AI-flag |
-| `src/app/proto/calendar/page.tsx` | Fuld kalenderside (placeholder) |
+
+| Path                                          | Responsibility                                                                                    |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `src/components/prototype/CalendarWidget.tsx` | Kompakt månedskalender med dots og event-liste                                                    |
+| `src/components/prototype/KpiCard.tsx`        | Genbrugelig KPI-kort komponent                                                                    |
+| `src/components/prototype/UrgencyList.tsx`    | Genbrugelig urgency/handlingsliste                                                                |
+| `src/components/prototype/HealthBar.tsx`      | Porteføljesundhed counts + bar                                                                    |
+| `src/components/prototype/CompanyRow.tsx`     | Selskabs-row med avatar, info, status                                                             |
+| `src/components/prototype/CoverageBar.tsx`    | Kontraktdækning progress-bar (erstatter eksisterende `src/components/ui/CoverageBar.tsx` pattern) |
+| `src/components/prototype/FinRow.tsx`         | Finansiel nøgletal-row                                                                            |
+| `src/components/prototype/SectionHeader.tsx`  | Sektions-overskrift med linje                                                                     |
+| `src/mock/calendar.ts`                        | Mock kalender-events med AI-flag                                                                  |
+| `src/app/proto/calendar/page.tsx`             | Fuld kalenderside (placeholder)                                                                   |
 
 ### Modified files
-| Path | Changes |
-|------|---------|
-| `src/app/proto/layout.tsx` | Ny baggrund `#f0f2f5`, font import |
-| `src/app/layout.tsx` | Tilføj Plus Jakarta Sans font |
+
+| Path                                          | Changes                                                               |
+| --------------------------------------------- | --------------------------------------------------------------------- |
+| `src/app/proto/layout.tsx`                    | Ny baggrund `#f0f2f5`, font import                                    |
+| `src/app/layout.tsx`                          | Tilføj Plus Jakarta Sans font                                         |
 | `src/components/layout/prototype-sidebar.tsx` | Nyt design: `#0f172a` bg, sektions-headers, kalender-link, blå accent |
-| `src/components/layout/prototype-header.tsx` | Nyt topbar-design med søgefelt og avatar |
-| `src/app/proto/dashboard/page.tsx` | Komplet rewrite: rollebaseret auto-tilpasning, nye komponenter |
-| `src/mock/types.ts` | Tilføj `MockCalendarEvent` type |
-| `src/mock/helpers.ts` | Tilføj `getDashboardSectionsForRole()` helper |
+| `src/components/layout/prototype-header.tsx`  | Nyt topbar-design med søgefelt og avatar                              |
+| `src/app/proto/dashboard/page.tsx`            | Komplet rewrite: rollebaseret auto-tilpasning, nye komponenter        |
+| `src/mock/types.ts`                           | Tilføj `MockCalendarEvent` type                                       |
+| `src/mock/helpers.ts`                         | Tilføj `getDashboardSectionsForRole()` helper                         |
 
 ---
 
 ## Task 1: Font og layout foundation
 
 **Files:**
+
 - Modify: `src/app/layout.tsx`
 - Modify: `src/app/proto/layout.tsx`
 
@@ -89,6 +92,7 @@ git commit -m "feat(prototype): tilføj Plus Jakarta Sans font og lys baggrund"
 ## Task 2: Redesign prototype sidebar
 
 **Files:**
+
 - Modify: `src/components/layout/prototype-sidebar.tsx`
 
 - [ ] **Step 1: Opdater sidebar med nyt design**
@@ -147,15 +151,24 @@ export function PrototypeSidebar() {
   const openCaseCount = getOpenCases().length
 
   const badgeData = {
-    criticalCount, warningCount, overdueTaskCount,
-    awaitingDocCount: processingDocsCount, expiringContractCount, openCaseCount,
+    criticalCount,
+    warningCount,
+    overdueTaskCount,
+    awaitingDocCount: processingDocsCount,
+    expiringContractCount,
+    openCaseCount,
   }
 
   const sections: NavSection[] = [
     {
       label: 'Overblik',
       items: [
-        { name: 'Dashboard', href: '/proto/dashboard', icon: LayoutDashboard, badgeKey: 'dashboard' },
+        {
+          name: 'Dashboard',
+          href: '/proto/dashboard',
+          icon: LayoutDashboard,
+          badgeKey: 'dashboard',
+        },
         { name: 'Kalender', href: '/proto/calendar', icon: Calendar, badgeKey: 'calendar' },
       ],
     },
@@ -177,7 +190,12 @@ export function PrototypeSidebar() {
     },
   ]
 
-  const initials = activeUser.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
+  const initials = activeUser.name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
 
   return (
     <div className="flex h-full w-60 flex-col bg-[#0f172a]">
@@ -213,7 +231,9 @@ export function PrototypeSidebar() {
                     )}
                   >
                     <span className="flex items-center gap-2.5">
-                      <item.icon className={cn('h-[18px] w-[18px]', isActive ? 'text-blue-400' : '')} />
+                      <item.icon
+                        className={cn('h-[18px] w-[18px]', isActive ? 'text-blue-400' : '')}
+                      />
                       {item.name}
                     </span>
                     {badge !== null && badge.count > 0 && (
@@ -271,6 +291,7 @@ export function PrototypeSidebar() {
 - [ ] **Step 2: Verificér sidebar i browser**
 
 Åbn `http://localhost:3000/proto/dashboard` — sidebar skal have:
+
 - Mørk `#0f172a` baggrund
 - Sektions-headers (Overblik, Portefølje, Ressourcer)
 - Kalender-link under Dashboard
@@ -289,6 +310,7 @@ git commit -m "feat(prototype): redesign sidebar med sektioner, kalender-link og
 ## Task 3: Genbrugelige dashboard-komponenter
 
 **Files:**
+
 - Create: `src/components/prototype/KpiCard.tsx`
 - Create: `src/components/prototype/UrgencyList.tsx`
 - Create: `src/components/prototype/HealthBar.tsx`
@@ -385,7 +407,10 @@ export function UrgencyList({ title, items, viewAllHref }: UrgencyListProps) {
       </div>
       <div className="space-y-0">
         {items.map((item) => (
-          <div key={item.id} className="flex items-center gap-3 border-b border-slate-50 py-2.5 last:border-none">
+          <div
+            key={item.id}
+            className="flex items-center gap-3 border-b border-slate-50 py-2.5 last:border-none"
+          >
             <div
               className={cn(
                 'w-1 self-stretch rounded-full',
@@ -516,11 +541,8 @@ interface CoverageBarProps {
 }
 
 export function CoverageBar({ label, percentage }: CoverageBarProps) {
-  const fillColor = percentage >= 100
-    ? 'bg-green-500'
-    : percentage >= 75
-      ? 'bg-blue-500'
-      : 'bg-amber-500'
+  const fillColor =
+    percentage >= 100 ? 'bg-green-500' : percentage >= 75 ? 'bg-blue-500' : 'bg-amber-500'
 
   return (
     <div className="flex items-center gap-3 mb-3.5">
@@ -618,6 +640,7 @@ git commit -m "feat(prototype): tilføj genbrugelige dashboard-komponenter"
 ## Task 4: Mock kalender-data
 
 **Files:**
+
 - Modify: `src/mock/types.ts`
 - Create: `src/mock/calendar.ts`
 
@@ -648,62 +671,114 @@ import type { MockCalendarEvent } from './types'
 export const mockCalendarEvents: MockCalendarEvent[] = [
   // Marts 2026
   {
-    id: 'cal-1', date: '2026-03-10', title: 'Frist: Indsendelse årsrapport',
-    subtitle: 'Nordklinik ApS', type: 'deadline', companyId: 'c1', companyName: 'Nordklinik ApS',
-    aiExtracted: true, href: '/proto/portfolio/c1',
+    id: 'cal-1',
+    date: '2026-03-10',
+    title: 'Frist: Indsendelse årsrapport',
+    subtitle: 'Nordklinik ApS',
+    type: 'deadline',
+    companyId: 'c1',
+    companyName: 'Nordklinik ApS',
+    aiExtracted: true,
+    href: '/proto/portfolio/c1',
   },
   {
-    id: 'cal-2', date: '2026-03-18', title: 'Fornyelse underskrevet',
-    subtitle: 'Aarhus Smile ApS · automatisk fornyelse', type: 'renewal',
-    companyId: 'c5', companyName: 'Aarhus Smile ApS', aiExtracted: true,
+    id: 'cal-2',
+    date: '2026-03-18',
+    title: 'Fornyelse underskrevet',
+    subtitle: 'Aarhus Smile ApS · automatisk fornyelse',
+    type: 'renewal',
+    companyId: 'c5',
+    companyName: 'Aarhus Smile ApS',
+    aiExtracted: true,
     href: '/proto/contracts/con-5',
   },
   {
-    id: 'cal-3', date: '2026-03-28', title: 'Udløb: Ejeraftale',
-    subtitle: 'Nordklinik ApS', type: 'expiry', companyId: 'c1', companyName: 'Nordklinik ApS',
-    aiExtracted: true, href: '/proto/contracts/con-1',
+    id: 'cal-3',
+    date: '2026-03-28',
+    title: 'Udløb: Ejeraftale',
+    subtitle: 'Nordklinik ApS',
+    type: 'expiry',
+    companyId: 'c1',
+    companyName: 'Nordklinik ApS',
+    aiExtracted: true,
+    href: '/proto/contracts/con-1',
   },
   {
-    id: 'cal-4', date: '2026-03-30', title: 'Opsigelse mulig — Leverandøraftale',
-    subtitle: 'Sundby Dental · opsigelsesfrist', type: 'deadline',
-    companyId: 'c2', companyName: 'Sundby Dental ApS', aiExtracted: true,
+    id: 'cal-4',
+    date: '2026-03-30',
+    title: 'Opsigelse mulig — Leverandøraftale',
+    subtitle: 'Sundby Dental · opsigelsesfrist',
+    type: 'deadline',
+    companyId: 'c2',
+    companyName: 'Sundby Dental ApS',
+    aiExtracted: true,
     href: '/proto/contracts/con-3',
   },
   {
-    id: 'cal-5', date: '2026-03-31', title: 'Besøg — Østklinikken',
-    subtitle: 'Driftsbesøg · kl. 10:00', type: 'meeting',
-    companyId: 'c3', companyName: 'Østklinikken ApS', aiExtracted: false,
+    id: 'cal-5',
+    date: '2026-03-31',
+    title: 'Besøg — Østklinikken',
+    subtitle: 'Driftsbesøg · kl. 10:00',
+    type: 'meeting',
+    companyId: 'c3',
+    companyName: 'Østklinikken ApS',
+    aiExtracted: false,
     href: '/proto/portfolio/c3',
   },
   // April 2026
   {
-    id: 'cal-6', date: '2026-04-01', title: 'Møde — Dr. Petersen',
-    subtitle: 'Nordklinik ApS · genforhandling', type: 'meeting',
-    companyId: 'c1', companyName: 'Nordklinik ApS', aiExtracted: false,
+    id: 'cal-6',
+    date: '2026-04-01',
+    title: 'Møde — Dr. Petersen',
+    subtitle: 'Nordklinik ApS · genforhandling',
+    type: 'meeting',
+    companyId: 'c1',
+    companyName: 'Nordklinik ApS',
+    aiExtracted: false,
     href: '/proto/portfolio/c1',
   },
   {
-    id: 'cal-7', date: '2026-04-02', title: 'Frist: Indsigelse lejemål',
-    subtitle: 'Aalborg Dental · sagsfrist', type: 'case',
-    companyId: 'c4', companyName: 'Aalborg Dental Group', aiExtracted: true,
+    id: 'cal-7',
+    date: '2026-04-02',
+    title: 'Frist: Indsigelse lejemål',
+    subtitle: 'Aalborg Dental · sagsfrist',
+    type: 'case',
+    companyId: 'c4',
+    companyName: 'Aalborg Dental Group',
+    aiExtracted: true,
     href: '/proto/portfolio/c4',
   },
   {
-    id: 'cal-8', date: '2026-04-05', title: 'Udløb: Huslejekontrakt',
-    subtitle: 'Vesterbro Tandlæge', type: 'expiry',
-    companyId: 'c6', companyName: 'Vesterbro Tandlæge ApS', aiExtracted: true,
+    id: 'cal-8',
+    date: '2026-04-05',
+    title: 'Udløb: Huslejekontrakt',
+    subtitle: 'Vesterbro Tandlæge',
+    type: 'expiry',
+    companyId: 'c6',
+    companyName: 'Vesterbro Tandlæge ApS',
+    aiExtracted: true,
     href: '/proto/contracts/con-6',
   },
   {
-    id: 'cal-9', date: '2026-04-06', title: 'Fornyelse underskrevet',
-    subtitle: 'Aarhus Smile · automatisk fornyelse', type: 'renewal',
-    companyId: 'c5', companyName: 'Aarhus Smile ApS', aiExtracted: true,
+    id: 'cal-9',
+    date: '2026-04-06',
+    title: 'Fornyelse underskrevet',
+    subtitle: 'Aarhus Smile · automatisk fornyelse',
+    type: 'renewal',
+    companyId: 'c5',
+    companyName: 'Aarhus Smile ApS',
+    aiExtracted: true,
     href: '/proto/contracts/con-5',
   },
   {
-    id: 'cal-10', date: '2026-04-14', title: 'Besøg — Sundby Dental',
-    subtitle: 'Opfølgning · kl. 14:00', type: 'meeting',
-    companyId: 'c2', companyName: 'Sundby Dental ApS', aiExtracted: false,
+    id: 'cal-10',
+    date: '2026-04-14',
+    title: 'Besøg — Sundby Dental',
+    subtitle: 'Opfølgning · kl. 14:00',
+    type: 'meeting',
+    companyId: 'c2',
+    companyName: 'Sundby Dental ApS',
+    aiExtracted: false,
     href: '/proto/portfolio/c2',
   },
 ]
@@ -728,21 +803,31 @@ export function getUpcomingCalendarEvents(fromDate: string, days: number): MockC
 
 export function getEventTypeColor(type: MockCalendarEvent['type']): string {
   switch (type) {
-    case 'expiry': return '#ef4444'
-    case 'deadline': return '#f59e0b'
-    case 'meeting': return '#3b82f6'
-    case 'case': return '#8b5cf6'
-    case 'renewal': return '#22c55e'
+    case 'expiry':
+      return '#ef4444'
+    case 'deadline':
+      return '#f59e0b'
+    case 'meeting':
+      return '#3b82f6'
+    case 'case':
+      return '#8b5cf6'
+    case 'renewal':
+      return '#22c55e'
   }
 }
 
 export function getEventTypeLabel(type: MockCalendarEvent['type']): string {
   switch (type) {
-    case 'expiry': return 'Udløb'
-    case 'deadline': return 'Frist'
-    case 'meeting': return 'Besøg/møde'
-    case 'case': return 'Sag'
-    case 'renewal': return 'Fornyelse'
+    case 'expiry':
+      return 'Udløb'
+    case 'deadline':
+      return 'Frist'
+    case 'meeting':
+      return 'Besøg/møde'
+    case 'case':
+      return 'Sag'
+    case 'renewal':
+      return 'Fornyelse'
   }
 }
 ```
@@ -764,6 +849,7 @@ git commit -m "feat(prototype): tilføj mock kalender-events med AI-flag"
 ## Task 5: CalendarWidget komponent
 
 **Files:**
+
 - Create: `src/components/prototype/CalendarWidget.tsx`
 
 - [ ] **Step 1: Opret CalendarWidget**
@@ -800,7 +886,7 @@ function getFirstDayOfWeek(year: number, month: number) {
 function formatEventDate(dateStr: string, today: string): string {
   if (dateStr === today) return 'I dag'
   const d = new Date(dateStr)
-  return `${d.getDate()}. ${['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'][d.getMonth()]}`
+  return `${d.getDate()}. ${['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'][d.getMonth()]}`
 }
 
 export function CalendarWidget() {
@@ -833,38 +919,72 @@ export function CalendarWidget() {
     return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}` === today
   }
 
-  const monthNames = ['Januar', 'Februar', 'Marts', 'April', 'Maj', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'December']
+  const monthNames = [
+    'Januar',
+    'Februar',
+    'Marts',
+    'April',
+    'Maj',
+    'Juni',
+    'Juli',
+    'August',
+    'September',
+    'Oktober',
+    'November',
+    'December',
+  ]
 
   function prevMonth() {
-    if (month === 1) { setYear(year - 1); setMonth(12) }
-    else setMonth(month - 1)
+    if (month === 1) {
+      setYear(year - 1)
+      setMonth(12)
+    } else setMonth(month - 1)
   }
 
   function nextMonth() {
-    if (month === 12) { setYear(year + 1); setMonth(1) }
-    else setMonth(month + 1)
+    if (month === 12) {
+      setYear(year + 1)
+      setMonth(1)
+    } else setMonth(month + 1)
   }
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-5">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <div className="text-sm font-semibold text-slate-900">{monthNames[month - 1]} {year}</div>
+        <div className="text-sm font-semibold text-slate-900">
+          {monthNames[month - 1]} {year}
+        </div>
         <div className="flex gap-1">
-          <button onClick={prevMonth} className="flex h-7 w-7 items-center justify-center rounded-md border border-gray-200 text-xs text-slate-500 hover:bg-slate-50 transition-colors">‹</button>
-          <button onClick={nextMonth} className="flex h-7 w-7 items-center justify-center rounded-md border border-gray-200 text-xs text-slate-500 hover:bg-slate-50 transition-colors">›</button>
+          <button
+            onClick={prevMonth}
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-gray-200 text-xs text-slate-500 hover:bg-slate-50 transition-colors"
+          >
+            ‹
+          </button>
+          <button
+            onClick={nextMonth}
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-gray-200 text-xs text-slate-500 hover:bg-slate-50 transition-colors"
+          >
+            ›
+          </button>
         </div>
       </div>
 
       {/* Calendar grid */}
       <div className="grid grid-cols-7 gap-0.5 mb-4">
         {WEEKDAYS.map((d) => (
-          <div key={d} className="py-1 text-center text-[11px] font-medium text-gray-400">{d}</div>
+          <div key={d} className="py-1 text-center text-[11px] font-medium text-gray-400">
+            {d}
+          </div>
         ))}
 
         {/* Previous month */}
         {prevDays.map((d) => (
-          <div key={`prev-${d}`} className="py-1.5 text-center text-[13px] text-gray-300 rounded-lg">
+          <div
+            key={`prev-${d}`}
+            className="py-1.5 text-center text-[13px] text-gray-300 rounded-lg"
+          >
             {d}
             <div className="flex justify-center gap-0.5 mt-0.5 min-h-[6px]" />
           </div>
@@ -899,7 +1019,10 @@ export function CalendarWidget() {
 
         {/* Next month */}
         {nextDays.map((d) => (
-          <div key={`next-${d}`} className="py-1.5 text-center text-[13px] text-gray-300 rounded-lg">
+          <div
+            key={`next-${d}`}
+            className="py-1.5 text-center text-[13px] text-gray-300 rounded-lg"
+          >
             {d}
             <div className="flex justify-center gap-0.5 mt-0.5 min-h-[6px]" />
           </div>
@@ -916,7 +1039,10 @@ export function CalendarWidget() {
 
       <div className="space-y-0">
         {upcoming.map((ev) => (
-          <div key={ev.id} className="flex items-start gap-2.5 border-b border-slate-50/80 py-2 last:border-none">
+          <div
+            key={ev.id}
+            className="flex items-start gap-2.5 border-b border-slate-50/80 py-2 last:border-none"
+          >
             <div
               className="mt-0.5 w-1 min-h-[28px] self-stretch rounded-full"
               style={{ backgroundColor: getEventTypeColor(ev.type) }}
@@ -959,7 +1085,10 @@ export function CalendarWidget() {
 
       {/* Full calendar link */}
       <div className="mt-3 text-center">
-        <Link href="/proto/calendar" className="text-xs font-medium text-blue-500 hover:text-blue-600 transition-colors">
+        <Link
+          href="/proto/calendar"
+          className="text-xs font-medium text-blue-500 hover:text-blue-600 transition-colors"
+        >
           Åbn fuld kalender →
         </Link>
       </div>
@@ -985,6 +1114,7 @@ git commit -m "feat(prototype): tilføj CalendarWidget med AI-badge og event-dot
 ## Task 6: Nyt dashboard med rollebaseret auto-tilpasning
 
 **Files:**
+
 - Modify: `src/app/proto/dashboard/page.tsx` (komplet rewrite)
 - Modify: `src/mock/helpers.ts` (tilføj rolle-sektions-helper)
 
@@ -993,16 +1123,44 @@ git commit -m "feat(prototype): tilføj CalendarWidget med AI-badge og event-dot
 Tilføj i bunden af `src/mock/helpers.ts`:
 
 ```typescript
-export type DashboardSection = 'kpi' | 'urgency' | 'health' | 'calendar' | 'coverage' | 'cases' | 'finance' | 'finance_alerts' | 'top_locations' | 'loss_locations' | 'finance_contracts' | 'legal_docs'
+export type DashboardSection =
+  | 'kpi'
+  | 'urgency'
+  | 'health'
+  | 'calendar'
+  | 'coverage'
+  | 'cases'
+  | 'finance'
+  | 'finance_alerts'
+  | 'top_locations'
+  | 'loss_locations'
+  | 'finance_contracts'
+  | 'legal_docs'
 
 export function getDashboardSectionsForRole(role: MockRole): DashboardSection[] {
   switch (role) {
     case 'GROUP_OWNER':
-      return ['kpi', 'urgency', 'health', 'calendar', 'coverage', 'cases', 'finance', 'finance_alerts']
+      return [
+        'kpi',
+        'urgency',
+        'health',
+        'calendar',
+        'coverage',
+        'cases',
+        'finance',
+        'finance_alerts',
+      ]
     case 'GROUP_LEGAL':
       return ['kpi', 'urgency', 'cases', 'calendar', 'coverage', 'legal_docs']
     case 'GROUP_FINANCE':
-      return ['kpi', 'top_locations', 'finance_alerts', 'calendar', 'loss_locations', 'finance_contracts']
+      return [
+        'kpi',
+        'top_locations',
+        'finance_alerts',
+        'calendar',
+        'loss_locations',
+        'finance_contracts',
+      ]
     case 'GROUP_ADMIN':
       return ['kpi', 'urgency', 'health', 'calendar']
     case 'COMPANY_MANAGER':
@@ -1014,6 +1172,7 @@ export function getDashboardSectionsForRole(role: MockRole): DashboardSection[] 
 ```
 
 Tilføj `MockRole` import øverst i filen hvis den ikke allerede er der:
+
 ```typescript
 import type { MockRole } from './types'
 ```
@@ -1089,6 +1248,7 @@ Data hentes fra eksisterende mock-funktioner: `getCompanies()`, `getExpiringCont
 
 Run: `npm run dev`
 Test alle tre roller via RoleSwitcher:
+
 - Philip (GROUP_OWNER) → fuldt dashboard med sektioner
 - Maria (GROUP_LEGAL) → juridisk fokus
 - Thomas (GROUP_FINANCE) → økonomi fokus
@@ -1110,6 +1270,7 @@ git commit -m "feat(prototype): rollebaseret auto-tilpasset dashboard med kalend
 ## Task 7: Kalender placeholder-side
 
 **Files:**
+
 - Create: `src/app/proto/calendar/page.tsx`
 
 - [ ] **Step 1: Opret kalenderside placeholder**
@@ -1138,8 +1299,8 @@ export default function CalendarPage() {
         <div className="text-4xl mb-4">📅</div>
         <h1 className="text-xl font-bold text-slate-900 mb-2">Fuld kalender</h1>
         <p className="text-sm text-gray-500 max-w-md mx-auto mb-6">
-          Her kommer den fulde kalendervisning med dag/uge/måned,
-          filtrering på event-typer, og mulighed for at oprette nye events.
+          Her kommer den fulde kalendervisning med dag/uge/måned, filtrering på event-typer, og
+          mulighed for at oprette nye events.
         </p>
         <div className="inline-flex items-center gap-2 rounded-lg bg-blue-50 px-4 py-2 text-sm font-medium text-blue-600">
           Kommer i næste sprint
@@ -1166,6 +1327,7 @@ git commit -m "feat(prototype): tilføj kalender placeholder-side"
 ## Task 8: Opdater prototype header
 
 **Files:**
+
 - Modify: `src/components/layout/prototype-header.tsx`
 
 - [ ] **Step 1: Opdater header til nyt design**
@@ -1213,6 +1375,7 @@ Forventet: Alle eksisterende tests passerer (ingen breaking changes).
 - [ ] **Step 4: Manuel browser-test**
 
 Test i browser (`http://localhost:3000/proto/dashboard`):
+
 1. Dashboard loader med nyt design (light mode, hvide kort, blå accent)
 2. Sidebar har sektioner (Overblik, Portefølje, Ressourcer) med Kalender-link
 3. Skift rolle via RoleSwitcher → dashboard ændrer sig automatisk
@@ -1223,11 +1386,13 @@ Test i browser (`http://localhost:3000/proto/dashboard`):
 - [ ] **Step 5: Commit alt ustaged**
 
 Sikr at alt er committed:
+
 ```bash
 git status
 ```
 
 Hvis der er ustaged ændringer:
+
 ```bash
 git add -A
 git commit -m "chore(prototype): final cleanup efter dashboard redesign"

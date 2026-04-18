@@ -5,7 +5,7 @@ import { registerSchema } from './registry'
 // Hjælpefunktion til at wrappe et felt i ExtractedFieldValue-struktur
 function extractedField(
   description: string,
-  valueSchema: Record<string, unknown>,
+  valueSchema: Record<string, unknown>
 ): Record<string, unknown> {
   return {
     type: 'object' as const,
@@ -62,17 +62,17 @@ const lejekontraktSchema: ContractSchema = {
               },
               required: ['name', 'role'],
             },
-          },
+          }
         ),
 
-        property_address: extractedField(
-          'Lejemålets adresse inkl. etage og postnummer',
-          { type: 'string', description: 'Fuld adresse på lejemålet' },
-        ),
+        property_address: extractedField('Lejemålets adresse inkl. etage og postnummer', {
+          type: 'string',
+          description: 'Fuld adresse på lejemålet',
+        }),
 
         effective_date: extractedField(
           'Ikrafttrædelsesdato / overtagelsesdato (ISO 8601 format: YYYY-MM-DD)',
-          { type: 'string', description: 'Dato i format YYYY-MM-DD' },
+          { type: 'string', description: 'Dato i format YYYY-MM-DD' }
         ),
 
         expiry_date: extractedField(
@@ -80,7 +80,7 @@ const lejekontraktSchema: ContractSchema = {
           {
             type: ['string', 'null'] as unknown as 'string',
             description: 'Dato i format YYYY-MM-DD, eller null hvis tidsubestemt',
-          },
+          }
         ),
 
         rent_monthly_dkk: extractedField(
@@ -89,7 +89,7 @@ const lejekontraktSchema: ContractSchema = {
             type: ['number', 'null'] as unknown as 'number',
             description: 'Månedlig leje i DKK (positivt tal)',
             minimum: 0,
-          },
+          }
         ),
 
         rent_adjustment: extractedField(
@@ -97,17 +97,14 @@ const lejekontraktSchema: ContractSchema = {
           {
             type: ['string', 'null'] as unknown as 'string',
             description: 'Beskrivelse af lejens reguleringsklausul',
-          },
+          }
         ),
 
-        deposit_dkk: extractedField(
-          'Depositum i DKK. Null hvis ikke angivet.',
-          {
-            type: ['number', 'null'] as unknown as 'number',
-            description: 'Depositum i DKK (0 eller positivt tal)',
-            minimum: 0,
-          },
-        ),
+        deposit_dkk: extractedField('Depositum i DKK. Null hvis ikke angivet.', {
+          type: ['number', 'null'] as unknown as 'number',
+          description: 'Depositum i DKK (0 eller positivt tal)',
+          minimum: 0,
+        }),
 
         notice_period_months: extractedField(
           'Opsigelsesvarsel i antal måneder. Null hvis ikke angivet.',
@@ -116,7 +113,7 @@ const lejekontraktSchema: ContractSchema = {
             description: 'Opsigelsesvarsel i måneder (1-120)',
             minimum: 1,
             maximum: 120,
-          },
+          }
         ),
 
         permitted_use: extractedField(
@@ -124,23 +121,21 @@ const lejekontraktSchema: ContractSchema = {
           {
             type: ['string', 'null'] as unknown as 'string',
             description: 'Beskrivelse af tilladt anvendelse',
-          },
+          }
         ),
 
-        sublease_allowed: extractedField(
-          'Er fremlejning tilladt? Null hvis ikke angivet.',
-          {
-            type: ['boolean', 'null'] as unknown as 'boolean',
-            description: 'True hvis fremlejning er tilladt, false hvis forbudt, null hvis ikke angivet',
-          },
-        ),
+        sublease_allowed: extractedField('Er fremlejning tilladt? Null hvis ikke angivet.', {
+          type: ['boolean', 'null'] as unknown as 'boolean',
+          description:
+            'True hvis fremlejning er tilladt, false hvis forbudt, null hvis ikke angivet',
+        }),
 
         maintenance_responsibility: extractedField(
           'Vedligeholdelsespligt — hvem er ansvarlig for hvad (indvendig/udvendig). Null hvis ikke specificeret.',
           {
             type: ['string', 'null'] as unknown as 'string',
             description: 'Beskrivelse af vedligeholdelsesansvarsfordeling',
-          },
+          }
         ),
 
         renewal_clause: extractedField(
@@ -148,7 +143,7 @@ const lejekontraktSchema: ContractSchema = {
           {
             type: ['string', 'null'] as unknown as 'string',
             description: 'Beskrivelse af fornyelsesklausul',
-          },
+          }
         ),
 
         ...COMMON_TOOL_PROPERTIES,
@@ -264,7 +259,8 @@ Dokumenter er på dansk. Returner feltværdier på dansk hvor relevant (fx beskr
 ## Yderligere fund
 Brug additional_findings til at rapportere usædvanlige klausuler, manglende standardelementer eller bemærkelsesværdige observationer der ikke er dækket af de definerede felter. Brug extraction_warnings til at rapportere problemer med ekstrationsqualiteten.`,
 
-  user_prompt_prefix: 'Analyser denne lejekontrakt og ekstraher alle felter via extract_lejekontrakt tool.',
+  user_prompt_prefix:
+    'Analyser denne lejekontrakt og ekstraher alle felter via extract_lejekontrakt tool.',
 
   extraction_model: 'claude-sonnet-4-20250514',
 
@@ -302,7 +298,8 @@ Brug additional_findings til at rapportere usædvanlige klausuler, manglende sta
     },
     {
       extracted_field: 'effective_date',
-      description: 'Verificér at ikrafttrædelsesdato ikke er efter eventuel udløbsdato (expiry_date)',
+      description:
+        'Verificér at ikrafttrædelsesdato ikke er efter eventuel udløbsdato (expiry_date)',
     },
     {
       extracted_field: 'rent_monthly_dkk',

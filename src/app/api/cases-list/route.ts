@@ -8,10 +8,7 @@ export async function GET() {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const companyIds = await getAccessibleCompanies(
-    session.user.id,
-    session.user.organizationId
-  )
+  const companyIds = await getAccessibleCompanies(session.user.id, session.user.organizationId)
 
   if (companyIds.length === 0) return Response.json({ cases: [] })
 
@@ -27,19 +24,20 @@ export async function GET() {
 
   const caseIds = caseCompanyLinks.map((cc) => cc.case_id)
 
-  const cases = caseIds.length > 0
-    ? await prisma.case.findMany({
-        where: {
-          id: { in: caseIds },
-          organization_id: session.user.organizationId,
-          deleted_at: null,
-          status: { not: 'ARKIVERET' },
-        },
-        select: { id: true, title: true },
-        orderBy: { created_at: 'desc' },
-        take: 100,
-      })
-    : []
+  const cases =
+    caseIds.length > 0
+      ? await prisma.case.findMany({
+          where: {
+            id: { in: caseIds },
+            organization_id: session.user.organizationId,
+            deleted_at: null,
+            status: { not: 'ARKIVERET' },
+          },
+          select: { id: true, title: true },
+          orderBy: { created_at: 'desc' },
+          take: 100,
+        })
+      : []
 
   return Response.json({ cases })
 }

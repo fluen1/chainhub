@@ -25,7 +25,12 @@ interface CompanyPersonListProps {
   roleLabels: Record<string, string>
 }
 
-export function CompanyPersonList({ persons, title, showActions, roleLabels }: CompanyPersonListProps) {
+export function CompanyPersonList({
+  persons,
+  title,
+  showActions,
+  roleLabels,
+}: CompanyPersonListProps) {
   const [endingId, setEndingId] = useState<string | null>(null)
   const [endDate, setEndDate] = useState('')
   const [loading, setLoading] = useState(false)
@@ -67,14 +72,24 @@ export function CompanyPersonList({ persons, title, showActions, roleLabels }: C
       <table className="min-w-full divide-y divide-gray-200">
         <thead>
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Navn</th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Rolle</th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Startdato</th>
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">
+              Navn
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">
+              Rolle
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">
+              Startdato
+            </th>
             {!showActions && (
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Slutdato</th>
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                Slutdato
+              </th>
             )}
             {showActions && (
-              <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-500">Handlinger</th>
+              <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-500">
+                Handlinger
+              </th>
             )}
           </tr>
         </thead>
@@ -85,9 +100,7 @@ export function CompanyPersonList({ persons, title, showActions, roleLabels }: C
                 <div className="text-sm font-medium text-gray-900">
                   {cp.person.first_name} {cp.person.last_name}
                 </div>
-                {cp.person.email && (
-                  <div className="text-xs text-gray-500">{cp.person.email}</div>
-                )}
+                {cp.person.email && <div className="text-xs text-gray-500">{cp.person.email}</div>}
               </td>
               <td className="px-6 py-4 text-sm text-gray-700">
                 {roleLabels[cp.role] ?? cp.role}
@@ -96,9 +109,7 @@ export function CompanyPersonList({ persons, title, showActions, roleLabels }: C
                 )}
               </td>
               <td className="px-6 py-4 text-sm text-gray-500">
-                {cp.start_date
-                  ? new Date(cp.start_date).toLocaleDateString('da-DK')
-                  : '—'}
+                {cp.start_date ? new Date(cp.start_date).toLocaleDateString('da-DK') : '—'}
               </td>
               {!showActions && cp.end_date && (
                 <td className="px-6 py-4 text-sm text-gray-500">

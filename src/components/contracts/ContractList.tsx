@@ -2,7 +2,15 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { FileText, Plus, AlertTriangle, ExternalLink, Search, ChevronDown, ChevronRight } from 'lucide-react'
+import {
+  FileText,
+  Plus,
+  AlertTriangle,
+  ExternalLink,
+  Search,
+  ChevronDown,
+  ChevronRight,
+} from 'lucide-react'
 import {
   getContractTypeLabel,
   getContractStatusLabel,
@@ -26,7 +34,9 @@ interface ContractListProps {
   companyId: string
 }
 
-function getUrgencyLevel(expiryDate: Date | string | null): 'expired' | 'urgent' | 'warning' | 'ok' | 'none' {
+function getUrgencyLevel(
+  expiryDate: Date | string | null
+): 'expired' | 'urgent' | 'warning' | 'ok' | 'none' {
   if (!expiryDate) return 'none'
   const d = new Date(expiryDate)
   const today = new Date()
@@ -137,9 +147,7 @@ export function ContractList({ contracts, companyId }: ContractListProps) {
   const [search, setSearch] = useState('')
 
   const filtered = search
-    ? contracts.filter((c) =>
-        c.display_name.toLowerCase().includes(search.toLowerCase())
-      )
+    ? contracts.filter((c) => c.display_name.toLowerCase().includes(search.toLowerCase()))
     : contracts
 
   // Grupper kontrakter efter kategori
@@ -191,9 +199,7 @@ export function ContractList({ contracts, companyId }: ContractListProps) {
         <div className="rounded-lg border border-dashed border-gray-200 py-16 text-center">
           <FileText className="mx-auto h-10 w-10 text-gray-300" />
           <p className="mt-3 text-sm font-medium text-gray-900">Ingen kontrakter endnu</p>
-          <p className="mt-1 text-sm text-gray-400">
-            Opret den første kontrakt for dette selskab.
-          </p>
+          <p className="mt-1 text-sm text-gray-400">Opret den første kontrakt for dette selskab.</p>
         </div>
       </div>
     )
@@ -214,9 +220,7 @@ export function ContractList({ contracts, companyId }: ContractListProps) {
           {needsAttention > 0 && (
             <>
               <span className="text-gray-300">·</span>
-              <span className="text-red-600 font-medium">
-                {needsAttention} kræver opmærksomhed
-              </span>
+              <span className="text-red-600 font-medium">{needsAttention} kræver opmærksomhed</span>
             </>
           )}
         </div>

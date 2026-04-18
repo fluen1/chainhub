@@ -11,6 +11,7 @@
 ChainHub's prototype defines a rich set of AI-powered features (document extraction, contract key terms, company insights, search AI answers, AI-extracted calendar events). The production codebase currently has **zero** AI integration. This spec defines the architecture, LLM strategy, extraction pipeline, and rollout plan for building the AI backend over ~26-40 weeks.
 
 **Key decisions:**
+
 1. **Materialized insights architecture** — AI results are cached as DB fields, regenerated on state change, never computed live on page view
 2. **LLM stack:** Claude Sonnet 4 (primary) + Claude Haiku 3.5 (cheap tier) via Anthropic Direct API during development, AWS Bedrock Frankfurt for production
 3. **Job queue:** pg-boss on existing Supabase Postgres
@@ -93,6 +94,7 @@ The single most important architectural decision: **AI results are DB fields, no
 ### Job Queue Responsibilities
 
 pg-boss queues these job types:
+
 - `document.extract` — extract structured data from uploaded document
 - `document.verify_source` — validate extracted field source attribution
 - `document.cross_validate` — compare extracted data with existing system data
@@ -110,21 +112,22 @@ pg-boss queues these job types:
 
 ### Model selection
 
-| Task | Model | Reason |
-|---|---|---|
-| Document extraction (Pass 1: type detection) | Claude Haiku 3.5 | Simple classification, cheap |
-| Document extraction (Pass 2: schema extraction) | Claude Sonnet 4 | Complex structured output, high precision required |
-| Document extraction (Pass 2 second run for agreement) | Claude Sonnet 4 | Same model for valid agreement check |
-| Company insights | Claude Haiku 3.5 | Lower criticality, cached |
-| Contract key terms | Claude Haiku 3.5 | Lower criticality, cached |
-| Contract critical insight (expired/expiring) | Claude Sonnet 4 | User-facing, higher importance |
-| Dashboard insights | Claude Haiku 3.5 | Role-specific, refreshed daily |
-| Søg & Spørg AI answers | Claude Sonnet 4 | User-facing quality requirement |
-| Query type detection (search/question/action) | Claude Haiku 3.5 | Simple classification |
+| Task                                                  | Model            | Reason                                             |
+| ----------------------------------------------------- | ---------------- | -------------------------------------------------- |
+| Document extraction (Pass 1: type detection)          | Claude Haiku 3.5 | Simple classification, cheap                       |
+| Document extraction (Pass 2: schema extraction)       | Claude Sonnet 4  | Complex structured output, high precision required |
+| Document extraction (Pass 2 second run for agreement) | Claude Sonnet 4  | Same model for valid agreement check               |
+| Company insights                                      | Claude Haiku 3.5 | Lower criticality, cached                          |
+| Contract key terms                                    | Claude Haiku 3.5 | Lower criticality, cached                          |
+| Contract critical insight (expired/expiring)          | Claude Sonnet 4  | User-facing, higher importance                     |
+| Dashboard insights                                    | Claude Haiku 3.5 | Role-specific, refreshed daily                     |
+| Søg & Spørg AI answers                                | Claude Sonnet 4  | User-facing quality requirement                    |
+| Query type detection (search/question/action)         | Claude Haiku 3.5 | Simple classification                              |
 
 ### Deployment strategy
 
 **Development phase (weeks 1-16):**
+
 - **Anthropic Direct API** (`@anthropic-ai/sdk`)
 - Signup: 5 minutes, $20 credit, instant access
 - US-hosted by default — acceptable because dev uses only test documents, not real customer data
@@ -132,6 +135,7 @@ pg-boss queues these job types:
 - No AWS approval dependency
 
 **Production phase (week 16+):**
+
 - **AWS Bedrock Frankfurt** via `@aws-sdk/client-bedrock-runtime`
 - EU data residency for customer data
 - AWS Customer Agreement + Bedrock terms of service constitute the DPA
@@ -143,10 +147,12 @@ pg-boss queues these job types:
 ### Cost model
 
 **Per-document extraction (realistic, including retries and 30% scan share):**
+
 - Average: ~$0.15-0.25
 - Worst case (large scanned contract): ~$0.40
 
 **Per customer (22 locations, 10 active users) steady state:**
+
 - Document extraction: $5 (50 docs/month)
 - Insights regeneration: $3 (triggered on uploads and edits)
 - Søg & Spørg: $18 (3 queries/user/day × 30 days × $0.01)
@@ -154,6 +160,7 @@ pg-boss queues these job types:
 - **Total: ~$29/month per customer**
 
 **Per customer onboarding (500 docs upload):**
+
 - Document extraction: $75-125
 - Insight regeneration: $15-20
 - Søg & Spørg: $18
@@ -169,13 +176,13 @@ Cost is dominated by document extraction and Søg & Spørg. Insights cost is neg
 
 ### Supported file types
 
-| Extension | Handler | Notes |
-|---|---|---|
-| `.pdf` | Claude native PDF API | Handles both text-based and scanned PDFs via vision |
-| `.png`, `.jpg`, `.jpeg` | Claude vision API | Single-page image documents |
-| `.docx` | `mammoth.convertToHtml()` + Claude text API | HTML preserves table structure |
-| `.xlsx` | `exceljs` → Markdown tables + Claude text API | Sheet-by-sheet, max 10 sheets |
-| `.doc` (legacy Word) | Not supported in v1 | Show error: "Konverter til .docx eller PDF" |
+| Extension               | Handler                                       | Notes                                               |
+| ----------------------- | --------------------------------------------- | --------------------------------------------------- |
+| `.pdf`                  | Claude native PDF API                         | Handles both text-based and scanned PDFs via vision |
+| `.png`, `.jpg`, `.jpeg` | Claude vision API                             | Single-page image documents                         |
+| `.docx`                 | `mammoth.convertToHtml()` + Claude text API   | HTML preserves table structure                      |
+| `.xlsx`                 | `exceljs` → Markdown tables + Claude text API | Sheet-by-sheet, max 10 sheets                       |
+| `.doc` (legacy Word)    | Not supported in v1                           | Show error: "Konverter til .docx eller PDF"         |
 
 ### File size limits
 
@@ -212,16 +219,16 @@ async function loadForExtraction(file: Buffer, filename: string): Promise<Extrac
 
 **Extraction failure modes and responses:**
 
-| Scenario | Handler |
-|---|---|
-| Password-protected PDF | Detect via `pdf-lib`, show error: "Dokumentet er beskyttet — fjern password og upload igen" |
-| Corrupt file | Mark `status=failed`, log error, notify user |
-| File too large | Reject at upload, before queue |
-| Unsupported type | Reject at upload |
-| Claude API timeout | Retry with exponential backoff (max 3 retries) |
-| Claude API rate limit | Requeue with longer delay |
-| Claude returns malformed output | Retry once with stricter prompt, then fail |
-| Low confidence across all fields | Complete extraction but mark `requires_manual_review` |
+| Scenario                         | Handler                                                                                     |
+| -------------------------------- | ------------------------------------------------------------------------------------------- |
+| Password-protected PDF           | Detect via `pdf-lib`, show error: "Dokumentet er beskyttet — fjern password og upload igen" |
+| Corrupt file                     | Mark `status=failed`, log error, notify user                                                |
+| File too large                   | Reject at upload, before queue                                                              |
+| Unsupported type                 | Reject at upload                                                                            |
+| Claude API timeout               | Retry with exponential backoff (max 3 retries)                                              |
+| Claude API rate limit            | Requeue with longer delay                                                                   |
+| Claude returns malformed output  | Retry once with stricter prompt, then fail                                                  |
+| Low confidence across all fields | Complete extraction but mark `requires_manual_review`                                       |
 
 ---
 
@@ -273,6 +280,7 @@ Upload → Content Loader → Detected filetype
 ### Pass details
 
 **Pass 1: Type detection**
+
 - Model: Haiku 3.5
 - Input: First 5 pages + last page of document (signatures often on last page indicate contract type)
 - Output: `{contract_type: <enum>, confidence: <float>, alternatives: [<top 2 alternatives>]}`
@@ -280,6 +288,7 @@ Upload → Content Loader → Detected filetype
 - If confidence < 0.75, flag for manual type selection before running Pass 2
 
 **Pass 2: Schema extraction (2x for agreement)**
+
 - Model: Sonnet 4
 - Input: Full document (via Claude native PDF for PDFs, or loaded text/HTML/markdown for other formats)
 - Output: Structured JSON matching type-specific schema via tool_use
@@ -287,6 +296,7 @@ Upload → Content Loader → Detected filetype
 - Cost: ~$0.15-0.25 per run × 2 = $0.30-0.50 per document
 
 **Pass 3: Source verification**
+
 - Pure code, no AI
 - For each extracted field with `source_page` and `source_text`:
   - Load the referenced page text
@@ -295,6 +305,7 @@ Upload → Content Loader → Detected filetype
   - If no match: mark `source_verified: false`, show warning in UI
 
 **Pass 4: Rule-based sanity checks**
+
 - Pure code, no AI
 - Type-specific rules:
   - Dates: Must parse as valid Date within reasonable range (1900-2100)
@@ -305,6 +316,7 @@ Upload → Content Loader → Detected filetype
 - Each failed rule reduces confidence of affected field
 
 **Pass 5: Cross-validation**
+
 - Pure Prisma queries
 - Compare extracted values against existing records
 - Generate `Discrepancy[]` with ai_value, existing_value, severity
@@ -313,12 +325,13 @@ Upload → Content Loader → Detected filetype
 ### Confidence computation
 
 **Agreement-based confidence per field:**
+
 ```typescript
 function computeFieldConfidence(
   pass2a: ExtractedField,
   pass2b: ExtractedField,
   sourceVerified: boolean,
-  sanityCheckPassed: boolean,
+  sanityCheckPassed: boolean
 ): number {
   let confidence = 0
 
@@ -340,12 +353,12 @@ function computeFieldConfidence(
 
 **Thresholds (conservative for legal data):**
 
-| Level | Confidence range | Behavior |
-|---|---|---|
-| **High** | ≥ 0.90 | Visible in "Høj konfidence (auto)" section, default collapsed. User can approve individually but no auto-commit for legal-critical fields. |
-| **Medium** | 0.70 - 0.90 | Visible in "Kræver opmærksomhed" section, default open. Shows AI value vs existing value side-by-side. |
-| **Low** | < 0.70 | Visible in "Lav konfidence" section. Only shown as suggestion, user must manually edit. |
-| **Missing** | — | Expected field not found. Visible in "Manglende klausuler" section. |
+| Level       | Confidence range | Behavior                                                                                                                                   |
+| ----------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| **High**    | ≥ 0.90           | Visible in "Høj konfidence (auto)" section, default collapsed. User can approve individually but no auto-commit for legal-critical fields. |
+| **Medium**  | 0.70 - 0.90      | Visible in "Kræver opmærksomhed" section, default open. Shows AI value vs existing value side-by-side.                                     |
+| **Low**     | < 0.70           | Visible in "Lav konfidence" section. Only shown as suggestion, user must manually edit.                                                    |
+| **Missing** | —                | Expected field not found. Visible in "Manglende klausuler" section.                                                                        |
 
 **No auto-accept for legal-critical fields.** Even at confidence 0.99, fields like `parties`, `ownership_percentage`, `effective_date`, `termination_clause` require explicit user approval. Non-critical fields (subtitle, document_description, tags) may auto-commit at confidence ≥ 0.90 — this is configurable per field type in the schema.
 
@@ -363,6 +376,7 @@ function computeFieldConfidence(
 6. **DRIFTSAFTALE** — operations agreement
 
 Each schema defines:
+
 - Tool use definition for Claude (`name`, `description`, `input_schema`)
 - Field metadata (type, required, legal-critical flag)
 - System prompt (Danish, domain-specific)
@@ -376,18 +390,18 @@ Each schema defines:
 // src/lib/ai/schemas/types.ts
 interface ContractSchema {
   contract_type: string
-  schema_version: string           // 'v1.0.0'
+  schema_version: string // 'v1.0.0'
   tool_definition: AnthropicTool
   field_metadata: Record<string, FieldMetadata>
-  prompt_template: string          // includes few-shot examples
+  prompt_template: string // includes few-shot examples
   sanity_rules: SanityRule[]
   cross_validation_rules: CrossValidationRule[]
 }
 
 interface FieldMetadata {
-  legal_critical: boolean          // requires human approval even at high confidence
+  legal_critical: boolean // requires human approval even at high confidence
   required: boolean
-  auto_accept_threshold?: number   // if set, auto-commit above this confidence
+  auto_accept_threshold?: number // if set, auto-commit above this confidence
   description: string
 }
 
@@ -426,11 +440,13 @@ The `ownership_type` enum and `notes` field handle real-world variability: vesti
 ### Structured output strategy
 
 **Use Claude's tool use (function calling) for structured extraction.** Tool use is more reliable than asking for JSON in the response text because:
+
 - Claude is trained to respect tool schemas
 - Partial/malformed output fails loudly
 - We can validate against JSON schema before accepting
 
 However, keep schemas **flat when possible** to avoid tool use failures on deeply nested structures. For very complex contracts, break into multiple tool calls:
+
 - Tool 1: `extract_contract_metadata` (type, dates, language)
 - Tool 2: `extract_parties_and_ownership`
 - Tool 3: `extract_key_clauses` (termination, competition, pre-emption)
@@ -460,6 +476,7 @@ Prompts are stored in `src/lib/ai/prompts/<contract_type>.ts` with version numbe
 ### Core concept
 
 Every AI-derived value is tagged with its provenance so we know:
+
 1. Where the value came from
 2. Whether a human has verified it
 3. Which AI version produced it (for audit)
@@ -573,6 +590,7 @@ If no human-verified data exists, cross-validation is skipped and the extraction
 Fields are categorized by **legal criticality**:
 
 **Legal-critical (require human approval even at high confidence):**
+
 - `parties` (names, ownership percentages)
 - `effective_date`, `termination_date`
 - `termination_notice_months`
@@ -582,6 +600,7 @@ Fields are categorized by **legal criticality**:
 - All financial terms (rent, deposits, milestones)
 
 **Non-critical (may auto-commit at confidence ≥ 0.90):**
+
 - `document_title`
 - `document_language`
 - `detected_contract_type` (already approved in Pass 1)
@@ -620,12 +639,14 @@ Every user decision logs to `AIFieldCorrection`, forming the feedback loop datas
 ### Analytics (Phase 2)
 
 **Weekly aggregation queries:**
+
 - Per-field correction rate (how often users override each field)
 - Per-contract-type accuracy (estimated from correction rate)
 - Per-prompt-version performance (A/B test old vs new prompts)
 - Per-schema accuracy drift (is accuracy degrading?)
 
 **Dashboard for internal use:**
+
 - Top 10 fields with highest correction rate → candidates for prompt improvement
 - Cost per extraction by contract type → identify expensive outliers
 - Extraction success rate over time → alert on degradation
@@ -633,6 +654,7 @@ Every user decision logs to `AIFieldCorrection`, forming the feedback loop datas
 ### Gold standard test set
 
 **Build from day 1:**
+
 - Collect 20-30 sample documents per contract type (120-180 total)
 - Manually annotate expected outputs for each field
 - Use as regression test when updating prompts or models
@@ -661,7 +683,7 @@ Claude sometimes hallucinates page numbers and source quotes when asked to attri
 async function verifySource(
   document: Document,
   page: number,
-  sourceText: string,
+  sourceText: string
 ): Promise<{ verified: boolean; matchScore: number }> {
   const pageText = await loadPageText(document, page)
   if (!pageText) return { verified: false, matchScore: 0 }
@@ -685,6 +707,7 @@ async function verifySource(
 ### Prompt instructions for accurate sourcing
 
 The schema prompt explicitly instructs:
+
 > "Du SKAL citere exact word-for-word passages fra dokumentet. Hvis du ikke kan finde en exakt passage der understøtter værdien, sæt source_text til null. Gæt ALDRIG om sideplacering — kun rapporter side-nummer hvis du er 100% sikker."
 
 ---
@@ -696,6 +719,7 @@ The schema prompt explicitly instructs:
 **Purpose:** Validate extraction quality against real-world documents before exposing results to users.
 
 **Implementation:**
+
 - Extraction runs on every document upload
 - Results stored in `DocumentExtraction` table
 - **Users see nothing** — upload UI behaves like a normal file upload
@@ -703,6 +727,7 @@ The schema prompt explicitly instructs:
 - Dashboard for internal review of shadow-mode accuracy
 
 **Exit criteria:**
+
 - ≥85% agreement between manual entry and AI extraction on core fields (parties, dates, ownership)
 - <5% extraction failures
 - No critical hallucinations (fabricated parties, wrong dates)
@@ -715,6 +740,7 @@ The schema prompt explicitly instructs:
 **Purpose:** Real users experience full AI UX, provide feedback, help iterate.
 
 **Implementation:**
+
 - Feature flag: `organization.ai_mode = 'beta'` enables AI UI for specific organizations
 - Beta customers see:
   - Prototype-style hero cards with AI extractions
@@ -725,6 +751,7 @@ The schema prompt explicitly instructs:
 - Rapid iteration on prompts, thresholds, UX
 
 **Exit criteria:**
+
 - Positive feedback from ≥2 beta customers
 - No legal accuracy issues reported
 - Feature flag tested in production
@@ -734,6 +761,7 @@ The schema prompt explicitly instructs:
 **Purpose:** Safe rollout to all customers.
 
 **Implementation:**
+
 - 10% → 25% → 50% → 100% over 2-3 weeks
 - Each step requires all metrics healthy
 - Kill switch: `organization.ai_mode = 'off'` disables all AI for that customer with one admin action
@@ -846,22 +874,19 @@ The prototype pages under `src/app/proto/*` are the new UI. They use mock data t
 ### Priority order
 
 **Week 1-8 (parallel with Pre-Phase and Phase 1):**
+
 1. `/documents` (list) + `/documents/review/[id]` — needed for AI review UX
 2. `/contracts` (list) + `/contracts/[id]` — receives AI key terms
 3. `/portfolio` (list) + `/portfolio/[id]` — receives AI insights
 
-**Week 9-14 (during Phase 2):**
-4. `/dashboard`
-5. `/tasks` (list) + `/tasks/[id]`
-6. `/calendar`
+**Week 9-14 (during Phase 2):** 4. `/dashboard` 5. `/tasks` (list) + `/tasks/[id]` 6. `/calendar`
 
-**Week 15+ (nice-to-haves):**
-7. `/search`
-8. `/settings`
+**Week 15+ (nice-to-haves):** 7. `/search` 8. `/settings`
 
 ### AI binding
 
 When AI features become available, the migrated pages bind to:
+
 - `contract.ai_key_terms` (for contract detail hero)
 - `company.ai_insight` + `company.ai_dimensions` (for selskab detail)
 - `document.ai_extraction` (for document review flow)
@@ -889,6 +914,7 @@ Pages degrade gracefully: if AI fields are null (extraction not yet run), show a
 ### Audit trail
 
 Every AI decision is auditable:
+
 - `DocumentExtraction` logs model name, prompt version, inputs, outputs, cost
 - `AIFieldCorrection` logs every user override
 - `field_provenance` on every entity field tracks source of data
@@ -950,10 +976,12 @@ Every AI decision is auditable:
 ### Pre-Phase: Setup (weeks 1-3, mostly background)
 
 **User actions (~30 min total on day 1):**
+
 - ~~Sign up for Anthropic API + $20 credit~~ (already done)
 - Submit AWS Bedrock model access application (30 min)
 
 **Dev work:**
+
 - Repository scaffolding for `src/lib/ai/*`
 - Prisma migrations for new fields (DocumentExtraction, OrganizationAISettings, field_provenance)
 - Feature flag infrastructure
@@ -963,6 +991,7 @@ Every AI decision is auditable:
 ### Phase 1: AI Foundation (weeks 4-10)
 
 **AI track:**
+
 - pg-boss local setup + worker scaffold
 - ClaudeClient abstraction (Anthropic Direct implementation)
 - Content loader for all 4 file types
@@ -981,6 +1010,7 @@ Every AI decision is auditable:
 - Feature flag: shadow mode toggle (default ON)
 
 **UI track (parallel):**
+
 - Migrate `/contracts` + `/contracts/[id]`
 - Migrate `/portfolio` + `/portfolio/[id]`
 - Wire to real Server Actions
@@ -991,6 +1021,7 @@ Every AI decision is auditable:
 ### Phase 2: Scale extraction + analytics (weeks 11-16)
 
 **AI track:**
+
 - Add schemas: LEJEKONTRAKT, FORSIKRING, VEDTAEGTER, ANSAETTELSESKONTRAKT, DRIFTSAFTALE
 - Feedback loop analytics queries
 - Internal accuracy dashboard
@@ -1000,6 +1031,7 @@ Every AI decision is auditable:
 - Gold standard regression tests
 
 **Infrastructure:**
+
 - AWS Bedrock approval (should be done by now)
 - Setup Hetzner Cloud worker
 - Switch ClaudeClient to Bedrock for staging
@@ -1007,6 +1039,7 @@ Every AI decision is auditable:
 - Deploy worker to Hetzner
 
 **UI track:**
+
 - Migrate `/dashboard`, `/tasks`, `/calendar`
 
 **Success criteria:** 6 schemas working. All priority pages migrated. Production infrastructure deployed. Shadow mode validated on 100+ real documents.
@@ -1034,11 +1067,13 @@ Every AI decision is auditable:
 ### Phase 5: Gradual rollout + Søg & Spørg (weeks 27-34)
 
 **Rollout track:**
+
 - 10% → 25% → 50% → 100% of customers over 2-3 weeks
 - Monitor metrics closely
 - Kill switch tested
 
 **Search track:**
+
 - Query type detection (search/question/action)
 - RAG pipeline (vector search + context building)
 - pgvector extension on Supabase
@@ -1177,11 +1212,15 @@ export const EJERAFTALE_V1: ContractSchema = {
   },
 
   field_metadata: {
-    'parties': { legal_critical: true, required: true, description: 'Aftaleparterne' },
-    'effective_date': { legal_critical: true, required: true, description: 'Ikrafttrædelse' },
-    'termination_notice_months': { legal_critical: true, required: false, description: 'Opsigelsesvarsel' },
-    'non_compete_clause': { legal_critical: true, required: false, description: 'Konkurrenceforbud' },
-    'pre_emption_right': { legal_critical: false, required: false, description: 'Forkøbsret' },
+    parties: { legal_critical: true, required: true, description: 'Aftaleparterne' },
+    effective_date: { legal_critical: true, required: true, description: 'Ikrafttrædelse' },
+    termination_notice_months: {
+      legal_critical: true,
+      required: false,
+      description: 'Opsigelsesvarsel',
+    },
+    non_compete_clause: { legal_critical: true, required: false, description: 'Konkurrenceforbud' },
+    pre_emption_right: { legal_critical: false, required: false, description: 'Forkøbsret' },
   },
 
   prompt_template: `Du er ekspert i danske ejeraftaler med 20+ års erfaring i selskabsret.
@@ -1244,13 +1283,13 @@ Analyser nu den vedlagte ejeraftale og returnér struktureret ekstraktion.`,
 
 ## Appendix B: Cost model spreadsheet
 
-| Scenario | Customers | Extraction | Insights | Search | Total/month |
-|---|---|---|---|---|---|
-| Single pilot customer, steady | 1 | $5 | $3 | $18 | **$26** |
-| Single pilot customer, onboarding | 1 | $100 | $20 | $18 | **$138** |
-| 20 customers, steady | 20 | $100 | $60 | $360 | **$520** |
-| 50 customers, steady | 50 | $250 | $150 | $900 | **$1,300** |
-| 100 customers, steady | 100 | $500 | $300 | $1,800 | **$2,600** |
+| Scenario                          | Customers | Extraction | Insights | Search | Total/month |
+| --------------------------------- | --------- | ---------- | -------- | ------ | ----------- |
+| Single pilot customer, steady     | 1         | $5         | $3       | $18    | **$26**     |
+| Single pilot customer, onboarding | 1         | $100       | $20      | $18    | **$138**    |
+| 20 customers, steady              | 20        | $100       | $60      | $360   | **$520**    |
+| 50 customers, steady              | 50        | $250       | $150     | $900   | **$1,300**  |
+| 100 customers, steady             | 100       | $500       | $300     | $1,800 | **$2,600**  |
 
 **All numbers assume materialized insights architecture.** Without caching, multiply by ~10x.
 
@@ -1259,6 +1298,7 @@ Analyser nu den vedlagte ejeraftale og returnér struktureret ekstraktion.`,
 ## Appendix C: Key dependencies summary
 
 **New npm dependencies:**
+
 - `@anthropic-ai/sdk` (dev + staging)
 - `@aws-sdk/client-bedrock-runtime` (prod)
 - `pg-boss`
@@ -1268,11 +1308,13 @@ Analyser nu den vedlagte ejeraftale og returnér struktureret ekstraktion.`,
 - `pdf-lib` (for password detection)
 
 **New services (deferred to week 16+):**
+
 - Hetzner Cloud CX11 VPS
 - AWS Bedrock access (approved during dev phase)
 - Resend custom domain
 
 **No changes to existing stack:**
+
 - Next.js 14
 - Prisma 5
 - Supabase Postgres

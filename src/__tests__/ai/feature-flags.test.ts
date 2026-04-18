@@ -36,10 +36,16 @@ describe('isAIEnabled', () => {
   it('returns false when kill_switch is true', async () => {
     process.env.AI_EXTRACTION_ENABLED = 'true'
     vi.mocked(prisma.organizationAISettings.findUnique).mockResolvedValue({
-      id: 's1', organization_id: 'org-1', ai_mode: 'LIVE',
-      shadow_comparison_enabled: false, beta_features: [],
-      rate_limit_per_day: 1000, monthly_cost_cap_usd: null,
-      kill_switch: true, created_at: new Date(), updated_at: new Date(),
+      id: 's1',
+      organization_id: 'org-1',
+      ai_mode: 'LIVE',
+      shadow_comparison_enabled: false,
+      beta_features: [],
+      rate_limit_per_day: 1000,
+      monthly_cost_cap_usd: null,
+      kill_switch: true,
+      created_at: new Date(),
+      updated_at: new Date(),
     } as never)
     const result = await isAIEnabled('org-1', 'extraction')
     expect(result).toBe(false)
@@ -48,10 +54,16 @@ describe('isAIEnabled', () => {
   it('returns false when ai_mode is OFF', async () => {
     process.env.AI_EXTRACTION_ENABLED = 'true'
     vi.mocked(prisma.organizationAISettings.findUnique).mockResolvedValue({
-      id: 's1', organization_id: 'org-1', ai_mode: 'OFF',
-      shadow_comparison_enabled: false, beta_features: [],
-      rate_limit_per_day: 1000, monthly_cost_cap_usd: null,
-      kill_switch: false, created_at: new Date(), updated_at: new Date(),
+      id: 's1',
+      organization_id: 'org-1',
+      ai_mode: 'OFF',
+      shadow_comparison_enabled: false,
+      beta_features: [],
+      rate_limit_per_day: 1000,
+      monthly_cost_cap_usd: null,
+      kill_switch: false,
+      created_at: new Date(),
+      updated_at: new Date(),
     } as never)
     const result = await isAIEnabled('org-1', 'extraction')
     expect(result).toBe(false)
@@ -60,10 +72,16 @@ describe('isAIEnabled', () => {
   it('returns true when ai_mode is SHADOW', async () => {
     process.env.AI_EXTRACTION_ENABLED = 'true'
     vi.mocked(prisma.organizationAISettings.findUnique).mockResolvedValue({
-      id: 's1', organization_id: 'org-1', ai_mode: 'SHADOW',
-      shadow_comparison_enabled: true, beta_features: [],
-      rate_limit_per_day: 1000, monthly_cost_cap_usd: null,
-      kill_switch: false, created_at: new Date(), updated_at: new Date(),
+      id: 's1',
+      organization_id: 'org-1',
+      ai_mode: 'SHADOW',
+      shadow_comparison_enabled: true,
+      beta_features: [],
+      rate_limit_per_day: 1000,
+      monthly_cost_cap_usd: null,
+      kill_switch: false,
+      created_at: new Date(),
+      updated_at: new Date(),
     } as never)
     const result = await isAIEnabled('org-1', 'extraction')
     expect(result).toBe(true)
@@ -72,10 +90,16 @@ describe('isAIEnabled', () => {
   it('returns true when ai_mode is BETA and feature is in beta_features', async () => {
     process.env.AI_EXTRACTION_ENABLED = 'true'
     vi.mocked(prisma.organizationAISettings.findUnique).mockResolvedValue({
-      id: 's1', organization_id: 'org-1', ai_mode: 'BETA',
-      shadow_comparison_enabled: false, beta_features: ['extraction', 'insights'],
-      rate_limit_per_day: 1000, monthly_cost_cap_usd: null,
-      kill_switch: false, created_at: new Date(), updated_at: new Date(),
+      id: 's1',
+      organization_id: 'org-1',
+      ai_mode: 'BETA',
+      shadow_comparison_enabled: false,
+      beta_features: ['extraction', 'insights'],
+      rate_limit_per_day: 1000,
+      monthly_cost_cap_usd: null,
+      kill_switch: false,
+      created_at: new Date(),
+      updated_at: new Date(),
     } as never)
     const result = await isAIEnabled('org-1', 'extraction')
     expect(result).toBe(true)
@@ -84,10 +108,16 @@ describe('isAIEnabled', () => {
   it('returns false when ai_mode is BETA but feature is not in beta_features', async () => {
     process.env.AI_EXTRACTION_ENABLED = 'true'
     vi.mocked(prisma.organizationAISettings.findUnique).mockResolvedValue({
-      id: 's1', organization_id: 'org-1', ai_mode: 'BETA',
-      shadow_comparison_enabled: false, beta_features: ['extraction'],
-      rate_limit_per_day: 1000, monthly_cost_cap_usd: null,
-      kill_switch: false, created_at: new Date(), updated_at: new Date(),
+      id: 's1',
+      organization_id: 'org-1',
+      ai_mode: 'BETA',
+      shadow_comparison_enabled: false,
+      beta_features: ['extraction'],
+      rate_limit_per_day: 1000,
+      monthly_cost_cap_usd: null,
+      kill_switch: false,
+      created_at: new Date(),
+      updated_at: new Date(),
     } as never)
     const result = await isAIEnabled('org-1', 'search_ai')
     expect(result).toBe(false)
@@ -96,10 +126,16 @@ describe('isAIEnabled', () => {
   it('returns true when ai_mode is LIVE', async () => {
     process.env.AI_EXTRACTION_ENABLED = 'true'
     vi.mocked(prisma.organizationAISettings.findUnique).mockResolvedValue({
-      id: 's1', organization_id: 'org-1', ai_mode: 'LIVE',
-      shadow_comparison_enabled: false, beta_features: [],
-      rate_limit_per_day: 1000, monthly_cost_cap_usd: null,
-      kill_switch: false, created_at: new Date(), updated_at: new Date(),
+      id: 's1',
+      organization_id: 'org-1',
+      ai_mode: 'LIVE',
+      shadow_comparison_enabled: false,
+      beta_features: [],
+      rate_limit_per_day: 1000,
+      monthly_cost_cap_usd: null,
+      kill_switch: false,
+      created_at: new Date(),
+      updated_at: new Date(),
     } as never)
     const result = await isAIEnabled('org-1', 'extraction')
     expect(result).toBe(true)

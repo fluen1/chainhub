@@ -3,8 +3,22 @@ import { render, screen } from '@testing-library/react'
 import { ContractsSection, type ContractRow } from '@/components/company-detail/contracts-section'
 
 const baseRows: ContractRow[] = [
-  { id: 'c1', iconLetters: 'EA', iconTone: 'red', name: 'Ejeraftale', meta: 'Udloebet 28. mar', badge: { label: 'Udloebet', tone: 'red' } },
-  { id: 'c2', iconLetters: 'LK', iconTone: 'green', name: 'Lejekontrakt', meta: 'Udloeber 15. sep 2027', badge: { label: 'Aktiv', tone: 'green' } },
+  {
+    id: 'c1',
+    iconLetters: 'EA',
+    iconTone: 'red',
+    name: 'Ejeraftale',
+    meta: 'Udloebet 28. mar',
+    badge: { label: 'Udloebet', tone: 'red' },
+  },
+  {
+    id: 'c2',
+    iconLetters: 'LK',
+    iconTone: 'green',
+    name: 'Lejekontrakt',
+    meta: 'Udloeber 15. sep 2027',
+    badge: { label: 'Aktiv', tone: 'green' },
+  },
 ]
 
 describe('ContractsSection', () => {
@@ -26,7 +40,9 @@ describe('ContractsSection', () => {
   })
 
   it('viser Vis alle-link kun naar total > 3', () => {
-    const { rerender } = render(<ContractsSection contracts={baseRows} totalCount={2} companyId="abc" />)
+    const { rerender } = render(
+      <ContractsSection contracts={baseRows} totalCount={2} companyId="abc" />
+    )
     expect(screen.queryByText(/Vis alle/)).toBeNull()
 
     rerender(<ContractsSection contracts={baseRows} totalCount={8} companyId="abc" />)

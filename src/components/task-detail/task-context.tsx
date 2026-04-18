@@ -69,11 +69,7 @@ export function TaskContext({
           value={relatedContract?.display_name ?? null}
           href={relatedContract ? `/contracts/${relatedContract.id}` : undefined}
         />
-        <ContextRow
-          icon={UserIcon}
-          label="Ansvarlig"
-          value={assignee?.name ?? null}
-        />
+        <ContextRow icon={UserIcon} label="Ansvarlig" value={assignee?.name ?? null} />
       </div>
     </SectionCard>
   )

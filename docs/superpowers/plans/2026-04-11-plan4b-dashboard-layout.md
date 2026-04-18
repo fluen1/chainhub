@@ -5,6 +5,7 @@
 **Goal:** Replace the current `/dashboard` page and `(dashboard)/layout.tsx` chrome with the proto-designed Timeline River + role-specific right panels + proto AppSidebar/AppHeader, wired to real Prisma data via Server Actions.
 
 **Architecture:** The 11 Plan 4A components become the atomic building blocks. This plan wires them together via:
+
 1. New Server Actions in `src/actions/dashboard.ts` that aggregate Prisma data into `TimelineItem[]`, `InlineKpi[]`, `SidebarBadge` records, coverage percentages, and financial totals.
 2. A new `HeatmapGrid` component (referenced by the proto dashboard but not part of 4A — it's dashboard-specific chrome, not a generic atom).
 3. A new `TimelineSection` component (same reasoning).
@@ -20,6 +21,7 @@
 ## Scope
 
 ### In scope
+
 - **Pre-wiring blocker fixes** (2 files from Plan 4A):
   - `src/components/ui/health-bar.tsx` empty-state
   - `src/components/layout/app-header.tsx` SSR hydration fix
@@ -34,6 +36,7 @@
 - **Adapter**: transform `getSidebarData()` output → `AppSidebarProps.badges` record
 
 ### Out of scope (Plan 4C)
+
 - `/tasks` list + `/tasks/[id]` detail rewrite
 - `/calendar` full page (replaces `/visits`)
 - `/search` global search
@@ -64,6 +67,7 @@
 **Why first:** This is the smallest blocker from Plan 4A reviews. Must be fixed before `HealthBar` is mounted on the dashboard (Task 9) or it will render as a zero-height invisible bar when all counts are 0.
 
 **Files:**
+
 - Modify: `src/components/ui/health-bar.tsx`
 - Modify: `src/__tests__/components/health-bar.test.tsx`
 
@@ -119,13 +123,13 @@ export function HealthBar({ healthy, warning, critical }: HealthBarProps) {
 Append to `src/__tests__/components/health-bar.test.tsx` inside the existing `describe` block, after the `håndterer nul-værdier` test:
 
 ```tsx
-  it('viser en neutral grå bar når alle værdier er 0', () => {
-    const { container } = render(<HealthBar healthy={0} warning={0} critical={0} />)
-    const barRow = container.querySelector('.h-2') as HTMLElement
-    const segments = barRow.querySelectorAll(':scope > div')
-    expect(segments).toHaveLength(1)
-    expect(segments[0]).toHaveClass('bg-slate-100', 'flex-1')
-  })
+it('viser en neutral grå bar når alle værdier er 0', () => {
+  const { container } = render(<HealthBar healthy={0} warning={0} critical={0} />)
+  const barRow = container.querySelector('.h-2') as HTMLElement
+  const segments = barRow.querySelectorAll(':scope > div')
+  expect(segments).toHaveLength(1)
+  expect(segments[0]).toHaveClass('bg-slate-100', 'flex-1')
+})
 ```
 
 The existing `håndterer nul-værdier` test still passes because it only asserts the three `0` digits appear — it didn't previously check bar segments.
@@ -149,6 +153,7 @@ git commit -m "fix(ui): HealthBar viser neutral bar når alle værdier er 0"
 **Why:** `getGreeting()` and `getDateString()` currently call `new Date()` at render time in a client component. When Next.js SSRs it and then hydrates on the client, the two renders can disagree (clock second, timezone) causing hydration warnings. Fix: convert to Server Component, accept `currentDate: Date` as a prop.
 
 **Files:**
+
 - Modify: `src/components/layout/app-header.tsx`
 - Modify: `src/__tests__/components/app-header.test.tsx`
 
@@ -170,7 +175,20 @@ function getGreeting(date: Date): string {
 
 function getDateString(date: Date): string {
   const days = ['Søndag', 'Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag']
-  const months = ['januar', 'februar', 'marts', 'april', 'maj', 'juni', 'juli', 'august', 'september', 'oktober', 'november', 'december']
+  const months = [
+    'januar',
+    'februar',
+    'marts',
+    'april',
+    'maj',
+    'juni',
+    'juli',
+    'august',
+    'september',
+    'oktober',
+    'november',
+    'december',
+  ]
   return `${days[date.getDay()]} ${date.getDate()}. ${months[date.getMonth()]} ${date.getFullYear()}`
 }
 
@@ -182,7 +200,12 @@ export interface AppHeaderProps {
 
 export function AppHeader({ userName, kpis, currentDate }: AppHeaderProps) {
   const firstName = userName.split(' ')[0]
-  const initials = userName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
+  const initials = userName
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
 
   return (
     <header className="flex items-center justify-between border-b border-gray-200 bg-white px-8 h-14 py-0">
@@ -191,7 +214,9 @@ export function AppHeader({ userName, kpis, currentDate }: AppHeaderProps) {
           <div className="text-sm font-bold text-slate-900 leading-tight">
             {getGreeting(currentDate)}, {firstName}
           </div>
-          <div className="text-[11px] text-gray-400 leading-tight">{getDateString(currentDate)}</div>
+          <div className="text-[11px] text-gray-400 leading-tight">
+            {getDateString(currentDate)}
+          </div>
         </div>
 
         <div className="w-px h-8 bg-gray-200 mr-5" />
@@ -204,7 +229,7 @@ export function AppHeader({ userName, kpis, currentDate }: AppHeaderProps) {
                   'text-[18px] font-bold tabular-nums leading-tight',
                   kpi.color === 'red' && 'text-red-600',
                   kpi.color === 'amber' && 'text-amber-600',
-                  !kpi.color && 'text-slate-900',
+                  !kpi.color && 'text-slate-900'
                 )}
               >
                 {kpi.value}
@@ -221,7 +246,11 @@ export function AppHeader({ userName, kpis, currentDate }: AppHeaderProps) {
           placeholder="Søg efter selskaber, kontrakter, personer..."
           readOnly
         />
-        <button type="button" aria-label="Notifikationer" className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-slate-50 text-gray-400 hover:bg-slate-100 transition-colors">
+        <button
+          type="button"
+          aria-label="Notifikationer"
+          className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-slate-50 text-gray-400 hover:bg-slate-100 transition-colors"
+        >
           <Bell className="h-4 w-4" />
           <div className="absolute top-1.5 right-1.5 h-[7px] w-[7px] rounded-full bg-red-500 border-2 border-white" />
         </button>
@@ -235,6 +264,7 @@ export function AppHeader({ userName, kpis, currentDate }: AppHeaderProps) {
 ```
 
 Key changes:
+
 - Removed `'use client'` (now Server Component)
 - Added `currentDate: Date` required prop
 - `getGreeting(date)` and `getDateString(date)` take the date as a parameter
@@ -336,6 +366,7 @@ non-deterministisk regex-match."
 **Note:** `KpiCard` keeps `'use client'` because of `onClick`. `InsightCard`/`CalendarWidget`/`AppSidebar` keep it because of `useState`/`usePathname`.
 
 **Files:**
+
 - Modify: `src/components/ui/fin-row.tsx` — remove line 1
 - Modify: `src/components/ui/coverage-bar.tsx` — remove line 1
 - Modify: `src/components/ui/company-row.tsx` — remove line 1
@@ -378,6 +409,7 @@ på sider der bruger dem."
 ## Task 3: Update CONVENTIONS.md for kebab-case
 
 **Files:**
+
 - Modify: `docs/build/CONVENTIONS.md`
 
 - [ ] **Step 3.1: Find the file-naming section**
@@ -415,6 +447,7 @@ git commit -m "docs(conventions): kebab-case for ui/ og layout/ (shadcn)"
 ## Task 4: Dashboard Server Actions
 
 **Files:**
+
 - Create: `src/actions/dashboard.ts`
 - Test: `src/__tests__/dashboard-actions.test.ts`
 
@@ -429,12 +462,7 @@ Create `src/actions/dashboard.ts`:
 
 import { prisma } from '@/lib/db'
 import { getAccessibleCompanies } from '@/lib/permissions'
-import type {
-  CalendarEvent,
-  InlineKpi,
-  SidebarBadge,
-  UrgencyItem,
-} from '@/types/ui'
+import type { CalendarEvent, InlineKpi, SidebarBadge, UrgencyItem } from '@/types/ui'
 
 // ---------------------------------------------------------------
 // Typer
@@ -633,7 +661,14 @@ export async function getDashboardData(
         name: true,
         _count: {
           select: {
-            cases: { where: { case: { deleted_at: null, status: { in: ['NY', 'AKTIV', 'AFVENTER_EKSTERN', 'AFVENTER_KLIENT'] } } } },
+            cases: {
+              where: {
+                case: {
+                  deleted_at: null,
+                  status: { in: ['NY', 'AKTIV', 'AFVENTER_EKSTERN', 'AFVENTER_KLIENT'] },
+                },
+              },
+            },
           },
         },
       },
@@ -687,13 +722,27 @@ export async function getDashboardData(
       },
     }),
     prisma.contract.count({
-      where: { organization_id: organizationId, company_id: { in: companyIds }, deleted_at: null, status: 'AKTIV' },
+      where: {
+        organization_id: organizationId,
+        company_id: { in: companyIds },
+        deleted_at: null,
+        status: 'AKTIV',
+      },
     }),
     prisma.case.count({
-      where: { organization_id: organizationId, deleted_at: null, status: { in: ['NY', 'AKTIV', 'AFVENTER_EKSTERN', 'AFVENTER_KLIENT'] } },
+      where: {
+        organization_id: organizationId,
+        deleted_at: null,
+        status: { in: ['NY', 'AKTIV', 'AFVENTER_EKSTERN', 'AFVENTER_KLIENT'] },
+      },
     }),
     prisma.task.count({
-      where: { organization_id: organizationId, deleted_at: null, status: { not: 'LUKKET' }, company_id: { in: companyIds } },
+      where: {
+        organization_id: organizationId,
+        deleted_at: null,
+        status: { not: 'LUKKET' },
+        company_id: { in: companyIds },
+      },
     }),
     prisma.document.count({
       where: { organization_id: organizationId, deleted_at: null, company_id: { in: companyIds } },
@@ -706,9 +755,13 @@ export async function getDashboardData(
   // Byg badges
   const badges: Record<string, SidebarBadge | null> = {
     dashboard: null,
-    calendar: upcomingVisits.length > 0 ? { count: upcomingVisits.length, urgency: 'neutral' } : null,
+    calendar:
+      upcomingVisits.length > 0 ? { count: upcomingVisits.length, urgency: 'neutral' } : null,
     portfolio: companies.length > 0 ? { count: companies.length, urgency: 'neutral' } : null,
-    contracts: expiringContracts.length > 0 ? { count: expiringContracts.length, urgency: 'critical' } : null,
+    contracts:
+      expiringContracts.length > 0
+        ? { count: expiringContracts.length, urgency: 'critical' }
+        : null,
     cases: openCases.length > 0 ? { count: openCases.length, urgency: 'neutral' } : null,
     tasks: overdueTasksCount > 0 ? { count: overdueTasksCount, urgency: 'critical' } : null,
     documents: documentsCount > 0 ? { count: documentsCount, urgency: 'neutral' } : null,
@@ -718,7 +771,7 @@ export async function getDashboardData(
   // Byg inline KPIs (role-adaptiv)
   const omsaetningTotal = sumMetric(financialMetrics, 'OMSAETNING')
   const ebitdaTotal = sumMetric(financialMetrics, 'EBITDA')
-  const margin = omsaetningTotal > 0 ? (ebitdaTotal / omsaetningTotal) : 0
+  const margin = omsaetningTotal > 0 ? ebitdaTotal / omsaetningTotal : 0
 
   const inlineKpis: InlineKpi[] = buildInlineKpis(role, {
     companiesCount: companies.length,
@@ -755,7 +808,10 @@ export async function getDashboardData(
   }))
 
   // Byg contract coverage
-  const REQUIRED_TYPES: Array<{ type: 'EJERAFTALE' | 'LEJEKONTRAKT_ERHVERV' | 'FORSIKRING' | 'ANSAETTELSE_FUNKTIONAER'; label: string }> = [
+  const REQUIRED_TYPES: Array<{
+    type: 'EJERAFTALE' | 'LEJEKONTRAKT_ERHVERV' | 'FORSIKRING' | 'ANSAETTELSE_FUNKTIONAER'
+    label: string
+  }> = [
     { type: 'EJERAFTALE', label: 'Ejeraftale' },
     { type: 'LEJEKONTRAKT_ERHVERV', label: 'Lejekontrakt' },
     { type: 'FORSIKRING', label: 'Forsikring' },
@@ -838,9 +894,17 @@ function buildInlineKpis(
 ): InlineKpi[] {
   if (role === 'GROUP_LEGAL') {
     return [
-      { label: 'Udløbende', value: String(data.expiringCount), color: data.expiringCount > 0 ? 'amber' : undefined },
+      {
+        label: 'Udløbende',
+        value: String(data.expiringCount),
+        color: data.expiringCount > 0 ? 'amber' : undefined,
+      },
       { label: 'Sager', value: String(data.openCasesCount) },
-      { label: 'Forfaldne', value: String(data.overdueCount), color: data.overdueCount > 0 ? 'red' : undefined },
+      {
+        label: 'Forfaldne',
+        value: String(data.overdueCount),
+        color: data.overdueCount > 0 ? 'red' : undefined,
+      },
     ]
   }
   if (role === 'GROUP_FINANCE') {
@@ -848,15 +912,27 @@ function buildInlineKpis(
       { label: 'Omsætning', value: `${formatMio(data.omsaetningTotal)}m` },
       { label: 'EBITDA', value: `${formatMio(data.ebitdaTotal)}m` },
       { label: 'Margin', value: `${(data.margin * 100).toFixed(1)}%` },
-      { label: 'Forfaldne', value: String(data.overdueCount), color: data.overdueCount > 0 ? 'red' : undefined },
+      {
+        label: 'Forfaldne',
+        value: String(data.overdueCount),
+        color: data.overdueCount > 0 ? 'red' : undefined,
+      },
     ]
   }
   // GROUP_OWNER and default
   return [
     { label: 'Selskaber', value: String(data.companiesCount) },
-    { label: 'Udløbende', value: String(data.expiringCount), color: data.expiringCount > 0 ? 'amber' : undefined },
+    {
+      label: 'Udløbende',
+      value: String(data.expiringCount),
+      color: data.expiringCount > 0 ? 'amber' : undefined,
+    },
     { label: 'Sager', value: String(data.openCasesCount) },
-    { label: 'Forfaldne', value: String(data.overdueCount), color: data.overdueCount > 0 ? 'red' : undefined },
+    {
+      label: 'Forfaldne',
+      value: String(data.overdueCount),
+      color: data.overdueCount > 0 ? 'red' : undefined,
+    },
   ]
 }
 
@@ -869,18 +945,58 @@ function relativeDays(from: Date, to: Date): number {
 }
 
 interface TimelineRawData {
-  overdueTasks: Array<{ id: string; title: string; due_date: Date | null; company: { id: string; name: string } | null }>
-  todayAndFutureTasks: Array<{ id: string; title: string; due_date: Date | null; company: { id: string; name: string } | null }>
-  expiringContracts: Array<{ id: string; display_name: string; expiry_date: Date | null; company: { id: string; name: string } }>
-  openCases: Array<{ id: string; title: string; status: string; companies: Array<{ company: { id: string; name: string } }> }>
-  upcomingVisits: Array<{ id: string; visit_date: Date; visit_type: string; company: { id: string; name: string } }>
-  recentDocuments: Array<{ id: string; filename: string; company_id: string | null; company: { id: string; name: string } | null; extraction: { extraction_status: string } | null }>
+  overdueTasks: Array<{
+    id: string
+    title: string
+    due_date: Date | null
+    company: { id: string; name: string } | null
+  }>
+  todayAndFutureTasks: Array<{
+    id: string
+    title: string
+    due_date: Date | null
+    company: { id: string; name: string } | null
+  }>
+  expiringContracts: Array<{
+    id: string
+    display_name: string
+    expiry_date: Date | null
+    company: { id: string; name: string }
+  }>
+  openCases: Array<{
+    id: string
+    title: string
+    status: string
+    companies: Array<{ company: { id: string; name: string } }>
+  }>
+  upcomingVisits: Array<{
+    id: string
+    visit_date: Date
+    visit_type: string
+    company: { id: string; name: string }
+  }>
+  recentDocuments: Array<{
+    id: string
+    filename: string
+    company_id: string | null
+    company: { id: string; name: string } | null
+    extraction: { extraction_status: string } | null
+  }>
   today: Date
   weekEnd: Date
 }
 
 function buildTimelineSections(data: TimelineRawData): TimelineSectionData[] {
-  const { overdueTasks, todayAndFutureTasks, expiringContracts, openCases, upcomingVisits, recentDocuments, today, weekEnd } = data
+  const {
+    overdueTasks,
+    todayAndFutureTasks,
+    expiringContracts,
+    openCases,
+    upcomingVisits,
+    recentDocuments,
+    today,
+    weekEnd,
+  } = data
 
   // Overdue
   const overdueItems: TimelineItem[] = []
@@ -896,7 +1012,9 @@ function buildTimelineSections(data: TimelineRawData): TimelineSectionData[] {
       href: '/tasks',
     })
   }
-  for (const c of expiringContracts.filter((c) => c.expiry_date && c.expiry_date < today).slice(0, 3)) {
+  for (const c of expiringContracts
+    .filter((c) => c.expiry_date && c.expiry_date < today)
+    .slice(0, 3)) {
     overdueItems.push({
       id: `contract-${c.id}`,
       letter: firstLetter(c.company.name),
@@ -915,7 +1033,9 @@ function buildTimelineSections(data: TimelineRawData): TimelineSectionData[] {
   const todayEnd = new Date(today)
   todayEnd.setHours(23, 59, 59, 999)
 
-  for (const v of upcomingVisits.filter((v) => v.visit_date >= todayStart && v.visit_date <= todayEnd).slice(0, 5)) {
+  for (const v of upcomingVisits
+    .filter((v) => v.visit_date >= todayStart && v.visit_date <= todayEnd)
+    .slice(0, 5)) {
     const time = v.visit_date.toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' })
     todayItems.push({
       id: `visit-${v.id}`,
@@ -927,7 +1047,9 @@ function buildTimelineSections(data: TimelineRawData): TimelineSectionData[] {
       href: `/companies/${v.company.id}`,
     })
   }
-  for (const t of todayAndFutureTasks.filter((t) => t.due_date && t.due_date >= todayStart && t.due_date <= todayEnd).slice(0, 3)) {
+  for (const t of todayAndFutureTasks
+    .filter((t) => t.due_date && t.due_date >= todayStart && t.due_date <= todayEnd)
+    .slice(0, 3)) {
     todayItems.push({
       id: `task-today-${t.id}`,
       letter: firstLetter(t.company?.name),
@@ -953,7 +1075,9 @@ function buildTimelineSections(data: TimelineRawData): TimelineSectionData[] {
 
   // This week (dag efter i dag → weekEnd)
   const thisweekItems: TimelineItem[] = []
-  for (const v of upcomingVisits.filter((v) => v.visit_date > todayEnd && v.visit_date <= weekEnd).slice(0, 3)) {
+  for (const v of upcomingVisits
+    .filter((v) => v.visit_date > todayEnd && v.visit_date <= weekEnd)
+    .slice(0, 3)) {
     thisweekItems.push({
       id: `visit-week-${v.id}`,
       letter: firstLetter(v.company.name),
@@ -964,7 +1088,9 @@ function buildTimelineSections(data: TimelineRawData): TimelineSectionData[] {
       href: `/companies/${v.company.id}`,
     })
   }
-  for (const c of expiringContracts.filter((c) => c.expiry_date && c.expiry_date > todayEnd && c.expiry_date <= weekEnd).slice(0, 3)) {
+  for (const c of expiringContracts
+    .filter((c) => c.expiry_date && c.expiry_date > todayEnd && c.expiry_date <= weekEnd)
+    .slice(0, 3)) {
     thisweekItems.push({
       id: `contract-week-${c.id}`,
       letter: firstLetter(c.company.name),
@@ -978,7 +1104,9 @@ function buildTimelineSections(data: TimelineRawData): TimelineSectionData[] {
 
   // Next week (weekEnd → +7 days)
   const nextweekItems: TimelineItem[] = []
-  for (const c of expiringContracts.filter((c) => c.expiry_date && c.expiry_date > weekEnd).slice(0, 3)) {
+  for (const c of expiringContracts
+    .filter((c) => c.expiry_date && c.expiry_date > weekEnd)
+    .slice(0, 3)) {
     nextweekItems.push({
       id: `contract-next-${c.id}`,
       letter: firstLetter(c.company.name),
@@ -1097,6 +1225,7 @@ InlineKpi-vælger for GROUP_OWNER / GROUP_LEGAL / GROUP_FINANCE."
 ## Task 5: HeatmapGrid component
 
 **Files:**
+
 - Create: `src/components/dashboard/heatmap-grid.tsx`
 - Test: `src/__tests__/components/heatmap-grid.test.tsx`
 
@@ -1238,6 +1367,7 @@ git commit -m "feat(dashboard): add HeatmapGrid component with unit tests"
 ## Task 6: TimelineSection component
 
 **Files:**
+
 - Create: `src/components/dashboard/timeline-section.tsx`
 - Test: `src/__tests__/components/timeline-section.test.tsx`
 
@@ -1256,12 +1386,18 @@ export interface TimelineSectionProps {
 
 function colorClass(c: TimelineColor): string {
   switch (c) {
-    case 'red':    return 'bg-red-50 text-red-600'
-    case 'amber':  return 'bg-amber-50 text-amber-600'
-    case 'blue':   return 'bg-blue-50 text-blue-600'
-    case 'purple': return 'bg-purple-50 text-purple-600'
-    case 'green':  return 'bg-green-50 text-green-600'
-    case 'gray':   return 'bg-slate-50 text-slate-500'
+    case 'red':
+      return 'bg-red-50 text-red-600'
+    case 'amber':
+      return 'bg-amber-50 text-amber-600'
+    case 'blue':
+      return 'bg-blue-50 text-blue-600'
+    case 'purple':
+      return 'bg-purple-50 text-purple-600'
+    case 'green':
+      return 'bg-green-50 text-green-600'
+    case 'gray':
+      return 'bg-slate-50 text-slate-500'
   }
 }
 
@@ -1272,14 +1408,14 @@ export function TimelineSection({ section }: TimelineSectionProps) {
     'absolute left-[-19px] top-[3px] w-2.5 h-2.5 rounded-full border-2',
     section.dotType === 'overdue' && 'border-red-500 bg-red-50',
     section.dotType === 'today' && 'border-blue-500 bg-blue-500',
-    section.dotType === 'future' && 'border-gray-300 bg-gray-50',
+    section.dotType === 'future' && 'border-gray-300 bg-gray-50'
   )
 
   const labelClass = cn(
     'text-[11px] font-semibold mb-2',
     section.dotType === 'overdue' && 'text-red-600',
     section.dotType === 'today' && 'text-blue-600',
-    section.dotType === 'future' && 'text-gray-500',
+    section.dotType === 'future' && 'text-gray-500'
   )
 
   return (
@@ -1297,7 +1433,12 @@ export function TimelineSection({ section }: TimelineSectionProps) {
           href={item.href}
           className="flex items-center gap-2.5 bg-white border border-gray-200 rounded-lg px-3 py-2.5 mb-1.5 cursor-pointer hover:shadow-sm hover:border-gray-300 transition-all no-underline"
         >
-          <div className={cn('w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold shrink-0', colorClass(item.color))}>
+          <div
+            className={cn(
+              'w-7 h-7 rounded-md flex items-center justify-center text-xs font-bold shrink-0',
+              colorClass(item.color)
+            )}
+          >
             {item.letter}
           </div>
           <div className="flex-1 min-w-0">
@@ -1306,7 +1447,9 @@ export function TimelineSection({ section }: TimelineSectionProps) {
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             {item.aiExtracted && (
-              <span className="text-[8px] font-bold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">AI</span>
+              <span className="text-[8px] font-bold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">
+                AI
+              </span>
             )}
             <span className="text-[10px] tabular-nums text-gray-400">{item.time}</span>
           </div>
@@ -1332,8 +1475,25 @@ const section: TimelineSectionData = {
   label: 'Overskredet',
   dotType: 'overdue',
   items: [
-    { id: 't1', letter: 'N', color: 'red', title: 'Ejeraftale Nordklinik', subtitle: 'Nordklinik · 3d over', time: '3d over', href: '/contracts/c1' },
-    { id: 't2', letter: 'S', color: 'purple', title: 'Dokument', subtitle: 'Sundby · AI', aiExtracted: true, time: 'Ny', href: '/documents' },
+    {
+      id: 't1',
+      letter: 'N',
+      color: 'red',
+      title: 'Ejeraftale Nordklinik',
+      subtitle: 'Nordklinik · 3d over',
+      time: '3d over',
+      href: '/contracts/c1',
+    },
+    {
+      id: 't2',
+      letter: 'S',
+      color: 'purple',
+      title: 'Dokument',
+      subtitle: 'Sundby · AI',
+      aiExtracted: true,
+      time: 'Ny',
+      href: '/documents',
+    },
   ],
 }
 
@@ -1385,6 +1545,7 @@ git commit -m "feat(dashboard): add TimelineSection component with unit tests"
 ## Task 7: Dashboard page rewrite
 
 **Files:**
+
 - Modify: `src/app/(dashboard)/dashboard/page.tsx` — full rewrite (replacing existing ~600-line production dashboard)
 - Create: `src/app/(dashboard)/dashboard/right-panels.tsx` — Server Component for role-specific right panels
 
@@ -1440,7 +1601,10 @@ export function RightPanels({ data, calendarEvents, upcomingEvents, todayISO }: 
         <Panel title="Nøgletal 2025">
           <FinRow label="Omsætning" value={`${formatMio(data.portfolioTotals.totalOmsaetning)}M`} />
           <FinRow label="EBITDA" value={`${formatMio(data.portfolioTotals.totalEbitda)}M`} />
-          <FinRow label="Margin" value={`${(data.portfolioTotals.avgEbitdaMargin * 100).toFixed(1)}%`} />
+          <FinRow
+            label="Margin"
+            value={`${(data.portfolioTotals.avgEbitdaMargin * 100).toFixed(1)}%`}
+          />
           <FinRow
             label="Underskud lok."
             value={String(data.underperformingCount)}
@@ -1556,6 +1720,7 @@ Data hentes server-side via getDashboardData() Server Action."
 ## Task 8: Layout swap (AppSidebar + AppHeader)
 
 **Files:**
+
 - Modify: `src/app/(dashboard)/layout.tsx` — replace Sidebar/Header/MobileNav with AppSidebar/AppHeader
 - Delete: `src/components/layout/sidebar.tsx`
 - Delete: `src/components/layout/header.tsx`
@@ -1579,9 +1744,12 @@ export function buildSidebarBadges(data: SidebarData): Record<string, SidebarBad
     portfolio: data.companiesCount > 0 ? { count: data.companiesCount, urgency: 'neutral' } : null,
     contracts: data.contractsCount > 0 ? { count: data.contractsCount, urgency: 'neutral' } : null,
     cases: data.casesCount > 0 ? { count: data.casesCount, urgency: 'neutral' } : null,
-    tasks: data.overdueTasksCount > 0
-      ? { count: data.overdueTasksCount, urgency: 'critical' }
-      : data.tasksCount > 0 ? { count: data.tasksCount, urgency: 'neutral' } : null,
+    tasks:
+      data.overdueTasksCount > 0
+        ? { count: data.overdueTasksCount, urgency: 'critical' }
+        : data.tasksCount > 0
+          ? { count: data.tasksCount, urgency: 'neutral' }
+          : null,
     documents: data.documentsCount > 0 ? { count: data.documentsCount, urgency: 'neutral' } : null,
     persons: data.personsCount > 0 ? { count: data.personsCount, urgency: 'neutral' } : null,
   }
@@ -1601,18 +1769,11 @@ import { redirect } from 'next/navigation'
 import { getSidebarData, buildSidebarBadges } from '@/lib/sidebar-data'
 import type { InlineKpi } from '@/types/ui'
 
-export default async function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
   if (!session) redirect('/login')
 
-  const sidebarData = await getSidebarData(
-    session.user.id,
-    session.user.organizationId
-  )
+  const sidebarData = await getSidebarData(session.user.id, session.user.organizationId)
   const badges = buildSidebarBadges(sidebarData)
 
   // Header inline KPIs — generisk 3-tal for layout-niveau
@@ -1642,9 +1803,7 @@ export default async function DashboardLayout({
             kpis={headerKpis}
             currentDate={new Date()}
           />
-          <main className="flex-1 overflow-y-auto bg-[#f0f2f5]">
-            {children}
-          </main>
+          <main className="flex-1 overflow-y-auto bg-[#f0f2f5]">{children}</main>
         </div>
       </div>
     </Providers>
@@ -1729,11 +1888,13 @@ Expected: "ready" on http://localhost:3000.
 ```bash
 curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/dashboard
 ```
+
 Expected: 307 (redirect to login — normal since unauthenticated).
 
 - [ ] **Step 9.7: Playwright visual audit**
 
 Open Playwright MCP. Log in as `philip@chainhub.dk / password123`. Navigate to `/dashboard`. Take a fullpage screenshot. Confirm:
+
 - Proto-designed dark sidebar is visible on left
 - Top header shows greeting, date, inline KPIs
 - Main area has "Tidslinje" header + 2-column layout
@@ -1771,6 +1932,7 @@ git commit -m "fix(dashboard): rettelser efter Plan 4B visuelt audit"
 ## What comes next
 
 **Plan 4C: Remaining pages**
+
 - `/tasks` list + `/tasks/[id]` detail rewrite
 - `/calendar` full page (replaces `/visits`, wires real CalendarEvents into `CalendarWidget` on dashboard)
 - `/search` global search

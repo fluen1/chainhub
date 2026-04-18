@@ -33,13 +33,7 @@ interface EmployeeListProps {
   entityName?: { singular: string; plural: string }
 }
 
-function EmployeeRow({
-  cp,
-  showActions,
-}: {
-  cp: PersonItem
-  showActions: boolean
-}) {
+function EmployeeRow({ cp, showActions }: { cp: PersonItem; showActions: boolean }) {
   const [endingId, setEndingId] = useState(false)
   const [endDate, setEndDate] = useState('')
   const [loading, setLoading] = useState(false)
@@ -79,12 +73,8 @@ function EmployeeRow({
         </Link>
         <p className="text-xs text-gray-400 mt-0.5">
           {getCompanyPersonRoleLabel(cp.role)}
-          {cp.employment_type && (
-            <span> · {cp.employment_type}</span>
-          )}
-          {cp.person.email && (
-            <span> · {cp.person.email}</span>
-          )}
+          {cp.employment_type && <span> · {cp.employment_type}</span>}
+          {cp.person.email && <span> · {cp.person.email}</span>}
           {startDateLabel && <span> · {startDateLabel}</span>}
           {endDateLabel && <span> · {endDateLabel}</span>}
         </p>
@@ -158,11 +148,7 @@ function CollapsibleGroup({
           {count}
         </span>
       </button>
-      {isOpen && (
-        <div className="border-l border-gray-200">
-          {children}
-        </div>
-      )}
+      {isOpen && <div className="border-l border-gray-200">{children}</div>}
     </div>
   )
 }
@@ -242,17 +228,13 @@ export function EmployeeList({
         <div className="rounded-lg border border-dashed border-gray-200 py-16 text-center">
           <Users className="mx-auto h-10 w-10 text-gray-300" />
           <p className="mt-3 text-sm font-medium text-gray-900">{emptyMessage}</p>
-          <p className="mt-1 text-sm text-gray-400">
-            {emptySubMessage}
-          </p>
+          <p className="mt-1 text-sm text-gray-400">{emptySubMessage}</p>
         </div>
       ) : filteredActive.length === 0 && filteredHistoric.length === 0 && search ? (
         <div className="rounded-lg border border-dashed border-gray-200 py-12 text-center">
           <Search className="mx-auto h-8 w-8 text-gray-300" />
           <p className="mt-3 text-sm font-medium text-gray-900">Ingen resultater</p>
-          <p className="mt-1 text-sm text-gray-400">
-            Ingen ansatte matcher &ldquo;{search}&rdquo;
-          </p>
+          <p className="mt-1 text-sm text-gray-400">Ingen ansatte matcher &ldquo;{search}&rdquo;</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -264,7 +246,11 @@ export function EmployeeList({
             </CollapsibleGroup>
           )}
           {filteredHistoric.length > 0 && (
-            <CollapsibleGroup title={historicLabel} count={filteredHistoric.length} defaultOpen={false}>
+            <CollapsibleGroup
+              title={historicLabel}
+              count={filteredHistoric.length}
+              defaultOpen={false}
+            >
               {filteredHistoric.map((cp) => (
                 <EmployeeRow key={cp.id} cp={cp} showActions={false} />
               ))}

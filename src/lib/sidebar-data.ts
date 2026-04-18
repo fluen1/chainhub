@@ -26,10 +26,7 @@ export interface SidebarData {
   recentCompanies: Array<{ id: string; name: string }>
 }
 
-export async function getSidebarData(
-  userId: string,
-  organizationId: string
-): Promise<SidebarData> {
+export async function getSidebarData(userId: string, organizationId: string): Promise<SidebarData> {
   const [companyIds, roleAssignments] = await Promise.all([
     getAccessibleCompanies(userId, organizationId),
     prisma.userRoleAssignment.findMany({
@@ -86,7 +83,12 @@ export async function getSidebarData(
       where: { organization_id: organizationId, deleted_at: null, status: { not: 'LUKKET' } },
     }),
     prisma.task.count({
-      where: { organization_id: organizationId, deleted_at: null, status: { not: 'LUKKET' }, due_date: { lt: today } },
+      where: {
+        organization_id: organizationId,
+        deleted_at: null,
+        status: { not: 'LUKKET' },
+        due_date: { lt: today },
+      },
     }),
     // Udløbende kontrakter (næste 14 dage)
     companyIds.length > 0
@@ -175,9 +177,12 @@ export function buildSidebarBadges(data: SidebarData): Record<string, SidebarBad
     portfolio: data.companiesCount > 0 ? { count: data.companiesCount, urgency: 'neutral' } : null,
     contracts: data.contractsCount > 0 ? { count: data.contractsCount, urgency: 'neutral' } : null,
     cases: data.casesCount > 0 ? { count: data.casesCount, urgency: 'neutral' } : null,
-    tasks: data.overdueTasksCount > 0
-      ? { count: data.overdueTasksCount, urgency: 'critical' }
-      : data.tasksCount > 0 ? { count: data.tasksCount, urgency: 'neutral' } : null,
+    tasks:
+      data.overdueTasksCount > 0
+        ? { count: data.overdueTasksCount, urgency: 'critical' }
+        : data.tasksCount > 0
+          ? { count: data.tasksCount, urgency: 'neutral' }
+          : null,
     documents: data.documentsCount > 0 ? { count: data.documentsCount, urgency: 'neutral' } : null,
     persons: data.personsCount > 0 ? { count: data.personsCount, urgency: 'neutral' } : null,
   }

@@ -1,6 +1,4 @@
-export type ClaudeModel =
-  | 'claude-sonnet-4-20250514'
-  | 'claude-3-5-haiku-20241022'
+export type ClaudeModel = 'claude-sonnet-4-20250514' | 'claude-3-5-haiku-20241022'
 
 export interface ClaudeMessage {
   role: 'user' | 'assistant'
@@ -52,7 +50,7 @@ export class ClaudeClientError extends Error {
   constructor(
     message: string,
     public readonly cause: unknown,
-    public readonly retryable: boolean,
+    public readonly retryable: boolean
   ) {
     super(message)
     this.name = 'ClaudeClientError'
@@ -67,7 +65,7 @@ export const MODEL_COSTS: Record<ClaudeModel, { input: number; output: number }>
 export function computeCostUsd(
   model: ClaudeModel,
   inputTokens: number,
-  outputTokens: number,
+  outputTokens: number
 ): number {
   const costs = MODEL_COSTS[model]
   return (inputTokens * costs.input + outputTokens * costs.output) / 1_000_000

@@ -6,9 +6,7 @@ import { canAccessCompany } from '@/lib/permissions'
 import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
 
-export async function deleteDocument(
-  documentId: string
-): Promise<ActionResult<void>> {
+export async function deleteDocument(documentId: string): Promise<ActionResult<void>> {
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
 

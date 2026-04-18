@@ -52,7 +52,10 @@ export function CompanyHeader({
         <div className="flex items-center gap-2.5 text-2xl font-extrabold tracking-tight text-slate-900">
           {name}
           <span
-            className={cn('rounded-lg border px-2.5 py-1 text-[11px] font-bold', STATUS_BADGE[statusBadge.severity])}
+            className={cn(
+              'rounded-lg border px-2.5 py-1 text-[11px] font-bold',
+              STATUS_BADGE[statusBadge.severity]
+            )}
           >
             {statusBadge.label}
           </span>
@@ -91,7 +94,9 @@ export function CompanyHeader({
           aria-disabled={readOnly}
           className={cn(
             'rounded-lg px-4 py-2 text-xs font-semibold no-underline',
-            readOnly ? 'cursor-not-allowed bg-slate-100 text-slate-400' : 'bg-blue-600 text-white hover:bg-blue-700'
+            readOnly
+              ? 'cursor-not-allowed bg-slate-100 text-slate-400'
+              : 'bg-blue-600 text-white hover:bg-blue-700'
           )}
         >
           Opret opgave

@@ -5,7 +5,7 @@ import { registerSchema } from './registry'
 // Hjælpefunktion til at wrappe et felt i ExtractedFieldValue-struktur
 function extractedField(
   description: string,
-  valueSchema: Record<string, unknown>,
+  valueSchema: Record<string, unknown>
 ): Record<string, unknown> {
   return {
     type: 'object' as const,
@@ -61,12 +61,12 @@ const driftsaftaleSchema: ContractSchema = {
               },
               required: ['name', 'role'],
             },
-          },
+          }
         ),
 
         effective_date: extractedField(
           'Ikrafttrædelsesdato for aftalen (ISO 8601 format: YYYY-MM-DD)',
-          { type: 'string', description: 'Dato i format YYYY-MM-DD' },
+          { type: 'string', description: 'Dato i format YYYY-MM-DD' }
         ),
 
         expiry_date: extractedField(
@@ -74,7 +74,7 @@ const driftsaftaleSchema: ContractSchema = {
           {
             type: ['string', 'null'] as unknown as 'string',
             description: 'Dato i format YYYY-MM-DD, eller null hvis tidsubestemt',
-          },
+          }
         ),
 
         scope_of_services: extractedField(
@@ -82,7 +82,7 @@ const driftsaftaleSchema: ContractSchema = {
           {
             type: ['string', 'null'] as unknown as 'string',
             description: 'Beskrivelse af ydelsesomfang og leverancer',
-          },
+          }
         ),
 
         fee_structure: extractedField(
@@ -90,7 +90,7 @@ const driftsaftaleSchema: ContractSchema = {
           {
             type: ['string', 'null'] as unknown as 'string',
             description: 'Beskrivelse af honorarstruktur og betalingsvilkår',
-          },
+          }
         ),
 
         payment_terms: extractedField(
@@ -98,7 +98,7 @@ const driftsaftaleSchema: ContractSchema = {
           {
             type: ['string', 'null'] as unknown as 'string',
             description: 'Beskrivelse af betalingsbetingelser',
-          },
+          }
         ),
 
         notice_period_months: extractedField(
@@ -108,15 +108,15 @@ const driftsaftaleSchema: ContractSchema = {
             description: 'Opsigelsesvarsel i måneder (1-120)',
             minimum: 1,
             maximum: 120,
-          },
+          }
         ),
 
         performance_metrics: extractedField(
-          'Beskrivelse af KPI\'er og serviceniveaumål (SLA). Null hvis ikke specificeret.',
+          "Beskrivelse af KPI'er og serviceniveaumål (SLA). Null hvis ikke specificeret.",
           {
             type: ['string', 'null'] as unknown as 'string',
             description: 'Beskrivelse af performance-krav og måleparametre',
-          },
+          }
         ),
 
         liability_cap_dkk: extractedField(
@@ -125,7 +125,7 @@ const driftsaftaleSchema: ContractSchema = {
             type: ['number', 'null'] as unknown as 'number',
             description: 'Ansvarsbegrænsning i DKK (0 eller positivt tal)',
             minimum: 0,
-          },
+          }
         ),
 
         termination_clause: extractedField(
@@ -133,7 +133,7 @@ const driftsaftaleSchema: ContractSchema = {
           {
             type: ['string', 'null'] as unknown as 'string',
             description: 'Beskrivelse af ophørsklausuler og betingelser for opsigelse',
-          },
+          }
         ),
 
         ...COMMON_TOOL_PROPERTIES,
@@ -237,7 +237,8 @@ Dokumenter er på dansk. Returner feltværdier på dansk hvor relevant (fx beskr
 ## Yderligere fund
 Brug additional_findings til at rapportere usædvanlige klausuler, SLA-krav, fortrolighedsbestemmelser eller bemærkelsesværdige observationer der ikke er dækket af de definerede felter. Brug extraction_warnings til at rapportere problemer med ekstrationsqualiteten.`,
 
-  user_prompt_prefix: 'Analyser denne driftsaftale og ekstraher alle felter via extract_driftsaftale tool.',
+  user_prompt_prefix:
+    'Analyser denne driftsaftale og ekstraher alle felter via extract_driftsaftale tool.',
 
   extraction_model: 'claude-sonnet-4-20250514',
 
@@ -263,11 +264,13 @@ Brug additional_findings til at rapportere usædvanlige klausuler, SLA-krav, for
   cross_validation_rules: [
     {
       extracted_field: 'parties',
-      description: 'Verificér at mindst en af parterne matcher det kendte lokationsselskab eller kædegruppe (CVR)',
+      description:
+        'Verificér at mindst en af parterne matcher det kendte lokationsselskab eller kædegruppe (CVR)',
     },
     {
       extracted_field: 'effective_date',
-      description: 'Verificér at ikrafttrædelsesdato ikke er efter eventuel udløbsdato (expiry_date)',
+      description:
+        'Verificér at ikrafttrædelsesdato ikke er efter eventuel udløbsdato (expiry_date)',
     },
     {
       extracted_field: 'termination_clause',

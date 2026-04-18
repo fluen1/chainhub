@@ -15,10 +15,7 @@ export function VisitStatusForm({ visitId, currentStatus }: VisitStatusFormProps
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
-  const nextStatuses =
-    currentStatus === 'PLANLAGT'
-      ? ['GENNEMFOERT', 'AFLYST']
-      : []
+  const nextStatuses = currentStatus === 'PLANLAGT' ? ['GENNEMFOERT', 'AFLYST'] : []
 
   if (nextStatuses.length === 0) return null
 
@@ -46,9 +43,7 @@ export function VisitStatusForm({ visitId, currentStatus }: VisitStatusFormProps
       <h3 className="text-sm font-semibold text-gray-900 mb-3">Opdatér status</h3>
       <p className="text-xs text-gray-500 mb-3">
         Nuværende:{' '}
-        <span className="font-medium">
-          {VISIT_STATUS_LABELS[currentStatus] ?? currentStatus}
-        </span>
+        <span className="font-medium">{VISIT_STATUS_LABELS[currentStatus] ?? currentStatus}</span>
       </p>
       <div className="space-y-2">
         {nextStatuses.map((status) => (

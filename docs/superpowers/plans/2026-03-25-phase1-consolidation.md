@@ -13,6 +13,7 @@
 ## Task 1: Tilføj manglende labels til labels.ts
 
 **Files:**
+
 - Modify: `src/lib/labels.ts`
 
 - [ ] **Step 1: Tilføj CompanyPerson rolle-labels**
@@ -39,9 +40,21 @@ export const COMPANY_PERSON_ROLE_LABELS: Record<string, string> = {
   forsikringskontakt: 'Forsikringskontakt',
 }
 
-export const GOVERNANCE_ROLES = ['direktoer', 'bestyrelsesformand', 'bestyrelsesmedlem', 'tegningsberettiget', 'revisor'] as const
+export const GOVERNANCE_ROLES = [
+  'direktoer',
+  'bestyrelsesformand',
+  'bestyrelsesmedlem',
+  'tegningsberettiget',
+  'revisor',
+] as const
 
-export const EMPLOYEE_ROLES = ['ansat', 'funktionaer', 'ikke-funktionaer', 'vikar', 'leder'] as const
+export const EMPLOYEE_ROLES = [
+  'ansat',
+  'funktionaer',
+  'ikke-funktionaer',
+  'vikar',
+  'leder',
+] as const
 
 export function getCompanyPersonRoleLabel(role: string): string {
   return COMPANY_PERSON_ROLE_LABELS[role] ?? role
@@ -93,9 +106,11 @@ git commit -m "feat: tilføj CompanyPerson rolle-labels og MetricSource labels t
 ## Task 2: Migrér 10 sider fra lokale labels til labels.ts
 
 **Files:**
+
 - Modify: 10 page.tsx filer (se liste nedenfor)
 
 Hver side skal:
+
 1. Fjerne lokale `const STATUS_LABELS`, `ROLE_LABELS`, etc.
 2. Importere getter-funktioner fra `@/lib/labels`
 3. Erstatte `STATUS_LABELS[x]` med `getCaseStatusLabel(x)` etc.
@@ -103,14 +118,17 @@ Hver side skal:
 - [ ] **Step 1: Migrér companies/[id]/cases/page.tsx**
 
 Fjern lokale STATUS_LABELS/STATUS_STYLES (linje 12-28). Importér:
+
 ```typescript
 import { getCaseStatusLabel, getCaseStatusStyle, getCaseTypeLabel } from '@/lib/labels'
 ```
+
 Erstat: `STATUS_LABELS[x]` → `getCaseStatusLabel(x)`, `STATUS_STYLES[x]` → `getCaseStatusStyle(x)`, `TYPE_LABELS[x]` → `getCaseTypeLabel(x)`
 
 - [ ] **Step 2: Migrér companies/[id]/contracts/page.tsx**
 
 Fjern lokale STATUS_LABELS/SENSITIVITY_LABELS. Importér:
+
 ```typescript
 import { getContractStatusLabel, getContractStatusStyle, getSensitivityLabel } from '@/lib/labels'
 ```
@@ -118,6 +136,7 @@ import { getContractStatusLabel, getContractStatusStyle, getSensitivityLabel } f
 - [ ] **Step 3: Migrér companies/[id]/employees/page.tsx**
 
 Fjern lokale ROLE_LABELS og GOVERNANCE_ROLES. Importér:
+
 ```typescript
 import { COMPANY_PERSON_ROLE_LABELS, GOVERNANCE_ROLES, EMPLOYEE_ROLES } from '@/lib/labels'
 ```
@@ -129,16 +148,30 @@ Fjern lokale ROLE_LABELS og GOVERNANCE_ROLES. Importér fra labels.ts.
 - [ ] **Step 5: Migrér companies/[id]/finance/page.tsx**
 
 Fjern lokale METRIC_LABELS/SOURCE_LABELS. Importér:
+
 ```typescript
-import { getMetricTypeLabel, getPeriodTypeLabel, getMetricSourceLabel, getMetricSourceStyle } from '@/lib/labels'
+import {
+  getMetricTypeLabel,
+  getPeriodTypeLabel,
+  getMetricSourceLabel,
+  getMetricSourceStyle,
+} from '@/lib/labels'
 ```
 
 - [ ] **Step 6: Migrér cases/page.tsx**
 
 Fjern lokale STATUS_LABELS/STATUS_STYLES/TYPE_LABELS. Importér:
+
 ```typescript
-import { getCaseStatusLabel, getCaseStatusStyle, getCaseTypeLabel, CASE_STATUS_LABELS, CASE_TYPE_LABELS } from '@/lib/labels'
+import {
+  getCaseStatusLabel,
+  getCaseStatusStyle,
+  getCaseTypeLabel,
+  CASE_STATUS_LABELS,
+  CASE_TYPE_LABELS,
+} from '@/lib/labels'
 ```
+
 Brug CASE_STATUS_LABELS og CASE_TYPE_LABELS til at bygge filter-options arrays.
 
 - [ ] **Step 7: Migrér cases/[id]/page.tsx**
@@ -174,6 +207,7 @@ git commit -m "refactor: migrér alle hardcoded labels til centraliseret labels.
 ## Task 3: Auth-check på 5 "opret ny"-sider
 
 **Files:**
+
 - Modify: `src/app/(dashboard)/companies/new/page.tsx`
 - Modify: `src/app/(dashboard)/cases/new/page.tsx`
 - Modify: `src/app/(dashboard)/contracts/new/page.tsx`
@@ -185,6 +219,7 @@ Mønstret: Konvertér fra ren client-component til server-component wrapper + cl
 - [ ] **Step 1: Fix companies/new/page.tsx**
 
 Læs filen. Hvis den er en client component ('use client'), konvertér:
+
 - Fjern 'use client' fra page.tsx
 - Tilføj auth-check øverst: `const session = await auth(); if (!session) redirect('/login')`
 - Flyt form-indhold til en separat client-komponent ELLER wrap i server-component
@@ -225,6 +260,7 @@ git commit -m "fix: tilføj auth-check på alle opret-sider (5 sider)"
 ## Task 4: Fix Zod UUID-validering i alle schemas
 
 **Files:**
+
 - Modify: `src/lib/validations/case.ts`
 - Modify: `src/lib/validations/company.ts`
 - Modify: `src/lib/validations/contract.ts`
@@ -239,6 +275,7 @@ I HVER fil: erstat `z.string().uuid()` med `z.string().min(1)`.
 Bevar `.optional()` og `.or(z.literal(''))` modifiers.
 
 Eksempel:
+
 ```typescript
 // FØR:
 companyId: z.string().uuid(),
@@ -286,6 +323,7 @@ Start dev-server og test at /settings rolle-ændring virker (den fejlede pga. UU
 - [ ] **Step 3: Opdater PROGRESS.md**
 
 Tilføj under Sprint 8:
+
 ```
 ### Fase 1: Konsolidering ✅ (DATO)
 - [x] Labels centraliseret i labels.ts (10 sider migreret)

@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { verifySourceAttribution, findBestFuzzyMatch, extractDocumentText } from '@/lib/ai/pipeline/pass3-source-verification'
+import {
+  verifySourceAttribution,
+  findBestFuzzyMatch,
+  extractDocumentText,
+} from '@/lib/ai/pipeline/pass3-source-verification'
 import type { ExtractedField } from '@/lib/ai/pipeline/types'
 
 describe('Pass 3: Source verification', () => {
@@ -7,7 +11,7 @@ describe('Pass 3: Source verification', () => {
     it('returns 1.0 for exact match', () => {
       const score = findBestFuzzyMatch(
         'Dette er en kontrakt indgået mellem parterne.',
-        'kontrakt indgået mellem parterne',
+        'kontrakt indgået mellem parterne'
       )
       expect(score).toBe(1.0)
     })
@@ -15,7 +19,7 @@ describe('Pass 3: Source verification', () => {
     it('returns 1.0 for exact match with case difference', () => {
       const score = findBestFuzzyMatch(
         'KONTRAKT INDGÅET MELLEM PARTERNE',
-        'kontrakt indgået mellem parterne',
+        'kontrakt indgået mellem parterne'
       )
       expect(score).toBe(1.0)
     })
@@ -23,7 +27,7 @@ describe('Pass 3: Source verification', () => {
     it('returns 1.0 for match with extra whitespace', () => {
       const score = findBestFuzzyMatch(
         'kontrakt  indgået   mellem  parterne',
-        'kontrakt indgået mellem parterne',
+        'kontrakt indgået mellem parterne'
       )
       expect(score).toBe(1.0)
     })
@@ -32,16 +36,13 @@ describe('Pass 3: Source verification', () => {
       // One character difference in a long string — should be above 0.85
       const score = findBestFuzzyMatch(
         'Dette er en lang kontrakt tekst med mange ord i dokumentet.',
-        'lang kontrakt tekst med mange ord',
+        'lang kontrakt tekst med mange ord'
       )
       expect(score).toBeGreaterThanOrEqual(0.85)
     })
 
     it('returns low score for poor match below threshold', () => {
-      const score = findBestFuzzyMatch(
-        'Dette er en juridisk aftale.',
-        'xyzqwerty foobar baz',
-      )
+      const score = findBestFuzzyMatch('Dette er en juridisk aftale.', 'xyzqwerty foobar baz')
       expect(score).toBeLessThan(0.85)
     })
 
@@ -62,7 +63,8 @@ describe('Pass 3: Source verification', () => {
   })
 
   describe('verifySourceAttribution', () => {
-    const documentText = 'Aftalen er indgået den 1. januar 2024 mellem Tandlæge ApS og ChainGroup A/S.'
+    const documentText =
+      'Aftalen er indgået den 1. januar 2024 mellem Tandlæge ApS og ChainGroup A/S.'
 
     it('verifies field with exact source_text match', () => {
       const fields: Record<string, ExtractedField> = {

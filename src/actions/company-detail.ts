@@ -255,11 +255,7 @@ export async function getCompanyDetailData(
 
   // Resolve owner_company_id → company.name for Ejerskab-sektionen
   const ownerCompanyIds = Array.from(
-    new Set(
-      ownerships
-        .map((o) => o.owner_company_id)
-        .filter((id): id is string => id !== null)
-    )
+    new Set(ownerships.map((o) => o.owner_company_id).filter((id): id is string => id !== null))
   )
   const holdingCompanyRows =
     ownerCompanyIds.length > 0
@@ -282,16 +278,12 @@ export async function getCompanyDetailData(
         ? {
             ebitda: finance2025Sum.ebitda,
             margin:
-              finance2025Sum.omsaetning > 0
-                ? finance2025Sum.ebitda / finance2025Sum.omsaetning
-                : 0,
+              finance2025Sum.omsaetning > 0 ? finance2025Sum.ebitda / finance2025Sum.omsaetning : 0,
             omsaetning: finance2025Sum.omsaetning,
           }
         : null,
     finance2024:
-      finance2024Sum.omsaetning !== null
-        ? { omsaetning: finance2024Sum.omsaetning }
-        : null,
+      finance2024Sum.omsaetning !== null ? { omsaetning: finance2024Sum.omsaetning } : null,
     lastVisitDate,
     today,
   })
@@ -437,9 +429,7 @@ interface FinanceSum {
   resultat: number | null
 }
 
-function sumFinance(
-  metrics: Array<{ metric_type: string; value: Prisma.Decimal }>
-): FinanceSum {
+function sumFinance(metrics: Array<{ metric_type: string; value: Prisma.Decimal }>): FinanceSum {
   const sum: FinanceSum = { omsaetning: null, ebitda: null, resultat: null }
   for (const m of metrics) {
     const val = Number(m.value)
@@ -542,8 +532,7 @@ function buildContracts(
   const in30days = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)
   const top: ContractViewRow[] = sorted.slice(0, 3).map((c) => {
     const expired = c.expiry_date !== null && c.expiry_date < today
-    const soon =
-      c.expiry_date !== null && c.expiry_date >= today && c.expiry_date < in30days
+    const soon = c.expiry_date !== null && c.expiry_date >= today && c.expiry_date < in30days
     const tone: 'red' | 'amber' | 'green' = expired ? 'red' : soon ? 'amber' : 'green'
     const meta = c.expiry_date
       ? expired
@@ -625,8 +614,7 @@ function buildCases(
   const top: CaseViewRow[] = sorted.slice(0, 3).map((c) => {
     const isAwaiting = c.status.startsWith('AFVENTER_')
     const tone: 'red' | 'amber' = isAwaiting ? 'amber' : 'red'
-    const badgeLabel =
-      c.status === 'NY' ? 'Ny' : c.status === 'AKTIV' ? 'Aktiv' : 'Afventer'
+    const badgeLabel = c.status === 'NY' ? 'Ny' : c.status === 'AKTIV' ? 'Aktiv' : 'Afventer'
     const meta = `Oprettet ${formatDate(c.created_at)}${isAwaiting ? ' · Afventer' : ''}`
     return {
       id: c.id,
@@ -666,11 +654,7 @@ function buildVisits(
     const tone: 'blue' | 'green' | 'slate' =
       v.status === 'PLANLAGT' ? 'blue' : v.status === 'GENNEMFOERT' ? 'green' : 'slate'
     const statusLabel =
-      v.status === 'PLANLAGT'
-        ? 'Planlagt'
-        : v.status === 'GENNEMFOERT'
-          ? 'Gennemfoert'
-          : 'Aflyst'
+      v.status === 'PLANLAGT' ? 'Planlagt' : v.status === 'GENNEMFOERT' ? 'Gennemfoert' : 'Aflyst'
     return {
       id: v.id,
       typeLabel: humanizeVisitType(v.visit_type),

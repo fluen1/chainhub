@@ -27,8 +27,7 @@ const BADGE_TONES: Record<string, string> = {
 }
 
 export function CasesSection({ cases, totalCount }: CasesSectionProps) {
-  const badge =
-    totalCount > 0 ? { label: `${totalCount} aktive`, tone: 'red' as const } : undefined
+  const badge = totalCount > 0 ? { label: `${totalCount} aktive`, tone: 'red' as const } : undefined
 
   return (
     <SectionCard title="Åbne sager" badge={badge}>
@@ -53,7 +52,12 @@ export function CasesSection({ cases, totalCount }: CasesSectionProps) {
               <div className="text-xs font-semibold text-slate-900">{c.title}</div>
               <div className="text-[11px] text-slate-400">{c.meta}</div>
             </div>
-            <span className={cn('whitespace-nowrap rounded-md px-2 py-[3px] text-[10px] font-bold', BADGE_TONES[c.badge.tone])}>
+            <span
+              className={cn(
+                'whitespace-nowrap rounded-md px-2 py-[3px] text-[10px] font-bold',
+                BADGE_TONES[c.badge.tone]
+              )}
+            >
               {c.badge.label}
             </span>
           </Link>

@@ -1,5 +1,7 @@
 # SPRINT-PLAN.md
+
 # ChainHub — Byggeplan
+
 **Version 0.5**
 
 ---

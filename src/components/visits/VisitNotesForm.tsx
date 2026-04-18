@@ -56,9 +56,7 @@ export function VisitNotesForm({
 
       {showSummary && (
         <>
-          <h2 className="text-base font-semibold text-gray-900 pt-2">
-            Opsummering
-          </h2>
+          <h2 className="text-base font-semibold text-gray-900 pt-2">Opsummering</h2>
           <textarea
             value={summary}
             onChange={(e) => setSummary(e.target.value)}

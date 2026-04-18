@@ -23,7 +23,11 @@ const SENSITIVITY_OPTIONS: { value: SensitivityLevelValue; label: string }[] = [
 ]
 
 const SENSITIVITY_ORDER: SensitivityLevelValue[] = [
-  'PUBLIC', 'STANDARD', 'INTERN', 'FORTROLIG', 'STRENGT_FORTROLIG',
+  'PUBLIC',
+  'STANDARD',
+  'INTERN',
+  'FORTROLIG',
+  'STRENGT_FORTROLIG',
 ]
 
 export function CreateContractForm() {
@@ -48,7 +52,9 @@ export function CreateContractForm() {
   // Opdater minimum-sensitivitet når type ændres
   useEffect(() => {
     if (selectedType && SENSITIVITY_MINIMUM[selectedType as ContractSystemTypeKey]) {
-      setMinSensitivity(SENSITIVITY_MINIMUM[selectedType as ContractSystemTypeKey] as SensitivityLevelValue)
+      setMinSensitivity(
+        SENSITIVITY_MINIMUM[selectedType as ContractSystemTypeKey] as SensitivityLevelValue
+      )
     } else {
       setMinSensitivity('STANDARD')
     }
@@ -108,9 +114,7 @@ export function CreateContractForm() {
           <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Grunddata</h2>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Tilknyttet selskab *
-            </label>
+            <label className="block text-sm font-medium text-gray-700">Tilknyttet selskab *</label>
             <select
               name="companyId"
               required
@@ -120,15 +124,15 @@ export function CreateContractForm() {
             >
               <option value="">Vælg selskab...</option>
               {companies.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
               ))}
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Kontrakttype *
-            </label>
+            <label className="block text-sm font-medium text-gray-700">Kontrakttype *</label>
             <select
               name="systemType"
               required
@@ -145,15 +149,16 @@ export function CreateContractForm() {
             </select>
             {selectedType && (
               <p className="mt-1 text-xs text-gray-500">
-                Minimum sensitivitet: <span className="font-medium">{SENSITIVITY_MINIMUM[selectedType as ContractSystemTypeKey] ?? 'STANDARD'}</span>
+                Minimum sensitivitet:{' '}
+                <span className="font-medium">
+                  {SENSITIVITY_MINIMUM[selectedType as ContractSystemTypeKey] ?? 'STANDARD'}
+                </span>
               </p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Kontraktens navn *
-            </label>
+            <label className="block text-sm font-medium text-gray-700">Kontraktens navn *</label>
             <input
               name="displayName"
               type="text"
@@ -161,13 +166,13 @@ export function CreateContractForm() {
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
               placeholder="fx Ejeraftale Tandlæge Østerbro ApS 2024"
             />
-            <p className="mt-1 text-xs text-gray-500">Dit eget navn til kontrakten — vises i oversigten</p>
+            <p className="mt-1 text-xs text-gray-500">
+              Dit eget navn til kontrakten — vises i oversigten
+            </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Sensitivitetsniveau *
-            </label>
+            <label className="block text-sm font-medium text-gray-700">Sensitivitetsniveau *</label>
             <select
               name="sensitivity"
               required
@@ -186,7 +191,9 @@ export function CreateContractForm() {
 
         {/* Datoer */}
         <div className="space-y-4 border-t pt-4">
-          <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Datoer og vilkår</h2>
+          <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
+            Datoer og vilkår
+          </h2>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -227,7 +234,9 @@ export function CreateContractForm() {
 
         {/* Advisering */}
         <div className="space-y-3 border-t pt-4">
-          <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Advisering</h2>
+          <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
+            Advisering
+          </h2>
           <p className="text-xs text-gray-500">Hvornår skal du adviseres om udløb?</p>
           <div className="space-y-2">
             <label className="flex items-center gap-2">

@@ -20,9 +20,7 @@ const fieldDecisionSchema = z.object({
   confidence: z.number().nullable(),
 })
 
-export async function approveDocumentReview(
-  extractionId: string
-): Promise<ActionResult<void>> {
+export async function approveDocumentReview(extractionId: string): Promise<ActionResult<void>> {
   const parsed = approveSchema.safeParse(extractionId)
   if (!parsed.success) return { error: 'Ugyldigt ekstraktions-ID' }
 
@@ -119,8 +117,7 @@ export async function saveFieldDecision(params: {
   })
 
   // Update field_decisions JSON on the extraction
-  const currentDecisions =
-    (extraction.field_decisions as Record<string, unknown>) ?? {}
+  const currentDecisions = (extraction.field_decisions as Record<string, unknown>) ?? {}
   const updatedDecisions = {
     ...currentDecisions,
     [params.fieldName]: {

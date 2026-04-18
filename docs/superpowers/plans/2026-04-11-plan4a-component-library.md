@@ -15,6 +15,7 @@
 ## Scope
 
 ### In scope (this plan)
+
 - Types: `src/types/ui.ts` with component interfaces (CalendarEvent, Insight, UrgencyItem, SidebarBadge, InlineKpi, NavSection)
 - 9 atoms in `src/components/ui/`:
   - `fin-row.tsx`, `coverage-bar.tsx`, `health-bar.tsx`, `kpi-card.tsx`
@@ -26,6 +27,7 @@
 - One `.test.tsx` file per component (11 test files total)
 
 ### Out of scope (Plan 4B / 4C)
+
 - Wiring components to real data (Plan 4B)
 - Replacing `app/(dashboard)/layout.tsx` (Plan 4B)
 - Deleting the old `sidebar.tsx`/`header.tsx`/`MobileNav.tsx` (Plan 4B)
@@ -33,6 +35,7 @@
 - Tasks / Calendar / Search / Settings pages (Plan 4C)
 
 ### Key design decisions
+
 - **No mock imports.** All proto components imported from `@/mock/*`. We rip those out — every component takes all needed data via props.
 - **No `usePrototype`.** Proto used a role provider. The new components receive `role` and `userName` as props.
 - **New naming.** `ProtoCoverageBar` → `CoverageBar`. Layout components get `app-` prefix to avoid colliding with existing `sidebar.tsx`/`header.tsx` until Plan 4B swaps them in.
@@ -44,6 +47,7 @@
 ## Task 0: Setup — shared types + directory structure
 
 **Files:**
+
 - Create: `src/types/ui.ts`
 - Verify: `src/components/ui/` directory exists (it should — shadcn-style)
 
@@ -108,7 +112,15 @@ export interface InlineKpi {
 export interface NavItem {
   name: string
   href: string
-  iconName: 'LayoutDashboard' | 'Building2' | 'FileText' | 'CheckSquare' | 'FolderOpen' | 'Calendar' | 'Users' | 'Briefcase'
+  iconName:
+    | 'LayoutDashboard'
+    | 'Building2'
+    | 'FileText'
+    | 'CheckSquare'
+    | 'FolderOpen'
+    | 'Calendar'
+    | 'Users'
+    | 'Briefcase'
   badgeKey: string
 }
 
@@ -120,11 +132,16 @@ export interface NavSection {
 // Hjælper: map CalendarEventType → hex-farve (bruges af widget + kalender-side)
 export function getEventTypeColor(type: CalendarEventType): string {
   switch (type) {
-    case 'expiry':   return '#ef4444'
-    case 'deadline': return '#f59e0b'
-    case 'meeting':  return '#3b82f6'
-    case 'case':     return '#8b5cf6'
-    case 'renewal':  return '#22c55e'
+    case 'expiry':
+      return '#ef4444'
+    case 'deadline':
+      return '#f59e0b'
+    case 'meeting':
+      return '#3b82f6'
+    case 'case':
+      return '#8b5cf6'
+    case 'renewal':
+      return '#22c55e'
   }
 }
 ```
@@ -146,6 +163,7 @@ git commit -m "feat(types): add shared UI types for plan 4a component library"
 ## Task 1: FinRow — finans-række til paneler
 
 **Files:**
+
 - Create: `src/components/ui/fin-row.tsx`
 - Test: `src/__tests__/components/fin-row.test.tsx`
 
@@ -250,6 +268,7 @@ git commit -m "feat(ui): add FinRow component from proto with unit tests"
 ## Task 2: CoverageBar — kontraktdæknings-bar
 
 **Files:**
+
 - Create: `src/components/ui/coverage-bar.tsx`
 - Test: `src/__tests__/components/coverage-bar.test.tsx`
 
@@ -268,11 +287,8 @@ export interface CoverageBarProps {
 }
 
 export function CoverageBar({ label, percentage }: CoverageBarProps) {
-  const fillColor = percentage >= 100
-    ? 'bg-green-500'
-    : percentage >= 75
-      ? 'bg-blue-500'
-      : 'bg-amber-500'
+  const fillColor =
+    percentage >= 100 ? 'bg-green-500' : percentage >= 75 ? 'bg-blue-500' : 'bg-amber-500'
 
   return (
     <div className="flex items-center gap-3 mb-3.5">
@@ -348,6 +364,7 @@ git commit -m "feat(ui): add CoverageBar component from proto with unit tests"
 ## Task 3: HealthBar — portfolio health-indicator
 
 **Files:**
+
 - Create: `src/components/ui/health-bar.tsx`
 - Test: `src/__tests__/components/health-bar.test.tsx`
 
@@ -445,6 +462,7 @@ git commit -m "feat(ui): add HealthBar component from proto with unit tests"
 ## Task 4: KpiCard — dashboard KPI-kort
 
 **Files:**
+
 - Create: `src/components/ui/kpi-card.tsx`
 - Test: `src/__tests__/components/kpi-card.test.tsx`
 
@@ -559,6 +577,7 @@ git commit -m "feat(ui): add KpiCard component from proto with unit tests"
 ## Task 5: SectionHeader — sektion-divider
 
 **Files:**
+
 - Create: `src/components/ui/section-header.tsx`
 - Test: `src/__tests__/components/section-header.test.tsx`
 
@@ -624,6 +643,7 @@ git commit -m "feat(ui): add SectionHeader component from proto with unit tests"
 ## Task 6: InsightCard — AI-indsigter med dismiss
 
 **Files:**
+
 - Create: `src/components/ui/insight-card.tsx`
 - Test: `src/__tests__/components/insight-card.test.tsx`
 
@@ -637,7 +657,15 @@ Create `src/components/ui/insight-card.tsx`:
 'use client'
 
 import { useState } from 'react'
-import { AlertTriangle, TrendingDown, FileWarning, BarChart3, CheckCircle2, ArrowRight, X } from 'lucide-react'
+import {
+  AlertTriangle,
+  TrendingDown,
+  FileWarning,
+  BarChart3,
+  CheckCircle2,
+  ArrowRight,
+  X,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Insight, InsightType } from '@/types/ui'
 
@@ -676,10 +704,7 @@ export function InsightCard({ insight }: InsightCardProps) {
 
   return (
     <div
-      className={cn(
-        'border-l-4 rounded-r-xl px-4 py-3 bg-white shadow-sm',
-        colorMap[insight.type],
-      )}
+      className={cn('border-l-4 rounded-r-xl px-4 py-3 bg-white shadow-sm', colorMap[insight.type])}
     >
       <div className="flex items-start gap-3">
         <div className={cn('mt-0.5 shrink-0', iconBgMap[insight.type])}>
@@ -781,6 +806,7 @@ git commit -m "feat(ui): add InsightCard component from proto with unit tests"
 ## Task 7: UrgencyList — liste af urgency-items
 
 **Files:**
+
 - Create: `src/components/ui/urgency-list.tsx`
 - Test: `src/__tests__/components/urgency-list.test.tsx`
 
@@ -815,7 +841,10 @@ export function UrgencyList({ title, items, viewAllHref }: UrgencyListProps) {
       </div>
       <div className="space-y-0">
         {items.map((item) => (
-          <div key={item.id} className="flex items-center gap-3 border-b border-slate-50 py-2.5 last:border-none">
+          <div
+            key={item.id}
+            className="flex items-center gap-3 border-b border-slate-50 py-2.5 last:border-none"
+          >
             <div
               className={cn(
                 'w-1 self-stretch rounded-full',
@@ -858,8 +887,21 @@ import { UrgencyList } from '@/components/ui/urgency-list'
 import type { UrgencyItem } from '@/types/ui'
 
 const items: UrgencyItem[] = [
-  { id: 'u1', name: 'Ejeraftale Nordklinik', subtitle: 'Nordklinik ApS', days: '3d over', indicator: 'red', overdue: true },
-  { id: 'u2', name: 'Huslejekontrakt Sundby', subtitle: 'Sundby Dental', days: '14 dage', indicator: 'amber' },
+  {
+    id: 'u1',
+    name: 'Ejeraftale Nordklinik',
+    subtitle: 'Nordklinik ApS',
+    days: '3d over',
+    indicator: 'red',
+    overdue: true,
+  },
+  {
+    id: 'u2',
+    name: 'Huslejekontrakt Sundby',
+    subtitle: 'Sundby Dental',
+    days: '14 dage',
+    indicator: 'amber',
+  },
 ]
 
 describe('UrgencyList', () => {
@@ -910,6 +952,7 @@ git commit -m "feat(ui): add UrgencyList component from proto with unit tests"
 ## Task 8: CompanyRow — selskabs-række med status
 
 **Files:**
+
 - Create: `src/components/ui/company-row.tsx`
 - Test: `src/__tests__/components/company-row.test.tsx`
 
@@ -961,7 +1004,11 @@ export function CompanyRow({ initials, name, meta, status, avatarColor, href }: 
   const className = 'flex items-center gap-3 border-b border-slate-50 py-2.5 last:border-none'
 
   if (href) {
-    return <Link href={href} className={cn(className, 'cursor-pointer hover:bg-slate-50')}>{content}</Link>
+    return (
+      <Link href={href} className={cn(className, 'cursor-pointer hover:bg-slate-50')}>
+        {content}
+      </Link>
+    )
   }
   return <div className={className}>{content}</div>
 }
@@ -995,7 +1042,10 @@ describe('CompanyRow', () => {
   it('viser status badge med grøn farve for ok', () => {
     render(
       <CompanyRow
-        initials="X" name="Test" meta="t" avatarColor="#000"
+        initials="X"
+        name="Test"
+        meta="t"
+        avatarColor="#000"
         status={{ label: 'Aktiv', type: 'ok' }}
       />
     )
@@ -1005,7 +1055,10 @@ describe('CompanyRow', () => {
   it('wrapper i <a> når href er angivet', () => {
     render(
       <CompanyRow
-        initials="X" name="Klikbar" meta="t" avatarColor="#000"
+        initials="X"
+        name="Klikbar"
+        meta="t"
+        avatarColor="#000"
         status={{ label: 'Aktiv', type: 'ok' }}
         href="/companies/123"
       />
@@ -1017,7 +1070,10 @@ describe('CompanyRow', () => {
   it('anvender avatarColor som inline backgroundColor', () => {
     render(
       <CompanyRow
-        initials="AB" name="T" meta="t" avatarColor="#ef4444"
+        initials="AB"
+        name="T"
+        meta="t"
+        avatarColor="#ef4444"
         status={{ label: 'Kritisk', type: 'critical' }}
       />
     )
@@ -1044,10 +1100,12 @@ git commit -m "feat(ui): add CompanyRow component from proto with unit tests"
 ## Task 9: CalendarWidget — månedskalender + kommende events
 
 **Files:**
+
 - Create: `src/components/ui/calendar-widget.tsx`
 - Test: `src/__tests__/components/calendar-widget.test.tsx`
 
 **Changes from proto:**
+
 - Takes `events: CalendarEvent[]`, `upcoming: CalendarEvent[]`, `today: string` as props (no mock imports)
 - Link destination: `/calendar` instead of `/proto/calendar`
 - Default today = `new Date().toISOString().slice(0, 10)` if prop omitted
@@ -1088,7 +1146,7 @@ function getFirstDayOfWeek(year: number, month: number) {
 function formatEventDate(dateStr: string, today: string): string {
   if (dateStr === today) return 'I dag'
   const d = new Date(dateStr)
-  return `${d.getDate()}. ${['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'][d.getMonth()]}`
+  return `${d.getDate()}. ${['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'][d.getMonth()]}`
 }
 
 export interface CalendarWidgetProps {
@@ -1127,34 +1185,72 @@ export function CalendarWidget({
     return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}` === today
   }
 
-  const monthNames = ['Januar', 'Februar', 'Marts', 'April', 'Maj', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'December']
+  const monthNames = [
+    'Januar',
+    'Februar',
+    'Marts',
+    'April',
+    'Maj',
+    'Juni',
+    'Juli',
+    'August',
+    'September',
+    'Oktober',
+    'November',
+    'December',
+  ]
 
   function prevMonth() {
-    if (month === 1) { setYear(year - 1); setMonth(12) }
-    else setMonth(month - 1)
+    if (month === 1) {
+      setYear(year - 1)
+      setMonth(12)
+    } else setMonth(month - 1)
   }
 
   function nextMonth() {
-    if (month === 12) { setYear(year + 1); setMonth(1) }
-    else setMonth(month + 1)
+    if (month === 12) {
+      setYear(year + 1)
+      setMonth(1)
+    } else setMonth(month + 1)
   }
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-5">
       <div className="flex items-center justify-between mb-4">
-        <div className="text-sm font-semibold text-slate-900">{monthNames[month - 1]} {year}</div>
+        <div className="text-sm font-semibold text-slate-900">
+          {monthNames[month - 1]} {year}
+        </div>
         <div className="flex gap-1">
-          <button type="button" onClick={prevMonth} aria-label="Forrige måned" className="flex h-7 w-7 items-center justify-center rounded-md border border-gray-200 text-xs text-slate-500 hover:bg-slate-50 transition-colors">‹</button>
-          <button type="button" onClick={nextMonth} aria-label="Næste måned" className="flex h-7 w-7 items-center justify-center rounded-md border border-gray-200 text-xs text-slate-500 hover:bg-slate-50 transition-colors">›</button>
+          <button
+            type="button"
+            onClick={prevMonth}
+            aria-label="Forrige måned"
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-gray-200 text-xs text-slate-500 hover:bg-slate-50 transition-colors"
+          >
+            ‹
+          </button>
+          <button
+            type="button"
+            onClick={nextMonth}
+            aria-label="Næste måned"
+            className="flex h-7 w-7 items-center justify-center rounded-md border border-gray-200 text-xs text-slate-500 hover:bg-slate-50 transition-colors"
+          >
+            ›
+          </button>
         </div>
       </div>
 
       <div className="grid grid-cols-7 gap-0.5 mb-4">
         {WEEKDAYS.map((d) => (
-          <div key={d} className="py-1 text-center text-[11px] font-medium text-gray-400">{d}</div>
+          <div key={d} className="py-1 text-center text-[11px] font-medium text-gray-400">
+            {d}
+          </div>
         ))}
         {prevDays.map((d) => (
-          <div key={`prev-${d}`} className="py-1.5 text-center text-[13px] text-gray-300 rounded-lg">
+          <div
+            key={`prev-${d}`}
+            className="py-1.5 text-center text-[13px] text-gray-300 rounded-lg"
+          >
             {d}
             <div className="flex justify-center gap-0.5 mt-0.5 min-h-[6px]" />
           </div>
@@ -1185,7 +1281,10 @@ export function CalendarWidget({
           )
         })}
         {nextDays.map((d) => (
-          <div key={`next-${d}`} className="py-1.5 text-center text-[13px] text-gray-300 rounded-lg">
+          <div
+            key={`next-${d}`}
+            className="py-1.5 text-center text-[13px] text-gray-300 rounded-lg"
+          >
             {d}
             <div className="flex justify-center gap-0.5 mt-0.5 min-h-[6px]" />
           </div>
@@ -1200,7 +1299,10 @@ export function CalendarWidget({
 
       <div className="space-y-0">
         {upcoming.map((ev) => (
-          <div key={ev.id} className="flex items-start gap-2.5 border-b border-slate-50/80 py-2 last:border-none">
+          <div
+            key={ev.id}
+            className="flex items-start gap-2.5 border-b border-slate-50/80 py-2 last:border-none"
+          >
             <div
               className="mt-0.5 w-1 min-h-[28px] self-stretch rounded-full"
               style={{ backgroundColor: getEventTypeColor(ev.type) }}
@@ -1241,7 +1343,10 @@ export function CalendarWidget({
       </div>
 
       <div className="mt-3 text-center">
-        <Link href={fullCalendarHref} className="text-xs font-medium text-blue-500 hover:text-blue-600 transition-colors">
+        <Link
+          href={fullCalendarHref}
+          className="text-xs font-medium text-blue-500 hover:text-blue-600 transition-colors"
+        >
           Åbn fuld kalender →
         </Link>
       </div>
@@ -1261,9 +1366,28 @@ import { CalendarWidget } from '@/components/ui/calendar-widget'
 import type { CalendarEvent } from '@/types/ui'
 
 const events: CalendarEvent[] = [
-  { id: 'e1', date: '2026-04-11', title: 'Udløb lejekontrakt', subtitle: 'Tandlæge Østerbro', type: 'expiry' },
-  { id: 'e2', date: '2026-04-15', title: 'Bestyrelsesmøde', subtitle: 'TandlægeGruppen', type: 'meeting' },
-  { id: 'e3', date: '2026-04-20', title: 'Sagsfrist', subtitle: 'Lejeforhandling', type: 'deadline', aiExtracted: true },
+  {
+    id: 'e1',
+    date: '2026-04-11',
+    title: 'Udløb lejekontrakt',
+    subtitle: 'Tandlæge Østerbro',
+    type: 'expiry',
+  },
+  {
+    id: 'e2',
+    date: '2026-04-15',
+    title: 'Bestyrelsesmøde',
+    subtitle: 'TandlægeGruppen',
+    type: 'meeting',
+  },
+  {
+    id: 'e3',
+    date: '2026-04-20',
+    title: 'Sagsfrist',
+    subtitle: 'Lejeforhandling',
+    type: 'deadline',
+    aiExtracted: true,
+  },
 ]
 
 const upcoming: CalendarEvent[] = [events[0], events[1]]
@@ -1308,7 +1432,14 @@ describe('CalendarWidget', () => {
   })
 
   it('link peger på fullCalendarHref', () => {
-    render(<CalendarWidget events={events} upcoming={upcoming} today="2026-04-11" fullCalendarHref="/calendar" />)
+    render(
+      <CalendarWidget
+        events={events}
+        upcoming={upcoming}
+        today="2026-04-11"
+        fullCalendarHref="/calendar"
+      />
+    )
     const link = screen.getByRole('link', { name: /Åbn fuld kalender/ })
     expect(link).toHaveAttribute('href', '/calendar')
   })
@@ -1332,10 +1463,12 @@ git commit -m "feat(ui): add CalendarWidget component from proto with unit tests
 ## Task 10: AppSidebar — proto-designet sidebar
 
 **Files:**
+
 - Create: `src/components/layout/app-sidebar.tsx`
 - Test: `src/__tests__/components/app-sidebar.test.tsx`
 
 **Changes from proto:**
+
 - No `usePrototype` hook → takes `role: string`, `userName: string`, `userRoleLabel: string`, `badges: Record<string, SidebarBadge | null>` as props
 - Real routes instead of `/proto/*`
 - `Sager` route is `/cases` (not `/proto/portfolio`)
@@ -1381,23 +1514,23 @@ const SECTIONS: NavSection[] = [
     label: 'Overblik',
     items: [
       { name: 'Dashboard', href: '/dashboard', iconName: 'LayoutDashboard', badgeKey: 'dashboard' },
-      { name: 'Kalender',  href: '/calendar',  iconName: 'Calendar',        badgeKey: 'calendar' },
+      { name: 'Kalender', href: '/calendar', iconName: 'Calendar', badgeKey: 'calendar' },
     ],
   },
   {
     label: 'Portefølje',
     items: [
-      { name: 'Selskaber',  href: '/companies', iconName: 'Building2',   badgeKey: 'portfolio' },
-      { name: 'Kontrakter', href: '/contracts', iconName: 'FileText',    badgeKey: 'contracts' },
-      { name: 'Sager',      href: '/cases',     iconName: 'Briefcase',   badgeKey: 'cases' },
-      { name: 'Opgaver',    href: '/tasks',     iconName: 'CheckSquare', badgeKey: 'tasks' },
+      { name: 'Selskaber', href: '/companies', iconName: 'Building2', badgeKey: 'portfolio' },
+      { name: 'Kontrakter', href: '/contracts', iconName: 'FileText', badgeKey: 'contracts' },
+      { name: 'Sager', href: '/cases', iconName: 'Briefcase', badgeKey: 'cases' },
+      { name: 'Opgaver', href: '/tasks', iconName: 'CheckSquare', badgeKey: 'tasks' },
     ],
   },
   {
     label: 'Ressourcer',
     items: [
       { name: 'Dokumenter', href: '/documents', iconName: 'FolderOpen', badgeKey: 'documents' },
-      { name: 'Personer',   href: '/persons',   iconName: 'Users',      badgeKey: 'persons' },
+      { name: 'Personer', href: '/persons', iconName: 'Users', badgeKey: 'persons' },
     ],
   },
 ]
@@ -1411,7 +1544,12 @@ export interface AppSidebarProps {
 export function AppSidebar({ userName, userRoleLabel, badges }: AppSidebarProps) {
   const pathname = usePathname() ?? ''
 
-  const initials = userName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
+  const initials = userName
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
 
   return (
     <div className="flex h-full w-60 flex-col bg-[#0f172a]">
@@ -1587,10 +1725,12 @@ git commit -m "feat(layout): add AppSidebar component from proto with unit tests
 ## Task 11: AppHeader — proto-designet header med inline KPIs
 
 **Files:**
+
 - Create: `src/components/layout/app-header.tsx`
 - Test: `src/__tests__/components/app-header.test.tsx`
 
 **Changes from proto:**
+
 - No `usePrototype` — takes `userName`, `kpis: InlineKpi[]` as props
 - Greeting + date computed at render time from `new Date()`
 - Søge-input er readOnly placeholder (wiring til `/search` sker i Plan 4C)
@@ -1615,7 +1755,20 @@ function getGreeting(): string {
 
 function getDateString(): string {
   const days = ['Søndag', 'Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag']
-  const months = ['januar', 'februar', 'marts', 'april', 'maj', 'juni', 'juli', 'august', 'september', 'oktober', 'november', 'december']
+  const months = [
+    'januar',
+    'februar',
+    'marts',
+    'april',
+    'maj',
+    'juni',
+    'juli',
+    'august',
+    'september',
+    'oktober',
+    'november',
+    'december',
+  ]
   const now = new Date()
   return `${days[now.getDay()]} ${now.getDate()}. ${months[now.getMonth()]} ${now.getFullYear()}`
 }
@@ -1627,7 +1780,12 @@ export interface AppHeaderProps {
 
 export function AppHeader({ userName, kpis }: AppHeaderProps) {
   const firstName = userName.split(' ')[0]
-  const initials = userName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
+  const initials = userName
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
 
   return (
     <header className="flex items-center justify-between border-b border-gray-200 bg-white px-8 h-14 py-0">
@@ -1650,7 +1808,7 @@ export function AppHeader({ userName, kpis }: AppHeaderProps) {
                   'text-[18px] font-bold tabular-nums leading-tight',
                   kpi.color === 'red' && 'text-red-600',
                   kpi.color === 'amber' && 'text-amber-600',
-                  !kpi.color && 'text-slate-900',
+                  !kpi.color && 'text-slate-900'
                 )}
               >
                 {kpi.value}
@@ -1668,7 +1826,11 @@ export function AppHeader({ userName, kpis }: AppHeaderProps) {
           placeholder="Søg efter selskaber, kontrakter, personer..."
           readOnly
         />
-        <button type="button" aria-label="Notifikationer" className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-slate-50 text-gray-400 hover:bg-slate-100 transition-colors">
+        <button
+          type="button"
+          aria-label="Notifikationer"
+          className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-slate-50 text-gray-400 hover:bg-slate-100 transition-colors"
+        >
           <Bell className="h-4 w-4" />
           <div className="absolute top-1.5 right-1.5 h-[7px] w-[7px] rounded-full bg-red-500 border-2 border-white" />
         </button>
@@ -1828,6 +1990,7 @@ Otherwise skip.
 ## What comes next
 
 **Plan 4B: Dashboard + Layout**
+
 - Replace `app/(dashboard)/layout.tsx` to use `AppSidebar` + `AppHeader`
 - Delete old `sidebar.tsx`, `header.tsx`, `MobileNav.tsx`
 - Rewrite `/dashboard` page with Timeline River + role-specific right panels
@@ -1835,6 +1998,7 @@ Otherwise skip.
 - Wire `FinRow`, `CoverageBar`, `HealthBar`, `KpiCard`, `UrgencyList`, `CompanyRow`, `CalendarWidget`, `SectionHeader`, `InsightCard` into dashboard
 
 **Plan 4C: Remaining pages**
+
 - `/tasks` list + `/tasks/[id]` detail
 - `/calendar` full page
 - `/search` global search

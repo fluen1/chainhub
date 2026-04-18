@@ -20,7 +20,10 @@ export function PageSkeleton({ rows = 6 }: { rows?: number }) {
       {/* Rows skeleton */}
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
         {Array.from({ length: rows }).map((_, i) => (
-          <div key={i} className="flex items-center gap-4 border-b border-gray-100 px-6 py-4 last:border-0">
+          <div
+            key={i}
+            className="flex items-center gap-4 border-b border-gray-100 px-6 py-4 last:border-0"
+          >
             <div className="h-9 w-9 rounded-md bg-gray-100 shrink-0" />
             <div className="flex-1 space-y-2">
               <div className="h-4 w-3/5 rounded bg-gray-100" />
@@ -42,7 +45,10 @@ export function DashboardSkeleton() {
         <div className="space-y-4">
           <div className="h-4 w-20 rounded bg-gray-200" />
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-3 bg-white border border-gray-200 rounded-lg px-4 py-3">
+            <div
+              key={i}
+              className="flex items-center gap-3 bg-white border border-gray-200 rounded-lg px-4 py-3"
+            >
               <div className="h-7 w-7 rounded-md bg-gray-100" />
               <div className="flex-1 space-y-1.5">
                 <div className="h-3.5 w-3/4 rounded bg-gray-100" />

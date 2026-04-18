@@ -109,11 +109,7 @@ export function UploadVersionForm({ contractId, companyId }: UploadVersionFormPr
         onClick={() => setIsOpen(!isOpen)}
         className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-800"
       >
-        {isOpen ? (
-          <ChevronUp className="h-4 w-4" />
-        ) : (
-          <ChevronDown className="h-4 w-4" />
-        )}
+        {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         Upload ny version
       </button>
 
@@ -150,9 +146,7 @@ export function UploadVersionForm({ contractId, companyId }: UploadVersionFormPr
                     <p className="text-sm font-medium text-gray-900 truncate">
                       {selectedFile.name}
                     </p>
-                    <p className="text-xs text-gray-500">
-                      {formatFileSize(selectedFile.size)}
-                    </p>
+                    <p className="text-xs text-gray-500">{formatFileSize(selectedFile.size)}</p>
                   </div>
                 </div>
                 <button
@@ -181,10 +175,7 @@ export function UploadVersionForm({ contractId, companyId }: UploadVersionFormPr
           {/* Change type + note */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <label
-                htmlFor="change-type"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
+              <label htmlFor="change-type" className="block text-sm font-medium text-gray-700 mb-1">
                 Ændringstype
               </label>
               <select
@@ -201,10 +192,7 @@ export function UploadVersionForm({ contractId, companyId }: UploadVersionFormPr
               </select>
             </div>
             <div>
-              <label
-                htmlFor="change-note"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
+              <label htmlFor="change-note" className="block text-sm font-medium text-gray-700 mb-1">
                 Ændringsnote (valgfrit)
               </label>
               <textarea

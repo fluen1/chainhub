@@ -39,11 +39,7 @@ describe('FinanceSection', () => {
   })
 
   it('negativt resultat vises i roed', () => {
-    render(
-      <FinanceSection
-        data={{ ...healthy, resultat: { value_k: -50, positive: false } }}
-      />
-    )
+    render(<FinanceSection data={{ ...healthy, resultat: { value_k: -50, positive: false } }} />)
     const res = screen.getByText('-50K kr.')
     expect(res).toHaveClass('text-red-600')
   })

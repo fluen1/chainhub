@@ -3,7 +3,15 @@ import { redirect, notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { canAccessCompany, canAccessSensitivity, canAccessModule } from '@/lib/permissions'
 import ContractDetailClient from './contract-detail-client'
-import type { ContractDetailData, RelatedCase, RelatedTask, RelatedDocument, RelatedContract, KeyTermData, ActivityItem } from './contract-detail-client'
+import type {
+  ContractDetailData,
+  RelatedCase,
+  RelatedTask,
+  RelatedDocument,
+  RelatedContract,
+  KeyTermData,
+  ActivityItem,
+} from './contract-detail-client'
 import {
   getContractTypeLabel,
   getContractStatusLabel,
@@ -32,7 +40,13 @@ type DerivedStatus = 'expired' | 'expiring' | 'active'
 
 function deriveStatus(status: string, daysUntilExpiry: number | null): DerivedStatus {
   if (status === 'UDLOEBET') return 'expired'
-  if (status === 'AKTIV' && daysUntilExpiry != null && daysUntilExpiry >= 0 && daysUntilExpiry <= 90) return 'expiring'
+  if (
+    status === 'AKTIV' &&
+    daysUntilExpiry != null &&
+    daysUntilExpiry >= 0 &&
+    daysUntilExpiry <= 90
+  )
+    return 'expiring'
   return 'active'
 }
 
@@ -120,10 +134,7 @@ export default async function ContractDetailPage({ params }: Props) {
       where: {
         organization_id: orgId,
         deleted_at: null,
-        OR: [
-          { contract_id: contract.id },
-          { company_id: contract.company_id },
-        ],
+        OR: [{ contract_id: contract.id }, { company_id: contract.company_id }],
         status: { not: 'LUKKET' },
       },
       include: {
@@ -186,30 +197,33 @@ export default async function ContractDetailPage({ params }: Props) {
     : null
 
   // Parter string
-  const parterStr = contract.parties.length > 0
-    ? contract.parties
-        .map((p) =>
-          p.person
-            ? `${p.person.first_name} ${p.person.last_name}`
-            : p.counterparty_name ?? 'Ekstern part'
-        )
-        .join(' · ')
-    : '—'
+  const parterStr =
+    contract.parties.length > 0
+      ? contract.parties
+          .map((p) =>
+            p.person
+              ? `${p.person.first_name} ${p.person.last_name}`
+              : (p.counterparty_name ?? 'Ekstern part')
+          )
+          .join(' · ')
+      : '—'
 
   const keyTerms: KeyTermData = {
-    type: extractionFields?.type as string
-      ?? `${categoryLabel} — ${getContractTypeLabel(contract.system_type)}`,
-    parter: extractionFields?.parties as string ?? parterStr,
-    loebetid: extractionFields?.duration as string
-      ?? (contract.expiry_date ? 'Aftalt løbetid' : 'Løbende aftale'),
-    udloeb: extractionFields?.expiry as string
-      ?? (contract.expiry_date
+    type:
+      (extractionFields?.type as string) ??
+      `${categoryLabel} — ${getContractTypeLabel(contract.system_type)}`,
+    parter: (extractionFields?.parties as string) ?? parterStr,
+    loebetid:
+      (extractionFields?.duration as string) ??
+      (contract.expiry_date ? 'Aftalt løbetid' : 'Løbende aftale'),
+    udloeb:
+      (extractionFields?.expiry as string) ??
+      (contract.expiry_date
         ? `${formatDate(contract.expiry_date)} (${relativeDate(daysUntilExpiry)})`
         : 'Ingen udløbsdato'),
-    opsigelse: extractionFields?.notice_period as string
-      ?? (contract.notice_period_days
-        ? `${contract.notice_period_days} dages varsel`
-        : '—'),
+    opsigelse:
+      (extractionFields?.notice_period as string) ??
+      (contract.notice_period_days ? `${contract.notice_period_days} dages varsel` : '—'),
     status: getContractStatusLabel(contract.status),
     hasExtractionData,
   }
@@ -250,9 +264,7 @@ export default async function ContractDetailPage({ params }: Props) {
     priorityLabel: getPriorityLabel(t.priority),
     status: t.status,
     statusLabel: getTaskStatusLabel(t.status),
-    assignedToName: t.assignee
-      ? t.assignee.name
-      : 'Ikke tildelt',
+    assignedToName: t.assignee ? t.assignee.name : 'Ikke tildelt',
     dueDate: t.due_date ? formatDate(t.due_date) : null,
   }))
 

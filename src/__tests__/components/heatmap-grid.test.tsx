@@ -21,7 +21,11 @@ describe('HeatmapGrid', () => {
     render(<HeatmapGrid companies={companies} />)
     const cellLinks = screen
       .getAllByRole('link')
-      .filter((l) => l.getAttribute('href')?.startsWith('/companies/') && l.getAttribute('href') !== '/companies')
+      .filter(
+        (l) =>
+          l.getAttribute('href')?.startsWith('/companies/') &&
+          l.getAttribute('href') !== '/companies'
+      )
     expect(cellLinks[0]).toHaveAttribute('href', '/companies/c1')
     expect(cellLinks[1]).toHaveAttribute('href', '/companies/c2')
     expect(cellLinks[2]).toHaveAttribute('href', '/companies/c3')
@@ -49,7 +53,11 @@ describe('HeatmapGrid', () => {
     render(<HeatmapGrid companies={many} />)
     const cellLinks = screen
       .getAllByRole('link')
-      .filter((l) => l.getAttribute('href')?.startsWith('/companies/') && l.getAttribute('href') !== '/companies')
+      .filter(
+        (l) =>
+          l.getAttribute('href')?.startsWith('/companies/') &&
+          l.getAttribute('href') !== '/companies'
+      )
     expect(cellLinks).toHaveLength(15)
   })
 })

@@ -6,10 +6,7 @@ import {
   getOverdueTasks,
   getUpcomingTasks,
 } from '@/lib/notifications/deadlines'
-import {
-  buildDigestHtml,
-  buildDigestSubject,
-} from '@/lib/email/templates/digest'
+import { buildDigestHtml, buildDigestSubject } from '@/lib/email/templates/digest'
 
 export async function POST(request: NextRequest) {
   // Auth: tjek cron-hemmelighed
@@ -20,10 +17,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (!resend) {
-    return NextResponse.json(
-      { error: 'RESEND_API_KEY not configured' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'RESEND_API_KEY not configured' }, { status: 500 })
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
@@ -44,19 +38,18 @@ export async function POST(request: NextRequest) {
 
   for (const user of users) {
     try {
-      const [overdueTasks, upcomingTasks, expiringContracts, newCasesCount] =
-        await Promise.all([
-          getOverdueTasks(user.organization_id, user.id),
-          getUpcomingTasks(user.organization_id, user.id, 7),
-          getExpiringContracts(user.organization_id, user.id, [7, 30, 90]),
-          prisma.case.count({
-            where: {
-              organization_id: user.organization_id,
-              deleted_at: null,
-              created_at: { gte: yesterday },
-            },
-          }),
-        ])
+      const [overdueTasks, upcomingTasks, expiringContracts, newCasesCount] = await Promise.all([
+        getOverdueTasks(user.organization_id, user.id),
+        getUpcomingTasks(user.organization_id, user.id, 7),
+        getExpiringContracts(user.organization_id, user.id, [7, 30, 90]),
+        prisma.case.count({
+          where: {
+            organization_id: user.organization_id,
+            deleted_at: null,
+            created_at: { gte: yesterday },
+          },
+        }),
+      ])
 
       // Spring over hvis der ikke er noget at rapportere
       const hasContent =

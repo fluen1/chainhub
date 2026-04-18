@@ -3,7 +3,12 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { canAccessCompany, canAccessModule } from '@/lib/permissions'
-import { createCompanySchema, updateCompanySchema, type CreateCompanyInput, type UpdateCompanyInput } from '@/lib/validations/company'
+import {
+  createCompanySchema,
+  updateCompanySchema,
+  type CreateCompanyInput,
+  type UpdateCompanyInput,
+} from '@/lib/validations/company'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import type { ActionResult } from '@/types/actions'
@@ -12,7 +17,10 @@ import { geocodeAddress } from '@/lib/geocode'
 
 const stamdataSchema = z.object({
   name: z.string().min(1, 'Navn er paakraevet').max(200, 'Navn maa maks vaere 200 tegn'),
-  cvr: z.string().regex(/^\d{8}$/, 'CVR skal vaere 8 cifre').nullable(),
+  cvr: z
+    .string()
+    .regex(/^\d{8}$/, 'CVR skal vaere 8 cifre')
+    .nullable(),
   address: z.string().max(200, 'Adresse maa maks vaere 200 tegn').nullable(),
   city: z.string().max(100, 'By maa maks vaere 100 tegn').nullable(),
   postal_code: z.string().max(10, 'Postnummer maa maks vaere 10 tegn').nullable(),
@@ -21,9 +29,7 @@ const stamdataSchema = z.object({
 
 export type UpdateCompanyStamdataInput = z.infer<typeof stamdataSchema>
 
-export async function createCompany(
-  input: CreateCompanyInput
-): Promise<ActionResult<Company>> {
+export async function createCompany(input: CreateCompanyInput): Promise<ActionResult<Company>> {
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
 
@@ -84,9 +90,7 @@ export async function createCompany(
   }
 }
 
-export async function updateCompany(
-  input: UpdateCompanyInput
-): Promise<ActionResult<Company>> {
+export async function updateCompany(input: UpdateCompanyInput): Promise<ActionResult<Company>> {
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
 
@@ -108,10 +112,14 @@ export async function updateCompany(
       data: {
         ...(parsed.data.name && { name: parsed.data.name }),
         ...(parsed.data.cvr !== undefined && { cvr: parsed.data.cvr || null }),
-        ...(parsed.data.companyType !== undefined && { company_type: parsed.data.companyType || null }),
+        ...(parsed.data.companyType !== undefined && {
+          company_type: parsed.data.companyType || null,
+        }),
         ...(parsed.data.address !== undefined && { address: parsed.data.address || null }),
         ...(parsed.data.city !== undefined && { city: parsed.data.city || null }),
-        ...(parsed.data.postalCode !== undefined && { postal_code: parsed.data.postalCode || null }),
+        ...(parsed.data.postalCode !== undefined && {
+          postal_code: parsed.data.postalCode || null,
+        }),
         ...(parsed.data.notes !== undefined && { notes: parsed.data.notes || null }),
       },
     })
@@ -124,9 +132,7 @@ export async function updateCompany(
   }
 }
 
-export async function deleteCompany(
-  companyId: string
-): Promise<ActionResult<void>> {
+export async function deleteCompany(companyId: string): Promise<ActionResult<void>> {
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
 

@@ -62,7 +62,10 @@ export default async function CaseDetailPage({ params }: Props) {
   let hasAccess = false
   for (const cc of caseItem.case_companies) {
     const ok = await canAccessCompany(session.user.id, cc.company.id)
-    if (ok) { hasAccess = true; break }
+    if (ok) {
+      hasAccess = true
+      break
+    }
   }
   if (!hasAccess) notFound()
 
@@ -72,7 +75,7 @@ export default async function CaseDetailPage({ params }: Props) {
   const caseNumber = descriptionLines[0]?.startsWith('CAS-') ? descriptionLines[0] : ''
   const descriptionText = caseNumber
     ? descriptionLines.slice(1).join('\n').trim()
-    : caseItem.description ?? ''
+    : (caseItem.description ?? '')
 
   const openTasks = caseItem.tasks.filter((t) => t.status !== 'LUKKET')
   const today = new Date()
@@ -86,7 +89,9 @@ export default async function CaseDetailPage({ params }: Props) {
         <div className="flex-1">
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-2xl font-bold text-gray-900">{caseItem.title}</h1>
-            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getCaseStatusStyle(caseItem.status)}`}>
+            <span
+              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getCaseStatusStyle(caseItem.status)}`}
+            >
               {getCaseStatusLabel(caseItem.status)}
             </span>
           </div>
@@ -120,7 +125,9 @@ export default async function CaseDetailPage({ params }: Props) {
             {descriptionText && (
               <div className="mt-4 pt-4 border-t">
                 <dt className="text-sm font-medium text-gray-500">Beskrivelse</dt>
-                <dd className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">{descriptionText}</dd>
+                <dd className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">
+                  {descriptionText}
+                </dd>
               </div>
             )}
           </div>
@@ -162,15 +169,20 @@ export default async function CaseDetailPage({ params }: Props) {
             ) : (
               <ul className="divide-y divide-gray-200">
                 {caseItem.tasks.map((task) => {
-                  const isOverdue = task.due_date && new Date(task.due_date) < today && task.status !== 'LUKKET'
+                  const isOverdue =
+                    task.due_date && new Date(task.due_date) < today && task.status !== 'LUKKET'
                   return (
                     <li key={task.id} className="py-3 flex items-center justify-between">
                       <div>
-                        <p className={`text-sm font-medium ${isOverdue ? 'text-red-700' : 'text-gray-900'}`}>
+                        <p
+                          className={`text-sm font-medium ${isOverdue ? 'text-red-700' : 'text-gray-900'}`}
+                        >
                           {task.title}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {task.due_date ? new Date(task.due_date).toLocaleDateString('da-DK') : 'Ingen deadline'}
+                          {task.due_date
+                            ? new Date(task.due_date).toLocaleDateString('da-DK')
+                            : 'Ingen deadline'}
                           {task.priority && ` · ${getPriorityLabel(task.priority)}`}
                         </p>
                       </div>

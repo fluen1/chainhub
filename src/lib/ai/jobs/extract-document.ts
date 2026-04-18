@@ -23,13 +23,19 @@ export interface ExtractDocumentResult {
 }
 
 export async function extractDocument(
-  payload: ExtractDocumentPayload,
+  payload: ExtractDocumentPayload
 ): Promise<ExtractDocumentResult> {
   // Check feature flag
   const enabled = await isAIEnabled(payload.organization_id, 'extraction')
   if (!enabled) {
     log.info({ document_id: payload.document_id }, 'AI extraction disabled for org — skipping')
-    return { extraction_id: '', detected_type: '', field_count: 0, total_cost_usd: 0, skipped: true }
+    return {
+      extraction_id: '',
+      detected_type: '',
+      field_count: 0,
+      total_cost_usd: 0,
+      skipped: true,
+    }
   }
 
   log.info({ document_id: payload.document_id, filename: payload.filename }, 'Starting extraction')
@@ -56,7 +62,7 @@ export async function extractDocument(
   })
 
   // Determine extraction status
-  const lowConfCount = result.field_confidences.filter(f => f.confidence < 0.5).length
+  const lowConfCount = result.field_confidences.filter((f) => f.confidence < 0.5).length
   let extractionStatus = 'completed'
   if (lowConfCount > Object.keys(result.extraction_run1.fields).length / 2) {
     extractionStatus = 'requires_manual_review'
@@ -76,10 +82,11 @@ export async function extractDocument(
       model_name: result.extraction_run1.model_used,
       model_temperature: 0.2,
       extracted_fields: result.extraction_run1.fields as never,
-      extracted_fields_run2: result.extraction_run2?.fields as never ?? null,
-      agreement_score: result.agreement.length > 0
-        ? result.agreement.filter(a => a.values_match).length / result.agreement.length
-        : null,
+      extracted_fields_run2: (result.extraction_run2?.fields as never) ?? null,
+      agreement_score:
+        result.agreement.length > 0
+          ? result.agreement.filter((a) => a.values_match).length / result.agreement.length
+          : null,
       source_verification: result.source_verification as never,
       sanity_check_results: result.sanity_checks as never,
       discrepancies: result.cross_validation as never,
@@ -97,10 +104,11 @@ export async function extractDocument(
       prompt_version: 'v1.0.0',
       model_name: result.extraction_run1.model_used,
       extracted_fields: result.extraction_run1.fields as never,
-      extracted_fields_run2: result.extraction_run2?.fields as never ?? null,
-      agreement_score: result.agreement.length > 0
-        ? result.agreement.filter(a => a.values_match).length / result.agreement.length
-        : null,
+      extracted_fields_run2: (result.extraction_run2?.fields as never) ?? null,
+      agreement_score:
+        result.agreement.length > 0
+          ? result.agreement.filter((a) => a.values_match).length / result.agreement.length
+          : null,
       source_verification: result.source_verification as never,
       sanity_check_results: result.sanity_checks as never,
       discrepancies: result.cross_validation as never,
@@ -112,13 +120,16 @@ export async function extractDocument(
     },
   })
 
-  log.info({
-    extraction_id: extraction.id,
-    type: result.type_detection.detected_type,
-    fields: Object.keys(result.extraction_run1.fields).length,
-    cost: result.total_cost_usd,
-    status: extractionStatus,
-  }, 'Extraction saved')
+  log.info(
+    {
+      extraction_id: extraction.id,
+      type: result.type_detection.detected_type,
+      fields: Object.keys(result.extraction_run1.fields).length,
+      cost: result.total_cost_usd,
+      status: extractionStatus,
+    },
+    'Extraction saved'
+  )
 
   return {
     extraction_id: extraction.id,

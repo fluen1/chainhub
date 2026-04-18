@@ -8,13 +8,7 @@ export default async function NewContractPage() {
   if (!session) redirect('/login')
 
   return (
-    <Suspense
-      fallback={
-        <div className="p-8 text-center text-sm text-gray-500">
-          Indlæser...
-        </div>
-      }
-    >
+    <Suspense fallback={<div className="p-8 text-center text-sm text-gray-500">Indlæser...</div>}>
       <CreateContractForm />
     </Suspense>
   )

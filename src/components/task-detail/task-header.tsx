@@ -1,11 +1,6 @@
 import { AlertTriangle, Clock, CalendarDays } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import {
-  getPriorityLabel,
-  getPriorityStyle,
-  getTaskStatusLabel,
-  formatDate,
-} from '@/lib/labels'
+import { getPriorityLabel, getPriorityStyle, getTaskStatusLabel, formatDate } from '@/lib/labels'
 import type { TaskUrgency } from '@/lib/task-detail/helpers'
 
 interface TaskHeaderProps {
@@ -17,7 +12,10 @@ interface TaskHeaderProps {
   editButton?: React.ReactNode
 }
 
-const URGENCY_BADGE: Record<TaskUrgency, { label: string; tone: string; icon: typeof Clock } | null> = {
+const URGENCY_BADGE: Record<
+  TaskUrgency,
+  { label: string; tone: string; icon: typeof Clock } | null
+> = {
   overdue: { label: 'Forfalden', tone: 'bg-red-50 text-red-700', icon: AlertTriangle },
   'due-soon': { label: 'Haster', tone: 'bg-amber-50 text-amber-700', icon: Clock },
   upcoming: null,

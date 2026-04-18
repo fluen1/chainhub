@@ -13,25 +13,30 @@
 ### Task 1: Calendar Server Action
 
 **Files:**
+
 - Create: `src/actions/calendar.ts`
 
 ### Task 2: Calendar Page + Loading
 
 **Files:**
+
 - Create: `src/app/(dashboard)/calendar/page.tsx`
 - Create: `src/app/(dashboard)/calendar/loading.tsx`
 
 ### Task 3: Full Calendar Client Component
 
 **Files:**
+
 - Create: `src/components/calendar/full-calendar.tsx`
 
 ### Task 4: Wire Dashboard Widget
 
 **Files:**
+
 - Modify: `src/app/(dashboard)/dashboard/page.tsx`
 
 ### Task 5: Verification
 
 **Files:**
+
 - All above

@@ -37,14 +37,24 @@ export function VisitsSection({ visits }: VisitsSectionProps) {
             href={`/visits/${v.id}`}
             className="flex items-center gap-2.5 border-b border-slate-50 py-2.5 no-underline last:border-0"
           >
-            <div className={cn('flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[12px] font-extrabold', ICON_TONES[v.badge.tone])}>
+            <div
+              className={cn(
+                'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[12px] font-extrabold',
+                ICON_TONES[v.badge.tone]
+              )}
+            >
               B
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-xs font-semibold text-slate-900">{v.typeLabel}</div>
               <div className="text-[11px] text-slate-400">{v.meta}</div>
             </div>
-            <span className={cn('whitespace-nowrap rounded-md px-2 py-[3px] text-[10px] font-bold', BADGE_TONES[v.badge.tone])}>
+            <span
+              className={cn(
+                'whitespace-nowrap rounded-md px-2 py-[3px] text-[10px] font-bold',
+                BADGE_TONES[v.badge.tone]
+              )}
+            >
               {v.badge.label}
             </span>
           </Link>

@@ -9,18 +9,22 @@
 ## 1. Mål og kontekst
 
 ### Problem
+
 `/companies/[id]` har i dag 11 subpages (cases, contracts, documents, employees, finance, governance, log, overview, ownership, stamdata, visits). Brugeren skal tab-navigere for at se et samlet billede. Baymard-research viser at 27% af brugere overser indhold bag tabs.
 
 ### Løsning
+
 Single scroll-view der matcher brainstorm-proto'en `.superpowers/brainstorm/45074-1775072716/content/selskab-detail-v1.html` (461 linjer HTML) 100% — visuelt layout, sektion-rækkefølge, role-visibility og AI-intentioner.
 
 AI-laget er "Lag 2: Relevans" fra det godkendte spec `docs/superpowers/specs/2026-03-30-ai-integrated-prototype-design.md`. AI genererer:
+
 - **Alert-banners** (op til 5, vises som 3 øverst) — hurtige strukturerede signaler med kausal prosa
 - **AI Insight** (én full-width card nederst) — strategisk anbefaling med klyngesammenligning
 
 Begge respekterer princippet **"UX er arkitekten, AI er materialet"** — AI er embedded strukturelt, ikke chatbot, og foreslår aldrig auto-udfyldning af kritiske felter.
 
 ### Ikke-mål
+
 - Dashboard-insights (Plan 4B ramte kun badges + inline KPIs — dashboard Indsigter kommer i en senere plan)
 - Plan 4D scope: `/calendar`, `/tasks`, `/search`, `/settings` — hver sin brainstorm
 - AI-insights til andre sider end `/companies/[id]` (deferred)
@@ -35,14 +39,14 @@ Begge respekterer princippet **"UX er arkitekten, AI er materialet"** — AI er 
 
 Fra `2026-03-30-ai-integrated-prototype-design.md`:
 
-| Princip | Anvendelse i Plan 4C |
-|---|---|
-| **UX er arkitekten, AI er materialet** | AI bruges KUN til alerts og insight — alt andet er regler. |
-| **Siderne selv er intelligente** | Alerts og insight er embedded i sidens struktur, ikke en tilkald-chatbot. |
-| **AI foreslår, mennesket beslutter** | AI returnerer alerts med action-links men udfører ingen handling. Quick-actions er manuelle. |
-| **En overflade, mange linser** | Sektion-rækkefølgen er FAST. Rolle ændrer kun SYNLIGHED, aldrig orden. |
-| **Dækningssprog, ikke fejlsprog** | Gælder cross-portfolio views. På enkelt-selskab bruger proto rød ved aktivt kritisk og grøn ved sundt — det respekteres. |
-| **Anti-automation-bias** | Ingen pre-checked felter, ingen auto-udfyldning. |
+| Princip                                | Anvendelse i Plan 4C                                                                                                     |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| **UX er arkitekten, AI er materialet** | AI bruges KUN til alerts og insight — alt andet er regler.                                                               |
+| **Siderne selv er intelligente**       | Alerts og insight er embedded i sidens struktur, ikke en tilkald-chatbot.                                                |
+| **AI foreslår, mennesket beslutter**   | AI returnerer alerts med action-links men udfører ingen handling. Quick-actions er manuelle.                             |
+| **En overflade, mange linser**         | Sektion-rækkefølgen er FAST. Rolle ændrer kun SYNLIGHED, aldrig orden.                                                   |
+| **Dækningssprog, ikke fejlsprog**      | Gælder cross-portfolio views. På enkelt-selskab bruger proto rød ved aktivt kritisk og grøn ved sundt — det respekteres. |
+| **Anti-automation-bias**               | Ingen pre-checked felter, ingen auto-udfyldning.                                                                         |
 
 ---
 
@@ -110,16 +114,16 @@ Stamdata (CVR, by, status, stiftelsesår) renderes i company-header meta-row, IK
 
 Præcis match med proto's `roleConfig`:
 
-| ChainHub-rolle | Proto-rolle | Sektioner synlige | Alerts synlige? |
-|---|---|---|---|
-| GROUP_OWNER | owner | Alle 8 | Ja (alle alerts med `owner` tag) |
-| GROUP_LEGAL | legal | Ejerskab, Kontrakter, Sager, Dokumenter, Insight (5) | Ja (alerts med `legal` tag) |
-| COMPANY_LEGAL | legal | Samme som GROUP_LEGAL | Ja |
-| GROUP_FINANCE | finance | Kontrakter, Økonomi, Insight (3) | Ja (alerts med `finance` tag) |
-| GROUP_ADMIN | admin | Ejerskab, Personer, Besøg, Dokumenter (4) | Nej (proto har ingen admin-tagged alerts) |
-| COMPANY_MANAGER | manager | Personer, Besøg (2) | Nej |
-| GROUP_READONLY | (fallback til owner) | Alle 8 (read-only: quick-actions disabled) | Ja |
-| COMPANY_READONLY | (fallback til manager) | Personer, Besøg (2, read-only) | Nej |
+| ChainHub-rolle   | Proto-rolle            | Sektioner synlige                                    | Alerts synlige?                           |
+| ---------------- | ---------------------- | ---------------------------------------------------- | ----------------------------------------- |
+| GROUP_OWNER      | owner                  | Alle 8                                               | Ja (alle alerts med `owner` tag)          |
+| GROUP_LEGAL      | legal                  | Ejerskab, Kontrakter, Sager, Dokumenter, Insight (5) | Ja (alerts med `legal` tag)               |
+| COMPANY_LEGAL    | legal                  | Samme som GROUP_LEGAL                                | Ja                                        |
+| GROUP_FINANCE    | finance                | Kontrakter, Økonomi, Insight (3)                     | Ja (alerts med `finance` tag)             |
+| GROUP_ADMIN      | admin                  | Ejerskab, Personer, Besøg, Dokumenter (4)            | Nej (proto har ingen admin-tagged alerts) |
+| COMPANY_MANAGER  | manager                | Personer, Besøg (2)                                  | Nej                                       |
+| GROUP_READONLY   | (fallback til owner)   | Alle 8 (read-only: quick-actions disabled)           | Ja                                        |
+| COMPANY_READONLY | (fallback til manager) | Personer, Besøg (2, read-only)                       | Nej                                       |
 
 Rolle-filtrering sker **server-side** i `getCompanyDetailData()`. Usynlige sektioner renderes IKKE (ingen `display: none`).
 
@@ -129,14 +133,14 @@ Hvis en bruger har flere role-assignments vælges den højeste prioritet via `pi
 
 ## 5. Company-header detaljer
 
-| Element | Data-kilde |
-|---|---|
-| Selskabsnavn | `company.name` |
-| Status-badge ("Kritisk"/"Advarsel"/"Sund") | `deriveStatusBadge(healthDimensions)` = max severity af 4 dims |
-| Meta-row | `company.cvr`, `company.city`, `company.status`, `company.founded_date.getFullYear()` |
-| Health-dimensions (4 dots) | `deriveHealthDimensions()` — se §7 |
-| Quick-action "Opret opgave" | Link til `/tasks/new?company=<id>` (eksisterer fra Plan 3) |
-| Quick-action "Rediger stamdata" | Åbner `EditStamdataDialog` (Client Component modal) |
+| Element                                    | Data-kilde                                                                            |
+| ------------------------------------------ | ------------------------------------------------------------------------------------- |
+| Selskabsnavn                               | `company.name`                                                                        |
+| Status-badge ("Kritisk"/"Advarsel"/"Sund") | `deriveStatusBadge(healthDimensions)` = max severity af 4 dims                        |
+| Meta-row                                   | `company.cvr`, `company.city`, `company.status`, `company.founded_date.getFullYear()` |
+| Health-dimensions (4 dots)                 | `deriveHealthDimensions()` — se §7                                                    |
+| Quick-action "Opret opgave"                | Link til `/tasks/new?company=<id>` (eksisterer fra Plan 3)                            |
+| Quick-action "Rediger stamdata"            | Åbner `EditStamdataDialog` (Client Component modal)                                   |
 
 Health-dimensions skjules for COMPANY_MANAGER (per proto's JS: `healthDims.style.display = (role === 'manager') ? 'none' : 'flex'`).
 
@@ -149,17 +153,20 @@ Health-dimensions skjules for COMPANY_MANAGER (per proto's JS: `healthDims.style
 **Afledes fra `Ownership`-rows for selskabet.** Schema: `Ownership { owner_person_id, owner_company_id, ownership_pct Decimal(5,2) }`. Hver row repræsenterer enten en person-ejer eller et selskab-ejer.
 
 **Data-rows (4):**
+
 - Kædegruppe-andel: summen af `ownership_pct` for rows hvor `owner_company_id IS NOT NULL` (holdings-ejede), vist som `<total>%`
 - Lokal partner: navnet på den `owner_person_id` med højeste `ownership_pct`, vist som `<person.first_name + ' ' + person.last_name> (<pct>%)`
 - Ejeraftale: hentes separat som `Contract` med `system_type: 'EJERAFTALE'` for dette company_id. Rød "Udløbet DD. mon YYYY" hvis `expiry_date < today`, normal "Aktiv" hvis AKTIV, "Ingen" hvis rækken ikke findes.
 - Holdingselskab: `company.name` af den `owner_company_id` med højeste `ownership_pct`
 
 **Ownership-bar** (visuel split-bar):
+
 ```
 [Kædegruppe <total_company_pct>%][Partnere <total_person_pct>%]
 ```
 
 Prisma-queries:
+
 ```ts
 prisma.ownership.findMany({
   where: { company_id, organization_id },
@@ -184,6 +191,7 @@ Hvis der er 0 ownership-rows: sektionen vises tom med "Ingen ejerskabsdata regis
 **Section badge:** `"<N> udløbet"` (rød) hvis der er udløbne aktive kontrakter, ellers `"<N> aktive"` (grøn).
 
 **Item-rows (top 3 sorteret via `sortContractsByUrgency`):** Per item:
+
 - Type-ikon (2-bogstavs forkortelse, farvekodet: rød for udløbet, grøn for aktiv)
 - Navn: `contract.display_name`
 - Meta: `"Udløbet DD. mon YYYY"` eller `"Udløber DD. mon YYYY"` eller `"Auto-fornyes DD. mon YYYY"`
@@ -192,6 +200,7 @@ Hvis der er 0 ownership-rows: sektionen vises tom med "Ingen ejerskabsdata regis
 **"Vis alle X kontrakter →"** link til `/contracts?company=<id>` hvis total > 3.
 
 Prisma-query:
+
 ```ts
 prisma.contract.findMany({
   where: { company_id, organization_id, deleted_at: null, status: 'AKTIV' },
@@ -206,6 +215,7 @@ prisma.contract.count({ where: { ... } })
 **Section badge:** `"Positiv"` (grøn) hvis EBITDA 2025 > 0, `"Underskud"` (rød) hvis EBITDA < 0, `"Presset"` (amber) hvis margin < 5%.
 
 **Data-rows (4) med YoY-deltas:**
+
 - Omsætning: `<value>M kr.` + `<delta>%` farvet efter fortegn
 - EBITDA: `<value>K kr.` + `<delta>%` farvet efter fortegn
 - EBITDA margin: `<pct>%` (ingen delta)
@@ -214,6 +224,7 @@ prisma.contract.count({ where: { ... } })
 **Q1–Q4 bar chart:** 4 vertikale søjler, højder proportional til kvartals-omsætning, sidste kvartal mørkest blå.
 
 Prisma-queries:
+
 - 2025 hele året: `period_year: 2025, period_type: 'HELAAR', metric_type: { in: ['OMSAETNING', 'EBITDA', 'RESULTAT'] }`
 - 2024 hele året: samme, year: 2024 (til YoY)
 - 2025 kvartaler: `period_year: 2025, period_type: 'KVARTAL', metric_type: 'OMSAETNING'`
@@ -223,12 +234,14 @@ Prisma-queries:
 **Section badge:** `"<N> aktive"` (rød hvis >0, skjult hvis 0).
 
 **Item-rows (top 3 sorteret via `sortCasesByUrgency`):** Per item:
+
 - Type-ikon (1 bogstav, farvekodet efter case_type)
 - Titel: `case.title`
 - Meta: `"Oprettet DD. mon YYYY"` + optional `" · Eskaleret"` hvis i AFVENTER-status
 - Badge: status-label farvekodet
 
 Prisma-query:
+
 ```ts
 prisma.case.findMany({
   where: {
@@ -247,6 +260,7 @@ prisma.case.findMany({
 ### Sektion 5 — Nøglepersoner
 
 **Item-rows (top 3 via `selectKeyPersons`):** Per person:
+
 - Avatar (2 initialer)
 - Navn: `person.first_name + ' ' + person.last_name`
 - Rolle: `company_person.role`
@@ -254,13 +268,22 @@ prisma.case.findMany({
 **"Vis alle X medarbejdere →"** link til `/persons?company=<id>` hvis total > 3.
 
 `selectKeyPersons` filtrerer `CompanyPerson[]` hvor `role` matcher en hardcoded hierarkisk whitelist af senior-roller (indexorden = prioritet):
+
 ```ts
 const KEY_PERSON_ROLES = [
-  'Partner', 'Medejer', 'CEO', 'Direktør',
-  'CFO', 'Bestyrelsesformand', 'Bestyrelsesmedlem',
-  'Klinisk leder', 'Klinikchef', 'Stedfortræder',
+  'Partner',
+  'Medejer',
+  'CEO',
+  'Direktør',
+  'CFO',
+  'Bestyrelsesformand',
+  'Bestyrelsesmedlem',
+  'Klinisk leder',
+  'Klinikchef',
+  'Stedfortræder',
 ]
 ```
+
 Sortering: rolle-hierarki (laveste index først) → `anciennity_start asc` → alfabetisk. Top 3.
 
 `totalCount` = total antal `CompanyPerson`-rows for selskabet (til "Vis alle X" linket — alle medarbejdere, ikke kun nøglepersoner).
@@ -268,12 +291,14 @@ Sortering: rolle-hierarki (laveste index først) → `anciennity_start asc` → 
 ### Sektion 6 — Besøg & governance
 
 **Item-rows (top 3, seneste først):** Per visit:
+
 - Type-ikon (1 bogstav "B", farvekodet efter visit_status)
 - Type: `visit.visit_type` (dansk label via `labels.ts`)
 - Meta: `"Planlagt DD. mon YYYY"` eller `"Gennemført DD. mon YYYY"`
 - Badge: `"Planlagt"` (blå) / `"Gennemført"` (grøn) / `"Aflyst"` (grå)
 
 Prisma-query:
+
 ```ts
 prisma.visit.findMany({
   where: { company_id, organization_id, deleted_at: null },
@@ -287,12 +312,14 @@ prisma.visit.findMany({
 **Section badge:** `"<N> til review"` (lilla) hvis der er dokumenter med `DocumentExtraction.extraction_status === 'completed'` og `reviewed_at === null`.
 
 **Item-rows (top 3, seneste uploaded_at først):** Per document:
+
 - Ikon: `"AI"` (lilla) hvis `extraction` findes, ellers `"PDF"` (grå)
 - Filnavn: `document.file_name`
 - Meta: `"Uploadet <relativ tid> · AI-behandlet"` hvis ekstraktet, ellers `"Uploadet DD. mon YYYY"`
 - Badge: `"Til review"` (lilla) hvis afventer review, `"Arkiveret"` (grøn) ellers
 
 Prisma-query:
+
 ```ts
 prisma.document.findMany({
   where: { company_id, organization_id, deleted_at: null },
@@ -307,6 +334,7 @@ prisma.document.findMany({
 **Visual:** lilla gradient card, `background: linear-gradient(135deg, #ede9fe 0%, #e0e7ff 100%)`, "AI" badge-ikon (lilla), prosa-tekst.
 
 **Indhold:**
+
 - `headline_md` (max 80 tegn, kan indeholde `**bold**`) — renderes som første sætning, `<strong>` for bold
 - `body_md` (max 280 tegn) — kausal analyse + konkret handling med tidsfrist
 
@@ -318,12 +346,12 @@ prisma.document.findMany({
 
 ### `deriveHealthDimensions(data)` → 4 dots
 
-| Dimension | Rød | Amber | Grøn |
-|---|---|---|---|
-| **Kontrakter** | ≥1 aktiv kontrakt hvor `expiry_date < today` | ≥1 aktiv kontrakt hvor `today ≤ expiry_date < today+30d` | Alle aktive ok |
-| **Sager** | ≥1 åben sag i status NY eller AKTIV | ≥1 sag i AFVENTER_* status | Ingen åbne |
-| **Økonomi** | EBITDA 2025 < 0 | EBITDA-margin 2025 < 5% ELLER omsætning faldet >10% YoY | Margin ≥5% og YoY stabil/positiv |
-| **Governance** | Ingen besøg sidste 12 mdr (seneste visit_date > 365 dage gammel eller null) | Ingen besøg sidste 6 mdr | Besøg inden for 6 mdr |
+| Dimension      | Rød                                                                         | Amber                                                    | Grøn                             |
+| -------------- | --------------------------------------------------------------------------- | -------------------------------------------------------- | -------------------------------- |
+| **Kontrakter** | ≥1 aktiv kontrakt hvor `expiry_date < today`                                | ≥1 aktiv kontrakt hvor `today ≤ expiry_date < today+30d` | Alle aktive ok                   |
+| **Sager**      | ≥1 åben sag i status NY eller AKTIV                                         | ≥1 sag i AFVENTER\_\* status                             | Ingen åbne                       |
+| **Økonomi**    | EBITDA 2025 < 0                                                             | EBITDA-margin 2025 < 5% ELLER omsætning faldet >10% YoY  | Margin ≥5% og YoY stabil/positiv |
+| **Governance** | Ingen besøg sidste 12 mdr (seneste visit_date > 365 dage gammel eller null) | Ingen besøg sidste 6 mdr                                 | Besøg inden for 6 mdr            |
 
 Returnerer: `{ kontrakter: 'red' | 'amber' | 'green', sager: ..., oekonomi: ..., governance: ... }`
 
@@ -406,26 +434,29 @@ Tilsvarende back-relations på `Organization` og `Company`. Migration via `npx p
 ```ts
 export interface CompanyAlert {
   severity: 'critical' | 'warning'
-  title: string          // max 60 tegn
-  sub: string            // max 100 tegn, kausal prosa med navne/tal
-  action_label: string   // max 20 tegn
-  action_href: string    // /contracts/<id>, /cases/<id>, etc.
+  title: string // max 60 tegn
+  sub: string // max 100 tegn, kausal prosa med navne/tal
+  action_label: string // max 20 tegn
+  action_href: string // /contracts/<id>, /cases/<id>, etc.
   roles: Array<'owner' | 'legal' | 'finance' | 'admin' | 'manager'>
 }
 
 export interface AiInsight {
-  headline_md: string    // max 80 tegn, kan have **bold**
-  body_md: string        // max 280 tegn, kausal analyse + handling
+  headline_md: string // max 80 tegn, kan have **bold**
+  body_md: string // max 280 tegn, kausal analyse + handling
 }
 
 export interface CompanyInsightsResult {
-  alerts: CompanyAlert[]        // op til 5
+  alerts: CompanyAlert[] // op til 5
   insight: AiInsight | null
 }
 
 export async function generateCompanyInsights(
   snapshot: CompanySnapshot
-): Promise<{ ok: true; data: CompanyInsightsResult; cost_usd: number; model_name: string } | { ok: false; error: string }>
+): Promise<
+  | { ok: true; data: CompanyInsightsResult; cost_usd: number; model_name: string }
+  | { ok: false; error: string }
+>
 ```
 
 - Timeout: 8s (fallback via `Promise.race`)
@@ -437,10 +468,10 @@ export async function generateCompanyInsights(
 
 ```ts
 interface CompanySnapshot {
-  company: { name, cvr, city, status, founded_year, company_type }
+  company: { name; cvr; city; status; founded_year; company_type }
   cluster: {
-    name: string                // "Odense", "Tandlæge-klyngen", etc.
-    peers: Array<{ name: string, omsaetning_2025: number }>
+    name: string // "Odense", "Tandlæge-klyngen", etc.
+    peers: Array<{ name: string; omsaetning_2025: number }>
   }
   contracts: Array<{
     id: string
@@ -448,7 +479,7 @@ interface CompanySnapshot {
     status: string
     expiry_date: string | null
     days_until_expiry: number | null
-    parties: string[]           // person-navne
+    parties: string[] // person-navne
   }>
   cases: Array<{
     id: string
@@ -458,16 +489,20 @@ interface CompanySnapshot {
     days_open: number
   }>
   finance: {
-    omsaetning_2025, omsaetning_2024,
-    ebitda_2025, ebitda_2024,
-    margin_2025, margin_2024, margin_delta_pp
+    omsaetning_2025
+    omsaetning_2024
+    ebitda_2025
+    ebitda_2024
+    margin_2025
+    margin_2024
+    margin_delta_pp
   } | null
   visits: {
     last_visit_date: string | null
     days_since_last: number | null
     planned_count: number
   }
-  persons: Array<{ name: string, role: string }>
+  persons: Array<{ name: string; role: string }>
   documents: {
     total: number
     recently_uploaded: number
@@ -540,14 +575,14 @@ getCompanyDetailData() flow:
 
 ### Graceful degradation
 
-| Situation | Adfærd |
-|---|---|
-| AI-call timer ud (>8s) | Render uden alerts/insight, log timeout, prøv igen ved næste request |
-| AI returnerer malformed JSON | Samme som timeout |
-| AI returnerer valid JSON der ikke matcher Zod schema | Samme som timeout |
-| AI API-fejl (rate limit, 500, etc.) | Samme som timeout |
-| `ANTHROPIC_API_KEY` mangler i env | Graceful degrade + warning i logger (ikke crash) |
-| Cache findes men er ældre end 7 dage | Samme flow som stale (>24h) — regenerér |
+| Situation                                            | Adfærd                                                               |
+| ---------------------------------------------------- | -------------------------------------------------------------------- |
+| AI-call timer ud (>8s)                               | Render uden alerts/insight, log timeout, prøv igen ved næste request |
+| AI returnerer malformed JSON                         | Samme som timeout                                                    |
+| AI returnerer valid JSON der ikke matcher Zod schema | Samme som timeout                                                    |
+| AI API-fejl (rate limit, 500, etc.)                  | Samme som timeout                                                    |
+| `ANTHROPIC_API_KEY` mangler i env                    | Graceful degrade + warning i logger (ikke crash)                     |
+| Cache findes men er ældre end 7 dage                 | Samme flow som stale (>24h) — regenerér                              |
 
 ---
 
@@ -591,13 +626,13 @@ export interface CompanyDetailData {
   visibleSections: Set<SectionKey>
   healthDimensions: HealthDimensions
   statusBadge: StatusBadge
-  alerts: CompanyAlert[]                   // allerede role-filtreret
+  alerts: CompanyAlert[] // allerede role-filtreret
   aiInsight: AiInsight | null
   ownership: OwnershipData | null
-  contracts: { top: ContractWithBadges[], totalCount: number }
+  contracts: { top: ContractWithBadges[]; totalCount: number }
   finance: FinanceData | null
-  cases: { top: CaseWithMeta[], totalCount: number }
-  persons: { top: PersonWithRole[], totalCount: number }
+  cases: { top: CaseWithMeta[]; totalCount: number }
+  persons: { top: PersonWithRole[]; totalCount: number }
   visits: VisitWithStatus[]
   documents: DocumentWithExtraction[]
   role: string
@@ -619,6 +654,7 @@ Sektioner der ikke er synlige for brugerens rolle: queries springes over (return
 ### Helpers placeres i `src/lib/company-detail/helpers.ts`
 
 Pure funktioner, ingen Prisma, fuldt testbare:
+
 - `sectionsForRole(role: string): Set<SectionKey>`
 - `pickHighestPriorityRole(roleRows: Array<{ role: string }>): string`
 - `deriveHealthDimensions(input): HealthDimensions`
@@ -659,7 +695,9 @@ export default async function CompanyDetailPage({ params }: { params: { id: stri
     <div className="mx-auto max-w-[1100px] p-6">
       {/* Breadcrumb */}
       <nav className="mb-4 text-xs text-gray-400">
-        <a href="/companies" className="hover:text-blue-600">Selskaber</a>
+        <a href="/companies" className="hover:text-blue-600">
+          Selskaber
+        </a>
         <span className="mx-2">›</span>
         <span className="text-slate-900 font-medium">{data.company.name}</span>
       </nav>
@@ -707,15 +745,14 @@ export default async function CompanyDetailPage({ params }: { params: { id: stri
             companyId={data.company.id}
           />
         )}
-        {data.visibleSections.has('visits') && (
-          <VisitsSection visits={data.visits} />
-        )}
-        {data.visibleSections.has('documents') && (
-          <DocumentsSection documents={data.documents} />
-        )}
+        {data.visibleSections.has('visits') && <VisitsSection visits={data.visits} />}
+        {data.visibleSections.has('documents') && <DocumentsSection documents={data.documents} />}
         {data.visibleSections.has('insight') && data.aiInsight && (
           <div className="col-span-2">
-            <AiInsightCard headlineMd={data.aiInsight.headline_md} bodyMd={data.aiInsight.body_md} />
+            <AiInsightCard
+              headlineMd={data.aiInsight.headline_md}
+              bodyMd={data.aiInsight.body_md}
+            />
           </div>
         )}
       </div>
@@ -728,19 +765,19 @@ export default async function CompanyDetailPage({ params }: { params: { id: stri
 
 ## 12. Edge cases
 
-| Situation | Adfærd |
-|---|---|
-| Selskab har ingen kontrakter | Sektion vises tom: "Ingen aktive kontrakter", ingen "Vis alle" link |
-| Selskab har ingen 2025 finansielle data | `data.finance` = null, FinanceSection skjules helt (selv for finance-rolle) |
-| Selskab har ingen besøg nogensinde | Governance-dim = rød, sektion vises tom: "Ingen besøg registreret" |
-| Selskab har 0 nøglepersoner (ingen matcher senior-roller) | Sektion vises tom: "Ingen nøglepersoner registreret", "Vis alle X medarbejdere →" link fungerer stadig |
-| AI-call fejler | alerts og aiInsight tomme, sektioner skjules, page renderer fint |
-| AI-cache <24h gammel | Brug cache uden at kalde AI |
-| Cluster har <3 peers | AI prompt får "klynge ikke tilstrækkelig — undgå sammenligninger" instruktion (stilles dynamisk i user prompt) |
-| Bruger har ikke adgang til selskab | `notFound()` (404) |
-| Bruger har ingen rolle-assignment | Fallback til `GROUP_READONLY` → owner-sektion-set med read-only quick-actions |
-| CompanyInsightsCache mangler på første visit | Synkron AI-call kører første gang, cacher, viser resultat |
-| EditStamdataDialog submit fejler | Toast error, modal forbliver åben, form state bevares |
+| Situation                                                 | Adfærd                                                                                                         |
+| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Selskab har ingen kontrakter                              | Sektion vises tom: "Ingen aktive kontrakter", ingen "Vis alle" link                                            |
+| Selskab har ingen 2025 finansielle data                   | `data.finance` = null, FinanceSection skjules helt (selv for finance-rolle)                                    |
+| Selskab har ingen besøg nogensinde                        | Governance-dim = rød, sektion vises tom: "Ingen besøg registreret"                                             |
+| Selskab har 0 nøglepersoner (ingen matcher senior-roller) | Sektion vises tom: "Ingen nøglepersoner registreret", "Vis alle X medarbejdere →" link fungerer stadig         |
+| AI-call fejler                                            | alerts og aiInsight tomme, sektioner skjules, page renderer fint                                               |
+| AI-cache <24h gammel                                      | Brug cache uden at kalde AI                                                                                    |
+| Cluster har <3 peers                                      | AI prompt får "klynge ikke tilstrækkelig — undgå sammenligninger" instruktion (stilles dynamisk i user prompt) |
+| Bruger har ikke adgang til selskab                        | `notFound()` (404)                                                                                             |
+| Bruger har ingen rolle-assignment                         | Fallback til `GROUP_READONLY` → owner-sektion-set med read-only quick-actions                                  |
+| CompanyInsightsCache mangler på første visit              | Synkron AI-call kører første gang, cacher, viser resultat                                                      |
+| EditStamdataDialog submit fejler                          | Toast error, modal forbliver åben, form state bevares                                                          |
 
 ---
 
@@ -749,6 +786,7 @@ export default async function CompanyDetailPage({ params }: { params: { id: stri
 ### Unit tests (pure helpers — ingen DB)
 
 `src/__tests__/company-detail/helpers.test.ts`:
+
 - `deriveHealthDimensions`: 16+ cases (hver dimension rød/amber/grøn, kombinationer)
 - `deriveStatusBadge`: 3 cases (max severity)
 - `sectionsForRole`: alle 8 rolle-mappings (inkl. fallbacks for unknown roles)
@@ -760,6 +798,7 @@ export default async function CompanyDetailPage({ params }: { params: { id: stri
 ### Component tests (Vitest + Testing Library)
 
 `src/__tests__/components/company-detail/`:
+
 - `company-header.test.tsx` — name, status-badge variant, meta-row, health-dims skjult for manager, quick-actions
 - `alert-banner.test.tsx` — critical vs warning variant, icon, action-link href
 - `ai-insight-card.test.tsx` — headline_md + body_md rendering (markdown bold), tom state
@@ -776,6 +815,7 @@ export default async function CompanyDetailPage({ params }: { params: { id: stri
 ### AI unit test (mocket Claude-client)
 
 `src/__tests__/ai/company-insights.test.ts`:
+
 - Happy path: mock returnerer valid JSON, parses korrekt via Zod schema
 - Malformed JSON: fanges, returnerer `{ ok: false }`
 - Timeout: 8s fires via fake timers, returnerer `{ ok: false }`
@@ -785,6 +825,7 @@ export default async function CompanyDetailPage({ params }: { params: { id: stri
 ### Action smoke test (mod seed DB, skipper uden DATABASE_URL)
 
 `src/__tests__/company-detail-actions.test.ts`:
+
 - `getCompanyDetailData` returnerer forventet shape for philip@chainhub.dk + første seed-selskab
 - `visibleSections` matcher GROUP_OWNER forventning
 - `notFound` når `companyId` ikke i `getAccessibleCompanies`
@@ -889,6 +930,7 @@ src/components/companies/CompanyTabs.tsx
 ```
 
 **Genbruges (intet nyt):**
+
 - AppSidebar, AppHeader fra Plan 4B (via (dashboard)/layout.tsx)
 - `createClaudeClient`, `computeCostUsd`, logger fra Sprint 8B
 - `getAccessibleCompanies` fra permissions

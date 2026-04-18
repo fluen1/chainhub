@@ -23,9 +23,7 @@ const createVisitSchema = z.object({
 
 const updateVisitSchema = z.object({
   visitId: z.string().uuid(),
-  status: z
-    .enum(['PLANLAGT', 'GENNEMFOERT', 'AFLYST'])
-    .optional(),
+  status: z.enum(['PLANLAGT', 'GENNEMFOERT', 'AFLYST']).optional(),
   notes: z.string().optional(),
   summary: z.string().optional(),
 })
@@ -33,20 +31,14 @@ const updateVisitSchema = z.object({
 type CreateVisitInput = z.infer<typeof createVisitSchema>
 type UpdateVisitInput = z.infer<typeof updateVisitSchema>
 
-export async function createVisit(
-  input: CreateVisitInput
-): Promise<ActionResult<{ id: string }>> {
+export async function createVisit(input: CreateVisitInput): Promise<ActionResult<{ id: string }>> {
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
 
   const parsed = createVisitSchema.safeParse(input)
-  if (!parsed.success)
-    return { error: parsed.error.issues[0]?.message ?? 'Ugyldigt input' }
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Ugyldigt input' }
 
-  const hasAccess = await canAccessCompany(
-    session.user.id,
-    parsed.data.companyId
-  )
+  const hasAccess = await canAccessCompany(session.user.id, parsed.data.companyId)
   if (!hasAccess) return { error: 'Ingen adgang til dette selskab' }
 
   try {
@@ -72,15 +64,12 @@ export async function createVisit(
   }
 }
 
-export async function updateVisit(
-  input: UpdateVisitInput
-): Promise<ActionResult<{ id: string }>> {
+export async function updateVisit(input: UpdateVisitInput): Promise<ActionResult<{ id: string }>> {
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
 
   const parsed = updateVisitSchema.safeParse(input)
-  if (!parsed.success)
-    return { error: parsed.error.issues[0]?.message ?? 'Ugyldigt input' }
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Ugyldigt input' }
 
   const visit = await prisma.visit.findFirst({
     where: {
@@ -99,12 +88,8 @@ export async function updateVisit(
       where: { id: parsed.data.visitId },
       data: {
         ...(parsed.data.status ? { status: parsed.data.status as never } : {}),
-        ...(parsed.data.notes !== undefined
-          ? { notes: parsed.data.notes }
-          : {}),
-        ...(parsed.data.summary !== undefined
-          ? { summary: parsed.data.summary }
-          : {}),
+        ...(parsed.data.notes !== undefined ? { notes: parsed.data.notes } : {}),
+        ...(parsed.data.summary !== undefined ? { summary: parsed.data.summary } : {}),
       },
     })
 
@@ -118,9 +103,7 @@ export async function updateVisit(
   }
 }
 
-export async function deleteVisit(
-  visitId: string
-): Promise<ActionResult<void>> {
+export async function deleteVisit(visitId: string): Promise<ActionResult<void>> {
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
 

@@ -31,10 +31,10 @@ export function CreateTaskForm() {
     const formData = new FormData(e.currentTarget)
     const result = await createTask({
       title: formData.get('title') as string,
-      description: formData.get('description') as string || undefined,
-      dueDate: formData.get('dueDate') as string || undefined,
+      description: (formData.get('description') as string) || undefined,
+      dueDate: (formData.get('dueDate') as string) || undefined,
       priority: (formData.get('priority') as 'LAV' | 'MELLEM' | 'HOEJ' | 'KRITISK') ?? 'MELLEM',
-      caseId: formData.get('caseId') as string || undefined,
+      caseId: (formData.get('caseId') as string) || undefined,
     })
 
     setLoading(false)
@@ -112,7 +112,9 @@ export function CreateTaskForm() {
           >
             <option value="">Ingen sag</option>
             {cases.map((c) => (
-              <option key={c.id} value={c.id}>{c.title}</option>
+              <option key={c.id} value={c.id}>
+                {c.title}
+              </option>
             ))}
           </select>
         </div>

@@ -6,11 +6,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { updateTaskStatus } from '@/actions/tasks'
-import {
-  TASK_STATUS_LABELS,
-  getPriorityLabel,
-  getPriorityStyle,
-} from '@/lib/labels'
+import { TASK_STATUS_LABELS, getPriorityLabel, getPriorityStyle } from '@/lib/labels'
 import type { TaskStatus } from '@prisma/client'
 
 export interface KanbanTask {
@@ -82,9 +78,7 @@ export function TasksKanbanBoard({ tasks }: TasksKanbanBoardProps) {
 
     const previousStatus = task.status
     // Optimistisk opdatering — bekræftes af router.refresh() bagefter
-    setLocalTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, status: nextStatus } : t))
-    )
+    setLocalTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, status: nextStatus } : t)))
 
     startTransition(async () => {
       const result = await updateTaskStatus({
@@ -175,9 +169,7 @@ interface KanbanCardProps {
 
 function KanbanCard({ task, isDragging, disabled, onDragStart, onDragEnd }: KanbanCardProps) {
   const isOverdue =
-    task.due_date &&
-    new Date(task.due_date) < new Date() &&
-    task.status !== 'LUKKET'
+    task.due_date && new Date(task.due_date) < new Date() && task.status !== 'LUKKET'
 
   return (
     <div
@@ -186,7 +178,9 @@ function KanbanCard({ task, isDragging, disabled, onDragStart, onDragEnd }: Kanb
       onDragEnd={onDragEnd}
       className={cn(
         'rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition-opacity',
-        disabled ? 'cursor-not-allowed' : 'cursor-grab active:cursor-grabbing hover:border-slate-300',
+        disabled
+          ? 'cursor-not-allowed'
+          : 'cursor-grab active:cursor-grabbing hover:border-slate-300',
         isDragging && 'opacity-40'
       )}
     >
@@ -219,9 +213,7 @@ function KanbanCard({ task, isDragging, disabled, onDragStart, onDragEnd }: Kanb
       </div>
       {(task.assigneeName || task.caseTitle) && (
         <div className="mt-2 pt-2 border-t border-slate-100 flex flex-wrap items-center gap-1.5">
-          {task.assigneeName && (
-            <span className="text-xs text-slate-400">{task.assigneeName}</span>
-          )}
+          {task.assigneeName && <span className="text-xs text-slate-400">{task.assigneeName}</span>}
           {task.caseTitle && task.caseId && (
             <Link
               href={`/cases/${task.caseId}`}

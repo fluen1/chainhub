@@ -11,7 +11,10 @@ const commentSchema = z.object({
   taskId: z.string().uuid(),
 })
 
-export async function createComment(input: { content: string; taskId: string }): Promise<ActionResult<{ id: string }>> {
+export async function createComment(input: {
+  content: string
+  taskId: string
+}): Promise<ActionResult<{ id: string }>> {
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
 
@@ -19,7 +22,11 @@ export async function createComment(input: { content: string; taskId: string }):
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Ugyldigt input' }
 
   const task = await prisma.task.findFirst({
-    where: { id: parsed.data.taskId, organization_id: session.user.organizationId, deleted_at: null },
+    where: {
+      id: parsed.data.taskId,
+      organization_id: session.user.organizationId,
+      deleted_at: null,
+    },
   })
   if (!task) return { error: 'Opgave ikke fundet' }
 

@@ -109,14 +109,15 @@ export default async function SettingsPage() {
                 const isSelf = user.id === session.user.id
 
                 return (
-                  <tr key={user.id} className={cn('hover:bg-gray-50', !user.active && 'opacity-60')}>
+                  <tr
+                    key={user.id}
+                    className={cn('hover:bg-gray-50', !user.active && 'opacity-60')}
+                  >
                     <td className="px-6 py-4">
                       <div>
                         <p className="text-sm font-medium text-gray-900">
                           {user.name}
-                          {isSelf && (
-                            <span className="ml-2 text-xs text-gray-400">(dig)</span>
-                          )}
+                          {isSelf && <span className="ml-2 text-xs text-gray-400">(dig)</span>}
                         </p>
                         <p className="text-sm text-gray-500">{user.email}</p>
                       </div>
@@ -191,11 +192,15 @@ export default async function SettingsPage() {
           <div className="border-t border-gray-100 bg-gray-50/60 px-6 py-3 text-xs text-gray-500">
             <div className="flex flex-wrap gap-4">
               <span>
-                Plan: <span className="font-medium text-gray-700 capitalize">{organization.plan}</span>
+                Plan:{' '}
+                <span className="font-medium text-gray-700 capitalize">{organization.plan}</span>
               </span>
               {organization.plan_expires_at && (
                 <span>
-                  Udløber: <span className="font-medium text-gray-700">{formatDate(organization.plan_expires_at)}</span>
+                  Udløber:{' '}
+                  <span className="font-medium text-gray-700">
+                    {formatDate(organization.plan_expires_at)}
+                  </span>
                 </span>
               )}
             </div>

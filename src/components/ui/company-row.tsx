@@ -39,7 +39,11 @@ export function CompanyRow({ initials, name, meta, status, avatarColor, href }: 
   const className = 'flex items-center gap-3 border-b border-slate-50 py-2.5 last:border-none'
 
   if (href) {
-    return <Link href={href} className={cn(className, 'cursor-pointer hover:bg-slate-50')}>{content}</Link>
+    return (
+      <Link href={href} className={cn(className, 'cursor-pointer hover:bg-slate-50')}>
+        {content}
+      </Link>
+    )
   }
   return <div className={className}>{content}</div>
 }

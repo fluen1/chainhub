@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { compareRuns, valuesMatch, computeFieldConfidence, computeAllFieldConfidences } from '@/lib/ai/pipeline/confidence'
+import {
+  compareRuns,
+  valuesMatch,
+  computeFieldConfidence,
+  computeAllFieldConfidences,
+} from '@/lib/ai/pipeline/confidence'
 import type { ExtractedField } from '@/lib/ai/pipeline/types'
 
 describe('valuesMatch', () => {
@@ -80,8 +85,18 @@ describe('compareRuns', () => {
   it('skips additional_findings and extraction_warnings', () => {
     const run1: Record<string, ExtractedField> = {
       name: { value: 'Test', claude_confidence: 0.9, source_page: 1, source_text: null },
-      additional_findings: { value: [], claude_confidence: 1, source_page: null, source_text: null },
-      extraction_warnings: { value: [], claude_confidence: 1, source_page: null, source_text: null },
+      additional_findings: {
+        value: [],
+        claude_confidence: 1,
+        source_page: null,
+        source_text: null,
+      },
+      extraction_warnings: {
+        value: [],
+        claude_confidence: 1,
+        source_page: null,
+        source_text: null,
+      },
     }
     const result = compareRuns(run1, run1)
     expect(result).toHaveLength(1)
@@ -98,7 +113,7 @@ describe('compareRuns', () => {
     }
     const result = compareRuns(run1, run2)
     expect(result).toHaveLength(2)
-    const phoneResult = result.find(r => r.field_name === 'phone')
+    const phoneResult = result.find((r) => r.field_name === 'phone')
     expect(phoneResult).toBeDefined()
     expect(phoneResult?.run1_value).toBe('123456')
     expect(phoneResult?.run2_value).toBeNull()
@@ -123,7 +138,7 @@ describe('computeFieldConfidence', () => {
       { field_name: 'test', run1_value: 'x', run2_value: 'x', values_match: true },
       { field_name: 'test', verified: true, match_score: 0.95 },
       { field_name: 'test', passed: true, rule: 'test' },
-      0.95,
+      0.95
     )
     expect(result.confidence).toBeGreaterThanOrEqual(0.95)
     expect(result.confidence).toBeLessThanOrEqual(1.0)
@@ -135,7 +150,7 @@ describe('computeFieldConfidence', () => {
       { field_name: 'test', run1_value: 'x', run2_value: 'y', values_match: false },
       { field_name: 'test', verified: true, match_score: 0.9 },
       { field_name: 'test', passed: true, rule: 'test' },
-      0.5,
+      0.5
     )
     expect(result.confidence).toBeGreaterThan(0.5)
     expect(result.confidence).toBeLessThan(0.7)
@@ -147,7 +162,7 @@ describe('computeFieldConfidence', () => {
       { field_name: 'test', run1_value: 'x', run2_value: 'y', values_match: false },
       { field_name: 'test', verified: false, match_score: 0.1 },
       { field_name: 'test', passed: false, rule: 'test', message: 'failed' },
-      0.5,
+      0.5
     )
     expect(result.confidence).toBeLessThan(0.1)
   })
@@ -158,7 +173,7 @@ describe('computeFieldConfidence', () => {
       { field_name: 'test', run1_value: 'x', run2_value: 'x', values_match: true },
       undefined,
       undefined, // no sanity rule
-      0.8,
+      0.8
     )
     expect(result.components.sanity_passed).toBe(0.2)
     expect(result.confidence).toBeCloseTo(0.68, 2)
@@ -170,7 +185,7 @@ describe('computeFieldConfidence', () => {
       { field_name: 'test', run1_value: 'x', run2_value: 'x', values_match: true },
       { field_name: 'test', verified: true, match_score: 1.0 },
       { field_name: 'test', passed: true, rule: 'test' },
-      1.0, // This would sum to 1.0 + 0.1 = 1.1 without cap
+      1.0 // This would sum to 1.0 + 0.1 = 1.1 without cap
     )
     expect(result.confidence).toBeCloseTo(1.0, 5)
   })
@@ -181,7 +196,7 @@ describe('computeFieldConfidence', () => {
       undefined, // no agreement
       { field_name: 'test', verified: true, match_score: 0.9 },
       { field_name: 'test', passed: true, rule: 'test' },
-      0.8,
+      0.8
     )
     expect(result.components.agreement).toBe(0)
     expect(result.confidence).toBeCloseTo(0.58, 2)
@@ -193,7 +208,7 @@ describe('computeFieldConfidence', () => {
       { field_name: 'test', run1_value: 'x', run2_value: 'x', values_match: true },
       { field_name: 'test', verified: true, match_score: 0.9 },
       { field_name: 'test', passed: false, rule: 'test', message: 'sanity failed' },
-      0.8,
+      0.8
     )
     expect(result.components.sanity_passed).toBe(0)
     expect(result.confidence).toBeCloseTo(0.78, 2)
@@ -205,7 +220,7 @@ describe('computeFieldConfidence', () => {
       undefined,
       undefined,
       undefined,
-      1.5, // Out of range
+      1.5 // Out of range
     )
     expect(result.components.claude_self).toBe(0.1) // 0.1 * min(1.5, 1.0) = 0.1 * 1.0
   })
@@ -230,7 +245,12 @@ describe('computeAllFieldConfidences', () => {
   it('skips meta-fields', () => {
     const fields: Record<string, ExtractedField> = {
       name: { value: 'Test', claude_confidence: 0.9, source_page: 1, source_text: null },
-      additional_findings: { value: [], claude_confidence: 1, source_page: null, source_text: null },
+      additional_findings: {
+        value: [],
+        claude_confidence: 1,
+        source_page: null,
+        source_text: null,
+      },
     }
     const result = computeAllFieldConfidences(fields, [], [], [])
     expect(result).toHaveLength(1)
@@ -249,12 +269,8 @@ describe('computeAllFieldConfidences', () => {
     const agreements = [
       { field_name: 'name', run1_value: 'Test', run2_value: 'Test', values_match: true },
     ]
-    const sourceVerifications = [
-      { field_name: 'name', verified: true, match_score: 0.95 },
-    ]
-    const sanityChecks = [
-      { field_name: 'name', passed: true, rule: 'name_length' },
-    ]
+    const sourceVerifications = [{ field_name: 'name', verified: true, match_score: 0.95 }]
+    const sanityChecks = [{ field_name: 'name', passed: true, rule: 'name_length' }]
     const result = computeAllFieldConfidences(fields, agreements, sourceVerifications, sanityChecks)
     expect(result).toHaveLength(1)
     expect(result[0].confidence).toBeGreaterThanOrEqual(0.95)

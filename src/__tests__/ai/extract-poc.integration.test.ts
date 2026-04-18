@@ -8,8 +8,7 @@ import { extractDocumentPoc } from '@/lib/ai/jobs/extract-document-poc'
 const FIXTURE_PATH = join(__dirname, '..', 'fixtures', 'test-contract.pdf')
 
 const runIntegration =
-  !!process.env.ANTHROPIC_API_KEY &&
-  (!!process.env.DIRECT_URL || !!process.env.DATABASE_URL)
+  !!process.env.ANTHROPIC_API_KEY && (!!process.env.DIRECT_URL || !!process.env.DATABASE_URL)
 
 describe.skipIf(!runIntegration)('extractDocumentPoc integration', () => {
   let testDocumentId: string

@@ -14,7 +14,9 @@ vi.mock('@anthropic-ai/sdk', () => {
 })
 
 describe('AnthropicDirectClient', () => {
-  beforeEach(() => { vi.clearAllMocks() })
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
 
   it('has providerName "anthropic"', () => {
     const client = new AnthropicDirectClient('sk-test')
@@ -27,17 +29,22 @@ describe('AnthropicDirectClient', () => {
 
   it('sends request and returns normalized response', async () => {
     mockCreate.mockResolvedValue({
-      id: 'msg_123', model: 'claude-sonnet-4-20250514', stop_reason: 'end_turn',
+      id: 'msg_123',
+      model: 'claude-sonnet-4-20250514',
+      stop_reason: 'end_turn',
       content: [{ type: 'text', text: 'Hello back' }],
       usage: { input_tokens: 10, output_tokens: 5 },
     })
     const client = new AnthropicDirectClient('sk-test')
     const request: ClaudeRequest = {
-      model: 'claude-sonnet-4-20250514', max_tokens: 100,
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 100,
       messages: [{ role: 'user', content: 'Hello' }],
     }
     const response = await client.complete(request)
-    expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({ model: 'claude-sonnet-4-20250514', max_tokens: 100 }))
+    expect(mockCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ model: 'claude-sonnet-4-20250514', max_tokens: 100 })
+    )
     expect(response.id).toBe('msg_123')
     expect(response.content).toEqual([{ type: 'text', text: 'Hello back' }])
     expect(response.usage.input_tokens).toBe(10)
@@ -48,8 +55,14 @@ describe('AnthropicDirectClient', () => {
     err.status = 429
     mockCreate.mockRejectedValue(err)
     const client = new AnthropicDirectClient('sk-test')
-    const request: ClaudeRequest = { model: 'claude-sonnet-4-20250514', max_tokens: 100, messages: [{ role: 'user', content: 'Hello' }] }
-    try { await client.complete(request) } catch (e) {
+    const request: ClaudeRequest = {
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 100,
+      messages: [{ role: 'user', content: 'Hello' }],
+    }
+    try {
+      await client.complete(request)
+    } catch (e) {
       expect(e).toBeInstanceOf(ClaudeClientError)
       expect((e as ClaudeClientError).retryable).toBe(true)
     }
@@ -60,8 +73,14 @@ describe('AnthropicDirectClient', () => {
     err.status = 400
     mockCreate.mockRejectedValue(err)
     const client = new AnthropicDirectClient('sk-test')
-    const request: ClaudeRequest = { model: 'claude-sonnet-4-20250514', max_tokens: 100, messages: [{ role: 'user', content: 'Hello' }] }
-    try { await client.complete(request) } catch (e) {
+    const request: ClaudeRequest = {
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 100,
+      messages: [{ role: 'user', content: 'Hello' }],
+    }
+    try {
+      await client.complete(request)
+    } catch (e) {
       expect((e as ClaudeClientError).retryable).toBe(false)
     }
   })
@@ -71,8 +90,14 @@ describe('AnthropicDirectClient', () => {
     err.status = 500
     mockCreate.mockRejectedValue(err)
     const client = new AnthropicDirectClient('sk-test')
-    const request: ClaudeRequest = { model: 'claude-sonnet-4-20250514', max_tokens: 100, messages: [{ role: 'user', content: 'Hello' }] }
-    try { await client.complete(request) } catch (e) {
+    const request: ClaudeRequest = {
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 100,
+      messages: [{ role: 'user', content: 'Hello' }],
+    }
+    try {
+      await client.complete(request)
+    } catch (e) {
       expect((e as ClaudeClientError).retryable).toBe(true)
     }
   })

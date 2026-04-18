@@ -66,14 +66,24 @@ export function OwnershipList({ ownerships, title, showActions }: OwnershipListP
       <table className="min-w-full divide-y divide-gray-200">
         <thead>
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Ejer</th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Ejerandel</th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Dato</th>
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">
+              Ejer
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">
+              Ejerandel
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">
+              Dato
+            </th>
             {!showActions && (
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">Ophørte</th>
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                Ophørte
+              </th>
             )}
             {showActions && (
-              <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-500">Handlinger</th>
+              <th className="px-6 py-3 text-right text-xs font-medium uppercase text-gray-500">
+                Handlinger
+              </th>
             )}
           </tr>
         </thead>
@@ -94,9 +104,7 @@ export function OwnershipList({ ownerships, title, showActions }: OwnershipListP
                 {Number(o.ownership_pct).toFixed(2)}%
               </td>
               <td className="px-6 py-4 text-sm text-gray-500">
-                {o.effective_date
-                  ? new Date(o.effective_date).toLocaleDateString('da-DK')
-                  : '—'}
+                {o.effective_date ? new Date(o.effective_date).toLocaleDateString('da-DK') : '—'}
               </td>
               {!showActions && o.end_date && (
                 <td className="px-6 py-4 text-sm text-gray-500">

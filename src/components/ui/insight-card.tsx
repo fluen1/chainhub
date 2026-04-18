@@ -1,7 +1,15 @@
 'use client'
 
 import { useState } from 'react'
-import { AlertTriangle, TrendingDown, FileWarning, BarChart3, CheckCircle2, ArrowRight, X } from 'lucide-react'
+import {
+  AlertTriangle,
+  TrendingDown,
+  FileWarning,
+  BarChart3,
+  CheckCircle2,
+  ArrowRight,
+  X,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Insight, InsightType } from '@/types/ui'
 
@@ -40,10 +48,7 @@ export function InsightCard({ insight }: InsightCardProps) {
 
   return (
     <div
-      className={cn(
-        'border-l-4 rounded-r-xl px-4 py-3 bg-white shadow-sm',
-        colorMap[insight.type],
-      )}
+      className={cn('border-l-4 rounded-r-xl px-4 py-3 bg-white shadow-sm', colorMap[insight.type])}
     >
       <div className="flex items-start gap-3">
         <div className={cn('mt-0.5 shrink-0', iconBgMap[insight.type])}>

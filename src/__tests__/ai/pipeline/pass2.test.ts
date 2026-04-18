@@ -50,16 +50,23 @@ describe('Pass 2: Schema extraction', () => {
         id: 'msg_1',
         model: 'claude-sonnet-4-20250514',
         stop_reason: 'tool_use',
-        content: [{
-          type: 'tool_use',
-          id: 'tu_1',
-          name: 'extract_test',
-          input: {
-            company_name: { value: 'Test ApS', claude_confidence: 0.95, source_page: 1, source_text: 'Test ApS' },
-            additional_findings: [],
-            extraction_warnings: [],
+        content: [
+          {
+            type: 'tool_use',
+            id: 'tu_1',
+            name: 'extract_test',
+            input: {
+              company_name: {
+                value: 'Test ApS',
+                claude_confidence: 0.95,
+                source_page: 1,
+                source_text: 'Test ApS',
+              },
+              additional_findings: [],
+              extraction_warnings: [],
+            },
           },
-        }],
+        ],
         usage: { input_tokens: 1000, output_tokens: 200 },
       }),
     }
@@ -98,12 +105,18 @@ describe('Pass 2: Schema extraction', () => {
         id: 'msg_1',
         model: 'claude-sonnet-4-20250514',
         stop_reason: 'tool_use',
-        content: [{
-          type: 'tool_use',
-          id: 'tu_1',
-          name: 'extract_test',
-          input: { company_name: 'Direct Value', additional_findings: [], extraction_warnings: [] },
-        }],
+        content: [
+          {
+            type: 'tool_use',
+            id: 'tu_1',
+            name: 'extract_test',
+            input: {
+              company_name: 'Direct Value',
+              additional_findings: [],
+              extraction_warnings: [],
+            },
+          },
+        ],
         usage: { input_tokens: 100, output_tokens: 50 },
       }),
     }
@@ -118,16 +131,18 @@ describe('Pass 2: Schema extraction', () => {
       id: 'msg_1',
       model: 'claude-sonnet-4-20250514',
       stop_reason: 'tool_use',
-      content: [{
-        type: 'tool_use',
-        id: 'tu_1',
-        name: 'extract_test',
-        input: {
-          company_name: { value: 'X', claude_confidence: 0.9, source_page: 1, source_text: 'X' },
-          additional_findings: [],
-          extraction_warnings: [],
+      content: [
+        {
+          type: 'tool_use',
+          id: 'tu_1',
+          name: 'extract_test',
+          input: {
+            company_name: { value: 'X', claude_confidence: 0.9, source_page: 1, source_text: 'X' },
+            additional_findings: [],
+            extraction_warnings: [],
+          },
         },
-      }],
+      ],
       usage: { input_tokens: 100, output_tokens: 50 },
     })
     const client: ClaudeClient = { providerName: 'anthropic', complete: completeFn }
@@ -143,13 +158,15 @@ describe('Pass 2: Schema extraction', () => {
         id: 'msg_1',
         model: 'claude-sonnet-4-20250514',
         stop_reason: 'tool_use',
-        content: [{
-          type: 'tool_use',
-          id: 'tu_1',
-          name: 'extract_test',
-          // company_name mangler i output
-          input: { additional_findings: [], extraction_warnings: [] },
-        }],
+        content: [
+          {
+            type: 'tool_use',
+            id: 'tu_1',
+            name: 'extract_test',
+            // company_name mangler i output
+            input: { additional_findings: [], extraction_warnings: [] },
+          },
+        ],
         usage: { input_tokens: 100, output_tokens: 30 },
       }),
     }
@@ -165,20 +182,24 @@ describe('Pass 2: Schema extraction', () => {
       id: 'msg_1',
       model: 'claude-sonnet-4-20250514',
       stop_reason: 'tool_use',
-      content: [{
-        type: 'tool_use',
-        id: 'tu_1',
-        name: 'extract_test',
-        input: { additional_findings: [], extraction_warnings: [] },
-      }],
+      content: [
+        {
+          type: 'tool_use',
+          id: 'tu_1',
+          name: 'extract_test',
+          input: { additional_findings: [], extraction_warnings: [] },
+        },
+      ],
       usage: { input_tokens: 100, output_tokens: 30 },
     })
     const client: ClaudeClient = { providerName: 'anthropic', complete: completeFn }
 
     await extractWithSchema(testContent, mockSchema, client)
-    expect(completeFn).toHaveBeenCalledWith(expect.objectContaining({
-      tool_choice: { type: 'tool', name: 'extract_test' },
-    }))
+    expect(completeFn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tool_choice: { type: 'tool', name: 'extract_test' },
+      })
+    )
   })
 
   it('inkluderer additional_findings og extraction_warnings fra svar', async () => {
@@ -188,16 +209,25 @@ describe('Pass 2: Schema extraction', () => {
         id: 'msg_1',
         model: 'claude-sonnet-4-20250514',
         stop_reason: 'tool_use',
-        content: [{
-          type: 'tool_use',
-          id: 'tu_1',
-          name: 'extract_test',
-          input: {
-            company_name: { value: 'Test ApS', claude_confidence: 0.9, source_page: 1, source_text: 'Test ApS' },
-            additional_findings: [{ finding: 'Usædvanlig klausul fundet', source_page: 3, importance: 'critical' }],
-            extraction_warnings: [{ warning: 'Lav billedkvalitet på side 2', severity: 'low' }],
+        content: [
+          {
+            type: 'tool_use',
+            id: 'tu_1',
+            name: 'extract_test',
+            input: {
+              company_name: {
+                value: 'Test ApS',
+                claude_confidence: 0.9,
+                source_page: 1,
+                source_text: 'Test ApS',
+              },
+              additional_findings: [
+                { finding: 'Usædvanlig klausul fundet', source_page: 3, importance: 'critical' },
+              ],
+              extraction_warnings: [{ warning: 'Lav billedkvalitet på side 2', severity: 'low' }],
+            },
           },
-        }],
+        ],
         usage: { input_tokens: 500, output_tokens: 100 },
       }),
     }

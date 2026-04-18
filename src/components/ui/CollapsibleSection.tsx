@@ -46,9 +46,7 @@ export function CollapsibleSection({
           isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
         )}
       >
-        <div className="overflow-hidden">
-          {children}
-        </div>
+        <div className="overflow-hidden">{children}</div>
       </div>
     </div>
   )

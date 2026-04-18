@@ -124,7 +124,10 @@ describe('logFieldCorrection', () => {
     } as never)
 
     const aiValue = [{ name: 'Partner A', percentage: 30 }]
-    const userValue = [{ name: 'Partner A', percentage: 35 }, { name: 'Partner B', percentage: 15 }]
+    const userValue = [
+      { name: 'Partner A', percentage: 35 },
+      { name: 'Partner B', percentage: 15 },
+    ]
 
     await logFieldCorrection({
       extraction_id: 'extr-4',
@@ -148,7 +151,7 @@ describe('logFieldCorrection', () => {
 
   it('propagates Prisma errors', async () => {
     vi.mocked(prisma.aIFieldCorrection.create).mockRejectedValue(
-      new Error('Database connection lost'),
+      new Error('Database connection lost')
     )
 
     await expect(
@@ -162,7 +165,7 @@ describe('logFieldCorrection', () => {
         schema_version: 'v1.0.0',
         prompt_version: 'v1.0.0',
         corrected_by: 'user-jkl',
-      }),
+      })
     ).rejects.toThrow('Database connection lost')
   })
 })

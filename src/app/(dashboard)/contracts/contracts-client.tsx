@@ -42,22 +42,22 @@ export interface CompanyItem {
 // Tilpasset til de reelle ContractSystemType enum-værdier
 // ---------------------------------------------------------------
 const REQUIRED_TYPES = [
-  { key: 'EJERAFTALE',              label: 'Ejeraftale' },
-  { key: 'LEJEKONTRAKT_ERHVERV',    label: 'Lejekontrakt' },
-  { key: 'FORSIKRING',              label: 'Forsikring' },
-  { key: 'VEDTAEGTER',              label: 'Vedtægter' },
+  { key: 'EJERAFTALE', label: 'Ejeraftale' },
+  { key: 'LEJEKONTRAKT_ERHVERV', label: 'Lejekontrakt' },
+  { key: 'FORSIKRING', label: 'Forsikring' },
+  { key: 'VEDTAEGTER', label: 'Vedtægter' },
   { key: 'ANSAETTELSE_FUNKTIONAER', label: 'Ansættelse' },
-  { key: 'INTERN_SERVICEAFTALE',    label: 'Drift' },
+  { key: 'INTERN_SERVICEAFTALE', label: 'Drift' },
 ] as const
 
 // Farve per kategori (til kategori-chip)
 const CATEGORY_COLORS: Record<string, string> = {
-  Ejerskab:        'bg-violet-500',
-  Lokaler:         'bg-sky-500',
-  Forsikring:      'bg-emerald-500',
-  Ansaettelse:     'bg-amber-500',
-  Ansættelse:      'bg-amber-500',
-  Kommercielle:    'bg-rose-500',
+  Ejerskab: 'bg-violet-500',
+  Lokaler: 'bg-sky-500',
+  Forsikring: 'bg-emerald-500',
+  Ansaettelse: 'bg-amber-500',
+  Ansættelse: 'bg-amber-500',
+  Kommercielle: 'bg-rose-500',
   Strukturaftaler: 'bg-slate-500',
 }
 
@@ -81,13 +81,13 @@ function statusLabel(s: DerivedStatus): string {
 }
 
 function statusStyle(s: DerivedStatus): string {
-  if (s === 'expired')  return 'bg-rose-50 text-rose-700'
+  if (s === 'expired') return 'bg-rose-50 text-rose-700'
   if (s === 'expiring') return 'bg-amber-50 text-amber-700'
   return 'bg-emerald-50 text-emerald-700'
 }
 
 function statusDot(s: DerivedStatus): string {
-  if (s === 'expired')  return 'bg-rose-500'
+  if (s === 'expired') return 'bg-rose-500'
   if (s === 'expiring') return 'bg-amber-500'
   return 'bg-emerald-500'
 }
@@ -103,13 +103,21 @@ function sortContracts(items: ContractItem[], key: SortKey, dir: 'asc' | 'desc')
   return [...items].sort((a, b) => {
     let cmp = 0
     switch (key) {
-      case 'name':     cmp = a.displayName.localeCompare(b.displayName, 'da'); break
-      case 'company':  cmp = a.companyName.localeCompare(b.companyName, 'da'); break
-      case 'category': cmp = a.categoryLabel.localeCompare(b.categoryLabel, 'da'); break
+      case 'name':
+        cmp = a.displayName.localeCompare(b.displayName, 'da')
+        break
+      case 'company':
+        cmp = a.companyName.localeCompare(b.companyName, 'da')
+        break
+      case 'category':
+        cmp = a.categoryLabel.localeCompare(b.categoryLabel, 'da')
+        break
       case 'expiry':
-        cmp = (a.daysUntilExpiry ?? 99999) - (b.daysUntilExpiry ?? 99999); break
+        cmp = (a.daysUntilExpiry ?? 99999) - (b.daysUntilExpiry ?? 99999)
+        break
       case 'status':
-        cmp = statusRank[deriveStatus(a)] - statusRank[deriveStatus(b)]; break
+        cmp = statusRank[deriveStatus(a)] - statusRank[deriveStatus(b)]
+        break
     }
     return cmp * mult
   })
@@ -147,9 +155,16 @@ export default function ContractsClient({
 
   // Udled manglende kontrakter (virtuelle rows for pinned-panel)
   const missingRows = useMemo(() => {
-    const rows: { companyId: string; companyName: string; missingType: string; missingLabel: string }[] = []
+    const rows: {
+      companyId: string
+      companyName: string
+      missingType: string
+      missingLabel: string
+    }[] = []
     for (const company of companies) {
-      const companyTypes = new Set(contracts.filter((c) => c.companyId === company.id).map((c) => c.systemType))
+      const companyTypes = new Set(
+        contracts.filter((c) => c.companyId === company.id).map((c) => c.systemType)
+      )
       for (const req of REQUIRED_TYPES) {
         if (!companyTypes.has(req.key)) {
           rows.push({
@@ -185,15 +200,18 @@ export default function ContractsClient({
     })
   }, [contracts, search, statusFilter])
 
-  const sorted = useMemo(() => sortContracts(filtered, sortKey, sortDir), [filtered, sortKey, sortDir])
+  const sorted = useMemo(
+    () => sortContracts(filtered, sortKey, sortDir),
+    [filtered, sortKey, sortDir]
+  )
 
   // Counts
   const counts = useMemo(() => {
     return {
-      expired:  contracts.filter((c) => deriveStatus(c) === 'expired').length,
+      expired: contracts.filter((c) => deriveStatus(c) === 'expired').length,
       expiring: contracts.filter((c) => deriveStatus(c) === 'expiring').length,
-      active:   contracts.filter((c) => deriveStatus(c) === 'active').length,
-      missing:  missingRows.length,
+      active: contracts.filter((c) => deriveStatus(c) === 'active').length,
+      missing: missingRows.length,
     }
   }, [contracts, missingRows.length])
 
@@ -250,8 +268,22 @@ export default function ContractsClient({
             <h1 className="text-[20px] font-semibold tracking-tight text-slate-900">Kontrakter</h1>
             <p className="text-[13px] text-slate-500 mt-1">
               {contracts.length} kontrakter i porteføljen
-              {(counts.expired + counts.expiring) > 0 && <> &middot; <span className="text-slate-700 font-medium">{counts.expired + counts.expiring} kræver handling</span></>}
-              {counts.missing > 0 && <> &middot; <span className="text-violet-600 font-medium">{counts.missing} mangler</span></>}
+              {counts.expired + counts.expiring > 0 && (
+                <>
+                  {' '}
+                  &middot;{' '}
+                  <span className="text-slate-700 font-medium">
+                    {counts.expired + counts.expiring} kræver handling
+                  </span>
+                </>
+              )}
+              {counts.missing > 0 && (
+                <>
+                  {' '}
+                  &middot;{' '}
+                  <span className="text-violet-600 font-medium">{counts.missing} mangler</span>
+                </>
+              )}
             </p>
           </div>
           <Link
@@ -274,7 +306,9 @@ export default function ContractsClient({
               placeholder="Søg kontrakt, selskab, type..."
               className="flex-1 text-[13px] text-slate-700 placeholder:text-slate-400 bg-transparent outline-none"
             />
-            <kbd className="bg-slate-100 ring-1 ring-slate-200 rounded px-1.5 py-0.5 text-[10px] text-slate-500 font-mono">⌘K</kbd>
+            <kbd className="bg-slate-100 ring-1 ring-slate-200 rounded px-1.5 py-0.5 text-[10px] text-slate-500 font-mono">
+              ⌘K
+            </kbd>
           </div>
 
           {counts.expired > 0 && (
@@ -323,7 +357,7 @@ export default function ContractsClient({
               onClick={() => setView('list')}
               className={cn(
                 'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium transition-colors',
-                view === 'list' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900',
+                view === 'list' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900'
               )}
             >
               <ListIcon className="w-3.5 h-3.5" />
@@ -334,7 +368,9 @@ export default function ContractsClient({
               onClick={() => setView('matrix')}
               className={cn(
                 'flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] font-medium transition-colors',
-                view === 'matrix' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:text-slate-900',
+                view === 'matrix'
+                  ? 'bg-slate-900 text-white'
+                  : 'text-slate-600 hover:text-slate-900'
               )}
             >
               <Grid3x3 className="w-3.5 h-3.5" />
@@ -356,61 +392,74 @@ export default function ContractsClient({
                 <span className="text-[12px] font-semibold text-slate-900">Kræver handling</span>
                 <span className="text-[11px] text-slate-400">({totalAttention})</span>
               </div>
-              <ChevronUp className={cn('w-3.5 h-3.5 text-slate-400 transition-transform', !showUrgency && 'rotate-180')} />
+              <ChevronUp
+                className={cn(
+                  'w-3.5 h-3.5 text-slate-400 transition-transform',
+                  !showUrgency && 'rotate-180'
+                )}
+              />
             </button>
-            {showUrgency && <div className="divide-y divide-slate-50">
-              {visibleUrgencyItems.map((item, idx) => {
-                if (item.kind === 'contract') {
-                  const derived = item.status
+            {showUrgency && (
+              <div className="divide-y divide-slate-50">
+                {visibleUrgencyItems.map((item, idx) => {
+                  if (item.kind === 'contract') {
+                    const derived = item.status
+                    return (
+                      <button
+                        key={`urgent-${item.contract.id}-${idx}`}
+                        type="button"
+                        onClick={() => jumpToContract(item.contract.id)}
+                        className="w-full flex items-center gap-3 px-5 py-2.5 hover:bg-slate-50/60 transition-colors text-left"
+                      >
+                        <span
+                          className={cn('w-1.5 h-1.5 rounded-full shrink-0', statusDot(derived))}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[12px] font-medium text-slate-900 truncate">
+                            {item.contract.displayName}
+                          </div>
+                          <div className="text-[11px] text-slate-400 truncate">
+                            {item.contract.companyName} &middot; {item.contract.categoryLabel}
+                          </div>
+                        </div>
+                        <span className="text-[11px] text-slate-500 tabular-nums shrink-0">
+                          {relativeDate(item.contract.daysUntilExpiry)}
+                        </span>
+                      </button>
+                    )
+                  }
                   return (
-                    <button
-                      key={`urgent-${item.contract.id}-${idx}`}
-                      type="button"
-                      onClick={() => jumpToContract(item.contract.id)}
-                      className="w-full flex items-center gap-3 px-5 py-2.5 hover:bg-slate-50/60 transition-colors text-left"
+                    <Link
+                      key={`missing-${item.row.companyId}-${item.row.missingType}-${idx}`}
+                      href={`/companies/${item.row.companyId}`}
+                      className="flex items-center gap-3 px-5 py-2.5 hover:bg-slate-50/60 transition-colors no-underline"
                     >
-                      <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', statusDot(derived))} />
+                      <span className="w-1.5 h-1.5 rounded-full bg-violet-500 shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <div className="text-[12px] font-medium text-slate-900 truncate">{item.contract.displayName}</div>
+                        <div className="text-[12px] font-medium text-slate-900 truncate">
+                          Mangler {item.row.missingLabel}
+                        </div>
                         <div className="text-[11px] text-slate-400 truncate">
-                          {item.contract.companyName} &middot; {item.contract.categoryLabel}
+                          {item.row.companyName}
                         </div>
                       </div>
-                      <span className="text-[11px] text-slate-500 tabular-nums shrink-0">
-                        {relativeDate(item.contract.daysUntilExpiry)}
-                      </span>
-                    </button>
+                      <span className="text-[11px] text-slate-500 shrink-0">Ingen</span>
+                    </Link>
                   )
-                }
-                return (
-                  <Link
-                    key={`missing-${item.row.companyId}-${item.row.missingType}-${idx}`}
-                    href={`/companies/${item.row.companyId}`}
-                    className="flex items-center gap-3 px-5 py-2.5 hover:bg-slate-50/60 transition-colors no-underline"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-violet-500 shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[12px] font-medium text-slate-900 truncate">
-                        Mangler {item.row.missingLabel}
-                      </div>
-                      <div className="text-[11px] text-slate-400 truncate">{item.row.companyName}</div>
-                    </div>
-                    <span className="text-[11px] text-slate-500 shrink-0">Ingen</span>
-                  </Link>
-                )
-              })}
-              {totalAttention > 5 && (
-                <div className="px-5 py-2 border-t border-slate-100">
-                  <button
-                    type="button"
-                    className="text-[11px] font-medium text-slate-500 hover:text-slate-900"
-                    onClick={() => setShowAllUrgency(!showAllUrgency)}
-                  >
-                    {showAllUrgency ? 'Vis færre' : `Vis alle ${totalAttention}`} →
-                  </button>
-                </div>
-              )}
-            </div>}
+                })}
+                {totalAttention > 5 && (
+                  <div className="px-5 py-2 border-t border-slate-100">
+                    <button
+                      type="button"
+                      className="text-[11px] font-medium text-slate-500 hover:text-slate-900"
+                      onClick={() => setShowAllUrgency(!showAllUrgency)}
+                    >
+                      {showAllUrgency ? 'Vis færre' : `Vis alle ${totalAttention}`} →
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -420,18 +469,44 @@ export default function ContractsClient({
             <table ref={tableRef} className="w-full text-[12px] border-collapse">
               <thead className="sticky top-0 z-10">
                 <tr className="border-b border-slate-200 bg-white">
-                  <Th label="Kontrakt"  active={sortKey === 'name'}     dir={sortDir} onClick={() => toggleSort('name')} />
-                  <Th label="Selskab"   active={sortKey === 'company'}  dir={sortDir} onClick={() => toggleSort('company')} />
-                  <Th label="Kategori"  active={sortKey === 'category'} dir={sortDir} onClick={() => toggleSort('category')} />
-                  <Th label="Udløber"   active={sortKey === 'expiry'}   dir={sortDir} onClick={() => toggleSort('expiry')} />
-                  <Th label="Status"    active={sortKey === 'status'}   dir={sortDir} onClick={() => toggleSort('status')} />
+                  <Th
+                    label="Kontrakt"
+                    active={sortKey === 'name'}
+                    dir={sortDir}
+                    onClick={() => toggleSort('name')}
+                  />
+                  <Th
+                    label="Selskab"
+                    active={sortKey === 'company'}
+                    dir={sortDir}
+                    onClick={() => toggleSort('company')}
+                  />
+                  <Th
+                    label="Kategori"
+                    active={sortKey === 'category'}
+                    dir={sortDir}
+                    onClick={() => toggleSort('category')}
+                  />
+                  <Th
+                    label="Udløber"
+                    active={sortKey === 'expiry'}
+                    dir={sortDir}
+                    onClick={() => toggleSort('expiry')}
+                  />
+                  <Th
+                    label="Status"
+                    active={sortKey === 'status'}
+                    dir={sortDir}
+                    onClick={() => toggleSort('status')}
+                  />
                 </tr>
               </thead>
               <tbody>
                 {sorted.map((c, idx) => {
                   const derived = deriveStatus(c)
                   const prevDerived = idx > 0 ? deriveStatus(sorted[idx - 1]) : null
-                  const showSeparator = sortKey === 'status' && prevDerived !== null && prevDerived !== derived
+                  const showSeparator =
+                    sortKey === 'status' && prevDerived !== null && prevDerived !== derived
                   const isHighlighted = highlightId === c.id
                   return (
                     <Fragment key={c.id}>
@@ -449,7 +524,7 @@ export default function ContractsClient({
                         id={`row-${c.id}`}
                         className={cn(
                           'border-b border-slate-100 transition-colors group/row [content-visibility:auto] [contain-intrinsic-size:auto_44px]',
-                          isHighlighted ? 'bg-amber-50' : 'hover:bg-slate-50/60',
+                          isHighlighted ? 'bg-amber-50' : 'hover:bg-slate-50/60'
                         )}
                       >
                         <td className="px-4 py-3">
@@ -461,21 +536,37 @@ export default function ContractsClient({
                           </Link>
                         </td>
                         <td className="px-4 py-3 text-slate-600">
-                          <Link href={`/companies/${c.companyId}`} className="text-slate-600 hover:text-slate-900 no-underline">
+                          <Link
+                            href={`/companies/${c.companyId}`}
+                            className="text-slate-600 hover:text-slate-900 no-underline"
+                          >
                             {c.companyName}
                           </Link>
                         </td>
                         <td className="px-4 py-3">
                           <span className="inline-flex items-center gap-1.5 text-slate-600">
-                            <span className={cn('w-1.5 h-1.5 rounded-full', CATEGORY_COLORS[c.categoryLabel] ?? 'bg-slate-400')} />
+                            <span
+                              className={cn(
+                                'w-1.5 h-1.5 rounded-full',
+                                CATEGORY_COLORS[c.categoryLabel] ?? 'bg-slate-400'
+                              )}
+                            />
                             {c.categoryLabel}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-slate-600 tabular-nums" title={c.expiryDate ?? ''}>
+                        <td
+                          className="px-4 py-3 text-slate-600 tabular-nums"
+                          title={c.expiryDate ?? ''}
+                        >
                           {relativeDate(c.daysUntilExpiry)}
                         </td>
                         <td className="px-4 py-3">
-                          <span className={cn('inline-flex items-center gap-1.5 text-[10px] font-medium px-2 py-0.5 rounded', statusStyle(derived))}>
+                          <span
+                            className={cn(
+                              'inline-flex items-center gap-1.5 text-[10px] font-medium px-2 py-0.5 rounded',
+                              statusStyle(derived)
+                            )}
+                          >
                             <span className={cn('w-1 h-1 rounded-full', statusDot(derived))} />
                             {statusLabel(derived)}
                           </span>
@@ -490,7 +581,9 @@ export default function ContractsClient({
             {sorted.length === 0 && (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <p className="text-[13px] text-slate-500 font-medium">Ingen kontrakter fundet</p>
-                <p className="text-[11px] text-slate-400 mt-1">Prøv et andet søgeord eller filter</p>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Prøv et andet søgeord eller filter
+                </p>
               </div>
             )}
 
@@ -520,7 +613,7 @@ export default function ContractsClient({
           'fixed bottom-6 right-6 w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center shadow-[0_4px_16px_-4px_rgba(15,23,42,0.3)] ring-1 ring-slate-900/10 transition-all duration-200',
           showScrollTop
             ? 'opacity-100 translate-y-0 pointer-events-auto'
-            : 'opacity-0 translate-y-2 pointer-events-none',
+            : 'opacity-0 translate-y-2 pointer-events-none'
         )}
         aria-label="Scroll til toppen"
       >
@@ -535,7 +628,11 @@ export default function ContractsClient({
 // ---------------------------------------------------------------
 type CellStatus = 'active' | 'expiring' | 'expired' | 'missing'
 
-function cellFor(companyId: string, typeKey: string, contracts: ContractItem[]): { status: CellStatus; contract?: ContractItem } {
+function cellFor(
+  companyId: string,
+  typeKey: string,
+  contracts: ContractItem[]
+): { status: CellStatus; contract?: ContractItem } {
   const matches = contracts.filter((c) => c.companyId === companyId && c.systemType === typeKey)
   if (matches.length === 0) return { status: 'missing' }
   const sorted = [...matches].sort((a, b) => {
@@ -548,7 +645,8 @@ function cellFor(companyId: string, typeKey: string, contracts: ContractItem[]):
   })
   const top = sorted[0]
   if (top.status === 'UDLOEBET') return { status: 'expired', contract: top }
-  if (top.daysUntilExpiry != null && top.daysUntilExpiry <= 90) return { status: 'expiring', contract: top }
+  if (top.daysUntilExpiry != null && top.daysUntilExpiry <= 90)
+    return { status: 'expiring', contract: top }
   return { status: 'active', contract: top }
 }
 
@@ -564,7 +662,7 @@ function MatrixView({
 
   const problemCompanies = useMemo(() => {
     return companies.filter((co) =>
-      REQUIRED_TYPES.some((req) => cellFor(co.id, req.key, contracts).status !== 'active'),
+      REQUIRED_TYPES.some((req) => cellFor(co.id, req.key, contracts).status !== 'active')
     )
   }, [companies, contracts])
 
@@ -575,7 +673,9 @@ function MatrixView({
       <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100">
         <div>
           <div className="text-[12px] font-semibold text-slate-900">Dækningsmatrix</div>
-          <div className="text-[11px] text-slate-400 mt-0.5">Obligatoriske kontrakter pr. selskab</div>
+          <div className="text-[11px] text-slate-400 mt-0.5">
+            Obligatoriske kontrakter pr. selskab
+          </div>
         </div>
         <div className="flex items-center bg-slate-50 rounded-lg p-0.5 ring-1 ring-slate-900/[0.06]">
           <button
@@ -583,7 +683,7 @@ function MatrixView({
             onClick={() => setShowAll(false)}
             className={cn(
               'px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors',
-              !showAll ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900',
+              !showAll ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'
             )}
           >
             Kun huller ({problemCompanies.length})
@@ -593,7 +693,7 @@ function MatrixView({
             onClick={() => setShowAll(true)}
             className={cn(
               'px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors',
-              showAll ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900',
+              showAll ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'
             )}
           >
             Alle ({companies.length})
@@ -609,7 +709,10 @@ function MatrixView({
                 Selskab
               </th>
               {REQUIRED_TYPES.map((t) => (
-                <th key={t.key} className="px-3 py-2.5 text-center text-[10px] font-medium text-slate-500 uppercase tracking-[0.08em] min-w-[100px]">
+                <th
+                  key={t.key}
+                  className="px-3 py-2.5 text-center text-[10px] font-medium text-slate-500 uppercase tracking-[0.08em] min-w-[100px]"
+                >
                   {t.label}
                 </th>
               ))}
@@ -617,9 +720,15 @@ function MatrixView({
           </thead>
           <tbody>
             {shownCompanies.map((co) => (
-              <tr key={co.id} className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/40">
+              <tr
+                key={co.id}
+                className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/40"
+              >
                 <td className="sticky left-0 bg-white/95 backdrop-blur-sm px-4 py-2.5 whitespace-nowrap">
-                  <Link href={`/companies/${co.id}`} className="text-slate-900 font-medium no-underline hover:text-slate-950">
+                  <Link
+                    href={`/companies/${co.id}`}
+                    className="text-slate-900 font-medium no-underline hover:text-slate-950"
+                  >
                     {co.name}
                   </Link>
                   {co.city && <div className="text-[10px] text-slate-400 mt-0.5">{co.city}</div>}
@@ -631,18 +740,25 @@ function MatrixView({
                     <td key={t.key} className="px-3 py-2.5 relative">
                       <button
                         type="button"
-                        onClick={() => setPopover(isOpen ? null : { companyId: co.id, typeKey: t.key })}
+                        onClick={() =>
+                          setPopover(isOpen ? null : { companyId: co.id, typeKey: t.key })
+                        }
                         className={cn(
                           'w-full h-8 rounded-md flex items-center justify-center transition-all',
-                          cell.status === 'active' && 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700',
-                          cell.status === 'expiring' && 'bg-amber-50 hover:bg-amber-100 text-amber-700',
+                          cell.status === 'active' &&
+                            'bg-emerald-50 hover:bg-emerald-100 text-emerald-700',
+                          cell.status === 'expiring' &&
+                            'bg-amber-50 hover:bg-amber-100 text-amber-700',
                           cell.status === 'expired' && 'bg-rose-50 hover:bg-rose-100 text-rose-700',
-                          cell.status === 'missing' && 'bg-violet-50 hover:bg-violet-100 text-violet-700 ring-1 ring-violet-200',
+                          cell.status === 'missing' &&
+                            'bg-violet-50 hover:bg-violet-100 text-violet-700 ring-1 ring-violet-200'
                         )}
                       >
                         {cell.status === 'active' && <span className="text-[13px]">✓</span>}
                         {cell.status === 'expiring' && (
-                          <span className="text-[10px] font-semibold tabular-nums">{cell.contract?.daysUntilExpiry}d</span>
+                          <span className="text-[10px] font-semibold tabular-nums">
+                            {cell.contract?.daysUntilExpiry}d
+                          </span>
                         )}
                         {cell.status === 'expired' && <span className="text-[13px]">✕</span>}
                         {cell.status === 'missing' && <span className="text-[13px]">⊘</span>}
@@ -655,19 +771,25 @@ function MatrixView({
                             <div className="text-[10px] font-medium text-slate-400 uppercase tracking-[0.08em]">
                               {co.name} &middot; {t.label}
                             </div>
-                            <button type="button" onClick={() => setPopover(null)} className="text-slate-400 hover:text-slate-900">
+                            <button
+                              type="button"
+                              onClick={() => setPopover(null)}
+                              className="text-slate-400 hover:text-slate-900"
+                            >
                               <X className="w-3 h-3" />
                             </button>
                           </div>
                           {cell.contract ? (
                             <>
-                              <div className="text-[12px] font-medium text-slate-900">{cell.contract.displayName}</div>
+                              <div className="text-[12px] font-medium text-slate-900">
+                                {cell.contract.displayName}
+                              </div>
                               <div className="text-[11px] text-slate-500 mt-0.5">
                                 {cell.status === 'expired'
                                   ? `Udløbet ${relativeDate(cell.contract.daysUntilExpiry)}`
                                   : cell.status === 'expiring'
-                                  ? `Udløber ${relativeDate(cell.contract.daysUntilExpiry)}`
-                                  : 'Aktiv'}
+                                    ? `Udløber ${relativeDate(cell.contract.daysUntilExpiry)}`
+                                    : 'Aktiv'}
                               </div>
                               <Link
                                 href={`/contracts/${cell.contract.id}`}
@@ -678,7 +800,9 @@ function MatrixView({
                             </>
                           ) : (
                             <>
-                              <div className="text-[12px] font-medium text-slate-900">Ingen aktiv kontrakt</div>
+                              <div className="text-[12px] font-medium text-slate-900">
+                                Ingen aktiv kontrakt
+                              </div>
                               <div className="text-[11px] text-slate-500 mt-0.5">
                                 Denne kontrakttype skal findes for alle selskaber.
                               </div>
@@ -704,14 +828,18 @@ function MatrixView({
       {shownCompanies.length === 0 && (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <p className="text-[13px] text-emerald-600 font-medium">Alt under kontrol ✓</p>
-          <p className="text-[11px] text-slate-400 mt-1">Ingen selskaber mangler obligatoriske kontrakter</p>
+          <p className="text-[11px] text-slate-400 mt-1">
+            Ingen selskaber mangler obligatoriske kontrakter
+          </p>
         </div>
       )}
 
       {/* Legend */}
       <div className="px-5 py-3 border-t border-slate-100 flex items-center gap-5 text-[11px] text-slate-500">
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded bg-emerald-100 text-emerald-700 flex items-center justify-center text-[9px]">✓</span>
+          <span className="w-2.5 h-2.5 rounded bg-emerald-100 text-emerald-700 flex items-center justify-center text-[9px]">
+            ✓
+          </span>
           Aktiv
         </div>
         <div className="flex items-center gap-1.5">
@@ -748,7 +876,9 @@ function StatusPill({
       onClick={onClick}
       className={cn(
         'flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] font-medium transition-colors bg-white ring-1 shadow-[0_1px_2px_rgba(15,23,42,0.04)] shrink-0',
-        active ? 'ring-slate-900/20 text-slate-900' : 'ring-slate-900/[0.06] text-slate-600 hover:text-slate-900',
+        active
+          ? 'ring-slate-900/20 text-slate-900'
+          : 'ring-slate-900/[0.06] text-slate-600 hover:text-slate-900'
       )}
     >
       <span className={cn('w-1.5 h-1.5 rounded-full', dot)} />
@@ -775,7 +905,8 @@ function Th({
     >
       <span className="inline-flex items-center gap-1">
         <span className={cn(active && 'text-slate-900')}>{label}</span>
-        {active && (dir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />)}
+        {active &&
+          (dir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />)}
       </span>
     </th>
   )

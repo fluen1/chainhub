@@ -2,9 +2,24 @@ import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
-import { Mail, Phone, Building2, FileText, Briefcase, PieChart, CalendarDays, Clock, Shield } from 'lucide-react'
+import {
+  Mail,
+  Phone,
+  Building2,
+  FileText,
+  Briefcase,
+  PieChart,
+  CalendarDays,
+  Clock,
+  Shield,
+} from 'lucide-react'
 import Link from 'next/link'
-import { getCompanyPersonRoleLabel, getContractStatusLabel, getContractStatusStyle, formatDate } from '@/lib/labels'
+import {
+  getCompanyPersonRoleLabel,
+  getContractStatusLabel,
+  getContractStatusStyle,
+  formatDate,
+} from '@/lib/labels'
 
 export const metadata: Metadata = { title: 'Person' }
 
@@ -46,7 +61,12 @@ export default async function PersonDetailPage({ params }: Props) {
       contract_parties: {
         include: {
           contract: {
-            select: { id: true, display_name: true, status: true, company: { select: { name: true } } },
+            select: {
+              id: true,
+              display_name: true,
+              status: true,
+              company: { select: { name: true } },
+            },
           },
         },
       },
@@ -74,13 +94,21 @@ export default async function PersonDetailPage({ params }: Props) {
   // Saml alle aktive ansættelseskontrakter
   const employmentContracts = activeRoles
     .filter((cp) => cp.contract)
-    .map((cp) => ({ ...cp.contract!, companyName: cp.company.name, companyId: cp.company.id, role: cp.role, employmentType: cp.employment_type }))
+    .map((cp) => ({
+      ...cp.contract!,
+      companyName: cp.company.name,
+      companyId: cp.company.id,
+      role: cp.role,
+      employmentType: cp.employment_type,
+    }))
 
   return (
     <div className="max-w-4xl">
       {/* Breadcrumb */}
       <nav className="mb-4 text-xs text-gray-400">
-        <Link href="/persons" className="text-slate-500 no-underline hover:text-blue-600">Personer</Link>
+        <Link href="/persons" className="text-slate-500 no-underline hover:text-blue-600">
+          Personer
+        </Link>
         <span className="mx-2">›</span>
         <span className="font-medium text-slate-900">{fullName}</span>
       </nav>
@@ -94,13 +122,19 @@ export default async function PersonDetailPage({ params }: Props) {
           <h1 className="text-xl font-bold text-gray-900">{fullName}</h1>
           <div className="mt-1 flex flex-wrap items-center gap-4 text-sm text-gray-500">
             {person.email && (
-              <a href={`mailto:${person.email}`} className="flex items-center gap-1.5 hover:text-gray-700 no-underline">
+              <a
+                href={`mailto:${person.email}`}
+                className="flex items-center gap-1.5 hover:text-gray-700 no-underline"
+              >
                 <Mail className="h-4 w-4 text-gray-400" />
                 {person.email}
               </a>
             )}
             {person.phone && (
-              <a href={`tel:${person.phone}`} className="flex items-center gap-1.5 hover:text-gray-700 no-underline">
+              <a
+                href={`tel:${person.phone}`}
+                className="flex items-center gap-1.5 hover:text-gray-700 no-underline"
+              >
                 <Phone className="h-4 w-4 text-gray-400" />
                 {person.phone}
               </a>
@@ -152,7 +186,9 @@ export default async function PersonDetailPage({ params }: Props) {
                     </p>
                   </div>
                 </div>
-                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getContractStatusStyle(ec.status)}`}>
+                <span
+                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getContractStatusStyle(ec.status)}`}
+                >
                   {getContractStatusLabel(ec.status)}
                 </span>
               </div>
@@ -162,8 +198,12 @@ export default async function PersonDetailPage({ params }: Props) {
                   <div className="flex items-start gap-2">
                     <CalendarDays className="h-3.5 w-3.5 text-gray-400 mt-0.5 shrink-0" />
                     <div>
-                      <div className="text-[10px] text-gray-400 uppercase tracking-wide">Ikrafttrædelse</div>
-                      <div className="text-xs font-medium text-gray-900">{formatDate(ec.effective_date)}</div>
+                      <div className="text-[10px] text-gray-400 uppercase tracking-wide">
+                        Ikrafttrædelse
+                      </div>
+                      <div className="text-xs font-medium text-gray-900">
+                        {formatDate(ec.effective_date)}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -172,7 +212,9 @@ export default async function PersonDetailPage({ params }: Props) {
                     <Clock className="h-3.5 w-3.5 text-gray-400 mt-0.5 shrink-0" />
                     <div>
                       <div className="text-[10px] text-gray-400 uppercase tracking-wide">Udløb</div>
-                      <div className="text-xs font-medium text-gray-900">{formatDate(ec.expiry_date)}</div>
+                      <div className="text-xs font-medium text-gray-900">
+                        {formatDate(ec.expiry_date)}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -180,8 +222,12 @@ export default async function PersonDetailPage({ params }: Props) {
                   <div className="flex items-start gap-2">
                     <Shield className="h-3.5 w-3.5 text-gray-400 mt-0.5 shrink-0" />
                     <div>
-                      <div className="text-[10px] text-gray-400 uppercase tracking-wide">Opsigelse</div>
-                      <div className="text-xs font-medium text-gray-900">{ec.notice_period_days} dage</div>
+                      <div className="text-[10px] text-gray-400 uppercase tracking-wide">
+                        Opsigelse
+                      </div>
+                      <div className="text-xs font-medium text-gray-900">
+                        {ec.notice_period_days} dage
+                      </div>
                     </div>
                   </div>
                 )}
@@ -189,8 +235,12 @@ export default async function PersonDetailPage({ params }: Props) {
                   <div className="flex items-start gap-2">
                     <CalendarDays className="h-3.5 w-3.5 text-gray-400 mt-0.5 shrink-0" />
                     <div>
-                      <div className="text-[10px] text-gray-400 uppercase tracking-wide">Underskrevet</div>
-                      <div className="text-xs font-medium text-gray-900">{formatDate(ec.signed_date)}</div>
+                      <div className="text-[10px] text-gray-400 uppercase tracking-wide">
+                        Underskrevet
+                      </div>
+                      <div className="text-xs font-medium text-gray-900">
+                        {formatDate(ec.signed_date)}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -198,8 +248,12 @@ export default async function PersonDetailPage({ params }: Props) {
                   <div className="flex items-start gap-2">
                     <CalendarDays className="h-3.5 w-3.5 text-gray-400 mt-0.5 shrink-0" />
                     <div>
-                      <div className="text-[10px] text-gray-400 uppercase tracking-wide">Anciennitet</div>
-                      <div className="text-xs font-medium text-gray-900">{formatDate(ec.anciennity_start)}</div>
+                      <div className="text-[10px] text-gray-400 uppercase tracking-wide">
+                        Anciennitet
+                      </div>
+                      <div className="text-xs font-medium text-gray-900">
+                        {formatDate(ec.anciennity_start)}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -208,7 +262,9 @@ export default async function PersonDetailPage({ params }: Props) {
                     <Clock className="h-3.5 w-3.5 text-red-400 mt-0.5 shrink-0" />
                     <div>
                       <div className="text-[10px] text-red-400 uppercase tracking-wide">Opsagt</div>
-                      <div className="text-xs font-medium text-red-700">{formatDate(ec.termination_date)}</div>
+                      <div className="text-xs font-medium text-red-700">
+                        {formatDate(ec.termination_date)}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -223,7 +279,9 @@ export default async function PersonDetailPage({ params }: Props) {
         <div className="rounded-xl border border-gray-200 bg-white p-5">
           <div className="flex items-center gap-2 mb-4">
             <Building2 className="h-4 w-4 text-gray-400" />
-            <h2 className="text-sm font-semibold text-gray-900">Aktive tilknytninger ({activeRoles.length})</h2>
+            <h2 className="text-sm font-semibold text-gray-900">
+              Aktive tilknytninger ({activeRoles.length})
+            </h2>
           </div>
           {activeRoles.length === 0 ? (
             <p className="text-sm text-gray-400 py-2">Ingen aktive tilknytninger</p>
@@ -241,7 +299,8 @@ export default async function PersonDetailPage({ params }: Props) {
                     <p className="text-xs text-gray-500 mt-0.5">
                       {getCompanyPersonRoleLabel(cp.role)}
                       {cp.employment_type && ` · ${cp.employment_type}`}
-                      {cp.start_date && ` · fra ${new Date(cp.start_date).toLocaleDateString('da-DK')}`}
+                      {cp.start_date &&
+                        ` · fra ${new Date(cp.start_date).toLocaleDateString('da-DK')}`}
                     </p>
                     {cp.anciennity_start && (
                       <p className="text-[10px] text-gray-400 mt-0.5">
@@ -270,7 +329,9 @@ export default async function PersonDetailPage({ params }: Props) {
         <div className="rounded-xl border border-gray-200 bg-white p-5">
           <div className="flex items-center gap-2 mb-4">
             <PieChart className="h-4 w-4 text-gray-400" />
-            <h2 className="text-sm font-semibold text-gray-900">Ejerskaber ({person.ownerships.length})</h2>
+            <h2 className="text-sm font-semibold text-gray-900">
+              Ejerskaber ({person.ownerships.length})
+            </h2>
           </div>
           {person.ownerships.length === 0 ? (
             <p className="text-sm text-gray-400 py-2">Ingen ejerskaber</p>
@@ -286,7 +347,8 @@ export default async function PersonDetailPage({ params }: Props) {
                   </Link>
                   <p className="text-xs text-gray-500 mt-0.5">
                     {Number(o.ownership_pct)}% ejerandel
-                    {o.effective_date && ` · fra ${new Date(o.effective_date).toLocaleDateString('da-DK')}`}
+                    {o.effective_date &&
+                      ` · fra ${new Date(o.effective_date).toLocaleDateString('da-DK')}`}
                   </p>
                 </li>
               ))}
@@ -299,7 +361,9 @@ export default async function PersonDetailPage({ params }: Props) {
           <div className="rounded-xl border border-gray-200 bg-white p-5">
             <div className="flex items-center gap-2 mb-4">
               <FileText className="h-4 w-4 text-gray-400" />
-              <h2 className="text-sm font-semibold text-gray-900">Tilknyttede kontrakter ({person.contract_parties.length})</h2>
+              <h2 className="text-sm font-semibold text-gray-900">
+                Tilknyttede kontrakter ({person.contract_parties.length})
+              </h2>
             </div>
             <ul className="space-y-3">
               {person.contract_parties.map((cp) => (
@@ -311,7 +375,8 @@ export default async function PersonDetailPage({ params }: Props) {
                     {cp.contract.display_name}
                   </Link>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    {cp.role_in_contract && `${cp.role_in_contract} · `}{cp.contract.company?.name ?? ''}
+                    {cp.role_in_contract && `${cp.role_in_contract} · `}
+                    {cp.contract.company?.name ?? ''}
                   </p>
                 </li>
               ))}
@@ -324,7 +389,9 @@ export default async function PersonDetailPage({ params }: Props) {
           <div className="rounded-xl border border-gray-200 bg-white p-5">
             <div className="flex items-center gap-2 mb-4">
               <Briefcase className="h-4 w-4 text-gray-400" />
-              <h2 className="text-sm font-semibold text-gray-900">Tilknyttede sager ({person.case_persons.length})</h2>
+              <h2 className="text-sm font-semibold text-gray-900">
+                Tilknyttede sager ({person.case_persons.length})
+              </h2>
             </div>
             <ul className="space-y-3">
               {person.case_persons.map((cp) => (
@@ -336,7 +403,8 @@ export default async function PersonDetailPage({ params }: Props) {
                     {cp.case.title}
                   </Link>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    {cp.role && `${cp.role} · `}{cp.case.status}
+                    {cp.role && `${cp.role} · `}
+                    {cp.case.status}
                   </p>
                 </li>
               ))}

@@ -22,7 +22,11 @@ const STATUS_LABELS: Record<string, string> = {
   ARKIVERET: 'Arkiveret',
 }
 
-export function ContractStatusForm({ contractId, currentStatus, nextStatuses }: ContractStatusFormProps) {
+export function ContractStatusForm({
+  contractId,
+  currentStatus,
+  nextStatuses,
+}: ContractStatusFormProps) {
   const router = useRouter()
   const [selectedStatus, setSelectedStatus] = useState(nextStatuses[0] ?? '')
   const [note, setNote] = useState('')
@@ -54,7 +58,8 @@ export function ContractStatusForm({ contractId, currentStatus, nextStatuses }: 
     <div className="rounded-lg border bg-white p-4 shadow-sm">
       <h3 className="text-sm font-semibold text-gray-900 mb-3">Opdatér status</h3>
       <p className="text-xs text-gray-500 mb-3">
-        Nuværende: <span className="font-medium">{STATUS_LABELS[currentStatus] ?? currentStatus}</span>
+        Nuværende:{' '}
+        <span className="font-medium">{STATUS_LABELS[currentStatus] ?? currentStatus}</span>
       </p>
 
       <div className="space-y-3">

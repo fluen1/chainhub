@@ -3,7 +3,7 @@ import type { ExtractedField, SanityCheckResult } from './types'
 
 export function runSanityChecks(
   fields: Record<string, ExtractedField>,
-  rules: SanityRule[],
+  rules: SanityRule[]
 ): SanityCheckResult[] {
   const values = extractValues(fields)
   return rules.map((rule) => {

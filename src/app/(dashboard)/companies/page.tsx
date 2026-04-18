@@ -79,9 +79,7 @@ export default async function CompaniesPage() {
   })
 
   // Hent åbne sager pr. selskab (via CaseCompany junction)
-  const openCaseCounts = await prisma.$queryRaw<
-    Array<{ company_id: string; count: bigint }>
-  >`
+  const openCaseCounts = await prisma.$queryRaw<Array<{ company_id: string; count: bigint }>>`
     SELECT cc.company_id, COUNT(DISTINCT c.id)::bigint as count
     FROM "CaseCompany" cc
     JOIN "Case" c ON c.id = cc.case_id
@@ -90,14 +88,10 @@ export default async function CompaniesPage() {
       AND c.status NOT IN ('LUKKET', 'ARKIVERET')
     GROUP BY cc.company_id
   `
-  const openCaseMap = new Map(
-    openCaseCounts.map((r) => [r.company_id, Number(r.count)])
-  )
+  const openCaseMap = new Map(openCaseCounts.map((r) => [r.company_id, Number(r.count)]))
 
   // Hent udløbne kontrakter pr. selskab
-  const expiredCounts = await prisma.$queryRaw<
-    Array<{ company_id: string; count: bigint }>
-  >`
+  const expiredCounts = await prisma.$queryRaw<Array<{ company_id: string; count: bigint }>>`
     SELECT company_id, COUNT(id)::bigint as count
     FROM "Contract"
     WHERE organization_id = ${orgId}
@@ -105,14 +99,10 @@ export default async function CompaniesPage() {
       AND status = 'UDLOBET'
     GROUP BY company_id
   `
-  const expiredMap = new Map(
-    expiredCounts.map((r) => [r.company_id, Number(r.count)])
-  )
+  const expiredMap = new Map(expiredCounts.map((r) => [r.company_id, Number(r.count)]))
 
   // Hent kontrakter der udløber inden 90 dage
-  const expiringCounts = await prisma.$queryRaw<
-    Array<{ company_id: string; count: bigint }>
-  >`
+  const expiringCounts = await prisma.$queryRaw<Array<{ company_id: string; count: bigint }>>`
     SELECT company_id, COUNT(id)::bigint as count
     FROM "Contract"
     WHERE organization_id = ${orgId}
@@ -123,9 +113,7 @@ export default async function CompaniesPage() {
       AND expiry_date > ${now}
     GROUP BY company_id
   `
-  const expiringMap = new Map(
-    expiringCounts.map((r) => [r.company_id, Number(r.count)])
-  )
+  const expiringMap = new Map(expiringCounts.map((r) => [r.company_id, Number(r.count)]))
 
   // Hent finansielle data (seneste helår)
   const financials = await prisma.financialMetric.findMany({
@@ -138,10 +126,7 @@ export default async function CompaniesPage() {
   })
 
   // Gruppér finansielle data pr. selskab (seneste år)
-  const finMap = new Map<
-    string,
-    { revenue: number | null; ebitda: number | null }
-  >()
+  const finMap = new Map<string, { revenue: number | null; ebitda: number | null }>()
   for (const f of financials) {
     const existing = finMap.get(f.company_id)
     if (!existing) {
@@ -181,14 +166,10 @@ export default async function CompaniesPage() {
       )
     }
     if (openCases > 0) {
-      healthReasons.push(
-        `${openCases} åben ${openCases === 1 ? 'sag' : 'sager'}`
-      )
+      healthReasons.push(`${openCases} åben ${openCases === 1 ? 'sag' : 'sager'}`)
     }
     if (expiring > 0) {
-      healthReasons.push(
-        `${expiring} kontrakt${expiring === 1 ? '' : 'er'} udløber snart`
-      )
+      healthReasons.push(`${expiring} kontrakt${expiring === 1 ? '' : 'er'} udløber snart`)
     }
 
     if (expired > 0 || openCases > 0) {
@@ -198,12 +179,8 @@ export default async function CompaniesPage() {
     }
 
     // Find partner (lokal ejer — person-ejerskab)
-    const partnerOwnership = company.ownerships.find(
-      (o) => o.owner_person_id !== null
-    )
-    const groupOwnership = company.ownerships.find(
-      (o) => o.owner_company_id !== null
-    )
+    const partnerOwnership = company.ownerships.find((o) => o.owner_person_id !== null)
+    const groupOwnership = company.ownerships.find((o) => o.owner_company_id !== null)
 
     // Find partnernavn fra company_persons (Direktør eller lignende)
     let partnerName: string | null = null
@@ -217,9 +194,7 @@ export default async function CompaniesPage() {
     }
     // Fallback: brug første Direktør
     if (!partnerName && company.company_persons.length > 0) {
-      const director = company.company_persons.find(
-        (cp) => cp.role === 'Direktør'
-      )
+      const director = company.company_persons.find((cp) => cp.role === 'Direktør')
       const person = director ?? company.company_persons[0]
       partnerName = `${person.person.first_name} ${person.person.last_name}`
     }
@@ -228,8 +203,7 @@ export default async function CompaniesPage() {
     const fin = finMap.get(company.id)
     const revenue = fin?.revenue ?? null
     const ebitda = fin?.ebitda ?? null
-    const ebitdaMargin =
-      revenue && ebitda ? ebitda / revenue : null
+    const ebitdaMargin = revenue && ebitda ? ebitda / revenue : null
 
     return {
       id: company.id,
@@ -248,24 +222,19 @@ export default async function CompaniesPage() {
       partnerOwnershipPct: partnerOwnership
         ? Number(partnerOwnership.ownership_pct as Decimal)
         : null,
-      groupOwnershipPct: groupOwnership
-        ? Number(groupOwnership.ownership_pct as Decimal)
-        : null,
+      groupOwnershipPct: groupOwnership ? Number(groupOwnership.ownership_pct as Decimal) : null,
       revenue,
       ebitdaMargin,
     }
   })
 
   // Beregn totals
-  const attentionCount = mapped.filter(
-    (c) => c.healthStatus !== 'healthy'
-  ).length
+  const attentionCount = mapped.filter((c) => c.healthStatus !== 'healthy').length
   const revenueSum = mapped.reduce((sum, c) => sum + (c.revenue ?? 0), 0)
   const marginsWithData = mapped.filter((c) => c.ebitdaMargin !== null)
   const avgMargin =
     marginsWithData.length > 0
-      ? marginsWithData.reduce((sum, c) => sum + (c.ebitdaMargin ?? 0), 0) /
-        marginsWithData.length
+      ? marginsWithData.reduce((sum, c) => sum + (c.ebitdaMargin ?? 0), 0) / marginsWithData.length
       : null
 
   const totals: PortfolioTotals = {
@@ -275,11 +244,5 @@ export default async function CompaniesPage() {
     avgEbitdaMargin: avgMargin,
   }
 
-  return (
-    <PortfolioClient
-      companies={mapped}
-      totals={totals}
-      canCreate={canCreate}
-    />
-  )
+  return <PortfolioClient companies={mapped} totals={totals} canCreate={canCreate} />
 }

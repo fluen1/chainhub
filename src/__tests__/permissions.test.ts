@@ -92,7 +92,13 @@ describe('Sensitivity cannot be lowered', () => {
   })
 
   it('GROUP_LEGAL (STRENGT_FORTROLIG) can create any sensitivity', () => {
-    const sensitivities = ['PUBLIC', 'STANDARD', 'INTERN', 'FORTROLIG', 'STRENGT_FORTROLIG'] as const
+    const sensitivities = [
+      'PUBLIC',
+      'STANDARD',
+      'INTERN',
+      'FORTROLIG',
+      'STRENGT_FORTROLIG',
+    ] as const
     sensitivities.forEach((s) => {
       expect(meetsMinimumSensitivity('STRENGT_FORTROLIG', s)).toBe(true)
     })

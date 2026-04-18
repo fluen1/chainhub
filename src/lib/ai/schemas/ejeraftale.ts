@@ -5,7 +5,7 @@ import { registerSchema } from './registry'
 // Hjælpefunktion til at wrappe et felt i ExtractedFieldValue-struktur
 function extractedField(
   description: string,
-  valueSchema: Record<string, unknown>,
+  valueSchema: Record<string, unknown>
 ): Record<string, unknown> {
   return {
     type: 'object' as const,
@@ -80,17 +80,18 @@ const ejeraftaleSchema: ContractSchema = {
                 },
                 notes: {
                   type: 'string',
-                  description: 'Eventuelle bemærkninger om partens særlige rettigheder eller vilkår',
+                  description:
+                    'Eventuelle bemærkninger om partens særlige rettigheder eller vilkår',
                 },
               },
               required: ['name', 'party_type', 'capital_pct', 'voting_pct', 'ownership_type'],
             },
-          },
+          }
         ),
 
         effective_date: extractedField(
           'Ikrafttrædelsesdato for ejeraftalen (ISO 8601 format: YYYY-MM-DD)',
-          { type: 'string', description: 'Dato i format YYYY-MM-DD' },
+          { type: 'string', description: 'Dato i format YYYY-MM-DD' }
         ),
 
         expiry_date: extractedField(
@@ -98,7 +99,7 @@ const ejeraftaleSchema: ContractSchema = {
           {
             type: ['string', 'null'] as unknown as 'string',
             description: 'Dato i format YYYY-MM-DD, eller null hvis løbende',
-          },
+          }
         ),
 
         termination_notice_months: extractedField(
@@ -108,7 +109,7 @@ const ejeraftaleSchema: ContractSchema = {
             description: 'Antal måneder (heltal)',
             minimum: 1,
             maximum: 120,
-          },
+          }
         ),
 
         non_compete: extractedField(
@@ -130,7 +131,7 @@ const ejeraftaleSchema: ContractSchema = {
               },
             },
             required: ['present', 'duration_months', 'geographic_scope'],
-          },
+          }
         ),
 
         pre_emption_right: extractedField(
@@ -148,32 +149,35 @@ const ejeraftaleSchema: ContractSchema = {
               },
             },
             required: ['present', 'description'],
-          },
+          }
         ),
 
-        exit_clause: extractedField('Exit-klausul. Angiv om den er til stede og beskriv vilkårene.', {
-          type: 'object',
-          properties: {
-            present: {
-              type: 'boolean',
-              description: 'Er der en exit-klausul?',
+        exit_clause: extractedField(
+          'Exit-klausul. Angiv om den er til stede og beskriv vilkårene.',
+          {
+            type: 'object',
+            properties: {
+              present: {
+                type: 'boolean',
+                description: 'Er der en exit-klausul?',
+              },
+              description: {
+                type: 'string',
+                description: 'Beskrivelse af exit-klausulens vilkår',
+              },
             },
-            description: {
-              type: 'string',
-              description: 'Beskrivelse af exit-klausulens vilkår',
-            },
-          },
-          required: ['present', 'description'],
-        }),
+            required: ['present', 'description'],
+          }
+        ),
 
         drag_along: extractedField(
           'Drag-along rettighed (medsalgsret for majoritetsejer). True hvis til stede, false hvis ikke.',
-          { type: 'boolean', description: 'Er der drag-along rettighed?' },
+          { type: 'boolean', description: 'Er der drag-along rettighed?' }
         ),
 
         tag_along: extractedField(
           'Tag-along rettighed (medsalgsret for minoritetsejer). True hvis til stede, false hvis ikke.',
-          { type: 'boolean', description: 'Er der tag-along rettighed?' },
+          { type: 'boolean', description: 'Er der tag-along rettighed?' }
         ),
 
         dividend_policy: extractedField(
@@ -181,7 +185,7 @@ const ejeraftaleSchema: ContractSchema = {
           {
             type: 'string',
             description: 'Beskrivelse af udbyttepolitikken',
-          },
+          }
         ),
 
         board_composition: extractedField(
@@ -189,7 +193,7 @@ const ejeraftaleSchema: ContractSchema = {
           {
             type: 'string',
             description: 'Beskrivelse af bestyrelsessammensætning og udpegningsregler',
-          },
+          }
         ),
 
         dispute_resolution: extractedField(
@@ -197,7 +201,7 @@ const ejeraftaleSchema: ContractSchema = {
           {
             type: 'string',
             description: 'Beskrivelse af tvistløsningsmekanisme og værneting',
-          },
+          }
         ),
 
         ...COMMON_TOOL_PROPERTIES,
@@ -314,7 +318,8 @@ Dokumenter er på dansk. Returner feltværdier på dansk hvor relevant (fx beskr
 ## Yderligere fund
 Brug additional_findings til at rapportere usædvanlige klausuler, manglende standardelementer eller bemærkelsesværdige observationer der ikke er dækket af de definerede felter. Brug extraction_warnings til at rapportere problemer med ekstrationsqualiteten.`,
 
-  user_prompt_prefix: 'Analyser denne ejeraftale og ekstraher alle felter via extract_ejeraftale tool.',
+  user_prompt_prefix:
+    'Analyser denne ejeraftale og ekstraher alle felter via extract_ejeraftale tool.',
 
   extraction_model: 'claude-sonnet-4-20250514',
 
@@ -335,11 +340,7 @@ Brug additional_findings til at rapportere usædvanlige klausuler, manglende sta
       check: (value) => {
         if (value == null) return false
         const date = new Date(value as string)
-        return (
-          !isNaN(date.getTime()) &&
-          date.getFullYear() >= 1900 &&
-          date.getFullYear() <= 2100
-        )
+        return !isNaN(date.getTime()) && date.getFullYear() >= 1900 && date.getFullYear() <= 2100
       },
       message: 'Ikrafttrædelsesdato skal være en gyldig dato',
     },

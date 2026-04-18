@@ -18,11 +18,7 @@ export const metadata: Metadata = {
   description: 'Porteføljestyring for kæder med delejede lokationsselskaber',
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="da">
       <body className={`${plusJakarta.variable} font-sans`}>

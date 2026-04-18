@@ -1,9 +1,5 @@
 import type { Task, TaskHistory, TaskHistoryField } from '@prisma/client'
-import {
-  getTaskStatusLabel,
-  getPriorityLabel,
-  formatDate,
-} from '@/lib/labels'
+import { getTaskStatusLabel, getPriorityLabel, formatDate } from '@/lib/labels'
 
 // -----------------------------------------------------------------
 // Typer
@@ -11,12 +7,7 @@ import {
 
 export type TaskUrgency = 'overdue' | 'due-soon' | 'upcoming' | 'none'
 
-export type TaskSectionKey =
-  | 'header'
-  | 'context'
-  | 'description'
-  | 'history'
-  | 'comments'
+export type TaskSectionKey = 'header' | 'context' | 'description' | 'history' | 'comments'
 
 export const TASK_SECTION_KEYS: TaskSectionKey[] = [
   'header',
@@ -43,9 +34,7 @@ export function deriveTaskUrgency(
   if (!task.due_date) return 'none'
 
   const msPerDay = 1000 * 60 * 60 * 24
-  const diffDays = Math.floor(
-    (task.due_date.getTime() - startOfDay(today).getTime()) / msPerDay
-  )
+  const diffDays = Math.floor((task.due_date.getTime() - startOfDay(today).getTime()) / msPerDay)
 
   if (diffDays < 0) return 'overdue'
   if (diffDays <= DUE_SOON_DAYS) return 'due-soon'
@@ -136,4 +125,3 @@ export function groupTasksByCompany<T extends { company_id: string | null }>(
   }
   return map
 }
-

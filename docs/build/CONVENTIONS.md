@@ -1,5 +1,7 @@
 # CONVENTIONS.md
+
 # ChainHub — Kodekonventioner
+
 **Version:** v0.5
 **Gælder for:** Al kode i dette projekt.
 **Regel:** Ingen kode der bryder med dette dokument.
@@ -57,6 +59,7 @@
 ## 2. Navngivning
 
 ### Filer og mapper
+
 ```
 UI-primitives:      kebab-case          fin-row.tsx        (src/components/ui/, src/components/layout/ — shadcn convention)
 Modul-komponenter:  PascalCase          CompanyCard.tsx    (src/components/<modul>/)
@@ -70,6 +73,7 @@ Migrations:         Prisma auto         20240101_add_contracts
 **Bemærk:** Nye komponenter i `src/components/ui/` og `src/components/layout/` skal bruge kebab-case (fx `fin-row.tsx`, `app-sidebar.tsx`) for at matche shadcn/ui-konventionen og Plan 4A-migrationerne. Eksisterende PascalCase-filer i disse mapper (`CollapsibleSection.tsx`, `Pagination.tsx`, `MobileNav.tsx`) renameres gradvist — ikke nødvendigt i én commit.
 
 ### Variabler og funktioner
+
 ```typescript
 // Variabler og funktioner: camelCase
 const companyId = params.id
@@ -88,6 +92,7 @@ interface ContractFormValues { title: string; ... }
 ```
 
 ### Database (Prisma)
+
 ```
 Tabeller:           snake_case plural       contracts, company_persons
 Kolonner:           snake_case              organization_id, created_at
@@ -136,6 +141,7 @@ const name = company.name
 ## 4. Database og Prisma
 
 ### Supabase datasource — ikke-forhandlingsbart
+
 ```prisma
 // prisma/schema.prisma SKAL bruge denne datasource-konfiguration:
 datasource db {
@@ -152,30 +158,32 @@ datasource db {
 ```
 
 ### Multi-tenancy — ikke-forhandlingsbart
+
 ```typescript
 // ALTID: organization_id på ALLE queries — ingen undtagelse
 const contracts = await prisma.contract.findMany({
   where: {
-    organization_id: session.user.organizationId,  // ALTID
-    deleted_at: null,                               // ALTID ved soft delete
-  }
+    organization_id: session.user.organizationId, // ALTID
+    deleted_at: null, // ALTID ved soft delete
+  },
 })
 
 // ALDRIG: findUnique uden organization_id tjek
 // Forkert:
 const contract = await prisma.contract.findUnique({
-  where: { id: contractId }
+  where: { id: contractId },
 })
 // Korrekt:
 const contract = await prisma.contract.findUnique({
   where: {
     id: contractId,
-    organization_id: session.user.organizationId,  // tenant isolation
-  }
+    organization_id: session.user.organizationId, // tenant isolation
+  },
 })
 ```
 
 ### Soft delete
+
 ```typescript
 // Alle kritiske tabeller har deleted_at
 // ALDRIG: hard delete på contracts, cases, companies, persons, documents
@@ -190,15 +198,17 @@ where: { organization_id: orgId, deleted_at: null }
 ```
 
 ### Sensitivity-tjek
+
 ```typescript
 // ALTID: tjek sensitivity FØR data returneres
 const contract = await prisma.contract.findUnique({ where: { id, organization_id: orgId } })
 if (!contract) notFound()
-if (!await canAccessSensitivity(userId, contract.sensitivity)) forbidden()
+if (!(await canAccessSensitivity(userId, contract.sensitivity))) forbidden()
 return contract
 ```
 
 ### N+1 prevention
+
 ```typescript
 // ALDRIG: loop med individuelle queries
 // Forkert:
@@ -211,8 +221,8 @@ for (const company of companies) {
 const companies = await prisma.company.findMany({
   where: { organization_id: orgId, deleted_at: null },
   include: {
-    _count: { select: { contracts: true, cases: true } }
-  }
+    _count: { select: { contracts: true, cases: true } },
+  },
 })
 ```
 
@@ -264,7 +274,7 @@ export async function createContract(
         ...parsed.data,
         organization_id: session.user.organizationId,
         created_by: session.user.id,
-      }
+      },
     })
     revalidatePath(`/companies/${parsed.data.companyId}`)
     return { data: contract }
@@ -286,16 +296,13 @@ type ActionResult<T> = { data: T; error?: never } | { error: string; data?: neve
 // Alt andet: Server Actions
 
 // Struktur
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: Request, { params }: { params: { id: string } }) {
   const session = await auth()
   if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 })
 
   // Altid: organization_id på queries
   const contract = await prisma.contract.findUnique({
-    where: { id: params.id, organization_id: session.user.organizationId }
+    where: { id: params.id, organization_id: session.user.organizationId },
   })
   if (!contract) return Response.json({ error: 'Not found' }, { status: 404 })
 
@@ -337,6 +344,7 @@ export function ContractListEmpty() {
 ```
 
 ### Styling
+
 ```typescript
 // KUN Tailwind utility classes — aldrig inline styles
 // Forkert:
@@ -573,4 +581,4 @@ v0.1:
   Første udkast
 ```
 
-*CONVENTIONS.md v0.5*
+_CONVENTIONS.md v0.5_

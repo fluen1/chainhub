@@ -19,9 +19,7 @@ import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
 import type { Task } from '@prisma/client'
 
-export async function createTask(
-  input: CreateTaskInput
-): Promise<ActionResult<Task>> {
+export async function createTask(input: CreateTaskInput): Promise<ActionResult<Task>> {
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
 
@@ -57,9 +55,7 @@ export async function createTask(
   }
 }
 
-export async function updateTaskStatus(
-  input: UpdateTaskStatusInput
-): Promise<ActionResult<Task>> {
+export async function updateTaskStatus(input: UpdateTaskStatusInput): Promise<ActionResult<Task>> {
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
 

@@ -38,7 +38,8 @@ export interface ContractSchema {
 export const COMMON_TOOL_PROPERTIES = {
   additional_findings: {
     type: 'array' as const,
-    description: 'Anything found in the document NOT covered by other fields. Report unusual clauses, missing standard elements, or noteworthy observations.',
+    description:
+      'Anything found in the document NOT covered by other fields. Report unusual clauses, missing standard elements, or noteworthy observations.',
     items: {
       type: 'object' as const,
       properties: {
@@ -51,7 +52,8 @@ export const COMMON_TOOL_PROPERTIES = {
   },
   extraction_warnings: {
     type: 'array' as const,
-    description: 'Warnings about extraction quality or reliability. Report ambiguities, unusual document structure, low-confidence areas.',
+    description:
+      'Warnings about extraction quality or reliability. Report ambiguities, unusual document structure, low-confidence areas.',
     items: {
       type: 'object' as const,
       properties: {

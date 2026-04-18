@@ -64,7 +64,9 @@ export const createCaseSchema = z.object({
   caseSubtype: z.string().optional(),
   companyIds: z.array(z.string().min(1)).min(1, 'Mindst ét selskab skal angives'),
   assignedTo: z.string().min(1).optional(),
-  sensitivity: z.enum(['PUBLIC', 'STANDARD', 'INTERN', 'FORTROLIG', 'STRENGT_FORTROLIG']).default('INTERN'),
+  sensitivity: z
+    .enum(['PUBLIC', 'STANDARD', 'INTERN', 'FORTROLIG', 'STRENGT_FORTROLIG'])
+    .default('INTERN'),
   description: z.string().optional(),
   notes: z.string().optional(),
 })

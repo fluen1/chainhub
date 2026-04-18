@@ -4,8 +4,21 @@ import { UrgencyList } from '@/components/ui/urgency-list'
 import type { UrgencyItem } from '@/types/ui'
 
 const items: UrgencyItem[] = [
-  { id: 'u1', name: 'Ejeraftale Nordklinik', subtitle: 'Nordklinik ApS', days: '3d over', indicator: 'red', overdue: true },
-  { id: 'u2', name: 'Huslejekontrakt Sundby', subtitle: 'Sundby Dental', days: '14 dage', indicator: 'amber' },
+  {
+    id: 'u1',
+    name: 'Ejeraftale Nordklinik',
+    subtitle: 'Nordklinik ApS',
+    days: '3d over',
+    indicator: 'red',
+    overdue: true,
+  },
+  {
+    id: 'u2',
+    name: 'Huslejekontrakt Sundby',
+    subtitle: 'Sundby Dental',
+    days: '14 dage',
+    indicator: 'amber',
+  },
 ]
 
 describe('UrgencyList', () => {

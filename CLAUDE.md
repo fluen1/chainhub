@@ -7,6 +7,7 @@ ChainHub er et B2B SaaS-system til kædegrupper (tandlæge-, optiker-, fysio-, f
 **Perspektivet er ALTID hovedkontorets.** Brugerne sidder i kædegruppen og styrer nedad. Lokale partnere og klinikpersonale er data i systemet — ikke primære brugere.
 
 ### Kernemodel (McDonald's-analogien)
+
 - **Kædegruppen/hovedkontoret** (brugerne) = McDonald's Corp.
 - **Lokationsselskabet** (ApS med CVR) = den enkelte restaurant
 - **Lokal partner** (fx tandlægen) = franchisetageren
@@ -36,35 +37,42 @@ ChainHub er et B2B SaaS-system til kædegrupper (tandlæge-, optiker-, fysio-, f
 ## Kritiske Regler (ikke-forhandlingsbare)
 
 ### 1. Multi-tenancy
+
 ```typescript
 // ALLE Prisma queries SKAL have organization_id
 where: { organization_id: session.user.organizationId, deleted_at: null }
 ```
 
 ### 2. Server Actions (IKKE REST API)
+
 Al CRUD bruger Server Actions i `src/actions/`. API routes kun til: auth, fil-upload, webhooks.
 
 Pattern for alle actions:
+
 1. Session-check → 2. Zod-validering → 3. Permission-check → 4. DB-operation → 5. `revalidatePath()` → 6. Return `ActionResult<T>`
 
 ### 3. Permissions (3 lag)
+
 ```typescript
-canAccessCompany(userId, companyId)      // Scope-check
-canAccessSensitivity(userId, level)      // Sensitivity-check
-canAccessModule(userId, module)          // Modul-check
+canAccessCompany(userId, companyId) // Scope-check
+canAccessSensitivity(userId, level) // Sensitivity-check
+canAccessModule(userId, module) // Modul-check
 // SKAL kaldes FØR data returneres — ingen undtagelser
 ```
 
 ### 4. Soft Deletes
+
 Aldrig hard delete på: contracts, cases, companies, persons, documents. Brug `deleted_at: new Date()`.
 
 ### 5. Dansk UI
+
 - Alle labels, knapper, fejlbeskeder på dansk
 - Du-form: "Opret selskab", "Du har ingen sager"
 - Enum-labels via `src/lib/labels.ts` — ALDRIG hardcoded strings
 - Fejlbeskeder skal være handlingsanvisende
 
 ### 6. No `any`
+
 Brug `unknown` + narrowing. Brug Prisma's genererede typer.
 
 ---
@@ -176,17 +184,17 @@ Fuld detaljer i `docs/build/CONVENTIONS.md`. Kernepointer:
 
 ## Vigtig dokumentation
 
-| Fil | Indhold |
-|-----|---------|
-| `docs/spec/DATABASE-SCHEMA.md` | Komplet schema + design-principper |
-| `docs/spec/CONTRACT-TYPES.md` | 34 kontrakttyper + metadata |
+| Fil                                  | Indhold                            |
+| ------------------------------------ | ---------------------------------- |
+| `docs/spec/DATABASE-SCHEMA.md`       | Komplet schema + design-principper |
+| `docs/spec/CONTRACT-TYPES.md`        | 34 kontrakttyper + metadata        |
 | `docs/spec/roller-og-tilladelser.md` | RBAC-model (3-lags adgangskontrol) |
-| `docs/spec/UI-FLOWS.md` | 12 brugerflows |
-| `docs/spec/API-SPEC.md` | Alle endpoints + request/response |
-| `docs/spec/SPEC-TILLAEG-v2.md` | Sprint 8+ features |
-| `docs/build/CONVENTIONS.md` | Kodekonventioner (bindende) |
-| `docs/build/SPRINT-PLAN.md` | Sprint-plan og rækkefølge |
-| `docs/build/INTELLIGENCE.md` | Kendte fejlmønstre og learnings |
-| `docs/status/PROGRESS.md` | Sprint-status |
-| `docs/status/DECISIONS.md` | Arkitekturbeslutninger |
-| `docs/status/BLOCKERS.md` | Kendte blockers |
+| `docs/spec/UI-FLOWS.md`              | 12 brugerflows                     |
+| `docs/spec/API-SPEC.md`              | Alle endpoints + request/response  |
+| `docs/spec/SPEC-TILLAEG-v2.md`       | Sprint 8+ features                 |
+| `docs/build/CONVENTIONS.md`          | Kodekonventioner (bindende)        |
+| `docs/build/SPRINT-PLAN.md`          | Sprint-plan og rækkefølge          |
+| `docs/build/INTELLIGENCE.md`         | Kendte fejlmønstre og learnings    |
+| `docs/status/PROGRESS.md`            | Sprint-status                      |
+| `docs/status/DECISIONS.md`           | Arkitekturbeslutninger             |
+| `docs/status/BLOCKERS.md`            | Kendte blockers                    |

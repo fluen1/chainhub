@@ -26,11 +26,7 @@ describe('OrganizationForm', () => {
 
   it('håndterer null CVR som tomt input', () => {
     render(
-      <OrganizationForm
-        initialName="Test ApS"
-        initialCvr={null}
-        initialChainStructure={false}
-      />
+      <OrganizationForm initialName="Test ApS" initialCvr={null} initialChainStructure={false} />
     )
     const cvrInput = screen.getByPlaceholderText('12345678') as HTMLInputElement
     expect(cvrInput.value).toBe('')
@@ -64,13 +60,7 @@ describe('OrganizationForm', () => {
   })
 
   it('filterer ikke-cifre væk fra CVR-input', () => {
-    render(
-      <OrganizationForm
-        initialName="Test ApS"
-        initialCvr=""
-        initialChainStructure={false}
-      />
-    )
+    render(<OrganizationForm initialName="Test ApS" initialCvr="" initialChainStructure={false} />)
     const cvrInput = screen.getByPlaceholderText('12345678') as HTMLInputElement
     fireEvent.change(cvrInput, { target: { value: '12-34 5678abc' } })
     expect(cvrInput.value).toBe('12345678')

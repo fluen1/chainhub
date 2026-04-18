@@ -39,10 +39,19 @@ export const SENSITIVITY_MINIMUM = {
 } as const
 
 export type ContractSystemTypeKey = keyof typeof SENSITIVITY_MINIMUM
-export type SensitivityLevelValue = 'PUBLIC' | 'STANDARD' | 'INTERN' | 'FORTROLIG' | 'STRENGT_FORTROLIG'
+export type SensitivityLevelValue =
+  | 'PUBLIC'
+  | 'STANDARD'
+  | 'INTERN'
+  | 'FORTROLIG'
+  | 'STRENGT_FORTROLIG'
 
 const SENSITIVITY_ORDER: SensitivityLevelValue[] = [
-  'PUBLIC', 'STANDARD', 'INTERN', 'FORTROLIG', 'STRENGT_FORTROLIG',
+  'PUBLIC',
+  'STANDARD',
+  'INTERN',
+  'FORTROLIG',
+  'STRENGT_FORTROLIG',
 ]
 
 export function meetsMinimumSensitivity(
@@ -97,7 +106,18 @@ export const createContractSchema = z.object({
   systemType: z.string().min(1),
   displayName: z.string().min(1, 'Kontraktnavn er påkrævet').max(255),
   sensitivity: z.enum(['PUBLIC', 'STANDARD', 'INTERN', 'FORTROLIG', 'STRENGT_FORTROLIG']),
-  status: z.enum(['UDKAST', 'TIL_REVIEW', 'TIL_UNDERSKRIFT', 'AKTIV', 'UDLOEBET', 'OPSAGT', 'FORNYET', 'ARKIVERET']).optional(),
+  status: z
+    .enum([
+      'UDKAST',
+      'TIL_REVIEW',
+      'TIL_UNDERSKRIFT',
+      'AKTIV',
+      'UDLOEBET',
+      'OPSAGT',
+      'FORNYET',
+      'ARKIVERET',
+    ])
+    .optional(),
   effectiveDate: z.string().optional(),
   expiryDate: z.string().optional().or(z.literal('')),
   noticePeriodDays: z.coerce.number().int().min(0).optional(),
@@ -110,7 +130,16 @@ export const createContractSchema = z.object({
 
 export const updateContractStatusSchema = z.object({
   contractId: z.string().min(1),
-  status: z.enum(['UDKAST', 'TIL_REVIEW', 'TIL_UNDERSKRIFT', 'AKTIV', 'UDLOEBET', 'OPSAGT', 'FORNYET', 'ARKIVERET']),
+  status: z.enum([
+    'UDKAST',
+    'TIL_REVIEW',
+    'TIL_UNDERSKRIFT',
+    'AKTIV',
+    'UDLOEBET',
+    'OPSAGT',
+    'FORNYET',
+    'ARKIVERET',
+  ]),
   note: z.string().optional(),
 })
 

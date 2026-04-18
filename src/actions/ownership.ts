@@ -15,9 +15,7 @@ import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
 import type { Ownership } from '@prisma/client'
 
-export async function addOwner(
-  input: AddOwnerInput
-): Promise<ActionResult<Ownership>> {
+export async function addOwner(input: AddOwnerInput): Promise<ActionResult<Ownership>> {
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
 
@@ -109,7 +107,9 @@ export async function updateOwnership(
       data: {
         ...(parsed.data.ownershipPct !== undefined && { ownership_pct: parsed.data.ownershipPct }),
         ...(parsed.data.acquiredAt && { effective_date: new Date(parsed.data.acquiredAt) }),
-        ...(parsed.data.contractId !== undefined && { contract_id: parsed.data.contractId || null }),
+        ...(parsed.data.contractId !== undefined && {
+          contract_id: parsed.data.contractId || null,
+        }),
       },
     })
 
@@ -120,9 +120,7 @@ export async function updateOwnership(
   }
 }
 
-export async function endOwnership(
-  input: EndOwnershipInput
-): Promise<ActionResult<Ownership>> {
+export async function endOwnership(input: EndOwnershipInput): Promise<ActionResult<Ownership>> {
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
 

@@ -1,8 +1,4 @@
-import type {
-  ExpiringContract,
-  OverdueTask,
-  UpcomingTask,
-} from '@/lib/notifications/deadlines'
+import type { ExpiringContract, OverdueTask, UpcomingTask } from '@/lib/notifications/deadlines'
 
 interface DigestData {
   userName: string
@@ -14,14 +10,7 @@ interface DigestData {
 }
 
 export function buildDigestHtml(data: DigestData): string {
-  const {
-    userName,
-    overdueTasks,
-    upcomingTasks,
-    expiringContracts,
-    newCasesCount,
-    appUrl,
-  } = data
+  const { userName, overdueTasks, upcomingTasks, expiringContracts, newCasesCount, appUrl } = data
 
   const sections: string[] = []
 
@@ -31,9 +20,7 @@ export function buildDigestHtml(data: DigestData): string {
 
   // Forfaldne opgaver
   if (overdueTasks.length > 0) {
-    sections.push(
-      `<h3 style="color: #dc2626;">Forfaldne opgaver (${overdueTasks.length})</h3>`
-    )
+    sections.push(`<h3 style="color: #dc2626;">Forfaldne opgaver (${overdueTasks.length})</h3>`)
     sections.push('<ul>')
     for (const t of overdueTasks) {
       sections.push(
@@ -45,9 +32,7 @@ export function buildDigestHtml(data: DigestData): string {
 
   // Kommende opgaver
   if (upcomingTasks.length > 0) {
-    sections.push(
-      `<h3>Opgaver de n\u00e6ste 7 dage (${upcomingTasks.length})</h3>`
-    )
+    sections.push(`<h3>Opgaver de n\u00e6ste 7 dage (${upcomingTasks.length})</h3>`)
     sections.push('<ul>')
     for (const t of upcomingTasks) {
       sections.push(
@@ -61,8 +46,7 @@ export function buildDigestHtml(data: DigestData): string {
   for (const days of [7, 30, 90]) {
     const contracts = expiringContracts[days] ?? []
     if (contracts.length > 0) {
-      const color =
-        days <= 7 ? '#dc2626' : days <= 30 ? '#ea580c' : '#ca8a04'
+      const color = days <= 7 ? '#dc2626' : days <= 30 ? '#ea580c' : '#ca8a04'
       sections.push(
         `<h3 style="color: ${color};">Kontrakter der udl\u00f8ber inden ${days} dage (${contracts.length})</h3>`
       )
@@ -90,9 +74,7 @@ export function buildDigestHtml(data: DigestData): string {
     Object.values(expiringContracts).every((v) => v.length === 0) &&
     newCasesCount === 0
   ) {
-    sections.push(
-      `<p>Ingen aktuelle advarsler — alt ser godt ud!</p>`
-    )
+    sections.push(`<p>Ingen aktuelle advarsler — alt ser godt ud!</p>`)
   }
 
   // Footer

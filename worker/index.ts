@@ -21,12 +21,12 @@ async function main() {
         const result = await extractDocumentPoc(payload)
         log.info(
           { job_id: job.id, extraction_id: result.extraction_id, cost_usd: result.cost_usd },
-          'Extraction.poc completed',
+          'Extraction.poc completed'
         )
       } catch (err) {
         log.error(
           { job_id: job.id, err: err instanceof Error ? err.message : String(err) },
-          'Extraction.poc failed',
+          'Extraction.poc failed'
         )
         throw err
       }
@@ -39,9 +39,15 @@ async function main() {
       log.info({ job_id: job.id, document_id: payload.document_id }, 'Processing extraction.full')
       try {
         const result = await extractDocument(payload)
-        log.info({ job_id: job.id, extraction_id: result.extraction_id, skipped: result.skipped }, 'Extraction.full completed')
+        log.info(
+          { job_id: job.id, extraction_id: result.extraction_id, skipped: result.skipped },
+          'Extraction.full completed'
+        )
       } catch (err) {
-        log.error({ job_id: job.id, err: err instanceof Error ? err.message : String(err) }, 'Extraction.full failed')
+        log.error(
+          { job_id: job.id, err: err instanceof Error ? err.message : String(err) },
+          'Extraction.full failed'
+        )
         throw err
       }
     }
@@ -56,8 +62,12 @@ async function main() {
     process.exit(0)
   }
 
-  process.on('SIGTERM', () => { void shutdown('SIGTERM') })
-  process.on('SIGINT', () => { void shutdown('SIGINT') })
+  process.on('SIGTERM', () => {
+    void shutdown('SIGTERM')
+  })
+  process.on('SIGINT', () => {
+    void shutdown('SIGINT')
+  })
 }
 
 main().catch((err) => {

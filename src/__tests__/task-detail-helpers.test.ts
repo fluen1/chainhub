@@ -11,12 +11,9 @@ describe('deriveTaskUrgency', () => {
   const today = new Date('2026-04-18T12:00:00Z')
 
   it('returnerer "none" for lukket opgave uanset frist', () => {
-    expect(
-      deriveTaskUrgency(
-        { status: 'LUKKET', due_date: new Date('2026-01-01') },
-        today
-      )
-    ).toBe('none')
+    expect(deriveTaskUrgency({ status: 'LUKKET', due_date: new Date('2026-01-01') }, today)).toBe(
+      'none'
+    )
   })
 
   it('returnerer "none" når der ikke er due_date', () => {
@@ -25,29 +22,20 @@ describe('deriveTaskUrgency', () => {
 
   it('returnerer "overdue" når due_date er passeret', () => {
     expect(
-      deriveTaskUrgency(
-        { status: 'AKTIV_TASK', due_date: new Date('2026-04-15') },
-        today
-      )
+      deriveTaskUrgency({ status: 'AKTIV_TASK', due_date: new Date('2026-04-15') }, today)
     ).toBe('overdue')
   })
 
   it('returnerer "due-soon" når der er 0-3 dage til frist', () => {
-    expect(
-      deriveTaskUrgency(
-        { status: 'NY', due_date: new Date('2026-04-20') },
-        today
-      )
-    ).toBe('due-soon')
+    expect(deriveTaskUrgency({ status: 'NY', due_date: new Date('2026-04-20') }, today)).toBe(
+      'due-soon'
+    )
   })
 
   it('returnerer "upcoming" når der er mere end 3 dage til frist', () => {
-    expect(
-      deriveTaskUrgency(
-        { status: 'NY', due_date: new Date('2026-05-01') },
-        today
-      )
-    ).toBe('upcoming')
+    expect(deriveTaskUrgency({ status: 'NY', due_date: new Date('2026-05-01') }, today)).toBe(
+      'upcoming'
+    )
   })
 })
 
@@ -135,12 +123,6 @@ describe('groupTasksByCompany', () => {
 
 describe('TASK_SECTION_KEYS', () => {
   it('indeholder præcis 5 sektioner i fast rækkefølge', () => {
-    expect(TASK_SECTION_KEYS).toEqual([
-      'header',
-      'context',
-      'description',
-      'history',
-      'comments',
-    ])
+    expect(TASK_SECTION_KEYS).toEqual(['header', 'context', 'description', 'history', 'comments'])
   })
 })

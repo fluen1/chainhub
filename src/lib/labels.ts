@@ -1,9 +1,9 @@
 /**
  * labels.ts — Global enum-til-dansk mapping utility
- * 
+ *
  * REGEL: Ingen rå enum-værdi må vises til brugeren.
  * Alle komponenter SKAL bruge dette modul — aldrig inline labels.
- * 
+ *
  * BA-04 | Sprint 7
  */
 
@@ -133,7 +133,7 @@ export const CONTRACT_CATEGORIES = [
   'STRUKTURAFTALER',
 ] as const
 
-export type ContractCategory = typeof CONTRACT_CATEGORIES[number]
+export type ContractCategory = (typeof CONTRACT_CATEGORIES)[number]
 
 export const CONTRACT_CATEGORY_LABELS: Record<ContractCategory, string> = {
   EJERSKAB_OG_SELSKABSRET: 'Ejerskab og selskabsret',
@@ -479,9 +479,21 @@ export const COMPANY_PERSON_ROLE_LABELS: Record<string, string> = {
   forsikringskontakt: 'Forsikringskontakt',
 }
 
-export const GOVERNANCE_ROLES = ['direktoer', 'bestyrelsesformand', 'bestyrelsesmedlem', 'tegningsberettiget', 'revisor'] as const
+export const GOVERNANCE_ROLES = [
+  'direktoer',
+  'bestyrelsesformand',
+  'bestyrelsesmedlem',
+  'tegningsberettiget',
+  'revisor',
+] as const
 
-export const EMPLOYEE_ROLES = ['ansat', 'funktionaer', 'ikke-funktionaer', 'vikar', 'leder'] as const
+export const EMPLOYEE_ROLES = [
+  'ansat',
+  'funktionaer',
+  'ikke-funktionaer',
+  'vikar',
+  'leder',
+] as const
 
 export function getCompanyPersonRoleLabel(role: string): string {
   return COMPANY_PERSON_ROLE_LABELS[role] ?? role
@@ -539,7 +551,7 @@ export function daysUntil(date: Date | string): number {
 }
 
 /**
- * Formater "udløber om X dage" / "forfaldent X dage" 
+ * Formater "udløber om X dage" / "forfaldent X dage"
  */
 export function formatDaysUntilLabel(date: Date | string): string {
   const days = daysUntil(date)
