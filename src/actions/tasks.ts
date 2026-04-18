@@ -6,8 +6,14 @@ import { canAccessCompany } from '@/lib/permissions'
 import {
   createTaskSchema,
   updateTaskStatusSchema,
+  updateTaskPrioritySchema,
+  updateTaskAssigneeSchema,
+  updateTaskDueDateSchema,
   type CreateTaskInput,
   type UpdateTaskStatusInput,
+  type UpdateTaskPriorityInput,
+  type UpdateTaskAssigneeInput,
+  type UpdateTaskDueDateInput,
 } from '@/lib/validations/case'
 import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
@@ -69,17 +75,190 @@ export async function updateTaskStatus(
   })
   if (!task) return { error: 'Opgave ikke fundet' }
 
+  if (task.status === parsed.data.status) {
+    return { data: task }
+  }
+
   try {
-    const updated = await prisma.task.update({
-      where: { id: parsed.data.taskId },
-      data: { status: parsed.data.status as never },
+    const updated = await prisma.$transaction(async (tx) => {
+      const next = await tx.task.update({
+        where: { id: parsed.data.taskId },
+        data: { status: parsed.data.status as never },
+      })
+      await tx.taskHistory.create({
+        data: {
+          organization_id: session.user.organizationId,
+          task_id: task.id,
+          field_name: 'STATUS',
+          old_value: task.status,
+          new_value: parsed.data.status,
+          changed_by: session.user.id,
+        },
+      })
+      return next
     })
 
     revalidatePath('/tasks')
+    revalidatePath(`/tasks/${task.id}`)
     if (task.case_id) revalidatePath(`/cases/${task.case_id}`)
     return { data: updated }
   } catch {
     return { error: 'Status kunne ikke opdateres' }
+  }
+}
+
+export async function updateTaskPriority(
+  input: UpdateTaskPriorityInput
+): Promise<ActionResult<Task>> {
+  const session = await auth()
+  if (!session) return { error: 'Ikke autoriseret' }
+
+  const parsed = updateTaskPrioritySchema.safeParse(input)
+  if (!parsed.success) return { error: 'Ugyldigt input' }
+
+  const task = await prisma.task.findFirst({
+    where: {
+      id: parsed.data.taskId,
+      organization_id: session.user.organizationId,
+      deleted_at: null,
+    },
+  })
+  if (!task) return { error: 'Opgave ikke fundet' }
+  if (task.priority === parsed.data.priority) return { data: task }
+
+  try {
+    const updated = await prisma.$transaction(async (tx) => {
+      const next = await tx.task.update({
+        where: { id: task.id },
+        data: { priority: parsed.data.priority as never },
+      })
+      await tx.taskHistory.create({
+        data: {
+          organization_id: session.user.organizationId,
+          task_id: task.id,
+          field_name: 'PRIORITY',
+          old_value: task.priority,
+          new_value: parsed.data.priority,
+          changed_by: session.user.id,
+        },
+      })
+      return next
+    })
+    revalidatePath('/tasks')
+    revalidatePath(`/tasks/${task.id}`)
+    return { data: updated }
+  } catch {
+    return { error: 'Prioritet kunne ikke opdateres' }
+  }
+}
+
+export async function updateTaskAssignee(
+  input: UpdateTaskAssigneeInput
+): Promise<ActionResult<Task>> {
+  const session = await auth()
+  if (!session) return { error: 'Ikke autoriseret' }
+
+  const parsed = updateTaskAssigneeSchema.safeParse(input)
+  if (!parsed.success) return { error: 'Ugyldigt input' }
+
+  const task = await prisma.task.findFirst({
+    where: {
+      id: parsed.data.taskId,
+      organization_id: session.user.organizationId,
+      deleted_at: null,
+    },
+    include: { assignee: { select: { name: true } } },
+  })
+  if (!task) return { error: 'Opgave ikke fundet' }
+  if (task.assigned_to === parsed.data.assignedTo) return { data: task }
+
+  // Resolve nyt assignee-navn til historik (user-id er ikke læsbart bagefter)
+  let newAssigneeName: string | null = null
+  if (parsed.data.assignedTo) {
+    const nextUser = await prisma.user.findFirst({
+      where: {
+        id: parsed.data.assignedTo,
+        organization_id: session.user.organizationId,
+        deleted_at: null,
+      },
+      select: { name: true },
+    })
+    if (!nextUser) return { error: 'Valgt bruger ikke fundet' }
+    newAssigneeName = nextUser.name
+  }
+
+  try {
+    const updated = await prisma.$transaction(async (tx) => {
+      const next = await tx.task.update({
+        where: { id: task.id },
+        data: { assigned_to: parsed.data.assignedTo },
+      })
+      await tx.taskHistory.create({
+        data: {
+          organization_id: session.user.organizationId,
+          task_id: task.id,
+          field_name: 'ASSIGNEE',
+          old_value: task.assignee?.name ?? null,
+          new_value: newAssigneeName,
+          changed_by: session.user.id,
+        },
+      })
+      return next
+    })
+    revalidatePath('/tasks')
+    revalidatePath(`/tasks/${task.id}`)
+    return { data: updated }
+  } catch {
+    return { error: 'Ansvarlig kunne ikke opdateres' }
+  }
+}
+
+export async function updateTaskDueDate(
+  input: UpdateTaskDueDateInput
+): Promise<ActionResult<Task>> {
+  const session = await auth()
+  if (!session) return { error: 'Ikke autoriseret' }
+
+  const parsed = updateTaskDueDateSchema.safeParse(input)
+  if (!parsed.success) return { error: 'Ugyldigt input' }
+
+  const task = await prisma.task.findFirst({
+    where: {
+      id: parsed.data.taskId,
+      organization_id: session.user.organizationId,
+      deleted_at: null,
+    },
+  })
+  if (!task) return { error: 'Opgave ikke fundet' }
+
+  const newDueDate = parsed.data.dueDate ? new Date(parsed.data.dueDate) : null
+  const oldIso = task.due_date ? task.due_date.toISOString().slice(0, 10) : null
+  const newIso = newDueDate ? newDueDate.toISOString().slice(0, 10) : null
+  if (oldIso === newIso) return { data: task }
+
+  try {
+    const updated = await prisma.$transaction(async (tx) => {
+      const next = await tx.task.update({
+        where: { id: task.id },
+        data: { due_date: newDueDate },
+      })
+      await tx.taskHistory.create({
+        data: {
+          organization_id: session.user.organizationId,
+          task_id: task.id,
+          field_name: 'DUE_DATE',
+          old_value: oldIso,
+          new_value: newIso,
+          changed_by: session.user.id,
+        },
+      })
+      return next
+    })
+    revalidatePath('/tasks')
+    revalidatePath(`/tasks/${task.id}`)
+    return { data: updated }
+  } catch {
+    return { error: 'Frist kunne ikke opdateres' }
   }
 }
 

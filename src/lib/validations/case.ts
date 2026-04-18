@@ -89,7 +89,25 @@ export const updateTaskStatusSchema = z.object({
   status: z.enum(['NY', 'AKTIV_TASK', 'AFVENTER', 'LUKKET']),
 })
 
+export const updateTaskPrioritySchema = z.object({
+  taskId: z.string().min(1),
+  priority: z.enum(['LAV', 'MELLEM', 'HOEJ', 'KRITISK']),
+})
+
+export const updateTaskAssigneeSchema = z.object({
+  taskId: z.string().min(1),
+  assignedTo: z.string().min(1).nullable(),
+})
+
+export const updateTaskDueDateSchema = z.object({
+  taskId: z.string().min(1),
+  dueDate: z.string().nullable(),
+})
+
 export type CreateCaseInput = z.infer<typeof createCaseSchema>
 export type UpdateCaseStatusInput = z.infer<typeof updateCaseStatusSchema>
 export type CreateTaskInput = z.infer<typeof createTaskSchema>
 export type UpdateTaskStatusInput = z.infer<typeof updateTaskStatusSchema>
+export type UpdateTaskPriorityInput = z.infer<typeof updateTaskPrioritySchema>
+export type UpdateTaskAssigneeInput = z.infer<typeof updateTaskAssigneeSchema>
+export type UpdateTaskDueDateInput = z.infer<typeof updateTaskDueDateSchema>
