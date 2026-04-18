@@ -46,3 +46,8 @@ next-env.d.ts
 .playwright-mcp/
 cookies.txt
 .superpowers/
+
+# playwright tests
+/playwright-report/
+/test-results/
+/tests/e2e/.auth/
