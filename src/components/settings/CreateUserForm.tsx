@@ -156,13 +156,20 @@ export function CreateUserForm({ companies }: CreateUserFormProps) {
 
         {isCompanyRole && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <span
+              id="user-companies-label"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Tildelte selskaber
-            </label>
+            </span>
             {companies.length === 0 ? (
               <p className="text-sm text-gray-500">Ingen selskaber fundet</p>
             ) : (
-              <div className="grid grid-cols-1 gap-1 sm:grid-cols-2 max-h-48 overflow-y-auto rounded-md border border-gray-200 p-2">
+              <div
+                role="group"
+                aria-labelledby="user-companies-label"
+                className="grid grid-cols-1 gap-1 sm:grid-cols-2 max-h-48 overflow-y-auto rounded-md border border-gray-200 p-2"
+              >
                 {companies.map((company) => (
                   <label
                     key={company.id}
