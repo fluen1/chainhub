@@ -11,7 +11,16 @@ import {
 } from '@/lib/validations/governance'
 import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
-import type { CompanyPerson } from '@prisma/client'
+import type { CompanyPerson, SensitivityLevel } from '@prisma/client'
+import { recordAuditEvent } from '@/lib/audit'
+import { captureError } from '@/lib/logger'
+
+// Direktør og bestyrelse er governance-roller — INTERN sensitivity på audit
+const GOVERNANCE_ROLES = new Set(['direktoer', 'bestyrelsesformand', 'bestyrelsesmedlem'])
+
+function sensitivityForRole(role: string): SensitivityLevel | undefined {
+  return GOVERNANCE_ROLES.has(role) ? 'INTERN' : undefined
+}
 
 export async function addCompanyPerson(
   input: AddCompanyPersonInput
@@ -75,9 +84,28 @@ export async function addCompanyPerson(
       },
     })
 
+    await recordAuditEvent({
+      organizationId: session.user.organizationId,
+      userId: session.user.id,
+      action: 'CREATE',
+      resourceType: 'company_person',
+      resourceId: companyPerson.id,
+      sensitivity: sensitivityForRole(parsed.data.role),
+      changes: {
+        personId,
+        companyId: parsed.data.companyId,
+        role: parsed.data.role,
+        startDate: parsed.data.startDate ?? null,
+      },
+    })
+
     revalidatePath(`/companies/${parsed.data.companyId}`)
     return { data: companyPerson }
-  } catch {
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:addCompanyPerson',
+      extra: { companyId: parsed.data.companyId, role: parsed.data.role },
+    })
     return { error: 'Tilknytning kunne ikke oprettes — prøv igen' }
   }
 }
@@ -91,10 +119,10 @@ export async function endCompanyPerson(
   const parsed = endCompanyPersonSchema.safeParse(input)
   if (!parsed.success) return { error: 'Ugyldigt input' }
 
-  // Hent company_id til revalidering
+  // Hent company_id + role til revalidering og audit
   const existing = await prisma.companyPerson.findFirst({
     where: { id: parsed.data.companyPersonId },
-    select: { organization_id: true, company_id: true },
+    select: { organization_id: true, company_id: true, person_id: true, role: true },
   })
   if (!existing || existing.organization_id !== session.user.organizationId) {
     return { error: 'Tilknytning ikke fundet' }
@@ -109,9 +137,28 @@ export async function endCompanyPerson(
       data: { end_date: new Date(parsed.data.endDate) },
     })
 
+    await recordAuditEvent({
+      organizationId: session.user.organizationId,
+      userId: session.user.id,
+      action: 'END',
+      resourceType: 'company_person',
+      resourceId: companyPerson.id,
+      sensitivity: sensitivityForRole(existing.role),
+      changes: {
+        personId: existing.person_id,
+        companyId: existing.company_id,
+        role: existing.role,
+        endDate: parsed.data.endDate,
+      },
+    })
+
     revalidatePath(`/companies/${existing.company_id}`)
     return { data: companyPerson }
-  } catch {
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:endCompanyPerson',
+      extra: { companyPersonId: parsed.data.companyPersonId },
+    })
     return { error: 'Tilknytning kunne ikke afregistreres — prøv igen' }
   }
 }
