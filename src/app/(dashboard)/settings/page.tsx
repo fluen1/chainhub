@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 import { Settings, Users, ShieldCheck } from 'lucide-react'
 import { CreateUserForm } from '@/components/settings/CreateUserForm'
 import { UserActions } from '@/components/settings/UserActions'
+import { OrganizationForm } from '@/components/settings/organization-form'
 
 export const metadata: Metadata = { title: 'Indstillinger' }
 
@@ -37,7 +38,7 @@ export default async function SettingsPage() {
     )
   }
 
-  const [users, companies] = await Promise.all([
+  const [users, companies, organization] = await Promise.all([
     prisma.user.findMany({
       where: {
         organization_id: session.user.organizationId,
@@ -53,6 +54,17 @@ export default async function SettingsPage() {
       },
       select: { id: true, name: true },
       orderBy: { name: 'asc' },
+    }),
+    prisma.organization.findUnique({
+      where: { id: session.user.organizationId },
+      select: {
+        id: true,
+        name: true,
+        cvr: true,
+        plan: true,
+        plan_expires_at: true,
+        chain_structure: true,
+      },
     }),
   ])
 
@@ -159,16 +171,37 @@ export default async function SettingsPage() {
         </div>
       </div>
 
-      {/* Organization section placeholder */}
-      <div className="rounded-lg border bg-white p-6 shadow-sm">
-        <div className="flex items-center gap-3 mb-4">
-          <Settings className="h-5 w-5 text-gray-400" />
-          <h2 className="text-lg font-semibold text-gray-900">Organisation</h2>
+      {/* Organization section */}
+      {organization && (
+        <div className="rounded-lg border bg-white shadow-sm">
+          <div className="flex items-center gap-3 border-b px-6 py-4">
+            <Settings className="h-5 w-5 text-gray-400" />
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Organisation</h2>
+              <p className="text-sm text-gray-500">Navn, CVR og kædestruktur</p>
+            </div>
+          </div>
+          <div className="px-6 py-5">
+            <OrganizationForm
+              initialName={organization.name}
+              initialCvr={organization.cvr}
+              initialChainStructure={organization.chain_structure}
+            />
+          </div>
+          <div className="border-t border-gray-100 bg-gray-50/60 px-6 py-3 text-xs text-gray-500">
+            <div className="flex flex-wrap gap-4">
+              <span>
+                Plan: <span className="font-medium text-gray-700 capitalize">{organization.plan}</span>
+              </span>
+              {organization.plan_expires_at && (
+                <span>
+                  Udløber: <span className="font-medium text-gray-700">{formatDate(organization.plan_expires_at)}</span>
+                </span>
+              )}
+            </div>
+          </div>
         </div>
-        <p className="text-sm text-gray-500">
-          Organisationsindstillinger kommer i en kommende opdatering.
-        </p>
-      </div>
+      )}
     </div>
   )
 }
