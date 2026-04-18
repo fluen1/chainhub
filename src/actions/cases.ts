@@ -12,6 +12,8 @@ import {
 import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
 import type { Case } from '@prisma/client'
+import { recordAuditEvent } from '@/lib/audit'
+import { captureError } from '@/lib/logger'
 
 // Gyldige sagsstatus-transitioner
 const CASE_TRANSITIONS: Record<string, string[]> = {
@@ -93,7 +95,14 @@ export async function createCase(input: CreateCaseInput): Promise<ActionResult<C
     revalidatePath('/cases')
     parsed.data.companyIds.forEach((cId) => revalidatePath(`/companies/${cId}/cases`))
     return { data: newCase }
-  } catch {
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:createCase',
+      extra: {
+        caseType: parsed.data.caseType,
+        companyIds: parsed.data.companyIds,
+      },
+    })
     return { error: 'Sagen kunne ikke oprettes — prøv igen' }
   }
 }
@@ -128,10 +137,24 @@ export async function updateCaseStatus(input: UpdateCaseStatusInput): Promise<Ac
       },
     })
 
+    await recordAuditEvent({
+      organizationId: session.user.organizationId,
+      userId: session.user.id,
+      action: 'STATUS_CHANGE',
+      resourceType: 'case',
+      resourceId: updated.id,
+      sensitivity: existingCase.sensitivity,
+      changes: { oldStatus: existingCase.status, newStatus: parsed.data.status },
+    })
+
     revalidatePath('/cases')
     revalidatePath(`/cases/${parsed.data.caseId}`)
     return { data: updated }
-  } catch {
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:updateCaseStatus',
+      extra: { caseId: parsed.data.caseId, newStatus: parsed.data.status },
+    })
     return { error: 'Status kunne ikke opdateres — prøv igen' }
   }
 }
