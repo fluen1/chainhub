@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { zodContractStatus, zodContractSystemType, zodSensitivityLevel } from '@/lib/zod-enums'
 
 // Sensitivity minimum pr. ContractSystemType
 export const SENSITIVITY_MINIMUM = {
@@ -103,21 +104,10 @@ export const CONTRACT_TYPE_LABELS: Record<ContractSystemTypeKey, string> = {
 
 export const createContractSchema = z.object({
   companyId: z.string().min(1),
-  systemType: z.string().min(1),
+  systemType: zodContractSystemType,
   displayName: z.string().min(1, 'Kontraktnavn er påkrævet').max(255),
-  sensitivity: z.enum(['PUBLIC', 'STANDARD', 'INTERN', 'FORTROLIG', 'STRENGT_FORTROLIG']),
-  status: z
-    .enum([
-      'UDKAST',
-      'TIL_REVIEW',
-      'TIL_UNDERSKRIFT',
-      'AKTIV',
-      'UDLOEBET',
-      'OPSAGT',
-      'FORNYET',
-      'ARKIVERET',
-    ])
-    .optional(),
+  sensitivity: zodSensitivityLevel,
+  status: zodContractStatus.optional(),
   effectiveDate: z.string().optional(),
   expiryDate: z.string().optional().or(z.literal('')),
   noticePeriodDays: z.coerce.number().int().min(0).optional(),
@@ -130,16 +120,7 @@ export const createContractSchema = z.object({
 
 export const updateContractStatusSchema = z.object({
   contractId: z.string().min(1),
-  status: z.enum([
-    'UDKAST',
-    'TIL_REVIEW',
-    'TIL_UNDERSKRIFT',
-    'AKTIV',
-    'UDLOEBET',
-    'OPSAGT',
-    'FORNYET',
-    'ARKIVERET',
-  ]),
+  status: zodContractStatus,
   note: z.string().optional(),
 })
 

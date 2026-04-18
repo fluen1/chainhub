@@ -1,4 +1,12 @@
 import { z } from 'zod'
+import {
+  zodCaseType,
+  zodCaseSubtype,
+  zodCaseStatus,
+  zodTaskStatus,
+  zodTaskPriority,
+  zodSensitivityLevel,
+} from '@/lib/zod-enums'
 
 export const CASE_TYPE_LABELS: Record<string, string> = {
   TRANSAKTION: 'Transaktion',
@@ -11,7 +19,7 @@ export const CASE_TYPE_LABELS: Record<string, string> = {
 
 export const CASE_SUBTYPE_BY_TYPE: Record<string, { value: string; label: string }[]> = {
   TRANSAKTION: [
-    { value: 'VIRKSOMHEDSKOB', label: 'Virksomhedskøb' },
+    { value: 'VIRKSOMHEDSKOEB', label: 'Virksomhedskøb' },
     { value: 'VIRKSOMHEDSSALG', label: 'Virksomhedssalg' },
     { value: 'FUSION', label: 'Fusion' },
     { value: 'OMSTRUKTURERING', label: 'Omstrukturering' },
@@ -26,7 +34,7 @@ export const CASE_SUBTYPE_BY_TYPE: Record<string, { value: string; label: string
   COMPLIANCE: [
     { value: 'GDPR', label: 'GDPR' },
     { value: 'ARBEJDSMILJOE', label: 'Arbejdsmiljø' },
-    { value: 'MYNDIGHEDSPAABUUD', label: 'Myndighedspåbud' },
+    { value: 'MYNDIGHEDSPAABUD', label: 'Myndighedspåbud' },
     { value: 'SKATTEMASSIG', label: 'Skattemæssig' },
   ],
   KONTRAKT: [
@@ -37,7 +45,7 @@ export const CASE_SUBTYPE_BY_TYPE: Record<string, { value: string; label: string
   ],
   GOVERNANCE: [
     { value: 'GENERALFORSAMLING', label: 'Generalforsamling' },
-    { value: 'BESTYRELSESMOED', label: 'Bestyrelsesmøde' },
+    { value: 'BESTYRELSESMOEDE', label: 'Bestyrelsesmøde' },
     { value: 'VEDTAEGTSAENDRING', label: 'Vedtægtsændring' },
     { value: 'DIREKTOERSKIFTE', label: 'Direktørskifte' },
   ],
@@ -60,20 +68,18 @@ export const PRIORITY_STYLES: Record<string, string> = {
 
 export const createCaseSchema = z.object({
   title: z.string().min(1, 'Titel er påkrævet').max(255),
-  caseType: z.string().min(1, 'Sagstype er påkrævet'),
-  caseSubtype: z.string().optional(),
+  caseType: zodCaseType,
+  caseSubtype: zodCaseSubtype.optional(),
   companyIds: z.array(z.string().min(1)).min(1, 'Mindst ét selskab skal angives'),
   assignedTo: z.string().min(1).optional(),
-  sensitivity: z
-    .enum(['PUBLIC', 'STANDARD', 'INTERN', 'FORTROLIG', 'STRENGT_FORTROLIG'])
-    .default('INTERN'),
+  sensitivity: zodSensitivityLevel.default('INTERN'),
   description: z.string().optional(),
   notes: z.string().optional(),
 })
 
 export const updateCaseStatusSchema = z.object({
   caseId: z.string().min(1),
-  status: z.enum(['NY', 'AKTIV', 'AFVENTER_EKSTERN', 'AFVENTER_KLIENT', 'LUKKET', 'ARKIVERET']),
+  status: zodCaseStatus,
 })
 
 export const createTaskSchema = z.object({
@@ -81,19 +87,19 @@ export const createTaskSchema = z.object({
   description: z.string().optional(),
   assignedTo: z.string().min(1).optional(),
   dueDate: z.string().optional(),
-  priority: z.enum(['LAV', 'MELLEM', 'HOEJ', 'KRITISK']).default('MELLEM'),
+  priority: zodTaskPriority.default('MELLEM'),
   caseId: z.string().min(1).optional(),
   companyId: z.string().min(1).optional(),
 })
 
 export const updateTaskStatusSchema = z.object({
   taskId: z.string().min(1),
-  status: z.enum(['NY', 'AKTIV_TASK', 'AFVENTER', 'LUKKET']),
+  status: zodTaskStatus,
 })
 
 export const updateTaskPrioritySchema = z.object({
   taskId: z.string().min(1),
-  priority: z.enum(['LAV', 'MELLEM', 'HOEJ', 'KRITISK']),
+  priority: zodTaskPriority,
 })
 
 export const updateTaskAssigneeSchema = z.object({
