@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { addOwner } from '@/actions/ownership'
 import { toast } from 'sonner'
-import { Plus, X } from 'lucide-react'
+import { Plus } from 'lucide-react'
+import { AccessibleDialog } from '@/components/ui/accessible-dialog'
 
 interface AddOwnerFormProps {
   companyId: string
@@ -40,8 +41,8 @@ export function AddOwnerForm({ companyId }: AddOwnerFormProps) {
     ;(e.target as HTMLFormElement).reset()
   }
 
-  if (!open) {
-    return (
+  return (
+    <>
       <button
         onClick={() => setOpen(true)}
         className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800"
@@ -49,21 +50,15 @@ export function AddOwnerForm({ companyId }: AddOwnerFormProps) {
         <Plus className="h-4 w-4" />
         Tilføj ejer
       </button>
-    )
-  }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-start justify-end">
-      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
-      <div className="fixed inset-0 bg-black/20" onClick={() => setOpen(false)} />
-      <div className="relative z-50 h-full w-full max-w-md bg-white shadow-xl overflow-y-auto">
-        <div className="sticky top-0 flex items-center justify-between border-b bg-white px-6 py-4">
-          <h2 className="text-lg font-semibold text-gray-900">Tilføj ejer</h2>
-          <button onClick={() => setOpen(false)} className="rounded-md p-1 hover:bg-gray-100">
-            <X className="h-5 w-5 text-gray-500" />
-          </button>
-        </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+      <AccessibleDialog
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Tilføj ejer"
+        titleId="add-owner-title"
+        className="max-w-md"
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label htmlFor="owner-firstName" className="block text-sm font-medium text-gray-700">
@@ -165,7 +160,7 @@ export function AddOwnerForm({ companyId }: AddOwnerFormProps) {
             </button>
           </div>
         </form>
-      </div>
-    </div>
+      </AccessibleDialog>
+    </>
   )
 }
