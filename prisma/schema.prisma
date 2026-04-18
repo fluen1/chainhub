@@ -355,25 +355,28 @@ model UserRoleAssignment {
 }
 
 model Company {
-  id              String    @id @default(uuid())
-  organization_id String
-  name            String
-  cvr             String?
-  company_type    String?
-  address         String?
-  city            String?
-  postal_code     String?
-  latitude        Float?
-  longitude       Float?
-  founded_date    DateTime?
-  status          String    @default("aktiv")
-  notes           String?
-  created_at      DateTime  @default(now())
-  updated_at      DateTime  @updatedAt
-  created_by      String
-  deleted_at      DateTime?
+  id                String    @id @default(uuid())
+  organization_id   String
+  name              String
+  cvr               String?
+  company_type      String?
+  address           String?
+  city              String?
+  postal_code       String?
+  latitude          Float?
+  longitude         Float?
+  founded_date      DateTime?
+  status            String    @default("aktiv")
+  parent_company_id String?
+  notes             String?
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+  created_by        String
+  deleted_at        DateTime?
 
-  organization    Organization    @relation(fields: [organization_id], references: [id])
+  organization    Organization          @relation(fields: [organization_id], references: [id])
+  parent_company  Company?              @relation("CompanyHierarchy", fields: [parent_company_id], references: [id])
+  subsidiaries    Company[]             @relation("CompanyHierarchy")
   ownerships      Ownership[]
   company_persons CompanyPerson[]
   contracts       Contract[]
@@ -384,6 +387,7 @@ model Company {
 
   @@index([organization_id, deleted_at])
   @@index([organization_id, status])
+  @@index([organization_id, parent_company_id])
 }
 
 model Ownership {
