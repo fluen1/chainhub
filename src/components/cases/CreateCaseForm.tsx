@@ -85,8 +85,11 @@ export function CreateCaseForm() {
           <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-900">Grunddata</h2>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Titel *</label>
+            <label htmlFor="case-title" className="block text-sm font-medium text-gray-700">
+              Titel *
+            </label>
             <input
+              id="case-title"
               name="title"
               type="text"
               required
@@ -97,8 +100,11 @@ export function CreateCaseForm() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Sagstype *</label>
+              <label htmlFor="case-caseType" className="block text-sm font-medium text-gray-700">
+                Sagstype *
+              </label>
               <select
+                id="case-caseType"
                 name="caseType"
                 required
                 value={selectedType}
@@ -115,13 +121,14 @@ export function CreateCaseForm() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label htmlFor="case-caseSubtype" className="block text-sm font-medium text-gray-700">
                 Undertype
                 {selectedType && selectedType !== 'ANDET' && (
                   <span className="ml-1 text-red-500">*</span>
                 )}
               </label>
               <select
+                id="case-caseSubtype"
                 name="caseSubtype"
                 disabled={!selectedType || selectedType === 'ANDET'}
                 required={selectedType !== '' && selectedType !== 'ANDET'}
@@ -140,8 +147,11 @@ export function CreateCaseForm() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Sensitivitetsniveau</label>
+            <label htmlFor="case-sensitivity" className="block text-sm font-medium text-gray-700">
+              Sensitivitetsniveau
+            </label>
             <select
+              id="case-sensitivity"
               name="sensitivity"
               defaultValue="INTERN"
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
@@ -154,10 +164,14 @@ export function CreateCaseForm() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <span id="case-companies-label" className="block text-sm font-medium text-gray-700">
               Tilknyttede selskaber *
-            </label>
-            <div className="mt-2 space-y-2 max-h-48 overflow-y-auto rounded-md border border-gray-200 p-3">
+            </span>
+            <div
+              role="group"
+              aria-labelledby="case-companies-label"
+              className="mt-2 space-y-2 max-h-48 overflow-y-auto rounded-md border border-gray-200 p-3"
+            >
               {companies.length === 0 ? (
                 <p className="text-sm text-gray-400">Ingen selskaber tilgængelige</p>
               ) : (
@@ -185,8 +199,11 @@ export function CreateCaseForm() {
             Beskrivelse
           </h2>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Beskrivelse</label>
+            <label htmlFor="case-description" className="block text-sm font-medium text-gray-700">
+              Beskrivelse
+            </label>
             <textarea
+              id="case-description"
               name="description"
               rows={4}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
@@ -194,8 +211,11 @@ export function CreateCaseForm() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Interne noter</label>
+            <label htmlFor="case-notes" className="block text-sm font-medium text-gray-700">
+              Interne noter
+            </label>
             <textarea
+              id="case-notes"
               name="notes"
               rows={2}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
