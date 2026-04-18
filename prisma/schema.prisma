@@ -144,6 +144,15 @@ enum TaskStatus {
   LUKKET
 }
 
+enum TaskHistoryField {
+  STATUS
+  PRIORITY
+  ASSIGNEE
+  DUE_DATE
+  TITLE
+  DESCRIPTION
+}
+
 enum VersionSource {
   BRANCHESTANDARD
   INTERNT
@@ -299,6 +308,7 @@ model Organization {
   ai_settings           OrganizationAISettings?
   company_insights_caches CompanyInsightsCache[]
   comments              Comment[]
+  task_history          TaskHistory[]
 
   @@index([id])
 }
@@ -322,6 +332,7 @@ model User {
   assigned_tasks    Task[]               @relation("TaskAssignedTo")
   visits            Visit[]              @relation("VisitVisitor")
   comments          Comment[]            @relation("CommentAuthor")
+  task_history_changes TaskHistory[]     @relation("TaskHistoryChangedBy")
 
   @@unique([organization_id, email])
   @@index([organization_id, deleted_at])
@@ -667,10 +678,30 @@ model Task {
   assignee     User?        @relation("TaskAssignedTo", fields: [assigned_to], references: [id])
   case         Case?        @relation(fields: [case_id], references: [id])
   comments     Comment[]
+  history      TaskHistory[]
 
   @@index([organization_id, deleted_at])
   @@index([organization_id, assigned_to, deleted_at])
   @@index([organization_id, due_date])
+}
+
+model TaskHistory {
+  id              String           @id @default(uuid())
+  organization_id String
+  task_id         String
+  field_name      TaskHistoryField
+  old_value       String?
+  new_value       String?
+  changed_by      String
+  changed_at      DateTime         @default(now())
+  deleted_at      DateTime?
+
+  organization Organization @relation(fields: [organization_id], references: [id])
+  task         Task         @relation(fields: [task_id], references: [id])
+  changedBy    User         @relation("TaskHistoryChangedBy", fields: [changed_by], references: [id])
+
+  @@index([organization_id, task_id, changed_at])
+  @@index([organization_id, deleted_at])
 }
 
 model Comment {
