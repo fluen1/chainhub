@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { endOwnership } from '@/actions/ownership'
 import { toast } from 'sonner'
+import { formatDate } from '@/lib/labels'
 import type { Decimal } from '@prisma/client/runtime/library'
 
 interface OwnershipItem {
@@ -104,12 +105,10 @@ export function OwnershipList({ ownerships, title, showActions }: OwnershipListP
                 {Number(o.ownership_pct).toFixed(2)}%
               </td>
               <td className="px-6 py-4 text-sm text-gray-500">
-                {o.effective_date ? new Date(o.effective_date).toLocaleDateString('da-DK') : '—'}
+                {o.effective_date ? formatDate(o.effective_date) : '—'}
               </td>
               {!showActions && o.end_date && (
-                <td className="px-6 py-4 text-sm text-gray-500">
-                  {new Date(o.end_date).toLocaleDateString('da-DK')}
-                </td>
+                <td className="px-6 py-4 text-sm text-gray-500">{formatDate(o.end_date)}</td>
               )}
               {showActions && (
                 <td className="px-6 py-4 text-right">

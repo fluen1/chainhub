@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Users, AlertTriangle, ChevronDown, ChevronRight } from 'lucide-react'
 import { endOwnership } from '@/actions/ownership'
 import { toast } from 'sonner'
+import { formatDate } from '@/lib/labels'
 import type { Decimal } from '@prisma/client/runtime/library'
 
 interface OwnershipItem {
@@ -59,12 +60,8 @@ function OwnershipRow({
   const name = ownership.owner_person
     ? `${ownership.owner_person.first_name} ${ownership.owner_person.last_name}`
     : 'Selskab'
-  const dateLabel = ownership.effective_date
-    ? `Siden ${new Date(ownership.effective_date).toLocaleDateString('da-DK')}`
-    : ''
-  const endDateLabel = ownership.end_date
-    ? `Ophørt ${new Date(ownership.end_date).toLocaleDateString('da-DK')}`
-    : ''
+  const dateLabel = ownership.effective_date ? `Siden ${formatDate(ownership.effective_date)}` : ''
+  const endDateLabel = ownership.end_date ? `Ophørt ${formatDate(ownership.end_date)}` : ''
 
   return (
     <div className="flex items-center justify-between px-3 py-2.5 border-b border-gray-100 hover:bg-gray-50/50 transition-colors">

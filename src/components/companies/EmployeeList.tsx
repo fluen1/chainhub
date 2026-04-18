@@ -5,7 +5,7 @@ import { Users, Search, ChevronDown, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { endCompanyPerson } from '@/actions/governance'
 import { toast } from 'sonner'
-import { getCompanyPersonRoleLabel } from '@/lib/labels'
+import { getCompanyPersonRoleLabel, formatDate } from '@/lib/labels'
 
 interface PersonItem {
   id: string
@@ -55,12 +55,8 @@ function EmployeeRow({ cp, showActions }: { cp: PersonItem; showActions: boolean
     setEndDate('')
   }
 
-  const startDateLabel = cp.start_date
-    ? `Siden ${new Date(cp.start_date).toLocaleDateString('da-DK')}`
-    : ''
-  const endDateLabel = cp.end_date
-    ? `Fratrådt ${new Date(cp.end_date).toLocaleDateString('da-DK')}`
-    : ''
+  const startDateLabel = cp.start_date ? `Siden ${formatDate(cp.start_date)}` : ''
+  const endDateLabel = cp.end_date ? `Fratrådt ${formatDate(cp.end_date)}` : ''
 
   return (
     <div className="flex items-center justify-between px-3 py-2.5 border-b border-gray-100 hover:bg-gray-50/50 transition-colors">

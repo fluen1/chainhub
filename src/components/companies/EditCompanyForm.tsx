@@ -6,7 +6,7 @@ import { updateCompany } from '@/actions/companies'
 import { toast } from 'sonner'
 import { Pencil } from 'lucide-react'
 import type { Company } from '@prisma/client'
-import { getCompanyStatusLabel, COMPANY_TYPE_OPTIONS } from '@/lib/labels'
+import { getCompanyStatusLabel, COMPANY_TYPE_OPTIONS, formatDate } from '@/lib/labels'
 
 interface EditCompanyFormProps {
   company: Company
@@ -80,11 +80,7 @@ export function EditCompanyForm({ company }: EditCompanyFormProps) {
             <Field label="Status" value={getCompanyStatusLabel(company.status ?? '')} />
             <Field
               label="Stiftelsesdato"
-              value={
-                company.founded_date
-                  ? new Date(company.founded_date).toLocaleDateString('da-DK')
-                  : null
-              }
+              value={company.founded_date ? formatDate(company.founded_date) : null}
             />
           </div>
         </div>

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { endCompanyPerson } from '@/actions/governance'
 import { toast } from 'sonner'
+import { formatDate } from '@/lib/labels'
 
 interface PersonItem {
   id: string
@@ -109,12 +110,10 @@ export function CompanyPersonList({
                 )}
               </td>
               <td className="px-6 py-4 text-sm text-gray-500">
-                {cp.start_date ? new Date(cp.start_date).toLocaleDateString('da-DK') : '—'}
+                {cp.start_date ? formatDate(cp.start_date) : '—'}
               </td>
               {!showActions && cp.end_date && (
-                <td className="px-6 py-4 text-sm text-gray-500">
-                  {new Date(cp.end_date).toLocaleDateString('da-DK')}
-                </td>
+                <td className="px-6 py-4 text-sm text-gray-500">{formatDate(cp.end_date)}</td>
               )}
               {showActions && (
                 <td className="px-6 py-4 text-right">
