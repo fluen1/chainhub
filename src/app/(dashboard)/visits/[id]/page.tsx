@@ -40,7 +40,7 @@ export default async function VisitDetailPage({ params }: Props) {
   return (
     <div className="space-y-6">
       <div className="flex items-start gap-4">
-        <Link href="/visits" className="mt-1 rounded-md p-1 hover:bg-gray-100">
+        <Link href="/calendar" className="mt-1 rounded-md p-1 hover:bg-gray-100">
           <ArrowLeft className="h-5 w-5 text-gray-500" />
         </Link>
         <div className="flex-1">

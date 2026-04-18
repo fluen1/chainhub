@@ -55,13 +55,13 @@ export function CreateVisitForm({ companies }: CreateVisitFormProps) {
     }
 
     toast.success('Besøg planlagt')
-    router.push('/visits')
+    router.push('/calendar')
   }
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex items-center gap-4">
-        <Link href="/visits" className="rounded-md p-1 hover:bg-gray-100">
+        <Link href="/calendar" className="rounded-md p-1 hover:bg-gray-100">
           <ArrowLeft className="h-5 w-5 text-gray-500" />
         </Link>
         <h1 className="text-2xl font-bold text-gray-900">Planlæg besøg</h1>
@@ -137,7 +137,7 @@ export function CreateVisitForm({ companies }: CreateVisitFormProps) {
 
         <div className="flex justify-end gap-3 pt-2">
           <Link
-            href="/visits"
+            href="/calendar"
             className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
             Annullér
