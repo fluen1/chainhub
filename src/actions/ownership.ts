@@ -14,6 +14,8 @@ import {
 import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
 import type { Ownership } from '@prisma/client'
+import { recordAuditEvent } from '@/lib/audit'
+import { captureError } from '@/lib/logger'
 
 export async function addOwner(input: AddOwnerInput): Promise<ActionResult<Ownership>> {
   const session = await auth()
@@ -61,21 +63,26 @@ export async function addOwner(input: AddOwnerInput): Promise<ActionResult<Owner
       },
     })
 
-    // Log aktivitet
-    await prisma.auditLog.create({
-      data: {
-        organization_id: session.user.organizationId,
-        user_id: session.user.id,
-        action: 'CREATE',
-        resource_type: 'ownership',
-        resource_id: ownership.id,
-        sensitivity: 'STRENGT_FORTROLIG',
+    await recordAuditEvent({
+      organizationId: session.user.organizationId,
+      userId: session.user.id,
+      action: 'CREATE',
+      resourceType: 'ownership',
+      resourceId: ownership.id,
+      sensitivity: 'STRENGT_FORTROLIG',
+      changes: {
+        companyId: parsed.data.companyId,
+        ownershipPct: Number(ownership.ownership_pct),
       },
     })
 
     revalidatePath(`/companies/${parsed.data.companyId}`)
     return { data: ownership }
-  } catch {
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:addOwner',
+      extra: { companyId: parsed.data.companyId },
+    })
     return { error: 'Ejerskab kunne ikke tilføjes — prøv igen' }
   }
 }
@@ -92,10 +99,16 @@ export async function updateOwnership(
   const hasSensitivityAccess = await canAccessSensitivity(session.user.id, 'STRENGT_FORTROLIG')
   if (!hasSensitivityAccess) return { error: 'Ingen adgang' }
 
-  // Verificér tenant isolation
+  // Verificér tenant isolation + læs før-værdier til audit
   const existing = await prisma.ownership.findFirst({
     where: { id: parsed.data.ownershipId },
-    select: { organization_id: true, company_id: true },
+    select: {
+      organization_id: true,
+      company_id: true,
+      ownership_pct: true,
+      effective_date: true,
+      contract_id: true,
+    },
   })
   if (!existing || existing.organization_id !== session.user.organizationId) {
     return { error: 'Ejerskab ikke fundet' }
@@ -113,9 +126,30 @@ export async function updateOwnership(
       },
     })
 
+    await recordAuditEvent({
+      organizationId: session.user.organizationId,
+      userId: session.user.id,
+      action: 'UPDATE',
+      resourceType: 'ownership',
+      resourceId: ownership.id,
+      sensitivity: 'STRENGT_FORTROLIG',
+      changes: {
+        oldOwnershipPct: Number(existing.ownership_pct),
+        newOwnershipPct: Number(ownership.ownership_pct),
+        oldEffectiveDate: existing.effective_date?.toISOString() ?? null,
+        newEffectiveDate: ownership.effective_date?.toISOString() ?? null,
+        oldContractId: existing.contract_id,
+        newContractId: ownership.contract_id,
+      },
+    })
+
     revalidatePath(`/companies/${existing.company_id}`)
     return { data: ownership }
-  } catch {
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:updateOwnership',
+      extra: { ownershipId: parsed.data.ownershipId },
+    })
     return { error: 'Ejerskab kunne ikke opdateres — prøv igen' }
   }
 }
@@ -144,21 +178,23 @@ export async function endOwnership(input: EndOwnershipInput): Promise<ActionResu
       data: { end_date: new Date(parsed.data.endDate) },
     })
 
-    await prisma.auditLog.create({
-      data: {
-        organization_id: session.user.organizationId,
-        user_id: session.user.id,
-        action: 'UPDATE',
-        resource_type: 'ownership',
-        resource_id: ownership.id,
-        sensitivity: 'STRENGT_FORTROLIG',
-        changes: { action: 'end_ownership', end_date: parsed.data.endDate },
-      },
+    await recordAuditEvent({
+      organizationId: session.user.organizationId,
+      userId: session.user.id,
+      action: 'END',
+      resourceType: 'ownership',
+      resourceId: ownership.id,
+      sensitivity: 'STRENGT_FORTROLIG',
+      changes: { endDate: parsed.data.endDate },
     })
 
     revalidatePath(`/companies/${existing.company_id}`)
     return { data: ownership }
-  } catch {
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:endOwnership',
+      extra: { ownershipId: parsed.data.ownershipId },
+    })
     return { error: 'Ejerskab kunne ikke afregistreres — prøv igen' }
   }
 }
