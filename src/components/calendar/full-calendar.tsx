@@ -16,6 +16,7 @@ import {
   X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { MONTH_NAMES_DA, WEEKDAYS_DA_SHORT } from '@/lib/calendar-constants'
 import type { CalendarEvent, CalendarEventType } from '@/types/ui'
 import { createTask } from '@/actions/tasks'
 import { toast } from 'sonner'
@@ -83,22 +84,6 @@ const EVENT_TYPE_STYLES: Record<
     borderL: 'border-l-emerald-500',
   },
 }
-
-const MONTH_NAMES = [
-  'Januar',
-  'Februar',
-  'Marts',
-  'April',
-  'Maj',
-  'Juni',
-  'Juli',
-  'August',
-  'September',
-  'Oktober',
-  'November',
-  'December',
-]
-const DAY_NAMES = ['Ma', 'Ti', 'On', 'To', 'Fr', 'Lø', 'Sø']
 
 // ---------------------------------------------------------------
 // URL helper — byg search params med filter-persistence
@@ -261,7 +246,7 @@ export function FullCalendar({ events, year, month, selectedDay, todayISO }: Ful
             <ChevronLeft className="h-4 w-4 text-gray-600" />
           </button>
           <div className="text-sm font-semibold text-gray-900 min-w-[140px] text-center">
-            {MONTH_NAMES[month - 1]} {year}
+            {MONTH_NAMES_DA[month - 1]} {year}
           </div>
           <button
             onClick={nextMonth}
@@ -302,7 +287,7 @@ export function FullCalendar({ events, year, month, selectedDay, todayISO }: Ful
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           {/* Day headers */}
           <div className="grid grid-cols-7 border-b border-gray-100">
-            {DAY_NAMES.map((d) => (
+            {WEEKDAYS_DA_SHORT.map((d) => (
               <div
                 key={d}
                 className="py-2.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider"
@@ -339,7 +324,7 @@ export function FullCalendar({ events, year, month, selectedDay, todayISO }: Ful
                   type="button"
                   onClick={() => selectDay(day)}
                   role="gridcell"
-                  aria-label={`${day}. ${MONTH_NAMES[month - 1]} ${year}${dayEvents.length > 0 ? `, ${dayEvents.length} events` : ''}`}
+                  aria-label={`${day}. ${MONTH_NAMES_DA[month - 1]} ${year}${dayEvents.length > 0 ? `, ${dayEvents.length} events` : ''}`}
                   aria-selected={isSelected}
                   className={cn(
                     'min-h-[80px] sm:min-h-[100px] border-b border-r border-gray-50 p-1.5 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-400',
@@ -416,7 +401,7 @@ export function FullCalendar({ events, year, month, selectedDay, todayISO }: Ful
               <>
                 <div className="flex items-center justify-between mb-3">
                   <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                    {selectedDay}. {MONTH_NAMES[month - 1].toLowerCase()} {year}
+                    {selectedDay}. {MONTH_NAMES_DA[month - 1].toLowerCase()} {year}
                   </div>
                   <button
                     onClick={() => navigate(monthStr)}
@@ -440,7 +425,7 @@ export function FullCalendar({ events, year, month, selectedDay, todayISO }: Ful
                   {quickAddMode === 'task' ? (
                     <form action={handleQuickAddTask} className="space-y-2">
                       <label className="block text-xs font-medium text-gray-700">
-                        Ny opgave — {selectedDay}. {MONTH_NAMES[month - 1].toLowerCase()}
+                        Ny opgave — {selectedDay}. {MONTH_NAMES_DA[month - 1].toLowerCase()}
                       </label>
                       <input
                         name="title"
@@ -495,7 +480,7 @@ export function FullCalendar({ events, year, month, selectedDay, todayISO }: Ful
             ) : allMonthEvents !== null ? (
               <>
                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                  Alle events · {MONTH_NAMES[month - 1].toLowerCase()}
+                  Alle events · {MONTH_NAMES_DA[month - 1].toLowerCase()}
                 </div>
                 {visibleMonthEvents.length === 0 ? (
                   <div className="py-6 text-center">

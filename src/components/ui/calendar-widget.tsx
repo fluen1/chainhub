@@ -3,9 +3,8 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
+import { MONTH_NAMES_DA, MONTH_NAMES_DA_SHORT, WEEKDAYS_DA_SHORT } from '@/lib/calendar-constants'
 import { getEventTypeColor, type CalendarEvent, type CalendarEventType } from '@/types/ui'
-
-const WEEKDAYS = ['Ma', 'Ti', 'On', 'To', 'Fr', 'Lø', 'Sø']
 
 const LEGEND: { type: CalendarEventType; label: string; color: string }[] = [
   { type: 'expiry', label: 'Udløb', color: '#ef4444' },
@@ -27,7 +26,7 @@ function getFirstDayOfWeek(year: number, month: number) {
 function formatEventDate(dateStr: string, today: string): string {
   if (dateStr === today) return 'I dag'
   const d = new Date(dateStr)
-  return `${d.getDate()}. ${['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'][d.getMonth()]}`
+  return `${d.getDate()}. ${MONTH_NAMES_DA_SHORT[d.getMonth()]}`
 }
 
 export interface CalendarWidgetProps {
@@ -66,21 +65,6 @@ export function CalendarWidget({
     return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}` === today
   }
 
-  const monthNames = [
-    'Januar',
-    'Februar',
-    'Marts',
-    'April',
-    'Maj',
-    'Juni',
-    'Juli',
-    'August',
-    'September',
-    'Oktober',
-    'November',
-    'December',
-  ]
-
   function prevMonth() {
     if (month === 1) {
       setYear(year - 1)
@@ -99,7 +83,7 @@ export function CalendarWidget({
     <div className="rounded-xl border border-gray-200 bg-white p-5">
       <div className="flex items-center justify-between mb-4">
         <div className="text-sm font-semibold text-slate-900">
-          {monthNames[month - 1]} {year}
+          {MONTH_NAMES_DA[month - 1]} {year}
         </div>
         <div className="flex gap-1">
           <button
@@ -122,7 +106,7 @@ export function CalendarWidget({
       </div>
 
       <div className="grid grid-cols-7 gap-0.5 mb-4">
-        {WEEKDAYS.map((d) => (
+        {WEEKDAYS_DA_SHORT.map((d) => (
           <div key={d} className="py-1 text-center text-[11px] font-medium text-gray-500">
             {d}
           </div>
