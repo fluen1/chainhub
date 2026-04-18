@@ -239,6 +239,25 @@ WCAG 2.1 Level A + kritisk AA bragt i hus. A11y-audit fra ~2/10 → ~8/10.
 
 Produktions-modenhed-track lukket: foundation (session 1) + schema/audit (session 2) + E2E/CI/coverage (session 3) + coverage uplift + a11y. Resterende: tech-debt cleanup + Vercel deploy.
 
+## Tech-debt cleanup — 2026-04-18 ✅
+
+5 ekstraherede lib-moduler + eliminated type-safety gaps.
+
+- [x] **`src/lib/calendar-constants.ts`** — MONTH_NAMES_DA/SHORT + WEEKDAYS_DA_SHORT, brugt i full-calendar.tsx + calendar-widget.tsx
+- [x] **`src/lib/date-helpers.ts`** — formatDanishDate/Time/Short/Relative + 17 unit-tests. Pragmatisk valg: refaktorerede 28 call-sites til eksisterende `formatDate` i labels.ts for konsistens (allerede brugt i 30+ filer); nye helpers fyldte kun de huller labels.ts ikke dækkede (null-safe, datetime, relativ)
+- [x] **`src/lib/dashboard-helpers.ts`** — 9 pure helpers fra dashboard.ts (filterLatestPerCompany, sumMetric, deriveHealth, pickHighestPriorityRole, firstLetter, relativeDays, buildInlineKpis, buildTimelineSections, emptyDashboardData) + 32 unit-tests. `dashboard.ts`: 740 → 362 linjer (−378)
+- [x] **`src/lib/zod-enums.ts`** — 14 Zod-Prisma-enum-bro-schemas med `satisfies z.ZodType<T>`-pattern + 28 unit-tests. 25 `as never`-casts fjernet fra 6 action-filer + 9 UI/page-filer. Resterende 21 `as never` er legitime (Prisma Json-kolonner + Anthropic SDK type-bridge)
+- [x] **`src/lib/nav-config.ts`** — fælles NAV_SECTIONS (sidebar, 3 grupper) + NAV_ITEMS (mobile, 10 items) via flatMap-derivation → ingen drift-mulighed mellem mobile + sidebar
+- [x] **Bonus: 2 latente runtime-bugs fundet og rettet** ved fjernelse af `as never`:
+  1. `CASE_SUBTYPE_BY_TYPE` havde 3 stavefejl der ikke matchede Prisma-enum (VIRKSOMHEDSKOEB, MYNDIGHEDSPAABUD, BESTYRELSESMOEDE) — ville give runtime P2003/P2009 på create
+  2. `finance.ts` sendte `'ANDET'` hvor Prisma forventer identifier `'ANDET_METRIC'` (Prisma `@map` oversætter selv til DB)
+- [x] **Tests**: 550 → 627 passed (+77 nye), 0 failed
+- [x] **Gate**: format ✅, lint ✅, tsc ✅, build ✅
+
+`fastest-levenshtein`-fjernelse blev skippet — dep bruges faktisk af `src/lib/ai/pipeline/pass3-source-verification.ts` (fuzzy match for AI extraction). Audit var forkert.
+
+Produktions-modenhed + tech-debt fuldt lukket. Resterende: Vercel deploy.
+
 ## Udskudte features (dedikerede sessions)
 
 Disse er bevidst taget ud af scope efter exploration og venter på dedikeret planning.
