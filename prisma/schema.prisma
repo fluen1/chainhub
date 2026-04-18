@@ -498,6 +498,7 @@ model Contract {
   parties         ContractParty[]
   versions        ContractVersion[]
   attachments     ContractAttachment[]
+  documents       Document[]
   relations_from  ContractRelation[]   @relation("RelationFrom")
   relations_to    ContractRelation[]   @relation("RelationTo")
   case_contracts  CaseContract[]
@@ -753,6 +754,7 @@ model Document {
   organization_id String
   company_id      String?
   case_id         String?
+  contract_id     String?
   title           String
   file_url        String
   file_name       String
@@ -770,10 +772,12 @@ model Document {
   organization Organization        @relation(fields: [organization_id], references: [id])
   company      Company?            @relation(fields: [company_id], references: [id])
   case         Case?               @relation(fields: [case_id], references: [id])
+  contract     Contract?           @relation(fields: [contract_id], references: [id])
   extraction   DocumentExtraction?
 
   @@index([organization_id, deleted_at])
   @@index([organization_id, company_id, deleted_at])
+  @@index([organization_id, contract_id])
 }
 
 model FinancialMetric {
