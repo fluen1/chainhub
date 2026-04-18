@@ -117,10 +117,19 @@ export function UploadVersionForm({ contractId, companyId }: UploadVersionFormPr
         <div className="mt-3 space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
           {/* Drop zone */}
           <div
+            role="button"
+            tabIndex={selectedFile ? -1 : 0}
+            aria-label="Vælg fil eller træk og slip"
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             onClick={() => !selectedFile && fileInputRef.current?.click()}
+            onKeyDown={(e) => {
+              if (!selectedFile && (e.key === 'Enter' || e.key === ' ')) {
+                e.preventDefault()
+                fileInputRef.current?.click()
+              }
+            }}
             className={cn(
               'relative rounded-lg border-2 border-dashed p-4 text-center transition-colors cursor-pointer',
               isDragging

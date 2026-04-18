@@ -82,10 +82,19 @@ export function FileUpload({ companyId, caseId, className }: FileUploadProps) {
     <div className={cn('space-y-3', className)}>
       {/* Drop zone */}
       <div
+        role="button"
+        tabIndex={selectedFile ? -1 : 0}
+        aria-label="Vælg fil eller træk og slip"
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={() => !selectedFile && fileInputRef.current?.click()}
+        onKeyDown={(e) => {
+          if (!selectedFile && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault()
+            fileInputRef.current?.click()
+          }
+        }}
         className={cn(
           'relative rounded-lg border-2 border-dashed p-6 text-center transition-colors cursor-pointer',
           isDragging

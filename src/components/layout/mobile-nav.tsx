@@ -51,8 +51,17 @@ export function MobileNav() {
         <>
           {/* Backdrop */}
           <div
+            role="button"
+            tabIndex={0}
+            aria-label="Luk menu"
             className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
             onClick={() => setOpen(false)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') {
+                e.preventDefault()
+                setOpen(false)
+              }
+            }}
           />
 
           {/* Drawer */}
