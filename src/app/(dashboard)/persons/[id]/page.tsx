@@ -2,9 +2,9 @@ import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
-import { Mail, Phone, Building2, FileText, Briefcase, PieChart } from 'lucide-react'
+import { Mail, Phone, Building2, FileText, Briefcase, PieChart, CalendarDays, Clock, Shield } from 'lucide-react'
 import Link from 'next/link'
-import { getCompanyPersonRoleLabel } from '@/lib/labels'
+import { getCompanyPersonRoleLabel, getContractStatusLabel, getContractStatusStyle, formatDate } from '@/lib/labels'
 
 export const metadata: Metadata = { title: 'Person' }
 
@@ -26,7 +26,20 @@ export default async function PersonDetailPage({ params }: Props) {
       company_persons: {
         include: {
           company: { select: { id: true, name: true, status: true } },
-          contract: { select: { id: true, display_name: true, status: true } },
+          contract: {
+            select: {
+              id: true,
+              display_name: true,
+              status: true,
+              system_type: true,
+              effective_date: true,
+              expiry_date: true,
+              notice_period_days: true,
+              termination_date: true,
+              signed_date: true,
+              anciennity_start: true,
+            },
+          },
         },
         orderBy: { start_date: 'desc' },
       },
@@ -57,6 +70,11 @@ export default async function PersonDetailPage({ params }: Props) {
   const historicRoles = person.company_persons.filter((cp) => cp.end_date)
   const fullName = `${person.first_name} ${person.last_name}`
   const initials = `${person.first_name[0] ?? ''}${person.last_name[0] ?? ''}`.toUpperCase()
+
+  // Saml alle aktive ansættelseskontrakter
+  const employmentContracts = activeRoles
+    .filter((cp) => cp.contract)
+    .map((cp) => ({ ...cp.contract!, companyName: cp.company.name, companyId: cp.company.id, role: cp.role, employmentType: cp.employment_type }))
 
   return (
     <div className="max-w-4xl">
@@ -112,6 +130,93 @@ export default async function PersonDetailPage({ params }: Props) {
           </div>
         </div>
       </div>
+
+      {/* Ansættelseskontrakter — prominent sektion */}
+      {employmentContracts.length > 0 && (
+        <div className="space-y-3 mb-4">
+          {employmentContracts.map((ec) => (
+            <div key={ec.id} className="rounded-xl border border-blue-200 bg-blue-50/40 p-5">
+              <div className="flex items-start justify-between gap-3 mb-4">
+                <div className="flex items-center gap-2.5">
+                  <FileText className="h-5 w-5 text-blue-600" />
+                  <div>
+                    <Link
+                      href={`/contracts/${ec.id}`}
+                      className="text-sm font-semibold text-gray-900 hover:text-blue-700 no-underline"
+                    >
+                      {ec.display_name}
+                    </Link>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {ec.companyName} · {getCompanyPersonRoleLabel(ec.role)}
+                      {ec.employmentType && ` · ${ec.employmentType}`}
+                    </p>
+                  </div>
+                </div>
+                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getContractStatusStyle(ec.status)}`}>
+                  {getContractStatusLabel(ec.status)}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {ec.effective_date && (
+                  <div className="flex items-start gap-2">
+                    <CalendarDays className="h-3.5 w-3.5 text-gray-400 mt-0.5 shrink-0" />
+                    <div>
+                      <div className="text-[10px] text-gray-400 uppercase tracking-wide">Ikrafttrædelse</div>
+                      <div className="text-xs font-medium text-gray-900">{formatDate(ec.effective_date)}</div>
+                    </div>
+                  </div>
+                )}
+                {ec.expiry_date && (
+                  <div className="flex items-start gap-2">
+                    <Clock className="h-3.5 w-3.5 text-gray-400 mt-0.5 shrink-0" />
+                    <div>
+                      <div className="text-[10px] text-gray-400 uppercase tracking-wide">Udløb</div>
+                      <div className="text-xs font-medium text-gray-900">{formatDate(ec.expiry_date)}</div>
+                    </div>
+                  </div>
+                )}
+                {ec.notice_period_days != null && (
+                  <div className="flex items-start gap-2">
+                    <Shield className="h-3.5 w-3.5 text-gray-400 mt-0.5 shrink-0" />
+                    <div>
+                      <div className="text-[10px] text-gray-400 uppercase tracking-wide">Opsigelse</div>
+                      <div className="text-xs font-medium text-gray-900">{ec.notice_period_days} dage</div>
+                    </div>
+                  </div>
+                )}
+                {ec.signed_date && (
+                  <div className="flex items-start gap-2">
+                    <CalendarDays className="h-3.5 w-3.5 text-gray-400 mt-0.5 shrink-0" />
+                    <div>
+                      <div className="text-[10px] text-gray-400 uppercase tracking-wide">Underskrevet</div>
+                      <div className="text-xs font-medium text-gray-900">{formatDate(ec.signed_date)}</div>
+                    </div>
+                  </div>
+                )}
+                {ec.anciennity_start && (
+                  <div className="flex items-start gap-2">
+                    <CalendarDays className="h-3.5 w-3.5 text-gray-400 mt-0.5 shrink-0" />
+                    <div>
+                      <div className="text-[10px] text-gray-400 uppercase tracking-wide">Anciennitet</div>
+                      <div className="text-xs font-medium text-gray-900">{formatDate(ec.anciennity_start)}</div>
+                    </div>
+                  </div>
+                )}
+                {ec.termination_date && (
+                  <div className="flex items-start gap-2">
+                    <Clock className="h-3.5 w-3.5 text-red-400 mt-0.5 shrink-0" />
+                    <div>
+                      <div className="text-[10px] text-red-400 uppercase tracking-wide">Opsagt</div>
+                      <div className="text-xs font-medium text-red-700">{formatDate(ec.termination_date)}</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-4">
         {/* Aktive tilknytninger */}
