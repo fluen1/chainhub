@@ -36,12 +36,12 @@ export function UrgencyList({ title, items, viewAllHref }: UrgencyListProps) {
             />
             <div className="min-w-0 flex-1">
               <div className="text-[13px] font-medium text-slate-800">{item.name}</div>
-              <div className="text-xs text-gray-400">{item.subtitle}</div>
+              <div className="text-xs text-gray-500">{item.subtitle}</div>
             </div>
             <div
               className={cn(
                 'shrink-0 text-xs tabular-nums',
-                item.overdue ? 'font-medium text-red-600' : 'text-gray-400'
+                item.overdue ? 'font-medium text-red-600' : 'text-gray-500'
               )}
             >
               {item.days}
@@ -49,7 +49,7 @@ export function UrgencyList({ title, items, viewAllHref }: UrgencyListProps) {
           </div>
         ))}
         {items.length === 0 && (
-          <div className="py-6 text-center text-xs text-gray-400">Ingen punkter</div>
+          <div className="py-6 text-center text-xs text-gray-500">Ingen punkter</div>
         )}
       </div>
     </div>

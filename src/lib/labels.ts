@@ -269,7 +269,7 @@ export const TASK_STATUS_STYLES: Record<string, string> = {
   NY: 'bg-gray-100 text-gray-600',
   AKTIV: 'bg-blue-50 text-blue-700',
   AFVENTER: 'bg-yellow-50 text-yellow-700',
-  LUKKET: 'bg-gray-50 text-gray-400',
+  LUKKET: 'bg-gray-50 text-gray-500',
 }
 
 export function getTaskStatusLabel(status: string): string {
@@ -317,7 +317,7 @@ export const CASE_STATUS_STYLES: Record<string, string> = {
   AFVENTER_EKSTERN: 'bg-yellow-50 text-yellow-700',
   AFVENTER_KLIENT: 'bg-orange-50 text-orange-700',
   LUKKET: 'bg-green-50 text-green-700',
-  ARKIVERET: 'bg-gray-50 text-gray-400',
+  ARKIVERET: 'bg-gray-50 text-gray-500',
 }
 
 export function getCaseStatusLabel(status: string): string {

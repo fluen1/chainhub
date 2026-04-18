@@ -358,6 +358,12 @@ import { cn } from '@/lib/utils'
 <div className={cn('base-classes', isActive && 'active-classes')}>
 ```
 
+### Kontrast-regler (WCAG AA)
+
+- Brødtekst: `text-gray-700` eller mørkere
+- Hjælpe-/beskrivelsestekst: `text-gray-500` minimum (aldrig gray-400 på hvid baggrund)
+- Placeholder/disabled/icon-decoration: `text-gray-400` acceptabelt
+
 ---
 
 ## 8. Fejlhåndtering

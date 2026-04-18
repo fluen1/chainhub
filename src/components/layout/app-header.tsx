@@ -53,7 +53,7 @@ export function AppHeader({ userName, kpis, currentDate }: AppHeaderProps) {
           <div className="text-sm font-bold text-slate-900 leading-tight">
             {getGreeting(currentDate)}, {firstName}
           </div>
-          <div className="text-[11px] text-gray-400 leading-tight">
+          <div className="text-[11px] text-gray-500 leading-tight">
             {getDateString(currentDate)}
           </div>
         </div>
@@ -73,7 +73,7 @@ export function AppHeader({ userName, kpis, currentDate }: AppHeaderProps) {
               >
                 {kpi.value}
               </div>
-              <div className="text-[10px] text-gray-400 leading-tight">{kpi.label}</div>
+              <div className="text-[10px] text-gray-500 leading-tight">{kpi.label}</div>
             </div>
           ))}
         </div>
@@ -82,7 +82,7 @@ export function AppHeader({ userName, kpis, currentDate }: AppHeaderProps) {
       <div className="flex items-center gap-3">
         <Link
           href="/search"
-          className="hidden sm:flex items-center w-[260px] rounded-lg border border-gray-200 bg-slate-50 px-3.5 py-2 text-[13px] text-gray-400 hover:border-gray-300 hover:bg-slate-100 transition-colors cursor-pointer"
+          className="hidden sm:flex items-center w-[260px] rounded-lg border border-gray-200 bg-slate-50 px-3.5 py-2 text-[13px] text-gray-500 hover:border-gray-300 hover:bg-slate-100 transition-colors cursor-pointer"
         >
           Søg efter selskaber, kontrakter, perso...
         </Link>

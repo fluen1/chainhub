@@ -71,7 +71,7 @@ async function SearchResults({
               >
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">{c.name}</p>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-gray-500">
                     {[c.cvr && `CVR ${c.cvr}`, c.city].filter(Boolean).join(' · ') || '—'}
                   </p>
                 </div>
@@ -98,11 +98,11 @@ async function SearchResults({
               >
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">{c.display_name}</p>
-                  <p className="text-xs text-gray-400 truncate">
+                  <p className="text-xs text-gray-500 truncate">
                     {getContractTypeLabel(c.system_type)} · {c.companyName}
                   </p>
                 </div>
-                <span className="text-xs text-gray-400 shrink-0">
+                <span className="text-xs text-gray-500 shrink-0">
                   {getContractStatusLabel(c.status)}
                 </span>
               </Link>
@@ -122,7 +122,7 @@ async function SearchResults({
                 className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors no-underline"
               >
                 <p className="text-sm font-medium text-gray-900 truncate">{c.title}</p>
-                <span className="text-xs text-gray-400 shrink-0">
+                <span className="text-xs text-gray-500 shrink-0">
                   {getCaseStatusLabel(c.status)}
                 </span>
               </Link>
@@ -143,7 +143,7 @@ async function SearchResults({
               >
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">{t.title}</p>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs text-gray-500">
                     {getTaskStatusLabel(t.status)}
                     {t.due_date && ` · Frist ${formatDate(t.due_date)}`}
                   </p>
@@ -173,7 +173,7 @@ async function SearchResults({
                   <p className="text-sm font-medium text-gray-900 truncate">
                     {p.first_name} {p.last_name}
                   </p>
-                  <p className="text-xs text-gray-400 truncate">
+                  <p className="text-xs text-gray-500 truncate">
                     {[p.email, p.phone].filter(Boolean).join(' · ') || '—'}
                   </p>
                 </div>
@@ -195,7 +195,7 @@ async function SearchResults({
               >
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">{d.title}</p>
-                  <p className="text-xs text-gray-400 truncate">
+                  <p className="text-xs text-gray-500 truncate">
                     {[d.file_name, d.companyName].filter(Boolean).join(' · ')}
                   </p>
                 </div>
@@ -230,7 +230,7 @@ function SectionHeader({
 function QuickAccessPanel() {
   return (
     <div className="py-8">
-      <p className="text-sm text-gray-400 mb-6">
+      <p className="text-sm text-gray-500 mb-6">
         Skriv mindst {MIN_SEARCH_LENGTH} tegn for at søge, eller gå direkte til:
       </p>
       <div className="grid grid-cols-2 gap-3">
@@ -250,7 +250,7 @@ function QuickAccessPanel() {
             <Icon className="h-5 w-5 text-gray-400" aria-hidden />
             <div>
               <p className="text-sm font-medium text-gray-900">{label}</p>
-              <p className="text-xs text-gray-400">{sub}</p>
+              <p className="text-xs text-gray-500">{sub}</p>
             </div>
           </Link>
         ))}

@@ -62,7 +62,7 @@ export function CreateCompanyForm() {
           </Link>
           <div>
             <h1 className="text-xl font-semibold tracking-tight text-gray-900">Opret selskab</h1>
-            <p className="text-sm text-gray-400">Tilføj et nyt lokationsselskab til porteføljen</p>
+            <p className="text-sm text-gray-500">Tilføj et nyt lokationsselskab til porteføljen</p>
           </div>
         </div>
       </div>
@@ -70,7 +70,7 @@ export function CreateCompanyForm() {
       <form onSubmit={handleSubmit}>
         {/* Selskabsinformation */}
         <div className="rounded-lg border border-gray-200 bg-white p-5 space-y-4">
-          <p className="text-xs font-medium text-gray-400 tracking-wide">Selskabsinformation</p>
+          <p className="text-xs font-medium text-gray-500 tracking-wide">Selskabsinformation</p>
 
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700">
@@ -102,7 +102,7 @@ export function CreateCompanyForm() {
                 className={inputClass}
                 placeholder="12345678"
               />
-              <p className="mt-1 text-xs text-gray-400">8 cifre</p>
+              <p className="mt-1 text-xs text-gray-500">8 cifre</p>
             </div>
 
             <div>
@@ -132,7 +132,7 @@ export function CreateCompanyForm() {
 
         {/* Adresse */}
         <div className="mt-4 rounded-lg border border-gray-200 bg-white p-5 space-y-4">
-          <p className="text-xs font-medium text-gray-400 tracking-wide">Adresse</p>
+          <p className="text-xs font-medium text-gray-500 tracking-wide">Adresse</p>
 
           <div>
             <label htmlFor="address" className="block text-sm font-medium text-gray-700">

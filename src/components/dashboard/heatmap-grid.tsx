@@ -27,7 +27,7 @@ export function HeatmapGrid({ companies }: HeatmapGridProps) {
     .slice(0, MAX_HEATMAP_CELLS)
 
   if (sorted.length === 0) {
-    return <p className="text-center text-xs text-gray-400 py-4">Ingen selskaber</p>
+    return <p className="text-center text-xs text-gray-500 py-4">Ingen selskaber</p>
   }
 
   return (
@@ -70,17 +70,17 @@ export function HeatmapGrid({ companies }: HeatmapGridProps) {
       <div className="flex items-center gap-3 mt-2 pt-1.5 border-t border-gray-100">
         <div className="flex items-center gap-1">
           <div className="w-1.5 h-1.5 rounded-sm bg-green-200" />
-          <span className="text-[8px] text-gray-400">Sund</span>
+          <span className="text-[8px] text-gray-500">Sund</span>
         </div>
         <div className="flex items-center gap-1">
           <div className="w-1.5 h-1.5 rounded-sm bg-amber-200" />
-          <span className="text-[8px] text-gray-400">Advarsel</span>
+          <span className="text-[8px] text-gray-500">Advarsel</span>
         </div>
         <div className="flex items-center gap-1">
           <div className="w-1.5 h-1.5 rounded-sm bg-red-200" />
-          <span className="text-[8px] text-gray-400">Kritisk</span>
+          <span className="text-[8px] text-gray-500">Kritisk</span>
         </div>
-        <span className="ml-auto text-[8px] text-gray-400">Tal = åbne issues</span>
+        <span className="ml-auto text-[8px] text-gray-500">Tal = åbne issues</span>
       </div>
     </div>
   )

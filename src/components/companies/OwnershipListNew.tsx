@@ -79,7 +79,7 @@ function OwnershipRow({
         ) : (
           <span className="text-sm font-medium text-gray-900">{name}</span>
         )}
-        <p className="text-xs text-gray-400 mt-0.5">
+        <p className="text-xs text-gray-500 mt-0.5">
           {ownership.owner_person ? 'Person' : 'Selskab'}
           {ownership.owner_person?.email && <span> · {ownership.owner_person.email}</span>}
           {dateLabel && <span> · {dateLabel}</span>}
@@ -117,7 +117,7 @@ function OwnershipRow({
             ) : (
               <button
                 onClick={() => setEnding(true)}
-                className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-xs text-gray-500 hover:text-gray-600 transition-colors"
               >
                 Afregistrér
               </button>
@@ -156,7 +156,7 @@ function CollapsibleGroup({
         <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
           {title}
         </span>
-        <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">
+        <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-full">
           {count}
         </span>
       </button>
@@ -214,7 +214,7 @@ export function OwnershipListNew({
         <div className="rounded-lg border border-dashed border-gray-200 py-16 text-center">
           <Users className="mx-auto h-10 w-10 text-gray-300" />
           <p className="mt-3 text-sm font-medium text-gray-900">Ingen ejere registreret endnu</p>
-          <p className="mt-1 text-sm text-gray-400">Tilføj den første ejer for dette selskab.</p>
+          <p className="mt-1 text-sm text-gray-500">Tilføj den første ejer for dette selskab.</p>
         </div>
       ) : (
         <div className="space-y-2">

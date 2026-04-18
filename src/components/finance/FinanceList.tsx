@@ -62,7 +62,7 @@ function CollapsibleYear({
         <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
           {year}
         </span>
-        <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">
+        <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-full">
           {metrics.length}
         </span>
       </button>
@@ -77,7 +77,7 @@ function CollapsibleYear({
                 <p className="text-sm font-medium text-gray-900">
                   {getMetricTypeLabel(m.metric_type)}
                 </p>
-                <p className="text-xs text-gray-400 mt-0.5">
+                <p className="text-xs text-gray-500 mt-0.5">
                   {getPeriodTypeLabel(m.period_type)}
                   {' · '}
                   <span className={getMetricSourceStyle(m.source)}>
@@ -119,7 +119,7 @@ export function FinanceList({ metrics, years, addButton }: FinanceListProps) {
         <div className="rounded-lg border border-dashed border-gray-200 py-16 text-center">
           <BarChart3 className="mx-auto h-10 w-10 text-gray-300" />
           <p className="mt-3 text-sm font-medium text-gray-900">Ingen nøgletal registreret endnu</p>
-          <p className="mt-1 text-sm text-gray-400">
+          <p className="mt-1 text-sm text-gray-500">
             Tilføj det første nøgletal for dette selskab.
           </p>
         </div>

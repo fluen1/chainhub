@@ -89,7 +89,7 @@ function CollapsibleCategory({
         <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
           {getContractCategoryLabel(category)}
         </span>
-        <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">
+        <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-full">
           {contracts.length}
         </span>
       </button>
@@ -123,7 +123,7 @@ function CollapsibleCategory({
                   <p className="text-sm font-medium text-gray-900 truncate">
                     {contract.display_name}
                   </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
+                  <p className="text-xs text-gray-500 mt-0.5">
                     {getContractTypeLabel(contract.system_type)}
                     {' · '}
                     <span className={contract.status === 'AKTIV' ? 'text-green-700' : ''}>
@@ -199,7 +199,7 @@ export function ContractList({ contracts, companyId }: ContractListProps) {
         <div className="rounded-lg border border-dashed border-gray-200 py-16 text-center">
           <FileText className="mx-auto h-10 w-10 text-gray-300" />
           <p className="mt-3 text-sm font-medium text-gray-900">Ingen kontrakter endnu</p>
-          <p className="mt-1 text-sm text-gray-400">Opret den første kontrakt for dette selskab.</p>
+          <p className="mt-1 text-sm text-gray-500">Opret den første kontrakt for dette selskab.</p>
         </div>
       </div>
     )
@@ -270,7 +270,7 @@ export function ContractList({ contracts, companyId }: ContractListProps) {
         <div className="rounded-lg border border-dashed border-gray-200 py-12 text-center">
           <Search className="mx-auto h-8 w-8 text-gray-300" />
           <p className="mt-3 text-sm font-medium text-gray-900">Ingen resultater</p>
-          <p className="mt-1 text-sm text-gray-400">
+          <p className="mt-1 text-sm text-gray-500">
             Ingen kontrakter matcher &ldquo;{search}&rdquo;
           </p>
         </div>

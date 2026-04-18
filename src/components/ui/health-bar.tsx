@@ -13,15 +13,15 @@ export function HealthBar({ healthy, warning, critical }: HealthBarProps) {
       <div className="flex gap-6 mt-3">
         <div className="text-center">
           <div className="text-2xl font-bold tabular-nums text-green-600">{healthy}</div>
-          <div className="text-[11px] text-gray-400">Sund</div>
+          <div className="text-[11px] text-gray-500">Sund</div>
         </div>
         <div className="text-center">
           <div className="text-2xl font-bold tabular-nums text-amber-600">{warning}</div>
-          <div className="text-[11px] text-gray-400">Advarsel</div>
+          <div className="text-[11px] text-gray-500">Advarsel</div>
         </div>
         <div className="text-center">
           <div className="text-2xl font-bold tabular-nums text-red-600">{critical}</div>
-          <div className="text-[11px] text-gray-400">Kritisk</div>
+          <div className="text-[11px] text-gray-500">Kritisk</div>
         </div>
       </div>
       <div className="mt-3 flex gap-[3px] h-2">

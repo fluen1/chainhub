@@ -21,7 +21,7 @@ export function CompanyRow({ initials, name, meta, status, avatarColor, href }: 
       </div>
       <div className="min-w-0 flex-1">
         <div className="text-[13px] font-medium text-slate-800">{name}</div>
-        <div className="text-xs text-gray-400">{meta}</div>
+        <div className="text-xs text-gray-500">{meta}</div>
       </div>
       <span
         className={cn(

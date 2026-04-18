@@ -65,7 +65,7 @@ export function TimelineSection({ section }: TimelineSectionProps) {
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-xs font-medium text-slate-800">{item.title}</div>
-            <div className="text-[10px] text-gray-400">{item.subtitle}</div>
+            <div className="text-[10px] text-gray-500">{item.subtitle}</div>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             {item.aiExtracted && (
@@ -73,7 +73,7 @@ export function TimelineSection({ section }: TimelineSectionProps) {
                 AI
               </span>
             )}
-            <span className="text-[10px] tabular-nums text-gray-400">{item.time}</span>
+            <span className="text-[10px] tabular-nums text-gray-500">{item.time}</span>
           </div>
         </Link>
       ))}

@@ -305,7 +305,7 @@ export function FullCalendar({ events, year, month, selectedDay, todayISO }: Ful
             {DAY_NAMES.map((d) => (
               <div
                 key={d}
-                className="py-2.5 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider"
+                className="py-2.5 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider"
               >
                 {d}
               </div>
@@ -380,7 +380,7 @@ export function FullCalendar({ events, year, month, selectedDay, todayISO }: Ful
                         )
                       })}
                       {dayEvents.length > 2 && (
-                        <div className="text-xs text-gray-400 px-1 font-medium">
+                        <div className="text-xs text-gray-500 px-1 font-medium">
                           +{dayEvents.length - 2} mere
                         </div>
                       )}
@@ -427,7 +427,7 @@ export function FullCalendar({ events, year, month, selectedDay, todayISO }: Ful
                   </button>
                 </div>
                 {selectedEvents.length === 0 ? (
-                  <p className="text-sm text-gray-400 py-4 text-center">Ingen events denne dag</p>
+                  <p className="text-sm text-gray-500 py-4 text-center">Ingen events denne dag</p>
                 ) : (
                   <div className="space-y-1.5">
                     {selectedEvents.map((e) => (
@@ -469,7 +469,7 @@ export function FullCalendar({ events, year, month, selectedDay, todayISO }: Ful
                     </form>
                   ) : (
                     <>
-                      <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                      <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                         Opret på denne dag
                       </div>
                       <div className="flex gap-2">
@@ -500,8 +500,8 @@ export function FullCalendar({ events, year, month, selectedDay, todayISO }: Ful
                 {visibleMonthEvents.length === 0 ? (
                   <div className="py-6 text-center">
                     <CalendarPlus className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                    <p className="text-sm text-gray-400">Ingen events denne måned</p>
-                    <p className="text-xs text-gray-400 mt-1">Klik på en dag for at oprette</p>
+                    <p className="text-sm text-gray-500">Ingen events denne måned</p>
+                    <p className="text-xs text-gray-500 mt-1">Klik på en dag for at oprette</p>
                   </div>
                 ) : (
                   <>
@@ -511,7 +511,7 @@ export function FullCalendar({ events, year, month, selectedDay, todayISO }: Ful
                       ))}
                     </div>
                     {hiddenEventCount > 0 && (
-                      <p className="text-xs text-gray-400 text-center mt-3 pt-2 border-t border-gray-100">
+                      <p className="text-xs text-gray-500 text-center mt-3 pt-2 border-t border-gray-100">
                         +{hiddenEventCount} flere events — klik på en dag for detaljer
                       </p>
                     )}
@@ -570,14 +570,14 @@ function EventCard({ event }: { event: CalendarEvent }) {
             <Icon className="h-3 w-3" />
             {EVENT_TYPE_LABELS[event.type]}
           </span>
-          <span className="text-xs text-gray-400">
+          <span className="text-xs text-gray-500">
             {new Date(event.date).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' })}
           </span>
         </div>
         <div className="text-sm font-medium text-gray-900 group-hover:text-blue-600 truncate">
           {event.title}
         </div>
-        <div className="text-xs text-gray-400">{event.subtitle}</div>
+        <div className="text-xs text-gray-500">{event.subtitle}</div>
       </div>
     </Link>
   )

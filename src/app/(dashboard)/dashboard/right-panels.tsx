@@ -74,7 +74,7 @@ export function RightPanels({ data, calendarEvents, upcomingEvents, todayISO }: 
       </Panel>
       <Panel title="Økonomi snapshot">
         {data.portfolioTotals.totalOmsaetning === 0 && data.portfolioTotals.totalEbitda === 0 ? (
-          <p className="text-xs text-gray-400 text-center py-3">
+          <p className="text-xs text-gray-500 text-center py-3">
             Ingen økonomi-data registreret endnu
           </p>
         ) : (

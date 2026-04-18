@@ -105,7 +105,7 @@ export default async function PersonDetailPage({ params }: Props) {
   return (
     <div className="max-w-4xl">
       {/* Breadcrumb */}
-      <nav className="mb-4 text-xs text-gray-400">
+      <nav className="mb-4 text-xs text-gray-500">
         <Link href="/persons" className="text-slate-500 no-underline hover:text-blue-600">
           Personer
         </Link>
@@ -147,19 +147,19 @@ export default async function PersonDetailPage({ params }: Props) {
       <div className="rounded-xl border border-gray-200 bg-white p-5 mb-4">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
           <div>
-            <div className="text-xs text-gray-400 mb-1">Fornavn</div>
+            <div className="text-xs text-gray-500 mb-1">Fornavn</div>
             <div className="text-gray-900 font-medium">{person.first_name}</div>
           </div>
           <div>
-            <div className="text-xs text-gray-400 mb-1">Efternavn</div>
+            <div className="text-xs text-gray-500 mb-1">Efternavn</div>
             <div className="text-gray-900 font-medium">{person.last_name}</div>
           </div>
           <div>
-            <div className="text-xs text-gray-400 mb-1">Email</div>
+            <div className="text-xs text-gray-500 mb-1">Email</div>
             <div className="text-gray-900">{person.email ?? '—'}</div>
           </div>
           <div>
-            <div className="text-xs text-gray-400 mb-1">Telefon</div>
+            <div className="text-xs text-gray-500 mb-1">Telefon</div>
             <div className="text-gray-900 tabular-nums">{person.phone ?? '—'}</div>
           </div>
         </div>
@@ -198,7 +198,7 @@ export default async function PersonDetailPage({ params }: Props) {
                   <div className="flex items-start gap-2">
                     <CalendarDays className="h-3.5 w-3.5 text-gray-400 mt-0.5 shrink-0" />
                     <div>
-                      <div className="text-[10px] text-gray-400 uppercase tracking-wide">
+                      <div className="text-[10px] text-gray-500 uppercase tracking-wide">
                         Ikrafttrædelse
                       </div>
                       <div className="text-xs font-medium text-gray-900">
@@ -211,7 +211,7 @@ export default async function PersonDetailPage({ params }: Props) {
                   <div className="flex items-start gap-2">
                     <Clock className="h-3.5 w-3.5 text-gray-400 mt-0.5 shrink-0" />
                     <div>
-                      <div className="text-[10px] text-gray-400 uppercase tracking-wide">Udløb</div>
+                      <div className="text-[10px] text-gray-500 uppercase tracking-wide">Udløb</div>
                       <div className="text-xs font-medium text-gray-900">
                         {formatDate(ec.expiry_date)}
                       </div>
@@ -222,7 +222,7 @@ export default async function PersonDetailPage({ params }: Props) {
                   <div className="flex items-start gap-2">
                     <Shield className="h-3.5 w-3.5 text-gray-400 mt-0.5 shrink-0" />
                     <div>
-                      <div className="text-[10px] text-gray-400 uppercase tracking-wide">
+                      <div className="text-[10px] text-gray-500 uppercase tracking-wide">
                         Opsigelse
                       </div>
                       <div className="text-xs font-medium text-gray-900">
@@ -235,7 +235,7 @@ export default async function PersonDetailPage({ params }: Props) {
                   <div className="flex items-start gap-2">
                     <CalendarDays className="h-3.5 w-3.5 text-gray-400 mt-0.5 shrink-0" />
                     <div>
-                      <div className="text-[10px] text-gray-400 uppercase tracking-wide">
+                      <div className="text-[10px] text-gray-500 uppercase tracking-wide">
                         Underskrevet
                       </div>
                       <div className="text-xs font-medium text-gray-900">
@@ -248,7 +248,7 @@ export default async function PersonDetailPage({ params }: Props) {
                   <div className="flex items-start gap-2">
                     <CalendarDays className="h-3.5 w-3.5 text-gray-400 mt-0.5 shrink-0" />
                     <div>
-                      <div className="text-[10px] text-gray-400 uppercase tracking-wide">
+                      <div className="text-[10px] text-gray-500 uppercase tracking-wide">
                         Anciennitet
                       </div>
                       <div className="text-xs font-medium text-gray-900">
@@ -284,7 +284,7 @@ export default async function PersonDetailPage({ params }: Props) {
             </h2>
           </div>
           {activeRoles.length === 0 ? (
-            <p className="text-sm text-gray-400 py-2">Ingen aktive tilknytninger</p>
+            <p className="text-sm text-gray-500 py-2">Ingen aktive tilknytninger</p>
           ) : (
             <ul className="space-y-3">
               {activeRoles.map((cp) => (
@@ -303,7 +303,7 @@ export default async function PersonDetailPage({ params }: Props) {
                         ` · fra ${new Date(cp.start_date).toLocaleDateString('da-DK')}`}
                     </p>
                     {cp.anciennity_start && (
-                      <p className="text-[10px] text-gray-400 mt-0.5">
+                      <p className="text-[10px] text-gray-500 mt-0.5">
                         Anciennitet fra {new Date(cp.anciennity_start).toLocaleDateString('da-DK')}
                       </p>
                     )}
@@ -334,7 +334,7 @@ export default async function PersonDetailPage({ params }: Props) {
             </h2>
           </div>
           {person.ownerships.length === 0 ? (
-            <p className="text-sm text-gray-400 py-2">Ingen ejerskaber</p>
+            <p className="text-sm text-gray-500 py-2">Ingen ejerskaber</p>
           ) : (
             <ul className="space-y-3">
               {person.ownerships.map((o) => (
@@ -429,13 +429,13 @@ export default async function PersonDetailPage({ params }: Props) {
                   >
                     {cp.company.name}
                   </Link>
-                  <p className="text-xs text-gray-400 mt-0.5">
+                  <p className="text-xs text-gray-500 mt-0.5">
                     {getCompanyPersonRoleLabel(cp.role)}
                     {cp.start_date && ` · ${new Date(cp.start_date).toLocaleDateString('da-DK')}`}
                     {cp.end_date && ` → ${new Date(cp.end_date).toLocaleDateString('da-DK')}`}
                   </p>
                 </div>
-                <span className="text-[10px] text-gray-400">Ophørt</span>
+                <span className="text-[10px] text-gray-500">Ophørt</span>
               </li>
             ))}
           </ul>

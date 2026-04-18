@@ -58,7 +58,7 @@ export function EditCompanyForm({ company }: EditCompanyFormProps) {
     return (
       <div className="mx-auto max-w-2xl">
         <div className="flex items-center justify-between mb-5">
-          <p className="text-sm text-gray-400">Grundoplysninger og adresse</p>
+          <p className="text-sm text-gray-500">Grundoplysninger og adresse</p>
           <button
             onClick={() => setEditing(true)}
             className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
@@ -70,7 +70,7 @@ export function EditCompanyForm({ company }: EditCompanyFormProps) {
 
         {/* Selskabsinformation */}
         <div className="rounded-lg border border-gray-200 bg-white p-5 mb-4">
-          <p className="text-xs font-medium text-gray-400 tracking-wide mb-4">
+          <p className="text-xs font-medium text-gray-500 tracking-wide mb-4">
             Selskabsinformation
           </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -91,7 +91,7 @@ export function EditCompanyForm({ company }: EditCompanyFormProps) {
 
         {/* Adresse */}
         <div className="rounded-lg border border-gray-200 bg-white p-5 mb-4">
-          <p className="text-xs font-medium text-gray-400 tracking-wide mb-4">Adresse</p>
+          <p className="text-xs font-medium text-gray-500 tracking-wide mb-4">Adresse</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Vejnavn og nummer" value={company.address} span2 />
             <Field label="Postnummer" value={company.postal_code} mono />
@@ -102,7 +102,7 @@ export function EditCompanyForm({ company }: EditCompanyFormProps) {
         {/* Interne noter */}
         {company.notes && (
           <div className="rounded-lg border border-gray-200 bg-white p-5">
-            <p className="text-xs font-medium text-gray-400 tracking-wide mb-2">Interne noter</p>
+            <p className="text-xs font-medium text-gray-500 tracking-wide mb-2">Interne noter</p>
             <p className="text-sm text-gray-700 whitespace-pre-wrap">{company.notes}</p>
           </div>
         )}
@@ -113,12 +113,12 @@ export function EditCompanyForm({ company }: EditCompanyFormProps) {
   // ── Edit mode ──────────────────────────────────────────────────────────────
   return (
     <div className="mx-auto max-w-2xl">
-      <p className="text-sm text-gray-400 mb-5">Rediger grundoplysninger og adresse</p>
+      <p className="text-sm text-gray-500 mb-5">Rediger grundoplysninger og adresse</p>
 
       <form onSubmit={handleSubmit}>
         {/* Selskabsinformation */}
         <div className="rounded-lg border border-gray-200 bg-white p-5 space-y-4 mb-4">
-          <p className="text-xs font-medium text-gray-400 tracking-wide">Selskabsinformation</p>
+          <p className="text-xs font-medium text-gray-500 tracking-wide">Selskabsinformation</p>
 
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700">
@@ -151,7 +151,7 @@ export function EditCompanyForm({ company }: EditCompanyFormProps) {
                 className={inputClass}
                 placeholder="12345678"
               />
-              <p className="mt-1 text-xs text-gray-400">8 cifre</p>
+              <p className="mt-1 text-xs text-gray-500">8 cifre</p>
             </div>
 
             <div>
@@ -196,7 +196,7 @@ export function EditCompanyForm({ company }: EditCompanyFormProps) {
 
         {/* Adresse */}
         <div className="rounded-lg border border-gray-200 bg-white p-5 space-y-4 mb-4">
-          <p className="text-xs font-medium text-gray-400 tracking-wide">Adresse</p>
+          <p className="text-xs font-medium text-gray-500 tracking-wide">Adresse</p>
 
           <div>
             <label htmlFor="address" className="block text-sm font-medium text-gray-700">
@@ -298,7 +298,7 @@ function Field({
 }) {
   return (
     <div className={span2 ? 'sm:col-span-2' : ''}>
-      <p className="text-xs text-gray-400">{label}</p>
+      <p className="text-xs text-gray-500">{label}</p>
       <p
         className={`mt-0.5 text-sm ${value ? 'text-gray-900' : 'text-gray-300'} ${mono ? 'tabular-nums' : ''}`}
       >

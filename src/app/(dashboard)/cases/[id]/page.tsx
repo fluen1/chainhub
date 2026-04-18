@@ -211,7 +211,7 @@ export default async function CaseDetailPage({ params }: Props) {
                     >
                       {cc.contract.display_name}
                     </Link>
-                    <span className="ml-2 text-xs text-gray-400">{cc.contract.system_type}</span>
+                    <span className="ml-2 text-xs text-gray-500">{cc.contract.system_type}</span>
                   </li>
                 ))}
               </ul>
@@ -232,7 +232,7 @@ export default async function CaseDetailPage({ params }: Props) {
           <div className="rounded-lg border bg-white p-4 shadow-sm">
             <h3 className="text-sm font-semibold text-gray-900 mb-3">Parter</h3>
             {caseItem.case_persons.length === 0 ? (
-              <p className="text-xs text-gray-400">Ingen parter tilknyttet</p>
+              <p className="text-xs text-gray-500">Ingen parter tilknyttet</p>
             ) : (
               <ul className="space-y-1">
                 {caseItem.case_persons.map((cp) => (
@@ -243,7 +243,7 @@ export default async function CaseDetailPage({ params }: Props) {
                     >
                       {cp.person.first_name} {cp.person.last_name}
                     </Link>
-                    {cp.role && <span className="ml-1 text-xs text-gray-400">({cp.role})</span>}
+                    {cp.role && <span className="ml-1 text-xs text-gray-500">({cp.role})</span>}
                   </li>
                 ))}
               </ul>

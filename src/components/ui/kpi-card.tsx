@@ -11,15 +11,13 @@ export interface KpiCardProps {
 }
 
 export function KpiCard({ label, value, trend, valueColor = 'default', onClick }: KpiCardProps) {
-  return (
-    <div
-      className={cn(
-        'rounded-xl border border-gray-200 bg-white p-5 transition-shadow duration-200 hover:shadow-md',
-        onClick && 'cursor-pointer'
-      )}
-      onClick={onClick}
-    >
-      <div className="text-xs font-medium text-gray-400">{label}</div>
+  const baseClass = cn(
+    'rounded-xl border border-gray-200 bg-white p-5 transition-shadow duration-200 hover:shadow-md',
+    onClick && 'cursor-pointer text-left w-full'
+  )
+  const content = (
+    <>
+      <div className="text-xs font-medium text-gray-500">{label}</div>
       <div
         className={cn(
           'mt-2 text-[30px] font-bold leading-none tabular-nums',
@@ -42,6 +40,16 @@ export function KpiCard({ label, value, trend, valueColor = 'default', onClick }
           {trend.text}
         </div>
       )}
-    </div>
+    </>
   )
+
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className={baseClass}>
+        {content}
+      </button>
+    )
+  }
+
+  return <div className={baseClass}>{content}</div>
 }

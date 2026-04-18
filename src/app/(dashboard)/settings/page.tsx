@@ -117,7 +117,7 @@ export default async function SettingsPage() {
                       <div>
                         <p className="text-sm font-medium text-gray-900">
                           {user.name}
-                          {isSelf && <span className="ml-2 text-xs text-gray-400">(dig)</span>}
+                          {isSelf && <span className="ml-2 text-xs text-gray-500">(dig)</span>}
                         </p>
                         <p className="text-sm text-gray-500">{user.email}</p>
                       </div>

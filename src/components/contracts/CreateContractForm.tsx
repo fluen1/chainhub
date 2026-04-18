@@ -237,7 +237,7 @@ export function CreateContractForm() {
                 className="block text-sm font-medium text-gray-700"
               >
                 Udløbsdato
-                <span className="ml-1 text-xs text-gray-400">(blank = løbende)</span>
+                <span className="ml-1 text-xs text-gray-500">(blank = løbende)</span>
               </label>
               <input
                 id="contract-expiryDate"
@@ -254,7 +254,7 @@ export function CreateContractForm() {
               className="block text-sm font-medium text-gray-700"
             >
               Opsigelsesvarsel (dage)
-              <span className="ml-1 text-xs text-gray-400">(løbende kontrakter)</span>
+              <span className="ml-1 text-xs text-gray-500">(løbende kontrakter)</span>
             </label>
             <input
               id="contract-noticePeriodDays"

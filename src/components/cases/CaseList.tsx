@@ -42,7 +42,7 @@ function getStatusColor(status: string): string {
     case 'LUKKET':
       return 'text-green-700'
     case 'ARKIVERET':
-      return 'text-gray-400'
+      return 'text-gray-500'
     default:
       return 'text-gray-600'
   }
@@ -85,7 +85,7 @@ function CollapsibleCaseGroup({ caseType, cases }: { caseType: string; cases: Ca
         <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
           {getCaseTypeLabel(caseType)}
         </span>
-        <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">
+        <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-full">
           {cases.length}
         </span>
       </button>
@@ -104,7 +104,7 @@ function CollapsibleCaseGroup({ caseType, cases }: { caseType: string; cases: Ca
               >
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-gray-900 truncate">{caseItem.title}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">
+                  <p className="text-xs text-gray-500 mt-0.5">
                     {getCaseTypeLabel(caseItem.case_type)}
                     {' · '}
                     <span className={getStatusColor(caseItem.status)}>
@@ -176,7 +176,7 @@ export function CaseList({ cases }: CaseListProps) {
         <div className="rounded-lg border border-dashed border-gray-200 py-16 text-center">
           <Briefcase className="mx-auto h-10 w-10 text-gray-300" />
           <p className="mt-3 text-sm font-medium text-gray-900">Ingen sager endnu</p>
-          <p className="mt-1 text-sm text-gray-400">Opret den første sag for dette selskab.</p>
+          <p className="mt-1 text-sm text-gray-500">Opret den første sag for dette selskab.</p>
         </div>
       </div>
     )
@@ -229,7 +229,7 @@ export function CaseList({ cases }: CaseListProps) {
         <div className="rounded-lg border border-dashed border-gray-200 py-12 text-center">
           <Search className="mx-auto h-8 w-8 text-gray-300" />
           <p className="mt-3 text-sm font-medium text-gray-900">Ingen resultater</p>
-          <p className="mt-1 text-sm text-gray-400">Ingen sager matcher &ldquo;{search}&rdquo;</p>
+          <p className="mt-1 text-sm text-gray-500">Ingen sager matcher &ldquo;{search}&rdquo;</p>
         </div>
       ) : (
         <div className="space-y-2">

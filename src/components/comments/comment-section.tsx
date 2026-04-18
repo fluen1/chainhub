@@ -97,7 +97,7 @@ export function CommentSection({ taskId, comments, currentUserId }: CommentSecti
 
       {/* Comment list */}
       {comments.length === 0 ? (
-        <p className="py-6 text-center text-sm text-gray-400">Ingen kommentarer endnu</p>
+        <p className="py-6 text-center text-sm text-gray-500">Ingen kommentarer endnu</p>
       ) : (
         <div className="space-y-3">
           {comments.map((c) => {
@@ -119,7 +119,7 @@ export function CommentSection({ taskId, comments, currentUserId }: CommentSecti
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-gray-900">{c.authorName}</span>
-                        <span className="text-xs text-gray-400">
+                        <span className="text-xs text-gray-500">
                           {formatRelativeDate(c.createdAt)}
                         </span>
                       </div>

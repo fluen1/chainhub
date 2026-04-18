@@ -203,7 +203,7 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
               </Link>
             ))}
             {caseItem.case_companies.length > 3 && (
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-gray-500">
                 +{caseItem.case_companies.length - 3} mere
               </span>
             )}

@@ -71,7 +71,7 @@ function EmployeeRow({ cp, showActions }: { cp: PersonItem; showActions: boolean
         >
           {cp.person.first_name} {cp.person.last_name}
         </Link>
-        <p className="text-xs text-gray-400 mt-0.5">
+        <p className="text-xs text-gray-500 mt-0.5">
           {getCompanyPersonRoleLabel(cp.role)}
           {cp.employment_type && <span> · {cp.employment_type}</span>}
           {cp.person.email && <span> · {cp.person.email}</span>}
@@ -106,7 +106,7 @@ function EmployeeRow({ cp, showActions }: { cp: PersonItem; showActions: boolean
           ) : (
             <button
               onClick={() => setEndingId(true)}
-              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-xs text-gray-500 hover:text-gray-600 transition-colors"
             >
               Afregistrér
             </button>
@@ -144,7 +144,7 @@ function CollapsibleGroup({
         <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
           {title}
         </span>
-        <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">
+        <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-full">
           {count}
         </span>
       </button>
@@ -228,13 +228,13 @@ export function EmployeeList({
         <div className="rounded-lg border border-dashed border-gray-200 py-16 text-center">
           <Users className="mx-auto h-10 w-10 text-gray-300" />
           <p className="mt-3 text-sm font-medium text-gray-900">{emptyMessage}</p>
-          <p className="mt-1 text-sm text-gray-400">{emptySubMessage}</p>
+          <p className="mt-1 text-sm text-gray-500">{emptySubMessage}</p>
         </div>
       ) : filteredActive.length === 0 && filteredHistoric.length === 0 && search ? (
         <div className="rounded-lg border border-dashed border-gray-200 py-12 text-center">
           <Search className="mx-auto h-8 w-8 text-gray-300" />
           <p className="mt-3 text-sm font-medium text-gray-900">Ingen resultater</p>
-          <p className="mt-1 text-sm text-gray-400">Ingen ansatte matcher &ldquo;{search}&rdquo;</p>
+          <p className="mt-1 text-sm text-gray-500">Ingen ansatte matcher &ldquo;{search}&rdquo;</p>
         </div>
       ) : (
         <div className="space-y-2">

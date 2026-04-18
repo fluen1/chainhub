@@ -342,7 +342,7 @@ function TaskList({
                     </span>
                   )}
                   {task.assignee && (
-                    <span className="text-xs text-gray-400">{task.assignee.name}</span>
+                    <span className="text-xs text-gray-500">{task.assignee.name}</span>
                   )}
                   {task.case && (
                     <Link
@@ -355,7 +355,7 @@ function TaskList({
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                <span className="text-xs text-gray-400 hidden sm:block">
+                <span className="text-xs text-gray-500 hidden sm:block">
                   {getTaskStatusLabel(task.status)}
                 </span>
                 <TaskStatusButton taskId={task.id} currentStatus={task.status} />

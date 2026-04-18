@@ -23,7 +23,7 @@ export default async function TaskDetailPage({ params }: { params: { id: string 
   return (
     <div className="max-w-3xl space-y-4">
       {/* Breadcrumb */}
-      <nav className="text-xs text-gray-400">
+      <nav className="text-xs text-gray-500">
         <Link href="/tasks" className="text-slate-500 no-underline hover:text-blue-600">
           Opgaver
         </Link>

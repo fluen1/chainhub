@@ -45,7 +45,7 @@ function LoginForm() {
           </div>
           <h1 className="text-2xl font-bold text-gray-900">ChainHub</h1>
           <p className="mt-1 text-sm text-gray-600">Log ind på din konto</p>
-          <p className="mt-1 text-xs text-gray-400">Porteføljestyring for kædegrupper</p>
+          <p className="mt-1 text-xs text-gray-500">Porteføljestyring for kædegrupper</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -92,7 +92,7 @@ function LoginForm() {
           </button>
         </form>
 
-        <p className="text-center text-xs text-gray-400 mt-4">
+        <p className="text-center text-xs text-gray-500 mt-4">
           Glemt adgangskode? Kontakt din administrator.
         </p>
       </div>

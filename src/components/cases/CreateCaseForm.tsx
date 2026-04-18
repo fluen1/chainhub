@@ -173,7 +173,7 @@ export function CreateCaseForm() {
               className="mt-2 space-y-2 max-h-48 overflow-y-auto rounded-md border border-gray-200 p-3"
             >
               {companies.length === 0 ? (
-                <p className="text-sm text-gray-400">Ingen selskaber tilgængelige</p>
+                <p className="text-sm text-gray-500">Ingen selskaber tilgængelige</p>
               ) : (
                 companies.map((c) => (
                   <label key={c.id} className="flex items-center gap-2 cursor-pointer">

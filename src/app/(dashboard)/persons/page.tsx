@@ -172,14 +172,14 @@ export default async function PersonsPage({ searchParams }: PersonsPageProps) {
         <div className="flex items-center bg-white ring-1 ring-gray-200 rounded-lg p-0.5 shadow-sm shrink-0">
           <Link
             href={`/persons?layout=kort&view=${viewFilter}${companyFilter ? `&company=${companyFilter}` : ''}${roleFilter ? `&role=${roleFilter}` : ''}${q ? `&q=${q}` : ''}`}
-            className={`p-1.5 rounded-md transition-colors no-underline ${layoutFilter === 'kort' ? 'bg-gray-900 text-white' : 'text-gray-400 hover:text-gray-900'}`}
+            className={`p-1.5 rounded-md transition-colors no-underline ${layoutFilter === 'kort' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-900'}`}
             title="Kortvisning"
           >
             <LayoutGrid className="h-4 w-4" />
           </Link>
           <Link
             href={`/persons?layout=tabel&view=${viewFilter}${companyFilter ? `&company=${companyFilter}` : ''}${roleFilter ? `&role=${roleFilter}` : ''}${q ? `&q=${q}` : ''}`}
-            className={`p-1.5 rounded-md transition-colors no-underline ${layoutFilter === 'tabel' ? 'bg-gray-900 text-white' : 'text-gray-400 hover:text-gray-900'}`}
+            className={`p-1.5 rounded-md transition-colors no-underline ${layoutFilter === 'tabel' ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-900'}`}
             title="Tabelvisning"
           >
             <TableProperties className="h-4 w-4" />
@@ -334,7 +334,7 @@ export default async function PersonsPage({ searchParams }: PersonsPageProps) {
                             </span>
                           )}
                           {primaryCp?.employment_type && (
-                            <span className="text-[10px] text-gray-400">
+                            <span className="text-[10px] text-gray-500">
                               {primaryCp.employment_type}
                             </span>
                           )}
@@ -363,7 +363,7 @@ export default async function PersonsPage({ searchParams }: PersonsPageProps) {
                     {person.company_persons.length > 0 && (
                       <div className="space-y-0.5 border-t border-gray-100 pt-2">
                         {person.company_persons.map((cp) => (
-                          <p key={cp.id} className="text-xs text-gray-400 truncate">
+                          <p key={cp.id} className="text-xs text-gray-500 truncate">
                             {cp.company.name}
                             {cp.role && cp.role !== primaryRole && (
                               <span className="text-gray-300">
@@ -377,7 +377,7 @@ export default async function PersonsPage({ searchParams }: PersonsPageProps) {
                     )}
 
                     {person.company_persons.length === 0 && (
-                      <p className="text-xs text-gray-400 border-t border-gray-100 pt-2">
+                      <p className="text-xs text-gray-500 border-t border-gray-100 pt-2">
                         Ingen tilknytninger
                       </p>
                     )}

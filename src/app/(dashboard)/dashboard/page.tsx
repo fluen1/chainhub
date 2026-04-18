@@ -40,7 +40,7 @@ export default async function DashboardPage() {
           {data.timelineSections.every((s) => s.items.length === 0) && (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <p className="text-sm font-medium text-gray-500">Ingen begivenheder</p>
-              <p className="text-xs text-gray-400 mt-1">Din tidslinje er tom lige nu.</p>
+              <p className="text-xs text-gray-500 mt-1">Din tidslinje er tom lige nu.</p>
             </div>
           )}
         </div>

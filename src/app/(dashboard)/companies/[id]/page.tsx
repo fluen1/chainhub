@@ -25,7 +25,7 @@ export default async function CompanyDetailPage({ params }: { params: { id: stri
 
   return (
     <div className="mx-auto max-w-[1100px]">
-      <nav className="mb-4 text-xs text-gray-400">
+      <nav className="mb-4 text-xs text-gray-500">
         <Link href="/companies" className="text-slate-500 no-underline hover:text-blue-600">
           Selskaber
         </Link>

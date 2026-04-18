@@ -123,7 +123,7 @@ export function CalendarWidget({
 
       <div className="grid grid-cols-7 gap-0.5 mb-4">
         {WEEKDAYS.map((d) => (
-          <div key={d} className="py-1 text-center text-[11px] font-medium text-gray-400">
+          <div key={d} className="py-1 text-center text-[11px] font-medium text-gray-500">
             {d}
           </div>
         ))}
@@ -174,7 +174,7 @@ export function CalendarWidget({
 
       <div className="h-px bg-slate-100 mb-3.5" />
 
-      <div className="text-xs font-semibold uppercase tracking-[0.06em] text-gray-400 mb-2.5">
+      <div className="text-xs font-semibold uppercase tracking-[0.06em] text-gray-500 mb-2.5">
         Denne måned
       </div>
 
@@ -190,7 +190,7 @@ export function CalendarWidget({
             />
             <div className="min-w-0 flex-1">
               <div className="text-[13px] font-medium text-slate-800">{ev.title}</div>
-              <div className="text-[11px] text-gray-400">
+              <div className="text-[11px] text-gray-500">
                 {ev.subtitle}
                 {ev.aiExtracted && (
                   <span className="ml-1 inline-flex items-center gap-0.5 rounded bg-purple-50 px-1.5 py-0.5 text-[10px] font-semibold text-purple-600">
@@ -202,7 +202,7 @@ export function CalendarWidget({
             <div
               className={cn(
                 'shrink-0 text-[11px] tabular-nums',
-                ev.type === 'expiry' ? 'font-medium text-red-600' : 'text-gray-400'
+                ev.type === 'expiry' ? 'font-medium text-red-600' : 'text-gray-500'
               )}
             >
               {formatEventDate(ev.date, today)}
@@ -210,13 +210,13 @@ export function CalendarWidget({
           </div>
         ))}
         {upcoming.length === 0 && (
-          <div className="py-4 text-center text-xs text-gray-400">Ingen events denne måned</div>
+          <div className="py-4 text-center text-xs text-gray-500">Ingen events denne måned</div>
         )}
       </div>
 
       <div className="flex flex-wrap gap-3 mt-3 pt-3 border-t border-slate-100">
         {LEGEND.map((l) => (
-          <div key={l.type} className="flex items-center gap-1.5 text-[11px] text-gray-400">
+          <div key={l.type} className="flex items-center gap-1.5 text-[11px] text-gray-500">
             <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: l.color }} />
             {l.label}
           </div>
