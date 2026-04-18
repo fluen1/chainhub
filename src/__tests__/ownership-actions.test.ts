@@ -12,14 +12,12 @@ vi.mock('@/lib/db', () => ({
     ownership: {
       create: vi.fn().mockResolvedValue({ id: 'o-1', ownership_pct: 50 }),
       findFirst: vi.fn(),
-      update: vi
-        .fn()
-        .mockResolvedValue({
-          id: 'o-1',
-          ownership_pct: 60,
-          effective_date: null,
-          contract_id: null,
-        }),
+      update: vi.fn().mockResolvedValue({
+        id: 'o-1',
+        ownership_pct: 60,
+        effective_date: null,
+        contract_id: null,
+      }),
     },
   },
 }))

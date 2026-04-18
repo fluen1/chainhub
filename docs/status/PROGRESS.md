@@ -202,6 +202,26 @@ Schema-modenhed + AuditLog-udvidelse + silent-catch retrofit. 8/10 → ~9/10.
 
 Med `Contract.documents` reverse-relation kan en person-detalje nu nå AI-udlæste data via `companyPerson.contract.documents[].extraction.extracted_fields`. Implementering af UI er separat feature-session.
 
+## Coverage uplift — 2026-04-18 ✅
+
+11 nye unit-test filer for tidligere utestede action-filer:
+
+- cases (11), comments (8), contracts (14), contract-versions (6),
+  document-review (8), documents (4), ownership (14), task-detail (5),
+  tasks (22), users (16), visits (9) — i alt 117 nye tests
+
+Tests: 428 → 545 passed (+117), 0 failed. Coverage på `src/actions/` nu
+omkring 80%.
+
+Mock-baseret pattern fra session 3 brugt konsistent: `vi.mock` af
+`@/lib/auth`, `@/lib/db`, `@/lib/permissions`, `@/lib/audit`,
+`@/lib/logger`, `next/cache`. Valid UUIDs til Zod-validering. `bcryptjs`
+mocket i users.ts. `@/lib/ai/feedback` mocket i document-review.ts.
+Transaction-mock pattern (passer mock-tx ind i `prisma.$transaction`)
+brugt i tasks.ts, contract-versions.ts, users.ts.
+
+Gate: format ✅, lint ✅, tsc ✅, build ✅.
+
 ## Udskudte features (dedikerede sessions)
 
 Disse er bevidst taget ud af scope efter exploration og venter på dedikeret planning.

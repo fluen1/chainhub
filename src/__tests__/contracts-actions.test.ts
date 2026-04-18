@@ -224,7 +224,7 @@ describe('getContractList', () => {
     const perms = await import('@/lib/permissions')
     vi.mocked(perms.canAccessSensitivity).mockResolvedValueOnce(true).mockResolvedValueOnce(false)
     const result = await getContractList({ organizationId: 'org-1', userId: 'user-1' })
-    if ('data' in result) {
+    if ('data' in result && result.data) {
       expect(result.data.contracts.length).toBe(1)
       expect(result.data.total).toBe(2)
     }
