@@ -27,6 +27,10 @@ interface TasksKanbanBoardProps {
 // Viser vi LUKKET-kolonne? Typisk bruges den kun når filter specifikt inkluderer lukkede
 const COLUMNS: TaskStatus[] = ['NY', 'AKTIV_TASK', 'AFVENTER', 'LUKKET']
 
+// Bruges til tastatur-navigation (pil-venstre/højre flytter mellem kolonner i denne rækkefølge)
+const KANBAN_STATUSES = ['NY', 'AKTIV_TASK', 'AFVENTER', 'LUKKET'] as const
+type KanbanStatus = (typeof KANBAN_STATUSES)[number]
+
 const COLUMN_ACCENT: Record<string, string> = {
   NY: 'border-t-slate-400',
   AKTIV_TASK: 'border-t-blue-500',
@@ -40,6 +44,8 @@ export function TasksKanbanBoard({ tasks }: TasksKanbanBoardProps) {
   const [localTasks, setLocalTasks] = useState(tasks)
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null)
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null)
+  const [grabbedTaskId, setGrabbedTaskId] = useState<string | null>(null)
+  const [announcement, setAnnouncement] = useState<string>('')
 
   // Genopfrisk når server sender nye props (efter router.refresh())
   useEffect(() => {
@@ -67,12 +73,8 @@ export function TasksKanbanBoard({ tasks }: TasksKanbanBoardProps) {
     if (dragOverColumn === columnStatus) setDragOverColumn(null)
   }
 
-  async function handleDrop(e: React.DragEvent, nextStatus: string) {
-    e.preventDefault()
-    const taskId = e.dataTransfer.getData('text/plain')
-    setDragOverColumn(null)
-    setDraggedTaskId(null)
-
+  // Fælles status-skift-logik — bruges af både drop og tastatur
+  function moveTask(taskId: string, nextStatus: string) {
     const task = localTasks.find((t) => t.id === taskId)
     if (!task || task.status === nextStatus) return
 
@@ -97,6 +99,49 @@ export function TasksKanbanBoard({ tasks }: TasksKanbanBoardProps) {
     })
   }
 
+  async function handleDrop(e: React.DragEvent, nextStatus: string) {
+    e.preventDefault()
+    const taskId = e.dataTransfer.getData('text/plain')
+    setDragOverColumn(null)
+    setDraggedTaskId(null)
+    moveTask(taskId, nextStatus)
+  }
+
+  function handleCardKeyDown(
+    e: React.KeyboardEvent,
+    task: { id: string; title: string; status: string }
+  ) {
+    if (e.key === ' ' || e.key === 'Enter') {
+      // Tillad Link-kliks via Enter på selve titel-linket — men grab på selve kortet
+      if ((e.target as HTMLElement).tagName === 'A') return
+      e.preventDefault()
+      if (grabbedTaskId === task.id) {
+        setGrabbedTaskId(null)
+        setAnnouncement(`'${task.title}' sluppet`)
+      } else {
+        setGrabbedTaskId(task.id)
+        setAnnouncement(`'${task.title}' grebet. Brug pil-tasterne til at flytte.`)
+      }
+      return
+    }
+    if (grabbedTaskId === task.id && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+      e.preventDefault()
+      const idx = KANBAN_STATUSES.indexOf(task.status as KanbanStatus)
+      if (idx === -1) return
+      const nextIdx = e.key === 'ArrowRight' ? idx + 1 : idx - 1
+      if (nextIdx < 0 || nextIdx >= KANBAN_STATUSES.length) return
+      const newStatus = KANBAN_STATUSES[nextIdx]
+      moveTask(task.id, newStatus)
+      setAnnouncement(`'${task.title}' flyttet til ${TASK_STATUS_LABELS[newStatus] ?? newStatus}`)
+      return
+    }
+    if (e.key === 'Escape' && grabbedTaskId === task.id) {
+      e.preventDefault()
+      setGrabbedTaskId(null)
+      setAnnouncement(`'${task.title}' sluppet`)
+    }
+  }
+
   const tasksByColumn: Record<string, KanbanTask[]> = {
     NY: [],
     AKTIV_TASK: [],
@@ -109,65 +154,83 @@ export function TasksKanbanBoard({ tasks }: TasksKanbanBoardProps) {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-      {COLUMNS.map((status) => {
-        const items = tasksByColumn[status] ?? []
-        const isDropTarget = dragOverColumn === status
-        return (
-          <div
-            key={status}
-            onDragOver={(e) => handleDragOver(e, status)}
-            onDragLeave={() => handleDragLeave(status)}
-            onDrop={(e) => handleDrop(e, status)}
-            className={cn(
-              'rounded-xl border border-t-2 border-slate-200 bg-slate-50/60 p-3 transition-colors',
-              COLUMN_ACCENT[status],
-              isDropTarget && 'bg-blue-50/80 ring-2 ring-inset ring-blue-300'
-            )}
-          >
-            <div className="flex items-center justify-between mb-3 px-1">
-              <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-600">
-                {TASK_STATUS_LABELS[status]}
-              </h2>
-              <span className="rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-700 tabular-nums">
-                {items.length}
-              </span>
-            </div>
-
-            <div className="space-y-2 min-h-[60px]">
-              {items.length === 0 ? (
-                <p className="py-4 text-center text-xs text-slate-400 italic">
-                  {isDropTarget ? 'Slip her' : 'Ingen opgaver'}
-                </p>
-              ) : (
-                items.map((task) => (
-                  <KanbanCard
-                    key={task.id}
-                    task={task}
-                    isDragging={draggedTaskId === task.id}
-                    disabled={isPending}
-                    onDragStart={(e) => handleDragStart(e, task.id)}
-                    onDragEnd={handleDragEnd}
-                  />
-                ))
+    <>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {COLUMNS.map((status) => {
+          const items = tasksByColumn[status] ?? []
+          const isDropTarget = dragOverColumn === status
+          return (
+            <div
+              key={status}
+              onDragOver={(e) => handleDragOver(e, status)}
+              onDragLeave={() => handleDragLeave(status)}
+              onDrop={(e) => handleDrop(e, status)}
+              className={cn(
+                'rounded-xl border border-t-2 border-slate-200 bg-slate-50/60 p-3 transition-colors',
+                COLUMN_ACCENT[status],
+                isDropTarget && 'bg-blue-50/80 ring-2 ring-inset ring-blue-300'
               )}
+            >
+              <div className="flex items-center justify-between mb-3 px-1">
+                <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+                  {TASK_STATUS_LABELS[status]}
+                </h2>
+                <span className="rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-700 tabular-nums">
+                  {items.length}
+                </span>
+              </div>
+
+              <div className="space-y-2 min-h-[60px]">
+                {items.length === 0 ? (
+                  <p className="py-4 text-center text-xs text-slate-400 italic">
+                    {isDropTarget ? 'Slip her' : 'Ingen opgaver'}
+                  </p>
+                ) : (
+                  items.map((task) => (
+                    <KanbanCard
+                      key={task.id}
+                      task={task}
+                      isDragging={draggedTaskId === task.id}
+                      isGrabbed={grabbedTaskId === task.id}
+                      disabled={isPending}
+                      onDragStart={(e) => handleDragStart(e, task.id)}
+                      onDragEnd={handleDragEnd}
+                      onKeyDown={(e) => handleCardKeyDown(e, task)}
+                    />
+                  ))
+                )}
+              </div>
             </div>
-          </div>
-        )
-      })}
-    </div>
+          )
+        })}
+      </div>
+      {/* Screen-reader live-region til tastatur-flytninger */}
+      <div aria-live="polite" aria-atomic="true" className="sr-only">
+        {announcement}
+      </div>
+    </>
   )
 }
 
 interface KanbanCardProps {
   task: KanbanTask
   isDragging: boolean
+  isGrabbed: boolean
   disabled: boolean
   onDragStart: (e: React.DragEvent) => void
   onDragEnd: () => void
+  onKeyDown: (e: React.KeyboardEvent) => void
 }
 
-function KanbanCard({ task, isDragging, disabled, onDragStart, onDragEnd }: KanbanCardProps) {
+function KanbanCard({
+  task,
+  isDragging,
+  isGrabbed,
+  disabled,
+  onDragStart,
+  onDragEnd,
+  onKeyDown,
+}: KanbanCardProps) {
   const isOverdue =
     task.due_date && new Date(task.due_date) < new Date() && task.status !== 'LUKKET'
 
@@ -176,12 +239,23 @@ function KanbanCard({ task, isDragging, disabled, onDragStart, onDragEnd }: Kanb
       draggable={!disabled}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
+      onKeyDown={onKeyDown}
+      role="button"
+      tabIndex={0}
+      aria-pressed={isGrabbed}
+      aria-label={
+        isGrabbed
+          ? `Opgave: ${task.title}. Aktiv — brug pil-tasterne til at flytte mellem kolonner. Tryk Enter eller mellemrum for at slippe.`
+          : `Opgave: ${task.title}. Tryk Enter eller mellemrum for at gribe og flytte.`
+      }
       className={cn(
         'rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition-opacity',
+        'focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2',
         disabled
           ? 'cursor-not-allowed'
           : 'cursor-grab active:cursor-grabbing hover:border-slate-300',
-        isDragging && 'opacity-40'
+        isDragging && 'opacity-40',
+        isGrabbed && 'ring-2 ring-blue-500 ring-offset-2'
       )}
     >
       <Link
