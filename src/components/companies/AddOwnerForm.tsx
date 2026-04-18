@@ -54,6 +54,7 @@ export function AddOwnerForm({ companyId }: AddOwnerFormProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-end">
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
       <div className="fixed inset-0 bg-black/20" onClick={() => setOpen(false)} />
       <div className="relative z-50 h-full w-full max-w-md bg-white shadow-xl overflow-y-auto">
         <div className="sticky top-0 flex items-center justify-between border-b bg-white px-6 py-4">
@@ -65,8 +66,11 @@ export function AddOwnerForm({ companyId }: AddOwnerFormProps) {
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Fornavn *</label>
+              <label htmlFor="owner-firstName" className="block text-sm font-medium text-gray-700">
+                Fornavn *
+              </label>
               <input
+                id="owner-firstName"
                 name="firstName"
                 type="text"
                 required
@@ -74,8 +78,11 @@ export function AddOwnerForm({ companyId }: AddOwnerFormProps) {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Efternavn *</label>
+              <label htmlFor="owner-lastName" className="block text-sm font-medium text-gray-700">
+                Efternavn *
+              </label>
               <input
+                id="owner-lastName"
                 name="lastName"
                 type="text"
                 required
@@ -85,8 +92,11 @@ export function AddOwnerForm({ companyId }: AddOwnerFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Email</label>
+            <label htmlFor="owner-personEmail" className="block text-sm font-medium text-gray-700">
+              Email
+            </label>
             <input
+              id="owner-personEmail"
               name="personEmail"
               type="email"
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
@@ -94,8 +104,11 @@ export function AddOwnerForm({ companyId }: AddOwnerFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Ejerandel % *</label>
+            <label htmlFor="owner-ownershipPct" className="block text-sm font-medium text-gray-700">
+              Ejerandel % *
+            </label>
             <input
+              id="owner-ownershipPct"
               name="ownershipPct"
               type="number"
               step="0.01"
@@ -108,8 +121,11 @@ export function AddOwnerForm({ companyId }: AddOwnerFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Ejertype *</label>
+            <label htmlFor="owner-ownerType" className="block text-sm font-medium text-gray-700">
+              Ejertype *
+            </label>
             <select
+              id="owner-ownerType"
               name="ownerType"
               required
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
@@ -121,8 +137,11 @@ export function AddOwnerForm({ companyId }: AddOwnerFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Dato for erhvervelse</label>
+            <label htmlFor="owner-acquiredAt" className="block text-sm font-medium text-gray-700">
+              Dato for erhvervelse
+            </label>
             <input
+              id="owner-acquiredAt"
               name="acquiredAt"
               type="date"
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
