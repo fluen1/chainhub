@@ -1,6 +1,6 @@
 # PROGRESS.md — ChainHub
 
-Opdateret: Plan 4C FÆRDIG 2026-04-12
+Opdateret: Plan 4D i praksis lukket + Sprint 8 accountability — 2026-04-18
 
 ## Sprint 1-6 ✅ FÆRDIGE
 - [x] Sprint 1 — Fundament (Next.js 14, Prisma, Auth, Permissions, Dashboard shell)
@@ -94,9 +94,10 @@ Opdateret: Plan 4C FÆRDIG 2026-04-12
 - [x] Build: GRØN (41 routes, 0 TS-fejl, 48 tests grønne)
 
 ### Sprint 8 resterende scope
-- [ ] Schema — task_participants, task_comments (deleted_at!), task_history
-- [ ] Schema — company_notes (sensitivity!), tasks tasks[] → Company relation
-- [ ] Opgave-udvidelser — deltagere, historik, kommentarer, kilde-badge
+- [x] Schema — task_history (leveret 2026-04-18 via `TaskHistory`-model + `TaskHistoryField`-enum)
+- [x] Opgave-udvidelser — historik (kommentarer leveret tidligere via polymorf Comment; kilde-badge er del af detail-rewrite)
+- [ ] Schema — task_participants (udskudt, se "Udskudte features")
+- [ ] Schema — company_notes med sensitivity (udskudt, se "Udskudte features")
 - [ ] Fase 2: Side-for-side UX-gennemgang (32 sider — spec i docs/superpowers/specs/)
 
 ## Plan 4A — Atomiske proto-komponenter ✅ (2026-04)
@@ -135,12 +136,37 @@ Opdateret: Plan 4C FÆRDIG 2026-04-12
 - [x] Build: GRØN (26 routes, `/companies/[id]` 1.53 kB / 107 kB first-load)
 - [x] Playwright audit: alle 7 sektioner renderes, ingen browser console errors, graceful AI degradation bekræftet
 
-## Plan 4D — Resterende sider (afventer)
-- [ ] `/tasks` list + `/tasks/[id]` detail-rewrite
-- [ ] `/calendar` full-page (erstatter `/visits`, feeder CalendarWidget på dashboard)
-- [ ] `/search` global søgning
-- [ ] `/settings`
-- [ ] Slet `/visits` efter `/calendar` overtager
+## Plan 4D — Resterende sider ✅ (i praksis lukket 2026-04-18)
+- [x] `/tasks` list + `/tasks/[id]` detail-rewrite (2026-04-18 — 6 commits, TaskHistory + kanban)
+- [x] `/calendar` full-page (leveret tidligere — event-filter, mobile layout, quick-add)
+- [x] `/search` global søgning (2026-04-18 — 6 entitetstyper, scope-filtrering, sensitivity)
+- [x] `/settings` organisation-info (2026-04-18 — navn/CVR/chain_structure editerbar + users-tabel bevaret)
+- [x] Slet legacy `/visits` list-page (2026-04-18 — `/visits/[id]` og `/visits/new` bevaret for calendar + VisitsSection)
+
+## Sprint 8 accountability + /search — 2026-04-18 ✅
+
+### Leveret i session
+- [x] **TaskHistory-model** i Prisma med `TaskHistoryField`-enum (STATUS, PRIORITY, ASSIGNEE, DUE_DATE, TITLE, DESCRIPTION)
+- [x] **Atomiske historik-skriv** via `prisma.$transaction` i `updateTaskStatus/Priority/Assignee/DueDate`
+- [x] **`/tasks/[id]` single-page rewrite** — sektion-baseret (TaskHeader, TaskContext, TaskDescription, TaskHistory, CommentSection) + EditTaskDialog
+- [x] **`/tasks` grouped-view** — `?view=grouped|flat|kanban`, CollapsibleSection pr. selskab
+- [x] **Kanban-view** — HTML5 native drag-drop, 4 kolonner pr. status, optimistisk UI med rollback
+- [x] **`/search` udvidet til 6 entitetstyper** — Selskaber, Kontrakter, Sager, Opgaver, Personer, Dokumenter med søgning i både titler og beskrivelses-felter
+- [x] **Permissions-fix** — scope-filter på sager (via case_companies), tasks/documents (NULL eller accessible), sensitivity-filter på kontrakter/sager/dokumenter
+- [x] **Test-suite fix** — 8 pre-existing text/spec-mismatch failures rettet (finance, heatmap-cap + dot, cases, calendar-widget, company-header, app-header)
+- [x] **`/settings` organisation-form** — name/cvr/chain_structure editerbar via `updateOrganization` server-action + Zod-validering
+- [x] **Tests**: 339 → 378 → 390 passed, 0 failed
+
+## Udskudte features (dedikerede sessions)
+
+Disse er bevidst taget ud af scope efter exploration og venter på dedikeret planning.
+
+- **DocumentExtraction-data på persons** — kræver `contract_id`-felt på `Document`-model (mangler i schema), backfill af eksisterende dokumenter, UI-rendering af AI-udlæste felter (løn, opsigelsesvarsel, pension, non-compete). Egen session med schema-migration + datasti `contract → document → extraction`.
+- **TaskParticipant (watchers)** — lavt afkast for små teams der bruger `assigned_to` + digest-emails. Tages når watcher-behovet er reelt.
+- **CompanyNote med sensitivity** — notater pr. selskab med 3-lags sensitivity-permissions. Dedikeret session pga. kompleks adgangskontrol.
+- **R2-produktionsstorage** — pt. lokal storage. Deploy-gated — bliver først relevant ved produktions-launch.
+- **Tech-debt duplicates** — `filterLatestPerCompany`, mobile-nav vs app-sidebar nav, calendar month/day arrays. Piggyback på næste refactor i hvert område.
+- **Dashboard whitespace + sidebar-badge contrast** — kosmetisk polish-sprint.
 
 ## Sprint 9 — Polish + Kalender ❌ AFVENTER SPRINT 8
 - [ ] Tværgående kalender
