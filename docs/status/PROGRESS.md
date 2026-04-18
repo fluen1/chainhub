@@ -222,6 +222,23 @@ brugt i tasks.ts, contract-versions.ts, users.ts.
 
 Gate: format ✅, lint ✅, tsc ✅, build ✅.
 
+## A11y-sweep — 2026-04-18 ✅
+
+WCAG 2.1 Level A + kritisk AA bragt i hus. A11y-audit fra ~2/10 → ~8/10.
+
+- [x] **eslint-plugin-jsx-a11y/recommended** enabled i `.eslintrc.json` — 59 baseline-violations identificeret
+- [x] **Forms** — htmlFor/id retrofit på 8 forms (CreateTaskForm, CreateVisitForm, CreateCaseForm, CreateContractForm, CreateUserForm, AddCompanyPersonForm, AddOwnerForm, AddMetricForm). 34 nye id/htmlFor-par + 2 checkbox-grupper konverteret til `role="group"` + `aria-labelledby`
+- [x] **AccessibleDialog-primitive** (`src/components/ui/accessible-dialog.tsx`) med focus-trap, Escape-close, aria-labelledby, focus-restore + 5 unit-tests (jsdom + testing-library)
+- [x] **3 modals refaktoreret** til AccessibleDialog: EditStamdataDialog, AddCompanyPersonForm, AddOwnerForm. ~42 linjer manuel modal-boilerplate fjernet
+- [x] **SkipToMain-link** i dashboard-layout for keyboard-first brugere — `<a href="#main-content">Spring til hovedindhold</a>` med `sr-only focus:not-sr-only`-pattern
+- [x] **Kanban keyboard-navigation** — Enter/Space grabber, ArrowLeft/Right flytter mellem statusser (NY → AKTIV_TASK → AFVENTER → LUKKET), Escape slipper. Aria-live polite region annoncerer flyt på dansk. Drag-drop bevaret 100%
+- [x] **Kontrast-sweep** — 117 `text-gray-400` → `text-gray-500` på brødtekst for WCAG AA (66 kept på icons/placeholders). Konvention dokumenteret i `docs/build/CONVENTIONS.md`
+- [x] **Drop-zones + mobile-nav** — tastatur-support (role="button", tabIndex, onKeyDown, aria-label) på UploadVersionForm + FileUpload drop-zones og mobile-nav burger
+- [x] **Tests**: 545 → 550 passed (+5 accessible-dialog), 0 failed
+- [x] **Gate**: format ✅, lint ✅ (kun 2 forventede no-autofocus warnings), tsc ✅, build ✅
+
+Produktions-modenhed-track lukket: foundation (session 1) + schema/audit (session 2) + E2E/CI/coverage (session 3) + coverage uplift + a11y. Resterende: tech-debt cleanup + Vercel deploy.
+
 ## Udskudte features (dedikerede sessions)
 
 Disse er bevidst taget ud af scope efter exploration og venter på dedikeret planning.
