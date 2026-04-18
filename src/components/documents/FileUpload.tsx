@@ -5,17 +5,12 @@ import { Upload, X, FileIcon, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { formatFileSize } from '@/lib/labels'
 
 interface FileUploadProps {
   companyId?: string
   caseId?: string
   className?: string
-}
-
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
 export function FileUpload({ companyId, caseId, className }: FileUploadProps) {

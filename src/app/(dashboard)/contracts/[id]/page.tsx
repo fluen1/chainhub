@@ -16,6 +16,7 @@ import {
   getPriorityLabel,
   formatDate,
   daysUntil,
+  relativeDate,
 } from '@/lib/labels'
 
 // ---------------------------------------------------------------
@@ -33,14 +34,6 @@ function deriveStatus(status: string, daysUntilExpiry: number | null): DerivedSt
   if (status === 'UDLOEBET') return 'expired'
   if (status === 'AKTIV' && daysUntilExpiry != null && daysUntilExpiry >= 0 && daysUntilExpiry <= 90) return 'expiring'
   return 'active'
-}
-
-function relativeDate(daysUntilExpiry: number | null): string {
-  if (daysUntilExpiry == null) return '—'
-  if (daysUntilExpiry < 0) return `${Math.abs(daysUntilExpiry)} dage siden`
-  if (daysUntilExpiry === 0) return 'I dag'
-  if (daysUntilExpiry === 1) return 'I morgen'
-  return `om ${daysUntilExpiry} dage`
 }
 
 // ---------------------------------------------------------------

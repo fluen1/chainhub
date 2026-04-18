@@ -4,7 +4,6 @@ import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import {
   Search,
-  Upload,
   FileText,
   FileSpreadsheet,
   FileImage,
@@ -12,11 +11,11 @@ import {
   Loader2,
   Plus,
   ChevronUp,
-  ChevronDown,
   Sparkles,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { formatDate } from '@/lib/labels'
 import { FileUpload } from '@/components/documents/FileUpload'
 
 // ---------------------------------------------------------------
@@ -58,10 +57,6 @@ function statusLabel(status: DocStatus): string {
     case 'reviewed':         return 'Godkendt'
     case 'archived':         return 'Arkiveret'
   }
-}
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('da-DK', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
 function fileTypeIcon(fileName: string) {

@@ -562,3 +562,30 @@ export function formatCurrency(amount: number | string | null, currency = 'DKK')
     maximumFractionDigits: 0,
   }).format(num)
 }
+
+/**
+ * Formatér beløb i millioner: "1.2" (uden suffix — kald som `${formatMio(val)}M`)
+ */
+export function formatMio(val: number): string {
+  return (val / 1_000_000).toFixed(1)
+}
+
+/**
+ * Formatér filstørrelse: "1.2 MB", "512 KB", "128 B"
+ */
+export function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+/**
+ * Relativ dato fra dage-til-udløb: "om 5 dage", "I dag", "3 dage siden"
+ */
+export function relativeDate(daysUntilExpiry: number | null): string {
+  if (daysUntilExpiry == null) return '—'
+  if (daysUntilExpiry < 0) return `${Math.abs(daysUntilExpiry)} dage siden`
+  if (daysUntilExpiry === 0) return 'I dag'
+  if (daysUntilExpiry === 1) return 'I morgen'
+  return `om ${daysUntilExpiry} dage`
+}

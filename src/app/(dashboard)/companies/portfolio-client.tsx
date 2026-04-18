@@ -12,6 +12,7 @@ import {
   ArrowDown,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { formatMio } from '@/lib/labels'
 import type { PortfolioCompany, PortfolioTotals } from './page'
 import type { MapCompany } from '@/components/companies/leaflet-map'
 
@@ -49,10 +50,6 @@ function badgeLabel(status: HealthStatus): string {
     case 'healthy':
       return 'Sund'
   }
-}
-
-function formatMio(val: number): string {
-  return (val / 1_000_000).toFixed(1)
 }
 
 // ---------------------------------------------------------------

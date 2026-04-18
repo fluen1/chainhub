@@ -14,6 +14,7 @@ import {
   ChevronUp,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { relativeDate } from '@/lib/labels'
 
 // ---------------------------------------------------------------
 // Serializable types (passed from server component)
@@ -89,17 +90,6 @@ function statusDot(s: DerivedStatus): string {
   if (s === 'expired')  return 'bg-rose-500'
   if (s === 'expiring') return 'bg-amber-500'
   return 'bg-emerald-500'
-}
-
-// ---------------------------------------------------------------
-// Relativ-tid helper
-// ---------------------------------------------------------------
-function relativeDate(daysUntilExpiry: number | null): string {
-  if (daysUntilExpiry == null) return '\u2014'
-  if (daysUntilExpiry < 0) return `${Math.abs(daysUntilExpiry)} dage siden`
-  if (daysUntilExpiry === 0) return 'I dag'
-  if (daysUntilExpiry === 1) return 'I morgen'
-  return `om ${daysUntilExpiry} dage`
 }
 
 // ---------------------------------------------------------------

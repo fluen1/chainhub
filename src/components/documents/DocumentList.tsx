@@ -5,6 +5,7 @@ import { FileText, Image, File as FileIcon, Download, Trash2, Loader2 } from 'lu
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { deleteDocument } from '@/actions/documents'
+import { formatFileSize } from '@/lib/labels'
 
 interface DocumentItem {
   id: string
@@ -18,12 +19,6 @@ interface DocumentItem {
 
 interface DocumentListProps {
   documents: DocumentItem[]
-}
-
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
 function getFileIcon(fileType: string) {

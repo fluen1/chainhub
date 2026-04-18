@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/db'
 import { getAccessibleCompanies } from '@/lib/permissions'
+import { formatMio } from '@/lib/labels'
 import type {
   InlineKpi,
   SidebarBadge,
@@ -435,10 +436,6 @@ function deriveHealth(openCases: number, overdueTasks: number): 'healthy' | 'war
   if (overdueTasks > 0) return 'critical'
   if (openCases > 0) return 'warning'
   return 'healthy'
-}
-
-function formatMio(val: number): string {
-  return (val / 1_000_000).toFixed(1)
 }
 
 function buildInlineKpis(

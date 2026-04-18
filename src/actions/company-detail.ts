@@ -3,6 +3,7 @@
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { getAccessibleCompanies } from '@/lib/permissions'
+import { formatDate } from '@/lib/labels'
 import {
   sectionsForRole,
   pickHighestPriorityRole,
@@ -453,25 +454,6 @@ function sumFinance(
 // View-builders
 // -----------------------------------------------------------------
 
-const MONTHS_DA = [
-  'jan',
-  'feb',
-  'mar',
-  'apr',
-  'maj',
-  'jun',
-  'jul',
-  'aug',
-  'sep',
-  'okt',
-  'nov',
-  'dec',
-]
-
-function formatDateDa(date: Date): string {
-  return `${date.getDate()}. ${MONTHS_DA[date.getMonth()]} ${date.getFullYear()}`
-}
-
 function humanizeVisitType(type: string): string {
   const map: Record<string, string> = {
     KVARTALSBESOEG: 'Kvartalsbesoeg',
@@ -522,7 +504,7 @@ function buildOwnership(
   if (ejeraftale) {
     if (ejeraftale.expiry_date && ejeraftale.expiry_date < today) {
       ejeraftaleStatus = {
-        label: `Udloebet ${formatDateDa(ejeraftale.expiry_date)}`,
+        label: `Udloebet ${formatDate(ejeraftale.expiry_date)}`,
         danger: true,
       }
     } else {
@@ -565,8 +547,8 @@ function buildContracts(
     const tone: 'red' | 'amber' | 'green' = expired ? 'red' : soon ? 'amber' : 'green'
     const meta = c.expiry_date
       ? expired
-        ? `Udloebet ${formatDateDa(c.expiry_date)}`
-        : `Udloeber ${formatDateDa(c.expiry_date)}`
+        ? `Udloebet ${formatDate(c.expiry_date)}`
+        : `Udloeber ${formatDate(c.expiry_date)}`
       : 'Ingen udloebsdato'
     const badgeLabel = expired ? 'Udloebet' : soon ? 'Udloeber snart' : 'Aktiv'
     return {
@@ -645,7 +627,7 @@ function buildCases(
     const tone: 'red' | 'amber' = isAwaiting ? 'amber' : 'red'
     const badgeLabel =
       c.status === 'NY' ? 'Ny' : c.status === 'AKTIV' ? 'Aktiv' : 'Afventer'
-    const meta = `Oprettet ${formatDateDa(c.created_at)}${isAwaiting ? ' · Afventer' : ''}`
+    const meta = `Oprettet ${formatDate(c.created_at)}${isAwaiting ? ' · Afventer' : ''}`
     return {
       id: c.id,
       iconLetter: c.case_type.charAt(0).toUpperCase(),
@@ -692,7 +674,7 @@ function buildVisits(
     return {
       id: v.id,
       typeLabel: humanizeVisitType(v.visit_type),
-      meta: `${statusLabel} ${formatDateDa(v.visit_date)}`,
+      meta: `${statusLabel} ${formatDate(v.visit_date)}`,
       badge: { label: statusLabel, tone },
     }
   })
@@ -717,8 +699,8 @@ function buildDocuments(
       isAiExtracted: isExtracted,
       fileName: d.file_name,
       meta: isExtracted
-        ? `Uploadet ${formatDateDa(d.uploaded_at)} · AI-behandlet`
-        : `Uploadet ${formatDateDa(d.uploaded_at)}`,
+        ? `Uploadet ${formatDate(d.uploaded_at)} · AI-behandlet`
+        : `Uploadet ${formatDate(d.uploaded_at)}`,
       badge: needsReview
         ? { label: 'Til review', tone: 'purple' as const }
         : { label: 'Arkiveret', tone: 'green' as const },

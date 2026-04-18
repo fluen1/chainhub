@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { getSidebarData, buildSidebarBadges } from '@/lib/sidebar-data'
 import type { InlineKpi } from '@/types/ui'
+import { formatMio } from '@/lib/labels'
 
 export default async function DashboardLayout({
   children,
@@ -21,7 +22,6 @@ export default async function DashboardLayout({
   const badges = buildSidebarBadges(sidebarData)
 
   // Header inline KPIs — 5 KPIs matchende proto (GROUP_OWNER)
-  const formatMio = (val: number) => `${(val / 1_000_000).toFixed(1)}m`
   const headerKpis: InlineKpi[] = [
     { label: 'Selskaber', value: String(sidebarData.companiesCount) },
     {
@@ -35,7 +35,7 @@ export default async function DashboardLayout({
       value: String(sidebarData.overdueTasksCount),
       color: sidebarData.overdueTasksCount > 0 ? 'red' : undefined,
     },
-    { label: 'Omsætning', value: formatMio(sidebarData.omsaetningTotal) },
+    { label: 'Omsætning', value: `${formatMio(sidebarData.omsaetningTotal)}m` },
   ]
 
   return (

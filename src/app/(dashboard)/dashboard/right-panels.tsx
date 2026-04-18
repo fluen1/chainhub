@@ -2,6 +2,7 @@ import { FinRow } from '@/components/ui/fin-row'
 import { CoverageBar } from '@/components/ui/coverage-bar'
 import { CalendarWidget } from '@/components/ui/calendar-widget'
 import { HeatmapGrid } from '@/components/dashboard/heatmap-grid'
+import { formatMio } from '@/lib/labels'
 import type { DashboardData } from '@/actions/dashboard'
 import type { CalendarEvent } from '@/types/ui'
 
@@ -12,10 +13,6 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
       {children}
     </div>
   )
-}
-
-function formatMio(val: number): string {
-  return (val / 1_000_000).toFixed(1)
 }
 
 export interface RightPanelsProps {

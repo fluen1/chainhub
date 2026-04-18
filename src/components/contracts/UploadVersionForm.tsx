@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { createContractVersion } from '@/actions/contract-versions'
-import { CHANGE_TYPE_LABELS } from '@/lib/labels'
+import { CHANGE_TYPE_LABELS, formatFileSize } from '@/lib/labels'
 
 interface UploadVersionFormProps {
   contractId: string
@@ -19,12 +19,6 @@ const CHANGE_TYPE_OPTIONS = [
   { value: 'MATERIEL', label: CHANGE_TYPE_LABELS.MATERIEL },
   { value: 'ALLONGE', label: CHANGE_TYPE_LABELS.ALLONGE },
 ] as const
-
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
 
 export function UploadVersionForm({ contractId, companyId }: UploadVersionFormProps) {
   const [isOpen, setIsOpen] = useState(false)
