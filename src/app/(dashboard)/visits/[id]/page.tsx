@@ -5,6 +5,7 @@ import { canAccessCompany } from '@/lib/permissions'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { getVisitTypeLabel, getVisitStatusLabel, getVisitStatusStyle } from '@/lib/labels'
+import { formatDanishDate } from '@/lib/date-helpers'
 import { VisitStatusForm } from '@/components/visits/VisitStatusForm'
 import { VisitNotesForm } from '@/components/visits/VisitNotesForm'
 
@@ -48,14 +49,7 @@ export default async function VisitDetailPage({ params }: Props) {
               {getVisitStatusLabel(visit.status)}
             </span>
           </div>
-          <p className="mt-0.5 text-sm text-gray-500">
-            {new Date(visit.visit_date).toLocaleDateString('da-DK', {
-              weekday: 'long',
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric',
-            })}
-          </p>
+          <p className="mt-0.5 text-sm text-gray-500">{formatDanishDate(visit.visit_date)}</p>
         </div>
       </div>
 
@@ -79,9 +73,7 @@ export default async function VisitDetailPage({ params }: Props) {
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-500">Besøgsdato</dt>
-                <dd className="mt-1 text-sm text-gray-900">
-                  {new Date(visit.visit_date).toLocaleDateString('da-DK')}
-                </dd>
+                <dd className="mt-1 text-sm text-gray-900">{formatDanishDate(visit.visit_date)}</dd>
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-500">Type</dt>
@@ -95,9 +87,7 @@ export default async function VisitDetailPage({ params }: Props) {
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-500">Oprettet</dt>
-                <dd className="mt-1 text-sm text-gray-900">
-                  {new Date(visit.created_at).toLocaleDateString('da-DK')}
-                </dd>
+                <dd className="mt-1 text-sm text-gray-900">{formatDanishDate(visit.created_at)}</dd>
               </div>
             </dl>
           </div>

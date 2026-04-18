@@ -20,6 +20,7 @@ import {
   getPriorityLabel,
   getPriorityStyle,
   getTaskStatusLabel,
+  formatDate,
 } from '@/lib/labels'
 import { groupTasksByCompany, NO_COMPANY_KEY } from '@/lib/task-detail/helpers'
 import type { TaskStatus, Prisma } from '@prisma/client'
@@ -331,7 +332,7 @@ function TaskList({
                     <span
                       className={`text-xs ${isOverdue ? 'text-red-600 font-medium' : 'text-gray-500'}`}
                     >
-                      {new Date(task.due_date).toLocaleDateString('da-DK')}
+                      {formatDate(task.due_date)}
                     </span>
                   )}
                   {task.priority && (

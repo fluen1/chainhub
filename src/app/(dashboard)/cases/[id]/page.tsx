@@ -11,6 +11,7 @@ import {
   getCaseTypeLabel,
   getPriorityLabel,
   getTaskStatusLabel,
+  formatDate,
 } from '@/lib/labels'
 
 interface Props {
@@ -117,9 +118,7 @@ export default async function CaseDetailPage({ params }: Props) {
               </div>
               <div>
                 <dt className="text-sm font-medium text-gray-500">Oprettet</dt>
-                <dd className="mt-1 text-sm text-gray-900">
-                  {new Date(caseItem.created_at).toLocaleDateString('da-DK')}
-                </dd>
+                <dd className="mt-1 text-sm text-gray-900">{formatDate(caseItem.created_at)}</dd>
               </div>
             </dl>
             {descriptionText && (
@@ -180,9 +179,7 @@ export default async function CaseDetailPage({ params }: Props) {
                           {task.title}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {task.due_date
-                            ? new Date(task.due_date).toLocaleDateString('da-DK')
-                            : 'Ingen deadline'}
+                          {task.due_date ? formatDate(task.due_date) : 'Ingen deadline'}
                           {task.priority && ` · ${getPriorityLabel(task.priority)}`}
                         </p>
                       </div>

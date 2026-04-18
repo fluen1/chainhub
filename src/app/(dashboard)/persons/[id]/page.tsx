@@ -299,12 +299,11 @@ export default async function PersonDetailPage({ params }: Props) {
                     <p className="text-xs text-gray-500 mt-0.5">
                       {getCompanyPersonRoleLabel(cp.role)}
                       {cp.employment_type && ` · ${cp.employment_type}`}
-                      {cp.start_date &&
-                        ` · fra ${new Date(cp.start_date).toLocaleDateString('da-DK')}`}
+                      {cp.start_date && ` · fra ${formatDate(cp.start_date)}`}
                     </p>
                     {cp.anciennity_start && (
                       <p className="text-[10px] text-gray-500 mt-0.5">
-                        Anciennitet fra {new Date(cp.anciennity_start).toLocaleDateString('da-DK')}
+                        Anciennitet fra {formatDate(cp.anciennity_start)}
                       </p>
                     )}
                     {cp.contract && (
@@ -347,8 +346,7 @@ export default async function PersonDetailPage({ params }: Props) {
                   </Link>
                   <p className="text-xs text-gray-500 mt-0.5">
                     {Number(o.ownership_pct)}% ejerandel
-                    {o.effective_date &&
-                      ` · fra ${new Date(o.effective_date).toLocaleDateString('da-DK')}`}
+                    {o.effective_date && ` · fra ${formatDate(o.effective_date)}`}
                   </p>
                 </li>
               ))}
@@ -431,8 +429,8 @@ export default async function PersonDetailPage({ params }: Props) {
                   </Link>
                   <p className="text-xs text-gray-500 mt-0.5">
                     {getCompanyPersonRoleLabel(cp.role)}
-                    {cp.start_date && ` · ${new Date(cp.start_date).toLocaleDateString('da-DK')}`}
-                    {cp.end_date && ` → ${new Date(cp.end_date).toLocaleDateString('da-DK')}`}
+                    {cp.start_date && ` · ${formatDate(cp.start_date)}`}
+                    {cp.end_date && ` → ${formatDate(cp.end_date)}`}
                   </p>
                 </div>
                 <span className="text-[10px] text-gray-500">Ophørt</span>
