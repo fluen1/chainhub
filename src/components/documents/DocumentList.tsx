@@ -5,7 +5,7 @@ import { FileText, Image, File as FileIcon, Download, Trash2, Loader2 } from 'lu
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { deleteDocument } from '@/actions/documents'
-import { formatFileSize } from '@/lib/labels'
+import { formatFileSize, formatDate } from '@/lib/labels'
 
 interface DocumentItem {
   id: string
@@ -80,8 +80,7 @@ export function DocumentList({ documents }: DocumentListProps) {
                 <p className="text-sm font-medium text-gray-900 truncate">{doc.title}</p>
                 <p className="text-xs text-gray-500">
                   {doc.file_name} · {getFileTypeLabel(doc.file_type)} ·{' '}
-                  {formatFileSize(doc.file_size_bytes)} ·{' '}
-                  {new Date(doc.uploaded_at).toLocaleDateString('da-DK')}
+                  {formatFileSize(doc.file_size_bytes)} · {formatDate(doc.uploaded_at)}
                 </p>
               </div>
             </div>

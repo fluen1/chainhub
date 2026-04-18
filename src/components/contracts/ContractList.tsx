@@ -17,6 +17,7 @@ import {
   getContractCategory,
   getContractCategoryLabel,
   CONTRACT_CATEGORIES,
+  formatDate,
   type ContractCategory,
 } from '@/lib/labels'
 
@@ -51,8 +52,7 @@ function getUrgencyLevel(
 }
 
 function formatExpiryDate(date: Date | string): string {
-  const d = new Date(date)
-  return d.toLocaleDateString('da-DK', { day: 'numeric', month: 'numeric', year: 'numeric' })
+  return formatDate(date)
 }
 
 function getDaysLabel(date: Date | string): string {

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Briefcase, Plus, Search, ChevronDown, ChevronRight } from 'lucide-react'
-import { getCaseTypeLabel, getCaseStatusLabel } from '@/lib/labels'
+import { getCaseTypeLabel, getCaseStatusLabel, formatDate } from '@/lib/labels'
 
 interface CaseData {
   id: string
@@ -64,8 +64,8 @@ function getDueDateInfo(
     }
   if (days === 0) return { label: 'Frist i dag', colorClass: 'text-red-600 font-medium' }
   if (days <= 14) return { label: `${days} dage tilbage`, colorClass: 'text-red-600 font-medium' }
-  if (days <= 90) return { label: d.toLocaleDateString('da-DK'), colorClass: 'text-amber-600' }
-  return { label: d.toLocaleDateString('da-DK'), colorClass: 'text-gray-500' }
+  if (days <= 90) return { label: formatDate(d), colorClass: 'text-amber-600' }
+  return { label: formatDate(d), colorClass: 'text-gray-500' }
 }
 
 function CollapsibleCaseGroup({ caseType, cases }: { caseType: string; cases: CaseData[] }) {

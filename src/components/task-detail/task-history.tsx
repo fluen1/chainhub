@@ -1,5 +1,6 @@
 import { History as HistoryIcon, ArrowRight } from 'lucide-react'
 import { SectionCard } from '@/components/company-detail/section-card'
+import { formatDate } from '@/lib/labels'
 import type { FormattedHistoryEntry } from '@/lib/task-detail/helpers'
 
 interface TaskHistoryProps {
@@ -15,11 +16,7 @@ function formatRelative(date: Date, now: Date = new Date()): string {
   if (diffHrs < 24) return `${diffHrs} t siden`
   const diffDays = Math.floor(diffHrs / 24)
   if (diffDays < 7) return `${diffDays} d siden`
-  return date.toLocaleDateString('da-DK', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
+  return formatDate(date)
 }
 
 export function TaskHistory({ entries }: TaskHistoryProps) {

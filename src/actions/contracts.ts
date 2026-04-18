@@ -17,6 +17,7 @@ import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
 import type { Contract } from '@prisma/client'
 import { captureError } from '@/lib/logger'
+import { formatDate } from '@/lib/labels'
 
 // Gyldige status-transitioner
 const VALID_TRANSITIONS: Record<string, string[]> = {
@@ -144,7 +145,7 @@ export async function updateContractStatus(
         status: parsed.data.status,
         ...(parsed.data.status === 'OPSAGT' ? { termination_date: new Date() } : {}),
         notes: parsed.data.note
-          ? `${contract.notes ?? ''}\n[${new Date().toLocaleDateString('da-DK')}] ${parsed.data.note}`.trim()
+          ? `${contract.notes ?? ''}\n[${formatDate(new Date())}] ${parsed.data.note}`.trim()
           : contract.notes,
       },
     })

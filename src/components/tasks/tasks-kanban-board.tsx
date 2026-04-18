@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { updateTaskStatus } from '@/actions/tasks'
-import { TASK_STATUS_LABELS, getPriorityLabel, getPriorityStyle } from '@/lib/labels'
+import { TASK_STATUS_LABELS, getPriorityLabel, getPriorityStyle, formatDate } from '@/lib/labels'
 import type { TaskStatus } from '@prisma/client'
 
 export interface KanbanTask {
@@ -281,7 +281,7 @@ function KanbanCard({
               isOverdue ? 'font-medium text-red-600' : 'text-slate-500'
             )}
           >
-            {new Date(task.due_date).toLocaleDateString('da-DK')}
+            {formatDate(task.due_date)}
           </span>
         )}
       </div>

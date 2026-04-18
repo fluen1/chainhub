@@ -5,6 +5,7 @@ import { MessageSquare, Trash2, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { createComment, deleteComment } from '@/actions/comments'
 import { useRouter } from 'next/navigation'
+import { formatDate } from '@/lib/labels'
 
 interface CommentData {
   id: string
@@ -29,11 +30,7 @@ function formatRelativeDate(iso: string): string {
   if (hours < 24) return `${hours} time${hours === 1 ? '' : 'r'} siden`
   const days = Math.floor(hours / 24)
   if (days < 7) return `${days} dag${days === 1 ? '' : 'e'} siden`
-  return new Date(iso).toLocaleDateString('da-DK', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
+  return formatDate(iso)
 }
 
 export function CommentSection({ taskId, comments, currentUserId }: CommentSectionProps) {
