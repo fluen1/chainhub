@@ -13,6 +13,7 @@ import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
 import type { User, UserRoleAssignment } from '@prisma/client'
 import bcrypt from 'bcryptjs'
+import { captureError } from '@/lib/logger'
 
 export type UserWithRoles = User & {
   roles: UserRoleAssignment[]
@@ -38,7 +39,8 @@ export async function getOrganizationUsers(): Promise<ActionResult<UserWithRoles
     })
 
     return { data: users }
-  } catch {
+  } catch (err) {
+    captureError(err, { namespace: 'action:getOrganizationUsers' })
     return { error: 'Kunne ikke hente brugere — prøv igen' }
   }
 }
@@ -101,7 +103,11 @@ export async function createUser(input: CreateUserInput): Promise<ActionResult<U
 
     revalidatePath('/settings')
     return { data: user }
-  } catch {
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:createUser',
+      extra: { email: parsed.data.email, role: parsed.data.role },
+    })
     return { error: 'Brugeren kunne ikke oprettes — prøv igen' }
   }
 }
@@ -163,8 +169,11 @@ export async function updateUserRole(input: UpdateUserRoleInput): Promise<Action
 
     revalidatePath('/settings')
     return { data: undefined }
-  } catch (error) {
-    console.error('updateUserRole error:', error)
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:updateUserRole',
+      extra: { userId: parsed.data.userId, role: parsed.data.role },
+    })
     return { error: 'Rollen kunne ikke opdateres — prøv igen' }
   }
 }
@@ -224,7 +233,11 @@ export async function toggleUserActive(userId: string): Promise<ActionResult<voi
 
     revalidatePath('/settings')
     return { data: undefined }
-  } catch {
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:toggleUserActive',
+      extra: { userId },
+    })
     return { error: 'Brugerstatus kunne ikke ændres — prøv igen' }
   }
 }

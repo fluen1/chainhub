@@ -6,6 +6,7 @@ import { canAccessCompany } from '@/lib/permissions'
 import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
 import { z } from 'zod'
+import { captureError } from '@/lib/logger'
 
 const createVisitSchema = z.object({
   companyId: z.string().uuid(),
@@ -59,7 +60,11 @@ export async function createVisit(input: CreateVisitInput): Promise<ActionResult
     revalidatePath(`/companies/${parsed.data.companyId}/visits`)
     revalidatePath('/dashboard')
     return { data: { id: visit.id } }
-  } catch {
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:createVisit',
+      extra: { companyId: parsed.data.companyId, visitType: parsed.data.visitType },
+    })
     return { error: 'Besøget kunne ikke oprettes — prøv igen' }
   }
 }
@@ -98,7 +103,11 @@ export async function updateVisit(input: UpdateVisitInput): Promise<ActionResult
     revalidatePath(`/companies/${visit.company_id}/visits`)
     revalidatePath('/dashboard')
     return { data: { id: updated.id } }
-  } catch {
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:updateVisit',
+      extra: { visitId: parsed.data.visitId },
+    })
     return { error: 'Besøget kunne ikke opdateres — prøv igen' }
   }
 }

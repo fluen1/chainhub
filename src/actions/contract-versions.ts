@@ -6,6 +6,7 @@ import { canAccessCompany, canAccessSensitivity } from '@/lib/permissions'
 import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
 import type { ContractVersion } from '@prisma/client'
+import { captureError } from '@/lib/logger'
 
 export async function createContractVersion(input: {
   contractId: string
@@ -88,7 +89,11 @@ export async function createContractVersion(input: {
 
     revalidatePath(`/contracts/${input.contractId}`)
     return { data: version }
-  } catch {
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:createContractVersion',
+      extra: { contractId: input.contractId, changeType: input.changeType },
+    })
     return { error: 'Versionen kunne ikke oprettes — prøv igen' }
   }
 }

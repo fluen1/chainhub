@@ -12,6 +12,7 @@ import {
 import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
 import type { Person } from '@prisma/client'
+import { captureError } from '@/lib/logger'
 
 export async function createPerson(input: CreatePersonInput): Promise<ActionResult<Person>> {
   const session = await auth()
@@ -51,7 +52,11 @@ export async function createPerson(input: CreatePersonInput): Promise<ActionResu
 
     revalidatePath('/persons')
     return { data: person }
-  } catch {
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:createPerson',
+      extra: { firstName: parsed.data.firstName, lastName: parsed.data.lastName },
+    })
     return { error: 'Personen kunne ikke oprettes — prøv igen' }
   }
 }
@@ -88,7 +93,11 @@ export async function updatePerson(input: UpdatePersonInput): Promise<ActionResu
     revalidatePath('/persons')
     revalidatePath(`/persons/${parsed.data.personId}`)
     return { data: person }
-  } catch {
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:updatePerson',
+      extra: { personId: parsed.data.personId },
+    })
     return { error: 'Personen kunne ikke opdateres — prøv igen' }
   }
 }
@@ -136,7 +145,11 @@ export async function deletePerson(personId: string): Promise<ActionResult<void>
 
     revalidatePath('/persons')
     return { data: undefined }
-  } catch {
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:deletePerson',
+      extra: { personId },
+    })
     return { error: 'Personen kunne ikke slettes — prøv igen' }
   }
 }
@@ -167,7 +180,11 @@ export async function searchPersons(
     })
 
     return { data: persons }
-  } catch {
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:searchPersons',
+      extra: { query },
+    })
     return { error: 'Søgning fejlede' }
   }
 }

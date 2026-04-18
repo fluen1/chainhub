@@ -6,6 +6,7 @@ import { canAccessCompany, canAccessModule } from '@/lib/permissions'
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
+import { captureError } from '@/lib/logger'
 
 const upsertMetricSchema = z.object({
   companyId: z.string().uuid(),
@@ -65,7 +66,15 @@ export async function upsertFinancialMetric(
 
     revalidatePath(`/companies/${parsed.data.companyId}/finance`)
     return { data: metric }
-  } catch {
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:upsertFinancialMetric',
+      extra: {
+        companyId: parsed.data.companyId,
+        metricType: parsed.data.metricType,
+        periodYear: parsed.data.periodYear,
+      },
+    })
     return { error: 'Nøgletallet kunne ikke gemmes — prøv igen' }
   }
 }
@@ -114,7 +123,11 @@ export async function createDividendRecord(
 
     revalidatePath(`/companies/${parsed.data.companyId}/finance`)
     return { data: metric }
-  } catch {
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:createDividendRecord',
+      extra: { companyId: parsed.data.companyId, periodYear: parsed.data.periodYear },
+    })
     return { error: 'Udbytteregistreringen kunne ikke gemmes — prøv igen' }
   }
 }

@@ -13,6 +13,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import type { ActionResult } from '@/types/actions'
 import type { Company } from '@prisma/client'
+import { captureError } from '@/lib/logger'
 import { geocodeAddress } from '@/lib/geocode'
 
 const stamdataSchema = z.object({
@@ -85,7 +86,11 @@ export async function createCompany(input: CreateCompanyInput): Promise<ActionRe
     revalidatePath('/dashboard')
     revalidatePath('/companies')
     return { data: company }
-  } catch {
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:createCompany',
+      extra: { name: parsed.data.name, cvr: parsed.data.cvr },
+    })
     return { error: 'Selskabet kunne ikke oprettes — prøv igen' }
   }
 }
@@ -127,7 +132,11 @@ export async function updateCompany(input: UpdateCompanyInput): Promise<ActionRe
     revalidatePath(`/companies/${parsed.data.companyId}`)
     revalidatePath('/companies')
     return { data: company }
-  } catch {
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:updateCompany',
+      extra: { companyId: parsed.data.companyId },
+    })
     return { error: 'Selskabet kunne ikke opdateres — prøv igen' }
   }
 }
@@ -151,7 +160,11 @@ export async function deleteCompany(companyId: string): Promise<ActionResult<voi
     revalidatePath('/dashboard')
     revalidatePath('/companies')
     return { data: undefined }
-  } catch {
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:deleteCompany',
+      extra: { companyId },
+    })
     return { error: 'Selskabet kunne ikke slettes — prøv igen' }
   }
 }
@@ -200,7 +213,11 @@ export async function updateCompanyStamdata(
     revalidatePath(`/companies/${companyId}`)
     revalidatePath('/companies')
     return { data: undefined }
-  } catch {
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:updateCompanyStamdata',
+      extra: { companyId },
+    })
     return { error: 'Stamdata kunne ikke opdateres — prøv igen' }
   }
 }
