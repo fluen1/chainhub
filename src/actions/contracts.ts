@@ -16,6 +16,7 @@ import {
 import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
 import type { Contract } from '@prisma/client'
+import { captureError } from '@/lib/logger'
 
 // Gyldige status-transitioner
 const VALID_TRANSITIONS: Record<string, string[]> = {
@@ -95,7 +96,14 @@ export async function createContract(input: CreateContractInput): Promise<Action
     revalidatePath('/contracts')
     revalidatePath(`/companies/${parsed.data.companyId}/contracts`)
     return { data: contract }
-  } catch {
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:createContract',
+      extra: {
+        companyId: parsed.data.companyId,
+        systemType: parsed.data.systemType,
+      },
+    })
     return { error: 'Kontrakten kunne ikke oprettes — prøv igen' }
   }
 }
@@ -158,7 +166,11 @@ export async function updateContractStatus(
     revalidatePath(`/contracts/${parsed.data.contractId}`)
     revalidatePath(`/companies/${contract.company_id}/contracts`)
     return { data: updated }
-  } catch {
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:updateContractStatus',
+      extra: { contractId: parsed.data.contractId, newStatus: parsed.data.status },
+    })
     return { error: 'Status kunne ikke opdateres — prøv igen' }
   }
 }
@@ -193,7 +205,11 @@ export async function deleteContract(contractId: string): Promise<ActionResult<v
     revalidatePath('/contracts')
     revalidatePath(`/companies/${contract.company_id}/contracts`)
     return { data: undefined }
-  } catch {
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:deleteContract',
+      extra: { contractId },
+    })
     return { error: 'Kontrakten kunne ikke slettes — prøv igen' }
   }
 }
@@ -247,7 +263,11 @@ export async function getContractList(options: {
     }
 
     return { data: { contracts: filteredContracts, total } }
-  } catch {
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:getContractList',
+      extra: { userId: options.userId, organizationId: options.organizationId },
+    })
     return { error: 'Kontraktliste kunne ikke hentes' }
   }
 }
