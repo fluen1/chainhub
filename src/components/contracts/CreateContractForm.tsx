@@ -114,8 +114,11 @@ export function CreateContractForm() {
           <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Grunddata</h2>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Tilknyttet selskab *</label>
+            <label htmlFor="contract-companyId" className="block text-sm font-medium text-gray-700">
+              Tilknyttet selskab *
+            </label>
             <select
+              id="contract-companyId"
               name="companyId"
               required
               value={companyId}
@@ -132,8 +135,14 @@ export function CreateContractForm() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Kontrakttype *</label>
+            <label
+              htmlFor="contract-systemType"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Kontrakttype *
+            </label>
             <select
+              id="contract-systemType"
               name="systemType"
               required
               value={selectedType}
@@ -158,8 +167,14 @@ export function CreateContractForm() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Kontraktens navn *</label>
+            <label
+              htmlFor="contract-displayName"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Kontraktens navn *
+            </label>
             <input
+              id="contract-displayName"
               name="displayName"
               type="text"
               required
@@ -172,8 +187,14 @@ export function CreateContractForm() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Sensitivitetsniveau *</label>
+            <label
+              htmlFor="contract-sensitivity"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Sensitivitetsniveau *
+            </label>
             <select
+              id="contract-sensitivity"
               name="sensitivity"
               required
               defaultValue={minSensitivity}
@@ -197,19 +218,29 @@ export function CreateContractForm() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Startdato</label>
+              <label
+                htmlFor="contract-effectiveDate"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Startdato
+              </label>
               <input
+                id="contract-effectiveDate"
                 name="effectiveDate"
                 type="date"
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="contract-expiryDate"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Udløbsdato
                 <span className="ml-1 text-xs text-gray-400">(blank = løbende)</span>
               </label>
               <input
+                id="contract-expiryDate"
                 name="expiryDate"
                 type="date"
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
@@ -218,11 +249,15 @@ export function CreateContractForm() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="contract-noticePeriodDays"
+              className="block text-sm font-medium text-gray-700"
+            >
               Opsigelsesvarsel (dage)
               <span className="ml-1 text-xs text-gray-400">(løbende kontrakter)</span>
             </label>
             <input
+              id="contract-noticePeriodDays"
               name="noticePeriodDays"
               type="number"
               min="0"
@@ -256,8 +291,11 @@ export function CreateContractForm() {
 
         {/* Noter */}
         <div className="border-t pt-4">
-          <label className="block text-sm font-medium text-gray-700">Interne noter</label>
+          <label htmlFor="contract-notes" className="block text-sm font-medium text-gray-700">
+            Interne noter
+          </label>
           <textarea
+            id="contract-notes"
             name="notes"
             rows={3}
             className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
