@@ -1,0 +1,10 @@
+.next/
+node_modules/
+public/
+prisma/migrations/
+.playwright-mcp/
+.claude/
+coverage/
+*.lock
+*.log
+package-lock.json

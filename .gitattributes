@@ -1,0 +1,14 @@
+# Normaliser alle tekstfiler til LF i repo (undgår CRLF-støj på Windows)
+* text=auto eol=lf
+
+# Binary-filer skal ikke normaliseres
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
