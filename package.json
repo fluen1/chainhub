@@ -15,10 +15,19 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "worker": "tsx worker/index.ts",
-    "worker:dev": "tsx watch worker/index.ts"
+    "worker:dev": "tsx watch worker/index.ts",
+    "prepare": "husky"
   },
   "prisma": {
     "seed": "npx ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,json,md}": [
+      "prettier --write"
+    ],
+    "*.{ts,tsx}": [
+      "eslint --fix"
+    ]
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.87.0",
@@ -61,7 +70,9 @@
     "docx": "^9.6.1",
     "eslint": "^8",
     "eslint-config-next": "14.2.35",
+    "husky": "^9.1.7",
     "jsdom": "^28.1.0",
+    "lint-staged": "^16.4.0",
     "playwright": "^1.58.2",
     "postcss": "^8",
     "prettier": "^3.8.3",
