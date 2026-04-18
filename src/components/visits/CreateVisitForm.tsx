@@ -21,6 +21,7 @@ export function CreateVisitForm({ companies }: CreateVisitFormProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const preselectedCompany = searchParams.get('company') ?? ''
+  const preselectedDate = searchParams.get('visitDate') ?? ''
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -98,6 +99,7 @@ export function CreateVisitForm({ companies }: CreateVisitFormProps) {
               name="visitDate"
               type="date"
               required
+              defaultValue={preselectedDate}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
             />
           </div>
