@@ -2,57 +2,10 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import {
-  LayoutDashboard,
-  Building2,
-  FileText,
-  CheckSquare,
-  FolderOpen,
-  Settings,
-  Calendar,
-  Users,
-  Briefcase,
-  Search,
-} from 'lucide-react'
+import { Settings, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { SidebarBadge, NavSection } from '@/types/ui'
-
-const ICON_MAP = {
-  LayoutDashboard,
-  Building2,
-  FileText,
-  CheckSquare,
-  FolderOpen,
-  Calendar,
-  Users,
-  Briefcase,
-} as const
-
-const SECTIONS: NavSection[] = [
-  {
-    label: 'Overblik',
-    items: [
-      { name: 'Dashboard', href: '/dashboard', iconName: 'LayoutDashboard', badgeKey: 'dashboard' },
-      { name: 'Kalender', href: '/calendar', iconName: 'Calendar', badgeKey: 'calendar' },
-    ],
-  },
-  {
-    label: 'Portefølje',
-    items: [
-      { name: 'Selskaber', href: '/companies', iconName: 'Building2', badgeKey: 'portfolio' },
-      { name: 'Kontrakter', href: '/contracts', iconName: 'FileText', badgeKey: 'contracts' },
-      { name: 'Sager', href: '/cases', iconName: 'Briefcase', badgeKey: 'cases' },
-      { name: 'Opgaver', href: '/tasks', iconName: 'CheckSquare', badgeKey: 'tasks' },
-    ],
-  },
-  {
-    label: 'Ressourcer',
-    items: [
-      { name: 'Dokumenter', href: '/documents', iconName: 'FolderOpen', badgeKey: 'documents' },
-      { name: 'Personer', href: '/persons', iconName: 'Users', badgeKey: 'persons' },
-    ],
-  },
-]
+import type { SidebarBadge } from '@/types/ui'
+import { NAV_SECTIONS, ICON_MAP } from '@/lib/nav-config'
 
 export interface AppSidebarProps {
   userName: string
@@ -103,7 +56,7 @@ export function AppSidebar({ userName, userRoleLabel, badges }: AppSidebarProps)
 
       {/* Navigation sections */}
       <nav className="flex-1 overflow-y-auto px-4 py-2">
-        {SECTIONS.map((section) => (
+        {NAV_SECTIONS.map((section) => (
           <div key={section.label} className="mb-5">
             <div className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">
               {section.label}

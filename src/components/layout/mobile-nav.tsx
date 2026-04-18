@@ -3,34 +3,9 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import {
-  Menu,
-  X,
-  LayoutDashboard,
-  Building2,
-  FileText,
-  CheckSquare,
-  FolderOpen,
-  Settings,
-  Calendar,
-  Users,
-  Briefcase,
-  Search,
-} from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-
-const NAV_ITEMS = [
-  { name: 'Søg', href: '/search', icon: Search },
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Kalender', href: '/calendar', icon: Calendar },
-  { name: 'Selskaber', href: '/companies', icon: Building2 },
-  { name: 'Kontrakter', href: '/contracts', icon: FileText },
-  { name: 'Sager', href: '/cases', icon: Briefcase },
-  { name: 'Opgaver', href: '/tasks', icon: CheckSquare },
-  { name: 'Dokumenter', href: '/documents', icon: FolderOpen },
-  { name: 'Personer', href: '/persons', icon: Users },
-  { name: 'Indstillinger', href: '/settings', icon: Settings },
-]
+import { NAV_ITEMS, ICON_MAP } from '@/lib/nav-config'
 
 export function MobileNav() {
   const [open, setOpen] = useState(false)
@@ -80,7 +55,7 @@ export function MobileNav() {
 
             <nav className="px-3 py-4 space-y-1">
               {NAV_ITEMS.map((item) => {
-                const Icon = item.icon
+                const Icon = ICON_MAP[item.iconName]
                 const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
                 return (
                   <Link
