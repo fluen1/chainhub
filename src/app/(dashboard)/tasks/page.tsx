@@ -3,10 +3,11 @@ import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { getAccessibleCompanies } from '@/lib/permissions'
-import { CheckSquare, List, LayoutGrid } from 'lucide-react'
+import { CheckSquare, List, LayoutGrid, KanbanSquare } from 'lucide-react'
 import Link from 'next/link'
 import { PageHeader } from '@/components/ui/page-header'
 import { TaskStatusButton } from '@/components/tasks/TaskStatusButton'
+import { TasksKanbanBoard } from '@/components/tasks/tasks-kanban-board'
 import { CollapsibleSection } from '@/components/ui/CollapsibleSection'
 import { Suspense } from 'react'
 import { SearchAndFilter } from '@/components/ui/SearchAndFilter'
@@ -47,7 +48,7 @@ interface TasksPageProps {
     status?: string
     priority?: string
     company?: string
-    view?: string // 'flat' (default) | 'grouped'
+    view?: string // 'flat' (default) | 'grouped' | 'kanban'
     page?: string
   }
 }
@@ -61,7 +62,12 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
   const statusFilter = searchParams.status
   const priorityFilter = searchParams.priority
   const companyFilter = searchParams.company
-  const viewFilter = searchParams.view === 'grouped' ? 'grouped' : 'flat'
+  const viewFilter: 'flat' | 'grouped' | 'kanban' =
+    searchParams.view === 'grouped'
+      ? 'grouped'
+      : searchParams.view === 'kanban'
+      ? 'kanban'
+      : 'flat'
 
   const today = new Date()
 
@@ -84,11 +90,15 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
 
   const companyNameLookup = new Map(companyOptions.map((c) => [c.value, c.label]))
 
+  // Kanban-view viser alle 4 statusser (inkl. LUKKET) så brugeren kan trække derind.
+  // Andre views filtrerer LUKKET fra som default (uændret adfærd).
   const where: Prisma.TaskWhereInput = {
     organization_id: session.user.organizationId,
     deleted_at: null,
     ...(statusFilter
       ? { status: statusFilter as TaskStatus }
+      : viewFilter === 'kanban'
+      ? {}
       : { status: { not: 'LUKKET' as TaskStatus } }),
     ...(priorityFilter ? { priority: priorityFilter as never } : {}),
     ...(q ? { title: { contains: q, mode: 'insensitive' as const } } : {}),
@@ -127,7 +137,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
   const groupedByCompany =
     viewFilter === 'grouped' ? groupTasksByCompany(tasks) : null
 
-  function buildToggleHref(nextView: 'flat' | 'grouped'): string {
+  function buildToggleHref(nextView: 'flat' | 'grouped' | 'kanban'): string {
     const params = new URLSearchParams()
     if (q) params.set('q', q)
     if (statusFilter) params.set('status', statusFilter)
@@ -136,6 +146,20 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
     params.set('view', nextView)
     return `/tasks?${params.toString()}`
   }
+
+  const kanbanTasks =
+    viewFilter === 'kanban'
+      ? tasks.map((t) => ({
+          id: t.id,
+          title: t.title,
+          status: t.status,
+          priority: t.priority,
+          due_date: t.due_date ? t.due_date.toISOString() : null,
+          assigneeName: t.assignee?.name ?? null,
+          caseTitle: t.case?.title ?? null,
+          caseId: t.case?.id ?? null,
+        }))
+      : null
 
   return (
     <div className="space-y-6">
@@ -174,7 +198,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
           <Link
             href={buildToggleHref('grouped')}
             className={cn(
-              'flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-r-md border-l border-gray-200 no-underline',
+              'flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border-l border-gray-200 no-underline',
               viewFilter === 'grouped'
                 ? 'bg-blue-50 text-blue-700'
                 : 'text-gray-500 hover:bg-gray-50'
@@ -182,6 +206,18 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
           >
             <LayoutGrid className="h-3.5 w-3.5" aria-hidden />
             Pr. selskab
+          </Link>
+          <Link
+            href={buildToggleHref('kanban')}
+            className={cn(
+              'flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-r-md border-l border-gray-200 no-underline',
+              viewFilter === 'kanban'
+                ? 'bg-blue-50 text-blue-700'
+                : 'text-gray-500 hover:bg-gray-50'
+            )}
+          >
+            <KanbanSquare className="h-3.5 w-3.5" aria-hidden />
+            Kanban
           </Link>
         </div>
       </div>
@@ -201,6 +237,8 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
             </>
           )}
         </div>
+      ) : viewFilter === 'kanban' && kanbanTasks ? (
+        <TasksKanbanBoard tasks={kanbanTasks} />
       ) : viewFilter === 'grouped' && groupedByCompany ? (
         <div className="space-y-3">
           {Array.from(groupedByCompany.entries()).map(([companyId, tasksForCompany]) => {
