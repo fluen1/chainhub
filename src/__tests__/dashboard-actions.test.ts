@@ -4,8 +4,8 @@ import { getDashboardData } from '@/actions/dashboard'
 // Smoke test: uses seed-brugeren philip@chainhub.dk via org-id
 // Kræver at local database er seeded med `npx prisma db seed`.
 describe.runIf(!!process.env.DATABASE_URL)('getDashboardData', () => {
-  const seedUserId = '00000000-0000-0000-0000-000000010001'
-  const seedOrgId = '00000000-0000-0000-0000-000000009001'
+  const seedUserId = '00000000-0000-0000-0000-000000000010'
+  const seedOrgId = '00000000-0000-0000-0000-000000000001'
 
   it('returnerer DashboardData shape', async () => {
     const data = await getDashboardData(seedUserId, seedOrgId)

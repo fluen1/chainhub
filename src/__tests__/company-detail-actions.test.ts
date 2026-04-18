@@ -6,8 +6,8 @@ vi.mock('@/lib/ai/jobs/company-insights', () => ({
 }))
 
 describe.runIf(!!process.env.DATABASE_URL)('getCompanyDetailData', () => {
-  const seedUserId = '00000000-0000-0000-0000-000000010001'
-  const seedOrgId = '00000000-0000-0000-0000-000000009001'
+  const seedUserId = '00000000-0000-0000-0000-000000000010'
+  const seedOrgId = '00000000-0000-0000-0000-000000000001'
 
   it('returnerer null for selskab udenfor adgang', async () => {
     const result = await getCompanyDetailData('nonexistent-id', seedUserId, seedOrgId)

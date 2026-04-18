@@ -9,6 +9,8 @@ export default defineConfig({
     setupFiles: ['./src/__tests__/setup.ts'],
     globals: true,
     testTimeout: 30_000,
+    // Playwright E2E tests bruger @playwright/test runner — ekskludér fra Vitest
+    exclude: ['node_modules/**', 'tests/e2e/**', '.next/**', 'dist/**'],
   },
   resolve: {
     alias: {
