@@ -76,8 +76,11 @@ export function CreateVisitForm({ companies }: CreateVisitFormProps) {
       <form onSubmit={handleSubmit} className="space-y-6 rounded-lg border bg-white p-6 shadow-sm">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Selskab *</label>
+            <label htmlFor="visit-companyId" className="block text-sm font-medium text-gray-700">
+              Selskab *
+            </label>
             <select
+              id="visit-companyId"
               name="companyId"
               required
               defaultValue={preselectedCompany}
@@ -93,8 +96,11 @@ export function CreateVisitForm({ companies }: CreateVisitFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Besøgsdato *</label>
+            <label htmlFor="visit-visitDate" className="block text-sm font-medium text-gray-700">
+              Besøgsdato *
+            </label>
             <input
+              id="visit-visitDate"
               name="visitDate"
               type="date"
               required
@@ -104,8 +110,11 @@ export function CreateVisitForm({ companies }: CreateVisitFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Besøgstype *</label>
+            <label htmlFor="visit-visitType" className="block text-sm font-medium text-gray-700">
+              Besøgstype *
+            </label>
             <select
+              id="visit-visitType"
               name="visitType"
               required
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
@@ -120,8 +129,11 @@ export function CreateVisitForm({ companies }: CreateVisitFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Noter</label>
+            <label htmlFor="visit-notes" className="block text-sm font-medium text-gray-700">
+              Noter
+            </label>
             <textarea
+              id="visit-notes"
               name="notes"
               rows={4}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
