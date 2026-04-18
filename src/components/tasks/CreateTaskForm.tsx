@@ -59,8 +59,11 @@ export function CreateTaskForm() {
 
       <form onSubmit={handleSubmit} className="space-y-5 rounded-lg border bg-white p-6 shadow-sm">
         <div>
-          <label className="block text-sm font-medium text-gray-700">Titel *</label>
+          <label htmlFor="task-title" className="block text-sm font-medium text-gray-700">
+            Titel *
+          </label>
           <input
+            id="task-title"
             name="title"
             type="text"
             required
@@ -70,8 +73,11 @@ export function CreateTaskForm() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Beskrivelse</label>
+          <label htmlFor="task-description" className="block text-sm font-medium text-gray-700">
+            Beskrivelse
+          </label>
           <textarea
+            id="task-description"
             name="description"
             rows={3}
             className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
@@ -80,8 +86,11 @@ export function CreateTaskForm() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Deadline</label>
+            <label htmlFor="task-dueDate" className="block text-sm font-medium text-gray-700">
+              Deadline
+            </label>
             <input
+              id="task-dueDate"
               name="dueDate"
               type="date"
               defaultValue={preselectedDueDate}
@@ -89,8 +98,11 @@ export function CreateTaskForm() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Prioritet</label>
+            <label htmlFor="task-priority" className="block text-sm font-medium text-gray-700">
+              Prioritet
+            </label>
             <select
+              id="task-priority"
               name="priority"
               defaultValue="MELLEM"
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
@@ -104,8 +116,11 @@ export function CreateTaskForm() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Tilknyt til sag</label>
+          <label htmlFor="task-caseId" className="block text-sm font-medium text-gray-700">
+            Tilknyt til sag
+          </label>
           <select
+            id="task-caseId"
             name="caseId"
             defaultValue={preselectedCaseId}
             className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
