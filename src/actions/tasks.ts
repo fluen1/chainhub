@@ -18,6 +18,7 @@ import {
 import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
 import type { Task } from '@prisma/client'
+import { captureError } from '@/lib/logger'
 
 export async function createTask(input: CreateTaskInput): Promise<ActionResult<Task>> {
   const session = await auth()
@@ -50,7 +51,11 @@ export async function createTask(input: CreateTaskInput): Promise<ActionResult<T
     revalidatePath('/tasks')
     if (parsed.data.caseId) revalidatePath(`/cases/${parsed.data.caseId}`)
     return { data: task }
-  } catch {
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:createTask',
+      extra: { companyId: parsed.data.companyId, caseId: parsed.data.caseId },
+    })
     return { error: 'Opgaven kunne ikke oprettes — prøv igen' }
   }
 }
@@ -98,7 +103,11 @@ export async function updateTaskStatus(input: UpdateTaskStatusInput): Promise<Ac
     revalidatePath(`/tasks/${task.id}`)
     if (task.case_id) revalidatePath(`/cases/${task.case_id}`)
     return { data: updated }
-  } catch {
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:updateTaskStatus',
+      extra: { taskId: parsed.data.taskId, newStatus: parsed.data.status },
+    })
     return { error: 'Status kunne ikke opdateres' }
   }
 }
@@ -143,7 +152,11 @@ export async function updateTaskPriority(
     revalidatePath('/tasks')
     revalidatePath(`/tasks/${task.id}`)
     return { data: updated }
-  } catch {
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:updateTaskPriority',
+      extra: { taskId: parsed.data.taskId, newPriority: parsed.data.priority },
+    })
     return { error: 'Prioritet kunne ikke opdateres' }
   }
 }
@@ -204,7 +217,11 @@ export async function updateTaskAssignee(
     revalidatePath('/tasks')
     revalidatePath(`/tasks/${task.id}`)
     return { data: updated }
-  } catch {
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:updateTaskAssignee',
+      extra: { taskId: parsed.data.taskId, newAssigneeId: parsed.data.assignedTo },
+    })
     return { error: 'Ansvarlig kunne ikke opdateres' }
   }
 }
@@ -253,7 +270,11 @@ export async function updateTaskDueDate(
     revalidatePath('/tasks')
     revalidatePath(`/tasks/${task.id}`)
     return { data: updated }
-  } catch {
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:updateTaskDueDate',
+      extra: { taskId: parsed.data.taskId, newDueDate: parsed.data.dueDate },
+    })
     return { error: 'Frist kunne ikke opdateres' }
   }
 }
