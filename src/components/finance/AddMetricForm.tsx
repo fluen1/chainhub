@@ -72,8 +72,14 @@ export function AddMetricForm({ companyId }: AddMetricFormProps) {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Type</label>
+                  <label
+                    htmlFor="metric-metricType"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Type
+                  </label>
                   <select
+                    id="metric-metricType"
                     name="metricType"
                     required
                     className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
@@ -86,8 +92,14 @@ export function AddMetricForm({ companyId }: AddMetricFormProps) {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Regnskabsår</label>
+                  <label
+                    htmlFor="metric-periodYear"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Regnskabsår
+                  </label>
                   <input
+                    id="metric-periodYear"
                     name="periodYear"
                     type="number"
                     required
@@ -100,8 +112,11 @@ export function AddMetricForm({ companyId }: AddMetricFormProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Beløb (DKK)</label>
+                <label htmlFor="metric-value" className="block text-sm font-medium text-gray-700">
+                  Beløb (DKK)
+                </label>
                 <input
+                  id="metric-value"
                   name="value"
                   type="number"
                   required
@@ -112,8 +127,11 @@ export function AddMetricForm({ companyId }: AddMetricFormProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Kilde</label>
+                <label htmlFor="metric-source" className="block text-sm font-medium text-gray-700">
+                  Kilde
+                </label>
                 <select
+                  id="metric-source"
                   name="source"
                   defaultValue="UREVIDERET"
                   className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
@@ -125,8 +143,11 @@ export function AddMetricForm({ companyId }: AddMetricFormProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Note</label>
+                <label htmlFor="metric-notes" className="block text-sm font-medium text-gray-700">
+                  Note
+                </label>
                 <input
+                  id="metric-notes"
                   name="notes"
                   type="text"
                   className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
