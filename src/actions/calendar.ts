@@ -2,7 +2,15 @@
 
 import { prisma } from '@/lib/db'
 import { getAccessibleCompanies } from '@/lib/permissions'
+import { createLogger } from '@/lib/logger'
 import type { CalendarEvent } from '@/types/ui'
+
+// Cap på antal events pr. type for at undgå OOM / timeouts ved store kæder.
+// 500 events/type/måned er rigeligt for 50 lokationer × 10 events/måned.
+// Hvis en type rammer capped, logges en warning.
+export const CALENDAR_MAX_EVENTS_PER_TYPE = 500
+
+const log = createLogger('action:calendar')
 
 export async function getCalendarEvents(
   userId: string,
@@ -27,6 +35,7 @@ export async function getCalendarEvents(
         expiry_date: { gte: startDate, lte: endDate },
       },
       include: { company: { select: { name: true } } },
+      take: CALENDAR_MAX_EVENTS_PER_TYPE,
     }),
 
     // Opgave-frister (ikke lukkede, due_date i måneden)
@@ -39,6 +48,7 @@ export async function getCalendarEvents(
         due_date: { gte: startDate, lte: endDate },
       },
       select: { id: true, title: true, due_date: true, company_id: true },
+      take: CALENDAR_MAX_EVENTS_PER_TYPE,
     }),
 
     // Besøg (PLANLAGT, visit_date i måneden)
@@ -50,6 +60,7 @@ export async function getCalendarEvents(
         visit_date: { gte: startDate, lte: endDate },
       },
       include: { company: { select: { name: true } } },
+      take: CALENDAR_MAX_EVENTS_PER_TYPE,
     }),
 
     // Sags-frister (åbne sager med due_date i måneden)
@@ -61,8 +72,30 @@ export async function getCalendarEvents(
         due_date: { gte: startDate, lte: endDate },
       },
       select: { id: true, title: true, due_date: true },
+      take: CALENDAR_MAX_EVENTS_PER_TYPE,
     }),
   ])
+
+  // Warn hvis nogen type ramte cap — skjulte events betyder at kæden er vokset
+  // ud over designede rammer
+  const capped: string[] = []
+  if (contracts.length === CALENDAR_MAX_EVENTS_PER_TYPE) capped.push('contracts')
+  if (tasks.length === CALENDAR_MAX_EVENTS_PER_TYPE) capped.push('tasks')
+  if (visits.length === CALENDAR_MAX_EVENTS_PER_TYPE) capped.push('visits')
+  if (cases.length === CALENDAR_MAX_EVENTS_PER_TYPE) capped.push('cases')
+  if (capped.length > 0) {
+    log.warn(
+      {
+        userId,
+        organizationId,
+        year,
+        month,
+        cappedTypes: capped,
+        cap: CALENDAR_MAX_EVENTS_PER_TYPE,
+      },
+      'calendar query hit event cap — some events may be hidden'
+    )
+  }
 
   const events: CalendarEvent[] = []
 
