@@ -9,7 +9,6 @@ function uid(n: number) {
 }
 
 // Datoer relativt til nu
-const now = new Date()
 const daysAgo = (d: number) => new Date(Date.now() - d * 24 * 60 * 60 * 1000)
 const daysFromNow = (d: number) => new Date(Date.now() + d * 24 * 60 * 60 * 1000)
 
@@ -120,7 +119,7 @@ async function main() {
   // ══════════════════════════════════════════════════════════════
   // 3. PERSONER (kontakter i systemet)
   // ══════════════════════════════════════════════════════════════
-  const persons = await Promise.all(
+  await Promise.all(
     [
       {
         id: uid(2001),
@@ -227,6 +226,7 @@ async function main() {
       city: 'København Ø',
       postal_code: '2100',
       status: 'aktiv',
+      parent_company_id: uid(1000),
       latitude: 55.7065,
       longitude: 12.5773,
     },
@@ -239,6 +239,7 @@ async function main() {
       city: 'Aarhus C',
       postal_code: '8000',
       status: 'aktiv',
+      parent_company_id: uid(1000),
       latitude: 56.1572,
       longitude: 10.2107,
     },
@@ -251,6 +252,7 @@ async function main() {
       city: 'København V',
       postal_code: '1620',
       status: 'aktiv',
+      parent_company_id: uid(1000),
       latitude: 55.6713,
       longitude: 12.552,
     },
@@ -263,6 +265,7 @@ async function main() {
       city: 'København Ø',
       postal_code: '2150',
       status: 'under_stiftelse',
+      parent_company_id: uid(1000),
       latitude: 55.7157,
       longitude: 12.5993,
     },
@@ -275,6 +278,7 @@ async function main() {
       city: 'Odense C',
       postal_code: '5000',
       status: 'aktiv',
+      parent_company_id: uid(1000),
       latitude: 55.3959,
       longitude: 10.3883,
     },
@@ -287,16 +291,21 @@ async function main() {
       city: 'Aalborg',
       postal_code: '9000',
       status: 'aktiv',
+      parent_company_id: uid(1000),
       latitude: 57.0488,
       longitude: 9.9217,
     },
   ]
 
-  const companies = await Promise.all(
+  await Promise.all(
     companyData.map((c) =>
       prisma.company.upsert({
         where: { id: c.id },
-        update: { latitude: c.latitude, longitude: c.longitude },
+        update: {
+          latitude: c.latitude,
+          longitude: c.longitude,
+          parent_company_id: 'parent_company_id' in c ? c.parent_company_id : null,
+        },
         create: { ...c, organization_id: org.id, created_by: philip.id },
       })
     )
