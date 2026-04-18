@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { updateCompanyStamdata } from '@/actions/companies'
+import { AccessibleDialog } from '@/components/ui/accessible-dialog'
 
 export interface EditStamdataDialogProps {
   companyId: string
@@ -59,68 +60,57 @@ export function EditStamdataDialog({ companyId, initial, disabled }: EditStamdat
         Rediger stamdata
       </button>
 
-      {open && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-          onClick={() => setOpen(false)}
-        >
-          <div
-            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="mb-4 text-lg font-bold text-slate-900">Rediger stamdata</h2>
-            <div className="space-y-3">
-              <Field
-                label="Navn"
-                value={form.name}
-                onChange={(v) => setForm({ ...form, name: v })}
-              />
-              <Field
-                label="CVR"
-                value={form.cvr}
-                onChange={(v) => setForm({ ...form, cvr: v })}
-                placeholder="8 cifre"
-              />
-              <Field
-                label="Adresse"
-                value={form.address}
-                onChange={(v) => setForm({ ...form, address: v })}
-              />
-              <Field label="By" value={form.city} onChange={(v) => setForm({ ...form, city: v })} />
-              <Field
-                label="Postnummer"
-                value={form.postal_code}
-                onChange={(v) => setForm({ ...form, postal_code: v })}
-              />
-              <Field
-                label="Stiftelsesdato"
-                type="date"
-                value={form.founded_date}
-                onChange={(v) => setForm({ ...form, founded_date: v })}
-              />
-            </div>
-            <div className="mt-5 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700"
-              >
-                Annuller
-              </button>
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={isPending}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
-              >
-                {isPending ? 'Gemmer...' : 'Gem'}
-              </button>
-            </div>
-          </div>
+      <AccessibleDialog
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Rediger stamdata"
+        titleId="edit-stamdata-title"
+        className="max-w-md rounded-2xl"
+      >
+        <div className="space-y-3">
+          <Field label="Navn" value={form.name} onChange={(v) => setForm({ ...form, name: v })} />
+          <Field
+            label="CVR"
+            value={form.cvr}
+            onChange={(v) => setForm({ ...form, cvr: v })}
+            placeholder="8 cifre"
+          />
+          <Field
+            label="Adresse"
+            value={form.address}
+            onChange={(v) => setForm({ ...form, address: v })}
+          />
+          <Field label="By" value={form.city} onChange={(v) => setForm({ ...form, city: v })} />
+          <Field
+            label="Postnummer"
+            value={form.postal_code}
+            onChange={(v) => setForm({ ...form, postal_code: v })}
+          />
+          <Field
+            label="Stiftelsesdato"
+            type="date"
+            value={form.founded_date}
+            onChange={(v) => setForm({ ...form, founded_date: v })}
+          />
         </div>
-      )}
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700"
+          >
+            Annuller
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={isPending}
+            className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
+          >
+            {isPending ? 'Gemmer...' : 'Gem'}
+          </button>
+        </div>
+      </AccessibleDialog>
     </>
   )
 }
