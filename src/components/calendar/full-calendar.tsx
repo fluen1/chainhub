@@ -20,6 +20,7 @@ import { MONTH_NAMES_DA, WEEKDAYS_DA_SHORT } from '@/lib/calendar-constants'
 import type { CalendarEvent, CalendarEventType } from '@/types/ui'
 import { createTask } from '@/actions/tasks'
 import { toast } from 'sonner'
+import { ExportButton } from '@/components/ui/export-button'
 
 // ---------------------------------------------------------------
 // Constants
@@ -232,6 +233,7 @@ export function FullCalendar({ events, year, month, selectedDay, todayISO }: Ful
           <p className="mt-0.5 text-sm text-gray-500">Kontrakter, sager, besøg og frister samlet</p>
         </div>
         <div className="flex items-center gap-2">
+          <ExportButton entity="visits" label="Eksportér besøg" />
           <button
             onClick={goToday}
             className="h-10 px-3.5 rounded-lg border border-gray-200 bg-white text-xs font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"

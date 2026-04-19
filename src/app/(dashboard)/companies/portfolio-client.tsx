@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic'
 import { Search, Map as MapIcon, List as ListIcon, Plus, ArrowUp, ArrowDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatMio } from '@/lib/labels'
+import { ExportButton } from '@/components/ui/export-button'
 import type { PortfolioCompany, PortfolioTotals } from './page'
 import type { MapCompany } from '@/components/companies/leaflet-map'
 
@@ -502,15 +503,18 @@ export function PortfolioClient({
               )}
             </p>
           </div>
-          {canCreate && (
-            <Link
-              href="/companies/new"
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-900 text-white text-[12px] font-medium hover:bg-slate-800 transition-colors shadow-[0_1px_2px_rgba(15,23,42,0.1)] no-underline"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Opret lokation
-            </Link>
-          )}
+          <div className="flex items-center gap-2">
+            <ExportButton entity="companies" />
+            {canCreate && (
+              <Link
+                href="/companies/new"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-900 text-white text-[12px] font-medium hover:bg-slate-800 transition-colors shadow-[0_1px_2px_rgba(15,23,42,0.1)] no-underline"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Opret lokation
+              </Link>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_340px]">

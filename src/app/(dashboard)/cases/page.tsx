@@ -7,6 +7,7 @@ import { Briefcase, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 import { PageHeader } from '@/components/ui/page-header'
 import { EmptyState } from '@/components/ui/empty-state'
+import { ExportButton } from '@/components/ui/export-button'
 import { Suspense } from 'react'
 import { SearchAndFilter } from '@/components/ui/SearchAndFilter'
 import { Pagination } from '@/components/ui/Pagination'
@@ -341,6 +342,7 @@ function CasesHeader() {
       subtitle="Alle sager på tværs af selskaber"
       actionLabel="Ny sag"
       actionHref="/cases/new"
+      extraActions={<ExportButton entity="cases" />}
     />
   )
 }

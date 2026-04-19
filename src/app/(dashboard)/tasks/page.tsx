@@ -6,6 +6,7 @@ import { getAccessibleCompanies } from '@/lib/permissions'
 import { CheckSquare, List, LayoutGrid, KanbanSquare } from 'lucide-react'
 import Link from 'next/link'
 import { PageHeader } from '@/components/ui/page-header'
+import { ExportButton } from '@/components/ui/export-button'
 import { TaskStatusButton } from '@/components/tasks/TaskStatusButton'
 import { TasksKanbanBoard } from '@/components/tasks/tasks-kanban-board'
 import { CollapsibleSection } from '@/components/ui/CollapsibleSection'
@@ -163,6 +164,7 @@ export default async function TasksPage({ searchParams }: TasksPageProps) {
         subtitle={`${totalCount} opgave${totalCount !== 1 ? 'r' : ''}${overdueCount > 0 ? ` · ${overdueCount} forfaldne` : ''}`}
         actionLabel="Ny opgave"
         actionHref="/tasks/new"
+        extraActions={<ExportButton entity="tasks" />}
       />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

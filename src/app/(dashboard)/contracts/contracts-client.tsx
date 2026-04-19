@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { relativeDate } from '@/lib/labels'
+import { ExportButton } from '@/components/ui/export-button'
 
 // ---------------------------------------------------------------
 // Serializable types (passed from server component)
@@ -286,13 +287,16 @@ export default function ContractsClient({
               )}
             </p>
           </div>
-          <Link
-            href="/contracts/new"
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-900 text-white text-[12px] font-medium hover:bg-slate-800 transition-colors shadow-[0_1px_2px_rgba(15,23,42,0.1)] no-underline"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Opret kontrakt
-          </Link>
+          <div className="flex items-center gap-2">
+            <ExportButton entity="contracts" />
+            <Link
+              href="/contracts/new"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-900 text-white text-[12px] font-medium hover:bg-slate-800 transition-colors shadow-[0_1px_2px_rgba(15,23,42,0.1)] no-underline"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Opret kontrakt
+            </Link>
+          </div>
         </div>
 
         {/* Filter bar */}

@@ -6,6 +6,7 @@ import { getAccessibleCompanies } from '@/lib/permissions'
 import { Users, Mail, Phone, LayoutGrid, TableProperties } from 'lucide-react'
 import Link from 'next/link'
 import { PageHeader } from '@/components/ui/page-header'
+import { ExportButton } from '@/components/ui/export-button'
 import { EmptyState } from '@/components/ui/empty-state'
 import { Suspense } from 'react'
 import { SearchAndFilter } from '@/components/ui/SearchAndFilter'
@@ -148,6 +149,7 @@ export default async function PersonsPage({ searchParams }: PersonsPageProps) {
         subtitle={`${totalCount} ${viewFilter === 'ansatte' ? 'ansatte' : 'kontakter'} på tværs af alle selskaber`}
         actionLabel="Ny person"
         actionHref="/persons/new"
+        extraActions={<ExportButton entity="persons" />}
       />
 
       <div className="flex items-center gap-3">
