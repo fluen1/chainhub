@@ -6,7 +6,7 @@ import { prisma } from '@/lib/db'
 import { canAccessModule } from '@/lib/permissions'
 import { getUserRoleLabel, getUserRoleStyle, formatDate } from '@/lib/labels'
 import { cn } from '@/lib/utils'
-import { Settings, Users, ShieldCheck, Sparkles, UserPlus } from 'lucide-react'
+import { Settings, Users, ShieldCheck, Sparkles, UserPlus, Download, Database } from 'lucide-react'
 import { CreateUserForm } from '@/components/settings/CreateUserForm'
 import { UserActions } from '@/components/settings/UserActions'
 import { OrganizationForm } from '@/components/settings/organization-form'
@@ -232,6 +232,34 @@ export default async function SettingsPage() {
               Månedligt forbrug, cap-status + seneste kald
             </div>
           </Link>
+        </div>
+      </div>
+
+      {/* Backup section — kun admin (hasAccess == GROUP_OWNER/GROUP_ADMIN) */}
+      <div className="rounded-lg border bg-white shadow-sm">
+        <div className="flex items-center gap-3 border-b px-6 py-4">
+          <Database className="h-5 w-5 text-gray-400" />
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Kunde-backup</h2>
+            <p className="text-sm text-gray-500">
+              Download en ZIP med alle data for denne organisation
+            </p>
+          </div>
+        </div>
+        <div className="px-6 py-5">
+          <p className="text-sm text-gray-600">
+            ZIP-filen indeholder JSON-eksport af alle 19 org-scope tabeller (selskaber, personer,
+            kontrakter, sager, opgaver, dokumenter m.fl.). Kan tage flere minutter for store
+            organisationer. Download logges i audit-loggen.
+          </p>
+          <a
+            href="/api/export/backup"
+            download
+            className="mt-3 inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            <Download className="h-4 w-4" aria-hidden />
+            Download fuld backup (.zip)
+          </a>
         </div>
       </div>
     </div>
