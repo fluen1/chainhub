@@ -5,8 +5,12 @@ vi.mock('@/lib/ai/client', () => ({
   createClaudeClient: vi.fn(),
   computeCostUsd: vi.fn(() => 0.0123),
 }))
+vi.mock('@/lib/ai/usage', () => ({
+  recordAIUsage: vi.fn().mockResolvedValue(undefined),
+}))
 
 import { createClaudeClient } from '@/lib/ai/client'
+import { recordAIUsage } from '@/lib/ai/usage'
 
 const mockSnapshot: CompanySnapshot = {
   company: {
@@ -67,7 +71,10 @@ describe('generateCompanyInsights', () => {
       providerName: 'anthropic',
     })
 
-    const result = await generateCompanyInsights(mockSnapshot)
+    const result = await generateCompanyInsights(mockSnapshot, {
+      organizationId: 'org-1',
+      companyId: 'company-1',
+    })
     expect(result.ok).toBe(true)
     if (result.ok) {
       expect(result.data.alerts).toHaveLength(1)
@@ -76,6 +83,40 @@ describe('generateCompanyInsights', () => {
       expect(result.cost_usd).toBe(0.0123)
       expect(result.model_name).toBe('claude-sonnet-4-20250514')
     }
+    expect(recordAIUsage).toHaveBeenCalledWith({
+      organizationId: 'org-1',
+      feature: 'insights',
+      model: 'claude-sonnet-4-20250514',
+      provider: 'anthropic',
+      inputTokens: 100,
+      outputTokens: 50,
+      costUsd: 0.0123,
+      resourceType: 'company',
+      resourceId: 'company-1',
+    })
+  })
+
+  it('skipper recordAIUsage naar context udelades', async () => {
+    const mockComplete = vi.fn().mockResolvedValue({
+      id: 'msg_nc',
+      model: 'claude-sonnet-4-20250514',
+      stop_reason: 'end_turn',
+      content: [
+        {
+          type: 'text',
+          text: '{"alerts":[],"insight":null}',
+        },
+      ],
+      usage: { input_tokens: 10, output_tokens: 5 },
+    })
+    ;(createClaudeClient as ReturnType<typeof vi.fn>).mockReturnValue({
+      complete: mockComplete,
+      providerName: 'anthropic',
+    })
+
+    const result = await generateCompanyInsights(mockSnapshot)
+    expect(result.ok).toBe(true)
+    expect(recordAIUsage).not.toHaveBeenCalled()
   })
 
   it('haandterer JSON i markdown fence', async () => {

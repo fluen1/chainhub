@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { createClaudeClient, computeCostUsd } from '@/lib/ai/client'
 import type { ClaudeModel, ClaudeResponse } from '@/lib/ai/client'
+import { recordAIUsage } from '@/lib/ai/usage'
 
 // -----------------------------------------------------------------
 // Typer
@@ -126,8 +127,14 @@ Hvis klyngen har faerre end 3 peers, undgaa sammenligninger og fokuser paa YoY.`
 const TIMEOUT_MS = 8000
 const MODEL: ClaudeModel = 'claude-sonnet-4-20250514'
 
+export interface GenerateInsightsContext {
+  organizationId: string
+  companyId: string
+}
+
 export async function generateCompanyInsights(
-  snapshot: CompanySnapshot
+  snapshot: CompanySnapshot,
+  context?: GenerateInsightsContext
 ): Promise<GenerateInsightsOutcome> {
   try {
     const client = createClaudeClient()
@@ -170,6 +177,21 @@ export async function generateCompanyInsights(
     }
 
     const costUsd = computeCostUsd(MODEL, response.usage.input_tokens, response.usage.output_tokens)
+
+    // Log AI-forbrug hvis kalder har givet context (org + company). Non-fatal hvis DB fejler.
+    if (context) {
+      await recordAIUsage({
+        organizationId: context.organizationId,
+        feature: 'insights',
+        model: MODEL,
+        provider: 'anthropic',
+        inputTokens: response.usage.input_tokens,
+        outputTokens: response.usage.output_tokens,
+        costUsd,
+        resourceType: 'company',
+        resourceId: context.companyId,
+      })
+    }
 
     return {
       ok: true,

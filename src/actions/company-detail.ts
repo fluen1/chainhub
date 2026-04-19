@@ -22,6 +22,11 @@ import {
   type CompanyAlert,
   type AiInsight,
 } from '@/lib/ai/jobs/company-insights'
+import { isAIEnabled } from '@/lib/ai/feature-flags'
+import { checkCostCap } from '@/lib/ai/cost-cap'
+import { createLogger } from '@/lib/logger'
+
+const log = createLogger('action:company-detail')
 
 // -----------------------------------------------------------------
 // Output-typer
@@ -301,48 +306,60 @@ export async function getCompanyDetailData(
       alerts = cachedAlerts.filter((a) => a.roles.includes(rolename(role)))
       aiInsight = (aiCacheRow.insight as unknown as AiInsight | null) ?? null
     } else {
-      const snapshot = await buildSnapshot({
-        companyId,
-        organizationId,
-        today,
-        company,
-        contractsRaw,
-        casesRaw,
-        finance2025Sum,
-        finance2024Sum,
-        companyPersonsRaw,
-        visitsRaw,
-        documentsRaw,
-      })
-      const result = await generateCompanyInsights(snapshot)
-      if (result.ok) {
-        await prisma.companyInsightsCache.upsert({
-          where: { company_id: companyId },
-          create: {
-            organization_id: organizationId,
-            company_id: companyId,
-            alerts: result.data.alerts as unknown as Prisma.InputJsonValue,
-            insight:
-              result.data.insight === null
-                ? Prisma.JsonNull
-                : (result.data.insight as unknown as Prisma.InputJsonValue),
-            model_name: result.model_name,
-            total_cost_usd: result.cost_usd,
-            generated_at: new Date(),
-          },
-          update: {
-            alerts: result.data.alerts as unknown as Prisma.InputJsonValue,
-            insight:
-              result.data.insight === null
-                ? Prisma.JsonNull
-                : (result.data.insight as unknown as Prisma.InputJsonValue),
-            model_name: result.model_name,
-            total_cost_usd: result.cost_usd,
-            generated_at: new Date(),
-          },
+      // Pre-flight gates: feature-flag + cost-cap. Ved skip beholdes alerts=[] og aiInsight=null.
+      const aiEnabled = await isAIEnabled(organizationId, 'insights')
+      const capCheck = aiEnabled ? await checkCostCap(organizationId) : { allowed: false }
+      if (!aiEnabled) {
+        // Graceful skip — ingen AI konfigureret for denne org. Ingen log (forventet tilstand).
+      } else if (!capCheck.allowed) {
+        log.warn(
+          { orgId: organizationId, companyId, reason: capCheck.reason },
+          'AI call blocked by cost cap'
+        )
+      } else {
+        const snapshot = await buildSnapshot({
+          companyId,
+          organizationId,
+          today,
+          company,
+          contractsRaw,
+          casesRaw,
+          finance2025Sum,
+          finance2024Sum,
+          companyPersonsRaw,
+          visitsRaw,
+          documentsRaw,
         })
-        alerts = result.data.alerts.filter((a) => a.roles.includes(rolename(role)))
-        aiInsight = result.data.insight
+        const result = await generateCompanyInsights(snapshot, { organizationId, companyId })
+        if (result.ok) {
+          await prisma.companyInsightsCache.upsert({
+            where: { company_id: companyId },
+            create: {
+              organization_id: organizationId,
+              company_id: companyId,
+              alerts: result.data.alerts as unknown as Prisma.InputJsonValue,
+              insight:
+                result.data.insight === null
+                  ? Prisma.JsonNull
+                  : (result.data.insight as unknown as Prisma.InputJsonValue),
+              model_name: result.model_name,
+              total_cost_usd: result.cost_usd,
+              generated_at: new Date(),
+            },
+            update: {
+              alerts: result.data.alerts as unknown as Prisma.InputJsonValue,
+              insight:
+                result.data.insight === null
+                  ? Prisma.JsonNull
+                  : (result.data.insight as unknown as Prisma.InputJsonValue),
+              model_name: result.model_name,
+              total_cost_usd: result.cost_usd,
+              generated_at: new Date(),
+            },
+          })
+          alerts = result.data.alerts.filter((a) => a.roles.includes(rolename(role)))
+          aiInsight = result.data.insight
+        }
       }
     }
   }
