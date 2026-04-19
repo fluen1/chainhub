@@ -381,6 +381,26 @@ Sidste Gate 1 kvalitets-infra. A11y-regressioner fanges nu automatisk i CI.
 
 **Første CI-run efter merge vil afdække eventuelle violations** — adresseres i follow-up PR med fix-mønstre fra A11Y-GUIDE.md.
 
+## Phase A.2 pricing-forarbejde + Phase B.1a extraction-trigger ✅ (2026-04-18)
+
+### A.2 — Pricing-beslutning klar til bruger-afgørelse
+
+- [x] **`docs/build/PRICING-DECISION-2026-04.md`** — fuldt beslutnings-dokument med 3 tier-forslag (Basis 3.500 kr., Plus 7.500 kr. m. staffeling, Enterprise floor 22.000 kr.) + 4 konkrete spørgsmål til bruger
+- [x] Cost-grundlag fra AI-COST-MODEL.md + drift-cost beregning + 3 Plus-afregningsmodeller (A flat, B staffel, C forbrug)
+- [ ] **Afventer bruger-svar på 4 spørgsmål** → priser låses derefter i roadmap + feature-flag-logik
+
+### B.1a — Extraction-pipeline wired til upload
+
+- [x] **`/api/upload/route.ts`** accepterer `contractId` FormData-field; når sat køer automatisk `EXTRACT_DOCUMENT`-job via pg-boss med base64-encoded buffer
+- [x] **`UploadVersionForm.tsx`** sender `contractId` ved kontrakt-version-uploads (trigger extraction)
+- [x] **Generisk FileUpload** sender IKKE contractId (designvalg — generiske dokumenter er ikke kontrakt-specifikke)
+- [x] **Fail-silent queue-send** — upload fejler IKKE hvis pg-boss er nede
+- [x] **Shadow-mode bevaret** — DocumentExtraction gemmes, INGEN auto-write-back til Contract.type_data (kræver human approval via review-UI)
+- [x] **pg-boss v10+ queue-creation fix** — `boss.createQueue()` kaldes defensivt før `send()` (idempotent)
+- [x] Tests: 730 passed uændret (upload-route-test komplekst pga. FormData/multipart — deferred)
+
+**Unblocker:** Ekstraktion kører nu automatisk når en kontrakt-PDF uploades med contract_id. Review-UI findes allerede (`/documents/review/[id]`, 817 linjer — substantial fra Sprint 9). AI-fields rendering på `/persons/[id]` er næste delleverance (B.1c).
+
 ## Udskudte features (dedikerede sessions)
 
 Disse er bevidst taget ud af scope efter exploration og venter på dedikeret planning.
