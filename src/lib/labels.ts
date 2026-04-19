@@ -521,6 +521,20 @@ export function getMetricSourceStyle(source: string): string {
   return METRIC_SOURCE_STYLES[source] ?? 'text-gray-500'
 }
 
+// ─── AI features ──────────────────────────────────────────────────────────────
+
+export const AI_FEATURE_LABELS: Record<string, string> = {
+  extraction: 'Dokument-ekstraktion',
+  insights: 'Selskabs-insights',
+  portfolio_insights: 'Portefølje-insights',
+  search_ai: 'Søg & Spørg',
+  calendar_events: 'Kalender-events',
+}
+
+export function labelForAIFeature(feature: string): string {
+  return AI_FEATURE_LABELS[feature] ?? feature
+}
+
 // ─── Hjælpefunktioner ─────────────────────────────────────────────────────────
 
 /**

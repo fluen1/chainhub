@@ -1,11 +1,12 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { canAccessModule } from '@/lib/permissions'
 import { getUserRoleLabel, getUserRoleStyle, formatDate } from '@/lib/labels'
 import { cn } from '@/lib/utils'
-import { Settings, Users, ShieldCheck } from 'lucide-react'
+import { Settings, Users, ShieldCheck, Sparkles } from 'lucide-react'
 import { CreateUserForm } from '@/components/settings/CreateUserForm'
 import { UserActions } from '@/components/settings/UserActions'
 import { OrganizationForm } from '@/components/settings/organization-form'
@@ -207,6 +208,28 @@ export default async function SettingsPage() {
           </div>
         </div>
       )}
+
+      {/* System section */}
+      <div className="rounded-lg border bg-white shadow-sm">
+        <div className="flex items-center gap-3 border-b px-6 py-4">
+          <Sparkles className="h-5 w-5 text-gray-400" />
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">System</h2>
+            <p className="text-sm text-gray-500">Forbrug og administrative indstillinger</p>
+          </div>
+        </div>
+        <div className="grid gap-3 px-6 py-5 sm:grid-cols-2">
+          <Link
+            href="/settings/ai-usage"
+            className="block rounded-lg border border-gray-200 bg-white p-4 hover:border-blue-300 hover:bg-blue-50 transition-colors"
+          >
+            <div className="text-sm font-semibold text-gray-900">AI-forbrug</div>
+            <div className="text-xs text-gray-500 mt-1">
+              Månedligt forbrug, cap-status + seneste kald
+            </div>
+          </Link>
+        </div>
+      </div>
     </div>
   )
 }
