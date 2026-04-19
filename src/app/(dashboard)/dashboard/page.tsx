@@ -3,7 +3,9 @@ import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { getDashboardData } from '@/actions/dashboard'
 import { getCalendarEvents } from '@/actions/calendar'
+import { getOnboardingStatus } from '@/actions/onboarding'
 import { TimelineSection } from '@/components/dashboard/timeline-section'
+import { OnboardingPanel } from '@/components/dashboard/onboarding-panel'
 import { RightPanels } from './right-panels'
 
 export const metadata: Metadata = { title: 'Dashboard' }
@@ -15,7 +17,7 @@ export default async function DashboardPage() {
   const now = new Date()
   const todayISO = now.toISOString().slice(0, 10)
 
-  const [data, calendarEvents] = await Promise.all([
+  const [data, calendarEvents, onboardingStatus] = await Promise.all([
     getDashboardData(session.user.id, session.user.organizationId),
     getCalendarEvents(
       session.user.id,
@@ -23,6 +25,7 @@ export default async function DashboardPage() {
       now.getFullYear(),
       now.getMonth() + 1
     ),
+    getOnboardingStatus(),
   ])
 
   // Alle events denne måned til widget (sorteret, max 6)
@@ -30,6 +33,9 @@ export default async function DashboardPage() {
 
   return (
     <div>
+      <div className="max-w-[1400px] mx-auto">
+        <OnboardingPanel status={onboardingStatus} />
+      </div>
       <div className="grid grid-cols-1 gap-5 max-w-[1400px] mx-auto lg:grid-cols-[1fr_320px]">
         {/* Venstre: Timeline River */}
         <div className="min-w-0">
