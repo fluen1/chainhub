@@ -1,4 +1,9 @@
-export type ClaudeModel = 'claude-sonnet-4-20250514' | 'claude-3-5-haiku-20241022'
+export type ClaudeModel =
+  | 'claude-opus-4-7-20260101'
+  | 'claude-sonnet-4-6-20251201'
+  | 'claude-sonnet-4-20250514'
+  | 'claude-3-5-haiku-20241022'
+  | 'claude-haiku-4-5-20260101'
 
 export interface ClaudeMessage {
   role: 'user' | 'assistant'
@@ -57,16 +62,39 @@ export class ClaudeClientError extends Error {
   }
 }
 
-export const MODEL_COSTS: Record<ClaudeModel, { input: number; output: number }> = {
-  'claude-sonnet-4-20250514': { input: 3.0, output: 15.0 },
-  'claude-3-5-haiku-20241022': { input: 0.8, output: 4.0 },
+export interface ModelPricing {
+  /** Price per million input tokens, USD */
+  input: number
+  /** Price per million output tokens, USD */
+  output: number
+  /** Price per million cache-write tokens, USD */
+  cacheWrite: number
+  /** Price per million cache-read tokens, USD */
+  cacheRead: number
+}
+
+/**
+ * Verified from claude.com/pricing on 2026-04-18.
+ * Batch processing: 50% discount on input+output (not modelled here; apply at call-site if used).
+ * US-only inference: 1.1× multiplier (not modelled here).
+ */
+export const MODEL_COSTS: Record<ClaudeModel, ModelPricing> = {
+  'claude-opus-4-7-20260101': { input: 5.0, output: 25.0, cacheWrite: 6.25, cacheRead: 0.5 },
+  'claude-sonnet-4-6-20251201': { input: 3.0, output: 15.0, cacheWrite: 3.75, cacheRead: 0.3 },
+  'claude-sonnet-4-20250514': { input: 3.0, output: 15.0, cacheWrite: 3.75, cacheRead: 0.3 },
+  'claude-3-5-haiku-20241022': { input: 1.0, output: 5.0, cacheWrite: 1.25, cacheRead: 0.1 },
+  'claude-haiku-4-5-20260101': { input: 1.0, output: 5.0, cacheWrite: 1.25, cacheRead: 0.1 },
 }
 
 export function computeCostUsd(
   model: ClaudeModel,
   inputTokens: number,
-  outputTokens: number
+  outputTokens: number,
+  options?: { cacheWriteTokens?: number; cacheReadTokens?: number }
 ): number {
   const costs = MODEL_COSTS[model]
-  return (inputTokens * costs.input + outputTokens * costs.output) / 1_000_000
+  const base = (inputTokens * costs.input + outputTokens * costs.output) / 1_000_000
+  const cacheWrite = ((options?.cacheWriteTokens ?? 0) * costs.cacheWrite) / 1_000_000
+  const cacheRead = ((options?.cacheReadTokens ?? 0) * costs.cacheRead) / 1_000_000
+  return base + cacheWrite + cacheRead
 }

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { AnthropicDirectClient } from '@/lib/ai/client/anthropic-direct'
 import type { ClaudeRequest } from '@/lib/ai/client/types'
-import { ClaudeClientError } from '@/lib/ai/client/types'
+import { ClaudeClientError, computeCostUsd, MODEL_COSTS } from '@/lib/ai/client/types'
 
 const mockCreate = vi.fn()
 vi.mock('@anthropic-ai/sdk', () => {
@@ -100,5 +100,47 @@ describe('AnthropicDirectClient', () => {
     } catch (e) {
       expect((e as ClaudeClientError).retryable).toBe(true)
     }
+  })
+})
+
+describe('computeCostUsd', () => {
+  it('beregner korrekt cost for Haiku 4.5', () => {
+    const cost = computeCostUsd('claude-haiku-4-5-20260101', 10_000, 2_000)
+    // 10k * $1/M + 2k * $5/M = $0.01 + $0.01 = $0.02
+    expect(cost).toBeCloseTo(0.02, 6)
+  })
+
+  it('beregner korrekt cost for Sonnet 4.6', () => {
+    const cost = computeCostUsd('claude-sonnet-4-6-20251201', 15_000, 3_000)
+    // 15k * $3/M + 3k * $15/M = $0.045 + $0.045 = $0.09
+    expect(cost).toBeCloseTo(0.09, 6)
+  })
+
+  it('inkluderer cache-write når leveret', () => {
+    const cost = computeCostUsd('claude-haiku-4-5-20260101', 0, 0, {
+      cacheWriteTokens: 1_000_000,
+    })
+    expect(cost).toBeCloseTo(1.25, 6)
+  })
+
+  it('inkluderer cache-read når leveret', () => {
+    const cost = computeCostUsd('claude-haiku-4-5-20260101', 0, 0, {
+      cacheReadTokens: 1_000_000,
+    })
+    expect(cost).toBeCloseTo(0.1, 6)
+  })
+
+  it('alle modeller er defineret i MODEL_COSTS', () => {
+    const keys: Array<keyof typeof MODEL_COSTS> = [
+      'claude-opus-4-7-20260101',
+      'claude-sonnet-4-6-20251201',
+      'claude-sonnet-4-20250514',
+      'claude-3-5-haiku-20241022',
+      'claude-haiku-4-5-20260101',
+    ]
+    keys.forEach((k) => {
+      expect(MODEL_COSTS[k]).toBeDefined()
+      expect(MODEL_COSTS[k].input).toBeGreaterThan(0)
+    })
   })
 })
