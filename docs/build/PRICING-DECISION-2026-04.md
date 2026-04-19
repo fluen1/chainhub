@@ -1,24 +1,31 @@
-# Pricing-beslutning — Phase A.2
+# Pricing-beslutning — Phase A.2 (REVIDERET)
 
 **Dato:** 2026-04-18
 **Status:** Afventer bruger-beslutning
 **Input:** `docs/build/AI-COST-MODEL.md` (verified priser + estimerede forbrug)
 
+> **v2 (2026-04-18 kl. 18:xx):** Opdateret efter bruger-feedback om urealistiske estimater. Fejl i v1:
+>
+> - Company-insights: regnet med 10k tokens, realistisk snapshot er 15-20k
+> - Document-extraction: regnet med 15k pr. pass, men faktisk sender pipelinen HELE dokumentet (20-100k tokens) gennem Pass 2 to gange med Sonnet
+> - Gennemsnits-dokument-cost: **$0.55 (ikke $0.22-0.25)** — ~2.5× højere
+> - L/XL-kunder på flat Plus-pris uholdbart — staffeling bliver KRITISK
+
 ---
 
-## TL;DR — anbefalede prisintervaller
+## TL;DR — anbefalede prisintervaller (REVIDERET v2)
 
 | Tier           | Forslag (DKK/måned) | AI-margin      | Hvem                                        |
 | -------------- | ------------------- | -------------- | ------------------------------------------- |
 | **Basis**      | 2.500–5.000         | N/A (ingen AI) | 5–15 lokationer, omkostningsfølsomme        |
-| **Plus**       | 6.000–12.000        | 20–30% af pris | 15–40 lokationer, vil spare manuelt arbejde |
-| **Enterprise** | 18.000–35.000       | 10–15% af pris | 40+ lokationer, strategisk overblik         |
+| **Plus**       | 8.500–15.000        | 20–30% af pris | 15–40 lokationer, vil spare manuelt arbejde |
+| **Enterprise** | 25.000–50.000       | 10–15% af pris | 40+ lokationer, strategisk overblik         |
 
-**Anbefalet pris-ankre** (midtpunkter):
+**Anbefalede pris-ankre (midtpunkter — REVIDERET):**
 
-- **Basis: 3.500 DKK/måned** (ca. 500 EUR)
-- **Plus: 9.000 DKK/måned** (ca. 1.200 EUR) — inkluderer 100 kontrakt-ekstraktioner/måned, derefter 50 DKK/ekstra
-- **Enterprise: forhandles pr. kunde, floor 22.000 DKK/måned** (ca. 3.000 EUR) — flat, ubegrænset
+- **Basis: 3.500 DKK/måned** (ca. 500 EUR) — uændret
+- **Plus: 9.500 DKK/måned** (ca. 1.275 EUR) — inkluderer **50** kontrakt-ekstraktioner, derefter **75 kr./ekstra** (v2 strammere end v1's 100+50)
+- **Enterprise: forhandles pr. kunde, floor 32.000 DKK/måned** (ca. 4.300 EUR) — fair-use 500 extractions/måned, derefter forhandlet pakke
 
 ---
 
@@ -54,14 +61,23 @@
 
 - 200 queries/måned = ~$4.40/måned
 
-### Samlede AI-costs pr. kunde/måned
+### Samlede AI-costs pr. kunde/måned (REVIDERET v2)
 
-| Kunde-profil                         | Tier 2 Plus       | Tier 3 Enterprise |
-| ------------------------------------ | ----------------- | ----------------- |
-| **S** (10 selskaber, 2 dok/måned)    | ~$9 (65 kr.)      | ~$15 (105 kr.)    |
-| **M** (30 selskaber, 5 dok/måned)    | ~$52 (365 kr.)    | ~$70 (490 kr.)    |
-| **L** (50 selskaber, 10 dok/måned)   | ~$150 (1.050 kr.) | ~$200 (1.400 kr.) |
-| **XL** (80+ selskaber, 30 dok/måned) | ~$625 (4.375 kr.) | ~$700 (4.900 kr.) |
+Beregnet på:
+
+- Document extraction: **~$0.55/dok** gennemsnit (typisk 30-siders kontrakt, 2× Sonnet-runs, Haiku classify + validate)
+- Company-insights: **~$0.03/kald** (15k input + 3k output Haiku)
+- Portfolio-insights: **~$0.05/kald** (20k input + 3k output Haiku, Enterprise daily)
+- RAG-query: **~$0.04/query** (retrieval + Sonnet grounded svar)
+
+| Kunde-profil                         | Tier 2 Plus         | Tier 3 Enterprise    |
+| ------------------------------------ | ------------------- | -------------------- |
+| **S** (10 selskaber, 2 dok/måned)    | ~$18 (125 kr.)      | ~$27 (190 kr.)       |
+| **M** (30 selskaber, 5 dok/måned)    | ~$100 (700 kr.)     | ~$130 (910 kr.)      |
+| **L** (50 selskaber, 10 dok/måned)   | ~$320 (2.250 kr.)   | ~$380 (2.660 kr.)    |
+| **XL** (80+ selskaber, 30 dok/måned) | ~$1.400 (9.800 kr.) | ~$1.500 (10.500 kr.) |
+
+**Realistiske scenarier er 2-2.5× højere** end første version. Dette ændrer pricing-strategi-konklusioner:
 
 ---
 
@@ -79,51 +95,52 @@
 - 3.500 kr. = 91% margin — **anbefalet start**
 - 5.000 kr. = 93.5% margin — for enterprise-only Basis-variant
 
-### Tier 2 — ChainHub Plus
+### Tier 2 — ChainHub Plus (REVIDERET)
 
 **Drift-cost pr. kunde/måned:** ~325 kr.
-**AI-cost typisk kunde (M):** ~365 kr./måned
-**Total cost-of-service:** ~700 kr./måned (for M-profile)
+**AI-cost typisk kunde (M):** ~700 kr./måned (v2 — 2× højere end v1)
+**Total cost-of-service:** ~1.025 kr./måned (for M-profile)
 **Margin-mål:** 70–80% (AI-cost som 20–30% af pris)
 
-**Anbefalet pris: 6.000–12.000 DKK/måned**
+**Anbefalet pris: 8.500–15.000 DKK/måned** (justeret opad fra 6-12k)
 
 Tre modeller at vælge mellem:
 
-**Model A — Flat månedspris (enkel):**
+**Model A — Flat månedspris (enkel):** ⚠ **RISIKO**
 
-- 8.000 kr./måned ubegrænset
-- Risiko: XL-kunder koster meget (4.375 kr./måned AI-cost) → margin kun 44%
-- Simpelt at forklare kunder
+- 10.000 kr./måned ubegrænset
+- På M (AI-cost $100): margin 86% ✅
+- På L (AI-cost $320): margin 68% — grænseværdi
+- På XL (AI-cost $1.400): **NEGATIVT margin** — uholdbart
+- Kun realistisk hvis kunder caps sig selv på volumen
 
-**Model B — Staffeling pr. upload (retfærdig):** ⭐ **anbefalet**
+**Model B — Staffeling pr. upload:** ⭐ **STÆRKT ANBEFALET (kritisk nu)**
 
-- 7.500 kr./måned inkluderet 100 kontrakt-ekstraktioner
-- 50 kr. pr. ekstra ekstraktion
-- Typisk M-kunde: 7.500 kr. (dækker 100 extractions = 90 kr. pr. kunde margin på ekstraktionen)
-- Heavy XL-kunde: 7.500 + (300 × 50) = 22.500 kr. (dækker costs ved volumen)
-- Gennemsigtigt — kunden ser hvad de betaler for
+- 9.500 kr./måned inkluderet **50 kontrakt-ekstraktioner** (ikke 100 — baseret på faktisk cost)
+- **75 kr. pr. ekstra ekstraktion** (vs. faktisk cost $0.55 = ~4 kr.; 19× margin på incremental)
+- Typisk M-kunde (150 dok/måned): 9.500 + (100 × 75) = 17.000 kr./måned — dækker reel cost $100 × 8 = $800 = 20% af pris
+- Heavy XL-kunde (2.400 dok/måned): 9.500 + (2.350 × 75) = 185.750 kr. — over-absurd; i praksis vil ingen uploade så mange, men staffeling beskytter os mod worst-case
+- Gennemsigtigt — kunden ser præcis hvad de betaler for
 
-**Model C — Forbrugs-baseret (mest retfærdig, mest kompleks):**
+**Model C — Forbrugs-baseret (ikke-anbefalet):**
 
-- 5.000 kr./måned base
-- - 75 kr. pr. extraction
-- Typisk M: 5.000 + 5 × 30 × 75 = 16.250 kr. — dyrt
-- Frarådes — friktion + svær at budget-planlægge for kunde
+- 6.000 kr./måned base + 100 kr./extraction
+- For volatile for kunden at forudse (friction)
+- Bedre til Enterprise-forhandlinger end markedsstandard
 
-### Tier 3 — ChainHub Enterprise
+### Tier 3 — ChainHub Enterprise (REVIDERET)
 
 **Drift-cost pr. kunde/måned:** ~325 kr.
-**AI-cost typisk enterprise-kunde (L):** ~1.400 kr./måned
-**Heavy (XL):** ~4.900 kr./måned
+**AI-cost typisk enterprise-kunde (L):** ~2.660 kr./måned (v2)
+**Heavy (XL):** ~10.500 kr./måned (v2)
 **Margin-mål:** 85–90% (enterprise-typical)
 
-**Anbefalet pris: 18.000–35.000 DKK/måned** (forhandles pr. kunde)
+**Anbefalet pris: 25.000–50.000 DKK/måned** (forhandles pr. kunde, justeret opad)
 
-- **Floor-pris: 22.000 kr./måned** (85% margin på L-kunde)
-- **Ubegrænset** ekstraktioner + portfolio-insights + RAG
+- **Floor-pris: 32.000 kr./måned** (85% margin på L-kunde — tidligere 22.000 var for lavt)
+- **Begrænsninger ved "ubegrænset"**: typisk fair-use-klausul (fx 500 extractions/måned inkluderet, derefter forhandles ekstra-pakke)
 - 12-måneders commitment
-- **Opt-outs kan tilbydes som rabat** (fx -10% for 24-måneders commitment)
+- Enterprise XL-kunder bør sandsynligvis forhandles op til 50.000+ kr./måned hvis de genererer >1.000 extractions/måned
 
 ---
 
