@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { CheckCircle2 } from 'lucide-react'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { getDashboardData } from '@/actions/dashboard'
@@ -55,14 +56,39 @@ export default async function DashboardPage() {
           {data.timelineSections.map((section) => (
             <TimelineSection key={section.id} section={section} />
           ))}
-          {data.timelineSections.every((s) => s.items.length === 0) && (
-            <div className="py-10 text-center text-sm text-gray-500">
-              Intet planlagt i denne periode.
-              <span className="mt-1 block text-xs text-gray-400">
-                Upload kontrakter eller opret besøg for at se tidsoverblikket.
-              </span>
-            </div>
-          )}
+          {data.timelineSections.every((s) => s.items.length === 0) &&
+            (() => {
+              const companiesCount = data.heatmap.length
+              const openCasesCount = data.heatmap.reduce((acc, c) => acc + c.openCaseCount, 0)
+              const sagerKpi = data.inlineKpis.find((k) => k.label === 'Sager')
+              const totalSager = sagerKpi
+                ? Number(sagerKpi.value) || openCasesCount
+                : openCasesCount
+              return (
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-6">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2
+                      className="h-6 w-6 text-emerald-600 shrink-0 mt-0.5"
+                      aria-hidden
+                    />
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-900">Alt under kontrol</h3>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Ingen forfaldne deadlines eller presserende items.
+                      </p>
+                      <div className="flex flex-wrap gap-4 mt-3 text-xs text-gray-500">
+                        <span>
+                          <strong className="text-gray-900">{companiesCount}</strong> selskaber
+                        </span>
+                        <span>
+                          <strong className="text-gray-900">{totalSager}</strong> åbne sager
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
         </div>
 
         {/* Højre: Rolle-specifikke paneler */}

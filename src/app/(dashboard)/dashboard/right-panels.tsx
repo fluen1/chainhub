@@ -8,7 +8,7 @@ import type { CalendarEvent } from '@/types/ui'
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-3.5">
+    <div className="bg-white border border-gray-200 rounded-lg p-3">
       <div className="text-[11px] font-semibold text-slate-900 mb-2.5">{title}</div>
       {children}
     </div>
@@ -28,7 +28,7 @@ export function RightPanels({ data, calendarEvents, upcomingEvents, todayISO }: 
 
   if (data.role === 'GROUP_LEGAL') {
     return (
-      <div className="space-y-3">
+      <div className="space-y-2">
         <Panel title="Kontraktdækning">
           {data.coverage.length === 0 ? (
             <div className="py-6 text-center text-sm text-gray-500">
@@ -50,7 +50,7 @@ export function RightPanels({ data, calendarEvents, upcomingEvents, todayISO }: 
 
   if (data.role === 'GROUP_FINANCE') {
     return (
-      <div className="space-y-3">
+      <div className="space-y-2">
         <Panel title="Nøgletal 2025">
           {hasFinanceData ? (
             <>
@@ -88,8 +88,8 @@ export function RightPanels({ data, calendarEvents, upcomingEvents, todayISO }: 
   // i getDashboardData(), så aggregaterne respekterer accessible companies for
   // COMPANY_*-brugere.
   return (
-    <div className="space-y-3">
-      <div className="bg-white border border-gray-200 rounded-lg p-3.5">
+    <div className="space-y-2">
+      <div className="bg-white border border-gray-200 rounded-lg p-3">
         <HeatmapGrid companies={data.heatmap} />
       </div>
       <CalendarWidget events={calendarEvents} upcoming={upcomingEvents} today={todayISO} />

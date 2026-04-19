@@ -80,7 +80,7 @@ export async function getDashboardData(
         due_date: { lt: today },
       },
       orderBy: { due_date: 'asc' },
-      take: 10,
+      take: 15,
       select: { id: true, title: true, due_date: true, company_id: true },
     }),
 

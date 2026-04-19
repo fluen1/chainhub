@@ -16,7 +16,7 @@ function shortName(name: string): string {
     .replace(/^Tandlæge /, '')
 }
 
-const MAX_HEATMAP_CELLS = 15
+const MAX_HEATMAP_CELLS = 18
 
 export function HeatmapGrid({ companies }: HeatmapGridProps) {
   const sorted = [...companies]
@@ -48,7 +48,7 @@ export function HeatmapGrid({ companies }: HeatmapGridProps) {
         </Link>
       </div>
 
-      <div className="grid grid-cols-5 gap-1">
+      <div className="grid grid-cols-6 gap-1">
         {sorted.map((c) => {
           const cellClass =
             c.healthStatus === 'critical'

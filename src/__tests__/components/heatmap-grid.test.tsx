@@ -43,8 +43,8 @@ describe('HeatmapGrid', () => {
     expect(screen.getByText(/Ingen økonomi-data/)).toBeInTheDocument()
   })
 
-  it('capper ved 15 selskaber', () => {
-    const many: HeatmapCompany[] = Array.from({ length: 20 }, (_, i) => ({
+  it('capper ved 18 selskaber', () => {
+    const many: HeatmapCompany[] = Array.from({ length: 25 }, (_, i) => ({
       id: `c${i}`,
       name: `Company ${i}`,
       healthStatus: 'healthy' as const,
@@ -58,6 +58,6 @@ describe('HeatmapGrid', () => {
           l.getAttribute('href')?.startsWith('/companies/') &&
           l.getAttribute('href') !== '/companies'
       )
-    expect(cellLinks).toHaveLength(15)
+    expect(cellLinks).toHaveLength(18)
   })
 })

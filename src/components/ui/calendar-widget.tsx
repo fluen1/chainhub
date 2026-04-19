@@ -203,14 +203,16 @@ export function CalendarWidget({
         )}
       </div>
 
-      <div className="flex flex-wrap gap-3 mt-3 pt-3 border-t border-slate-100">
-        {LEGEND.map((l) => (
-          <div key={l.type} className="flex items-center gap-1.5 text-[11px] text-gray-500">
-            <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: l.color }} />
-            {l.label}
-          </div>
-        ))}
-      </div>
+      {events.length > 0 && (
+        <div className="flex flex-wrap gap-3 mt-3 pt-3 border-t border-slate-100">
+          {LEGEND.map((l) => (
+            <div key={l.type} className="flex items-center gap-1.5 text-[11px] text-gray-500">
+              <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: l.color }} />
+              {l.label}
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="mt-3 text-center">
         <Link
