@@ -284,6 +284,26 @@ Første leverance af produkt-roadmap (`docs/superpowers/plans/2026-04-18-product
 - pg-boss v10+ kræver eksplicit `boss.createQueue(name)` før `boss.work(name)` — adresseres i Phase B.1 når pipelinen faktisk wires
 - AWS Bedrock model-access-ansøgning afventer start (ekstern bruger-action)
 
+## Mobile + Empty-states track ✅ (2026-04-18)
+
+Første konkrete UX-fix-leverance efter page-audit. Gate 1 (lokalt færdig) krav adresseret: BLK-003 løst, empty-states-primitive på plads, responsive grids på critical-sider, 44px tap-targets på forms.
+
+- [x] **Page-audit leveret** (`docs/status/PAGE-AUDIT-2026-04.md`, 687 linjer) — 25 sider gennemgået på 8 dimensioner, prioriteret fix-liste, reference-mønster identificeret (`/cases/[id]`)
+- [x] **Del 1: `<EmptyState>`-primitive** (`src/components/ui/empty-state.tsx`) med 4 unit-tests + retrofit på 3 sider (/cases, /persons, /settings). 4 sider bevidst sprunget over pga. visuel-inkompabilitet med slate-tema/kompakte panel-layouts
+- [x] **Del 2: Mobile sidebar-drawer (BLK-003 LØST)** — ny `MobileSidebarWrapper` med hamburger-knap i header, focus-trap, Escape-close, backdrop-click, auto-close ved route-skift, body-scroll lock. `AppSidebar` genbrugt direkte i drawer (identisk funktionalitet som desktop). 4 unit-tests
+- [x] **Del 3: Responsive grids** på 5 critical sider: /dashboard (`grid-cols-[1fr_320px]` → `grid-cols-1 lg:grid-cols-[1fr_320px]`), /companies portfolio + filter-bar, /companies/[id], /contracts/[id] (2 grids). Kanban-board var allerede responsive
+- [x] **Del 4: 44px tap-targets** på 6 Create-forms (inputs/selects/textareas/submits) + `<Pagination>` + `<GroupToggle>`. Mønster: `py-3 md:py-2` / `h-11 md:h-8` — mobile-venlig uden at ændre desktop-look
+- [x] **Tests:** 652 → 660 passed (+8 nye: 4 empty-state, 4 mobile-sidebar-wrapper)
+- [x] **Gate:** format ✅, lint ✅ (2 pre-existing autofocus), tsc ✅, build ✅
+- [x] **10 commits** på master (Del 1 × 2, Del 2, Del 3, Del 4 × 2, audit, PROGRESS m.fl.)
+
+**Udestående til næste iteration (Gate 1 fortsat):**
+
+- A.3 manglende features: Data-eksport (CSV/Excel), GDPR-sletningsflow, kunde-backup-download, onboarding-wizard, R2-interface
+- A.4 yderligere UX: Empty-states på de 4 skippede sider (kræver compact/slate variant af EmptyState), form-density på /new-sider (max-w-xl → max-w-2xl+), dashboard-finalization (print-stylesheet, empty-states 6 varianter)
+- Performance-audit (Lighthouse >90 på alle top-pages)
+- A11y-retrofit til WCAG 2.2 Level AA + axe-core i CI
+
 ## Udskudte features (dedikerede sessions)
 
 Disse er bevidst taget ud af scope efter exploration og venter på dedikeret planning.
