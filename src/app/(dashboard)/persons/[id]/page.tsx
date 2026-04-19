@@ -22,6 +22,7 @@ import {
   formatDate,
 } from '@/lib/labels'
 import { GdprPanel } from './gdpr-panel'
+import { EmptyState } from '@/components/ui/empty-state'
 
 export const metadata: Metadata = { title: 'Person' }
 
@@ -288,7 +289,7 @@ export default async function PersonDetailPage({ params }: Props) {
             </h2>
           </div>
           {activeRoles.length === 0 ? (
-            <p className="text-sm text-gray-500 py-2">Ingen aktive tilknytninger</p>
+            <EmptyState icon={Briefcase} title="Ingen aktive tilknytninger" variant="compact" />
           ) : (
             <ul className="space-y-3">
               {activeRoles.map((cp) => (
@@ -337,7 +338,7 @@ export default async function PersonDetailPage({ params }: Props) {
             </h2>
           </div>
           {person.ownerships.length === 0 ? (
-            <p className="text-sm text-gray-500 py-2">Ingen ejerskaber</p>
+            <EmptyState icon={PieChart} title="Ingen ejerskaber" variant="compact" />
           ) : (
             <ul className="space-y-3">
               {person.ownerships.map((o) => (

@@ -17,6 +17,7 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { formatDate } from '@/lib/labels'
 import { FileUpload } from '@/components/documents/FileUpload'
+import { EmptyState } from '@/components/ui/empty-state'
 
 // ---------------------------------------------------------------
 // Typer — afledt af Prisma-data, serialiseret fra server
@@ -164,10 +165,15 @@ export default function DocumentsClient({ documents }: { documents: DocumentItem
       <div className="min-h-full">
         <div className="max-w-[1280px] mx-auto">
           <h1 className="text-[20px] font-semibold tracking-tight text-slate-900">Dokumenter</h1>
-          <div className="mt-8 bg-white rounded-xl ring-1 ring-slate-900/[0.06] shadow-[0_1px_2px_rgba(15,23,42,0.04)] p-8">
-            <p className="text-[13px] font-medium text-slate-500 text-center mb-4">
-              Ingen dokumenter endnu — upload dit første dokument
-            </p>
+          <div className="mt-8">
+            <EmptyState
+              icon={FileText}
+              title="Ingen dokumenter endnu"
+              description="Upload dit første dokument for at komme i gang."
+              theme="slate"
+            />
+          </div>
+          <div className="mt-4 bg-white rounded-xl ring-1 ring-slate-900/[0.06] shadow-[0_1px_2px_rgba(15,23,42,0.04)] p-5">
             <FileUpload />
           </div>
         </div>
@@ -315,9 +321,14 @@ export default function DocumentsClient({ documents }: { documents: DocumentItem
           </div>
 
           {filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <p className="text-[13px] text-slate-500 font-medium">Ingen dokumenter fundet</p>
-              <p className="text-[11px] text-slate-400 mt-1">Prøv et andet søgeord eller filter</p>
+            <div className="p-4">
+              <EmptyState
+                icon={FileText}
+                title="Ingen dokumenter matcher søgningen"
+                description="Prøv et andet søgeord eller filter."
+                variant="filtered"
+                theme="slate"
+              />
             </div>
           ) : (
             <div>

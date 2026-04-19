@@ -21,6 +21,7 @@ import type { CalendarEvent, CalendarEventType } from '@/types/ui'
 import { createTask } from '@/actions/tasks'
 import { toast } from 'sonner'
 import { ExportButton } from '@/components/ui/export-button'
+import { EmptyState } from '@/components/ui/empty-state'
 
 // ---------------------------------------------------------------
 // Constants
@@ -414,7 +415,12 @@ export function FullCalendar({ events, year, month, selectedDay, todayISO }: Ful
                   </button>
                 </div>
                 {selectedEvents.length === 0 ? (
-                  <p className="text-sm text-gray-500 py-4 text-center">Ingen events denne dag</p>
+                  <EmptyState
+                    icon={CalendarPlus}
+                    title="Ingen events"
+                    description="Ingen begivenheder på denne dag."
+                    variant="compact"
+                  />
                 ) : (
                   <div className="space-y-1.5">
                     {selectedEvents.map((e) => (
@@ -485,11 +491,12 @@ export function FullCalendar({ events, year, month, selectedDay, todayISO }: Ful
                   Alle events · {MONTH_NAMES_DA[month - 1].toLowerCase()}
                 </div>
                 {visibleMonthEvents.length === 0 ? (
-                  <div className="py-6 text-center">
-                    <CalendarPlus className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                    <p className="text-sm text-gray-500">Ingen events denne måned</p>
-                    <p className="text-xs text-gray-500 mt-1">Klik på en dag for at oprette</p>
-                  </div>
+                  <EmptyState
+                    icon={CalendarPlus}
+                    title="Ingen events denne måned"
+                    description="Klik på en dag for at oprette."
+                    variant="compact"
+                  />
                 ) : (
                   <>
                     <div className="space-y-1">

@@ -11,10 +11,12 @@ import {
   AlertCircle,
   Sparkles,
   ChevronDown,
+  FileQuestion,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { approveDocumentReview, saveFieldDecision } from '@/actions/document-review'
+import { EmptyState } from '@/components/ui/empty-state'
 
 // ---------------------------------------------------------------
 // Types — serialiseret fra server
@@ -647,8 +649,13 @@ export default function ReviewClient({ document: doc, reviewQueue }: ReviewClien
 
               {/* Tom state — ingen felter */}
               {fields.length === 0 && (
-                <div className="p-8 text-center">
-                  <p className="text-[12px] text-slate-400">Ingen ekstraherede felter fundet</p>
+                <div className="p-4">
+                  <EmptyState
+                    icon={FileQuestion}
+                    title="Ingen udlæste felter"
+                    description="AI-ekstraktionen er ikke færdig eller har fejlet. Kontakt support hvis det vedvarer."
+                    theme="slate"
+                  />
                 </div>
               )}
             </div>
