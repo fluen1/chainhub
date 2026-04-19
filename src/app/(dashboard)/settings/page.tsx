@@ -6,10 +6,11 @@ import { prisma } from '@/lib/db'
 import { canAccessModule } from '@/lib/permissions'
 import { getUserRoleLabel, getUserRoleStyle, formatDate } from '@/lib/labels'
 import { cn } from '@/lib/utils'
-import { Settings, Users, ShieldCheck, Sparkles } from 'lucide-react'
+import { Settings, Users, ShieldCheck, Sparkles, UserPlus } from 'lucide-react'
 import { CreateUserForm } from '@/components/settings/CreateUserForm'
 import { UserActions } from '@/components/settings/UserActions'
 import { OrganizationForm } from '@/components/settings/organization-form'
+import { EmptyState } from '@/components/ui/empty-state'
 
 export const metadata: Metadata = { title: 'Indstillinger' }
 
@@ -92,85 +93,88 @@ export default async function SettingsPage() {
         </div>
 
         {/* User table */}
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b bg-gray-50 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                <th className="px-6 py-3">Bruger</th>
-                <th className="px-6 py-3">Rolle</th>
-                <th className="px-6 py-3">Status</th>
-                <th className="px-6 py-3">Oprettet</th>
-                <th className="px-6 py-3">Handlinger</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {users.map((user) => {
-                const primaryRole = user.roles[0]
-                const roleName = primaryRole?.role ?? 'GROUP_READONLY'
-                const isSelf = user.id === session.user.id
-
-                return (
-                  <tr
-                    key={user.id}
-                    className={cn('hover:bg-gray-50', !user.active && 'opacity-60')}
-                  >
-                    <td className="px-6 py-4">
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">
-                          {user.name}
-                          {isSelf && <span className="ml-2 text-xs text-gray-500">(dig)</span>}
-                        </p>
-                        <p className="text-sm text-gray-500">{user.email}</p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={cn(
-                          'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-                          getUserRoleStyle(roleName)
-                        )}
-                      >
-                        {getUserRoleLabel(roleName)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={cn(
-                          'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
-                          user.active
-                            ? 'bg-green-50 text-green-700 ring-1 ring-green-600/20'
-                            : 'bg-gray-100 text-gray-500 ring-1 ring-gray-400/20'
-                        )}
-                      >
-                        {user.active ? 'Aktiv' : 'Inaktiv'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      {formatDate(user.created_at)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <UserActions
-                        userId={user.id}
-                        currentRole={roleName}
-                        currentCompanyIds={primaryRole?.company_ids ?? []}
-                        active={user.active}
-                        isSelf={isSelf}
-                        companies={companies}
-                      />
-                    </td>
-                  </tr>
-                )
-              })}
-              {users.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500">
-                    Ingen brugere fundet
-                  </td>
+        {users.length === 0 ? (
+          <div className="p-6">
+            <EmptyState
+              icon={UserPlus}
+              title="Ingen brugere endnu"
+              description="Tilføj din første kollega via knappen ovenfor."
+            />
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b bg-gray-50 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  <th className="px-6 py-3">Bruger</th>
+                  <th className="px-6 py-3">Rolle</th>
+                  <th className="px-6 py-3">Status</th>
+                  <th className="px-6 py-3">Oprettet</th>
+                  <th className="px-6 py-3">Handlinger</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {users.map((user) => {
+                  const primaryRole = user.roles[0]
+                  const roleName = primaryRole?.role ?? 'GROUP_READONLY'
+                  const isSelf = user.id === session.user.id
+
+                  return (
+                    <tr
+                      key={user.id}
+                      className={cn('hover:bg-gray-50', !user.active && 'opacity-60')}
+                    >
+                      <td className="px-6 py-4">
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">
+                            {user.name}
+                            {isSelf && <span className="ml-2 text-xs text-gray-500">(dig)</span>}
+                          </p>
+                          <p className="text-sm text-gray-500">{user.email}</p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={cn(
+                            'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
+                            getUserRoleStyle(roleName)
+                          )}
+                        >
+                          {getUserRoleLabel(roleName)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={cn(
+                            'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
+                            user.active
+                              ? 'bg-green-50 text-green-700 ring-1 ring-green-600/20'
+                              : 'bg-gray-100 text-gray-500 ring-1 ring-gray-400/20'
+                          )}
+                        >
+                          {user.active ? 'Aktiv' : 'Inaktiv'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500">
+                        {formatDate(user.created_at)}
+                      </td>
+                      <td className="px-6 py-4">
+                        <UserActions
+                          userId={user.id}
+                          currentRole={roleName}
+                          currentCompanyIds={primaryRole?.company_ids ?? []}
+                          active={user.active}
+                          isSelf={isSelf}
+                          companies={companies}
+                        />
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Organization section */}

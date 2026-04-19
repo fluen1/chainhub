@@ -3,9 +3,10 @@ import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { getAccessibleCompanies } from '@/lib/permissions'
-import { Users, Plus, Mail, Phone, LayoutGrid, TableProperties } from 'lucide-react'
+import { Users, Mail, Phone, LayoutGrid, TableProperties } from 'lucide-react'
 import Link from 'next/link'
 import { PageHeader } from '@/components/ui/page-header'
+import { EmptyState } from '@/components/ui/empty-state'
 import { Suspense } from 'react'
 import { SearchAndFilter } from '@/components/ui/SearchAndFilter'
 import { Pagination } from '@/components/ui/Pagination'
@@ -203,31 +204,21 @@ export default async function PersonsPage({ searchParams }: PersonsPageProps) {
       </div>
 
       {persons.length === 0 ? (
-        <div className="rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
-          <Users className="mx-auto h-12 w-12 text-gray-400" />
-          {q ? (
-            <>
-              <h3 className="mt-2 text-sm font-semibold text-gray-900">
-                Ingen personer matcher søgningen
-              </h3>
-              <p className="mt-1 text-sm text-gray-500">Prøv et andet søgeord.</p>
-            </>
-          ) : (
-            <>
-              <h3 className="mt-2 text-sm font-semibold text-gray-900">Ingen personer endnu</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                Opret din første kontakt for at komme i gang.
-              </p>
-              <Link
-                href="/persons/new"
-                className="mt-4 inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-              >
-                <Plus className="h-4 w-4" />
-                Opret person
-              </Link>
-            </>
-          )}
-        </div>
+        q || companyFilter || roleFilter ? (
+          <EmptyState
+            icon={Users}
+            title="Ingen personer matcher søgningen"
+            description="Prøv at ændre filtrene."
+            variant="filtered"
+          />
+        ) : (
+          <EmptyState
+            icon={Users}
+            title="Ingen personer endnu"
+            description="Opret din første person for at komme i gang."
+            action={{ label: 'Opret person', href: '/persons/new' }}
+          />
+        )
       ) : (
         <>
           {layoutFilter === 'tabel' ? (
