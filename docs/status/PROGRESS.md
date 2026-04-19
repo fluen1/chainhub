@@ -329,6 +329,18 @@ Gate 1 legal/compliance-blokkere lukket. Uden disse kan ChainHub ikke lovligt on
 - Backup er sync JSON-ZIP — async via pg-boss er flagget hvis orgs >100MB (v2)
 - Ikke-inkluderet i backup: User, UserRoleAssignment (brugerstyring håndteres separat), AI-drift-data, join-metadata
 
+## Onboarding + UX Polish track ✅ (2026-04-18)
+
+Sidste store Gate 1-track. Dashboard-onboarding leveret per DEC-F0-013, /new-sider tættere, dashboard empty-states + print-support, EmptyState-primitiven udvidet med varianter.
+
+- [x] **Onboarding-panel** (DEC-F0-013) — dashboard-top viser "Kom godt i gang med ChainHub" med 3 checklist-steps (opret selskab, tilføj kontrakt, invitér kollega). Auto-hide når alle 3 færdige ELLER org >14 dage. `getOnboardingStatus` + `<OnboardingPanel>` + 16 unit-tests
+- [x] **Form-density** — alle 6 Create-forms opgraderet: `max-w-xl/2xl` → `max-w-3xl`, relaterede felter grupperet i 2-col grid (`grid-cols-1 md:grid-cols-2`). Bedre space-udnyttelse på wide viewports uden at være overloaded
+- [x] **Dashboard empty-states** — 7 sektioner fik pædagogiske empty-states: urgency-list, timeline-river, heatmap-grid, calendar-widget, contract-coverage, finans-nøgletal, økonomi-snapshot. Konsistent pattern (`py-6 text-center`, titel + hint om næste skridt)
+- [x] **Print-stylesheet** (`src/app/globals.css`) — `@media print`-regler skjuler nav/sidebar/buttons/sticky-elementer, fladere farver, borders uden shadow, page-break-inside avoid på sektioner. Dashboard har print-specifik header ("ChainHub — Porteføljerapport" + dato). `.print-hide` klasse på mobile-sidebar-wrapper
+- [x] **EmptyState varianter** — `variant="compact"` (p-4 + h-8 ikon) + `theme="slate"` (slate-border i stedet for gray-dashed). Retrofit på 4 tidligere-skippede sider: /documents, /documents/review/[id] (slate), /persons/[id], /calendar (compact i begge). 3 nye variant-tests
+- [x] **Tests:** 705 → 724 passed (+19 nye: 16 onboarding, 3 empty-state varianter)
+- [x] **Gate:** format ✅, lint ✅ (1 pre-existing autofocus-warning), tsc ✅, build ✅
+
 ## Udskudte features (dedikerede sessions)
 
 Disse er bevidst taget ud af scope efter exploration og venter på dedikeret planning.
