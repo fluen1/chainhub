@@ -23,6 +23,8 @@ import {
 } from '@/lib/labels'
 import { GdprPanel } from './gdpr-panel'
 import { EmptyState } from '@/components/ui/empty-state'
+import { getPersonAIExtractions } from '@/actions/person-ai'
+import { PersonAIExtractionsSection } from '@/components/persons/ai-extractions-section'
 
 export const metadata: Metadata = { title: 'Person' }
 
@@ -90,6 +92,9 @@ export default async function PersonDetailPage({ params }: Props) {
   if (!person) notFound()
 
   const isAdmin = await canAccessModule(session.user.id, 'settings')
+
+  const aiResult = await getPersonAIExtractions(params.id)
+  const aiExtractions = 'data' in aiResult && aiResult.data ? aiResult.data : []
 
   const activeRoles = person.company_persons.filter((cp) => !cp.end_date)
   const historicRoles = person.company_persons.filter((cp) => cp.end_date)
@@ -278,6 +283,9 @@ export default async function PersonDetailPage({ params }: Props) {
           ))}
         </div>
       )}
+
+      {/* AI-udlæste kontrakt-vilkår (fra Claude-ekstraktion af dokumenter) */}
+      <PersonAIExtractionsSection extractions={aiExtractions} />
 
       <div className="grid grid-cols-2 gap-4">
         {/* Aktive tilknytninger */}
