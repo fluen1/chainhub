@@ -65,7 +65,7 @@ export function CreateVisitForm({ companies }: CreateVisitFormProps) {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex items-center gap-4">
         <Link href="/calendar" className="rounded-md p-1 hover:bg-gray-100">
           <ArrowLeft className="h-5 w-5 text-gray-500" />
@@ -95,37 +95,39 @@ export function CreateVisitForm({ companies }: CreateVisitFormProps) {
             </select>
           </div>
 
-          <div>
-            <label htmlFor="visit-visitDate" className="block text-sm font-medium text-gray-700">
-              Besøgsdato *
-            </label>
-            <input
-              id="visit-visitDate"
-              name="visitDate"
-              type="date"
-              required
-              defaultValue={preselectedDate}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none"
-            />
-          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <label htmlFor="visit-visitDate" className="block text-sm font-medium text-gray-700">
+                Besøgsdato *
+              </label>
+              <input
+                id="visit-visitDate"
+                name="visitDate"
+                type="date"
+                required
+                defaultValue={preselectedDate}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none"
+              />
+            </div>
 
-          <div>
-            <label htmlFor="visit-visitType" className="block text-sm font-medium text-gray-700">
-              Besøgstype *
-            </label>
-            <select
-              id="visit-visitType"
-              name="visitType"
-              required
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none"
-            >
-              <option value="">Vælg type...</option>
-              {Object.entries(VISIT_TYPE_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
+            <div>
+              <label htmlFor="visit-visitType" className="block text-sm font-medium text-gray-700">
+                Besøgstype *
+              </label>
+              <select
+                id="visit-visitType"
+                name="visitType"
+                required
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none"
+              >
+                <option value="">Vælg type...</option>
+                {Object.entries(VISIT_TYPE_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div>

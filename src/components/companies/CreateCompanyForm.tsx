@@ -49,7 +49,7 @@ export function CreateCompanyForm() {
     'mt-1 block w-full rounded-lg border border-gray-200 bg-white px-3 py-3 md:py-2 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-400'
 
   return (
-    <div className="mx-auto max-w-xl">
+    <div className="mx-auto max-w-3xl">
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3">
@@ -120,13 +120,11 @@ export function CreateCompanyForm() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label htmlFor="foundedDate" className="block text-sm font-medium text-gray-700">
-                Stiftelsesdato
-              </label>
-              <input id="foundedDate" name="foundedDate" type="date" className={inputClass} />
-            </div>
+          <div>
+            <label htmlFor="foundedDate" className="block text-sm font-medium text-gray-700">
+              Stiftelsesdato
+            </label>
+            <input id="foundedDate" name="foundedDate" type="date" className={inputClass} />
           </div>
         </div>
 

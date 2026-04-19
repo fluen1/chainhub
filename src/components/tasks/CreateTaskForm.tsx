@@ -49,7 +49,7 @@ export function CreateTaskForm() {
   }
 
   return (
-    <div className="mx-auto max-w-xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex items-center gap-4">
         <Link href="/tasks" className="rounded-md p-1 hover:bg-gray-100">
           <ArrowLeft className="h-5 w-5 text-gray-500" />
@@ -84,7 +84,7 @@ export function CreateTaskForm() {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <label htmlFor="task-dueDate" className="block text-sm font-medium text-gray-700">
               Deadline

@@ -88,7 +88,7 @@ export function CreateCaseForm() {
   const subtypes = selectedType ? (CASE_SUBTYPE_BY_TYPE[selectedType] ?? []) : []
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex items-center gap-4">
         <Link href="/cases" className="rounded-md p-1 hover:bg-gray-100">
           <ArrowLeft className="h-5 w-5 text-gray-500" />
@@ -114,7 +114,7 @@ export function CreateCaseForm() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <label htmlFor="case-caseType" className="block text-sm font-medium text-gray-700">
                 Sagstype *

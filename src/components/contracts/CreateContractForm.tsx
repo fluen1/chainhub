@@ -107,7 +107,7 @@ export function CreateContractForm() {
   )
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex items-center gap-4">
         <Link href="/contracts" className="rounded-md p-1 hover:bg-gray-100">
           <ArrowLeft className="h-5 w-5 text-gray-500" />
@@ -141,36 +141,61 @@ export function CreateContractForm() {
             </select>
           </div>
 
-          <div>
-            <label
-              htmlFor="contract-systemType"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Kontrakttype *
-            </label>
-            <select
-              id="contract-systemType"
-              name="systemType"
-              required
-              value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value as ContractSystemTypeKey)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none"
-            >
-              <option value="">Vælg type...</option>
-              {CONTRACT_SYSTEM_TYPES.map((type) => (
-                <option key={type} value={type}>
-                  {CONTRACT_TYPE_LABELS[type]}
-                </option>
-              ))}
-            </select>
-            {selectedType && (
-              <p className="mt-1 text-xs text-gray-500">
-                Minimum sensitivitet:{' '}
-                <span className="font-medium">
-                  {SENSITIVITY_MINIMUM[selectedType as ContractSystemTypeKey] ?? 'STANDARD'}
-                </span>
-              </p>
-            )}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <label
+                htmlFor="contract-systemType"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Kontrakttype *
+              </label>
+              <select
+                id="contract-systemType"
+                name="systemType"
+                required
+                value={selectedType}
+                onChange={(e) => setSelectedType(e.target.value as ContractSystemTypeKey)}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none"
+              >
+                <option value="">Vælg type...</option>
+                {CONTRACT_SYSTEM_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {CONTRACT_TYPE_LABELS[type]}
+                  </option>
+                ))}
+              </select>
+              {selectedType && (
+                <p className="mt-1 text-xs text-gray-500">
+                  Minimum sensitivitet:{' '}
+                  <span className="font-medium">
+                    {SENSITIVITY_MINIMUM[selectedType as ContractSystemTypeKey] ?? 'STANDARD'}
+                  </span>
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label
+                htmlFor="contract-sensitivity"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Sensitivitetsniveau *
+              </label>
+              <select
+                id="contract-sensitivity"
+                name="sensitivity"
+                required
+                defaultValue={minSensitivity}
+                key={minSensitivity}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none"
+              >
+                {availableSensitivityOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div>
@@ -192,29 +217,6 @@ export function CreateContractForm() {
               Dit eget navn til kontrakten — vises i oversigten
             </p>
           </div>
-
-          <div>
-            <label
-              htmlFor="contract-sensitivity"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Sensitivitetsniveau *
-            </label>
-            <select
-              id="contract-sensitivity"
-              name="sensitivity"
-              required
-              defaultValue={minSensitivity}
-              key={minSensitivity}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none"
-            >
-              {availableSensitivityOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
 
         {/* Datoer */}
@@ -223,7 +225,7 @@ export function CreateContractForm() {
             Datoer og vilkår
           </h2>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <label
                 htmlFor="contract-effectiveDate"
