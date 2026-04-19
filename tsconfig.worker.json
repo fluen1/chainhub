@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "outDir": "./dist/worker",
+    "noEmit": false,
+    "jsx": "react",
+    "incremental": false,
+    "plugins": []
+  },
+  "include": ["worker/**/*.ts", "src/lib/ai/**/*.ts", "src/lib/db/**/*.ts", "src/lib/logger.ts"],
+  "exclude": ["**/__tests__/**", "node_modules", ".next"]
+}
