@@ -3,9 +3,10 @@ import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { getAccessibleCompanies } from '@/lib/permissions'
-import { Briefcase, Plus, AlertTriangle } from 'lucide-react'
+import { Briefcase, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 import { PageHeader } from '@/components/ui/page-header'
+import { EmptyState } from '@/components/ui/empty-state'
 import { Suspense } from 'react'
 import { SearchAndFilter } from '@/components/ui/SearchAndFilter'
 import { Pagination } from '@/components/ui/Pagination'
@@ -125,7 +126,12 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
             <GroupToggle />
           </Suspense>
         </div>
-        <EmptyState hasFilters={false} />
+        <EmptyState
+          icon={Briefcase}
+          title="Ingen sager endnu"
+          description="Opret din første sag for at komme i gang."
+          action={{ label: 'Opret sag', href: '/cases/new' }}
+        />
       </div>
     )
   }
@@ -277,7 +283,21 @@ export default async function CasesPage({ searchParams }: CasesPageProps) {
       </div>
 
       {cases.length === 0 ? (
-        <EmptyState hasFilters={hasFilters} />
+        hasFilters ? (
+          <EmptyState
+            icon={Briefcase}
+            title="Ingen sager matcher søgningen"
+            description="Prøv at ændre filtrene."
+            variant="filtered"
+          />
+        ) : (
+          <EmptyState
+            icon={Briefcase}
+            title="Ingen sager endnu"
+            description="Opret din første sag for at komme i gang."
+            action={{ label: 'Opret sag', href: '/cases/new' }}
+          />
+        )
       ) : isGrouped ? (
         <div className="space-y-4">
           {sortedGroups.map(([companyId, group]) => (
@@ -322,33 +342,5 @@ function CasesHeader() {
       actionLabel="Ny sag"
       actionHref="/cases/new"
     />
-  )
-}
-
-function EmptyState({ hasFilters }: { hasFilters: boolean }) {
-  return (
-    <div className="rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
-      <Briefcase className="mx-auto h-12 w-12 text-gray-400" />
-      {hasFilters ? (
-        <>
-          <h3 className="mt-2 text-sm font-semibold text-gray-900">
-            Ingen sager matcher søgningen
-          </h3>
-          <p className="mt-1 text-sm text-gray-500">Prøv at ændre filtrene.</p>
-        </>
-      ) : (
-        <>
-          <h3 className="mt-2 text-sm font-semibold text-gray-900">Ingen sager endnu</h3>
-          <p className="mt-1 text-sm text-gray-500">Opret din første sag for at komme i gang.</p>
-          <Link
-            href="/cases/new"
-            className="mt-4 inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            <Plus className="h-4 w-4" />
-            Opret sag
-          </Link>
-        </>
-      )}
-    </div>
   )
 }
