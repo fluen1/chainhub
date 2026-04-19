@@ -1,5 +1,7 @@
 import { prisma } from '@/lib/db'
 import { isAIEnabled } from '@/lib/ai/feature-flags'
+import { checkCostCap } from '@/lib/ai/cost-cap'
+import { recordAIUsage } from '@/lib/ai/usage'
 import { loadForExtraction } from '@/lib/ai/content-loader'
 import { runExtractionPipeline } from '@/lib/ai/pipeline/orchestrator'
 import { createLogger } from '@/lib/ai/logger'
@@ -14,12 +16,16 @@ export interface ExtractDocumentPayload {
   forced_type?: string
 }
 
+export type ExtractDocumentStatus = 'success' | 'skipped' | 'error'
+
 export interface ExtractDocumentResult {
   extraction_id: string
   detected_type: string
   field_count: number
   total_cost_usd: number
   skipped: boolean
+  status?: ExtractDocumentStatus
+  reason?: string
 }
 
 export async function extractDocument(
@@ -35,6 +41,26 @@ export async function extractDocument(
       field_count: 0,
       total_cost_usd: 0,
       skipped: true,
+      status: 'skipped',
+      reason: 'AI extraction ikke aktiveret for denne organisation',
+    }
+  }
+
+  // Check månedlig cost-cap inden vi starter pipeline (dyrt kald)
+  const capCheck = await checkCostCap(payload.organization_id)
+  if (!capCheck.allowed) {
+    log.warn(
+      { document_id: payload.document_id, reason: capCheck.reason },
+      'AI extraction blocked by cost cap'
+    )
+    return {
+      extraction_id: '',
+      detected_type: '',
+      field_count: 0,
+      total_cost_usd: 0,
+      skipped: true,
+      status: 'skipped',
+      reason: capCheck.reason ?? 'Månedlig AI-cap er nået',
     }
   }
 
@@ -131,11 +157,25 @@ export async function extractDocument(
     'Extraction saved'
   )
 
+  // Log AI-forbrug til AIUsageLog — non-fatal hvis DB fejler
+  await recordAIUsage({
+    organizationId: payload.organization_id,
+    feature: 'extraction',
+    model: result.extraction_run1.model_used ?? 'claude-sonnet-4-20250514',
+    provider: 'anthropic',
+    inputTokens: result.total_input_tokens,
+    outputTokens: result.total_output_tokens,
+    costUsd: result.total_cost_usd,
+    resourceType: 'document',
+    resourceId: payload.document_id,
+  })
+
   return {
     extraction_id: extraction.id,
     detected_type: result.type_detection.detected_type,
     field_count: Object.keys(result.extraction_run1.fields).length,
     total_cost_usd: result.total_cost_usd,
     skipped: false,
+    status: 'success',
   }
 }
