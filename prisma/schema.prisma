@@ -306,6 +306,7 @@ model Organization {
   deadlines             Deadline[]
   visits                Visit[]
   ai_settings           OrganizationAISettings?
+  ai_usage_logs           AIUsageLog[]
   company_insights_caches CompanyInsightsCache[]
   comments              Comment[]
   task_history          TaskHistory[]
@@ -941,6 +942,35 @@ model OrganizationAISettings {
   updated_at DateTime @updatedAt
 
   @@index([ai_mode])
+}
+
+// ============================================================
+// AI USAGE TRACKING
+// ============================================================
+
+model AIUsageLog {
+  id              String       @id @default(uuid())
+  organization_id String
+  organization    Organization @relation(fields: [organization_id], references: [id])
+
+  feature       String   // 'extraction' | 'insights' | 'search_ai' | 'portfolio_insights' | 'calendar_events'
+  model         String   // Claude model identifier
+  provider      String   // 'anthropic' | 'bedrock'
+  input_tokens  Int
+  output_tokens Int
+  cost_usd      Decimal  @db.Decimal(10, 6)
+
+  // Optional context — for debugging + attribution
+  resource_type String?  // 'company' | 'document' | 'contract' — hvad kaldet angår
+  resource_id   String?
+  cached        Boolean  @default(false) // var det en cache-hit?
+
+  // Ingen dybere PII. Logger ingen prompt-indhold.
+
+  created_at DateTime @default(now())
+
+  @@index([organization_id, created_at])
+  @@index([organization_id, feature, created_at])
 }
 
 model DocumentExtraction {
