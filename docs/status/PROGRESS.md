@@ -353,6 +353,19 @@ Bruger klikkede rundt lokalt og rapporterede 3 issues. Alle fixet.
 
 **Tilbage til user-bekræftelse lokalt:** Performance kræver sandsynligvis produktions-build test (`npm run build && npm start`) — dev-mode er inherent langsomt. Deploy-arbejdet venter til Gate 2.
 
+## R2 storage interface ✅ (2026-04-18)
+
+Sidste store Gate-1 kode-item: swap-ready storage-abstraktion så R2 kan aktiveres ved deploy uden kode-ændringer.
+
+- [x] **`src/lib/storage/`** — `StorageProvider`-interface (upload, download, delete, getDownloadUrl) + `LocalStorageProvider` (filesystem, dev + CI) + `R2StorageProvider` (S3-compatible via @aws-sdk/client-s3 + s3-request-presigner) + `getStorageProvider()`-factory (singleton) der vælger via `STORAGE_PROVIDER` env
+- [x] **Refactor `/api/upload/route.ts`** — fjernet inline `writeFile`/`mkdir`, bruger nu `storage.upload()`. `file_url` genereres via `storage.getDownloadUrl(key)` (local: `/api/uploads/...`; R2: presigned URL, 1t expires)
+- [x] **Refactor `/api/uploads/[...path]/route.ts`** — `readFile` → `storage.download()` + null-check → 404
+- [x] **Path-traversal guard** — LocalStorageProvider afviser keys med `..`
+- [x] **`.env.example`** opdateret med STORAGE*PROVIDER + R2*\* docs
+- [x] **Tests:** 724 → 730 passed (+6 local-storage unit-tests med tempdir-cleanup)
+
+**Swap-instruktion (Gate 2):** Sæt i prod env `STORAGE_PROVIDER=r2` + `R2_ACCOUNT_ID/ACCESS_KEY_ID/SECRET_ACCESS_KEY/BUCKET`. Ingen kode-ændringer.
+
 ## Udskudte features (dedikerede sessions)
 
 Disse er bevidst taget ud af scope efter exploration og venter på dedikeret planning.
