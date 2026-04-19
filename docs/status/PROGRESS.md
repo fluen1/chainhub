@@ -366,6 +366,21 @@ Sidste store Gate-1 kode-item: swap-ready storage-abstraktion så R2 kan aktiver
 
 **Swap-instruktion (Gate 2):** Sæt i prod env `STORAGE_PROVIDER=r2` + `R2_ACCOUNT_ID/ACCESS_KEY_ID/SECRET_ACCESS_KEY/BUCKET`. Ingen kode-ændringer.
 
+## axe-core CI ✅ (2026-04-18)
+
+Sidste Gate 1 kvalitets-infra. A11y-regressioner fanges nu automatisk i CI.
+
+- [x] **`@axe-core/playwright`** installed som dev-dep
+- [x] **`tests/e2e/a11y.spec.ts`** scanner 15 sider (10 top-level + 5 detail) med WCAG 2.1 A/AA tags. Bruger eksisterende `loggedInPage`-fixture
+- [x] **CI fejler på critical/serious** — moderate/minor logges kun (tolereres p.t.)
+- [x] **Detail-pages bruger seed-IDs** via `uid(n)`-konvention: companies(1001), persons(2001), contracts(5001), cases(6001), tasks(7001)
+- [x] **`docs/build/A11Y-GUIDE.md`** — guide til at tilføje nye sider + fix-mønstre for common violations + eskalerings-regler
+- [x] **Ingen CI-workflow-ændring** — specs kører automatisk via eksisterende `npx playwright test` i e2e-job
+- [x] **Tests:** 730 Vitest passed (axe-tests kører i Playwright/CI separat)
+- [x] **Gate:** format ✅, lint ✅ (1 pre-existing autofocus), tsc ✅
+
+**Første CI-run efter merge vil afdække eventuelle violations** — adresseres i follow-up PR med fix-mønstre fra A11Y-GUIDE.md.
+
 ## Udskudte features (dedikerede sessions)
 
 Disse er bevidst taget ud af scope efter exploration og venter på dedikeret planning.
