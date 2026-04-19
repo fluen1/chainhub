@@ -60,7 +60,7 @@ export function Pagination({ currentPage, totalCount, pageSize = 20, className }
         <button
           onClick={() => goToPage(currentPage - 1)}
           disabled={currentPage === 1}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="inline-flex h-11 w-11 md:h-8 md:w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
           aria-label="Forrige side"
         >
           <ChevronLeft className="h-4 w-4" />
@@ -76,7 +76,7 @@ export function Pagination({ currentPage, totalCount, pageSize = 20, className }
               key={page}
               onClick={() => goToPage(page)}
               className={cn(
-                'inline-flex h-8 min-w-8 items-center justify-center rounded-md border px-2 text-sm',
+                'inline-flex h-11 min-w-11 md:h-8 md:min-w-8 items-center justify-center rounded-md border px-2 text-sm',
                 page === currentPage
                   ? 'border-blue-600 bg-blue-600 text-white font-medium'
                   : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
@@ -90,7 +90,7 @@ export function Pagination({ currentPage, totalCount, pageSize = 20, className }
         <button
           onClick={() => goToPage(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="inline-flex h-11 w-11 md:h-8 md:w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
           aria-label="Næste side"
         >
           <ChevronRight className="h-4 w-4" />

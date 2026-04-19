@@ -21,7 +21,7 @@ export function GroupToggle() {
       <button
         onClick={() => setView('flat')}
         className={cn(
-          'flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-l-md',
+          'flex items-center gap-1.5 px-4 py-2.5 md:px-3 md:py-1.5 text-xs font-medium rounded-l-md',
           view === 'flat' ? 'bg-blue-50 text-blue-700' : 'text-gray-500 hover:bg-gray-50'
         )}
       >
@@ -31,7 +31,7 @@ export function GroupToggle() {
       <button
         onClick={() => setView('grouped')}
         className={cn(
-          'flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-r-md border-l border-gray-200',
+          'flex items-center gap-1.5 px-4 py-2.5 md:px-3 md:py-1.5 text-xs font-medium rounded-r-md border-l border-gray-200',
           view === 'grouped' ? 'bg-blue-50 text-blue-700' : 'text-gray-500 hover:bg-gray-50'
         )}
       >
