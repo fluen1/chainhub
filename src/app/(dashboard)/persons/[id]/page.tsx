@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
+import { canAccessModule } from '@/lib/permissions'
 import {
   Mail,
   Phone,
@@ -20,6 +21,7 @@ import {
   getContractStatusStyle,
   formatDate,
 } from '@/lib/labels'
+import { GdprPanel } from './gdpr-panel'
 
 export const metadata: Metadata = { title: 'Person' }
 
@@ -85,6 +87,8 @@ export default async function PersonDetailPage({ params }: Props) {
   })
 
   if (!person) notFound()
+
+  const isAdmin = await canAccessModule(session.user.id, 'settings')
 
   const activeRoles = person.company_persons.filter((cp) => !cp.end_date)
   const historicRoles = person.company_persons.filter((cp) => cp.end_date)
@@ -446,6 +450,14 @@ export default async function PersonDetailPage({ params }: Props) {
           <h2 className="text-sm font-semibold text-gray-900 mb-2">Interne noter</h2>
           <p className="text-sm text-gray-700 whitespace-pre-wrap">{person.notes}</p>
         </div>
+      )}
+
+      {/* GDPR-handlinger — kun admin, placeret nederst (destruktiv) */}
+      {isAdmin && (
+        <GdprPanel
+          personId={person.id}
+          personName={`${person.first_name} ${person.last_name}`.trim()}
+        />
       )}
     </div>
   )
