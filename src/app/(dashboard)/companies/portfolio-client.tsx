@@ -513,9 +513,9 @@ export function PortfolioClient({
           )}
         </div>
 
-        <div className="grid grid-cols-[1fr_340px] gap-4">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_340px]">
           {/* Filter bar */}
-          <div className="col-span-2 flex items-center gap-2 mb-0">
+          <div className="flex flex-col gap-2 mb-0 sm:flex-row sm:items-center sm:flex-wrap lg:col-span-2">
             <div className="flex-1 bg-white ring-1 ring-slate-900/[0.06] rounded-lg px-3.5 py-2.5 flex items-center gap-2.5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
               <Search className="w-4 h-4 text-slate-400 shrink-0" />
               <input

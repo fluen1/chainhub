@@ -30,7 +30,7 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      <div className="grid grid-cols-[1fr_320px] gap-5 max-w-[1400px] mx-auto">
+      <div className="grid grid-cols-1 gap-5 max-w-[1400px] mx-auto lg:grid-cols-[1fr_320px]">
         {/* Venstre: Timeline River */}
         <div className="min-w-0">
           <div className="text-[13px] font-semibold text-slate-900 mb-4">Tidslinje</div>

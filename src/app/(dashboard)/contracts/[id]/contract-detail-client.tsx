@@ -406,7 +406,7 @@ export default function ContractDetailClient({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-x-8 gap-y-3">
+          <div className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
             <KeyTerm label="Type" value={keyTerms.type} />
             <KeyTerm label="Parter" value={keyTerms.parter} />
             <KeyTerm label="Løbetid" value={keyTerms.loebetid} />
@@ -436,7 +436,7 @@ export default function ContractDetailClient({
         </div>
 
         {/* Main grid */}
-        <div className="grid grid-cols-[180px_1fr] gap-8">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[180px_1fr]">
           <SectionNav activeId={activeSection} onJump={jumpTo} />
 
           <div className="min-w-0 flex flex-col gap-4">

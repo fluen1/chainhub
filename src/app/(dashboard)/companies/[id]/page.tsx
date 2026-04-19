@@ -75,7 +75,7 @@ export default async function CompanyDetailPage({ params }: { params: { id: stri
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {data.visibleSections.has('ownership') && <OwnershipSection data={data.ownership} />}
         {data.visibleSections.has('contracts') && (
           <ContractsSection
