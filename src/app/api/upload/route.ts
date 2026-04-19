@@ -2,9 +2,8 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { canAccessCompany } from '@/lib/permissions'
 import { NextRequest, NextResponse } from 'next/server'
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
 import { randomUUID } from 'crypto'
+import { getStorageProvider } from '@/lib/storage'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
 const ALLOWED_TYPES = [
@@ -49,13 +48,17 @@ export async function POST(request: NextRequest) {
 
   const documentId = randomUUID()
   const orgId = session.user.organizationId
-  const uploadDir = join(process.cwd(), 'uploads', orgId, documentId)
-  await mkdir(uploadDir, { recursive: true })
+  const storage = getStorageProvider()
+  const key = `${orgId}/${documentId}/${file.name}`
 
   const bytes = await file.arrayBuffer()
-  const buffer = Buffer.from(bytes)
-  const filePath = join(uploadDir, file.name)
-  await writeFile(filePath, buffer)
+  await storage.upload({
+    key,
+    buffer: Buffer.from(bytes),
+    contentType: file.type,
+  })
+
+  const fileUrl = await storage.getDownloadUrl(key)
 
   // Save to database
   const document = await prisma.document.create({
@@ -65,7 +68,7 @@ export async function POST(request: NextRequest) {
       company_id: companyId || null,
       case_id: caseId || null,
       title: title || file.name,
-      file_url: `/api/uploads/${orgId}/${documentId}/${encodeURIComponent(file.name)}`,
+      file_url: fileUrl,
       file_name: file.name,
       file_size_bytes: file.size,
       file_type: file.type,

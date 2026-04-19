@@ -1,7 +1,6 @@
 import { auth } from '@/lib/auth'
 import { NextRequest, NextResponse } from 'next/server'
-import { readFile } from 'fs/promises'
-import { join } from 'path'
+import { getStorageProvider } from '@/lib/storage'
 
 const CONTENT_TYPES: Record<string, string> = {
   pdf: 'application/pdf',
@@ -25,17 +24,19 @@ export async function GET(request: NextRequest, { params }: { params: { path: st
 
   // Decode each segment to handle encoded filenames
   const decodedSegments = params.path.map((segment) => decodeURIComponent(segment))
-  const filePath = join(process.cwd(), 'uploads', ...decodedSegments)
+  const key = decodedSegments.join('/')
 
-  try {
-    const data = await readFile(filePath)
-    const ext = filePath.split('.').pop()?.toLowerCase()
-    return new NextResponse(data, {
-      headers: {
-        'Content-Type': CONTENT_TYPES[ext ?? ''] ?? 'application/octet-stream',
-      },
-    })
-  } catch {
+  const data = await getStorageProvider().download(key)
+  if (!data) {
     return NextResponse.json({ error: 'Fil ikke fundet' }, { status: 404 })
   }
+
+  const lastSegment = decodedSegments[decodedSegments.length - 1] ?? ''
+  const ext = lastSegment.split('.').pop()?.toLowerCase()
+  // Cast Buffer → Uint8Array for NextResponse BodyInit compatibility
+  return new NextResponse(new Uint8Array(data), {
+    headers: {
+      'Content-Type': CONTENT_TYPES[ext ?? ''] ?? 'application/octet-stream',
+    },
+  })
 }
