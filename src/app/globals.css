@@ -84,3 +84,77 @@
 .leaflet-label-dark::before {
   display: none !important;
 }
+
+/* =========================================================
+   Print-stylesheet
+   Optimering til udskrift af dashboard + detalje-sider.
+   Skjuler sidebar/header/knapper og sikrer læselig layout.
+   ========================================================= */
+@media print {
+  /* Skjul interaktive elementer der ikke giver mening på print */
+  .print-hide,
+  nav,
+  aside,
+  [role='navigation'],
+  button,
+  .sticky,
+  .fixed,
+  header {
+    display: none !important;
+  }
+
+  /* Tillad specifik overskrivning med print-show */
+  .print-show {
+    display: block !important;
+  }
+
+  /* Print-venlig base */
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 10pt;
+  }
+
+  main {
+    padding: 0 !important;
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  /* Sikr at vigtige sektioner ikke splittes mellem sider */
+  section,
+  article,
+  .print-avoid-break {
+    page-break-inside: avoid;
+  }
+
+  /* Links som sort tekst — ingen URL'er bagved */
+  a {
+    color: black !important;
+    text-decoration: none !important;
+  }
+
+  /* Table printing */
+  table {
+    border-collapse: collapse !important;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  /* Kort + borders bliver tyndere */
+  .rounded-lg,
+  .rounded-xl,
+  .rounded-md {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Flat farvede baggrunde til print */
+  .bg-blue-50,
+  .bg-indigo-50,
+  .bg-gradient-to-br {
+    background: white !important;
+  }
+}

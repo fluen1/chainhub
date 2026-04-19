@@ -33,6 +33,18 @@ export default async function DashboardPage() {
 
   return (
     <div>
+      {/* Print-header — kun synlig ved udskrift */}
+      <div className="hidden print:block mb-6 border-b-2 border-black pb-4">
+        <h1 className="text-xl font-bold text-black">ChainHub — Porteføljerapport</h1>
+        <p className="text-sm text-black mt-1">
+          Udskrevet:{' '}
+          {new Date().toLocaleDateString('da-DK', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric',
+          })}
+        </p>
+      </div>
       <div className="max-w-[1400px] mx-auto">
         <OnboardingPanel status={onboardingStatus} />
       </div>

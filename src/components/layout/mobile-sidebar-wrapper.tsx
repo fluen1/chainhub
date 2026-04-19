@@ -92,7 +92,7 @@ export function MobileSidebarWrapper({
   return (
     <>
       {/* Desktop sidebar (lg+) */}
-      <div className="hidden lg:flex h-full">
+      <div className="hidden lg:flex h-full print-hide">
         <AppSidebar userName={userName} userRoleLabel={userRoleLabel} badges={badges} />
       </div>
 
