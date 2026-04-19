@@ -265,7 +265,7 @@ export async function getCompanyDetailData(
   const holdingCompanyRows =
     ownerCompanyIds.length > 0
       ? await prisma.company.findMany({
-          where: { id: { in: ownerCompanyIds } },
+          where: { id: { in: ownerCompanyIds }, organization_id: organizationId },
           select: { id: true, name: true },
         })
       : []
