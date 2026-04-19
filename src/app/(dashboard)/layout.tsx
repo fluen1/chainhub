@@ -1,5 +1,4 @@
-import { AppSidebar } from '@/components/layout/app-sidebar'
-import { AppHeader } from '@/components/layout/app-header'
+import { MobileSidebarWrapper } from '@/components/layout/mobile-sidebar-wrapper'
 import { SkipToMain } from '@/components/layout/SkipToMain'
 import { Providers } from '@/components/providers'
 import { auth } from '@/lib/auth'
@@ -36,23 +35,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
     <Providers>
       <SkipToMain />
       <div className="flex h-screen overflow-hidden">
-        <div className="hidden lg:flex h-full">
-          <AppSidebar
-            userName={session.user.name ?? 'Bruger'}
-            userRoleLabel={sidebarData.userRoleLabel}
-            badges={badges}
-          />
-        </div>
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <AppHeader
-            userName={session.user.name ?? 'Bruger'}
-            kpis={headerKpis}
-            currentDate={new Date()}
-          />
-          <main id="main-content" className="flex-1 overflow-y-auto bg-[#f0f2f5] px-8 py-6">
-            {children}
-          </main>
-        </div>
+        <MobileSidebarWrapper
+          userName={session.user.name ?? 'Bruger'}
+          userRoleLabel={sidebarData.userRoleLabel}
+          badges={badges}
+          kpis={headerKpis}
+          currentDate={new Date()}
+        >
+          {children}
+        </MobileSidebarWrapper>
       </div>
     </Providers>
   )

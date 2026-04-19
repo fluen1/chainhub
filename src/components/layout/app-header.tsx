@@ -1,8 +1,7 @@
-import { Bell } from 'lucide-react'
+import { Bell, Menu } from 'lucide-react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import type { InlineKpi } from '@/types/ui'
-import { MobileNav } from './mobile-nav'
 
 function getGreeting(date: Date): string {
   const hour = date.getHours()
@@ -34,9 +33,11 @@ export interface AppHeaderProps {
   userName: string
   kpis: InlineKpi[]
   currentDate: Date
+  /** Callback til at åbne mobile sidebar-drawer. Hvis udeladt vises ingen hamburger-knap. */
+  onOpenMobileSidebar?: () => void
 }
 
-export function AppHeader({ userName, kpis, currentDate }: AppHeaderProps) {
+export function AppHeader({ userName, kpis, currentDate, onOpenMobileSidebar }: AppHeaderProps) {
   const firstName = userName.split(' ')[0]
   const initials = userName
     .split(' ')
@@ -48,7 +49,16 @@ export function AppHeader({ userName, kpis, currentDate }: AppHeaderProps) {
   return (
     <header className="flex items-center justify-between border-b border-gray-200 bg-white px-4 lg:px-8 h-16 py-0">
       <div className="flex items-center">
-        <MobileNav />
+        {onOpenMobileSidebar && (
+          <button
+            type="button"
+            onClick={onOpenMobileSidebar}
+            className="lg:hidden flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 transition-colors"
+            aria-label="Åbn hovedmenu"
+          >
+            <Menu className="h-5 w-5" aria-hidden />
+          </button>
+        )}
         <div className="pr-6 pl-3 lg:pl-0">
           <div className="text-sm font-bold text-slate-900 leading-tight">
             {getGreeting(currentDate)}, {firstName}
