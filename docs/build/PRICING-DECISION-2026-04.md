@@ -157,22 +157,22 @@ Foreslået: **3.500 kr./måned**. Er dette:
 - (c) For højt — start ved 2.500 kr.
 - (d) Andet beløb (sig hvilket)
 
-### Spørgsmål 2: Plus-modellen
+### Spørgsmål 2: Plus-modellen (REVIDERET v2)
 
 Hvilken afregningsmodel for Tier 2 Plus?
 
-- (A) Flat 8.000 kr./måned ubegrænset — enkel, risiko for heavy-kunder
-- (B) **7.500 kr. + 50 kr./ekstra extraction over 100/måned** — retfærdig + gennemsigtig
-- (C) Forbrugs-baseret (5.000 base + 75/extraction) — mest retfærdig, mest kompleks
+- (A) Flat 10.000 kr./måned ubegrænset — ⚠ RISIKO for XL-kunder (negativt margin)
+- (B) **9.500 kr./måned + 75 kr./ekstra extraction over 50/måned** — retfærdig + gennemsigtig (strammere end v1)
+- (C) Forbrugs-baseret (6.000 base + 100/extraction) — ikke-anbefalet, friction
 - (D) Andet
 
-### Spørgsmål 3: Enterprise floor
+### Spørgsmål 3: Enterprise floor (REVIDERET v2)
 
 Floor-pris for Tier 3 Enterprise (forhandles op pr. kunde):
 
-- (a) 18.000 kr./måned (aggressiv indstigning)
-- (b) **22.000 kr./måned** (anbefalet — 85% margin på L-kunde)
-- (c) 28.000 kr./måned (konservativt)
+- (a) 25.000 kr./måned (aggressiv indstigning — hvis 400+ kontrakter/måned bliver negativt)
+- (b) **32.000 kr./måned** (anbefalet — 85% margin på L-kunde, fair-use 500 extractions)
+- (c) 40.000 kr./måned (konservativt, giver plads til XL-kunder)
 - (d) Andet
 
 ### Spørgsmål 4: Margin-mål
