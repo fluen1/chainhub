@@ -304,6 +304,31 @@ Første konkrete UX-fix-leverance efter page-audit. Gate 1 (lokalt færdig) krav
 - Performance-audit (Lighthouse >90 på alle top-pages)
 - A11y-retrofit til WCAG 2.2 Level AA + axe-core i CI
 
+## Compliance + Data-export track ✅ (2026-04-18)
+
+Gate 1 legal/compliance-blokkere lukket. Uden disse kan ChainHub ikke lovligt onboarde betalende kunder. Følger plan `docs/superpowers/plans/2026-04-18-compliance-data-export.md`.
+
+- [x] **CSV-helper** (`src/lib/export/csv.ts`) med `toCsvString` + `toCsvBuffer`, UTF-8 BOM for Excel-kompatibilitet, custom formatters pr. kolonne, null→tom + auto-escape. 4 unit-tests
+- [x] **Per-entity serializers** (`src/lib/export/entities.ts`) for 6 entity-typer: companies, contracts, cases, tasks, persons, visits. 17 unit-tests. Dispatcher `fetchEntityForExport(entity, scope)`. Danske header-labels + dato-formatering
+- [x] **Export server action** (`src/actions/export.ts`) + API-route (`/api/export/[entity]`) — admin-only via `canAccessModule('settings')`, audit-logget (`action='EXPORT'`), Content-Disposition attachment. 3 unit-tests
+- [x] **`<ExportButton>`-komponent** på 6 list-sider (companies, contracts, cases, tasks, persons, calendar for visits). PageHeader udvidet med `extraActions`-slot. 3 unit-tests
+- [x] **GDPR Article 15** (Right of access) — `gdprExportPerson(personId, orgId)` aggregerer Person + CompanyPerson + Ownership + ContractParty + CasePerson til JSON-bundle. Tenant-scoped. 3 unit-tests
+- [x] **GDPR Article 17** (Right to erasure) — `gdprDeletePerson(personId, orgId)` pseudonymiserer Person (first_name='Slettet person', email=null, notes=null, microsoft_contact_id=null, deleted_at=now), soft-ender CompanyPerson + Ownership, hard-deleter ContractParty + CasePerson. Atomisk transaction. 3 unit-tests
+- [x] **GDPR server actions + API** (`src/actions/gdpr.ts` + `/api/export/gdpr/[personId]`) — admin-only, audit-logget med sensitivity FORTROLIG (export) / STRENGT_FORTROLIG (delete), revalidatePath. 7 unit-tests
+- [x] **GDPR admin-panel** på `/persons/[id]` — amber-bordered panel med 2 knapper (Eksportér + Slet). Sletning kræver navn-typing i AccessibleDialog, deaktiverer "Slet permanent" indtil match. Kun synligt for admin. 5 unit-tests
+- [x] **Organisations-backup (ZIP)** — `createOrganizationBackupStream` med 19 org-scope tabeller som JSON-filer + manifest. API-route `/api/export/backup` med audit-trail (action='BACKUP', sensitivity='FORTROLIG'). "Download fuld backup"-knap på `/settings`
+- [x] **Dependencies:** `csv-stringify`, `archiver`, `@types/archiver` installed
+- [x] **Tests:** 660 → 705 passed (+45 nye på tværs af track)
+- [x] **Gate:** format ✅, lint ✅ (2 pre-existing autofocus-warnings), tsc ✅, build ✅
+- [x] **Audit-coverage** — alle compliance-handlinger logget: EXPORT / GDPR_EXPORT / GDPR_DELETE / BACKUP
+
+**Design-beslutninger (dokumenteret):**
+
+- CSV-format foretrukket (XLSX udskudt til v2) — csv-stringify er let, Excel åbner UTF-8 BOM + dansk korrekt
+- Pseudonymization fremfor hard-delete for Person (bevarer audit-trail i B2B-kontext — juridisk equivalent til erasure)
+- Backup er sync JSON-ZIP — async via pg-boss er flagget hvis orgs >100MB (v2)
+- Ikke-inkluderet i backup: User, UserRoleAssignment (brugerstyring håndteres separat), AI-drift-data, join-metadata
+
 ## Udskudte features (dedikerede sessions)
 
 Disse er bevidst taget ud af scope efter exploration og venter på dedikeret planning.
