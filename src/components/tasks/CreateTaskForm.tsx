@@ -67,7 +67,7 @@ export function CreateTaskForm() {
             name="title"
             type="text"
             required
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none"
             placeholder="fx Gennemgå lejekontrakt inden fornyelse"
           />
         </div>
@@ -80,7 +80,7 @@ export function CreateTaskForm() {
             id="task-description"
             name="description"
             rows={3}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none"
           />
         </div>
 
@@ -94,7 +94,7 @@ export function CreateTaskForm() {
               name="dueDate"
               type="date"
               defaultValue={preselectedDueDate}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none"
             />
           </div>
           <div>
@@ -105,7 +105,7 @@ export function CreateTaskForm() {
               id="task-priority"
               name="priority"
               defaultValue="MELLEM"
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none"
             >
               <option value="LAV">Lav</option>
               <option value="MELLEM">Mellem</option>
@@ -123,7 +123,7 @@ export function CreateTaskForm() {
             id="task-caseId"
             name="caseId"
             defaultValue={preselectedCaseId}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none"
           >
             <option value="">Ingen sag</option>
             {cases.map((c) => (
@@ -137,14 +137,14 @@ export function CreateTaskForm() {
         <div className="flex justify-end gap-3">
           <Link
             href="/tasks"
-            className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="rounded-md border border-gray-300 bg-white px-4 py-3 md:py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
             Annullér
           </Link>
           <button
             type="submit"
             disabled={loading}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-md bg-blue-600 px-4 py-3 md:py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
             {loading ? 'Opretter...' : 'Opret opgave'}
           </button>

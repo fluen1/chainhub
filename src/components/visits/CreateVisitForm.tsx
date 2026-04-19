@@ -84,7 +84,7 @@ export function CreateVisitForm({ companies }: CreateVisitFormProps) {
               name="companyId"
               required
               defaultValue={preselectedCompany}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none"
             >
               <option value="">Vælg selskab...</option>
               {companies.map((c) => (
@@ -105,7 +105,7 @@ export function CreateVisitForm({ companies }: CreateVisitFormProps) {
               type="date"
               required
               defaultValue={preselectedDate}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none"
             />
           </div>
 
@@ -117,7 +117,7 @@ export function CreateVisitForm({ companies }: CreateVisitFormProps) {
               id="visit-visitType"
               name="visitType"
               required
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none"
             >
               <option value="">Vælg type...</option>
               {Object.entries(VISIT_TYPE_LABELS).map(([value, label]) => (
@@ -136,7 +136,7 @@ export function CreateVisitForm({ companies }: CreateVisitFormProps) {
               id="visit-notes"
               name="notes"
               rows={4}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none"
               placeholder="Eventuelle noter til besøget..."
             />
           </div>
@@ -145,14 +145,14 @@ export function CreateVisitForm({ companies }: CreateVisitFormProps) {
         <div className="flex justify-end gap-3 pt-2">
           <Link
             href="/calendar"
-            className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="rounded-md border border-gray-300 bg-white px-4 py-3 md:py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
             Annullér
           </Link>
           <button
             type="submit"
             disabled={loading}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-md bg-blue-600 px-4 py-3 md:py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
           >
             {loading ? 'Opretter...' : 'Planlæg besøg'}
           </button>
