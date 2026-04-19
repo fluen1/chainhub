@@ -40,7 +40,7 @@ describe('HeatmapGrid', () => {
 
   it('viser tom-state ved ingen selskaber', () => {
     render(<HeatmapGrid companies={[]} />)
-    expect(screen.getByText('Ingen selskaber')).toBeInTheDocument()
+    expect(screen.getByText(/Ingen økonomi-data/)).toBeInTheDocument()
   })
 
   it('capper ved 15 selskaber', () => {

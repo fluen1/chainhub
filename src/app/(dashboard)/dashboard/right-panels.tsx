@@ -23,13 +23,25 @@ export interface RightPanelsProps {
 }
 
 export function RightPanels({ data, calendarEvents, upcomingEvents, todayISO }: RightPanelsProps) {
+  const hasFinanceData =
+    data.portfolioTotals.totalOmsaetning !== 0 || data.portfolioTotals.totalEbitda !== 0
+
   if (data.role === 'GROUP_LEGAL') {
     return (
       <div className="space-y-3">
         <Panel title="Kontraktdækning">
-          {data.coverage.map((item) => (
-            <CoverageBar key={item.label} label={item.label} percentage={item.pct} />
-          ))}
+          {data.coverage.length === 0 ? (
+            <div className="py-6 text-center text-sm text-gray-500">
+              Ingen kontrakter endnu.
+              <span className="mt-1 block text-xs text-gray-400">
+                Upload kontrakter for at se dækningen pr. type.
+              </span>
+            </div>
+          ) : (
+            data.coverage.map((item) => (
+              <CoverageBar key={item.label} label={item.label} percentage={item.pct} />
+            ))
+          )}
         </Panel>
         <CalendarWidget events={calendarEvents} upcoming={upcomingEvents} today={todayISO} />
       </div>
@@ -40,17 +52,31 @@ export function RightPanels({ data, calendarEvents, upcomingEvents, todayISO }: 
     return (
       <div className="space-y-3">
         <Panel title="Nøgletal 2025">
-          <FinRow label="Omsætning" value={`${formatMio(data.portfolioTotals.totalOmsaetning)}M`} />
-          <FinRow label="EBITDA" value={`${formatMio(data.portfolioTotals.totalEbitda)}M`} />
-          <FinRow
-            label="Margin"
-            value={`${(data.portfolioTotals.avgEbitdaMargin * 100).toFixed(1)}%`}
-          />
-          <FinRow
-            label="Underskud lok."
-            value={String(data.underperformingCount)}
-            valueColor={data.underperformingCount > 0 ? '#ef4444' : undefined}
-          />
+          {hasFinanceData ? (
+            <>
+              <FinRow
+                label="Omsætning"
+                value={`${formatMio(data.portfolioTotals.totalOmsaetning)}M`}
+              />
+              <FinRow label="EBITDA" value={`${formatMio(data.portfolioTotals.totalEbitda)}M`} />
+              <FinRow
+                label="Margin"
+                value={`${(data.portfolioTotals.avgEbitdaMargin * 100).toFixed(1)}%`}
+              />
+              <FinRow
+                label="Underskud lok."
+                value={String(data.underperformingCount)}
+                valueColor={data.underperformingCount > 0 ? '#ef4444' : undefined}
+              />
+            </>
+          ) : (
+            <div className="py-6 text-center text-sm text-gray-500">
+              Ingen økonomi-data.
+              <span className="mt-1 block text-xs text-gray-400">
+                Tilføj finansielle metrics på dine selskaber for at se nøgletal.
+              </span>
+            </div>
+          )}
         </Panel>
         <CalendarWidget events={calendarEvents} upcoming={upcomingEvents} today={todayISO} />
       </div>
@@ -68,15 +94,27 @@ export function RightPanels({ data, calendarEvents, upcomingEvents, todayISO }: 
       </div>
       <CalendarWidget events={calendarEvents} upcoming={upcomingEvents} today={todayISO} />
       <Panel title="Kontraktdækning">
-        {data.coverage.map((item) => (
-          <CoverageBar key={item.label} label={item.label} percentage={item.pct} />
-        ))}
+        {data.coverage.length === 0 ? (
+          <div className="py-6 text-center text-sm text-gray-500">
+            Ingen kontrakter endnu.
+            <span className="mt-1 block text-xs text-gray-400">
+              Upload kontrakter for at se dækningen pr. type.
+            </span>
+          </div>
+        ) : (
+          data.coverage.map((item) => (
+            <CoverageBar key={item.label} label={item.label} percentage={item.pct} />
+          ))
+        )}
       </Panel>
       <Panel title="Økonomi snapshot">
-        {data.portfolioTotals.totalOmsaetning === 0 && data.portfolioTotals.totalEbitda === 0 ? (
-          <p className="text-xs text-gray-500 text-center py-3">
-            Ingen økonomi-data registreret endnu
-          </p>
+        {!hasFinanceData ? (
+          <div className="py-6 text-center text-sm text-gray-500">
+            Ingen økonomi-data.
+            <span className="mt-1 block text-xs text-gray-400">
+              Tilføj finansielle metrics på dine selskaber for at se nøgletal.
+            </span>
+          </div>
         ) : (
           <>
             <FinRow

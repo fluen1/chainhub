@@ -27,7 +27,14 @@ export function HeatmapGrid({ companies }: HeatmapGridProps) {
     .slice(0, MAX_HEATMAP_CELLS)
 
   if (sorted.length === 0) {
-    return <p className="text-center text-xs text-gray-500 py-4">Ingen selskaber</p>
+    return (
+      <div className="py-6 text-center text-sm text-gray-500">
+        Ingen økonomi-data.
+        <span className="mt-1 block text-xs text-gray-400">
+          Tilføj metrics via /companies/[id]/finans for at se sundhedstilstanden.
+        </span>
+      </div>
+    )
   }
 
   return (

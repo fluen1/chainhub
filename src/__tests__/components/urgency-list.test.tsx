@@ -47,6 +47,6 @@ describe('UrgencyList', () => {
 
   it('viser tom-state når items er tomme', () => {
     render(<UrgencyList title="Tom liste" items={[]} />)
-    expect(screen.getByText('Ingen punkter')).toBeInTheDocument()
+    expect(screen.getByText(/Ingen forestående deadlines/)).toBeInTheDocument()
   })
 })

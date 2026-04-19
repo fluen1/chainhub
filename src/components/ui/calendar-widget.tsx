@@ -194,7 +194,12 @@ export function CalendarWidget({
           </div>
         ))}
         {upcoming.length === 0 && (
-          <div className="py-4 text-center text-xs text-gray-500">Ingen events denne måned</div>
+          <div className="py-6 text-center text-sm text-gray-500">
+            Ingen planlagte besøg.
+            <span className="mt-1 block text-xs text-gray-400">
+              Opret et besøg ved at klikke &quot;Nyt besøg&quot; på et selskab.
+            </span>
+          </div>
         )}
       </div>
 

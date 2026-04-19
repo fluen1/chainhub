@@ -44,9 +44,11 @@ export default async function DashboardPage() {
             <TimelineSection key={section.id} section={section} />
           ))}
           {data.timelineSections.every((s) => s.items.length === 0) && (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <p className="text-sm font-medium text-gray-500">Ingen begivenheder</p>
-              <p className="text-xs text-gray-500 mt-1">Din tidslinje er tom lige nu.</p>
+            <div className="py-10 text-center text-sm text-gray-500">
+              Intet planlagt i denne periode.
+              <span className="mt-1 block text-xs text-gray-400">
+                Upload kontrakter eller opret besøg for at se tidsoverblikket.
+              </span>
             </div>
           )}
         </div>

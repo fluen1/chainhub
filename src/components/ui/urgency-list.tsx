@@ -49,7 +49,12 @@ export function UrgencyList({ title, items, viewAllHref }: UrgencyListProps) {
           </div>
         ))}
         {items.length === 0 && (
-          <div className="py-6 text-center text-xs text-gray-500">Ingen punkter</div>
+          <div className="py-6 text-center text-sm text-gray-500">
+            Ingen forestående deadlines.
+            <span className="mt-1 block text-xs text-gray-400">
+              Dine kontrakter, opgaver og besøg vises her når der er noget der kræver opmærksomhed.
+            </span>
+          </div>
         )}
       </div>
     </div>
