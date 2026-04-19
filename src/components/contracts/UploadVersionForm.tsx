@@ -67,9 +67,11 @@ export function UploadVersionForm({ contractId, companyId }: UploadVersionFormPr
 
     try {
       // Step 1: Upload file via /api/upload
+      // contractId sendes med så extraction-pipeline kan queue job automatisk (shadow-mode)
       const formData = new FormData()
       formData.append('file', selectedFile)
       formData.append('companyId', companyId)
+      formData.append('contractId', contractId)
 
       const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData })
       const uploadResult = await uploadRes.json()
