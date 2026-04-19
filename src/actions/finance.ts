@@ -10,7 +10,7 @@ import { captureError } from '@/lib/logger'
 import { zodMetricType, zodPeriodType, zodMetricSource } from '@/lib/zod-enums'
 
 const upsertMetricSchema = z.object({
-  companyId: z.string().uuid(),
+  companyId: z.string().min(1, 'Selskab mangler'),
   metricType: zodMetricType,
   periodType: zodPeriodType,
   periodYear: z.coerce.number().int().min(1990).max(2100),

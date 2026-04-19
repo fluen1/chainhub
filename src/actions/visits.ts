@@ -10,14 +10,14 @@ import { captureError } from '@/lib/logger'
 import { zodVisitType, zodVisitStatus } from '@/lib/zod-enums'
 
 const createVisitSchema = z.object({
-  companyId: z.string().uuid(),
+  companyId: z.string().min(1, 'Selskab mangler'),
   visitDate: z.string(),
   visitType: zodVisitType,
   notes: z.string().optional(),
 })
 
 const updateVisitSchema = z.object({
-  visitId: z.string().uuid(),
+  visitId: z.string().min(1, 'Besøg-ID mangler'),
   status: zodVisitStatus.optional(),
   notes: z.string().optional(),
   summary: z.string().optional(),

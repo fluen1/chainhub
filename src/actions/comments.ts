@@ -8,7 +8,7 @@ import type { ActionResult } from '@/types/actions'
 
 const commentSchema = z.object({
   content: z.string().min(1, 'Kommentar kan ikke være tom').max(2000, 'Maks 2000 tegn'),
-  taskId: z.string().uuid(),
+  taskId: z.string().min(1, 'Opgave-ID mangler'),
 })
 
 export async function createComment(input: {

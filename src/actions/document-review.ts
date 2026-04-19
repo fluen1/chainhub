@@ -9,10 +9,10 @@ import type { ActionResult } from '@/types/actions'
 import type { Prisma } from '@prisma/client'
 import { z } from 'zod'
 
-const approveSchema = z.string().uuid('Ugyldigt ekstraktions-ID')
+const approveSchema = z.string().min(1, 'Ekstraktions-ID mangler')
 
 const fieldDecisionSchema = z.object({
-  extractionId: z.string().uuid(),
+  extractionId: z.string().min(1, 'Ekstraktions-ID mangler'),
   fieldName: z.string().min(1),
   decision: z.enum(['use_ai', 'keep_existing', 'manual', 'accept_missing', 'add_manual']),
   aiValue: z.unknown(),
