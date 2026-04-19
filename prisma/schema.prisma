@@ -515,6 +515,7 @@ model Contract {
   @@index([organization_id, company_id, deleted_at])
   @@index([organization_id, system_type, deleted_at])
   @@index([organization_id, status, deleted_at])
+  @@index([organization_id, company_id, deleted_at, status])
   @@index([expiry_date])
 }
 
@@ -617,6 +618,7 @@ model Case {
 
   @@index([organization_id, deleted_at])
   @@index([organization_id, status, deleted_at])
+  @@index([organization_id, deleted_at, status])
 }
 
 model CaseCompany {
@@ -689,6 +691,7 @@ model Task {
   @@index([organization_id, deleted_at])
   @@index([organization_id, assigned_to, deleted_at])
   @@index([organization_id, due_date])
+  @@index([organization_id, deleted_at, status])
 }
 
 model TaskHistory {
