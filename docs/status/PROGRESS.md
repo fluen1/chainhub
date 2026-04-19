@@ -401,6 +401,17 @@ Sidste Gate 1 kvalitets-infra. A11y-regressioner fanges nu automatisk i CI.
 
 **Unblocker:** Ekstraktion kører nu automatisk når en kontrakt-PDF uploades med contract_id. Review-UI findes allerede (`/documents/review/[id]`, 817 linjer — substantial fra Sprint 9). AI-fields rendering på `/persons/[id]` er næste delleverance (B.1c).
 
+### B.1c — AI-udlæste vilkår på /persons/[id]
+
+- [x] **`src/actions/person-ai.ts`** — `getPersonAIExtractions(personId)` fetcher via ContractParty → Contract → Document → DocumentExtraction, normaliserer `extracted_fields`-JSON til `{ value, confidence, sourcePage, sourceText }`, filtrerer uden company-access
+- [x] **`PersonAIExtractionsSection`** — lilla gradient-sektion med 10 key-fields pr. kontrakt (løn, opsigelsesvarsel, pension, ferie, arbejdstid, start/slut, konkurrenceklausul), konfidens-badge pr. felt (grøn/amber/rød), link til review-UI, link til source-kontrakt
+- [x] **Placering på person-detalje** — mellem ansættelseskontrakter-blokken og tilknytninger-griddet (ANSÆTTELSE-kontekst-nært). Skjules helt når 0 extractions
+- [x] 5 nye unit-tests (normalization, empty, permission, no-session, skip without extraction)
+- [x] **Tests:** 730 → 735 passed
+- [x] **Gate:** format ✅, tsc ✅, build ✅
+
+**Phase B first delivery komplet**: upload → auto-extraction → resultater synlige på person-side i shadow-mode. Write-back til Contract kræver stadig human approval via review-UI.
+
 ## Udskudte features (dedikerede sessions)
 
 Disse er bevidst taget ud af scope efter exploration og venter på dedikeret planning.
