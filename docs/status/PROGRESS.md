@@ -258,6 +258,32 @@ Produktions-modenhed-track lukket: foundation (session 1) + schema/audit (sessio
 
 Produktions-modenhed + tech-debt fuldt lukket. Resterende: Vercel deploy.
 
+## Phase A.0 — AI infrastructure + cost-research ✅ (2026-04-18)
+
+Første leverance af produkt-roadmap (`docs/superpowers/plans/2026-04-18-product-roadmap.md` afsnit 9 + dedikeret execution-plan i `docs/superpowers/plans/2026-04-18-phase-a0-ai-infrastructure.md`).
+
+- [x] **Schema:** `AIUsageLog`-model tilføjet — per-call tracking af tokens + cost + feature + model + provider + optional resource-attribution
+- [x] **MODEL_COSTS opdateret** med verified priser fra `claude.com/pricing` 2026-04-18 (Opus 4.7 $5/$25, Sonnet 4.6 $3/$15, Haiku 4.5 $1/$5). Haiku-pris hævet fra gammel $0.8/$4. Cache-pricing tilføjet. Opus-support tilføjet
+- [x] **`src/lib/ai/usage.ts`** — `recordAIUsage` + `getMonthlyUsage` helpers. DB-fejl sluges via `captureError` (logging må ikke bringe AI-flow ned). 4 unit-tests
+- [x] **`src/lib/ai/cost-cap.ts`** — `checkCostCap` + `getCostCapStatus` enforcement. 5 tærskler (none / 50-info / 75-warn / 90-alert / exceeded). 7 unit-tests
+- [x] **Retrofit company-insights** — `isAIEnabled` + `checkCostCap` gates foran AI-kald i `getCompanyDetailData` (kun på cache-miss-branchen); `recordAIUsage` efter success. Graceful skip uden at brække UI-render
+- [x] **Retrofit extraction-job** — samme enforcement-hooks + status/reason-felter i return-type. Klar til Phase B.1 wiring (stadig dormant)
+- [x] **Worker-proces** `worker/index.ts` verificeret (pre-eksisterende, starter korrekt, env loades auto via tsx). `tsconfig.worker.json` tilføjet til standalone prod-build
+- [x] **Admin-UI** `/settings/ai-usage` med månedligt overblik, cap-progress-bar (farve-kodet pr. tærskel), pr.-feature + pr.-model breakdown, seneste 25 kald i tabel. Link fra `/settings` under ny "System"-sektion
+- [x] **`getAIUsageDashboard` server action** + 3 unit-tests
+- [x] **`src/lib/labels.ts`** — `AI_FEATURE_LABELS` + `labelForAIFeature` (5 feature-labels på dansk)
+- [x] **`scripts/ai-cost-research.ts`** — aggregering af AIUsageLog + rapportering
+- [x] **`docs/build/AI-COST-MODEL.md`** — levende dokument med verified priser + målte-tal-placeholder + Bedrock-status + volume-modellering-skelet
+- [x] **Tests:** 627 → 652 passed (+25 nye: 5 MODEL_COSTS, 4 usage, 7 cost-cap, 3 company-insights retrofit, 3 extraction retrofit, 3 ai-usage-dashboard)
+- [x] **Gate:** format ✅, lint ✅ (2 pre-existing autofocus-warnings), tsc ✅, build ✅
+
+**Unblocker:** Basis-tier kan prissættes nu (ingen AI-cost). Plus/Enterprise afventer Phase B.1 måling for endelig pris (cost-model-dokumentet opdateres iterativt).
+
+**Noter:**
+
+- pg-boss v10+ kræver eksplicit `boss.createQueue(name)` før `boss.work(name)` — adresseres i Phase B.1 når pipelinen faktisk wires
+- AWS Bedrock model-access-ansøgning afventer start (ekstern bruger-action)
+
 ## Udskudte features (dedikerede sessions)
 
 Disse er bevidst taget ud af scope efter exploration og venter på dedikeret planning.
