@@ -341,6 +341,18 @@ Sidste store Gate 1-track. Dashboard-onboarding leveret per DEC-F0-013, /new-sid
 - [x] **Tests:** 705 → 724 passed (+19 nye: 16 onboarding, 3 empty-state varianter)
 - [x] **Gate:** format ✅, lint ✅ (1 pre-existing autofocus-warning), tsc ✅, build ✅
 
+## Lokal-godkendelses fix-round ✅ (2026-04-18)
+
+Bruger klikkede rundt lokalt og rapporterede 3 issues. Alle fixet.
+
+- [x] **Comment-bug** — `comments.ts`, `visits.ts`, `finance.ts`, `document-review.ts` brugte stadig `z.string().uuid()` som afviser seed-IDs (`00000000-0000-0000-0000-000000000010`). Sprint 8C fixede 6 andre schemas men missede disse 4. Ændret til `z.string().min(1)`
+- [x] **Dashboard density** — 5 ændringer: positiv empty-state med aggregerede metrics (CheckCircle2 + selskaber/sager-counts) når intet er forfaldent, højre-panel margins tættere (p-3, space-y-2), heatmap 5→6 cols + max 15→18, calendar-legend skjules ved 0 events, overdueTasks take 10→15
+- [x] **Performance quick-wins** — 3 compound indexes på ofte-brugte patterns (`Task[org_id, deleted_at, status]`, `Contract[org_id, company_id, deleted_at, status]`, `Case[org_id, deleted_at, status]`) via manual migration-SQL med `CREATE INDEX CONCURRENTLY`. Tenant-filter tilføjet på batch holding-company fetch for multi-tenancy safety
+- [x] **Tests:** stabilt 724 passed
+- [x] **Gate:** format ✅, lint ✅, tsc ✅
+
+**Tilbage til user-bekræftelse lokalt:** Performance kræver sandsynligvis produktions-build test (`npm run build && npm start`) — dev-mode er inherent langsomt. Deploy-arbejdet venter til Gate 2.
+
 ## Udskudte features (dedikerede sessions)
 
 Disse er bevidst taget ud af scope efter exploration og venter på dedikeret planning.
