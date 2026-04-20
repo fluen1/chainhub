@@ -22,7 +22,7 @@ import { EmptyState } from '@/components/ui/empty-state'
 // ---------------------------------------------------------------
 // Typer — afledt af Prisma-data, serialiseret fra server
 // ---------------------------------------------------------------
-export type DocStatus = 'processing' | 'ready_for_review' | 'reviewed' | 'archived'
+export type DocStatus = 'processing' | 'ready_for_review' | 'reviewed' | 'archived' | 'rejected'
 export type ConfidenceLevel = 'high' | 'medium' | 'low'
 
 export interface DocumentItem {
@@ -52,6 +52,8 @@ function statusStyle(status: DocStatus): string {
       return 'bg-emerald-50 text-emerald-700'
     case 'archived':
       return 'bg-slate-50 text-slate-600'
+    case 'rejected':
+      return 'bg-rose-50 text-rose-700 ring-1 ring-rose-200'
   }
 }
 
@@ -65,6 +67,8 @@ function statusLabel(status: DocStatus): string {
       return 'Godkendt'
     case 'archived':
       return 'Arkiveret'
+    case 'rejected':
+      return 'Afvist'
   }
 }
 
@@ -152,7 +156,13 @@ export default function DocumentsClient({ documents }: { documents: DocumentItem
         return true
       })
       .sort((a, b) => {
-        const rank = { ready_for_review: 0, processing: 1, reviewed: 2, archived: 3 }
+        const rank: Record<DocStatus, number> = {
+          ready_for_review: 0,
+          processing: 1,
+          reviewed: 2,
+          archived: 3,
+          rejected: 4,
+        }
         const diff = rank[a.status] - rank[b.status]
         if (diff !== 0) return diff
         return new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
@@ -345,6 +355,7 @@ export default function DocumentsClient({ documents }: { documents: DocumentItem
                             'w-1 h-1 rounded-full',
                             doc.status === 'ready_for_review' && 'bg-violet-500',
                             doc.status === 'processing' && 'bg-blue-500',
+                            doc.status === 'rejected' && 'bg-rose-500',
                             (doc.status === 'reviewed' || doc.status === 'archived') &&
                               'bg-slate-400'
                           )}

@@ -18,6 +18,7 @@ const fieldDecisionSchema = z.object({
   aiValue: z.unknown(),
   existingValue: z.unknown(),
   confidence: z.number().nullable(),
+  manualValue: z.string().max(1000).optional(),
 })
 
 export async function approveDocumentReview(extractionId: string): Promise<ActionResult<void>> {
@@ -67,6 +68,7 @@ export async function saveFieldDecision(params: {
   aiValue: unknown
   existingValue: unknown
   confidence: number | null
+  manualValue?: string
 }): Promise<ActionResult<{ correctionId: string }>> {
   const parsed = fieldDecisionSchema.safeParse(params)
   if (!parsed.success) return { error: 'Ugyldige parametre' }
@@ -101,7 +103,11 @@ export async function saveFieldDecision(params: {
       ? params.aiValue
       : params.decision === 'keep_existing'
         ? params.existingValue
-        : params.existingValue // manual/accept_missing/add_manual — log existing
+        : params.decision === 'manual'
+          ? (params.manualValue ?? null)
+          : params.decision === 'add_manual'
+            ? (params.manualValue ?? null)
+            : params.existingValue // accept_missing
 
   // Log correction via feedback system
   const correctionId = await logFieldCorrection({
@@ -125,6 +131,7 @@ export async function saveFieldDecision(params: {
       decided_at: new Date().toISOString(),
       decided_by: session.user.id,
       correction_id: correctionId,
+      manual_value: params.manualValue ?? null,
     },
   }
 
@@ -135,4 +142,64 @@ export async function saveFieldDecision(params: {
 
   revalidatePath('/documents')
   return { data: { correctionId } }
+}
+
+const rejectSchema = z.object({
+  extractionId: z.string().min(1, 'Ekstraktions-ID mangler'),
+  reason: z.string().max(500, 'Maks 500 tegn').optional(),
+})
+
+export async function rejectDocumentExtraction(params: {
+  extractionId: string
+  reason?: string
+}): Promise<ActionResult<void>> {
+  const parsed = rejectSchema.safeParse(params)
+  if (!parsed.success) return { error: 'Ugyldige parametre' }
+
+  const session = await auth()
+  if (!session) return { error: 'Ikke autoriseret' }
+
+  const extraction = await prisma.documentExtraction.findFirst({
+    where: {
+      id: params.extractionId,
+      organization_id: session.user.organizationId,
+    },
+    include: {
+      document: {
+        select: { company_id: true, deleted_at: true },
+      },
+    },
+  })
+
+  if (!extraction || extraction.document.deleted_at) {
+    return { error: 'Ekstraktion ikke fundet' }
+  }
+
+  if (extraction.document.company_id) {
+    const hasAccess = await canAccessCompany(session.user.id, extraction.document.company_id)
+    if (!hasAccess) return { error: 'Ingen adgang til dette dokument' }
+  }
+
+  const currentDecisions = (extraction.field_decisions as Record<string, unknown>) ?? {}
+  const normalizedReason = params.reason?.trim() ? params.reason.trim() : null
+
+  await prisma.documentExtraction.update({
+    where: { id: params.extractionId },
+    data: {
+      extraction_status: 'rejected',
+      reviewed_by: session.user.id,
+      reviewed_at: new Date(),
+      field_decisions: {
+        ...currentDecisions,
+        __rejection__: {
+          rejected_at: new Date().toISOString(),
+          rejected_by: session.user.id,
+          reason: normalizedReason,
+        },
+      } as Prisma.InputJsonValue,
+    },
+  })
+
+  revalidatePath('/documents')
+  return { data: undefined }
 }

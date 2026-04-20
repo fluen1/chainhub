@@ -2,6 +2,9 @@ import { auth } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { canAccessCompany } from '@/lib/permissions'
+import { getExistingValue, type ContractWithRelations } from '@/lib/ai/review/existing-values'
+import { getSchema } from '@/lib/ai/schemas/registry'
+import type { ContractSchema } from '@/lib/ai/schemas/types'
 import ReviewClient from './review-client'
 import type { ReviewDocument, ReviewField, ReviewQueueItem } from './review-client'
 
@@ -10,13 +13,18 @@ import type { ReviewDocument, ReviewField, ReviewQueueItem } from './review-clie
 // ---------------------------------------------------------------
 interface ExtractedFieldJson {
   value?: unknown
-  confidence?: number
+  claude_confidence?: number
   source_page?: number
   source_paragraph?: string
   source_text?: string
 }
 
-function mapExtractedFields(extractedFields: unknown, discrepancies: unknown): ReviewField[] {
+function mapExtractedFields(
+  extractedFields: unknown,
+  discrepancies: unknown,
+  contract: ContractWithRelations | null,
+  schema: ContractSchema | null
+): ReviewField[] {
   if (!extractedFields || typeof extractedFields !== 'object' || Array.isArray(extractedFields)) {
     return []
   }
@@ -33,9 +41,30 @@ function mapExtractedFields(extractedFields: unknown, discrepancies: unknown): R
         ? (raw as ExtractedFieldJson)
         : ({} as ExtractedFieldJson)
 
-    const confidence = typeof field.confidence === 'number' ? field.confidence : 0
+    const confidence = typeof field.claude_confidence === 'number' ? field.claude_confidence : 0
+
+    const meta = schema?.field_metadata?.[key] ?? null
+    const description =
+      meta && typeof meta === 'object' && 'description' in meta
+        ? (meta as { description?: string }).description
+        : undefined
+    const legalCritical =
+      meta && typeof meta === 'object' && 'legal_critical' in meta
+        ? !!(meta as { legal_critical?: boolean }).legal_critical
+        : false
+    const autoAcceptThreshold =
+      meta && typeof meta === 'object' && 'auto_accept_threshold' in meta
+        ? ((meta as { auto_accept_threshold?: number }).auto_accept_threshold ?? 0.85)
+        : 0.85
+
+    const fieldLabel = description ?? formatFieldLabel(key)
+
     const confidenceLevel: 'high' | 'medium' | 'low' =
-      confidence >= 0.85 ? 'high' : confidence >= 0.6 ? 'medium' : 'low'
+      confidence >= autoAcceptThreshold
+        ? 'high'
+        : confidence >= autoAcceptThreshold - 0.25
+          ? 'medium'
+          : 'low'
 
     // Check discrepancy info
     const disc = discrepancyRecord[key]
@@ -49,12 +78,16 @@ function mapExtractedFields(extractedFields: unknown, discrepancies: unknown): R
       ? (discObj.type as 'value_mismatch' | 'missing_clause' | 'new_data' | undefined)
       : undefined
 
-    const existingValue = discObj ? ((discObj.existing_value as string | null) ?? null) : null
+    const existingFromContract = getExistingValue(key, contract, schema?.contract_type ?? '')
+    const existingFromDiscrepancy = discObj
+      ? ((discObj.existing_value as string | null) ?? null)
+      : null
+    const existingValue = existingFromContract ?? existingFromDiscrepancy
 
     return {
       id: key,
       fieldName: key,
-      fieldLabel: formatFieldLabel(key),
+      fieldLabel,
       extractedValue: field.value != null ? String(field.value) : null,
       existingValue,
       confidence,
@@ -65,6 +98,9 @@ function mapExtractedFields(extractedFields: unknown, discrepancies: unknown): R
       hasDiscrepancy,
       discrepancyType,
       category: 'general',
+      legalCritical,
+      isAttention: confidenceLevel !== 'high' || legalCritical,
+      autoAcceptThreshold,
     }
   })
 }
@@ -75,6 +111,34 @@ function formatFieldLabel(key: string): string {
     .replace(/_/g, ' ')
     .replace(/([a-z])([A-Z])/g, '$1 $2')
     .replace(/^./, (c) => c.toUpperCase())
+}
+
+// ---------------------------------------------------------------
+// Source blocks — unikke PDF-tekstblokke bygget fra felternes source_text
+// ---------------------------------------------------------------
+export interface SourceBlock {
+  id: string
+  page: number
+  paragraph: string
+  text: string
+}
+
+function buildSourceBlocks(fields: ReviewField[]): SourceBlock[] {
+  const seen = new Set<string>()
+  const blocks: SourceBlock[] = []
+  for (const f of fields) {
+    if (!f.sourceText || !f.sourcePageNumber) continue
+    const key = `${f.sourcePageNumber}-${f.sourceParagraph}-${f.sourceText.slice(0, 40)}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    blocks.push({
+      id: `block-${blocks.length}`,
+      page: f.sourcePageNumber,
+      paragraph: f.sourceParagraph || `Side ${f.sourcePageNumber}`,
+      text: f.sourceText,
+    })
+  }
+  return blocks.sort((a, b) => a.page - b.page)
 }
 
 // ---------------------------------------------------------------
@@ -95,6 +159,12 @@ export default async function DocumentReviewPage({ params }: { params: { id: str
     include: {
       company: { select: { name: true } },
       extraction: true,
+      contract: {
+        include: {
+          parties: { include: { person: true } },
+          ownerships: true,
+        },
+      },
     },
   })
 
@@ -131,9 +201,18 @@ export default async function DocumentReviewPage({ params }: { params: { id: str
 
   // Map data for client
   const extraction = doc.extraction
+  const schema = extraction?.detected_type ? getSchema(extraction.detected_type) : null
+
   const fields = extraction
-    ? mapExtractedFields(extraction.extracted_fields, extraction.discrepancies)
+    ? mapExtractedFields(
+        extraction.extracted_fields,
+        extraction.discrepancies,
+        doc.contract as ContractWithRelations | null,
+        schema ?? null
+      )
     : []
+
+  const sourceBlocks = buildSourceBlocks(fields)
 
   // Check already decided fields
   const fieldDecisions =
@@ -143,7 +222,7 @@ export default async function DocumentReviewPage({ params }: { params: { id: str
       ? (extraction.field_decisions as Record<string, unknown>)
       : {}
 
-  const decidedFieldNames = Object.keys(fieldDecisions)
+  const decidedFieldNames = Object.keys(fieldDecisions).filter((k) => !k.startsWith('__'))
 
   const reviewDoc: ReviewDocument = {
     id: doc.id,
@@ -159,5 +238,5 @@ export default async function DocumentReviewPage({ params }: { params: { id: str
     decidedFieldNames,
   }
 
-  return <ReviewClient document={reviewDoc} reviewQueue={reviewQueue} />
+  return <ReviewClient document={reviewDoc} reviewQueue={reviewQueue} sourceBlocks={sourceBlocks} />
 }

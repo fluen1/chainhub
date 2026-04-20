@@ -15,8 +15,13 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
-import { approveDocumentReview, saveFieldDecision } from '@/actions/document-review'
+import {
+  approveDocumentReview,
+  saveFieldDecision,
+  rejectDocumentExtraction,
+} from '@/actions/document-review'
 import { EmptyState } from '@/components/ui/empty-state'
+import type { SourceBlock } from './page'
 
 // ---------------------------------------------------------------
 // Types — serialiseret fra server
@@ -35,6 +40,9 @@ export interface ReviewField {
   hasDiscrepancy: boolean
   discrepancyType?: 'value_mismatch' | 'missing_clause' | 'new_data'
   category: string
+  legalCritical: boolean
+  isAttention: boolean
+  autoAcceptThreshold: number
 }
 
 export interface ReviewDocument {
@@ -59,61 +67,8 @@ export interface ReviewQueueItem {
 interface ReviewClientProps {
   document: ReviewDocument
   reviewQueue: ReviewQueueItem[]
+  sourceBlocks: SourceBlock[]
 }
-
-// ---------------------------------------------------------------
-// Mock PDF tekst-blokke — placeholder indtil ægte PDF-rendering
-// ---------------------------------------------------------------
-const mockPdfBlocks = [
-  {
-    id: 'block-p1-1',
-    page: 1,
-    paragraph: '§ 1 SELSKABET',
-    text: 'Selskabets navn er Odense Tandlægehus ApS, CVR-nr. 38201745, med hjemsted i Odense Kommune. Selskabet er stiftet den 1. juni 2021 og driver virksomhed inden for tandlæge-ydelser.',
-  },
-  {
-    id: 'block-p1-2',
-    page: 1,
-    paragraph: '§ 2 PARTER',
-    text: 'Henrik Munk, CPR ..., er lokal partner i selskabet og indgår denne ejeraftale med Kædegruppen A/S. Aftalen træder i kraft den 1. juni 2021 og erstatter alle tidligere aftaler.',
-  },
-  {
-    id: 'block-p2-1',
-    page: 2,
-    paragraph: '§ 3 EJERFORHOLD',
-    text: 'Kædegruppen ejer 60% af selskabets kapital jf. stiftelsesdokument af 15. marts 2026. Henrik Munk ejer 40% af selskabets kapital. Ejerandelene kan kun overdrages i overensstemmelse med bestemmelserne i denne aftale.',
-  },
-  {
-    id: 'block-p3-1',
-    page: 3,
-    paragraph: '§ 5 UDBYTTE',
-    text: 'Der udloddes minimum 80% af selskabets årsoverskud som udbytte til anpartshaverne i forhold til deres ejerandele, medmindre der er særlige forretningsmæssige grunde til at tilbageholde udbytte.',
-  },
-  {
-    id: 'block-p3-2',
-    page: 3,
-    paragraph: '§ 6 LEDELSE',
-    text: 'Bestyrelsen består af 3 medlemmer: 2 udpeget af kædegruppen og 1 af partneren. Bestyrelsesformanden udpeges af kædegruppen og har den afgørende stemme ved stemmelighed.',
-  },
-  {
-    id: 'block-p4-1',
-    page: 4,
-    paragraph: '§ 7 OVERDRAGELSE',
-    text: 'Parterne har gensidig forkøbsret ved overdragelse af kapitalandele. Udløsningsprisen beregnes som selskabets indre værdi plus goodwillfaktor 1,5 baseret på gennemsnitlig EBITDA over de seneste 3 regnskabsår.',
-  },
-  {
-    id: 'block-p5-1',
-    page: 5,
-    paragraph: '§ 9 KONKURRENCEFORBUD',
-    text: 'Partneren er underlagt konkurrenceforbud i 24 måneder efter udtræden af selskabet inden for en radius af 15 km fra selskabets forretningssted.',
-  },
-  {
-    id: 'block-p6-1',
-    page: 6,
-    paragraph: '§ 12 IKRAFTTRÆDELSE',
-    text: 'Denne aftale erstatter ejeraftale af 1. juni 2021 og træder i kraft 15. marts 2026. Samtlige tidligere aftaler mellem parterne om ejerskab og governance af selskabet er hermed erstattet af nærværende aftale.',
-  },
-]
 
 // ---------------------------------------------------------------
 // Helpers
@@ -151,6 +106,8 @@ function AttentionFieldRow({
   onDecide,
 }: FieldRowProps) {
   const [isPending, startTransition] = useTransition()
+  const [isEditing, setIsEditing] = useState(false)
+  const [manualValue, setManualValue] = useState('')
   const isMissingClause = field.discrepancyType === 'missing_clause'
 
   function decide(
@@ -175,6 +132,36 @@ function AttentionFieldRow({
     })
   }
 
+  function startManualEdit() {
+    setIsEditing(true)
+    setManualValue(field.extractedValue ?? '')
+  }
+
+  function saveManual() {
+    if (manualValue.trim().length === 0) {
+      toast.error('Angiv en værdi eller annullér')
+      return
+    }
+    startTransition(async () => {
+      const result = await saveFieldDecision({
+        extractionId,
+        fieldName: field.fieldName,
+        decision: 'manual',
+        aiValue: field.extractedValue,
+        existingValue: field.existingValue,
+        confidence: field.confidence,
+        manualValue,
+      })
+      if (result.error) {
+        toast.error(result.error)
+        return
+      }
+      setIsEditing(false)
+      onDecide?.(field.id)
+      toast.success(`${field.fieldLabel}: rettet manuelt`)
+    })
+  }
+
   return (
     <div
       className={cn(
@@ -191,6 +178,11 @@ function AttentionFieldRow({
           className={cn('w-1.5 h-1.5 rounded-full shrink-0', confidenceDot(field.confidenceLevel))}
         />
         <span className="text-[12px] font-semibold text-slate-900">{field.fieldLabel}</span>
+        {field.legalCritical && (
+          <span className="text-[9px] font-semibold uppercase tracking-wider text-rose-600 bg-rose-50 ring-1 ring-rose-200 px-1.5 py-0.5 rounded">
+            Juridisk
+          </span>
+        )}
         <span className="text-[10px] text-slate-400 tabular-nums">
           {confidenceLabel(field.confidence)} konfidence
         </span>
@@ -246,7 +238,7 @@ function AttentionFieldRow({
               </button>
               <button
                 disabled={isPending}
-                onClick={() => decide('manual', 'Ret manuelt')}
+                onClick={startManualEdit}
                 className="text-slate-500 text-[11px] font-medium px-2.5 py-1 rounded-md hover:bg-slate-50 transition-colors disabled:opacity-50"
               >
                 Ret manuelt
@@ -270,6 +262,37 @@ function AttentionFieldRow({
               </button>
             </>
           )}
+        </div>
+      )}
+
+      {isEditing && (
+        <div className="ml-3.5 mt-2 flex items-center gap-1.5">
+          <input
+            type="text"
+            value={manualValue}
+            onChange={(e) => setManualValue(e.target.value)}
+            autoFocus
+            maxLength={1000}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') saveManual()
+              if (e.key === 'Escape') setIsEditing(false)
+            }}
+            className="flex-1 text-[11px] font-medium text-slate-900 bg-white ring-1 ring-slate-300 rounded-md px-2 py-1 focus:outline-none focus:ring-slate-900"
+            placeholder="Indtast korrekt værdi..."
+          />
+          <button
+            disabled={isPending}
+            onClick={saveManual}
+            className="bg-slate-900 text-white text-[11px] font-medium px-2.5 py-1 rounded-md hover:bg-slate-800 disabled:opacity-50"
+          >
+            Gem
+          </button>
+          <button
+            onClick={() => setIsEditing(false)}
+            className="text-slate-500 text-[11px] font-medium px-2 py-1 rounded-md hover:bg-slate-50"
+          >
+            Annullér
+          </button>
         </div>
       )}
     </div>
@@ -309,12 +332,19 @@ function HighConfidenceRow({
 // ---------------------------------------------------------------
 // Hovedkomponent
 // ---------------------------------------------------------------
-export default function ReviewClient({ document: doc, reviewQueue }: ReviewClientProps) {
+export default function ReviewClient({
+  document: doc,
+  reviewQueue,
+  sourceBlocks,
+}: ReviewClientProps) {
   const router = useRouter()
   const [hoveredFieldId, setHoveredFieldId] = useState<string | null>(null)
   const [showHighConf, setShowHighConf] = useState(true)
   const [decidedIds, setDecidedIds] = useState<Set<string>>(() => new Set(doc.decidedFieldNames))
   const [isApproving, startApprove] = useTransition()
+  const [rejecting, setRejecting] = useState(false)
+  const [rejectReason, setRejectReason] = useState('')
+  const [isRejecting, startReject] = useTransition()
 
   function markDecided(fieldId: string) {
     setDecidedIds((prev) => {
@@ -393,10 +423,8 @@ export default function ReviewClient({ document: doc, reviewQueue }: ReviewClien
   }
 
   const { fields } = doc
-  const highConfidenceFields = fields.filter(
-    (f) => f.confidenceLevel === 'high' && !f.hasDiscrepancy
-  )
-  const attentionFields = fields.filter((f) => f.hasDiscrepancy || f.confidenceLevel !== 'high')
+  const highConfidenceFields = fields.filter((f) => !f.isAttention && !f.hasDiscrepancy)
+  const attentionFields = fields.filter((f) => f.isAttention || f.hasDiscrepancy)
   const missingClauseFields = fields.filter((f) => f.discrepancyType === 'missing_clause')
   const totalReady = highConfidenceFields.length
   const totalFields = fields.length
@@ -419,6 +447,22 @@ export default function ReviewClient({ document: doc, reviewQueue }: ReviewClien
         return
       }
       toast.success('Dokument godkendt')
+      router.push('/documents')
+    })
+  }
+
+  function confirmReject() {
+    if (!doc.extractionId) return
+    startReject(async () => {
+      const result = await rejectDocumentExtraction({
+        extractionId: doc.extractionId!,
+        reason: rejectReason.trim() || undefined,
+      })
+      if (result.error) {
+        toast.error(result.error)
+        return
+      }
+      toast.success('Dokument afvist')
       router.push('/documents')
     })
   }
@@ -515,26 +559,32 @@ export default function ReviewClient({ document: doc, reviewQueue }: ReviewClien
             </div>
             <div className="flex-1 overflow-y-auto bg-slate-50/40 p-6">
               <div className="bg-white rounded-lg ring-1 ring-slate-200/60 shadow-sm px-10 py-10 space-y-7 text-[13px] leading-relaxed text-slate-700 max-w-[640px] mx-auto">
-                {mockPdfBlocks.map((block) => {
-                  const isHighlighted =
-                    hoveredSourceText !== null &&
-                    block.text.includes(hoveredSourceText.slice(0, 20))
-                  return (
-                    <div key={block.id}>
-                      <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.1em] mb-1.5">
-                        {block.paragraph}
-                      </p>
-                      <p
-                        className={cn(
-                          'transition-all rounded px-1.5 -mx-1.5 py-0.5',
-                          isHighlighted && 'bg-amber-200/70 ring-1 ring-amber-300'
-                        )}
-                      >
-                        {block.text}
-                      </p>
-                    </div>
-                  )
-                })}
+                {sourceBlocks.length === 0 ? (
+                  <p className="text-[12px] text-slate-400 italic">
+                    AI-extraktionen har ikke registreret source-blokke for dette dokument.
+                  </p>
+                ) : (
+                  sourceBlocks.map((block) => {
+                    const isHighlighted =
+                      hoveredSourceText !== null &&
+                      block.text.includes(hoveredSourceText.slice(0, 20))
+                    return (
+                      <div key={block.id}>
+                        <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.1em] mb-1.5">
+                          {block.paragraph}
+                        </p>
+                        <p
+                          className={cn(
+                            'transition-all rounded px-1.5 -mx-1.5 py-0.5',
+                            isHighlighted && 'bg-amber-200/70 ring-1 ring-amber-300'
+                          )}
+                        >
+                          {block.text}
+                        </p>
+                      </div>
+                    )
+                  })
+                )}
               </div>
             </div>
           </div>
@@ -685,7 +735,7 @@ export default function ReviewClient({ document: doc, reviewQueue }: ReviewClien
 
               <div className="flex items-center justify-between gap-2 px-4 py-3">
                 <button
-                  onClick={() => toast.info('Dokument afvist (funktion kommer senere)')}
+                  onClick={() => setRejecting(true)}
                   className="bg-white ring-1 ring-slate-900/[0.08] text-slate-700 text-[12px] font-medium px-3 py-1.5 rounded-md hover:bg-slate-50 transition-colors"
                 >
                   Afvis
@@ -727,6 +777,69 @@ export default function ReviewClient({ document: doc, reviewQueue }: ReviewClien
           </div>
         </div>
       </div>
+
+      {rejecting && (
+        // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- backdrop-click lukker dialog; Escape håndteres af autoFocus'd textarea
+        <div
+          className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="reject-dialog-title"
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !isRejecting) {
+              setRejecting(false)
+              setRejectReason('')
+            }
+          }}
+        >
+          {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- stopPropagation forhindrer backdrop-close ved klik på dialog-indhold */}
+          <div
+            className="bg-white rounded-xl ring-1 ring-slate-900/10 p-5 max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 id="reject-dialog-title" className="text-[14px] font-semibold text-slate-900 mb-2">
+              Afvis extraction
+            </h3>
+            <p className="text-[12px] text-slate-500 mb-4 leading-relaxed">
+              Dokumentet markeres som afvist og vises ikke længere i review-køen. Denne handling kan
+              ikke fortrydes.
+            </p>
+            <textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape' && !isRejecting) {
+                  setRejecting(false)
+                  setRejectReason('')
+                }
+              }}
+              placeholder="Årsag (valgfrit, max 500 tegn)"
+              maxLength={500}
+              autoFocus
+              className="w-full text-[12px] text-slate-900 bg-white ring-1 ring-slate-300 rounded-md px-2.5 py-2 min-h-[80px] focus:outline-none focus:ring-slate-900 resize-none mb-4"
+            />
+            <div className="flex items-center justify-end gap-2">
+              <button
+                onClick={() => {
+                  setRejecting(false)
+                  setRejectReason('')
+                }}
+                disabled={isRejecting}
+                className="text-slate-500 text-[12px] font-medium px-3 py-1.5 rounded-md hover:bg-slate-50"
+              >
+                Annullér
+              </button>
+              <button
+                disabled={isRejecting}
+                onClick={confirmReject}
+                className="bg-rose-600 text-white text-[12px] font-medium px-3 py-1.5 rounded-md hover:bg-rose-700 disabled:opacity-50"
+              >
+                {isRejecting ? 'Afviser...' : 'Afvis dokumentet'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

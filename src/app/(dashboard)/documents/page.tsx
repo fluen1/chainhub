@@ -13,6 +13,7 @@ export const metadata: Metadata = { title: 'Dokumenter' }
 // ---------------------------------------------------------------
 function deriveStatus(extraction: ExtractionData | null): DocStatus {
   if (!extraction) return 'archived'
+  if (extraction.extraction_status === 'rejected') return 'rejected'
   if (extraction.extraction_status === 'pending') return 'processing'
   if (!extraction.reviewed_at) return 'ready_for_review'
   return 'reviewed'
