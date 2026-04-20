@@ -58,16 +58,31 @@ export async function createUser(input: CreateUserInput): Promise<ActionResult<U
   const hasAccess = await canAccessModule(session.user.id, 'user_management')
   if (!hasAccess) return { error: 'Du har ikke adgang til at oprette brugere' }
 
-  // Check for duplicate email in organization
+  const normalizedEmail = parsed.data.email.trim().toLowerCase()
+
+  // Fremadrettet håndhæver vi global email-entydighed i app-laget.
+  // Schemaet er stadig unik pr. organisation, men nye tvetydige logins på tværs af
+  // tenants må ikke kunne opstå igen.
   const existing = await prisma.user.findFirst({
     where: {
-      organization_id: session.user.organizationId,
-      email: parsed.data.email,
+      email: { equals: normalizedEmail, mode: 'insensitive' },
       deleted_at: null,
     },
+    select: {
+      id: true,
+      organization_id: true,
+    },
   })
+
   if (existing) {
-    return { error: `En bruger med email ${parsed.data.email} findes allerede` }
+    if (existing.organization_id === session.user.organizationId) {
+      return { error: `En bruger med email ${normalizedEmail} findes allerede` }
+    }
+
+    return {
+      error:
+        'Emailen bruges allerede i en anden organisation. Brug en unik email eller flyt brugeren i stedet.',
+    }
   }
 
   const isGroupRole = parsed.data.role.startsWith('GROUP_')
@@ -81,7 +96,7 @@ export async function createUser(input: CreateUserInput): Promise<ActionResult<U
       const newUser = await tx.user.create({
         data: {
           organization_id: session.user.organizationId,
-          email: parsed.data.email,
+          email: normalizedEmail,
           name: parsed.data.name,
           password_hash: passwordHash,
         },
@@ -106,7 +121,7 @@ export async function createUser(input: CreateUserInput): Promise<ActionResult<U
   } catch (err) {
     captureError(err, {
       namespace: 'action:createUser',
-      extra: { email: parsed.data.email, role: parsed.data.role },
+      extra: { email: normalizedEmail, role: parsed.data.role },
     })
     return { error: 'Brugeren kunne ikke oprettes — prøv igen' }
   }
