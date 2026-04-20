@@ -37,15 +37,34 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
-        const user = await prisma.user.findFirst({
+        const normalizedEmail = credentials.email.trim().toLowerCase()
+
+        // Defensive auth-guard:
+        // Email er kun unik pr. organisation i schemaet, så vi må ikke logge ind på
+        // "første match" hvis samme email findes i flere tenants. I så fald afvises
+        // login deterministisk indtil email er gjort entydig i data.
+        const matchingUsers = await prisma.user.findMany({
           where: {
-            email: credentials.email,
+            email: { equals: normalizedEmail, mode: 'insensitive' },
             deleted_at: null,
             active: true,
           },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            password_hash: true,
+            organization_id: true,
+          },
+          take: 2,
         })
 
-        if (!user || !user.password_hash) {
+        if (matchingUsers.length !== 1) {
+          return null
+        }
+
+        const user = matchingUsers[0]
+        if (!user.password_hash) {
           return null
         }
 
