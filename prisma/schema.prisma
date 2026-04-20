@@ -938,7 +938,9 @@ model OrganizationAISettings {
   shadow_comparison_enabled Boolean  @default(false)
   beta_features             String[] @default([])
   rate_limit_per_day        Int      @default(1000)
-  monthly_cost_cap_usd      Decimal? @db.Decimal(10, 2)
+  monthly_cost_cap_usd      Decimal  @db.Decimal(10, 2) @default(50.00)
+  reserved_cost_usd         Decimal  @db.Decimal(10, 4) @default(0)
+  reservation_period        DateTime @default(now())
   kill_switch               Boolean  @default(false)
 
   created_at DateTime @default(now())
@@ -967,6 +969,8 @@ model AIUsageLog {
   resource_type String?  // 'company' | 'document' | 'contract' — hvad kaldet angår
   resource_id   String?
   cached        Boolean  @default(false) // var det en cache-hit?
+  cache_read_tokens   Int      @default(0)
+  cache_write_tokens  Int      @default(0)
 
   // Ingen dybere PII. Logger ingen prompt-indhold.
 
@@ -981,6 +985,7 @@ model DocumentExtraction {
   document_id     String   @unique
   document        Document @relation(fields: [document_id], references: [id])
   organization_id String
+  content_hash    String?  @db.VarChar(64)
 
   detected_type     String?
   type_confidence   Float?
@@ -993,6 +998,7 @@ model DocumentExtraction {
 
   extracted_fields      Json
   extracted_fields_run2 Json?
+  pipeline_checkpoint   Json?
   agreement_score       Float?
 
   source_verification  Json?
@@ -1021,6 +1027,7 @@ model DocumentExtraction {
   @@index([detected_type])
   @@index([reviewed_at])
   @@index([extraction_status])
+  @@index([organization_id, content_hash])
 }
 
 model AIFieldCorrection {

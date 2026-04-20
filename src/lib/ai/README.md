@@ -51,7 +51,7 @@ Every Claude call logs tokens and cost:
 
 ```typescript
 import { computeCostUsd } from './client'
-const cost = computeCostUsd('claude-sonnet-4-20250514', inputTokens, outputTokens)
+const cost = computeCostUsd('claude-sonnet-4-6', inputTokens, outputTokens)
 ```
 
 ### Feature flags

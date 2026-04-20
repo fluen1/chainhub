@@ -36,21 +36,17 @@ export function AIUsageClient({ data }: Props) {
             </div>
             <div className="text-sm text-gray-500">denne måned</div>
           </div>
-          {data.capUsd !== null && (
-            <div className="text-right">
-              <div className="text-sm text-gray-700">Cap: ${data.capUsd.toFixed(2)}</div>
-              <div className="text-xs text-gray-500">{data.percentage}% brugt</div>
-            </div>
-          )}
-        </div>
-        {data.capUsd !== null && (
-          <div className="w-full h-2 rounded-full bg-gray-200 overflow-hidden">
-            <div
-              className={`h-full ${progressColor} transition-all`}
-              style={{ width: `${Math.min(100, data.percentage)}%` }}
-            />
+          <div className="text-right">
+            <div className="text-sm text-gray-700">Cap: ${data.capUsd.toFixed(2)}</div>
+            <div className="text-xs text-gray-500">{data.percentage}% brugt</div>
           </div>
-        )}
+        </div>
+        <div className="w-full h-2 rounded-full bg-gray-200 overflow-hidden">
+          <div
+            className={`h-full ${progressColor} transition-all`}
+            style={{ width: `${Math.min(100, data.percentage)}%` }}
+          />
+        </div>
         {data.threshold === 'exceeded' && (
           <div className="mt-3 rounded-md bg-red-50 p-3 text-sm text-red-700">
             Månedlig cap er nået. AI-kald afvises indtil ny måned eller cap øges.

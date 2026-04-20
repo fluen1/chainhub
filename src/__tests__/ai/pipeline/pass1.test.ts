@@ -15,7 +15,7 @@ function mockClient(response: Partial<ClaudeResponse>): ClaudeClient {
     providerName: 'anthropic',
     complete: vi.fn().mockResolvedValue({
       id: 'msg_test',
-      model: 'claude-3-5-haiku-20241022',
+      model: 'claude-haiku-4-5',
       stop_reason: 'tool_use',
       content: [
         {
@@ -58,7 +58,7 @@ describe('Pass 1: Type detection', () => {
       providerName: 'anthropic',
       complete: vi.fn().mockResolvedValue({
         id: 'msg_test',
-        model: 'claude-3-5-haiku-20241022',
+        model: 'claude-haiku-4-5',
         stop_reason: 'tool_use',
         content: [
           {
@@ -82,7 +82,7 @@ describe('Pass 1: Type detection', () => {
       providerName: 'anthropic',
       complete: vi.fn().mockResolvedValue({
         id: 'msg_test',
-        model: 'claude-3-5-haiku-20241022',
+        model: 'claude-haiku-4-5',
         stop_reason: 'end_turn',
         content: [{ type: 'text', text: 'I could not classify.' }],
         usage: { input_tokens: 100, output_tokens: 30 },

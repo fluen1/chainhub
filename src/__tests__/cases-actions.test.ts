@@ -14,7 +14,13 @@ vi.mock('@/lib/db', () => ({
       findFirst: vi.fn(),
       update: vi.fn().mockResolvedValue({ id: 'case-1' }),
     },
-    caseCompany: { create: vi.fn().mockResolvedValue({}) },
+    caseCompany: {
+      create: vi.fn().mockResolvedValue({}),
+      findMany: vi.fn().mockResolvedValue([]),
+    },
+    companyInsightsCache: {
+      deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+    },
   },
 }))
 

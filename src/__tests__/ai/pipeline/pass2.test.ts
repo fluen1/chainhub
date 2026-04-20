@@ -31,7 +31,7 @@ const mockSchema: ContractSchema = {
   },
   system_prompt: 'Test prompt',
   user_prompt_prefix: 'Extract fields.',
-  extraction_model: 'claude-sonnet-4-20250514',
+  extraction_model: 'claude-sonnet-4-6',
   sanity_rules: [],
   cross_validation_rules: [],
 }
@@ -48,7 +48,7 @@ describe('Pass 2: Schema extraction', () => {
       providerName: 'anthropic',
       complete: vi.fn().mockResolvedValue({
         id: 'msg_1',
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         stop_reason: 'tool_use',
         content: [
           {
@@ -85,7 +85,7 @@ describe('Pass 2: Schema extraction', () => {
       providerName: 'anthropic',
       complete: vi.fn().mockResolvedValue({
         id: 'msg_1',
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         stop_reason: 'end_turn',
         content: [{ type: 'text', text: 'Could not extract.' }],
         usage: { input_tokens: 100, output_tokens: 20 },
@@ -103,7 +103,7 @@ describe('Pass 2: Schema extraction', () => {
       providerName: 'anthropic',
       complete: vi.fn().mockResolvedValue({
         id: 'msg_1',
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         stop_reason: 'tool_use',
         content: [
           {
@@ -129,7 +129,7 @@ describe('Pass 2: Schema extraction', () => {
   it('passes temperature option to Claude', async () => {
     const completeFn = vi.fn().mockResolvedValue({
       id: 'msg_1',
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       stop_reason: 'tool_use',
       content: [
         {
@@ -156,7 +156,7 @@ describe('Pass 2: Schema extraction', () => {
       providerName: 'anthropic',
       complete: vi.fn().mockResolvedValue({
         id: 'msg_1',
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         stop_reason: 'tool_use',
         content: [
           {
@@ -180,7 +180,7 @@ describe('Pass 2: Schema extraction', () => {
   it('sender korrekt tool_choice til Claude', async () => {
     const completeFn = vi.fn().mockResolvedValue({
       id: 'msg_1',
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       stop_reason: 'tool_use',
       content: [
         {
@@ -207,7 +207,7 @@ describe('Pass 2: Schema extraction', () => {
       providerName: 'anthropic',
       complete: vi.fn().mockResolvedValue({
         id: 'msg_1',
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         stop_reason: 'tool_use',
         content: [
           {

@@ -7,6 +7,7 @@ import { getStorageProvider } from '@/lib/storage'
 import { createQueue, JOB_NAMES } from '@/lib/ai/queue'
 import type { ExtractDocumentPayload } from '@/lib/ai/jobs/extract-document'
 import { createLogger } from '@/lib/ai/logger'
+import { checkUploadRateLimit } from '@/lib/ai/rate-limit'
 
 const log = createLogger('api:upload')
 
@@ -22,6 +23,18 @@ export async function POST(request: NextRequest) {
   const session = await auth()
   if (!session) {
     return NextResponse.json({ error: 'Ikke autoriseret' }, { status: 401 })
+  }
+
+  // Rate-limit: 10 uploads/min per org — blokerer bulk-upload-storm mod Anthropic.
+  const rateCheck = checkUploadRateLimit(session.user.organizationId)
+  if (!rateCheck.allowed) {
+    return NextResponse.json(
+      {
+        error: 'For mange uploads — prøv igen senere',
+        retry_after_ms: rateCheck.retryAfterMs,
+      },
+      { status: 429 }
+    )
   }
 
   const formData = await request.formData()

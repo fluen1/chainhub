@@ -221,7 +221,7 @@ Brug additional_findings til at rapportere usædvanlige klausuler, ændringer fr
   user_prompt_prefix:
     'Analyser disse selskabsvedtægter og ekstraher alle felter via extract_vedtaegter tool.',
 
-  extraction_model: 'claude-sonnet-4-20250514',
+  extraction_model: 'claude-sonnet-4-6',
 
   sanity_rules: [
     {

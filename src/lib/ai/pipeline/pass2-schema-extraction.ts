@@ -3,6 +3,7 @@ import type { ExtractionContent } from '@/lib/ai/content-loader'
 import type { ContractSchema } from '@/lib/ai/schemas/types'
 import type { SchemaExtractionResult, ExtractedField } from './types'
 import { createLogger } from '@/lib/ai/logger'
+import { withCacheControl, canCacheForModel } from '@/lib/ai/cache-control'
 
 const log = createLogger('pass2-schema-extraction')
 
@@ -19,7 +20,7 @@ export async function extractWithSchema(
   const temperature = options.temperature ?? 0.2
 
   // Byg message content baseret på filtype
-  const messageContent = buildContent(content, schema.user_prompt_prefix)
+  const messageContent = buildContent(content, schema.user_prompt_prefix, schema.extraction_model)
 
   const response = await client.complete({
     model: schema.extraction_model,
@@ -27,7 +28,7 @@ export async function extractWithSchema(
     temperature,
     system: schema.system_prompt,
     messages: [{ role: 'user', content: messageContent }],
-    tools: [schema.tool_definition],
+    tools: [withCacheControl(schema.tool_definition)],
     tool_choice: { type: 'tool', name: schema.tool_definition.name },
   })
 
@@ -45,6 +46,8 @@ export async function extractWithSchema(
       model_used: response.model,
       input_tokens: response.usage.input_tokens,
       output_tokens: response.usage.output_tokens,
+      cache_read_input_tokens: response.usage.cache_read_input_tokens ?? 0,
+      cache_creation_input_tokens: response.usage.cache_creation_input_tokens ?? 0,
       raw_response: response,
     }
   }
@@ -121,26 +124,32 @@ export async function extractWithSchema(
     model_used: response.model,
     input_tokens: response.usage.input_tokens,
     output_tokens: response.usage.output_tokens,
+    cache_read_input_tokens: response.usage.cache_read_input_tokens ?? 0,
+    cache_creation_input_tokens: response.usage.cache_creation_input_tokens ?? 0,
     raw_response: response,
   }
 }
 
 function buildContent(
   content: ExtractionContent,
-  userPromptPrefix: string
+  userPromptPrefix: string,
+  extractionModel: ContractSchema['extraction_model']
 ): string | ClaudeContentBlock[] {
   if (content.type === 'pdf_binary') {
-    return [
-      {
-        type: 'document',
-        source: {
-          type: 'base64',
-          media_type: 'application/pdf',
-          data: content.data.toString('base64'),
-        },
+    // Verificeret: PDF-tokens ≈ 3800 pr. side (tekst 2000-2500 + image ~1600)
+    const estimatedTokens = content.page_count * 3800
+    const shouldCache = canCacheForModel(extractionModel, estimatedTokens)
+
+    const docBlock: ClaudeContentBlock = {
+      type: 'document',
+      source: {
+        type: 'base64',
+        media_type: 'application/pdf',
+        data: content.data.toString('base64'),
       },
-      { type: 'text', text: userPromptPrefix },
-    ] as ClaudeContentBlock[]
+      ...(shouldCache ? { cache_control: { type: 'ephemeral' as const } } : {}),
+    }
+    return [docBlock, { type: 'text', text: userPromptPrefix }]
   }
 
   if (content.type === 'text_html') {

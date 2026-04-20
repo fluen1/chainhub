@@ -8,6 +8,7 @@ import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
 import { captureError } from '@/lib/logger'
 import { zodMetricType, zodPeriodType, zodMetricSource } from '@/lib/zod-enums'
+import { invalidateCompanyInsightsCache } from '@/lib/ai/invalidate-cache'
 
 const upsertMetricSchema = z.object({
   companyId: z.string().min(1, 'Selskab mangler'),
@@ -65,6 +66,8 @@ export async function upsertFinancialMetric(
       },
     })
 
+    await invalidateCompanyInsightsCache(parsed.data.companyId)
+
     revalidatePath(`/companies/${parsed.data.companyId}/finance`)
     return { data: metric }
   } catch (err) {
@@ -121,6 +124,8 @@ export async function createDividendRecord(
         created_by: session.user.id,
       },
     })
+
+    await invalidateCompanyInsightsCache(parsed.data.companyId)
 
     revalidatePath(`/companies/${parsed.data.companyId}/finance`)
     return { data: metric }

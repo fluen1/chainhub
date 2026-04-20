@@ -1,9 +1,4 @@
-export type ClaudeModel =
-  | 'claude-opus-4-7-20260101'
-  | 'claude-sonnet-4-6-20251201'
-  | 'claude-sonnet-4-20250514'
-  | 'claude-3-5-haiku-20241022'
-  | 'claude-haiku-4-5-20260101'
+export type ClaudeModel = 'claude-opus-4-7' | 'claude-sonnet-4-6' | 'claude-haiku-4-5'
 
 export interface ClaudeMessage {
   role: 'user' | 'assistant'
@@ -11,15 +6,19 @@ export interface ClaudeMessage {
 }
 
 export type ClaudeContentBlock =
-  | { type: 'text'; text: string }
+  | { type: 'text'; text: string; cache_control?: { type: 'ephemeral' } }
   | { type: 'image'; source: { type: 'base64'; media_type: string; data: string } }
-  | { type: 'document'; source: { type: 'base64'; media_type: 'application/pdf'; data: string } }
+  | {
+      type: 'document'
+      source: { type: 'base64'; media_type: 'application/pdf'; data: string }
+      cache_control?: { type: 'ephemeral' }
+    }
 
 export interface ClaudeRequest {
   model: ClaudeModel
   max_tokens: number
   temperature?: number
-  system?: string
+  system?: string | Array<{ type: 'text'; text: string; cache_control?: { type: 'ephemeral' } }>
   messages: ClaudeMessage[]
   tools?: ClaudeTool[]
   tool_choice?: { type: 'auto' } | { type: 'any' } | { type: 'tool'; name: string }
@@ -29,6 +28,7 @@ export interface ClaudeTool {
   name: string
   description: string
   input_schema: Record<string, unknown>
+  cache_control?: { type: 'ephemeral' }
 }
 
 export interface ClaudeResponse {
@@ -39,6 +39,8 @@ export interface ClaudeResponse {
   usage: {
     input_tokens: number
     output_tokens: number
+    cache_creation_input_tokens?: number
+    cache_read_input_tokens?: number
   }
 }
 
@@ -63,27 +65,21 @@ export class ClaudeClientError extends Error {
 }
 
 export interface ModelPricing {
-  /** Price per million input tokens, USD */
   input: number
-  /** Price per million output tokens, USD */
   output: number
-  /** Price per million cache-write tokens, USD */
   cacheWrite: number
-  /** Price per million cache-read tokens, USD */
   cacheRead: number
 }
 
 /**
- * Verified from claude.com/pricing on 2026-04-18.
- * Batch processing: 50% discount on input+output (not modelled here; apply at call-site if used).
- * US-only inference: 1.1× multiplier (not modelled here).
+ * Verified from claude.com/pricing 2026-04-19.
+ * 5-minute cache (1.25x write, 0.1x read). For 1-hour cache: multiplier er 2.0x write.
+ * Batch API: 50% rabat på input+output (ikke modelleret; anvendes pr. call-site).
  */
 export const MODEL_COSTS: Record<ClaudeModel, ModelPricing> = {
-  'claude-opus-4-7-20260101': { input: 5.0, output: 25.0, cacheWrite: 6.25, cacheRead: 0.5 },
-  'claude-sonnet-4-6-20251201': { input: 3.0, output: 15.0, cacheWrite: 3.75, cacheRead: 0.3 },
-  'claude-sonnet-4-20250514': { input: 3.0, output: 15.0, cacheWrite: 3.75, cacheRead: 0.3 },
-  'claude-3-5-haiku-20241022': { input: 1.0, output: 5.0, cacheWrite: 1.25, cacheRead: 0.1 },
-  'claude-haiku-4-5-20260101': { input: 1.0, output: 5.0, cacheWrite: 1.25, cacheRead: 0.1 },
+  'claude-opus-4-7': { input: 5.0, output: 25.0, cacheWrite: 6.25, cacheRead: 0.5 },
+  'claude-sonnet-4-6': { input: 3.0, output: 15.0, cacheWrite: 3.75, cacheRead: 0.3 },
+  'claude-haiku-4-5': { input: 1.0, output: 5.0, cacheWrite: 1.25, cacheRead: 0.1 },
 }
 
 export function computeCostUsd(

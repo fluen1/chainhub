@@ -18,6 +18,7 @@ import type { ActionResult } from '@/types/actions'
 import type { Contract } from '@prisma/client'
 import { captureError } from '@/lib/logger'
 import { formatDate } from '@/lib/labels'
+import { invalidateCompanyInsightsCache } from '@/lib/ai/invalidate-cache'
 
 // Gyldige status-transitioner
 const VALID_TRANSITIONS: Record<string, string[]> = {
@@ -94,6 +95,8 @@ export async function createContract(input: CreateContractInput): Promise<Action
       })
     }
 
+    if (contract.company_id) await invalidateCompanyInsightsCache(contract.company_id)
+
     revalidatePath('/contracts')
     revalidatePath(`/companies/${parsed.data.companyId}/contracts`)
     return { data: contract }
@@ -163,6 +166,8 @@ export async function updateContractStatus(
       },
     })
 
+    if (contract.company_id) await invalidateCompanyInsightsCache(contract.company_id)
+
     revalidatePath('/contracts')
     revalidatePath(`/contracts/${parsed.data.contractId}`)
     revalidatePath(`/companies/${contract.company_id}/contracts`)
@@ -202,6 +207,8 @@ export async function deleteContract(contractId: string): Promise<ActionResult<v
       where: { id: contractId },
       data: { deleted_at: new Date() },
     })
+
+    if (contract.company_id) await invalidateCompanyInsightsCache(contract.company_id)
 
     revalidatePath('/contracts')
     revalidatePath(`/companies/${contract.company_id}/contracts`)

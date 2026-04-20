@@ -36,7 +36,7 @@ export async function extractDocumentPoc(
   }
 
   const client = createClaudeClient()
-  const model = 'claude-3-5-haiku-20241022' as const
+  const model = 'claude-haiku-4-5' as const
 
   const response = await client.complete({
     model,

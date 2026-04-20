@@ -125,7 +125,7 @@ Hvis klyngen har faerre end 3 peers, undgaa sammenligninger og fokuser paa YoY.`
 // -----------------------------------------------------------------
 
 const TIMEOUT_MS = 8000
-const MODEL: ClaudeModel = 'claude-sonnet-4-20250514'
+const MODEL: ClaudeModel = 'claude-haiku-4-5'
 
 export interface GenerateInsightsContext {
   organizationId: string
@@ -176,9 +176,17 @@ export async function generateCompanyInsights(
       }
     }
 
-    const costUsd = computeCostUsd(MODEL, response.usage.input_tokens, response.usage.output_tokens)
+    const cacheReadTokens = response.usage.cache_read_input_tokens ?? 0
+    const cacheWriteTokens = response.usage.cache_creation_input_tokens ?? 0
+    const costUsd = computeCostUsd(
+      MODEL,
+      response.usage.input_tokens,
+      response.usage.output_tokens,
+      { cacheReadTokens, cacheWriteTokens }
+    )
 
     // Log AI-forbrug hvis kalder har givet context (org + company). Non-fatal hvis DB fejler.
+    // Cache-tokens threades igennem så AIUsageLog reflekterer cache-effektivitet.
     if (context) {
       await recordAIUsage({
         organizationId: context.organizationId,
@@ -187,6 +195,8 @@ export async function generateCompanyInsights(
         provider: 'anthropic',
         inputTokens: response.usage.input_tokens,
         outputTokens: response.usage.output_tokens,
+        cacheReadTokens,
+        cacheWriteTokens,
         costUsd,
         resourceType: 'company',
         resourceId: context.companyId,

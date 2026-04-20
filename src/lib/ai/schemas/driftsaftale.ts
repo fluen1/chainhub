@@ -240,7 +240,7 @@ Brug additional_findings til at rapportere usædvanlige klausuler, SLA-krav, for
   user_prompt_prefix:
     'Analyser denne driftsaftale og ekstraher alle felter via extract_driftsaftale tool.',
 
-  extraction_model: 'claude-sonnet-4-20250514',
+  extraction_model: 'claude-sonnet-4-6',
 
   sanity_rules: [
     {

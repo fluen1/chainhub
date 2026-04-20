@@ -21,10 +21,12 @@ import { checkCostCap, getCostCapStatus } from '@/lib/ai/cost-cap'
 describe('checkCostCap', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('returnerer allowed=true når ingen cap konfigureret', async () => {
+  it('anvender default $50/md cap når settings-row mangler', async () => {
     const { prisma } = await import('@/lib/db')
     vi.mocked(prisma.organizationAISettings.findUnique).mockImplementation((() =>
-      Promise.resolve({ monthly_cost_cap_usd: null })) as never)
+      Promise.resolve(null)) as never)
+    vi.mocked(prisma.aIUsageLog.aggregate).mockImplementation((() =>
+      Promise.resolve({ _sum: { cost_usd: 10 } })) as never)
     const result = await checkCostCap('org-1')
     expect(result.allowed).toBe(true)
     expect(result.reason).toBeUndefined()
@@ -88,12 +90,15 @@ describe('getCostCapStatus', () => {
     expect(result.threshold).toBe('exceeded')
   })
 
-  it('returnerer threshold=none når ingen cap', async () => {
+  it('falder tilbage til default $50 cap når settings-row mangler', async () => {
     const { prisma } = await import('@/lib/db')
     vi.mocked(prisma.organizationAISettings.findUnique).mockImplementation((() =>
-      Promise.resolve({ monthly_cost_cap_usd: null })) as never)
+      Promise.resolve(null)) as never)
+    vi.mocked(prisma.aIUsageLog.aggregate).mockImplementation((() =>
+      Promise.resolve({ _sum: { cost_usd: 5 } })) as never)
     const result = await getCostCapStatus('org-1')
-    expect(result.capUsd).toBeNull()
+    expect(result.capUsd).toBe(50)
+    expect(result.currentUsd).toBe(5)
     expect(result.threshold).toBe('none')
   })
 })

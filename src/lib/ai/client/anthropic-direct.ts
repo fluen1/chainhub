@@ -28,12 +28,20 @@ export class AnthropicDirectClient implements ClaudeClient {
         tool_choice: request.tool_choice as never,
       })
       const latencyMs = Date.now() - start
+      const usage = response.usage as {
+        input_tokens: number
+        output_tokens: number
+        cache_creation_input_tokens?: number
+        cache_read_input_tokens?: number
+      }
       log.info(
         {
           model: response.model,
           stop_reason: response.stop_reason,
-          input_tokens: response.usage.input_tokens,
-          output_tokens: response.usage.output_tokens,
+          input_tokens: usage.input_tokens,
+          output_tokens: usage.output_tokens,
+          cache_read: usage.cache_read_input_tokens ?? 0,
+          cache_write: usage.cache_creation_input_tokens ?? 0,
           latency_ms: latencyMs,
         },
         'Claude response'
@@ -44,8 +52,10 @@ export class AnthropicDirectClient implements ClaudeClient {
         stop_reason: response.stop_reason as ClaudeResponse['stop_reason'],
         content: response.content as ClaudeResponse['content'],
         usage: {
-          input_tokens: response.usage.input_tokens,
-          output_tokens: response.usage.output_tokens,
+          input_tokens: usage.input_tokens,
+          output_tokens: usage.output_tokens,
+          cache_creation_input_tokens: usage.cache_creation_input_tokens,
+          cache_read_input_tokens: usage.cache_read_input_tokens,
         },
       }
     } catch (err) {

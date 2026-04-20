@@ -6,6 +6,10 @@ vi.mock('@/lib/ai/feature-flags', () => ({
 }))
 vi.mock('@/lib/ai/cost-cap', () => ({
   checkCostCap: vi.fn(),
+  reserveAIBudget: vi.fn().mockResolvedValue({ reserved: true, reservationId: 'test' }),
+  commitAIUsage: vi.fn().mockResolvedValue(undefined),
+  releaseReservation: vi.fn().mockResolvedValue(undefined),
+  estimateExtractionCost: vi.fn().mockReturnValue(0.12),
 }))
 vi.mock('@/lib/ai/usage', () => ({
   recordAIUsage: vi.fn().mockResolvedValue(undefined),
@@ -20,6 +24,8 @@ vi.mock('@/lib/db', () => ({
   prisma: {
     documentExtraction: {
       upsert: vi.fn(),
+      findFirst: vi.fn().mockResolvedValue(null),
+      findUnique: vi.fn().mockResolvedValue(null),
     },
   },
 }))
@@ -84,7 +90,7 @@ describe('extractDocument enforcement', () => {
       type_detection: { detected_type: 'EJERAFTALE', confidence: 0.95, alternatives: [] },
       extraction_run1: {
         fields: { field_a: 'value' },
-        model_used: 'claude-sonnet-4-20250514',
+        model_used: 'claude-sonnet-4-6',
         raw_response: {},
       },
       extraction_run2: null,
@@ -97,8 +103,11 @@ describe('extractDocument enforcement', () => {
       extraction_warnings: [],
       total_input_tokens: 500,
       total_output_tokens: 250,
+      total_cache_read_tokens: 300,
+      total_cache_write_tokens: 100,
       total_cost_usd: 0.042,
     })
+    ;(prisma.documentExtraction.findFirst as ReturnType<typeof vi.fn>).mockResolvedValue(null)
     ;(prisma.documentExtraction.upsert as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: 'extraction-1',
     })
@@ -112,10 +121,12 @@ describe('extractDocument enforcement', () => {
     expect(recordAIUsage).toHaveBeenCalledWith({
       organizationId: 'org-1',
       feature: 'extraction',
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       provider: 'anthropic',
       inputTokens: 500,
       outputTokens: 250,
+      cacheReadTokens: 300,
+      cacheWriteTokens: 100,
       costUsd: 0.042,
       resourceType: 'document',
       resourceId: 'doc-1',

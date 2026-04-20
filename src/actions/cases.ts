@@ -14,6 +14,7 @@ import type { ActionResult } from '@/types/actions'
 import type { Case } from '@prisma/client'
 import { recordAuditEvent } from '@/lib/audit'
 import { captureError } from '@/lib/logger'
+import { invalidateCompanyInsightsCache } from '@/lib/ai/invalidate-cache'
 
 // Gyldige sagsstatus-transitioner
 const CASE_TRANSITIONS: Record<string, string[]> = {
@@ -92,6 +93,8 @@ export async function createCase(input: CreateCaseInput): Promise<ActionResult<C
       )
     )
 
+    await Promise.all(parsed.data.companyIds.map((cId) => invalidateCompanyInsightsCache(cId)))
+
     revalidatePath('/cases')
     parsed.data.companyIds.forEach((cId) => revalidatePath(`/companies/${cId}/cases`))
     return { data: newCase }
@@ -147,6 +150,13 @@ export async function updateCaseStatus(input: UpdateCaseStatusInput): Promise<Ac
       changes: { oldStatus: existingCase.status, newStatus: parsed.data.status },
     })
 
+    // Invalider insights-cache for alle tilknyttede selskaber (M:N via CaseCompany)
+    const caseCompanies = await prisma.caseCompany.findMany({
+      where: { case_id: parsed.data.caseId, organization_id: session.user.organizationId },
+      select: { company_id: true },
+    })
+    await Promise.all(caseCompanies.map((cc) => invalidateCompanyInsightsCache(cc.company_id)))
+
     revalidatePath('/cases')
     revalidatePath(`/cases/${parsed.data.caseId}`)
     return { data: updated }
@@ -175,6 +185,13 @@ export async function deleteCase(caseId: string): Promise<ActionResult<void>> {
     where: { id: caseId },
     data: { deleted_at: new Date() },
   })
+
+  // Invalider insights-cache for alle tilknyttede selskaber
+  const caseCompanies = await prisma.caseCompany.findMany({
+    where: { case_id: caseId, organization_id: session.user.organizationId },
+    select: { company_id: true },
+  })
+  await Promise.all(caseCompanies.map((cc) => invalidateCompanyInsightsCache(cc.company_id)))
 
   revalidatePath('/cases')
   return { data: undefined }

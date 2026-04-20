@@ -6,7 +6,7 @@ const minimalSchema: ContractSchema = {
   contract_type: 'MINIMAL',
   schema_version: 'v1.0.0',
   display_name: 'Ukendt kontrakttype',
-  extraction_model: 'claude-3-5-haiku-20241022', // cheap model for basic extraction
+  extraction_model: 'claude-haiku-4-5', // cheap model for basic extraction
 
   tool_definition: {
     name: 'extract_minimal',

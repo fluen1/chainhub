@@ -17,6 +17,8 @@ export interface RecordUsageInput {
   provider: 'anthropic' | 'bedrock'
   inputTokens: number
   outputTokens: number
+  cacheReadTokens?: number
+  cacheWriteTokens?: number
   costUsd: number
   resourceType?: string
   resourceId?: string
@@ -38,10 +40,12 @@ export async function recordAIUsage(input: RecordUsageInput): Promise<void> {
         provider: input.provider,
         input_tokens: input.inputTokens,
         output_tokens: input.outputTokens,
+        cache_read_tokens: input.cacheReadTokens ?? 0,
+        cache_write_tokens: input.cacheWriteTokens ?? 0,
         cost_usd: input.costUsd,
         resource_type: input.resourceType ?? null,
         resource_id: input.resourceId ?? null,
-        cached: input.cached ?? false,
+        cached: input.cached ?? (input.cacheReadTokens ?? 0) > 0,
       },
     })
   } catch (err) {

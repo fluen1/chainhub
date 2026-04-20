@@ -6,7 +6,7 @@ const log = createLogger('content-loader')
 const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024
 
 export type ExtractionContent =
-  | { type: 'pdf_binary'; data: Buffer; detectedMime: string }
+  | { type: 'pdf_binary'; data: Buffer; detectedMime: string; page_count: number }
   | { type: 'text_html'; html: string; detectedMime: string }
   | { type: 'text_markdown'; markdown: string; detectedMime: string }
 
@@ -63,11 +63,16 @@ export async function loadForExtraction(
   log.debug({ filename, detected_ext: type.ext, size: buffer.length }, 'File detected')
 
   if (type.ext === 'pdf') {
+    let pageCount = 0
     try {
       const encrypted = await isPdfEncrypted(buffer)
       if (encrypted) {
         throw new ContentLoaderError(`PDF is password-protected: ${filename}`, 'encrypted_pdf')
       }
+      // Tæl sider efter encryption-check så vi ved PDF'en er loadable
+      const uint8 = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength)
+      const pdfDoc = await PDFDocument.load(uint8, { ignoreEncryption: true })
+      pageCount = pdfDoc.getPageCount()
     } catch (err) {
       if (err instanceof ContentLoaderError) throw err
       throw new ContentLoaderError(
@@ -75,7 +80,7 @@ export async function loadForExtraction(
         'corrupt_file'
       )
     }
-    return { type: 'pdf_binary', data: buffer, detectedMime: type.mime }
+    return { type: 'pdf_binary', data: buffer, detectedMime: type.mime, page_count: pageCount }
   }
 
   if (type.ext === 'docx') {

@@ -9,7 +9,7 @@ import type { ActionResult } from '@/types/actions'
 
 export interface AIUsageDashboardData {
   totalCostUsd: number
-  capUsd: number | null
+  capUsd: number
   percentage: number
   threshold: string
   byFeature: Array<{ feature: string; costUsd: number }>

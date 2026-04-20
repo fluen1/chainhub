@@ -5,6 +5,8 @@ export interface TypeDetectionResult {
   model_used: string
   input_tokens: number
   output_tokens: number
+  cache_read_input_tokens?: number
+  cache_creation_input_tokens?: number
 }
 
 export interface SchemaExtractionResult {
@@ -14,6 +16,8 @@ export interface SchemaExtractionResult {
   model_used: string
   input_tokens: number
   output_tokens: number
+  cache_read_input_tokens?: number
+  cache_creation_input_tokens?: number
   raw_response: unknown
 }
 
@@ -75,12 +79,35 @@ export interface PipelineResult {
   extraction_warnings: Array<{ warning: string; severity: string }>
   total_input_tokens: number
   total_output_tokens: number
+  total_cache_read_tokens: number
+  total_cache_write_tokens: number
   total_cost_usd: number
+}
+
+export interface PipelineCheckpoint {
+  type_result?: TypeDetectionResult
+  run1?: SchemaExtractionResult
 }
 
 export interface PipelineOptions {
   document_id: string
-  organization_id: string
-  skip_agreement: boolean
+  organization_id?: string
+  /**
+   * Styrer Pass 2b (2. extraction-run for agreement-scoring).
+   * - undefined (default): confidence-gated — 2b kører kun hvis Pass 2a har min-confidence < 0.75
+   * - true: tving 1-run (spar cost; agreement-score bliver tom)
+   * - false: tving 2-run (eksplicit opt-in til fuld agreement-scoring)
+   */
+  skip_agreement?: boolean
   forced_type?: string
+  /**
+   * Resumable checkpoint fra et tidligere kørsel-forsøg.
+   * Hvis til stede, springer orchestrator de færdige passes over.
+   */
+  checkpoint?: PipelineCheckpoint
+  /**
+   * Kaldes efter hvert succesfuldt pass med den opdaterede checkpoint-state.
+   * Brugt til at persistere checkpoint i DB så retry kan genoptage.
+   */
+  onCheckpoint?: (cp: PipelineCheckpoint) => Promise<void>
 }

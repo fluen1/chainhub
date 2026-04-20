@@ -11,6 +11,37 @@
 > - Gennemsnits-dokument-cost: **$0.55 (ikke $0.22-0.25)** — ~2.5× højere
 > - L/XL-kunder på flat Plus-pris uholdbart — staffeling bliver KRITISK
 
+> **v3 (2026-04-19) — verificerede tal + safeguards leveret:**
+>
+> Efter dybere audit (se `docs/build/AI-COST-MODEL.md` v3) og Safeguards-sprint (se `docs/superpowers/plans/2026-04-19-ai-cost-safeguards.md`):
+>
+> - **AI-cost-beregninger er verificerede** mod claude.com/pricing og platform.claude.com-docs (2026-04-19)
+> - **Realistisk gennemsnits-dokument-cost efter safeguards: ~$0.23** (skip_agreement default + PDF-caching + Haiku 4.5 insights) — **60-70% lavere end v2's $0.55**
+> - **AI-andel af tier-pris:** 0.3-1.0% med safeguards, 0.7-2.5% uden. **Marginerne er dramatisk sunde.**
+> - Safeguards leveret på branch `feat/ai-cost-safeguards`: model-migration, prompt-caching, atomisk cost-cap, rate-limit, content-hash dedup, checkpoint-resume, default $50/md cap
+>
+> ### Beslutning bekræftet (ingen tier-prisændringer)
+>
+> - **Basis: 3.500 kr/md** ✓
+> - **Plus: 9.500 kr/md + 75 kr/ekstra selskab over 50** ✓
+> - **Enterprise: floor 32.000 kr/md** ✓
+> - **Margin-mål: 95%+ på alle tiers** ✓ (opnås komfortabelt med safeguards)
+>
+> ### NYT — onboarding-fee
+>
+> Onboarding-AI-cost for kunde med mange eksisterende kontrakter kan løbe op i $1.800 worst case (XL uden safeguards). Med safeguards + Batch API reduceres til $560. For at dække og signalere værdi:
+>
+> - **Onboarding-fee: 1 kr pr. dokument ved initial import, max 2.500 kr**
+> - Forklares som "data-migrations-setup" i salgsmateriale
+> - Dækker AI-cost med 3-5× margin + administrativt arbejde
+>
+> ### Åbne spørgsmål til brugeren
+>
+> 1. Godkendes onboarding-fee 1 kr/dok, max 2.500 kr? (ja/nej/andet)
+> 2. Overvej Plus-S (6.500 kr for 15-30 selskaber) og Plus-L (9.500 kr for 30-50)? (ja/nej/senere)
+> 3. Default cost-cap på nye orgs: $50/md er nu implementeret. Behold? (ja/andet beløb)
+> 4. Anthropic-tier ved prod-start: Tier 2 ($40 deposit, 1.000 RPM) anbefalet. OK?
+
 ---
 
 ## TL;DR — anbefalede prisintervaller (REVIDERET v2)

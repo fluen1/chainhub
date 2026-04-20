@@ -41,7 +41,7 @@ describe('generateCompanyInsights', () => {
   it('returnerer valid result ved happy path', async () => {
     const mockComplete = vi.fn().mockResolvedValue({
       id: 'msg_1',
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       stop_reason: 'end_turn',
       content: [
         {
@@ -81,15 +81,17 @@ describe('generateCompanyInsights', () => {
       expect(result.data.alerts[0].severity).toBe('critical')
       expect(result.data.insight?.headline_md).toContain('ejeraftalen')
       expect(result.cost_usd).toBe(0.0123)
-      expect(result.model_name).toBe('claude-sonnet-4-20250514')
+      expect(result.model_name).toBe('claude-haiku-4-5')
     }
     expect(recordAIUsage).toHaveBeenCalledWith({
       organizationId: 'org-1',
       feature: 'insights',
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-haiku-4-5',
       provider: 'anthropic',
       inputTokens: 100,
       outputTokens: 50,
+      cacheReadTokens: 0,
+      cacheWriteTokens: 0,
       costUsd: 0.0123,
       resourceType: 'company',
       resourceId: 'company-1',
@@ -99,7 +101,7 @@ describe('generateCompanyInsights', () => {
   it('skipper recordAIUsage naar context udelades', async () => {
     const mockComplete = vi.fn().mockResolvedValue({
       id: 'msg_nc',
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       stop_reason: 'end_turn',
       content: [
         {
@@ -122,7 +124,7 @@ describe('generateCompanyInsights', () => {
   it('haandterer JSON i markdown fence', async () => {
     const mockComplete = vi.fn().mockResolvedValue({
       id: 'msg_2',
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       stop_reason: 'end_turn',
       content: [
         {
@@ -148,7 +150,7 @@ describe('generateCompanyInsights', () => {
   it('returnerer failure ved malformed JSON', async () => {
     const mockComplete = vi.fn().mockResolvedValue({
       id: 'msg_3',
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       stop_reason: 'end_turn',
       content: [{ type: 'text', text: 'ikke-json-tekst' }],
       usage: { input_tokens: 50, output_tokens: 10 },
@@ -165,7 +167,7 @@ describe('generateCompanyInsights', () => {
   it('returnerer failure ved schema mismatch', async () => {
     const mockComplete = vi.fn().mockResolvedValue({
       id: 'msg_4',
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       stop_reason: 'end_turn',
       content: [
         {

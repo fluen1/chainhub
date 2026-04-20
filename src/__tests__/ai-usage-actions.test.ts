@@ -47,7 +47,7 @@ describe('getAIUsageDashboard', () => {
         {
           id: 'log-1',
           feature: 'insights',
-          model: 'claude-haiku-4-5-20260101',
+          model: 'claude-haiku-4-5',
           cost_usd: 0.02,
           created_at: new Date(),
           resource_type: 'company',

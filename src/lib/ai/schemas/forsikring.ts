@@ -233,7 +233,7 @@ Brug additional_findings til at rapportere usædvanlige klausuler, særlige beti
   user_prompt_prefix:
     'Analyser denne forsikringspolice og ekstraher alle felter via extract_forsikring tool.',
 
-  extraction_model: 'claude-sonnet-4-20250514',
+  extraction_model: 'claude-sonnet-4-6',
 
   sanity_rules: [
     {

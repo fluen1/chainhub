@@ -25,7 +25,7 @@ describe('recordAIUsage', () => {
     await recordAIUsage({
       organizationId: 'org-1',
       feature: 'insights',
-      model: 'claude-haiku-4-5-20260101',
+      model: 'claude-haiku-4-5',
       provider: 'anthropic',
       inputTokens: 10000,
       outputTokens: 2000,
@@ -37,11 +37,84 @@ describe('recordAIUsage', () => {
       data: expect.objectContaining({
         organization_id: 'org-1',
         feature: 'insights',
-        model: 'claude-haiku-4-5-20260101',
+        model: 'claude-haiku-4-5',
         input_tokens: 10000,
         output_tokens: 2000,
         cost_usd: 0.02,
       }),
+    })
+  })
+
+  it('persisterer cache_read_tokens + cache_write_tokens', async () => {
+    const { prisma } = await import('@/lib/db')
+    await recordAIUsage({
+      organizationId: 'org-1',
+      feature: 'insights',
+      model: 'claude-haiku-4-5',
+      provider: 'anthropic',
+      inputTokens: 10000,
+      outputTokens: 2000,
+      cacheReadTokens: 5000,
+      cacheWriteTokens: 10000,
+      costUsd: 0.02,
+    })
+    expect(prisma.aIUsageLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        cache_read_tokens: 5000,
+        cache_write_tokens: 10000,
+      }),
+    })
+  })
+
+  it('auto-inferer cached=true når cacheReadTokens > 0', async () => {
+    const { prisma } = await import('@/lib/db')
+    await recordAIUsage({
+      organizationId: 'org-1',
+      feature: 'insights',
+      model: 'claude-haiku-4-5',
+      provider: 'anthropic',
+      inputTokens: 10000,
+      outputTokens: 2000,
+      cacheReadTokens: 5000,
+      costUsd: 0.02,
+    })
+    expect(prisma.aIUsageLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ cached: true }),
+    })
+  })
+
+  it('auto-inferer cached=false når cacheReadTokens === 0', async () => {
+    const { prisma } = await import('@/lib/db')
+    await recordAIUsage({
+      organizationId: 'org-1',
+      feature: 'insights',
+      model: 'claude-haiku-4-5',
+      provider: 'anthropic',
+      inputTokens: 10000,
+      outputTokens: 2000,
+      cacheReadTokens: 0,
+      costUsd: 0.02,
+    })
+    expect(prisma.aIUsageLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ cached: false }),
+    })
+  })
+
+  it('eksplicit cached=false overruler auto-inference selv med cacheReadTokens > 0', async () => {
+    const { prisma } = await import('@/lib/db')
+    await recordAIUsage({
+      organizationId: 'org-1',
+      feature: 'insights',
+      model: 'claude-haiku-4-5',
+      provider: 'anthropic',
+      inputTokens: 10000,
+      outputTokens: 2000,
+      cacheReadTokens: 5000,
+      cached: false,
+      costUsd: 0.02,
+    })
+    expect(prisma.aIUsageLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ cached: false }),
     })
   })
 
@@ -53,7 +126,7 @@ describe('recordAIUsage', () => {
       recordAIUsage({
         organizationId: 'org-1',
         feature: 'insights',
-        model: 'claude-haiku-4-5-20260101',
+        model: 'claude-haiku-4-5',
         provider: 'anthropic',
         inputTokens: 100,
         outputTokens: 50,

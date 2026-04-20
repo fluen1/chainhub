@@ -18,7 +18,7 @@ export async function detectDocumentType(
   const messageContent = buildMessageContent(content)
 
   const response = await client.complete({
-    model: 'claude-3-5-haiku-20241022',
+    model: 'claude-haiku-4-5',
     max_tokens: 256,
     system: `Du er ekspert i at klassificere danske juridiske dokumenter.
 Klassificér dokumentet som en af følgende typer:
@@ -81,6 +81,8 @@ Returnér via classify_document tool.`,
       model_used: response.model,
       input_tokens: response.usage.input_tokens,
       output_tokens: response.usage.output_tokens,
+      cache_read_input_tokens: response.usage.cache_read_input_tokens ?? 0,
+      cache_creation_input_tokens: response.usage.cache_creation_input_tokens ?? 0,
     }
   }
 
@@ -109,6 +111,8 @@ Returnér via classify_document tool.`,
     model_used: response.model,
     input_tokens: response.usage.input_tokens,
     output_tokens: response.usage.output_tokens,
+    cache_read_input_tokens: response.usage.cache_read_input_tokens ?? 0,
+    cache_creation_input_tokens: response.usage.cache_creation_input_tokens ?? 0,
   }
 }
 

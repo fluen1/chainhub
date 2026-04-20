@@ -262,7 +262,7 @@ Brug additional_findings til at rapportere usædvanlige klausuler, manglende sta
   user_prompt_prefix:
     'Analyser denne lejekontrakt og ekstraher alle felter via extract_lejekontrakt tool.',
 
-  extraction_model: 'claude-sonnet-4-20250514',
+  extraction_model: 'claude-sonnet-4-6',
 
   sanity_rules: [
     {

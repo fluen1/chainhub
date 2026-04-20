@@ -15,6 +15,7 @@ import type { ActionResult } from '@/types/actions'
 import type { Company } from '@prisma/client'
 import { captureError } from '@/lib/logger'
 import { geocodeAddress } from '@/lib/geocode'
+import { invalidateCompanyInsightsCache } from '@/lib/ai/invalidate-cache'
 
 const stamdataSchema = z.object({
   name: z.string().min(1, 'Navn er paakraevet').max(200, 'Navn maa maks vaere 200 tegn'),
@@ -129,6 +130,8 @@ export async function updateCompany(input: UpdateCompanyInput): Promise<ActionRe
       },
     })
 
+    await invalidateCompanyInsightsCache(parsed.data.companyId)
+
     revalidatePath(`/companies/${parsed.data.companyId}`)
     revalidatePath('/companies')
     return { data: company }
@@ -156,6 +159,8 @@ export async function deleteCompany(companyId: string): Promise<ActionResult<voi
       },
       data: { deleted_at: new Date() },
     })
+
+    await invalidateCompanyInsightsCache(companyId)
 
     revalidatePath('/dashboard')
     revalidatePath('/companies')
@@ -209,6 +214,8 @@ export async function updateCompanyStamdata(
         longitude: coords?.longitude ?? undefined,
       },
     })
+
+    await invalidateCompanyInsightsCache(companyId)
 
     revalidatePath(`/companies/${companyId}`)
     revalidatePath('/companies')
