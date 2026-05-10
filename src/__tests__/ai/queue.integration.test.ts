@@ -44,6 +44,6 @@ describe.skipIf(!runIntegrationTests)('queue integration', () => {
   }, 15_000)
 
   it('exposes JOB_NAMES constants', () => {
-    expect(JOB_NAMES.EXTRACT_DOCUMENT_POC).toBe('extraction.poc')
+    expect(JOB_NAMES.EXTRACT_DOCUMENT).toBe('extraction.full')
   })
 })

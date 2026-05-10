@@ -6,7 +6,6 @@ const log = createLogger('queue')
 let bossInstance: PgBoss | null = null
 
 export const JOB_NAMES = {
-  EXTRACT_DOCUMENT_POC: 'extraction.poc',
   EXTRACT_DOCUMENT: 'extraction.full',
 } as const
 
