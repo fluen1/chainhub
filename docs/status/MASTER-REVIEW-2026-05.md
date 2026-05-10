@@ -10,7 +10,40 @@
 
 ## 1. Eksekutiv opsummering
 
-_Skrives sidst — opsamler alle fund_
+**Pilot-readiness:** **3,9/5** gennemsnit på 25 sider. Stiger til **~4,5/5** når P0-listen lukkes (~13-20 timers arbejde).
+
+**Hovedfund:**
+
+1. **🔴 KRITISK: 6 server actions har ingen UI-wiring** (afsnit 4.3) — `addOwner`, `addCompanyPerson`, `addMetric`, upload kontraktversion, `endOwnership`, `endCompanyPerson`. Pilot-kunde kan oprette et selskab, men ikke tilføje ejere, medarbejdere, finansielle metrics eller nye kontraktversioner fra UI. Plan 4C/4D omskrev `/companies/[id]` til READ-ONLY single-page og glemte Add-knapperne. **Den vigtigste blocker for første betalende kunde.**
+2. **🟠 Plus-tier-hul:** AI-extractions vises ikke på `/contracts/[id]` — kun på `/persons/[id]` og `/documents/review/[id]`. Brugeren åbner naturligt en kontrakt for at se kontrakt-felter, ikke en person. Kommerciel uoverensstemmelse.
+3. **🟢 17 dead-code-filer fundet** — 7 sletes denne session (6 komponenter + extract-document-poc-stack); 11 markeret som "afhænger af UI-wiring-beslutning".
+
+**Tier-vurdering kommercielt:**
+
+- **Basis:** 3,5/5 nu, **4/5 efter P0-fix** → pilot-klar.
+- **Plus:** 3/5 — fungerer, men hul i salgsfortælling pga. P0-5.
+- **Enterprise:** 1/5 — Phase C ikke startet.
+
+**Leveret denne session (5 commits):**
+
+- Master review-dokument + design-spec (`276f7fb`)
+- `/persons/[id]` responsive grid + bredere desktop (`b18c441`)
+- 6 dead-code komponenter slettet (`8e41750`) — −1079 linjer
+- POC extraction-stack slettet (`ff4a8f5`) — −195 linjer
+- `/settings` System-sektion kollapseret til single-link (`8e721bc`)
+
+**Test-gate efter fixes:**
+
+- ✅ TypeScript: 0 fejl
+- ✅ Build: 28 routes prerendered, kun pre-existing warning på global-error.tsx
+- ✅ Komponent-tests: 147/147
+- ⚠ Integration-tests: 15 fejl pga. Supabase-instans utilgængelig (`ENOTFOUND`) — ikke forårsaget af denne session. Verificeret via fokuseret test-kørsel.
+
+**Anbefalet næste skridt:**
+
+1. **Beslutning på P0-listen** (afsnit 5) — vil du eksekvere de 6 wiring-fixes næste session? ~13-20 timer samlet.
+2. **Verificér Supabase-instans er aktiv** (BLK-005-lignende) — tests kan ikke køres komplet før det.
+3. **Walk-through af GROUP_LEGAL og GROUP_FINANCE roller** (P2-12) — dashboard er kun valideret for GROUP_OWNER.
 
 ---
 
@@ -199,7 +232,7 @@ ai/
 │  └─ Personer (/persons)         [→ /persons/new, /persons/[id] m. GDPR-panel]
 │
 └─ Bottom
-   └─ Indstillinger (/settings)   [→ /settings/users, /settings/ai-usage]
+   └─ Indstillinger (/settings)   [→ /settings/ai-usage] (brugerstyring inline på /settings)
 
 Skjult fra sidebar:
    /visits/new, /visits/[id]      [kun nået via /calendar eller /companies/[id]]
@@ -246,11 +279,12 @@ _Tier: B=Basis · +=Plus · ++=Enterprise_
 | 20  | /visits/[id]           | **5** | B        | skjult  | Plan 4C-konform 2-col responsive                                                                                     |
 | 21  | /calendar              | **3** | B        | nyttig  | Erstatter /visits-listen. Måneds-grid bryder <400px — agenda-fallback mangler                                        |
 | 22  | /search                | **5** | B        | nyttig  | 6 entitetstyper, sektioneret, dashed empty-state                                                                     |
-| 23  | /settings              | **3** | B        | infra   | User-tabel + org-form + system-grid. System-grid halvtom (kun AI-usage-link)                                         |
-| 24  | /settings/users        | **4** | B        | infra   | (Linket fra /settings — overlapper indholdsmæssigt med /settings user-tabel)                                         |
-| 25  | /settings/ai-usage     | **4** | + / ++   | infra   | Cap-bar + breakdown. Kun relevant for Plus/Enterprise (Basis ser ingen AI-data)                                      |
+| 23  | /settings              | **4** | B        | infra   | User-tabel + org-form + System-link (kollapseret denne session) + backup                                             |
+| 24  | /settings/ai-usage     | **4** | + / ++   | infra   | Cap-bar + breakdown. Kun relevant for Plus/Enterprise (Basis ser ingen AI-data)                                      |
 
-**Gennemsnit pilot-readiness: ~3,9 / 5**
+_(Note: `/settings/users` findes IKKE som separat route — al brugerstyring er på `/settings` direkte. Tidligere udkast og dokumenter referer til en ikke-eksisterende side.)_
+
+**Gennemsnit pilot-readiness: ~3,9 / 5** (24 sider faktisk).
 
 ### Detaljer pr. side (kun hvor opdatering siden 2026-04 audit eller ny vinkel er relevant)
 
@@ -407,11 +441,11 @@ Plan 4C/4D omskrev `/companies/[id]` til single-page med READ-ONLY sektioner. Se
 
 ### 4.5 Navigation-overlap
 
-| Issue                                       | Detalje                                                                                                                                                                               |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/settings` user-tabel vs `/settings/users` | Begge sider viser brugere. `/settings` har inline-tabel (`page.tsx:98-104`), `/settings/users` har dedicated. Skal `/settings` linke til `/settings/users` i stedet for at duplikere? |
-| `/visits` ingen list-page                   | Slettet i Plan 4D — adgang kun via `/calendar`. Sidebar har ingen "Besøg"-entry. Inkonsistens: `/visits/new` er standalone route + linkbar fra calendar.                              |
-| `/persons` employees vs all-toggle          | Velvalg, men den default-state (employees=true) skjuler alle non-employees uden tydeligt visuel cue.                                                                                  |
+| Issue                                           | Detalje                                                                                                                                                                                                                                          |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| ~~`/settings` user-tabel vs `/settings/users`~~ | **VOID:** `/settings/users` findes ikke som faktisk route. Brugerstyring er konsolideret på `/settings` direkte. Historisk reference i flere docs (PROGRESS.md, SPEC-TILLAEG-v2.md, UI-FLOWS.md, onboarding-panel.tsx kommentar) skal opdateres. |
+| `/visits` ingen list-page                       | Slettet i Plan 4D — adgang kun via `/calendar`. Sidebar har ingen "Besøg"-entry. Inkonsistens: `/visits/new` er standalone route + linkbar fra calendar.                                                                                         |
+| `/persons` employees vs all-toggle              | Velvalg, men den default-state (employees=true) skjuler alle non-employees uden tydeligt visuel cue.                                                                                                                                             |
 
 ### 4.6 Doc-redundans
 
@@ -436,16 +470,16 @@ Plan 4C/4D omskrev `/companies/[id]` til single-page med READ-ONLY sektioner. Se
 
 ### P1 — Quick wins (denne session)
 
-| #    | Fix                                                                                                                        | Estimat | Kilde           |
-| ---- | -------------------------------------------------------------------------------------------------------------------------- | ------: | --------------- |
-| P1-1 | Slet 6 sikre dead-code komponenter (EditCompanyForm, CompanyStatusBadge, ContractList, CaseList, DocumentList, mobile-nav) |  30 min | 4.1             |
-| P1-2 | Slet `extract-document-poc.ts` (+ poc-test)                                                                                |  15 min | 4.1             |
-| P1-3 | `/persons/[id]` linje 290: tilføj `lg:grid-cols-2` for responsive                                                          |   5 min | §3 persons/[id] |
-| P1-4 | `/persons/[id]` `max-w-4xl` → `max-w-6xl` (udnyt desktop)                                                                  |   5 min | §3 persons/[id] |
-| P1-5 | `/settings` System-sektion: udfyld eller kollapsi til single-col                                                           |  15 min | §3 settings     |
-| P1-6 | `/settings` user-tabel: link til /settings/users i stedet for duplikering                                                  |  20 min | 4.5             |
+| #        | Fix                                                                                                                        | Estimat | Kilde           |
+| -------- | -------------------------------------------------------------------------------------------------------------------------- | ------: | --------------- |
+| P1-1     | Slet 6 sikre dead-code komponenter (EditCompanyForm, CompanyStatusBadge, ContractList, CaseList, DocumentList, mobile-nav) |  30 min | 4.1             |
+| P1-2     | Slet `extract-document-poc.ts` (+ poc-test)                                                                                |  15 min | 4.1             |
+| P1-3     | `/persons/[id]` linje 290: tilføj `lg:grid-cols-2` for responsive                                                          |   5 min | §3 persons/[id] |
+| P1-4     | `/persons/[id]` `max-w-4xl` → `max-w-6xl` (udnyt desktop)                                                                  |   5 min | §3 persons/[id] |
+| P1-5     | `/settings` System-sektion: udfyld eller kollapsi til single-col                                                           |  15 min | §3 settings     |
+| ~~P1-6~~ | ~~`/settings` user-tabel: link til /settings/users~~ — **VOID:** /settings/users findes ikke som separat route             |     n/a | 4.5             |
 
-**Total P1: ~1,5 timer**, vi har plads til alle 6.
+**Status:** P1-1 til P1-5 leveret denne session (5 commits). P1-6 droppet som invalid.
 
 ### P2 — Næste sprint (kræver dedikeret tid)
 
