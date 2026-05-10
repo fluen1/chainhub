@@ -113,7 +113,7 @@ export default async function PersonDetailPage({ params }: Props) {
     }))
 
   return (
-    <div className="max-w-4xl">
+    <div className="max-w-6xl">
       {/* Breadcrumb */}
       <nav className="mb-4 text-xs text-gray-500">
         <Link href="/persons" className="text-slate-500 no-underline hover:text-blue-600">
@@ -287,7 +287,7 @@ export default async function PersonDetailPage({ params }: Props) {
       {/* AI-udlæste kontrakt-vilkår (fra Claude-ekstraktion af dokumenter) */}
       <PersonAIExtractionsSection extractions={aiExtractions} />
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* Aktive tilknytninger */}
         <div className="rounded-xl border border-gray-200 bg-white p-5">
           <div className="flex items-center gap-2 mb-4">
