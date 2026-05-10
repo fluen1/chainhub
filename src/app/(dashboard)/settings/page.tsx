@@ -222,15 +222,20 @@ export default async function SettingsPage() {
             <p className="text-sm text-gray-500">Forbrug og administrative indstillinger</p>
           </div>
         </div>
-        <div className="grid gap-3 px-6 py-5 sm:grid-cols-2">
+        <div className="px-6 py-5">
           <Link
             href="/settings/ai-usage"
-            className="block rounded-lg border border-gray-200 bg-white p-4 hover:border-blue-300 hover:bg-blue-50 transition-colors"
+            className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4 hover:border-blue-300 hover:bg-blue-50 transition-colors"
           >
-            <div className="text-sm font-semibold text-gray-900">AI-forbrug</div>
-            <div className="text-xs text-gray-500 mt-1">
-              Månedligt forbrug, cap-status + seneste kald
+            <div>
+              <div className="text-sm font-semibold text-gray-900">AI-forbrug</div>
+              <div className="text-xs text-gray-500 mt-1">
+                Månedligt forbrug, cap-status + seneste kald
+              </div>
             </div>
+            <span aria-hidden className="text-gray-400">
+              →
+            </span>
           </Link>
         </div>
       </div>
