@@ -144,7 +144,7 @@ export function CreatePersonForm() {
         {/* Actions */}
         <div className="flex items-center justify-end gap-2">
           <Link href="/persons">
-            <BButton disabled={loading}>Annullér</BButton>
+            <BButton disabled={loading}>Annuller</BButton>
           </Link>
           <BButton
             type="submit"

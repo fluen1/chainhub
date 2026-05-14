@@ -49,6 +49,7 @@ export function CreateVisitForm({ companies }: CreateVisitFormProps) {
   const [visitDate, setVisitDate] = useState(preselectedDate)
   const [visitType, setVisitType] = useState('')
   const [notes, setNotes] = useState('')
+  const [planlaegEndnu, setPlanlaegEndnu] = useState(false)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -74,7 +75,17 @@ export function CreateVisitForm({ companies }: CreateVisitFormProps) {
     }
 
     toast.success('Besøg planlagt')
-    router.push('/calendar')
+
+    if (planlaegEndnu) {
+      // Nulstil form men behold selskab — klar til nyt besøg
+      setVisitDate('')
+      setVisitType('')
+      setNotes('')
+      setPlanlaegEndnu(false)
+      router.push(`/visits/new?company=${companyId}`)
+    } else {
+      router.push('/calendar')
+    }
   }
 
   return (
@@ -147,10 +158,22 @@ export function CreateVisitForm({ companies }: CreateVisitFormProps) {
           </div>
         </Panel>
 
+        {/* Planlæg endnu ét */}
+        <label className="flex cursor-pointer items-center gap-2 text-[13px] text-b-2">
+          <input
+            type="checkbox"
+            checked={planlaegEndnu}
+            onChange={(e) => setPlanlaegEndnu(e.target.checked)}
+            disabled={loading}
+            className="h-4 w-4 rounded accent-b-blue-fg"
+          />
+          Planlæg endnu ét besøg for samme selskab bagefter
+        </label>
+
         {/* Actions */}
         <div className="flex items-center justify-end gap-2">
           <Link href="/calendar">
-            <BButton disabled={loading}>Annullér</BButton>
+            <BButton disabled={loading}>Annuller</BButton>
           </Link>
           <BButton type="submit" primary disabled={loading}>
             {loading ? 'Opretter...' : 'Planlæg besøg'}

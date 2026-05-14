@@ -16,6 +16,7 @@ import type { Company } from '@prisma/client'
 import { captureError } from '@/lib/logger'
 import { geocodeAddress } from '@/lib/geocode'
 import { invalidateCompanyInsightsCache } from '@/lib/ai/invalidate-cache'
+import { recordAuditEvent } from '@/lib/audit'
 
 const stamdataSchema = z.object({
   name: z.string().min(1, 'Navn er paakraevet').max(200, 'Navn maa maks vaere 200 tegn'),
@@ -33,7 +34,7 @@ export type UpdateCompanyStamdataInput = z.infer<typeof stamdataSchema>
 
 export async function createCompany(input: CreateCompanyInput): Promise<ActionResult<Company>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   const parsed = createCompanySchema.safeParse(input)
   if (!parsed.success) {
@@ -98,7 +99,7 @@ export async function createCompany(input: CreateCompanyInput): Promise<ActionRe
 
 export async function updateCompany(input: UpdateCompanyInput): Promise<ActionResult<Company>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   const parsed = updateCompanySchema.safeParse(input)
   if (!parsed.success) {
@@ -150,10 +151,17 @@ export async function updateCompany(input: UpdateCompanyInput): Promise<ActionRe
 
 export async function deleteCompany(companyId: string): Promise<ActionResult<void>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   const hasAccess = await canAccessModule(session.user.id, 'settings', session.user.organizationId)
   if (!hasAccess) return { error: 'Du har ikke adgang til at slette selskaber' }
+
+  // Tenant isolation check
+  const existing = await prisma.company.findFirst({
+    where: { id: companyId, organization_id: session.user.organizationId, deleted_at: null },
+    select: { id: true },
+  })
+  if (!existing) return { error: 'Selskab ikke fundet' }
 
   try {
     await prisma.company.update({
@@ -165,6 +173,15 @@ export async function deleteCompany(companyId: string): Promise<ActionResult<voi
     })
 
     await invalidateCompanyInsightsCache(companyId)
+
+    await recordAuditEvent({
+      organizationId: session.user.organizationId,
+      userId: session.user.id,
+      action: 'DELETE',
+      resourceType: 'company',
+      resourceId: companyId,
+      resourceCompanyId: companyId,
+    })
 
     revalidatePath('/dashboard')
     revalidatePath('/companies')
@@ -183,7 +200,7 @@ export async function updateCompanyStamdata(
   input: UpdateCompanyStamdataInput
 ): Promise<ActionResult<void>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   const parsed = stamdataSchema.safeParse(input)
   if (!parsed.success) {

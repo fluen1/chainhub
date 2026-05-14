@@ -17,6 +17,7 @@ import {
   type CaseLinkData,
   type CaseDocData,
   type CaseActivityData,
+  type CaseCommentData,
 } from './case-detail-b'
 
 interface Props {
@@ -86,6 +87,13 @@ export default async function CaseDetailPage({ params }: Props) {
   )
   if (!hasSensitivity) notFound()
 
+  // Hent kommentarer (nyeste øverst)
+  const commentsRaw = await prisma.comment.findMany({
+    where: { case_id: params.id, organization_id: session.user.organizationId, deleted_at: null },
+    orderBy: { created_at: 'desc' },
+    include: { author: { select: { id: true, name: true, email: true } } },
+  })
+
   // User-navne (ansvarlig + task assignees)
   const userIds = Array.from(
     new Set(
@@ -140,6 +148,7 @@ export default async function CaseDetailPage({ params }: Props) {
     updatedAt: formatDate(caseItem.updated_at),
     closedAt: caseItem.closed_at ? formatDate(caseItem.closed_at) : null,
     dueDate: caseItem.due_date ? caseItem.due_date.toISOString().slice(0, 10) : null,
+    responsibleId: caseItem.responsible_id ?? null,
   }
 
   const tasks: CaseTaskData[] = caseItem.tasks.map((t) => {
@@ -226,5 +235,25 @@ export default async function CaseDetailPage({ params }: Props) {
     .sort((a, b) => ((b as { _ts?: number })._ts ?? 0) - ((a as { _ts?: number })._ts ?? 0))
     .slice(0, 8)
 
-  return <CaseDetailB data={data} tasks={tasks} links={links} docs={docs} activity={activity} />
+  const comments: CaseCommentData[] = commentsRaw.map((c) => ({
+    id: c.id,
+    content: c.content,
+    authorId: c.created_by,
+    authorName: c.author.name ?? c.author.email ?? 'Ukendt',
+    createdAt: formatShortDate(c.created_at),
+  }))
+
+  const currentUserId = session.user.id
+
+  return (
+    <CaseDetailB
+      data={data}
+      tasks={tasks}
+      links={links}
+      docs={docs}
+      activity={activity}
+      comments={comments}
+      currentUserId={currentUserId}
+    />
+  )
 }

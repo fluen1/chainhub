@@ -194,7 +194,7 @@ export function CalendarPageB({
             <button
               type="button"
               onClick={() => navigateMonth(-1)}
-              className="rounded-[4px] border border-b-border-strong bg-white px-1.5 py-0.5 text-[12px] text-b-1 hover:bg-[#f6f8fa]"
+              className="rounded-[4px] border border-b-border-strong bg-white px-1.5 py-2 md:py-0.5 text-[12px] text-b-1 hover:bg-[#f6f8fa]"
               aria-label="Forrige måned"
             >
               ←
@@ -205,7 +205,7 @@ export function CalendarPageB({
             <button
               type="button"
               onClick={() => navigateMonth(1)}
-              className="rounded-[4px] border border-b-border-strong bg-white px-1.5 py-0.5 text-[12px] text-b-1 hover:bg-[#f6f8fa]"
+              className="rounded-[4px] border border-b-border-strong bg-white px-1.5 py-2 md:py-0.5 text-[12px] text-b-1 hover:bg-[#f6f8fa]"
               aria-label="Næste måned"
             >
               →

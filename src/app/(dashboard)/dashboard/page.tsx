@@ -4,16 +4,10 @@ import { redirect } from 'next/navigation'
 import { getDashboardData } from '@/actions/dashboard'
 import { getRecentActivity } from '@/actions/activity-feed'
 import { getSidebarData } from '@/lib/sidebar-data'
+import { getAccessibleCompanies } from '@/lib/permissions'
 import { formatMio } from '@/lib/labels'
 import { WEEKDAYS_DA_FULL_SUN, MONTH_NAMES_DA_LOWER } from '@/lib/calendar-constants'
-import {
-  PageTopbar,
-  Strip,
-  BottomBar,
-  SyncDot,
-  KbdHint,
-  type StripCellData,
-} from '@/components/ui/b'
+import { PageTopbar, Strip, BottomBar, SyncDot, type StripCellData } from '@/components/ui/b'
 import { UrgencyPanel } from '@/components/dashboard/b/UrgencyPanel'
 import { HeatmapPanel } from '@/components/dashboard/b/HeatmapPanel'
 import { ActivityPanel } from '@/components/dashboard/b/ActivityPanel'
@@ -34,10 +28,13 @@ export default async function DashboardPage() {
 
   const now = new Date()
 
+  // Hent companyIds én gang — eliminerer 2 ud af 3 redundante DB-roundtrips
+  const companyIds = await getAccessibleCompanies(session.user.id, session.user.organizationId)
+
   const [data, sidebar, activity] = await Promise.all([
-    getDashboardData(session.user.id, session.user.organizationId),
-    getSidebarData(session.user.id, session.user.organizationId),
-    getRecentActivity(session.user.organizationId, session.user.id),
+    getDashboardData(session.user.id, session.user.organizationId, companyIds),
+    getSidebarData(session.user.id, session.user.organizationId, companyIds),
+    getRecentActivity(session.user.organizationId, session.user.id, companyIds),
   ])
 
   const omsaetning = data.portfolioTotals.totalOmsaetning
@@ -45,23 +42,26 @@ export default async function DashboardPage() {
   // 6-cell strip: Selskaber · Udløber 30d · Åbne sager · Forfaldne opg.
   //               · Dokumenter · Omsætning YTD
   const stripCells: StripCellData[] = [
-    { num: sidebar.companiesCount, label: 'Selskaber' },
+    { num: sidebar.companiesCount, label: 'Selskaber', href: '/companies' },
     {
       num: sidebar.expiringContractsCount,
       label: 'Udløber 30d',
       color: sidebar.expiringContractsCount > 0 ? 'red' : 'default',
+      href: '/contracts?status=AKTIV&expiresWithin=30d',
     },
     {
       num: sidebar.casesCount,
       label: 'Åbne sager',
       color: sidebar.casesCount > 0 ? 'red' : 'default',
+      href: '/cases?status=AKTIV',
     },
     {
       num: sidebar.overdueTasksCount,
       label: 'Forfaldne opg.',
       color: sidebar.overdueTasksCount > 0 ? 'amber' : 'default',
+      href: '/tasks?overdue=true',
     },
-    { num: sidebar.documentsCount, label: 'Dokumenter' },
+    { num: sidebar.documentsCount, label: 'Dokumenter', href: '/documents' },
     { num: `${formatMio(omsaetning)}m`, label: 'Omsætning YTD', color: 'green' },
   ]
 
@@ -69,7 +69,7 @@ export default async function DashboardPage() {
     <>
       <PageTopbar
         title={`Min portefølje · ${formatDate(now)}`}
-        meta={`Sidst opdateret ${formatTime(now)} · auto-refresh on`}
+        meta={`Sidst opdateret ${formatTime(now)} · automatisk opdatering`}
       />
 
       <Strip cells={stripCells} />
@@ -87,15 +87,6 @@ export default async function DashboardPage() {
             <SyncDot />
             Sidst synkroniseret {formatTime(now)} · {sidebar.companiesCount} selskaber ·{' '}
             {sidebar.documentsCount} dokumenter
-          </>
-        }
-        right={
-          <>
-            <KbdHint k="⌘K" label="handling" />
-            <span>·</span>
-            <KbdHint k="G" label="derhen" />
-            <span>·</span>
-            <KbdHint k="N" label="ny" />
           </>
         }
       />

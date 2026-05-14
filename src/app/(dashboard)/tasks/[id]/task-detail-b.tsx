@@ -19,7 +19,6 @@ import {
   Badge,
   type BadgeTone,
   BottomBar,
-  KbdHint,
 } from '@/components/ui/b'
 import { updateTaskStatus } from '@/actions/tasks'
 import { createComment } from '@/actions/comments'
@@ -351,11 +350,7 @@ export function TaskDetailB({ data }: { data: TaskDetailViewData }) {
                   placeholder="Tilføj kommentar..."
                   className="w-full resize-none rounded-[4px] border border-b-border-strong bg-white px-2.5 py-1.5 text-[12px] text-b-1 placeholder:text-b-3 focus:border-b-blue-fg focus:outline-none focus:ring-2 focus:ring-b-blue-bg"
                 />
-                <div className="mt-1.5 flex items-center justify-end gap-2">
-                  <span className="text-[11px] text-b-3">
-                    <KbdHint k="⌘" />
-                    <KbdHint k="↵" />
-                  </span>
+                <div className="mt-1.5 flex items-center justify-end">
                   <BButton primary onClick={submitComment}>
                     Gem
                   </BButton>
@@ -457,17 +452,6 @@ export function TaskDetailB({ data }: { data: TaskDetailViewData }) {
           <>
             {data.nr}
             {data.relatedCompany && ` · ${data.relatedCompany.name}`} · Oprettet {data.createdAt}
-          </>
-        }
-        right={
-          <>
-            <KbdHint k="⌘K" label="handling" />
-            <span>·</span>
-            <KbdHint k="E" label="rediger" />
-            <span>·</span>
-            <KbdHint k="C" label="kommentar" />
-            <span>·</span>
-            <KbdHint k="M" label="markér fuldført" />
           </>
         }
       />

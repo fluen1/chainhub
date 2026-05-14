@@ -860,7 +860,7 @@ function KanbanCard({
     <button
       type="button"
       draggable
-      aria-grabbed={isGrabbed}
+      aria-pressed={isGrabbed}
       aria-label={`${task.titel} — ${task.selskab}. Tryk Enter for at gribe, piletaster for at flytte.`}
       onDragStart={(e) => {
         e.dataTransfer.setData('task-id', task.id)

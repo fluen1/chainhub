@@ -84,7 +84,7 @@ export const CONTRACT_TYPE_LABELS: Record<string, string> = {
   EJERAFTALE: 'Ejeraftale',
   DIREKTOERKONTRAKT: 'Direktørkontrakt',
   OVERDRAGELSESAFTALE: 'Overdragelsesaftale',
-  AKTINONAERLAAN: 'Aktionærlåneaftale',
+  AKTIONAERLAAN: 'Aktionærlåneaftale',
   PANTSAETNING: 'Pantsætningsaftale',
   VEDTAEGTER: 'Vedtægter',
   ANSAETTELSE_FUNKTIONAER: 'Ansættelseskontrakt (funktionær)',
@@ -149,7 +149,7 @@ export const CONTRACT_CATEGORY_MAP: Record<string, ContractCategory> = {
   EJERAFTALE: 'EJERSKAB_OG_SELSKABSRET',
   DIREKTOERKONTRAKT: 'EJERSKAB_OG_SELSKABSRET',
   OVERDRAGELSESAFTALE: 'EJERSKAB_OG_SELSKABSRET',
-  AKTINONAERLAAN: 'EJERSKAB_OG_SELSKABSRET',
+  AKTIONAERLAAN: 'EJERSKAB_OG_SELSKABSRET',
   PANTSAETNING: 'EJERSKAB_OG_SELSKABSRET',
   VEDTAEGTER: 'EJERSKAB_OG_SELSKABSRET',
   // Ansættelse og personale
@@ -590,10 +590,10 @@ export function formatCurrency(amount: number | string | null, currency = 'DKK')
 }
 
 /**
- * Formatér beløb i millioner: "1.2" (uden suffix — kald som `${formatMio(val)}M`)
+ * Formatér beløb i millioner med dansk komma-separator: "1,2" (uden suffix — kald som `${formatMio(val)}m`)
  */
 export function formatMio(val: number): string {
-  return (val / 1_000_000).toFixed(1)
+  return new Intl.NumberFormat('da-DK', { maximumFractionDigits: 1 }).format(val / 1_000_000)
 }
 
 /**

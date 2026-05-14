@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { BModal, BTextField, BTextareaField, BFieldWrap } from '@/components/ui/b'
@@ -10,7 +10,8 @@ import { SENSITIVITY_LABELS } from '@/lib/labels'
 import type { SagsSubtype, SagsType, SensitivityLevel } from '@prisma/client'
 
 // ────────────────────────────────────────────────────────────────────────────
-// EditCaseDialog — rediger sag inkl. titel, beskrivelse, type, sensitivitet.
+// EditCaseDialog — rediger sag inkl. titel, beskrivelse, type, sensitivitet,
+// og ansvarlig bruger.
 // ────────────────────────────────────────────────────────────────────────────
 
 export interface EditCaseInitial {
@@ -21,6 +22,7 @@ export interface EditCaseInitial {
   caseSubtype: string | null
   sensitivity: string
   dueDate: string | null
+  assignedTo?: string | null
 }
 
 interface Props {
@@ -37,6 +39,11 @@ const SENSITIVITY_OPTIONS: Array<{ value: SensitivityLevel; label: string }> = [
   { value: 'STRENGT_FORTROLIG', label: SENSITIVITY_LABELS['STRENGT_FORTROLIG'] },
 ]
 
+interface OrgUser {
+  id: string
+  name: string | null
+}
+
 export function EditCaseDialog({ open, onClose, initial }: Props) {
   const router = useRouter()
   const [title, setTitle] = useState(initial.title)
@@ -45,7 +52,22 @@ export function EditCaseDialog({ open, onClose, initial }: Props) {
   const [caseSubtype, setCaseSubtype] = useState<string>(initial.caseSubtype ?? '')
   const [sensitivity, setSensitivity] = useState<string>(initial.sensitivity)
   const [dueDate, setDueDate] = useState<string>(initial.dueDate ?? '')
+  const [assignedTo, setAssignedTo] = useState<string>(initial.assignedTo ?? '')
+  const [orgUsers, setOrgUsers] = useState<OrgUser[]>([])
   const [submitting, startTransition] = useTransition()
+
+  // Hent org-brugere én gang når dialogen åbnes
+  useEffect(() => {
+    if (!open) return
+    fetch('/api/users-list')
+      .then((r) => r.json())
+      .then((data: { users?: OrgUser[] }) => {
+        if (data.users) setOrgUsers(data.users)
+      })
+      .catch(() => {
+        // Stiltiende fejl — feltet vises stadig men tomt
+      })
+  }, [open])
 
   const subtypeOptions = CASE_SUBTYPE_BY_TYPE[caseType] ?? []
 
@@ -62,6 +84,7 @@ export function EditCaseDialog({ open, onClose, initial }: Props) {
         caseSubtype: (caseSubtype || undefined) as SagsSubtype | undefined,
         sensitivity: sensitivity as SensitivityLevel,
         dueDate: dueDate || null,
+        assignedTo: assignedTo || null,
       })
 
       if ('error' in result) {
@@ -145,6 +168,21 @@ export function EditCaseDialog({ open, onClose, initial }: Props) {
           {SENSITIVITY_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>
               {opt.label}
+            </option>
+          ))}
+        </select>
+      </BFieldWrap>
+
+      <BFieldWrap label="Ansvarlig">
+        <select
+          value={assignedTo}
+          onChange={(e) => setAssignedTo(e.target.value)}
+          className="w-full rounded-[4px] border border-b-border-strong bg-white px-2.5 py-1.5 text-[13px] text-b-1 focus:border-transparent focus:outline focus:outline-2 focus:outline-b-blue-fg focus:outline-offset-[-1px]"
+        >
+          <option value="">— Ingen ansvarlig —</option>
+          {orgUsers.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.name ?? u.id}
             </option>
           ))}
         </select>

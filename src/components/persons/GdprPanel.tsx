@@ -48,7 +48,7 @@ export function GdprPanel({ personId, personFullName, isAdmin }: GdprPanelProps)
         toast.error(result.error)
         return
       }
-      toast.success('Persondata slettet permanent (GDPR Art. 17)')
+      toast.success('Persondata er slettet permanent')
       setDeleteOpen(false)
       router.push('/persons')
     })
@@ -81,7 +81,7 @@ export function GdprPanel({ personId, personFullName, isAdmin }: GdprPanelProps)
             disabled={exporting}
             className="inline-flex items-center gap-1.5 rounded-[4px] border border-amber-400 bg-white px-3 py-1.5 text-[12px] font-medium text-amber-800 hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {exporting ? 'Forbereder...' : 'Eksportér persondata (GDPR Art. 15)'}
+            {exporting ? 'Forbereder...' : 'Eksportér persondata (GDPR)'}
           </button>
           <button
             type="button"
@@ -91,7 +91,7 @@ export function GdprPanel({ personId, personFullName, isAdmin }: GdprPanelProps)
             }}
             className="inline-flex items-center gap-1.5 rounded-[4px] border border-red-400 bg-white px-3 py-1.5 text-[12px] font-medium text-red-700 hover:bg-red-50"
           >
-            Slet permanent (GDPR Art. 17)
+            Slet persondata permanent
           </button>
         </div>
       </div>
@@ -106,9 +106,9 @@ export function GdprPanel({ personId, personFullName, isAdmin }: GdprPanelProps)
       >
         <div className="flex flex-col gap-4">
           <div className="rounded-[4px] border border-red-200 bg-red-50 p-3 text-[12px] text-red-700">
-            <strong>Advarsel: Denne handling er uomkørbar.</strong> Al persondata pseudonymiseres og
-            alle relationer afregistreres permanent (GDPR Art. 17). Audit-loggen bevares af
-            juridiske hensyn.
+            <strong>Advarsel: Denne handling kan ikke fortrydes.</strong> Al persondata
+            pseudonymiseres og alle relationer afregistreres permanent (GDPR Art. 17). Audit-loggen
+            bevares af juridiske hensyn.
           </div>
 
           <div className="flex flex-col gap-1.5">

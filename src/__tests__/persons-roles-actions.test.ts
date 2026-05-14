@@ -79,7 +79,7 @@ describe('addPersonRole', () => {
       companyId: COMPANY_ID,
       role: 'ansat',
     })
-    expect(result).toEqual({ error: 'Ikke autoriseret' })
+    expect(result).toEqual({ error: 'Din session er udløbet — log ind igen.' })
   })
 
   it('afviser hvis ingen selskabsadgang', async () => {
@@ -150,7 +150,7 @@ describe('addPersonOwnership', () => {
       companyId: COMPANY_ID,
       sharePercent: 50,
     })
-    expect(result).toEqual({ error: 'Ikke autoriseret' })
+    expect(result).toEqual({ error: 'Din session er udløbet — log ind igen.' })
   })
 
   it('afviser hvis ingen selskabsadgang', async () => {

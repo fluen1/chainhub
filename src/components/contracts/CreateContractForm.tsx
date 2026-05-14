@@ -332,7 +332,7 @@ export function CreateContractForm() {
         {/* Actions */}
         <div className="flex items-center justify-end gap-2">
           <Link href="/contracts">
-            <BButton disabled={loading}>Annullér</BButton>
+            <BButton disabled={loading}>Annuller</BButton>
           </Link>
           <BButton type="submit" primary disabled={loading || !displayName.trim()}>
             {loading ? 'Opretter...' : 'Opret kontrakt'}

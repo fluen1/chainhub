@@ -203,7 +203,7 @@ export function CreateTaskForm() {
 
           <div className="flex items-center justify-end gap-2 border-t border-b-border pt-3">
             <Link href="/tasks">
-              <BButton>Annullér</BButton>
+              <BButton>Annuller</BButton>
             </Link>
             <BButton type="submit" primary disabled={loading || !title.trim()}>
               {loading ? 'Opretter...' : 'Opret opgave'}

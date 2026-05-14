@@ -36,7 +36,7 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
 
 export async function createContract(input: CreateContractInput): Promise<ActionResult<Contract>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   const parsed = createContractSchema.safeParse(input)
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Ugyldigt input' }
@@ -126,10 +126,10 @@ export async function updateContractStatus(
   input: UpdateContractStatusInput
 ): Promise<ActionResult<Contract>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   const parsed = updateContractStatusSchema.safeParse(input)
-  if (!parsed.success) return { error: 'Ugyldigt input' }
+  if (!parsed.success) return { error: 'Udfyld alle påkrævede felter og prøv igen.' }
 
   const contract = await prisma.contract.findFirst({
     where: {
@@ -197,10 +197,11 @@ export async function updateContractStatus(
 
 export async function deleteContract(contractId: string): Promise<ActionResult<void>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   const hasAccess = await canAccessModule(session.user.id, 'settings', session.user.organizationId)
-  if (!hasAccess) return { error: 'Ingen adgang' }
+  if (!hasAccess)
+    return { error: 'Du har ikke adgang til denne funktion. Kontakt din administrator.' }
 
   const contract = await prisma.contract.findFirst({
     where: {
@@ -253,7 +254,7 @@ export type UpdateContractInput = z.infer<typeof updateContractSchema>
 
 export async function updateContract(input: UpdateContractInput): Promise<ActionResult<Contract>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   const parsed = updateContractSchema.safeParse(input)
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Ugyldigt input' }
@@ -345,7 +346,7 @@ export async function addContractParty(
   input: AddContractPartyInput
 ): Promise<ActionResult<ContractParty>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   const parsed = addContractPartySchema.safeParse(input)
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Ugyldigt input' }
@@ -428,7 +429,7 @@ export async function getContractList(options: {
   expiresWithinDays?: number
 }): Promise<ActionResult<{ contracts: Contract[]; total: number }>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   const page = options.page ?? 1
   const pageSize = Math.min(options.pageSize ?? 25, 100)

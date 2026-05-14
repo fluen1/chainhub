@@ -39,7 +39,7 @@ export type AddPersonOwnershipInput = z.infer<typeof addPersonOwnershipSchema>
 
 export async function createPerson(input: CreatePersonInput): Promise<ActionResult<Person>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   const parsed = createPersonSchema.safeParse(input)
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Ugyldigt input' }
@@ -86,10 +86,10 @@ export async function createPerson(input: CreatePersonInput): Promise<ActionResu
 
 export async function updatePerson(input: UpdatePersonInput): Promise<ActionResult<Person>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   const parsed = updatePersonSchema.safeParse(input)
-  if (!parsed.success) return { error: 'Ugyldigt input' }
+  if (!parsed.success) return { error: 'Udfyld alle påkrævede felter og prøv igen.' }
 
   // Tenant isolation
   const existing = await prisma.person.findFirst({
@@ -113,6 +113,14 @@ export async function updatePerson(input: UpdatePersonInput): Promise<ActionResu
       },
     })
 
+    await recordAuditEvent({
+      organizationId: session.user.organizationId,
+      userId: session.user.id,
+      action: 'UPDATE',
+      resourceType: 'person',
+      resourceId: parsed.data.personId,
+    })
+
     revalidatePath('/persons')
     revalidatePath(`/persons/${parsed.data.personId}`)
     return { data: person }
@@ -127,10 +135,11 @@ export async function updatePerson(input: UpdatePersonInput): Promise<ActionResu
 
 export async function deletePerson(personId: string): Promise<ActionResult<void>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   const hasAccess = await canAccessModule(session.user.id, 'settings', session.user.organizationId)
-  if (!hasAccess) return { error: 'Ingen adgang' }
+  if (!hasAccess)
+    return { error: 'Du har ikke adgang til denne funktion. Kontakt din administrator.' }
 
   // Tjek aktive tilknytninger
   const [activeRoles, activeOwnerships] = await Promise.all([
@@ -166,6 +175,14 @@ export async function deletePerson(personId: string): Promise<ActionResult<void>
       data: { deleted_at: new Date() },
     })
 
+    await recordAuditEvent({
+      organizationId: session.user.organizationId,
+      userId: session.user.id,
+      action: 'DELETE',
+      resourceType: 'person',
+      resourceId: personId,
+    })
+
     revalidatePath('/persons')
     return { data: undefined }
   } catch (err) {
@@ -183,7 +200,7 @@ export async function searchPersons(
   limit = 10
 ): Promise<ActionResult<Person[]>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   if (query.length < 2) return { data: [] }
 
@@ -220,7 +237,7 @@ export async function addPersonRole(
   input: AddPersonRoleInput
 ): Promise<ActionResult<CompanyPerson>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   const parsed = addPersonRoleSchema.safeParse(input)
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Ugyldigt input' }
@@ -291,7 +308,7 @@ export async function addPersonOwnership(
   input: AddPersonOwnershipInput
 ): Promise<ActionResult<Ownership>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   const parsed = addPersonOwnershipSchema.safeParse(input)
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Ugyldigt input' }

@@ -17,12 +17,14 @@ import {
   type BadgeTone,
   PlusBadge,
   BottomBar,
-  KbdHint,
   AIBadge,
 } from '@/components/ui/b'
+import dynamic from 'next/dynamic'
 import { EndRoleLink } from './end-role-link'
-import { GdprPanel } from '@/components/persons/GdprPanel'
 import { EditPersonDialog } from '@/components/persons/EditPersonDialog'
+
+// Lazy-load GdprPanel — kun vist for admins, splittes fra hoved-bundle
+const GdprPanel = dynamic(() => import('@/components/persons/GdprPanel').then((m) => m.GdprPanel))
 import { AddPersonRoleModal } from '@/components/persons/AddPersonRoleModal'
 import { AddPersonOwnershipModal } from '@/components/persons/AddPersonOwnershipModal'
 import { getCaseStatusLabel } from '@/lib/labels'
@@ -549,15 +551,6 @@ export function PersonDetailB({
             {person.fullName} · {person.companiesCount}{' '}
             {person.companiesCount === 1 ? 'selskab' : 'selskaber'} · {person.contractsCount}{' '}
             kontrakter
-          </>
-        }
-        right={
-          <>
-            <KbdHint k="⌘K" label="handling" />
-            <span>·</span>
-            <KbdHint k="E" label="rediger" />
-            <span>·</span>
-            <KbdHint k="G" label="derhen" />
           </>
         }
       />

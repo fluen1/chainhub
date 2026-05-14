@@ -64,7 +64,7 @@ describe('createTask', () => {
     const auth = await import('@/lib/auth')
     vi.mocked(auth.auth).mockResolvedValueOnce(null)
     const result = await createTask({ title: 'Test', priority: 'MELLEM' } as never)
-    expect(result).toEqual({ error: 'Ikke autoriseret' })
+    expect(result).toEqual({ error: 'Din session er udløbet — log ind igen.' })
   })
 
   it('afviser uden company-adgang', async () => {

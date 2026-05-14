@@ -37,10 +37,13 @@ export type {
 // ---------------------------------------------------------------
 export async function getDashboardData(
   userId: string,
-  organizationId: string
+  organizationId: string,
+  preloadedCompanyIds?: string[]
 ): Promise<DashboardData> {
   const [companyIds, roleRows] = await Promise.all([
-    getAccessibleCompanies(userId, organizationId),
+    preloadedCompanyIds !== undefined
+      ? Promise.resolve(preloadedCompanyIds)
+      : getAccessibleCompanies(userId, organizationId),
     prisma.userRoleAssignment.findMany({
       where: { user_id: userId, organization_id: organizationId },
       select: { role: true },
@@ -50,7 +53,8 @@ export async function getDashboardData(
   const role = pickHighestPriorityRole(roleRows)
   const today = new Date()
   const weekEnd = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-  const twoWeekEnd = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+  // "Udløber 30d" strip-KPI: 30 dage fremfor 14 (matcher sidebar-data + dashboard-label)
+  const twoWeekEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
 
   if (companyIds.length === 0) {
     return emptyDashboardData(role)

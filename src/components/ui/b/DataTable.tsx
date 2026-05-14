@@ -17,7 +17,7 @@ export function TableWrap({
 }) {
   return (
     <div
-      className={cn('overflow-hidden rounded-[4px] border border-b-border bg-b-panel', className)}
+      className={cn('overflow-x-auto rounded-[4px] border border-b-border bg-b-panel', className)}
     >
       {children}
     </div>
@@ -124,6 +124,18 @@ export function Td({
       {children}
     </td>
   )
+}
+
+// TableInner — <table> med min-bredde så celler ikke squishes på mobil.
+// Brug i stedet for rå <table> inde i <TableWrap>.
+export function TableInner({
+  children,
+  className,
+}: {
+  children: React.ReactNode
+  className?: string
+}) {
+  return <table className={cn('min-w-[600px] w-full border-collapse', className)}>{children}</table>
 }
 
 // EmptyState — vises i stedet for tabel når filtre giver 0 resultater.

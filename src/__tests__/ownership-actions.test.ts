@@ -19,6 +19,16 @@ vi.mock('@/lib/db', () => ({
         contract_id: null,
       }),
     },
+    // addOwner bruger $transaction med SERIALIZABLE isolation
+    $transaction: vi.fn().mockImplementation(async (callback: (tx: unknown) => unknown) => {
+      const tx = {
+        ownership: {
+          aggregate: vi.fn().mockResolvedValue({ _sum: { ownership_pct: 0 } }),
+          create: vi.fn().mockResolvedValue({ id: 'o-1', ownership_pct: 50 }),
+        },
+      }
+      return callback(tx)
+    }),
   },
 }))
 

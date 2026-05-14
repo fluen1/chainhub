@@ -145,7 +145,7 @@ export function UserActions({
             }}
             className="rounded-md border border-gray-300 bg-white px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
           >
-            Annullér
+            Annuller
           </button>
         </div>
       </div>

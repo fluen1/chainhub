@@ -98,9 +98,17 @@ export function HeatmapPanel({ heatmap }: { heatmap: HeatmapCompany[] }) {
           )}
         </div>
 
-        <div className="flex justify-between px-3 pb-3 text-[10px] text-b-2">
+        <div className="flex items-center justify-between px-3 pb-3 text-[10px] text-b-2">
           <span>
             {critical} kritisk{critical === 1 ? '' : 'e'}
+            {critical > 3 && (
+              <Link
+                href="/companies?health=critical"
+                className="ml-2 text-b-blue-fg underline-offset-2 hover:underline"
+              >
+                Se alle {critical} kritiske →
+              </Link>
+            )}
           </span>
           <span>
             {ok} OK · {warning} afventer

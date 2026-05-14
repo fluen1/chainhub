@@ -58,10 +58,14 @@ function formatRelative(date: Date, now: Date): string {
 
 export async function getRecentActivity(
   organizationId: string,
-  userId: string
+  userId: string,
+  preloadedCompanyIds?: string[]
 ): Promise<ActivityEvent[]> {
-  // Hent accessible companies for RBAC-scope
-  const companyIds = await getAccessibleCompanies(userId, organizationId)
+  // Hent accessible companies for RBAC-scope — brug preloaded liste hvis tilgængelig
+  const companyIds =
+    preloadedCompanyIds !== undefined
+      ? preloadedCompanyIds
+      : await getAccessibleCompanies(userId, organizationId)
 
   const logs = await prisma.auditLog.findMany({
     where: {
@@ -85,7 +89,7 @@ export async function getRecentActivity(
 
   const userIds = Array.from(new Set(logs.map((l) => l.user_id)))
   const users = await prisma.user.findMany({
-    where: { id: { in: userIds } },
+    where: { id: { in: userIds }, organization_id: organizationId, deleted_at: null },
     select: { id: true, name: true, email: true },
   })
   const userMap = new Map(users.map((u) => [u.id, u.name ?? u.email ?? 'Ukendt']))

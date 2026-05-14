@@ -136,7 +136,7 @@ export function CompanyPersonList({
                         onClick={() => setEndingId(null)}
                         className="rounded border border-gray-300 px-2 py-1 text-xs text-gray-700 hover:bg-gray-50"
                       >
-                        Annullér
+                        Annuller
                       </button>
                     </div>
                   ) : (

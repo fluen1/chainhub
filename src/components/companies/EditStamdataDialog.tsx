@@ -175,7 +175,7 @@ export function EditStamdataDialog({ open, onClose, companyId, initial }: Props)
         value={industryCode}
         onChange={setIndustryCode}
         placeholder="fx 86210"
-        hint="5-cifret DB07-kode"
+        hint="Virksomhedens produktionsenhedsnummer fra CVR-registret (valgfrit) · 5-cifret DB07-kode"
       />
 
       {/* Kontaktoplysninger */}

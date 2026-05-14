@@ -32,7 +32,6 @@ import {
   AIInsightCard,
   PlusBadge,
   BottomBar,
-  KbdHint,
   PanelEmpty,
 } from '@/components/ui/b'
 
@@ -795,17 +794,6 @@ export default async function ContractDetailPage({ params }: Props) {
             Sidst opdateret {formatDate(contract.updated_at)} · {contract.company.name} ·{' '}
             {contract.display_name}
             {currentVersion ? ` v${currentVersion.version_number}` : ''}
-          </>
-        }
-        right={
-          <>
-            <KbdHint k="⌘K" label="handling" />
-            <span>·</span>
-            <KbdHint k="E" label="rediger" />
-            <span>·</span>
-            <KbdHint k="U" label="upload" />
-            <span>·</span>
-            <KbdHint k="G" label="derhen" />
           </>
         }
       />

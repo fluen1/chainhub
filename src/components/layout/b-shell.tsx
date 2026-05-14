@@ -116,7 +116,7 @@ export function BShell({ badges, children }: Props) {
           <button
             type="button"
             onClick={() => setDrawerOpen(true)}
-            className="flex h-8 w-8 items-center justify-center rounded-[4px] border border-b-border-strong bg-white text-b-2 hover:bg-b-row-hover"
+            className="flex h-11 w-11 md:h-8 md:w-8 items-center justify-center rounded-[4px] border border-b-border-strong bg-white text-b-2 hover:bg-b-row-hover"
             aria-label="Åbn hovedmenu"
           >
             <Menu className="h-4 w-4" aria-hidden />

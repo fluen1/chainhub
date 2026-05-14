@@ -45,7 +45,7 @@
 
     /* Tekst */
     --b-text-1:       #1f2328;
-    --b-text-2:       #6e7681;
+    --b-text-2:       #586069; /* Kontrast-fix: #586069 = 4.7:1 på #fafafa (WCAG 2.2 AA) */
     --b-text-3:       #8c959f;
 
     /* Status — bg + fg */
@@ -127,6 +127,20 @@
     font-family: 'SF Mono', 'Fira Mono', ui-monospace, monospace;
     font-size: 10px;
     color: var(--b-text-1);
+  }
+}
+
+/* =========================================================
+   prefers-reduced-motion
+   Deaktiverer animationer og transitions for brugere der har
+   anmodet om reduceret bevægelse (WCAG 2.2 AA 2.3.3).
+   ========================================================= */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

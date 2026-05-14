@@ -82,13 +82,13 @@ export function DeleteDocumentButton({
           Er du sikker på, at du vil slette{' '}
           <span className="font-semibold">&ldquo;{fileName}&rdquo;</span>?
         </p>
-        <p className="text-[12px] text-slate-400 mb-4">
-          Dokumentet flyttes til arkiv (soft-delete) og kan ikke gendannes via UI.
+        <p className="text-[12px] text-slate-600 mb-4">
+          Dokumentet flyttes til arkiv og kan ikke gendannes.
         </p>
 
         {hasTilknytning && (
           <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-[12px] text-amber-800">
-            <span className="font-semibold">OBS:</span> Dette dokument er tilknyttet{' '}
+            <span className="font-semibold">Bemærk:</span> Dette dokument er tilknyttet{' '}
             {contractName ? (
               <>
                 kontrakten <span className="font-medium">{contractName}</span>
@@ -109,7 +109,7 @@ export function DeleteDocumentButton({
             onClick={() => setOpen(false)}
             className="rounded-md px-3 py-1.5 text-[12px] font-medium text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50"
           >
-            Annullér
+            Annuller
           </button>
           <button
             type="button"

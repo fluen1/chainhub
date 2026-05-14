@@ -13,7 +13,9 @@ import { cn } from '@/lib/utils'
 // ────────────────────────────────────────────────────────────────────────────
 
 export function FilterRow({ children }: { children: React.ReactNode }) {
-  return <div className="flex flex-nowrap items-center gap-1.5 overflow-visible">{children}</div>
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 gap-y-1.5 overflow-visible">{children}</div>
+  )
 }
 
 export function FilterSearch({

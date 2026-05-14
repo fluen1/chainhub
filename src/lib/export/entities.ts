@@ -50,9 +50,77 @@ export async function fetchCompaniesForExport(
       created_at: true,
     },
   })
+
+  // Hent seneste finansdata pr. selskab (to år — til YoY beregning)
+  const companyIds = companies.map((c) => c.id)
+  const financials =
+    companyIds.length > 0
+      ? await prisma.financialMetric.findMany({
+          where: {
+            organization_id: scope.organizationId,
+            company_id: { in: companyIds },
+            period_type: 'HELAAR',
+            metric_type: { in: ['OMSAETNING', 'EBITDA'] },
+          },
+          orderBy: { period_year: 'desc' },
+          select: { company_id: true, metric_type: true, value: true, period_year: true },
+        })
+      : []
+
+  // Byg seneste og næst-seneste tal pr. selskab
+  interface YearMap {
+    omsaetning?: number
+    ebitda?: number
+  }
+  const byCompany = new Map<string, { latest: YearMap; prev: YearMap; latestYear: number }>()
+  for (const fm of financials) {
+    const val = Number(fm.value)
+    const entry = byCompany.get(fm.company_id) ?? {
+      latest: {},
+      prev: {},
+      latestYear: fm.period_year,
+    }
+    if (fm.period_year === entry.latestYear) {
+      if (fm.metric_type === 'OMSAETNING') entry.latest.omsaetning = val
+      if (fm.metric_type === 'EBITDA') entry.latest.ebitda = val
+    } else if (fm.period_year === entry.latestYear - 1) {
+      if (fm.metric_type === 'OMSAETNING') entry.prev.omsaetning = val
+      if (fm.metric_type === 'EBITDA') entry.prev.ebitda = val
+    }
+    byCompany.set(fm.company_id, entry)
+  }
+
+  const rows = companies.map((c) => {
+    const fin = byCompany.get(c.id)
+    const omsaetning_seneste = fin?.latest.omsaetning ?? null
+    const ebitda_seneste = fin?.latest.ebitda ?? null
+    const margin_seneste =
+      omsaetning_seneste && omsaetning_seneste > 0 && ebitda_seneste != null
+        ? Math.round((ebitda_seneste / omsaetning_seneste) * 1000) / 10
+        : null
+    const omsaetning_yoy_pct =
+      omsaetning_seneste != null && fin?.prev.omsaetning && fin.prev.omsaetning > 0
+        ? Math.round(((omsaetning_seneste - fin.prev.omsaetning) / fin.prev.omsaetning) * 1000) / 10
+        : null
+    const ebitda_yoy_pct =
+      ebitda_seneste != null && fin?.prev.ebitda != null && fin.prev.ebitda !== 0
+        ? Math.round(((ebitda_seneste - fin.prev.ebitda) / Math.abs(fin.prev.ebitda)) * 1000) / 10
+        : null
+
+    return {
+      ...c,
+      omsaetning_seneste,
+      ebitda_seneste,
+      margin_seneste,
+      omsaetning_yoy_pct,
+      ebitda_yoy_pct,
+      seneste_finans_aar: fin?.latestYear ?? null,
+    }
+  })
+
   return {
     filename: `chainhub-selskaber-${new Date().toISOString().slice(0, 10)}`,
-    rows: companies as Record<string, unknown>[],
+    rows: rows as Record<string, unknown>[],
     columns: [
       { key: 'id', header: 'ID' },
       { key: 'name', header: 'Navn' },
@@ -62,6 +130,12 @@ export async function fetchCompaniesForExport(
       { key: 'postal_code', header: 'Postnummer' },
       { key: 'founded_date', header: 'Stiftet', format: fmtDate },
       { key: 'created_at', header: 'Oprettet i ChainHub', format: fmtDate },
+      { key: 'seneste_finans_aar', header: 'Finansår' },
+      { key: 'omsaetning_seneste', header: 'Omsætning (kr)' },
+      { key: 'ebitda_seneste', header: 'EBITDA (kr)' },
+      { key: 'margin_seneste', header: 'EBITDA-margin (%)' },
+      { key: 'omsaetning_yoy_pct', header: 'Omsætning YoY (%)' },
+      { key: 'ebitda_yoy_pct', header: 'EBITDA YoY (%)' },
     ],
   }
 }

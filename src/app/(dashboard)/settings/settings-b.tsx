@@ -11,7 +11,6 @@ import {
   Badge,
   type BadgeTone,
   BottomBar,
-  KbdHint,
 } from '@/components/ui/b'
 import { OrganizationForm } from '@/components/settings/organization-form'
 import { CreateUserForm } from '@/components/settings/CreateUserForm'
@@ -136,13 +135,6 @@ export function SettingsPageB({
           organization
             ? `${organization.name} · ${organization.plan} · ${currentUserIdToEmail(users, currentUserId)}`
             : '—'
-        }
-        right={
-          <>
-            <KbdHint k="⌘K" label="handling" />
-            <span>·</span>
-            <KbdHint k="S" label="gem" />
-          </>
         }
       />
     </>
@@ -381,7 +373,7 @@ function AISection({
             />
           </div>
           <div className="b-tnum mt-2 flex justify-between text-[11px] text-b-2">
-            <span>{usage.used.toLocaleString('da-DK')} extractions brugt</span>
+            <span>{usage.used.toLocaleString('da-DK')} analyser brugt</span>
             <span>{usage.max.toLocaleString('da-DK')} pr. måned</span>
           </div>
           {usage.threshold && usage.threshold !== 'none' && (
@@ -393,18 +385,18 @@ function AISection({
               }`}
             >
               {usage.threshold === 'exceeded'
-                ? 'Månedlig cost-cap er nået — nye AI-kald er blokeret. Kontakt support.'
+                ? 'Månedlig kvota er nået — nye AI-analyser er blokeret. Kontakt support.'
                 : usage.threshold === '90-alert'
-                  ? `90% af cost-cap brugt (${usage.currentUsd?.toFixed(2) ?? '—'} / ${usage.capUsd?.toFixed(0) ?? '—'} USD).`
-                  : `${usage.threshold === '75-warn' ? '75' : '50'}% af cost-cap nået (${usage.currentUsd?.toFixed(2) ?? '—'} USD brugt).`}
+                  ? `90% af kvota brugt (AI-omkostning: $${usage.currentUsd?.toFixed(2) ?? '—'} / $${usage.capUsd?.toFixed(0) ?? '—'}).`
+                  : `${usage.threshold === '75-warn' ? '75' : '50'}% af kvota nået (AI-omkostning: $${usage.currentUsd?.toFixed(2) ?? '—'} brugt).`}
             </div>
           )}
         </div>
         <PanelFooter>
           <div className="flex items-center justify-between">
             <span>
-              Nulstilles første dag i næste måned · {Math.max(0, usage.max - usage.used)}{' '}
-              extractions tilbage
+              Nulstilles første dag i næste måned · {Math.max(0, usage.max - usage.used)} analyser
+              tilbage
             </span>
             <Link href="/settings/ai-usage" className="text-b-blue-fg no-underline hover:underline">
               Se detaljeret brug →
@@ -417,12 +409,12 @@ function AISection({
         <PanelHeader title="AI-funktioner" />
         <div className="px-3 py-3">
           <p className="text-[13px] text-b-2">
-            AI-funktioner er aktiveret globalt for jeres tier. Kontakt support for at deaktivere
-            specifikke funktioner.
+            AI-funktioner er aktiveret globalt for jeres abonnement. Kontakt support for at
+            deaktivere specifikke funktioner.
           </p>
           <ul className="mt-2 space-y-1 text-[12px] text-b-3">
-            <li>· Auto-extraction ved dokumentupload (kræver review)</li>
-            <li>· AI Insights på selskabsdetaljer (renewal-risk, markedsanalyse)</li>
+            <li>· Auto-analyse ved dokumentupload (kræver review)</li>
+            <li>· AI-insights på selskabsdetaljer (fornyelsesrisiko, markedsanalyse)</li>
             <li>· Sagsrisikovurdering (sandsynlighed for forlig)</li>
           </ul>
         </div>
@@ -459,7 +451,7 @@ function FakturaSection({ org }: { org: SettingsOrg | null }) {
           isLast
         />
         <PanelFooter>
-          <span>Tier-skift og faktura-historik kommer i en senere version</span>
+          <span>Abonnementsskift og faktura-historik kommer i en senere version</span>
         </PanelFooter>
       </Panel>
 
