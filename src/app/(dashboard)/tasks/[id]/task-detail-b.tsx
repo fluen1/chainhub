@@ -28,6 +28,7 @@ import {
   type TaskPriority,
   type TaskStatus,
 } from '@/components/tasks/EditTaskDialog'
+import { getCaseStatusLabel, getContractStatusLabel } from '@/lib/labels'
 
 // ────────────────────────────────────────────────────────────────────────────
 // /tasks/[id] — klient-komponent. B-stil port af Opgave detail.html.
@@ -423,8 +424,8 @@ export function TaskDetailB({ data }: { data: TaskDetailViewData }) {
                   <LinkRow
                     href={`/cases/${data.relatedCase.id}`}
                     title={data.relatedCase.title}
-                    sub={`Sag · ${data.relatedCase.status}`}
-                    badge={data.relatedCase.status}
+                    sub={`Sag · ${getCaseStatusLabel(data.relatedCase.status)}`}
+                    badge={getCaseStatusLabel(data.relatedCase.status)}
                     badgeTone={data.relatedCase.status === 'LUKKET' ? 'gray' : 'blue'}
                     isLast={!data.relatedContract}
                   />
@@ -433,12 +434,8 @@ export function TaskDetailB({ data }: { data: TaskDetailViewData }) {
                   <LinkRow
                     href={`/contracts/${data.relatedContract.id}`}
                     title={data.relatedContract.display_name}
-                    sub={`Kontrakt · ${data.relatedContract.status}`}
-                    badge={
-                      data.relatedContract.status === 'AKTIV'
-                        ? 'Aktiv'
-                        : data.relatedContract.status
-                    }
+                    sub={`Kontrakt · ${getContractStatusLabel(data.relatedContract.status)}`}
+                    badge={getContractStatusLabel(data.relatedContract.status)}
                     badgeTone={data.relatedContract.status === 'AKTIV' ? 'green' : 'gray'}
                     isLast={true}
                   />

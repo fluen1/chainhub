@@ -19,6 +19,7 @@ import {
   type TimelineItem,
   type TimelineSectionData,
 } from '@/lib/dashboard-helpers'
+import { getContractTypeLabel } from '@/lib/labels'
 
 // Re-eksportér typer så eksisterende importers (`@/actions/dashboard`) fortsat virker.
 export type {
@@ -323,10 +324,10 @@ export async function getDashboardData(
     type: 'EJERAFTALE' | 'LEJEKONTRAKT_ERHVERV' | 'FORSIKRING' | 'ANSAETTELSE_FUNKTIONAER'
     label: string
   }> = [
-    { type: 'EJERAFTALE', label: 'Ejeraftale' },
-    { type: 'LEJEKONTRAKT_ERHVERV', label: 'Lejekontrakt' },
-    { type: 'FORSIKRING', label: 'Forsikring' },
-    { type: 'ANSAETTELSE_FUNKTIONAER', label: 'Ansættelse' },
+    { type: 'EJERAFTALE', label: getContractTypeLabel('EJERAFTALE') },
+    { type: 'LEJEKONTRAKT_ERHVERV', label: getContractTypeLabel('LEJEKONTRAKT_ERHVERV') },
+    { type: 'FORSIKRING', label: getContractTypeLabel('FORSIKRING') },
+    { type: 'ANSAETTELSE_FUNKTIONAER', label: getContractTypeLabel('ANSAETTELSE_FUNKTIONAER') },
   ]
   const totalCompanies = companies.length || 1
   const coverage: CoverageItem[] = REQUIRED_TYPES.map((req) => {

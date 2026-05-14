@@ -7,6 +7,8 @@ import {
   getContractTypeLabel,
   getContractStatusLabel,
   getCaseStatusLabel,
+  getCaseTypeLabel,
+  getCompanyStatusLabel,
   getTaskStatusLabel,
   getPriorityLabel,
   formatDate,
@@ -44,7 +46,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       title: c.name,
       sub: [c.cvr ? `CVR ${c.cvr}` : null, c.city].filter(Boolean).join(' · ') || '—',
       href: `/companies/${c.id}`,
-      badge: { tone: 'gray', label: c.status === 'aktiv' ? 'Aktiv' : c.status },
+      badge: { tone: 'gray', label: getCompanyStatusLabel(c.status) },
     })
   }
   for (const c of raw.contracts) {
@@ -62,7 +64,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       id: `cs-${cs.id}`,
       type: 'sag',
       title: cs.title,
-      sub: `${cs.case_type}`,
+      sub: getCaseTypeLabel(cs.case_type),
       href: `/cases/${cs.id}`,
       badge: caseStatusBadge(cs.status),
     })

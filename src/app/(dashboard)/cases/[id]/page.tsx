@@ -9,6 +9,7 @@ import {
   formatDate,
   daysUntil,
 } from '@/lib/labels'
+import { formatShortDate } from '@/lib/date-helpers'
 import {
   CaseDetailB,
   type CaseDetailData,
@@ -20,11 +21,6 @@ import {
 
 interface Props {
   params: { id: string }
-}
-
-const MONTHS = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec']
-function formatShortDate(d: Date): string {
-  return `${d.getDate()}. ${MONTHS[d.getMonth()]}`
 }
 
 export default async function CaseDetailPage({ params }: Props) {

@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react'
 import Link from 'next/link'
 import { Panel, PanelHeader, PanelGroupLabel } from '@/components/ui/b'
+import { HEATMAP_STATUS_LABELS } from '@/lib/labels'
 import type { HeatmapCompany } from '@/lib/dashboard-helpers'
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -32,9 +33,11 @@ function levelFor(c: HeatmapCompany): keyof typeof LEVEL_CLASS {
 }
 
 function statusFor(c: HeatmapCompany): string {
-  if (c.healthStatus === 'critical') return `Kritisk · ${c.openCaseCount} åbne sager`
-  if (c.healthStatus === 'warning') return `Advarsel · ${c.openCaseCount} åbne sager`
-  return c.openCaseCount === 0 ? 'OK · aktiv' : `OK · ${c.openCaseCount} åbne sager`
+  if (c.healthStatus === 'critical')
+    return `${HEATMAP_STATUS_LABELS.critical} · ${c.openCaseCount} åbne sager`
+  if (c.healthStatus === 'warning')
+    return `${HEATMAP_STATUS_LABELS.warning} · ${c.openCaseCount} åbne sager`
+  return c.openCaseCount === 0 ? HEATMAP_STATUS_LABELS.ok : `OK · ${c.openCaseCount} åbne sager`
 }
 
 interface Tooltip {

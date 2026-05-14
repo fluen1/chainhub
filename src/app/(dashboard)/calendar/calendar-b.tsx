@@ -13,6 +13,13 @@ import {
   KbdHint,
 } from '@/components/ui/b'
 import type { CalendarEvent, CalendarEventType } from '@/types/ui'
+import {
+  MONTH_NAMES_DA,
+  MONTH_NAMES_DA_SHORT,
+  MONTH_NAMES_DA_LOWER,
+  WEEKDAYS_DA_SHORT,
+  WEEKDAYS_DA_FULL,
+} from '@/lib/calendar-constants'
 
 // ────────────────────────────────────────────────────────────────────────────
 // /calendar — klient-komponent.
@@ -20,38 +27,6 @@ import type { CalendarEvent, CalendarEventType } from '@/types/ui'
 // Month navigation håndteres via router (?month=YYYY-MM), så server re-fetcher.
 // View-toggle (?view=agenda) er også URL-state.
 // ────────────────────────────────────────────────────────────────────────────
-
-const MAANEDER = [
-  'januar',
-  'februar',
-  'marts',
-  'april',
-  'maj',
-  'juni',
-  'juli',
-  'august',
-  'september',
-  'oktober',
-  'november',
-  'december',
-]
-const MAANEDER_CAP = MAANEDER.map((m) => m[0].toUpperCase() + m.slice(1))
-const MAANEDER_SHORT = [
-  'jan',
-  'feb',
-  'mar',
-  'apr',
-  'maj',
-  'jun',
-  'jul',
-  'aug',
-  'sep',
-  'okt',
-  'nov',
-  'dec',
-]
-const UGEDAGE = ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn']
-const UGEDAGE_FULL = ['mandag', 'tirsdag', 'onsdag', 'torsdag', 'fredag', 'lørdag', 'søndag']
 
 // CalendarEventType → B-stil farver. Holdt afgrænset til design's 6 farver.
 type EvColor = 'blue' | 'amber' | 'red' | 'purple' | 'gray' | 'green'
@@ -137,8 +112,8 @@ function formatAgendaDate(dateString: string): string {
   const [y, m, d] = dateString.split('-').map(Number)
   const dow = new Date(y, m - 1, d).getDay()
   const dowEU = dow === 0 ? 6 : dow - 1
-  const cap = UGEDAGE_FULL[dowEU][0].toUpperCase() + UGEDAGE_FULL[dowEU].slice(1)
-  return `${cap} ${d}. ${MAANEDER[m - 1]}`
+  const cap = WEEKDAYS_DA_FULL[dowEU][0].toUpperCase() + WEEKDAYS_DA_FULL[dowEU].slice(1)
+  return `${cap} ${d}. ${MONTH_NAMES_DA_LOWER[m - 1]}`
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -224,7 +199,7 @@ export function CalendarPageB({
               ←
             </button>
             <span className="b-tnum text-[14px] font-medium text-b-1">
-              {MAANEDER_CAP[monthIdx]} {year}
+              {MONTH_NAMES_DA[monthIdx]} {year}
             </span>
             <button
               type="button"
@@ -285,7 +260,7 @@ export function CalendarPageB({
       <BottomBar
         left={
           <>
-            Kalender · {MAANEDER_CAP[monthIdx]} {year} · {monthEvents.length} begivenheder
+            Kalender · {MONTH_NAMES_DA[monthIdx]} {year} · {monthEvents.length} begivenheder
           </>
         }
         right={
@@ -318,7 +293,7 @@ function MonthView({
     <div className="overflow-hidden rounded-[4px] border border-b-border bg-b-panel">
       {/* Ugedag-header */}
       <div className="grid grid-cols-7 border-b border-b-border bg-b-panel-h">
-        {UGEDAGE.map((d, i) => (
+        {WEEKDAYS_DA_SHORT.map((d, i) => (
           <div
             key={d}
             className={`px-2 py-1.5 text-[10px] font-semibold uppercase ${
@@ -458,7 +433,7 @@ function RightPanel({ upcoming }: { upcoming: CalendarEvent[] }) {
         ) : (
           upcoming.map((ev, i) => {
             const [, m, d] = ev.date.split('-').map(Number)
-            const shortDate = `${d}. ${MAANEDER_SHORT[m - 1]}`
+            const shortDate = `${d}. ${MONTH_NAMES_DA_SHORT[m - 1]}`
             const c = colorForType(ev.type)
             return (
               <div

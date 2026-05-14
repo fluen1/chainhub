@@ -3,24 +3,11 @@ import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { getAccessibleCompanies } from '@/lib/permissions'
-import { getCompanyPersonRoleLabel } from '@/lib/labels'
+import { getCompanyPersonRoleLabel, getInitials } from '@/lib/labels'
+import { formatShortDate } from '@/lib/date-helpers'
 import { PersonsListB, type PersonRow } from './persons-list-b'
 
 export const metadata: Metadata = { title: 'Personer' }
-
-function formatShortDate(d: Date | null): string {
-  if (!d) return '—'
-  const dd = String(d.getDate()).padStart(2, '0')
-  const mm = String(d.getMonth() + 1).padStart(2, '0')
-  const yy = String(d.getFullYear()).slice(-2)
-  return `${dd}.${mm}.${yy}`
-}
-
-function initials(first: string, last: string): string {
-  const f = first?.[0] ?? ''
-  const l = last?.[0] ?? ''
-  return (f + l).toUpperCase() || '?'
-}
 
 export default async function PersonsPage() {
   const session = await auth()
@@ -61,7 +48,7 @@ export default async function PersonsPage() {
 
     return {
       id: p.id,
-      ini: initials(p.first_name, p.last_name),
+      ini: getInitials(p.first_name, p.last_name),
       navn: `${p.first_name} ${p.last_name}`,
       rolle: role ? getCompanyPersonRoleLabel(role) : '—',
       rawRole: role,
