@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { EndOwnershipRoleModal } from '@/components/modals/b'
+import { SlutLink } from '@/components/ui/b'
 
 // ────────────────────────────────────────────────────────────────────────────
 // EndRoleLink — tynd klient-wrapper der ejer modal-state for én rolle-række.
@@ -25,18 +26,7 @@ export function EndRoleLink({
   const [open, setOpen] = useState(false)
   return (
     <>
-      <button
-        type="button"
-        onClick={(e) => {
-          e.preventDefault()
-          e.stopPropagation()
-          setOpen(true)
-        }}
-        className="text-[10px] text-b-2 hover:text-b-red-fg"
-        title="Slut rolle"
-      >
-        Slut
-      </button>
+      <SlutLink onClick={() => setOpen(true)} title="Slut rolle" />
       <EndOwnershipRoleModal
         open={open}
         onClose={() => setOpen(false)}

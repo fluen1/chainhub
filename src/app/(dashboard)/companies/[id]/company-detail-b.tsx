@@ -20,6 +20,8 @@ import {
   PlusBadge,
   BottomBar,
   KbdHint,
+  PanelEmpty,
+  SlutLink,
 } from '@/components/ui/b'
 import {
   AddOwnerModal,
@@ -240,13 +242,9 @@ export function CompanyDetailB({
             meta={`${ownerships.length} ${ownerships.length === 1 ? 'ejer' : 'ejere'}`}
           />
           {!canSeeOwnership ? (
-            <div className="px-3 py-3 text-center text-[12px] text-b-3">
-              Du har ikke adgang til ejerskabsoplysninger
-            </div>
+            <PanelEmpty>Du har ikke adgang til ejerskabsoplysninger</PanelEmpty>
           ) : ownerships.length === 0 ? (
-            <div className="px-3 py-3 text-center text-[12px] text-b-3">
-              Ingen ejere registreret
-            </div>
+            <PanelEmpty>Ingen ejere registreret</PanelEmpty>
           ) : (
             ownerships.map((o, i) => (
               <div
@@ -264,14 +262,7 @@ export function CompanyDetailB({
                 <div className="flex shrink-0 items-center gap-2">
                   <span className="b-tnum font-medium">{o.pct.toFixed(0)}%</span>
                   {!readOnly && (
-                    <button
-                      type="button"
-                      onClick={() => setEndOwnership(o)}
-                      className="text-[10px] text-b-2 hover:text-b-red-fg"
-                      title="Slut ejerskab"
-                    >
-                      Slut
-                    </button>
+                    <SlutLink onClick={() => setEndOwnership(o)} title="Slut ejerskab" />
                   )}
                 </div>
               </div>
@@ -302,9 +293,7 @@ export function CompanyDetailB({
             meta={`${companyPersons.length} ${companyPersons.length === 1 ? 'aktiv' : 'aktive'}`}
           />
           {companyPersons.length === 0 ? (
-            <div className="px-3 py-3 text-center text-[12px] text-b-3">
-              Ingen personer tilknyttet
-            </div>
+            <PanelEmpty>Ingen personer tilknyttet</PanelEmpty>
           ) : (
             companyPersons.slice(0, 6).map((cp, i) => (
               <div
@@ -323,16 +312,7 @@ export function CompanyDetailB({
                     {cp.startDate && ` · ans. ${cp.startDate}`}
                   </div>
                 </div>
-                {!readOnly && (
-                  <button
-                    type="button"
-                    onClick={() => setEndRole(cp)}
-                    className="text-[10px] text-b-2 hover:text-b-red-fg"
-                    title="Slut rolle"
-                  >
-                    Slut
-                  </button>
-                )}
+                {!readOnly && <SlutLink onClick={() => setEndRole(cp)} title="Slut rolle" />}
               </div>
             ))
           )}
@@ -368,9 +348,7 @@ export function CompanyDetailB({
               </AIInsightCard>
             </div>
           ) : (
-            <div className="px-3 py-4 text-center text-[12px] text-b-3">
-              AI-analyse er ikke konfigureret eller cap-blokeret
-            </div>
+            <PanelEmpty>AI-analyse er ikke konfigureret eller cap-blokeret</PanelEmpty>
           )}
         </Panel>
       </div>
@@ -389,7 +367,7 @@ export function CompanyDetailB({
           meta="sortér: udløb"
         />
         {data.contracts.top.length === 0 ? (
-          <div className="px-3 py-4 text-center text-[12px] text-b-3">Ingen aktive kontrakter</div>
+          <PanelEmpty>Ingen aktive kontrakter</PanelEmpty>
         ) : (
           data.contracts.top.map((c, i) => (
             <Link
@@ -436,7 +414,7 @@ export function CompanyDetailB({
             meta="åbne"
           />
           {data.cases.top.length === 0 ? (
-            <div className="px-3 py-3 text-center text-[12px] text-b-3">Ingen åbne sager</div>
+            <PanelEmpty>Ingen åbne sager</PanelEmpty>
           ) : (
             data.cases.top.slice(0, 4).map((c, i) => (
               <Link
@@ -488,9 +466,7 @@ export function CompanyDetailB({
               />
             </div>
           ) : (
-            <div className="px-3 py-3 text-center text-[12px] text-b-3">
-              Tilføj første finansiel metric
-            </div>
+            <PanelEmpty>Tilføj første finansiel metric</PanelEmpty>
           )}
           <PanelFooter>
             <div className="flex items-center justify-between">
@@ -506,7 +482,7 @@ export function CompanyDetailB({
         <Panel>
           <PanelHeader title="Besøg" meta={`${data.visits.length} planlagt`} />
           {data.visits.length === 0 ? (
-            <div className="px-3 py-3 text-center text-[12px] text-b-3">Ingen besøg</div>
+            <PanelEmpty>Ingen besøg</PanelEmpty>
           ) : (
             data.visits.slice(0, 4).map((v, i) => (
               <div
@@ -550,9 +526,7 @@ export function CompanyDetailB({
           }
         />
         {data.documents.rows.length === 0 ? (
-          <div className="px-3 py-3 text-center text-[12px] text-b-3">
-            Ingen dokumenter uploadet endnu
-          </div>
+          <PanelEmpty>Ingen dokumenter uploadet endnu</PanelEmpty>
         ) : (
           data.documents.rows.map((d, i) => (
             <Link

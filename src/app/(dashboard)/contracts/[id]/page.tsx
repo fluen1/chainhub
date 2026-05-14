@@ -30,6 +30,7 @@ import {
   PlusBadge,
   BottomBar,
   KbdHint,
+  PanelEmpty,
 } from '@/components/ui/b'
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -474,9 +475,7 @@ export default async function ContractDetailPage({ params }: Props) {
             }
           />
           {keyTerms.length === 0 ? (
-            <div className="px-3 py-4 text-center text-[12px] text-b-3">
-              Upload et dokument for at få AI-extracted vilkår
-            </div>
+            <PanelEmpty>Upload et dokument for at få AI-extracted vilkår</PanelEmpty>
           ) : (
             <div className="px-3 py-2.5">
               {keyTerms.map((t, i) => (
@@ -569,9 +568,7 @@ export default async function ContractDetailPage({ params }: Props) {
               </div>
             </div>
           ) : (
-            <div className="px-3 py-4 text-center text-[12px] text-b-3">
-              AI-analyse aktiveres når et dokument er uploadet og processeret
-            </div>
+            <PanelEmpty>AI-analyse aktiveres når et dokument er uploadet og processeret</PanelEmpty>
           )}
         </Panel>
       </div>
@@ -592,9 +589,7 @@ export default async function ContractDetailPage({ params }: Props) {
           }
         />
         {sortedVersions.length === 0 ? (
-          <div className="px-3 py-4 text-center text-[12px] text-b-3">
-            Ingen versioner uploadet endnu
-          </div>
+          <PanelEmpty>Ingen versioner uploadet endnu</PanelEmpty>
         ) : (
           <>
             <div
@@ -664,10 +659,10 @@ export default async function ContractDetailPage({ params }: Props) {
         <Panel>
           <PanelHeader title="Parter" meta={`${partyRows.length} parter`} />
           {partyRows.length === 0 ? (
-            <div className="px-3 py-4 text-center text-[12px] text-b-2">
-              <div className="font-medium text-b-1">Ingen parter registreret endnu</div>
-              <div className="mt-0.5 text-b-3">Tilføj parter for at signere og spore ansvar</div>
-            </div>
+            <PanelEmpty
+              title="Ingen parter registreret endnu"
+              hint="Tilføj parter for at signere og spore ansvar"
+            />
           ) : (
             partyRows.map((p, i) => (
               <div
@@ -732,7 +727,7 @@ export default async function ContractDetailPage({ params }: Props) {
         <Panel>
           <PanelHeader title="Aktivitet" meta={`Seneste ${activityRows.length}`} />
           {activityRows.length === 0 ? (
-            <div className="px-3 py-3 text-center text-[12px] text-b-3">Ingen aktivitet</div>
+            <PanelEmpty>Ingen aktivitet</PanelEmpty>
           ) : (
             activityRows.map((a, i) => (
               <div
