@@ -87,7 +87,7 @@ describe('closeCase', () => {
 
     const result = await closeCase(UUID_1)
 
-    expect(result).toEqual({ error: 'Ikke autoriseret' })
+    expect(result).toEqual({ error: 'Din session er udløbet — log ind igen.' })
   })
 
   it('afviser uden modul-adgang', async () => {
@@ -170,7 +170,7 @@ describe('escalateCase', () => {
 
     const result = await escalateCase(UUID_1)
 
-    expect(result).toEqual({ error: 'Ikke autoriseret' })
+    expect(result).toEqual({ error: 'Din session er udløbet — log ind igen.' })
   })
 
   it('afviser lukket sag', async () => {
@@ -224,7 +224,7 @@ describe('updateCase', () => {
 
     const result = await updateCase({ caseId: UUID_1, title: 'Test' })
 
-    expect(result).toEqual({ error: 'Ikke autoriseret' })
+    expect(result).toEqual({ error: 'Din session er udløbet — log ind igen.' })
   })
 
   it('afviser tom titel', async () => {

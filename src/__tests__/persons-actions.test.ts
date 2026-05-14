@@ -56,7 +56,7 @@ describe('createPerson', () => {
       firstName: 'Anders',
       lastName: 'Andersen',
     } as never)
-    expect(result).toEqual({ error: 'Ikke autoriseret' })
+    expect(result).toEqual({ error: 'Din session er udløbet — log ind igen.' })
   })
 
   it('afviser tomt firstName', async () => {
@@ -156,6 +156,6 @@ describe('searchPersons', () => {
     const auth = await import('@/lib/auth')
     vi.mocked(auth.auth).mockResolvedValueOnce(null)
     const result = await searchPersons('test', 'org-1')
-    expect(result).toEqual({ error: 'Ikke autoriseret' })
+    expect(result).toEqual({ error: 'Din session er udløbet — log ind igen.' })
   })
 })

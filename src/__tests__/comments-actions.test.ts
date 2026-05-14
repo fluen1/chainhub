@@ -59,7 +59,7 @@ describe('createComment', () => {
     const auth = await import('@/lib/auth')
     vi.mocked(auth.auth).mockResolvedValueOnce(null)
     const result = await createComment({ content: 'X', taskId: UUID_TASK })
-    expect(result).toEqual({ error: 'Ikke autoriseret' })
+    expect(result).toEqual({ error: 'Din session er udløbet — log ind igen.' })
   })
 
   it('afviser tom content', async () => {
@@ -100,7 +100,7 @@ describe('createCaseComment', () => {
     vi.mocked(auth.auth).mockResolvedValueOnce(null)
 
     const result = await createCaseComment({ content: 'Test', caseId: UUID_CASE })
-    expect(result).toEqual({ error: 'Ikke autoriseret' })
+    expect(result).toEqual({ error: 'Din session er udløbet — log ind igen.' })
   })
 
   it('afviser sag fra anden tenant (not found)', async () => {
