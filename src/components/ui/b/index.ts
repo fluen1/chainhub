@@ -23,3 +23,5 @@ export {
 } from './FilterRow'
 export { Pager } from './Pager'
 export { TableWrap, Th, Tr, Td, TableEmpty, AIBadge } from './DataTable'
+export { BModal } from './BModal'
+export { BFieldWrap, BTextField, BTextareaField, BSegmentedField, BFieldRow } from './BField'

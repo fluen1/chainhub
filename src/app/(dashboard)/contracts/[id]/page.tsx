@@ -11,6 +11,7 @@ import {
   formatDate,
   daysUntil,
 } from '@/lib/labels'
+import { UploadVersionTrigger } from '@/components/modals/b/UploadVersionTrigger'
 import {
   Breadcrumb,
   PageHeader,
@@ -412,9 +413,14 @@ export default async function ContractDetailPage({ params }: Props) {
         actions={
           <>
             <BButton href={`/contracts/${contract.id}/edit`}>Rediger</BButton>
-            <BButton primary href={`/contracts/${contract.id}/versions/new`}>
-              Upload ny version
-            </BButton>
+            <UploadVersionTrigger
+              contractId={contract.id}
+              contractName={contract.display_name}
+              companyId={contract.company_id}
+              companyName={contract.company.name}
+              currentVersion={currentVersion?.version_number ?? null}
+              variant="primary"
+            />
           </>
         }
       />
@@ -638,9 +644,14 @@ export default async function ContractDetailPage({ params }: Props) {
               {sortedVersions.length} version{sortedVersions.length === 1 ? '' : 'er'}
               {sortedVersions.length > 0 ? ' · v1 er original' : ''}
             </span>
-            <BAddButton href={`/contracts/${contract.id}/versions/new`}>
-              + Upload ny version
-            </BAddButton>
+            <UploadVersionTrigger
+              contractId={contract.id}
+              contractName={contract.display_name}
+              companyId={contract.company_id}
+              companyName={contract.company.name}
+              currentVersion={currentVersion?.version_number ?? null}
+              variant="add"
+            />
           </div>
         </PanelFooter>
       </Panel>

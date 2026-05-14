@@ -221,7 +221,9 @@
       "Bash(cp \"C:\\\\Users\\\\birke\\\\.claude\\\\projects\\\\C--Users-birke-OneDrive-Skrivebord-Code-chainhub\\\\fad2513f-871c-47c4-a2fb-8dedf2e3c762\\\\tool-results\\\\webfetch-1778755587194-er8d3q.bin\" design.tar.gz)",
       "Bash(tar -tzf design.tar.gz)",
       "Bash(tar -xzf design.tar.gz)",
-      "Bash(echo \"EXITCODE=$?\")"
+      "Bash(echo \"EXITCODE=$?\")",
+      "Bash(ls src/components/company-detail/)",
+      "Bash(ls src/components/finance/)"
     ]
   }
 }
