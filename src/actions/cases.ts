@@ -2,7 +2,7 @@
 
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { canAccessCompany, canAccessModule } from '@/lib/permissions'
+import { canAccessCompany, canAccessModule, canAccessSensitivity } from '@/lib/permissions'
 import {
   createCaseSchema,
   updateCaseStatusSchema,
@@ -64,6 +64,17 @@ export async function createCase(input: CreateCaseInput): Promise<ActionResult<C
       session.user.organizationId
     )
     if (!hasAccess) return { error: `Ingen adgang til selskab ${companyId}` }
+  }
+
+  // Tjek at bruger har adgang til det valgte sensitivitetsniveau
+  if (parsed.data.sensitivity) {
+    const hasSensitivity = await canAccessSensitivity(
+      session.user.id,
+      parsed.data.sensitivity,
+      session.user.organizationId
+    )
+    if (!hasSensitivity)
+      return { error: 'Du har ikke adgang til at oprette sager på dette fortrolighedsniveau' }
   }
 
   try {
@@ -379,6 +390,17 @@ export async function updateCase(input: UpdateCaseInput): Promise<ActionResult<C
     }
   }
   if (!hasAccess) return { error: 'Ingen adgang til denne sag' }
+
+  // Tjek at bruger har adgang til det nye sensitivitetsniveau
+  if (parsed.data.sensitivity !== undefined) {
+    const hasSensitivity = await canAccessSensitivity(
+      session.user.id,
+      parsed.data.sensitivity,
+      session.user.organizationId
+    )
+    if (!hasSensitivity)
+      return { error: 'Du har ikke adgang til at sætte dette fortrolighedsniveau på sagen' }
+  }
 
   try {
     const updateData: Record<string, unknown> = {}

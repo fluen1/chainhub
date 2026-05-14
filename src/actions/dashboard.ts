@@ -237,15 +237,24 @@ export async function getDashboardData(
         OR: [{ company_id: { in: companyIds } }, { company_id: null }],
       },
     }),
+    // Documents scope: selskaber brugeren har adgang til + org-brede dokumenter (company_id=null)
     prisma.document.count({
       where: {
         organization_id: organizationId,
         deleted_at: null,
-        company_id: { in: companyIds },
+        OR: [{ company_id: { in: companyIds } }, { company_id: null }],
       },
     }),
+    // Persons scope: tilknyttet selskaber brugeren har adgang til + orphan-personer
     prisma.person.count({
-      where: { organization_id: organizationId, deleted_at: null },
+      where: {
+        organization_id: organizationId,
+        deleted_at: null,
+        OR: [
+          { company_persons: { some: { company_id: { in: companyIds } } } },
+          { company_persons: { none: {} } },
+        ],
+      },
     }),
   ])
 

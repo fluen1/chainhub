@@ -135,11 +135,26 @@ export const getSidebarData = cache(
             select: { value: true, company_id: true, period_year: true },
           })
         : Promise.resolve([]),
+      // Persons scope: personer tilknyttet selskaber brugeren har adgang til,
+      // ELLER orphan-personer (ingen company_persons-relation)
       prisma.person.count({
-        where: { organization_id: organizationId, deleted_at: null },
+        where: {
+          organization_id: organizationId,
+          deleted_at: null,
+          OR: [
+            { company_persons: { some: { company_id: { in: companyIds } } } },
+            { company_persons: { none: {} } },
+          ],
+        },
       }),
+      // Documents scope: dokumenter tilknyttet selskaber brugeren har adgang til,
+      // ELLER org-brede dokumenter (company_id = null)
       prisma.document.count({
-        where: { organization_id: organizationId, deleted_at: null },
+        where: {
+          organization_id: organizationId,
+          deleted_at: null,
+          OR: [{ company_id: { in: companyIds } }, { company_id: null }],
+        },
       }),
       prisma.visit.count({
         where: {
