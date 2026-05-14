@@ -73,8 +73,8 @@ export const createCaseSchema = z.object({
   companyIds: z.array(z.string().min(1)).min(1, 'Mindst ét selskab skal angives'),
   assignedTo: z.string().min(1).optional(),
   sensitivity: zodSensitivityLevel.default('INTERN'),
-  description: z.string().optional(),
-  notes: z.string().optional(),
+  description: z.string().max(5000, 'Beskrivelse må maks være 5.000 tegn').optional(),
+  notes: z.string().max(2000, 'Noter må maks være 2.000 tegn').optional(),
 })
 
 export const updateCaseStatusSchema = z.object({
@@ -84,7 +84,7 @@ export const updateCaseStatusSchema = z.object({
 
 export const createTaskSchema = z.object({
   title: z.string().min(1, 'Titel er påkrævet').max(255),
-  description: z.string().optional(),
+  description: z.string().max(5000, 'Beskrivelse må maks være 5.000 tegn').optional(),
   assignedTo: z.string().min(1).optional(),
   dueDate: z.string().optional(),
   priority: zodTaskPriority.default('MELLEM'),
