@@ -115,7 +115,7 @@ export function AddPersonOwnershipModal({
           label="Andel (%)"
           value={sharePercent}
           onChange={setSharePercent}
-          placeholder="fx 33.33"
+          placeholder="fx 33,33"
           type="number"
           required
           hint="Mellem 0.01 og 100"

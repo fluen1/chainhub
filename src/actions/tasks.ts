@@ -19,10 +19,11 @@ import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
 import type { Task, TaskHistoryField } from '@prisma/client'
 import { captureError } from '@/lib/logger'
+import { recordAuditEvent } from '@/lib/audit'
 
 export async function createTask(input: CreateTaskInput): Promise<ActionResult<Task>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   const parsed = createTaskSchema.safeParse(input)
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Ugyldigt input' }
@@ -121,10 +122,10 @@ export async function createTask(input: CreateTaskInput): Promise<ActionResult<T
 
 export async function updateTaskStatus(input: UpdateTaskStatusInput): Promise<ActionResult<Task>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   const parsed = updateTaskStatusSchema.safeParse(input)
-  if (!parsed.success) return { error: 'Ugyldigt input' }
+  if (!parsed.success) return { error: 'Udfyld alle påkrævede felter og prøv igen.' }
 
   const task = await prisma.task.findFirst({
     where: {
@@ -175,10 +176,10 @@ export async function updateTaskPriority(
   input: UpdateTaskPriorityInput
 ): Promise<ActionResult<Task>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   const parsed = updateTaskPrioritySchema.safeParse(input)
-  if (!parsed.success) return { error: 'Ugyldigt input' }
+  if (!parsed.success) return { error: 'Udfyld alle påkrævede felter og prøv igen.' }
 
   const task = await prisma.task.findFirst({
     where: {
@@ -224,10 +225,10 @@ export async function updateTaskAssignee(
   input: UpdateTaskAssigneeInput
 ): Promise<ActionResult<Task>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   const parsed = updateTaskAssigneeSchema.safeParse(input)
-  if (!parsed.success) return { error: 'Ugyldigt input' }
+  if (!parsed.success) return { error: 'Udfyld alle påkrævede felter og prøv igen.' }
 
   const task = await prisma.task.findFirst({
     where: {
@@ -289,10 +290,10 @@ export async function updateTaskDueDate(
   input: UpdateTaskDueDateInput
 ): Promise<ActionResult<Task>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   const parsed = updateTaskDueDateSchema.safeParse(input)
-  if (!parsed.success) return { error: 'Ugyldigt input' }
+  if (!parsed.success) return { error: 'Udfyld alle påkrævede felter og prøv igen.' }
 
   const task = await prisma.task.findFirst({
     where: {
@@ -340,7 +341,7 @@ export async function updateTaskDueDate(
 
 export async function deleteTask(taskId: string): Promise<ActionResult<void>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   const task = await prisma.task.findFirst({
     where: { id: taskId, organization_id: session.user.organizationId, deleted_at: null },
@@ -359,6 +360,15 @@ export async function deleteTask(taskId: string): Promise<ActionResult<void>> {
   await prisma.task.update({
     where: { id: taskId },
     data: { deleted_at: new Date() },
+  })
+
+  await recordAuditEvent({
+    organizationId: session.user.organizationId,
+    userId: session.user.id,
+    action: 'DELETE',
+    resourceType: 'task',
+    resourceId: taskId,
+    resourceCompanyId: task.company_id ?? undefined,
   })
 
   revalidatePath('/tasks')

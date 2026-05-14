@@ -277,7 +277,7 @@ export function CreateCaseForm() {
         {/* Actions */}
         <div className="flex items-center justify-end gap-2">
           <Link href="/cases">
-            <BButton disabled={loading}>Annullér</BButton>
+            <BButton disabled={loading}>Annuller</BButton>
           </Link>
           <BButton type="submit" primary disabled={loading || !title.trim()}>
             {loading ? 'Opretter...' : 'Opret sag'}

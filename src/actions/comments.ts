@@ -23,7 +23,7 @@ export async function createComment(input: {
   taskId: string
 }): Promise<ActionResult<{ id: string }>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   const parsed = commentSchema.safeParse(input)
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Ugyldigt input' }
@@ -55,7 +55,7 @@ export async function createCaseComment(input: {
   caseId: string
 }): Promise<ActionResult<{ id: string }>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   const parsed = caseCommentSchema.safeParse(input)
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Ugyldigt input' }
@@ -99,6 +99,7 @@ export async function createCaseComment(input: {
     action: 'COMMENT_CREATE',
     resourceType: 'case',
     resourceId: parsed.data.caseId,
+    resourceCompanyId: caseItem.case_companies[0]?.company_id,
     sensitivity: caseItem.sensitivity,
   })
 
@@ -108,16 +109,30 @@ export async function createCaseComment(input: {
 
 export async function deleteComment(commentId: string): Promise<ActionResult<null>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   const comment = await prisma.comment.findFirst({
-    where: { id: commentId, organization_id: session.user.organizationId },
+    where: { id: commentId, organization_id: session.user.organizationId, deleted_at: null },
   })
   if (!comment) return { error: 'Kommentar ikke fundet' }
   if (comment.created_by !== session.user.id) return { error: 'Du kan kun slette egne kommentarer' }
 
-  await prisma.comment.delete({ where: { id: commentId } })
+  // Soft-delete — bevarer kommentar i audit-trail
+  await prisma.comment.update({
+    where: { id: commentId },
+    data: { deleted_at: new Date() },
+  })
+
+  await recordAuditEvent({
+    organizationId: session.user.organizationId,
+    userId: session.user.id,
+    action: 'DELETE',
+    resourceType: 'comment',
+    resourceId: commentId,
+    resourceCompanyId: comment.case_id ?? undefined,
+  })
 
   if (comment.task_id) revalidatePath(`/tasks/${comment.task_id}`)
+  if (comment.case_id) revalidatePath(`/cases/${comment.case_id}`)
   return { data: null }
 }

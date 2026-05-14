@@ -403,8 +403,8 @@ function AISection({
         <PanelFooter>
           <div className="flex items-center justify-between">
             <span>
-              Nulstilles første dag i næste måned · {Math.max(0, usage.max - usage.used)}{' '}
-              analyser tilbage
+              Nulstilles første dag i næste måned · {Math.max(0, usage.max - usage.used)} analyser
+              tilbage
             </span>
             <Link href="/settings/ai-usage" className="text-b-blue-fg no-underline hover:underline">
               Se detaljeret brug →
@@ -417,12 +417,12 @@ function AISection({
         <PanelHeader title="AI-funktioner" />
         <div className="px-3 py-3">
           <p className="text-[13px] text-b-2">
-            AI-funktioner er aktiveret globalt for jeres tier. Kontakt support for at deaktivere
-            specifikke funktioner.
+            AI-funktioner er aktiveret globalt for jeres abonnement. Kontakt support for at
+            deaktivere specifikke funktioner.
           </p>
           <ul className="mt-2 space-y-1 text-[12px] text-b-3">
-            <li>· Auto-extraction ved dokumentupload (kræver review)</li>
-            <li>· AI Insights på selskabsdetaljer (renewal-risk, markedsanalyse)</li>
+            <li>· Auto-analyse ved dokumentupload (kræver review)</li>
+            <li>· AI-insights på selskabsdetaljer (fornyelsesrisiko, markedsanalyse)</li>
             <li>· Sagsrisikovurdering (sandsynlighed for forlig)</li>
           </ul>
         </div>

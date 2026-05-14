@@ -45,10 +45,13 @@ async function generateCaseNumber(organizationId: string): Promise<string> {
 
 export async function createCase(input: CreateCaseInput): Promise<ActionResult<Case>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   const parsed = createCaseSchema.safeParse(input)
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Ugyldigt input' }
+  if (!parsed.success)
+    return {
+      error: parsed.error.issues[0]?.message ?? 'Udfyld alle påkrævede felter og prøv igen.',
+    }
 
   const hasModule = await canAccessModule(session.user.id, 'cases', session.user.organizationId)
   if (!hasModule) return { error: 'Ingen adgang til sagsstyring' }
@@ -118,10 +121,10 @@ export async function createCase(input: CreateCaseInput): Promise<ActionResult<C
 
 export async function updateCaseStatus(input: UpdateCaseStatusInput): Promise<ActionResult<Case>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   const parsed = updateCaseStatusSchema.safeParse(input)
-  if (!parsed.success) return { error: 'Ugyldigt input' }
+  if (!parsed.success) return { error: 'Udfyld alle påkrævede felter og prøv igen.' }
 
   const existingCase = await prisma.case.findFirst({
     where: {
@@ -134,7 +137,7 @@ export async function updateCaseStatus(input: UpdateCaseStatusInput): Promise<Ac
 
   const validNext = CASE_TRANSITIONS[existingCase.status] ?? []
   if (!validNext.includes(parsed.data.status)) {
-    return { error: `Ugyldig statusændring: ${existingCase.status} → ${parsed.data.status}` }
+    return { error: 'Sagen kan ikke ændres til denne status i det nuværende forløb.' }
   }
 
   try {
@@ -146,12 +149,19 @@ export async function updateCaseStatus(input: UpdateCaseStatusInput): Promise<Ac
       },
     })
 
+    // Hent første tilknyttede selskab til resourceCompanyId
+    const firstCaseCompany = await prisma.caseCompany.findFirst({
+      where: { case_id: parsed.data.caseId, organization_id: session.user.organizationId },
+      select: { company_id: true },
+    })
+
     await recordAuditEvent({
       organizationId: session.user.organizationId,
       userId: session.user.id,
       action: 'STATUS_CHANGE',
       resourceType: 'case',
       resourceId: updated.id,
+      resourceCompanyId: firstCaseCompany?.company_id,
       sensitivity: existingCase.sensitivity,
       changes: { oldStatus: existingCase.status, newStatus: parsed.data.status },
     })
@@ -183,10 +193,13 @@ const closeCaseSchema = z.object({
 
 export async function closeCase(caseId: string, notes?: string): Promise<ActionResult<Case>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   const parsed = closeCaseSchema.safeParse({ caseId, notes })
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Ugyldigt input' }
+  if (!parsed.success)
+    return {
+      error: parsed.error.issues[0]?.message ?? 'Udfyld alle påkrævede felter og prøv igen.',
+    }
 
   const hasModule = await canAccessModule(session.user.id, 'cases', session.user.organizationId)
   if (!hasModule) return { error: 'Ingen adgang til sagsstyring' }
@@ -228,6 +241,7 @@ export async function closeCase(caseId: string, notes?: string): Promise<ActionR
       action: 'CLOSE',
       resourceType: 'case',
       resourceId: updated.id,
+      resourceCompanyId: existingCase.case_companies[0]?.company_id,
       sensitivity: existingCase.sensitivity,
       changes: { notes: parsed.data.notes ?? null },
     })
@@ -249,7 +263,7 @@ export async function closeCase(caseId: string, notes?: string): Promise<ActionR
 // Eskalér sag: tilføjer kommentar + audit. Case-modellen har ikke eget priority-felt.
 export async function escalateCase(caseId: string): Promise<ActionResult<void>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   if (!caseId || caseId.trim().length === 0) return { error: 'Sags-ID mangler' }
 
@@ -306,6 +320,7 @@ export async function escalateCase(caseId: string): Promise<ActionResult<void>> 
       action: 'ESCALATE',
       resourceType: 'case',
       resourceId: caseId,
+      resourceCompanyId: existingCase.case_companies[0]?.company_id,
       sensitivity: existingCase.sensitivity,
     })
 
@@ -334,10 +349,13 @@ export type UpdateCaseInput = z.infer<typeof updateCaseSchema>
 
 export async function updateCase(input: UpdateCaseInput): Promise<ActionResult<Case>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   const parsed = updateCaseSchema.safeParse(input)
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Ugyldigt input' }
+  if (!parsed.success)
+    return {
+      error: parsed.error.issues[0]?.message ?? 'Udfyld alle påkrævede felter og prøv igen.',
+    }
 
   const hasModule = await canAccessModule(session.user.id, 'cases', session.user.organizationId)
   if (!hasModule) return { error: 'Ingen adgang til sagsstyring' }
@@ -386,6 +404,7 @@ export async function updateCase(input: UpdateCaseInput): Promise<ActionResult<C
       action: 'UPDATE',
       resourceType: 'case',
       resourceId: updated.id,
+      resourceCompanyId: existingCase.case_companies[0]?.company_id,
       sensitivity: existingCase.sensitivity,
       changes: updateData,
     })
@@ -405,10 +424,11 @@ export async function updateCase(input: UpdateCaseInput): Promise<ActionResult<C
 
 export async function deleteCase(caseId: string): Promise<ActionResult<void>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   const hasModule = await canAccessModule(session.user.id, 'settings', session.user.organizationId)
-  if (!hasModule) return { error: 'Ingen adgang' }
+  if (!hasModule)
+    return { error: 'Du har ikke adgang til denne funktion. Kontakt din administrator.' }
 
   const existingCase = await prisma.case.findFirst({
     where: { id: caseId, organization_id: session.user.organizationId, deleted_at: null },
@@ -426,6 +446,16 @@ export async function deleteCase(caseId: string): Promise<ActionResult<void>> {
     select: { company_id: true },
   })
   await Promise.all(caseCompanies.map((cc) => invalidateCompanyInsightsCache(cc.company_id)))
+
+  await recordAuditEvent({
+    organizationId: session.user.organizationId,
+    userId: session.user.id,
+    action: 'DELETE',
+    resourceType: 'case',
+    resourceId: caseId,
+    resourceCompanyId: caseCompanies[0]?.company_id,
+    sensitivity: existingCase.sensitivity,
+  })
 
   revalidatePath('/cases')
   return { data: undefined }

@@ -96,7 +96,7 @@ function EmployeeRow({ cp, showActions }: { cp: PersonItem; showActions: boolean
                 onClick={() => setEndingId(false)}
                 className="rounded border border-gray-200 px-2 py-1 text-xs text-gray-500 hover:bg-gray-50"
               >
-                Annullér
+                Annuller
               </button>
             </div>
           ) : (

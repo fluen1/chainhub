@@ -28,7 +28,7 @@ type UpdateVisitInput = z.infer<typeof updateVisitSchema>
 
 export async function createVisit(input: CreateVisitInput): Promise<ActionResult<{ id: string }>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   const parsed = createVisitSchema.safeParse(input)
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Ugyldigt input' }
@@ -69,7 +69,7 @@ export async function createVisit(input: CreateVisitInput): Promise<ActionResult
 
 export async function updateVisit(input: UpdateVisitInput): Promise<ActionResult<{ id: string }>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   const parsed = updateVisitSchema.safeParse(input)
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Ugyldigt input' }
@@ -116,7 +116,7 @@ export async function updateVisit(input: UpdateVisitInput): Promise<ActionResult
 
 export async function deleteVisit(visitId: string): Promise<ActionResult<void>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   const visit = await prisma.visit.findFirst({
     where: {
@@ -132,7 +132,8 @@ export async function deleteVisit(visitId: string): Promise<ActionResult<void>> 
     visit.company_id,
     session.user.organizationId
   )
-  if (!hasAccess) return { error: 'Ingen adgang' }
+  if (!hasAccess)
+    return { error: 'Du har ikke adgang til denne funktion. Kontakt din administrator.' }
 
   await prisma.visit.update({
     where: { id: visitId },

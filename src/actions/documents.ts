@@ -8,7 +8,7 @@ import type { ActionResult } from '@/types/actions'
 
 export async function deleteDocument(documentId: string): Promise<ActionResult<void>> {
   const session = await auth()
-  if (!session) return { error: 'Ikke autoriseret' }
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   const doc = await prisma.document.findFirst({
     where: {
