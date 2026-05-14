@@ -101,15 +101,59 @@ function healthCellBg(h: CompanyRow['health']): string {
   return 'bg-[#239a3b]'
 }
 
-export function CompaniesListB({
-  companies,
-  canCreate,
-  totalsExtra,
-}: {
+interface CompaniesListBProps {
   companies: CompanyRow[]
   canCreate: boolean
   totalsExtra: { persons: number }
-}) {
+}
+
+export function CompaniesListB(props: CompaniesListBProps) {
+  // 0-totalt empty-state: ny kunde uden selskaber. Vi splitter ud i en
+  // separat content-component så hooks ikke kaldes betinget (Rules of Hooks).
+  if (props.companies.length === 0) {
+    return <EmptyCompaniesView canCreate={props.canCreate} />
+  }
+  return <CompaniesListBContent {...props} />
+}
+
+function EmptyCompaniesView({ canCreate }: { canCreate: boolean }) {
+  return (
+    <>
+      <Breadcrumb trail={[]} current="Selskaber" />
+      <PageHeader
+        title="Selskaber"
+        meta="Ingen selskaber i porteføljen endnu"
+        actions={
+          canCreate ? (
+            <BButton primary href="/companies/new">
+              + Opret selskab
+            </BButton>
+          ) : null
+        }
+      />
+      <Panel>
+        <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
+          <div className="text-[14px] font-medium text-b-1">Velkommen til ChainHub</div>
+          <p className="max-w-md text-[13px] text-b-2">
+            Opret dit første selskab for at komme i gang. ChainHub samler kontrakter, sager, opgaver
+            og dokumenter ét sted — på tværs af alle dine lokationer.
+          </p>
+          {canCreate ? (
+            <BButton primary href="/companies/new">
+              + Opret dit første selskab
+            </BButton>
+          ) : (
+            <p className="text-[12px] text-b-3">
+              Bed en GROUP_OWNER eller GROUP_ADMIN om at oprette det første selskab.
+            </p>
+          )}
+        </div>
+      </Panel>
+    </>
+  )
+}
+
+function CompaniesListBContent({ companies, canCreate, totalsExtra }: CompaniesListBProps) {
   const router = useRouter()
 
   const [viewMode, setViewMode] = useState<ViewMode>('tabel')

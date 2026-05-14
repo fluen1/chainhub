@@ -94,13 +94,52 @@ function shortSens(sens: string): string {
   return sens
 }
 
-export function ContractsListB({
-  contracts,
-  totalContracts,
-}: {
+interface ContractsListBProps {
   contracts: ContractRow[]
   totalContracts: number
-}) {
+}
+
+export function ContractsListB(props: ContractsListBProps) {
+  // 0-totalt empty-state. Vi tjekker mod totalContracts (utiltret server-tal)
+  // så sensitivity/scope-filtre ikke triggers den. Splitter ud i content-
+  // component så hooks ikke kaldes betinget (Rules of Hooks).
+  if (props.totalContracts === 0) {
+    return <EmptyContractsView />
+  }
+  return <ContractsListBContent {...props} />
+}
+
+function EmptyContractsView() {
+  return (
+    <>
+      <Breadcrumb trail={[]} current="Kontrakter" />
+      <PageHeader
+        title="Kontrakter"
+        meta="Ingen kontrakter oprettet endnu"
+        actions={
+          <BButton primary href="/contracts/new">
+            + Opret kontrakt
+          </BButton>
+        }
+      />
+      <Panel>
+        <div className="flex flex-col items-center gap-3 px-6 py-16 text-center">
+          <div className="text-[14px] font-medium text-b-1">Ingen kontrakter endnu</div>
+          <p className="max-w-md text-[13px] text-b-2">
+            Opret den første kontrakt — lejekontrakt, ejeraftale, ansættelseskontrakt eller en af de
+            øvrige 34 typer. Du kan uploade et PDF-dokument undervejs så AI ekstraherer vilkår
+            automatisk.
+          </p>
+          <BButton primary href="/contracts/new">
+            + Opret kontrakt
+          </BButton>
+        </div>
+      </Panel>
+    </>
+  )
+}
+
+function ContractsListBContent({ contracts, totalContracts }: ContractsListBProps) {
   const router = useRouter()
 
   const [viewMode, setViewMode] = useState<ViewMode>('flat')
