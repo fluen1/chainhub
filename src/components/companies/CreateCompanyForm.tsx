@@ -7,26 +7,56 @@ import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { COMPANY_TYPE_OPTIONS } from '@/lib/labels'
+import {
+  Panel,
+  BButton,
+  BTextField,
+  BTextareaField,
+  BFieldRow,
+  BFieldWrap,
+  Breadcrumb,
+} from '@/components/ui/b'
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CreateCompanyForm — B-stil port. Felter: name, cvr, companyType, address,
+// city, postalCode, foundedDate, notes.
+// ─────────────────────────────────────────────────────────────────────────────
 
 export function CreateCompanyForm() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
+  const [name, setName] = useState('')
+  const [cvr, setCvr] = useState('')
+  const [companyType, setCompanyType] = useState('')
+  const [foundedDate, setFoundedDate] = useState('')
+  const [address, setAddress] = useState('')
+  const [postalCode, setPostalCode] = useState('')
+  const [city, setCity] = useState('')
+  const [notes, setNotes] = useState('')
+
+  const [nameError, setNameError] = useState<string | null>(null)
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
+
+    if (!name.trim()) {
+      setNameError('Selskabsnavn er påkrævet')
+      return
+    }
+    setNameError(null)
     setLoading(true)
 
     try {
-      const formData = new FormData(e.currentTarget)
       const result = await createCompany({
-        name: formData.get('name') as string,
-        cvr: formData.get('cvr') as string,
-        companyType: formData.get('companyType') as string,
-        address: formData.get('address') as string,
-        city: formData.get('city') as string,
-        postalCode: formData.get('postalCode') as string,
-        foundedDate: formData.get('foundedDate') as string,
-        notes: formData.get('notes') as string,
+        name: name.trim(),
+        cvr: cvr || undefined,
+        companyType: companyType || undefined,
+        address: address || undefined,
+        city: city || undefined,
+        postalCode: postalCode || undefined,
+        foundedDate: foundedDate || undefined,
+        notes: notes || undefined,
       })
 
       if (result.error) {
@@ -45,167 +75,137 @@ export function CreateCompanyForm() {
     }
   }
 
-  const inputClass =
-    'mt-1 block w-full rounded-lg border border-gray-200 bg-white px-3 py-3 md:py-2 text-sm text-gray-900 placeholder:text-gray-400 transition-colors focus:border-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-400'
-
   return (
-    <div className="mx-auto max-w-3xl">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/companies"
-            className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
-            aria-label="Tilbage til selskaber"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight text-gray-900">Opret selskab</h1>
-            <p className="text-sm text-gray-500">Tilføj et nyt lokationsselskab til porteføljen</p>
-          </div>
-        </div>
+    <div className="mx-auto max-w-3xl space-y-3">
+      <Breadcrumb trail={[{ label: 'Selskaber', href: '/companies' }]} current="Nyt selskab" />
+
+      <div className="flex items-center gap-2">
+        <Link href="/companies" className="rounded-[4px] p-1 hover:bg-[#f6f8fa]">
+          <ArrowLeft className="h-4 w-4 text-b-2" />
+        </Link>
+        <span className="text-[16px] font-semibold text-b-1">Opret selskab</span>
       </div>
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         {/* Selskabsinformation */}
-        <div className="rounded-lg border border-gray-200 bg-white p-5 space-y-4">
-          <p className="text-xs font-medium text-gray-500 tracking-wide">Selskabsinformation</p>
+        <Panel>
+          <div className="flex flex-col gap-3.5 px-4 py-4">
+            <p
+              className="text-[10px] font-semibold uppercase text-b-2"
+              style={{ letterSpacing: '0.4px' }}
+            >
+              Selskabsinformation
+            </p>
 
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-              Selskabsnavn <span className="text-red-400">*</span>
-            </label>
-            <input
-              id="name"
-              name="name"
-              type="text"
+            <BTextField
+              label="Selskabsnavn"
+              value={name}
+              onChange={(v) => {
+                setName(v)
+                if (v.trim()) setNameError(null)
+              }}
               required
-              maxLength={200}
-              className={inputClass}
               placeholder="Tandlæge Østerbro ApS"
+              error={nameError}
+              autoFocus
+              disabled={loading}
+            />
+
+            <BFieldRow>
+              <BTextField
+                label="CVR-nummer"
+                value={cvr}
+                onChange={setCvr}
+                placeholder="12345678"
+                hint="8 cifre"
+                disabled={loading}
+              />
+              <BFieldWrap label="Selskabsform">
+                <select
+                  value={companyType}
+                  onChange={(e) => setCompanyType(e.target.value)}
+                  disabled={loading}
+                  className="rounded-[4px] border border-b-border-strong bg-white px-2.5 py-1.5 text-[13px] text-b-1 focus:border-transparent focus:outline focus:outline-2 focus:outline-b-blue-fg focus:outline-offset-[-1px] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <option value="">Vælg...</option>
+                  {COMPANY_TYPE_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </BFieldWrap>
+            </BFieldRow>
+
+            <BTextField
+              label="Stiftelsesdato"
+              value={foundedDate}
+              onChange={setFoundedDate}
+              type="date"
+              disabled={loading}
             />
           </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label htmlFor="cvr" className="block text-sm font-medium text-gray-700">
-                CVR-nummer
-              </label>
-              <input
-                id="cvr"
-                name="cvr"
-                type="text"
-                inputMode="numeric"
-                pattern="\d{8}"
-                maxLength={8}
-                className={inputClass}
-                placeholder="12345678"
-              />
-              <p className="mt-1 text-xs text-gray-500">8 cifre</p>
-            </div>
-
-            <div>
-              <label htmlFor="companyType" className="block text-sm font-medium text-gray-700">
-                Selskabsform
-              </label>
-              <select id="companyType" name="companyType" className={inputClass}>
-                <option value="">Vælg...</option>
-                {COMPANY_TYPE_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor="foundedDate" className="block text-sm font-medium text-gray-700">
-              Stiftelsesdato
-            </label>
-            <input id="foundedDate" name="foundedDate" type="date" className={inputClass} />
-          </div>
-        </div>
+        </Panel>
 
         {/* Adresse */}
-        <div className="mt-4 rounded-lg border border-gray-200 bg-white p-5 space-y-4">
-          <p className="text-xs font-medium text-gray-500 tracking-wide">Adresse</p>
+        <Panel>
+          <div className="flex flex-col gap-3.5 px-4 py-4">
+            <p
+              className="text-[10px] font-semibold uppercase text-b-2"
+              style={{ letterSpacing: '0.4px' }}
+            >
+              Adresse
+            </p>
 
-          <div>
-            <label htmlFor="address" className="block text-sm font-medium text-gray-700">
-              Vejnavn og nummer
-            </label>
-            <input
-              id="address"
-              name="address"
-              type="text"
-              className={inputClass}
+            <BTextField
+              label="Vejnavn og nummer"
+              value={address}
+              onChange={setAddress}
               placeholder="Østerbrogade 123"
+              disabled={loading}
+            />
+
+            <BFieldRow>
+              <BTextField
+                label="Postnummer"
+                value={postalCode}
+                onChange={setPostalCode}
+                placeholder="2100"
+                disabled={loading}
+              />
+              <BTextField
+                label="By"
+                value={city}
+                onChange={setCity}
+                placeholder="København Ø"
+                disabled={loading}
+              />
+            </BFieldRow>
+          </div>
+        </Panel>
+
+        {/* Noter */}
+        <Panel>
+          <div className="px-4 py-4">
+            <BTextareaField
+              label="Interne noter"
+              value={notes}
+              onChange={setNotes}
+              placeholder="Valgfrie noter om selskabet..."
+              rows={2}
+              disabled={loading}
             />
           </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700">
-                Postnummer
-              </label>
-              <input
-                id="postalCode"
-                name="postalCode"
-                type="text"
-                inputMode="numeric"
-                pattern="\d{4}"
-                maxLength={4}
-                className={inputClass}
-                placeholder="2100"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="city" className="block text-sm font-medium text-gray-700">
-                By
-              </label>
-              <input
-                id="city"
-                name="city"
-                type="text"
-                className={inputClass}
-                placeholder="København Ø"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Interne noter — direkte, ingen sektion-wrapper */}
-        <div className="mt-4">
-          <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
-            Interne noter
-          </label>
-          <textarea
-            id="notes"
-            name="notes"
-            rows={2}
-            className={`${inputClass} mt-1`}
-            placeholder="Valgfrie noter om selskabet..."
-          />
-        </div>
+        </Panel>
 
         {/* Actions */}
-        <div className="mt-6 flex justify-end gap-3">
-          <Link
-            href="/companies"
-            className="rounded-lg border border-gray-200 bg-white px-4 py-3 md:py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
-          >
-            Annullér
+        <div className="flex items-center justify-end gap-2">
+          <Link href="/companies">
+            <BButton disabled={loading}>Annullér</BButton>
           </Link>
-          <button
-            type="submit"
-            disabled={loading}
-            className="rounded-lg bg-gray-900 px-5 py-3 md:py-2 text-sm font-medium text-white transition-colors hover:bg-gray-800 disabled:opacity-50"
-          >
+          <BButton type="submit" primary disabled={loading || !name.trim()}>
             {loading ? 'Opretter...' : 'Opret selskab'}
-          </button>
+          </BButton>
         </div>
       </form>
     </div>

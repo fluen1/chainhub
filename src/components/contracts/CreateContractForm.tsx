@@ -14,6 +14,20 @@ import { zodContractSystemType } from '@/lib/zod-enums'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
+import {
+  Panel,
+  BButton,
+  BTextField,
+  BTextareaField,
+  BFieldRow,
+  BFieldWrap,
+  Breadcrumb,
+} from '@/components/ui/b'
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CreateContractForm — B-stil port. Felter: companyId, systemType, displayName,
+// sensitivity, effectiveDate, expiryDate, noticePeriodDays, advisering, notes.
+// ─────────────────────────────────────────────────────────────────────────────
 
 const SENSITIVITY_OPTIONS: { value: SensitivityLevelValue; label: string }[] = [
   { value: 'PUBLIC', label: 'Offentlig' },
@@ -40,9 +54,17 @@ export function CreateContractForm() {
   const [selectedType, setSelectedType] = useState<ContractSystemTypeKey | ''>('')
   const [minSensitivity, setMinSensitivity] = useState<SensitivityLevelValue>('STANDARD')
   const [companyId, setCompanyId] = useState(preselectedCompanyId)
+  const [displayName, setDisplayName] = useState('')
+  const [effectiveDate, setEffectiveDate] = useState('')
+  const [expiryDate, setExpiryDate] = useState('')
+  const [noticePeriodDays, setNoticePeriodDays] = useState('')
+  const [notes, setNotes] = useState('')
+  const [reminder90, setReminder90] = useState(true)
+  const [reminder30, setReminder30] = useState(true)
+  const [reminder7, setReminder7] = useState(true)
   const [companies, setCompanies] = useState<{ id: string; name: string }[]>([])
+  const [displayNameError, setDisplayNameError] = useState<string | null>(null)
 
-  // Hent selskaber
   useEffect(() => {
     fetch('/api/companies-list')
       .then((r) => r.json())
@@ -50,7 +72,6 @@ export function CreateContractForm() {
       .catch(() => {})
   }, [])
 
-  // Opdater minimum-sensitivitet når type ændres
   useEffect(() => {
     if (selectedType && SENSITIVITY_MINIMUM[selectedType as ContractSystemTypeKey]) {
       setMinSensitivity(
@@ -63,29 +84,36 @@ export function CreateContractForm() {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
+
+    if (!displayName.trim()) {
+      setDisplayNameError('Kontraktens navn er påkrævet')
+      return
+    }
+    setDisplayNameError(null)
     setLoading(true)
 
-    const formData = new FormData(e.currentTarget)
-    const parsedSystemType = zodContractSystemType.safeParse(formData.get('systemType'))
+    const parsedSystemType = zodContractSystemType.safeParse(selectedType)
     if (!parsedSystemType.success) {
       setLoading(false)
       toast.error('Vælg en gyldig kontrakttype')
       return
     }
+
+    const formData = new FormData(e.currentTarget)
+    const sensitivity = formData.get('sensitivity') as SensitivityLevelValue
+
     const result = await createContract({
-      companyId: formData.get('companyId') as string,
+      companyId,
       systemType: parsedSystemType.data,
-      displayName: formData.get('displayName') as string,
-      sensitivity: formData.get('sensitivity') as SensitivityLevelValue,
-      effectiveDate: formData.get('effectiveDate') as string,
-      expiryDate: formData.get('expiryDate') as string,
-      noticePeriodDays: formData.get('noticePeriodDays')
-        ? Number(formData.get('noticePeriodDays'))
-        : undefined,
-      notes: formData.get('notes') as string,
-      reminder90Days: formData.get('reminder90Days') === 'on',
-      reminder30Days: formData.get('reminder30Days') === 'on',
-      reminder7Days: formData.get('reminder7Days') === 'on',
+      displayName: displayName.trim(),
+      sensitivity,
+      effectiveDate: effectiveDate || undefined,
+      expiryDate: expiryDate || undefined,
+      noticePeriodDays: noticePeriodDays ? Number(noticePeriodDays) : undefined,
+      notes: notes || undefined,
+      reminder90Days: reminder90,
+      reminder30Days: reminder30,
+      reminder7Days: reminder7,
     })
 
     setLoading(false)
@@ -101,231 +129,214 @@ export function CreateContractForm() {
     }
   }
 
-  // Filtrer sensitivity-options til kun dem >= minimum
   const availableSensitivityOptions = SENSITIVITY_OPTIONS.filter(
     (opt) => SENSITIVITY_ORDER.indexOf(opt.value) >= SENSITIVITY_ORDER.indexOf(minSensitivity)
   )
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href="/contracts" className="rounded-md p-1 hover:bg-gray-100">
-          <ArrowLeft className="h-5 w-5 text-gray-500" />
+    <div className="mx-auto max-w-3xl space-y-3">
+      <Breadcrumb trail={[{ label: 'Kontrakter', href: '/contracts' }]} current="Ny kontrakt" />
+
+      <div className="flex items-center gap-2">
+        <Link href="/contracts" className="rounded-[4px] p-1 hover:bg-[#f6f8fa]">
+          <ArrowLeft className="h-4 w-4 text-b-2" />
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900">Opret kontrakt</h1>
+        <span className="text-[16px] font-semibold text-b-1">Opret kontrakt</span>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6 rounded-lg border bg-white p-6 shadow-sm">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         {/* Grunddata */}
-        <div className="space-y-4">
-          <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Grunddata</h2>
-
-          <div>
-            <label htmlFor="contract-companyId" className="block text-sm font-medium text-gray-700">
-              Tilknyttet selskab *
-            </label>
-            <select
-              id="contract-companyId"
-              name="companyId"
-              required
-              value={companyId}
-              onChange={(e) => setCompanyId(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none"
+        <Panel>
+          <div className="flex flex-col gap-3.5 px-4 py-4">
+            <p
+              className="text-[10px] font-semibold uppercase text-b-2"
+              style={{ letterSpacing: '0.4px' }}
             >
-              <option value="">Vælg selskab...</option>
-              {companies.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <label
-                htmlFor="contract-systemType"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Kontrakttype *
-              </label>
-              <select
-                id="contract-systemType"
-                name="systemType"
-                required
-                value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value as ContractSystemTypeKey)}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none"
-              >
-                <option value="">Vælg type...</option>
-                {CONTRACT_SYSTEM_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {CONTRACT_TYPE_LABELS[type]}
-                  </option>
-                ))}
-              </select>
-              {selectedType && (
-                <p className="mt-1 text-xs text-gray-500">
-                  Minimum sensitivitet:{' '}
-                  <span className="font-medium">
-                    {SENSITIVITY_MINIMUM[selectedType as ContractSystemTypeKey] ?? 'STANDARD'}
-                  </span>
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label
-                htmlFor="contract-sensitivity"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Sensitivitetsniveau *
-              </label>
-              <select
-                id="contract-sensitivity"
-                name="sensitivity"
-                required
-                defaultValue={minSensitivity}
-                key={minSensitivity}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none"
-              >
-                {availableSensitivityOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label
-              htmlFor="contract-displayName"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Kontraktens navn *
-            </label>
-            <input
-              id="contract-displayName"
-              name="displayName"
-              type="text"
-              required
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none"
-              placeholder="fx Ejeraftale Tandlæge Østerbro ApS 2024"
-            />
-            <p className="mt-1 text-xs text-gray-500">
-              Dit eget navn til kontrakten — vises i oversigten
+              Grunddata
             </p>
-          </div>
-        </div>
 
-        {/* Datoer */}
-        <div className="space-y-4 border-t pt-4">
-          <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
-            Datoer og vilkår
-          </h2>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <label
-                htmlFor="contract-effectiveDate"
-                className="block text-sm font-medium text-gray-700"
+            <BFieldWrap label="Tilknyttet selskab" required>
+              <select
+                value={companyId}
+                onChange={(e) => setCompanyId(e.target.value)}
+                required
+                disabled={loading}
+                className="rounded-[4px] border border-b-border-strong bg-white px-2.5 py-1.5 text-[13px] text-b-1 focus:border-transparent focus:outline focus:outline-2 focus:outline-b-blue-fg focus:outline-offset-[-1px] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Startdato
-              </label>
-              <input
-                id="contract-effectiveDate"
-                name="effectiveDate"
-                type="date"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none"
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="contract-expiryDate"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Udløbsdato
-                <span className="ml-1 text-xs text-gray-500">(blank = løbende)</span>
-              </label>
-              <input
-                id="contract-expiryDate"
-                name="expiryDate"
-                type="date"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none"
-              />
-            </div>
-          </div>
+                <option value="">Vælg selskab...</option>
+                {companies.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </BFieldWrap>
 
-          <div>
-            <label
-              htmlFor="contract-noticePeriodDays"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Opsigelsesvarsel (dage)
-              <span className="ml-1 text-xs text-gray-500">(løbende kontrakter)</span>
-            </label>
-            <input
-              id="contract-noticePeriodDays"
-              name="noticePeriodDays"
-              type="number"
-              min="0"
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none"
-              placeholder="30"
+            <BFieldRow>
+              <BFieldWrap
+                label="Kontrakttype"
+                required
+                hint={
+                  selectedType
+                    ? `Min. sensitivitet: ${SENSITIVITY_MINIMUM[selectedType as ContractSystemTypeKey] ?? 'STANDARD'}`
+                    : undefined
+                }
+              >
+                <select
+                  value={selectedType}
+                  onChange={(e) => setSelectedType(e.target.value as ContractSystemTypeKey)}
+                  required
+                  disabled={loading}
+                  className="rounded-[4px] border border-b-border-strong bg-white px-2.5 py-1.5 text-[13px] text-b-1 focus:border-transparent focus:outline focus:outline-2 focus:outline-b-blue-fg focus:outline-offset-[-1px] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <option value="">Vælg type...</option>
+                  {CONTRACT_SYSTEM_TYPES.map((type) => (
+                    <option key={type} value={type}>
+                      {CONTRACT_TYPE_LABELS[type]}
+                    </option>
+                  ))}
+                </select>
+              </BFieldWrap>
+
+              <BFieldWrap label="Sensitivitetsniveau" required>
+                <select
+                  name="sensitivity"
+                  required
+                  defaultValue={minSensitivity}
+                  key={minSensitivity}
+                  disabled={loading}
+                  className="rounded-[4px] border border-b-border-strong bg-white px-2.5 py-1.5 text-[13px] text-b-1 focus:border-transparent focus:outline focus:outline-2 focus:outline-b-blue-fg focus:outline-offset-[-1px] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {availableSensitivityOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </BFieldWrap>
+            </BFieldRow>
+
+            <BTextField
+              label="Kontraktens navn"
+              value={displayName}
+              onChange={(v) => {
+                setDisplayName(v)
+                if (v.trim()) setDisplayNameError(null)
+              }}
+              required
+              placeholder="fx Ejeraftale Tandlæge Østerbro ApS 2024"
+              hint="Dit eget navn til kontrakten — vises i oversigten"
+              error={displayNameError}
+              disabled={loading}
             />
           </div>
-        </div>
+        </Panel>
+
+        {/* Datoer og vilkår */}
+        <Panel>
+          <div className="flex flex-col gap-3.5 px-4 py-4">
+            <p
+              className="text-[10px] font-semibold uppercase text-b-2"
+              style={{ letterSpacing: '0.4px' }}
+            >
+              Datoer og vilkår
+            </p>
+
+            <BFieldRow>
+              <BTextField
+                label="Startdato"
+                value={effectiveDate}
+                onChange={setEffectiveDate}
+                type="date"
+                disabled={loading}
+              />
+              <BTextField
+                label="Udløbsdato"
+                value={expiryDate}
+                onChange={setExpiryDate}
+                type="date"
+                hint="Blank = løbende"
+                disabled={loading}
+              />
+            </BFieldRow>
+
+            <BTextField
+              label="Opsigelsesvarsel (dage)"
+              value={noticePeriodDays}
+              onChange={setNoticePeriodDays}
+              type="number"
+              placeholder="30"
+              hint="Løbende kontrakter"
+              disabled={loading}
+            />
+          </div>
+        </Panel>
 
         {/* Advisering */}
-        <div className="space-y-3 border-t pt-4">
-          <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
-            Advisering
-          </h2>
-          <p className="text-xs text-gray-500">Hvornår skal du adviseres om udløb?</p>
-          <div className="space-y-2">
-            <label className="flex items-center gap-2">
-              <input type="checkbox" name="reminder90Days" defaultChecked className="rounded" />
-              <span className="text-sm text-gray-700">90 dage før udløb</span>
-            </label>
-            <label className="flex items-center gap-2">
-              <input type="checkbox" name="reminder30Days" defaultChecked className="rounded" />
-              <span className="text-sm text-gray-700">30 dage før udløb</span>
-            </label>
-            <label className="flex items-center gap-2">
-              <input type="checkbox" name="reminder7Days" defaultChecked className="rounded" />
-              <span className="text-sm text-gray-700">7 dage før udløb</span>
-            </label>
+        <Panel>
+          <div className="flex flex-col gap-2 px-4 py-4">
+            <p
+              className="text-[10px] font-semibold uppercase text-b-2"
+              style={{ letterSpacing: '0.4px' }}
+            >
+              Advisering
+            </p>
+            <p className="text-[12px] text-b-2">Hvornår skal du adviseres om udløb?</p>
+            <div className="flex flex-col gap-1.5">
+              {(
+                [
+                  {
+                    key: 'r90',
+                    label: '90 dage før udløb',
+                    value: reminder90,
+                    setter: setReminder90,
+                  },
+                  {
+                    key: 'r30',
+                    label: '30 dage før udløb',
+                    value: reminder30,
+                    setter: setReminder30,
+                  },
+                  { key: 'r7', label: '7 dage før udløb', value: reminder7, setter: setReminder7 },
+                ] as const
+              ).map(({ key, label, value, setter }) => (
+                <label key={key} className="flex cursor-pointer items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={value}
+                    onChange={(e) => setter(e.target.checked)}
+                    disabled={loading}
+                    className="rounded"
+                  />
+                  <span className="text-[13px] text-b-1">{label}</span>
+                </label>
+              ))}
+            </div>
           </div>
-        </div>
+        </Panel>
 
         {/* Noter */}
-        <div className="border-t pt-4">
-          <label htmlFor="contract-notes" className="block text-sm font-medium text-gray-700">
-            Interne noter
-          </label>
-          <textarea
-            id="contract-notes"
-            name="notes"
-            rows={3}
-            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none"
-            placeholder="Interne noter..."
-          />
-        </div>
+        <Panel>
+          <div className="px-4 py-4">
+            <BTextareaField
+              label="Interne noter"
+              value={notes}
+              onChange={setNotes}
+              placeholder="Interne noter..."
+              rows={3}
+              disabled={loading}
+            />
+          </div>
+        </Panel>
 
-        <div className="flex justify-end gap-3 pt-2">
-          <Link
-            href="/contracts"
-            className="rounded-md border border-gray-300 bg-white px-4 py-3 md:py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            Annullér
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-2">
+          <Link href="/contracts">
+            <BButton disabled={loading}>Annullér</BButton>
           </Link>
-          <button
-            type="submit"
-            disabled={loading}
-            className="rounded-md bg-blue-600 px-4 py-3 md:py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-          >
+          <BButton type="submit" primary disabled={loading || !displayName.trim()}>
             {loading ? 'Opretter...' : 'Opret kontrakt'}
-          </button>
+          </BButton>
         </div>
       </form>
     </div>

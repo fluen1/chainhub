@@ -6,22 +6,54 @@ import { createPerson } from '@/actions/persons'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
+import {
+  Panel,
+  BButton,
+  BTextField,
+  BTextareaField,
+  BFieldRow,
+  Breadcrumb,
+} from '@/components/ui/b'
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CreatePersonForm — B-stil port. Felter: firstName, lastName, email, phone, notes.
+// ─────────────────────────────────────────────────────────────────────────────
 
 export function CreatePersonForm() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
+  const [notes, setNotes] = useState('')
+
+  const [firstNameError, setFirstNameError] = useState<string | null>(null)
+  const [lastNameError, setLastNameError] = useState<string | null>(null)
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
+
+    let hasError = false
+    if (!firstName.trim()) {
+      setFirstNameError('Fornavn er påkrævet')
+      hasError = true
+    }
+    if (!lastName.trim()) {
+      setLastNameError('Efternavn er påkrævet')
+      hasError = true
+    }
+    if (hasError) return
+
     setLoading(true)
 
-    const formData = new FormData(e.currentTarget)
     const result = await createPerson({
-      firstName: formData.get('firstName') as string,
-      lastName: formData.get('lastName') as string,
-      email: formData.get('email') as string,
-      phone: formData.get('phone') as string,
-      notes: formData.get('notes') as string,
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      email: email || undefined,
+      phone: phone || undefined,
+      notes: notes || undefined,
     })
 
     setLoading(false)
@@ -38,98 +70,89 @@ export function CreatePersonForm() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href="/persons" className="rounded-md p-1 hover:bg-gray-100">
-          <ArrowLeft className="h-5 w-5 text-gray-500" />
+    <div className="mx-auto max-w-3xl space-y-3">
+      <Breadcrumb trail={[{ label: 'Personer', href: '/persons' }]} current="Ny person" />
+
+      <div className="flex items-center gap-2">
+        <Link href="/persons" className="rounded-[4px] p-1 hover:bg-[#f6f8fa]">
+          <ArrowLeft className="h-4 w-4 text-b-2" />
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900">Opret person</h1>
+        <span className="text-[16px] font-semibold text-b-1">Opret person</span>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6 rounded-lg border bg-white p-6 shadow-sm">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
-              Fornavn *
-            </label>
-            <input
-              id="firstName"
-              name="firstName"
-              type="text"
-              required
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              placeholder="Philip"
-            />
-          </div>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        <Panel>
+          <div className="flex flex-col gap-3.5 px-4 py-4">
+            <BFieldRow>
+              <BTextField
+                label="Fornavn"
+                value={firstName}
+                onChange={(v) => {
+                  setFirstName(v)
+                  if (v.trim()) setFirstNameError(null)
+                }}
+                required
+                placeholder="Philip"
+                error={firstNameError}
+                autoFocus
+                disabled={loading}
+              />
+              <BTextField
+                label="Efternavn"
+                value={lastName}
+                onChange={(v) => {
+                  setLastName(v)
+                  if (v.trim()) setLastNameError(null)
+                }}
+                required
+                placeholder="Larsen"
+                error={lastNameError}
+                disabled={loading}
+              />
+            </BFieldRow>
 
-          <div>
-            <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
-              Efternavn *
-            </label>
-            <input
-              id="lastName"
-              name="lastName"
-              type="text"
-              required
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              placeholder="Larsen"
-            />
-          </div>
+            <BFieldRow>
+              <BTextField
+                label="Email"
+                value={email}
+                onChange={setEmail}
+                type="email"
+                placeholder="philip@eksempel.dk"
+                disabled={loading}
+              />
+              <BTextField
+                label="Telefon"
+                value={phone}
+                onChange={setPhone}
+                type="tel"
+                placeholder="+45 12 34 56 78"
+                disabled={loading}
+              />
+            </BFieldRow>
 
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-              Email
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              placeholder="philip@eksempel.dk"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-              Telefon
-            </label>
-            <input
-              id="phone"
-              name="phone"
-              type="tel"
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              placeholder="+45 12 34 56 78"
-            />
-          </div>
-
-          <div className="sm:col-span-2">
-            <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
-              Interne noter
-            </label>
-            <textarea
-              id="notes"
-              name="notes"
-              rows={3}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            <BTextareaField
+              label="Interne noter"
+              value={notes}
+              onChange={setNotes}
               placeholder="Interne noter om denne person..."
+              rows={3}
+              disabled={loading}
             />
           </div>
-        </div>
+        </Panel>
 
-        <div className="flex justify-end gap-3">
-          <Link
-            href="/persons"
-            className="rounded-md border border-gray-300 bg-white px-4 py-3 md:py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            Annullér
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-2">
+          <Link href="/persons">
+            <BButton disabled={loading}>Annullér</BButton>
           </Link>
-          <button
+          <BButton
             type="submit"
-            disabled={loading}
-            className="rounded-md bg-blue-600 px-4 py-3 md:py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            primary
+            disabled={loading || !firstName.trim() || !lastName.trim()}
           >
             {loading ? 'Opretter...' : 'Opret person'}
-          </button>
+          </BButton>
         </div>
       </form>
     </div>
