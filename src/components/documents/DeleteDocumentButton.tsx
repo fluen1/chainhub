@@ -82,7 +82,7 @@ export function DeleteDocumentButton({
           Er du sikker på, at du vil slette{' '}
           <span className="font-semibold">&ldquo;{fileName}&rdquo;</span>?
         </p>
-        <p className="text-[12px] text-slate-400 mb-4">
+        <p className="text-[12px] text-slate-600 mb-4">
           Dokumentet flyttes til arkiv og kan ikke gendannes.
         </p>
 

@@ -201,13 +201,13 @@ describe('Fix 7: ContractStatusButton a11y', () => {
 })
 
 // ────────────────────────────────────────────────────────────────────────────
-// Fix 8: tasks-list-b aria-grabbed → aria-selected (ARIA 1.2)
+// Fix 8: tasks-list-b aria-grabbed → aria-pressed (ARIA 1.2 kompatibelt på <button>)
 // ────────────────────────────────────────────────────────────────────────────
 describe('Fix 8: tasks-list-b ARIA 1.2 pattern', () => {
   const src = read('src/app/(dashboard)/tasks/tasks-list-b.tsx')
 
-  it('bruger aria-selected i stedet for aria-grabbed', () => {
-    expect(src).toContain('aria-selected={isGrabbed}')
+  it('bruger aria-pressed i stedet for aria-grabbed (gyldig på <button>)', () => {
+    expect(src).toContain('aria-pressed={isGrabbed}')
     expect(src).not.toContain('aria-grabbed={isGrabbed}')
   })
 })

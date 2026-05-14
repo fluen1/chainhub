@@ -60,6 +60,7 @@ export function HeatmapGrid({ companies }: HeatmapGridProps) {
             <Link
               key={c.id}
               href={`/companies/${c.id}`}
+              aria-label={`${c.name} — ${c.healthStatus === 'critical' ? 'kritisk' : c.healthStatus === 'warning' ? 'advarsel' : 'sund'}${c.openCaseCount > 0 ? `, ${c.openCaseCount} åbne sager` : ''}`}
               className={cn(
                 'rounded p-1 text-center cursor-pointer hover:opacity-80 transition-opacity no-underline',
                 cellClass
