@@ -280,7 +280,7 @@ export async function escalateCase(caseId: string): Promise<ActionResult<void>> 
   try {
     // Hent bruger-navn til eskalerings-kommentar
     const user = await prisma.user.findFirst({
-      where: { id: session.user.id },
+      where: { id: session.user.id, organization_id: session.user.organizationId },
       select: { name: true, email: true },
     })
     const userName = user?.name ?? user?.email ?? 'Ukendt bruger'
