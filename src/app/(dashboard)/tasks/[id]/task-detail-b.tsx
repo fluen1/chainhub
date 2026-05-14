@@ -23,6 +23,11 @@ import {
 } from '@/components/ui/b'
 import { updateTaskStatus } from '@/actions/tasks'
 import { createComment } from '@/actions/comments'
+import {
+  EditTaskDialog,
+  type TaskPriority,
+  type TaskStatus,
+} from '@/components/tasks/EditTaskDialog'
 
 // ────────────────────────────────────────────────────────────────────────────
 // /tasks/[id] — klient-komponent. B-stil port af Opgave detail.html.
@@ -46,6 +51,8 @@ export interface TaskDetailViewData {
   isUrgent: boolean
   createdAt: string
   assigneeName: string
+  assigneeId: string | null
+  dueDateIso: string | null
   relatedCompany: { id: string; name: string } | null
   relatedCase: { id: string; title: string; status: string } | null
   relatedContract: { id: string; display_name: string; status: string } | null
@@ -63,6 +70,7 @@ export interface TaskDetailViewData {
     authorName: string
     createdAt: string
   }>
+  availableAssignees: Array<{ id: string; name: string }>
 }
 
 // Status-options (matcher TaskStatus enum). AKTIV bruges som "I gang" i UI.
@@ -136,6 +144,7 @@ export function TaskDetailB({ data }: { data: TaskDetailViewData }) {
   const [status, setStatus] = useState(data.status)
   const [comment, setComment] = useState('')
   const [isPending, startTransition] = useTransition()
+  const [editOpen, setEditOpen] = useState(false)
 
   const isDone = status === 'LUKKET'
 
@@ -267,7 +276,7 @@ export function TaskDetailB({ data }: { data: TaskDetailViewData }) {
         }
         actions={
           <>
-            <BButton href={`/tasks/${data.id}/edit`}>Rediger</BButton>
+            <BButton onClick={() => setEditOpen(true)}>Rediger</BButton>
             <BButton primary={!isDone} onClick={toggleDone}>
               {isDone ? 'Genåbn' : 'Markér fuldført'}
             </BButton>
@@ -284,7 +293,7 @@ export function TaskDetailB({ data }: { data: TaskDetailViewData }) {
           <Panel>
             <PanelHeader
               title="Beskrivelse"
-              actions={<BAddButton href={`/tasks/${data.id}/edit`}>Rediger</BAddButton>}
+              actions={<BAddButton onClick={() => setEditOpen(true)}>Rediger</BAddButton>}
             />
             <div className="px-3 py-2.5 text-[13px] leading-relaxed text-b-1">
               {data.description ? (
@@ -395,7 +404,7 @@ export function TaskDetailB({ data }: { data: TaskDetailViewData }) {
             <PanelFooter>
               <div className="flex items-center justify-between">
                 <span />
-                <BAddButton href={`/tasks/${data.id}/edit`}>Rediger</BAddButton>
+                <BAddButton onClick={() => setEditOpen(true)}>Rediger</BAddButton>
               </div>
             </PanelFooter>
           </Panel>
@@ -464,6 +473,22 @@ export function TaskDetailB({ data }: { data: TaskDetailViewData }) {
             <KbdHint k="M" label="markér fuldført" />
           </>
         }
+      />
+
+      <EditTaskDialog
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        onSaved={() => router.refresh()}
+        task={{
+          id: data.id,
+          title: data.title,
+          description: data.description,
+          priority: data.priority as TaskPriority,
+          status: status as TaskStatus,
+          dueDate: data.dueDateIso,
+          assignedToId: data.assigneeId,
+        }}
+        availableAssignees={data.availableAssignees}
       />
     </>
   )

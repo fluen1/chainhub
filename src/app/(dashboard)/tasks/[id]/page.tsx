@@ -39,6 +39,8 @@ export default async function TaskDetailPage({ params }: { params: { id: string 
     isUrgent: dDue != null && dDue >= 0 && dDue <= 1,
     createdAt: formatDate(data.task.created_at),
     assigneeName: data.assignee?.name ?? 'Ikke tildelt',
+    assigneeId: data.assignee?.id ?? null,
+    dueDateIso: data.task.due_date ? data.task.due_date.toISOString().slice(0, 10) : null,
     relatedCompany: data.relatedCompany,
     relatedCase: data.relatedCase
       ? {
@@ -62,6 +64,7 @@ export default async function TaskDetailPage({ params }: { params: { id: string 
       authorName: c.author.name,
       createdAt: c.created_at.toISOString(),
     })),
+    availableAssignees: data.availableAssignees,
   }
 
   return <TaskDetailB data={view} />
