@@ -1,5 +1,6 @@
 'use client'
 
+import React, { useId } from 'react'
 import { cn } from '@/lib/utils'
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -13,22 +14,48 @@ interface FieldWrapProps {
   hint?: React.ReactNode
   error?: string | null
   children: React.ReactNode
+  /** Eksplicit id — genereres automatisk via useId hvis ikke angivet. */
+  inputId?: string
 }
 
 /** FieldWrap — fælles label + hint/error-frame om hvert form-felt. */
-export function BFieldWrap({ label, required, hint, error, children }: FieldWrapProps) {
+export function BFieldWrap({
+  label,
+  required,
+  hint,
+  error,
+  children,
+  inputId: inputIdProp,
+}: FieldWrapProps) {
+  const generatedId = useId()
+  const inputId = inputIdProp ?? generatedId
+  const errorId = `${inputId}-error`
+
+  // Klon child-element med id + aria-attributter
+  const child = children as React.ReactElement<React.HTMLAttributes<HTMLElement>>
+  const clonedChild = React.isValidElement(child)
+    ? React.cloneElement(child, {
+        id: inputId,
+        ...(required ? { 'aria-required': true } : {}),
+        ...(error ? { 'aria-invalid': true, 'aria-describedby': errorId } : {}),
+      } as React.HTMLAttributes<HTMLElement>)
+    : children
+
   return (
     <div className="flex flex-col gap-1">
       <label
+        htmlFor={inputId}
         className="text-[11px] font-semibold uppercase text-b-2"
         style={{ letterSpacing: '0.4px' }}
       >
         {label}
         {required && <span className="ml-0.5 text-b-red-fg">*</span>}
       </label>
-      {children}
+      {clonedChild}
       {error ? (
-        <div className="text-[11px] text-b-red-fg">{error}</div>
+        <p id={errorId} role="alert" className="m-0 text-[11px] text-b-red-fg">
+          {error}
+        </p>
       ) : hint ? (
         <div className="text-[11px] text-b-2">{hint}</div>
       ) : null}

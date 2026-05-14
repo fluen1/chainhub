@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useId, useRef } from 'react'
 import { cn } from '@/lib/utils'
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -40,7 +40,7 @@ export interface BModalProps {
   submitting?: boolean
   /** Bredde i px — default 480. Brug 380 til kompakte confirm-modaler. */
   width?: number
-  /** ID til title (a11y). Default "b-modal-title". */
+  /** ID til title (a11y). Auto-genereres via useId hvis ikke angivet. */
   titleId?: string
 }
 
@@ -57,8 +57,10 @@ export function BModal({
   destructive,
   submitting,
   width = 480,
-  titleId = 'b-modal-title',
+  titleId: titleIdProp,
 }: BModalProps) {
+  const generatedId = useId()
+  const titleId = titleIdProp ?? generatedId
   const dialogRef = useRef<HTMLDivElement>(null)
   const previouslyFocused = useRef<HTMLElement | null>(null)
 
@@ -138,16 +140,16 @@ export function BModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="overflow-hidden rounded-[6px] border border-b-border-strong bg-white shadow-[0_16px_48px_rgba(15,23,42,0.25)]"
+        className="w-full overflow-hidden rounded-[6px] border border-b-border-strong bg-white shadow-[0_16px_48px_rgba(15,23,42,0.25)] max-w-[calc(100vw-16px)] sm:max-w-none"
         style={{ width }}
       >
         <form onSubmit={handleSubmit}>
           {/* Header */}
           <div className="flex items-start justify-between gap-3 border-b border-b-border bg-b-panel-h px-4 py-3">
             <div className="min-w-0">
-              <div id={titleId} className="text-[14px] font-semibold text-b-1">
+              <h2 id={titleId} className="text-[14px] font-semibold text-b-1 m-0">
                 {title}
-              </div>
+              </h2>
               {subtitle && <div className="mt-0.5 text-[12px] text-b-2">{subtitle}</div>}
             </div>
             <button
