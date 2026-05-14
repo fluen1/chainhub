@@ -1,14 +1,9 @@
 import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
-import Link from 'next/link'
 import { getTaskDetailData } from '@/actions/task-detail'
-import { TaskHeader } from '@/components/task-detail/task-header'
-import { TaskContext } from '@/components/task-detail/task-context'
-import { TaskDescription } from '@/components/task-detail/task-description'
-import { TaskHistory } from '@/components/task-detail/task-history'
-import { EditTaskDialog } from '@/components/task-detail/edit-task-dialog'
-import { CommentSection } from '@/components/comments/comment-section'
+import { getTaskStatusLabel, getPriorityLabel, formatDate, daysUntil } from '@/lib/labels'
+import { TaskDetailB, type TaskDetailViewData } from './task-detail-b'
 
 export const metadata: Metadata = { title: 'Opgave' }
 
@@ -17,60 +12,57 @@ export default async function TaskDetailPage({ params }: { params: { id: string 
   if (!session) redirect('/login')
 
   const data = await getTaskDetailData(params.id, session.user.id, session.user.organizationId)
-
   if (!data) notFound()
 
-  return (
-    <div className="max-w-3xl space-y-4">
-      {/* Breadcrumb */}
-      <nav className="text-xs text-gray-500">
-        <Link href="/tasks" className="text-slate-500 no-underline hover:text-blue-600">
-          Opgaver
-        </Link>
-        <span className="mx-2">&rsaquo;</span>
-        <span className="font-medium text-slate-900">{data.task.title}</span>
-      </nav>
+  const dDue = data.task.due_date ? daysUntil(data.task.due_date) : null
+  const fristShort =
+    data.task.due_date == null
+      ? '—'
+      : dDue != null && dDue < 0
+        ? `${Math.abs(dDue)}d for sent`
+        : dDue != null
+          ? `${dDue}d`
+          : '—'
 
-      <TaskHeader
-        title={data.task.title}
-        status={data.task.status}
-        priority={data.task.priority}
-        dueDate={data.task.due_date}
-        urgency={data.urgency}
-        editButton={
-          <EditTaskDialog
-            taskId={data.task.id}
-            currentStatus={data.task.status}
-            currentPriority={data.task.priority}
-            currentAssigneeId={data.assignee?.id ?? null}
-            currentDueDate={data.task.due_date}
-            availableAssignees={data.availableAssignees}
-          />
+  const view: TaskDetailViewData = {
+    id: data.task.id,
+    nr: data.task.id.slice(0, 8),
+    title: data.task.title,
+    description: data.task.description,
+    status: data.task.status,
+    statusLabel: getTaskStatusLabel(data.task.status),
+    priority: data.task.priority,
+    priorityLabel: getPriorityLabel(data.task.priority),
+    frist: data.task.due_date ? formatDate(data.task.due_date) : 'Ingen frist',
+    fristShort,
+    fristDays: dDue,
+    isUrgent: dDue != null && dDue >= 0 && dDue <= 1,
+    createdAt: formatDate(data.task.created_at),
+    assigneeName: data.assignee?.name ?? 'Ikke tildelt',
+    relatedCompany: data.relatedCompany,
+    relatedCase: data.relatedCase
+      ? {
+          id: data.relatedCase.id,
+          title: data.relatedCase.title,
+          status: data.relatedCase.status,
         }
-      />
+      : null,
+    relatedContract: data.relatedContract,
+    history: data.history.map((h) => ({
+      id: h.id,
+      fieldLabel: h.fieldLabel,
+      oldLabel: h.oldLabel,
+      newLabel: h.newLabel,
+      changedByName: h.changedByName,
+      changedAt: h.changedAt.toISOString(),
+    })),
+    comments: data.comments.map((c) => ({
+      id: c.id,
+      content: c.content,
+      authorName: c.author.name,
+      createdAt: c.created_at.toISOString(),
+    })),
+  }
 
-      <TaskContext
-        relatedCompany={data.relatedCompany}
-        relatedCase={data.relatedCase}
-        relatedContract={data.relatedContract}
-        assignee={data.assignee}
-      />
-
-      <TaskDescription description={data.task.description} />
-
-      <TaskHistory entries={data.history} />
-
-      <CommentSection
-        taskId={data.task.id}
-        comments={data.comments.map((c) => ({
-          id: c.id,
-          content: c.content,
-          authorName: c.author.name,
-          authorId: c.created_by,
-          createdAt: c.created_at.toISOString(),
-        }))}
-        currentUserId={session.user.id}
-      />
-    </div>
-  )
+  return <TaskDetailB data={view} />
 }

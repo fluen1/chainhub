@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tilføj person — ChainHub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #fafafa; color: #1f2328; }
+
+    /* ── SCENE ── */
+    .scene { position: relative; min-height: 100vh; overflow: hidden; background: #fafafa; }
+    .bg    { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh;
+             opacity: 0.32; filter: blur(0.6px); pointer-events: none; }
+    .overlay { position: absolute; inset: 0; background: rgba(15,23,42,0.42);
+               backdrop-filter: blur(2px); display: flex; align-items: flex-start;
+               justify-content: center; padding-top: 48px; z-index: 10; }
+
+    /* ── SIDEBAR ── */
+    .sb      { background: #f6f7f9; border-right: 1px solid #e1e4e8; padding: 14px 8px; font-size: 13px; }
+    .sb-logo { font-weight: 600; padding: 4px 10px 16px; color: #1f2328; }
+    .sb-sec  { margin-bottom: 16px; }
+    .sb-lab  { font-size: 10px; color: #6e7681; padding: 0 10px 4px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+    .sb-item { display: flex; justify-content: space-between; padding: 4px 10px; border-radius: 4px; color: #1f2328; font-size: 13px; }
+    .sb-item.active { background: #e8eaee; font-weight: 500; }
+    .sb-cnt  { font-size: 11px; color: #6e7681; font-variant-numeric: tabular-nums; }
+    .sb-cnt.a { color: #b91c1c; font-weight: 600; }
+    .sb-cnt.w { color: #b54708; }
+
+    /* ── BG MAIN ── */
+    .main-bg  { padding: 12px 24px; display: flex; flex-direction: column; gap: 12px; }
+    .crumb    { font-size: 12px; color: #6e7681; }
+    .ph       { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 10px; border-bottom: 1px solid #e1e4e8; }
+    .ph h1    { font-size: 18px; font-weight: 600; margin-bottom: 3px; }
+    .ph-meta  { font-size: 12px; color: #6e7681; font-variant-numeric: tabular-nums; }
+    .ph-btns  { display: flex; gap: 6px; }
+    .bbtn     { font-size: 12px; padding: 4px 10px; border: 1px solid #d0d7de; background: white; color: #1f2328; border-radius: 4px; }
+    .bbtn.p   { background: #0969da; color: white; border-color: #0969da; }
+
+    .strip    { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: #e1e4e8; border: 1px solid #e1e4e8; border-radius: 4px; overflow: hidden; }
+    .sc       { background: white; padding: 8px 12px; }
+    .sn       { font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1; }
+    .sn.w     { color: #b54708; } .sn.a { color: #b91c1c; }
+    .sl       { font-size: 10px; color: #6e7681; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.4px; }
+
+    .grid3    { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 12px; }
+    .pnl      { background: white; border: 1px solid #e1e4e8; border-radius: 4px; overflow: hidden; }
+    .pnl-h    { padding: 6px 12px; border-bottom: 1px solid #e1e4e8; background: #fbfbfc; display: flex; justify-content: space-between; align-items: center; }
+    .pnl-t    { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .pnl-m    { font-size: 11px; color: #6e7681; }
+    .crow-bg  { display: flex; justify-content: space-between; padding: 4px 12px; font-size: 13px; }
+    .prow-bg  { display: grid; grid-template-columns: 22px 1fr; gap: 8px; padding: 5px 12px; align-items: center; font-size: 13px; border-bottom: 1px solid #f0f1f3; }
+    .prow-bg:last-child { border-bottom: none; }
+    .pinit    { width: 22px; height: 22px; border-radius: 50%; background: #d0d7de; color: #57606a; font-size: 10px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+    /* ── MODAL ── */
+    .modal    { background: white; border: 1px solid #d0d7de; border-radius: 6px; width: 480px;
+                box-shadow: 0 16px 48px rgba(15,23,42,0.28); display: flex; flex-direction: column;
+                max-height: calc(100vh - 68px); }
+    .modal-h  { padding: 14px 18px; border-bottom: 1px solid #e1e4e8; background: #fbfbfc;
+                display: flex; justify-content: space-between; align-items: flex-start; flex-shrink: 0; }
+    .modal-ti { font-size: 14px; font-weight: 600; color: #1f2328; }
+    .modal-su { font-size: 12px; color: #6e7681; margin-top: 2px; }
+    .modal-x  { background: none; border: none; font-size: 18px; color: #8c959f; cursor: pointer;
+                line-height: 1; padding: 0; margin-left: 12px; flex-shrink: 0; }
+    .modal-x:hover { color: #1f2328; }
+    .modal-bd { padding: 16px 18px; display: flex; flex-direction: column; gap: 13px;
+                overflow-y: auto; flex: 1; }
+    .modal-ft { padding: 11px 18px; border-top: 1px solid #e1e4e8; background: #fbfbfc;
+                display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+
+    /* ── FORM ── */
+    .field    { display: flex; flex-direction: column; gap: 4px; }
+    .frow     { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .fl       { font-size: 11px; font-weight: 600; color: #6e7681; text-transform: uppercase; letter-spacing: 0.4px; }
+    .fl-row   { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .req      { color: #cf222e; margin-left: 2px; }
+    .fi       { font-size: 13px; padding: 7px 10px; border: 1px solid #d0d7de; border-radius: 4px;
+                background: white; color: #1f2328; font-family: inherit; width: 100%; }
+    .fi:focus { outline: 2px solid #0969da; outline-offset: -1px; border-color: transparent; }
+    .fi:disabled { opacity: 0.45; cursor: not-allowed; background: #f6f8fa; }
+    .fhint    { font-size: 11px; color: #6e7681; margin-top: 2px; }
+
+    /* Role buttons — wrapping grid */
+    .role-grid { display: flex; flex-wrap: wrap; gap: 4px; }
+    .rbtn     { padding: 5px 10px; font-size: 12px; color: #6e7681; background: white;
+                border: 1px solid #d0d7de; border-radius: 4px; cursor: pointer;
+                font-family: inherit; white-space: nowrap; transition: background 0.1s; }
+    .rbtn.on  { background: #0969da; color: white; border-color: #0969da; }
+    .rbtn:hover:not(.on) { background: #f6f8fa; }
+
+    /* Segmented control */
+    .seg      { display: inline-flex; border: 1px solid #d0d7de; border-radius: 4px; overflow: hidden; }
+    .sopt     { padding: 5px 11px; font-size: 12px; color: #6e7681; background: white;
+                border-right: 1px solid #d0d7de; cursor: pointer; font-family: inherit;
+                white-space: nowrap; }
+    .sopt:last-child { border-right: none; }
+    .sopt.on  { background: #0969da; color: white; }
+    .sopt:hover:not(.on) { background: #f6f8fa; }
+
+    /* Search wrap + dropdown */
+    .sw       { position: relative; }
+    .dd       { position: absolute; top: calc(100% + 3px); left: 0; right: 0; background: white;
+                border: 1px solid #d0d7de; border-radius: 4px;
+                box-shadow: 0 8px 24px rgba(15,23,42,0.11); z-index: 200;
+                max-height: 196px; overflow-y: auto; }
+    .dd-div   { padding: 4px 10px; font-size: 10px; font-weight: 600; text-transform: uppercase;
+                letter-spacing: 0.5px; color: #8c959f; background: #fbfbfc;
+                border-bottom: 1px solid #f0f1f3; }
+    .dd-item  { display: flex; justify-content: space-between; align-items: center;
+                padding: 7px 10px; cursor: pointer; border-bottom: 1px solid #f0f1f3; gap: 8px; }
+    .dd-item:last-of-type { border-bottom: none; }
+    .dd-item:hover { background: #f6f7f9; }
+    .dd-name  { font-size: 13px; font-weight: 500; color: #1f2328; }
+    .dd-meta  { font-size: 11px; color: #6e7681; }
+    .dd-tag   { font-size: 10px; padding: 1px 6px; border-radius: 3px; font-weight: 500; white-space: nowrap; flex-shrink: 0; }
+    .dd-tag.ic { background: #dafbe1; color: #1a7f37; }
+    .dd-new   { display: flex; align-items: center; gap: 6px; padding: 7px 10px; font-size: 12px;
+                color: #0969da; cursor: pointer; border-top: 1px solid #e1e4e8; }
+    .dd-new:hover { background: #f0f9ff; }
+    .dd-empty { padding: 10px 12px; font-size: 12px; color: #8c959f; text-align: center; }
+
+    /* Person chip (selected) */
+    .pchip    { display: flex; justify-content: space-between; align-items: center;
+                padding: 7px 10px; background: #f6f7f9; border: 1px solid #e1e4e8; border-radius: 4px; }
+    .pc-name  { font-size: 13px; font-weight: 500; color: #1f2328; }
+    .pc-meta  { font-size: 11px; color: #6e7681; }
+    .pc-tag   { font-size: 10px; padding: 1px 6px; border-radius: 3px; font-weight: 500;
+                background: #dafbe1; color: #1a7f37; margin-left: 6px; }
+    .pc-x     { background: none; border: none; color: #8c959f; cursor: pointer;
+                font-size: 16px; line-height: 1; padding: 0; }
+    .pc-x:hover { color: #cf222e; }
+
+    /* Back link */
+    .back-link { font-size: 11px; color: #0969da; cursor: pointer; background: none;
+                 border: none; font-family: inherit; padding: 0; }
+    .back-link:hover { text-decoration: underline; }
+
+    /* Alert boxes */
+    .err-box  { padding: 9px 12px; background: #ffebe9; border: 1px solid #ffc1ba;
+                border-left: 3px solid #cf222e; border-radius: 4px; font-size: 12px;
+                color: #6e1010; line-height: 1.5; }
+    .warn-box { padding: 9px 12px; background: #fff8c5; border: 1px solid #d4a72c;
+                border-left: 3px solid #9a6700; border-radius: 4px; font-size: 12px;
+                color: #4d2d00; line-height: 1.5; }
+
+    /* Linked toggle */
+    .ltog     { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #6e7681;
+                cursor: pointer; user-select: none; }
+    .ltog input { accent-color: #0969da; cursor: pointer; }
+
+    /* Context preview panel */
+    .ctx-pnl  { background: #fbfbfc; border: 1px solid #e1e4e8; border-radius: 4px; padding: 10px 12px; }
+    .ctx-l    { font-size: 10px; font-weight: 600; color: #6e7681; text-transform: uppercase;
+                letter-spacing: 0.5px; margin-bottom: 8px; }
+    .ctx-row  { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-size: 12px; color: #1f2328; }
+    .ctx-row.new-e { color: #0969da; padding-top: 7px; margin-top: 4px; border-top: 1px dashed #d0d7de; }
+    .cpinit   { width: 18px; height: 18px; border-radius: 50%; background: #d0d7de; color: #57606a;
+                font-size: 9px; font-weight: 600; display: flex; align-items: center;
+                justify-content: center; flex-shrink: 0; }
+    .cpinit.new-p { background: #ddf4ff; color: #0969da; }
+    .ctx-name { flex: 1; }
+    .ctx-role { font-size: 11px; color: #6e7681; }
+    .ctx-role.new-r { color: #0969da; font-weight: 500; }
+
+    /* Footer */
+    .kbd-hint { font-size: 11px; color: #8c959f; display: flex; align-items: center; gap: 4px; }
+    .kbd      { background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 3px;
+                padding: 1px 5px; font-family: 'SF Mono', 'Fira Mono', monospace;
+                font-size: 10px; color: #1f2328; }
+    .f-btns   { display: flex; gap: 6px; }
+    .btn      { font-size: 12px; font-weight: 500; padding: 6px 12px; border: 1px solid #d0d7de;
+                background: white; color: #1f2328; border-radius: 4px; cursor: pointer;
+                font-family: inherit; }
+    .btn:hover { background: #f6f8fa; }
+    .btn.p    { background: #0969da; color: white; border-color: #0969da; }
+    .btn.p:hover { background: #0860c7; }
+    .btn.p:disabled { background: #a5cef5; border-color: #a5cef5; cursor: not-allowed; }
+
+    /* Toast */
+    .toast    { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+                background: #1f2328; color: white; padding: 9px 16px; border-radius: 4px;
+                font-size: 13px; box-shadow: 0 4px 16px rgba(0,0,0,0.22); z-index: 1000;
+                white-space: nowrap; animation: tin 0.15s ease; }
+    @keyframes tin { from { opacity:0; transform: translateX(-50%) translateY(5px); }
+                     to   { opacity:1; transform: translateX(-50%) translateY(0); } }
+
+    .sep-dot  { color: #d0d7de; margin: 0 6px; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+/* ─── DATA ─── */
+const COMPANY_PERSONS = [
+  { id:1, ini:'LH', navn:'Lars Hansen',       rolle:'CEO · medejer',                 inCo: true  },
+  { id:2, ini:'MK', navn:'Marie Kristensen',  rolle:'Bestyrelsesformand',            inCo: true  },
+  { id:3, ini:'PB', navn:'Peter Brandt',      rolle:'Tandlæge · ans. 2019',          inCo: true  },
+  { id:4, ini:'SO', navn:'Sara Olsen',        rolle:'Klinikassistent · ans. 2022',   inCo: true  },
+];
+const SYS_PERSONS = [
+  { id:5, ini:'TN', navn:'Thomas Nielsen',    rolle:'Direktør',           inCo: false },
+  { id:6, ini:'KM', navn:'Kirsten Møller',    rolle:'Bestyrelsesmedlem',  inCo: false },
+  { id:7, ini:'AC', navn:'Anders Chr.',       rolle:'Tandlæge',           inCo: false },
+  { id:8, ini:'HJ', navn:'Helle Jacobsen',    rolle:'Klinikassistent',    inCo: false },
+  { id:9, ini:'RS', navn:'Rasmus Sørensen',   rolle:'Konsulent',          inCo: false },
+];
+const ALL_PERSONS = [...COMPANY_PERSONS, ...SYS_PERSONS];
+
+const ROLES      = ['CEO','Bestyrelsesmedlem','Bestyrelsesformand','Direktør','Tandlæge','Klinikassistent','Andet'];
+const GOV_ROLES  = ['CEO','Bestyrelsesmedlem','Bestyrelsesformand','Direktør'];
+const EMP_ROLES  = ['CEO','Direktør','Tandlæge','Klinikassistent','Andet'];
+const SENS_OPTS  = ['PUBLIC','STANDARD','INTERN','FORTROLIG'];
+const ANS_OPTS   = ['Fuldtid','Deltid','Vikar','Konsulent'];
+
+/* ─── BACKGROUND: Sidebar ─── */
+function Sidebar() {
+  return (
+    <div className="sb">
+      <div className="sb-logo">▣ ChainHub</div>
+      <div className="sb-sec">
+        <div className="sb-lab">Overblik</div>
+        <div className="sb-item">Forside <span className="sb-cnt a">5</span></div>
+        <div className="sb-item">Kalender <span className="sb-cnt">12</span></div>
+        <div className="sb-item">Søg</div>
+      </div>
+      <div className="sb-sec">
+        <div className="sb-lab">Portefølje</div>
+        <div className="sb-item active">Selskaber <span className="sb-cnt">32</span></div>
+        <div className="sb-item">Kontrakter <span className="sb-cnt w">3</span></div>
+        <div className="sb-item">Sager <span className="sb-cnt a">7</span></div>
+        <div className="sb-item">Opgaver <span className="sb-cnt w">9</span></div>
+      </div>
+      <div className="sb-sec">
+        <div className="sb-lab">Ressourcer</div>
+        <div className="sb-item">Personer <span className="sb-cnt">184</span></div>
+        <div className="sb-item">Dokumenter <span className="sb-cnt">412</span></div>
+        <div className="sb-item">Indstillinger</div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── BACKGROUND: Main content ─── */
+function BgMain() {
+  return (
+    <div className="main-bg">
+      <div className="crumb">Selskaber › Tandlæge Østerbro ApS</div>
+      <div className="ph">
+        <div>
+          <h1>Tandlæge Østerbro ApS</h1>
+          <div className="ph-meta">CVR 12345678<span className="sep-dot">·</span>Østerbrogade 142, 2100 Kbh Ø<span className="sep-dot">·</span>Co-ejet med Lars Hansen</div>
+        </div>
+        <div className="ph-btns">
+          <button className="bbtn">Rediger stamdata</button>
+          <button className="bbtn p">Tilføj data ▾</button>
+        </div>
+      </div>
+      <div className="strip">
+        <div className="sc"><div className="sn">51%</div><div className="sl">Kædeandel</div></div>
+        <div className="sc"><div className="sn w">6</div><div className="sl">Kontrakter</div></div>
+        <div className="sc"><div className="sn a">2</div><div className="sl">Åbne sager</div></div>
+        <div className="sc"><div className="sn">4</div><div className="sl">Personer</div></div>
+        <div className="sc"><div className="sn">18</div><div className="sl">Dokumenter</div></div>
+        <div className="sc"><div className="sn">2,4m</div><div className="sl">EBITDA YTD</div></div>
+      </div>
+      <div className="grid3">
+        <div className="pnl">
+          <div className="pnl-h"><span className="pnl-t">Ejerskab</span><span className="pnl-m">2 ejere</span></div>
+          <div style={{padding:'8px 0'}}>
+            <div className="crow-bg"><span>Kædegruppe (Holding)</span><span>51%</span></div>
+            <div className="crow-bg"><span>Lars Hansen</span><span>49%</span></div>
+          </div>
+        </div>
+        <div className="pnl">
+          <div className="pnl-h"><span className="pnl-t">Personer</span><span className="pnl-m">4 aktive</span></div>
+          {COMPANY_PERSONS.map(p => (
+            <div key={p.id} className="prow-bg">
+              <div className="pinit">{p.ini}</div>
+              <div>
+                <div style={{fontSize:'13px'}}>{p.navn}</div>
+                <div style={{fontSize:'11px',color:'#6e7681'}}>{p.rolle}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="pnl">
+          <div className="pnl-h"><span className="pnl-t">AI Insight</span><span className="pnl-m">4t siden</span></div>
+          <div style={{margin:'8px',padding:'10px 12px',background:'linear-gradient(135deg,#f3e8ff,#ede9fe)',border:'1px solid #c4b5fd',borderRadius:'3px'}}>
+            <div style={{fontSize:'10px',fontWeight:700,color:'#7c3aed',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:'5px'}}>⚡ Renewal-risk · 82% conf.</div>
+            <div style={{fontSize:'12px',color:'#4c1d95',lineHeight:1.45}}>Forventet markedsleje 10–12% over nuværende kontrakt. Anbefaling: start forhandling nu.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── MODAL ─── */
+function AddPersonModal() {
+  const [mode, setMode]           = useState('search'); // 'search' | 'new'
+  const [search, setSearch]       = useState('');
+  const [showDD, setShowDD]       = useState(false);
+  const [person, setPerson]       = useState(null);
+
+  const [newNavn, setNewNavn]     = useState('');
+  const [newEmail, setNewEmail]   = useState('');
+  const [newTel, setNewTel]       = useState('');
+
+  const [rolle, setRolle]         = useState('');
+  const [andetRolle, setAndetRolle] = useState('');
+  const [sens, setSens]           = useState('STANDARD');
+  const [ansType, setAnsType]     = useState('Fuldtid');
+  const [startDato, setStartDato] = useState('');
+  const [ancDate, setAncDate]     = useState('');
+  const [ancLinked, setAncLinked] = useState(true);
+  const [note, setNote]           = useState('');
+  const [toast, setToast]         = useState(null);
+  const [toastKey, setToastKey]   = useState(0);
+
+  const searchRef = useRef(null);
+  const ddRef     = useRef(null);
+  const stRef     = useRef({});  // stale-closure guard
+
+  /* Derived */
+  const isGov         = GOV_ROLES.includes(rolle);
+  const isEmp         = EMP_ROLES.includes(rolle);
+  const isCEOConflict = rolle === 'CEO';
+  const rolleLabel    = rolle === 'Andet' ? (andetRolle.trim() || 'Andet') : rolle;
+
+  const filtered     = ALL_PERSONS.filter(p => !search || p.navn.toLowerCase().includes(search.toLowerCase()));
+  const inCoFiltered = filtered.filter(p => p.inCo);
+  const sysFiltered  = filtered.filter(p => !p.inCo);
+
+  const personName  = mode === 'search' ? (person?.navn ?? '') : newNavn.trim();
+  const personValid = mode === 'search' ? !!person : !!newNavn.trim();
+  const canSubmit   = personValid && !!rolle && !isCEOConflict;
+  const showCtx     = personValid && !!rolle && !isCEOConflict;
+
+  const newIni = newNavn.trim()
+    ? newNavn.trim().split(' ').filter(Boolean).map(w => w[0]).join('').slice(0,2).toUpperCase()
+    : '?';
+
+  stRef.current = { canSubmit, personName, rolleLabel };
+
+  /* Sync anciennitet ↔ startdato */
+  useEffect(() => {
+    if (ancLinked) setAncDate(startDato);
+  }, [startDato, ancLinked]);
+
+  /* Keyboard shortcuts — use ref to avoid stale closures */
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === 'Escape') {
+        showToast('Modal lukket med Esc');
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        const s = stRef.current;
+        if (s.canSubmit) doToast(`Person tilføjet · ${s.personName} som ${s.rolleLabel}`);
+      }
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
+
+  /* Close dropdown on outside click */
+  useEffect(() => {
+    if (!showDD) return;
+    function onClick(e) {
+      if (ddRef.current?.contains(e.target)) return;
+      if (searchRef.current?.contains(e.target)) return;
+      setShowDD(false);
+    }
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [showDD]);
+
+  function doToast(msg) {
+    setToast(msg);
+    setToastKey(k => k + 1);
+    setTimeout(() => setToast(null), 3200);
+  }
+  function showToast(msg) { doToast(msg); }
+
+  function handleSubmit() {
+    if (!canSubmit) return;
+    doToast(`Person tilføjet · ${personName} som ${rolleLabel}`);
+  }
+
+  function selectPerson(p) {
+    setPerson(p);
+    setSearch(p.navn);
+    setShowDD(false);
+  }
+
+  function clearPerson() {
+    setPerson(null);
+    setSearch('');
+  }
+
+  function switchToNew() {
+    setMode('new');
+    setPerson(null);
+    setSearch('');
+    setShowDD(false);
+  }
+
+  function switchToSearch() {
+    setMode('search');
+    setNewNavn('');
+    setNewEmail('');
+    setNewTel('');
+  }
+
+  /* ── Render ── */
+  return (
+    <div style={{position:'relative', minHeight:'100vh', overflow:'hidden', background:'#fafafa'}}>
+
+      {/* Dimmed background */}
+      <div className="bg">
+        <Sidebar />
+        <BgMain />
+      </div>
+
+      {/* Backdrop + modal */}
+      <div className="overlay">
+        <div className="modal">
+
+          {/* Header */}
+          <div className="modal-h">
+            <div style={{flex:1, minWidth:0}}>
+              <div className="modal-ti">Tilføj person · Tandlæge Østerbro ApS</div>
+              <div className="modal-su">Eksisterende: 4 personer (LH CEO · MK Bestyrelsesformand · PB Tandlæge · SO Klinikassistent)</div>
+            </div>
+            <button className="modal-x" onClick={() => showToast('Modal lukket')}>×</button>
+          </div>
+
+          {/* Body */}
+          <div className="modal-bd">
+
+            {/* 1. Person-vælger */}
+            <div className="field">
+              <div className="fl-row">
+                <label className="fl">Person <span className="req">*</span></label>
+                {mode === 'new'
+                  ? <button className="back-link" onClick={switchToSearch}>← Søg eksisterende</button>
+                  : null}
+              </div>
+
+              {mode === 'search' ? (
+                person ? (
+                  /* Selected chip */
+                  <div className="pchip">
+                    <div style={{display:'flex', alignItems:'center', gap:'6px', flexWrap:'wrap'}}>
+                      <span className="pc-name">{person.navn}</span>
+                      <span className="pc-meta">· {person.rolle}</span>
+                      {person.inCo && <span className="pc-tag">i selskabet</span>}
+                    </div>
+                    <button className="pc-x" onClick={clearPerson}>×</button>
+                  </div>
+                ) : (
+                  /* Search input + dropdown */
+                  <div className="sw">
+                    <input
+                      ref={searchRef}
+                      className="fi"
+                      placeholder="Søg person i systemet..."
+                      value={search}
+                      autoFocus
+                      onChange={e => { setSearch(e.target.value); setShowDD(true); }}
+                      onFocus={() => setShowDD(true)}
+                    />
+                    {showDD && (
+                      <div className="dd" ref={ddRef}>
+                        {inCoFiltered.length > 0 && (
+                          <>
+                            <div className="dd-div">I dette selskab</div>
+                            {inCoFiltered.map(p => (
+                              <div key={p.id} className="dd-item" onClick={() => selectPerson(p)}>
+                                <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+                                  <div className="pinit" style={{width:20,height:20,fontSize:'9px',flexShrink:0}}>{p.ini}</div>
+                                  <div>
+                                    <div className="dd-name">{p.navn}</div>
+                                    <div className="dd-meta">{p.rolle}</div>
+                                  </div>
+                                </div>
+                                <span className="dd-tag ic">i selskabet</span>
+                              </div>
+                            ))}
+                          </>
+                        )}
+                        {sysFiltered.length > 0 && (
+                          <>
+                            <div className="dd-div">Systemet</div>
+                            {sysFiltered.map(p => (
+                              <div key={p.id} className="dd-item" onClick={() => selectPerson(p)}>
+                                <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+                                  <div className="pinit" style={{width:20,height:20,fontSize:'9px',flexShrink:0}}>{p.ini}</div>
+                                  <div>
+                                    <div className="dd-name">{p.navn}</div>
+                                    <div className="dd-meta">{p.rolle}</div>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </>
+                        )}
+                        {filtered.length === 0 && (
+                          <div className="dd-empty">Ingen resultater for "{search}"</div>
+                        )}
+                        <div className="dd-new" onClick={switchToNew}>
+                          + Opret ny person i systemet
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              ) : (
+                /* New person fields */
+                <div style={{display:'flex', flexDirection:'column', gap:'7px'}}>
+                  <input
+                    className="fi"
+                    placeholder="Fulde navn *"
+                    value={newNavn}
+                    autoFocus
+                    onChange={e => setNewNavn(e.target.value)}
+                  />
+                  <div className="frow">
+                    <input className="fi" type="email" placeholder="E-mail (valgfri)"
+                      value={newEmail} onChange={e => setNewEmail(e.target.value)} />
+                    <input className="fi" type="tel" placeholder="Telefon (valgfri)"
+                      value={newTel} onChange={e => setNewTel(e.target.value)} />
+                  </div>
+                  <div className="fhint">Ny person oprettes i systemet og knyttes til dette selskab.</div>
+                </div>
+              )}
+            </div>
+
+            {/* 2. Rolle */}
+            <div className="field">
+              <label className="fl">Rolle <span className="req">*</span></label>
+              <div className="role-grid">
+                {ROLES.map(r => (
+                  <button key={r} className={`rbtn${rolle === r ? ' on' : ''}`}
+                    onClick={() => setRolle(r)}>{r}</button>
+                ))}
+              </div>
+              {rolle === 'Andet' && (
+                <input className="fi" style={{marginTop:'7px'}}
+                  placeholder="Angiv rolle..."
+                  value={andetRolle}
+                  onChange={e => setAndetRolle(e.target.value)}
+                  autoFocus
+                />
+              )}
+            </div>
+
+            {/* Live validering: CEO-konflikt */}
+            {isCEOConflict && (
+              <div className="err-box">
+                <strong>Lars Hansen er allerede CEO i dette selskab.</strong> Slut hans rolle først, eller vælg en anden rolle for denne person.
+              </div>
+            )}
+
+            {/* Live preview: governance-advarsel */}
+            {isGov && !isCEOConflict && (
+              <div className="warn-box">
+                ⚠ Denne rolle giver adgang til governance-data — sensitivitet skal sættes.
+              </div>
+            )}
+
+            {/* 3. Sensitivitet (kun governance-roller) */}
+            {isGov && (
+              <div className="field">
+                <label className="fl">Sensitivitet</label>
+                <div className="seg">
+                  {SENS_OPTS.map(s => (
+                    <button key={s} className={`sopt${sens === s ? ' on' : ''}`}
+                      onClick={() => setSens(s)}>{s}</button>
+                  ))}
+                </div>
+                <div className="fhint">Bestemmer hvem der kan se denne persons tilknytning og tilknyttede dokumenter.</div>
+              </div>
+            )}
+
+            {/* 4. Ansættelses-type (kun medarbejder-roller) */}
+            {isEmp && (
+              <div className="field">
+                <label className="fl">Ansættelses-type</label>
+                <div className="seg">
+                  {ANS_OPTS.map(a => (
+                    <button key={a} className={`sopt${ansType === a ? ' on' : ''}`}
+                      onClick={() => setAnsType(a)}>{a}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 5+6. Datoer */}
+            <div className="frow">
+              <div className="field">
+                <label className="fl">Startdato <span className="req">*</span></label>
+                <input className="fi" type="date" value={startDato}
+                  onChange={e => setStartDato(e.target.value)} />
+              </div>
+              <div className="field">
+                <div className="fl-row">
+                  <label className="fl">Anciennitets-start</label>
+                  <label className="ltog">
+                    <input type="checkbox" checked={ancLinked}
+                      onChange={e => setAncLinked(e.target.checked)} />
+                    <span>= startdato</span>
+                  </label>
+                </div>
+                <input className="fi" type="date" value={ancDate} disabled={ancLinked}
+                  onChange={e => { setAncDate(e.target.value); setAncLinked(false); }} />
+                <div className="fhint">Valgfri — jubilæer og optjening.</div>
+              </div>
+            </div>
+
+            {/* Live preview: personliste efter tilføjelse */}
+            {showCtx && (
+              <div className="ctx-pnl">
+                <div className="ctx-l">Personliste efter tilføjelse · {COMPANY_PERSONS.length + 1} personer</div>
+                {COMPANY_PERSONS.map(p => (
+                  <div key={p.id} className="ctx-row">
+                    <div className="cpinit">{p.ini}</div>
+                    <span className="ctx-name">{p.navn}</span>
+                    <span className="ctx-role">{p.rolle.split(' · ')[0]}</span>
+                  </div>
+                ))}
+                <div className="ctx-row new-e">
+                  <div className={`cpinit${mode === 'new' ? ' new-p' : ''}`}>
+                    {mode === 'search' ? (person?.ini ?? '?') : newIni}
+                  </div>
+                  <span className="ctx-name">
+                    {personName || '—'}
+                    {mode === 'new' && <span style={{color:'#0969da', marginLeft:5}}>(ny)</span>}
+                    {mode === 'search' && person?.inCo && <span style={{color:'#1a7f37', marginLeft:5, fontSize:'10px'}}>(eksisterende)</span>}
+                  </span>
+                  <span className="ctx-role new-r">{rolleLabel}</span>
+                </div>
+              </div>
+            )}
+
+            {/* 7. Note */}
+            <div className="field">
+              <label className="fl">Note (valgfri)</label>
+              <textarea className="fi" rows={2} style={{resize:'none'}}
+                placeholder="Fx baggrund for ansættelse, særlige aftaler, referencer..."
+                value={note}
+                onChange={e => setNote(e.target.value)}
+              />
+            </div>
+
+          </div>{/* /modal-bd */}
+
+          {/* Footer */}
+          <div className="modal-ft">
+            <div className="kbd-hint">
+              <span className="kbd">Esc</span> luk
+              <span style={{margin:'0 4px', color:'#d0d7de'}}>·</span>
+              <span className="kbd">⌘</span><span className="kbd">↵</span> tilføj
+            </div>
+            <div className="f-btns">
+              <button className="btn" onClick={() => showToast('Annulleret')}>Annuller</button>
+              <button className="btn p" disabled={!canSubmit} onClick={handleSubmit}>
+                Tilføj person
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Toast */}
+      {toast && <div className="toast" key={toastKey}>✓ {toast}</div>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<AddPersonModal />);
+</script>
+</body>
+</html>

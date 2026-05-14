@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Personer — ChainHub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #fafafa; color: #1f2328; font-size: 13px; -webkit-font-smoothing: antialiased; }
+
+    .layout { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+
+    /* ── SIDEBAR ── */
+    .sb      { background: #f6f7f9; border-right: 1px solid #e1e4e8; padding: 14px 8px; font-size: 13px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+    .sb-logo { font-weight: 600; padding: 4px 10px 16px; }
+    .sb-sec  { margin-bottom: 16px; }
+    .sb-lab  { font-size: 10px; color: #6e7681; padding: 0 10px 4px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+    .sb-item { display: flex; justify-content: space-between; align-items: center; padding: 4px 10px; border-radius: 4px; cursor: pointer; }
+    .sb-item.active { background: #e8eaee; font-weight: 500; }
+    .sb-item:hover:not(.active) { background: #ecedf0; }
+    .sb-cnt  { font-size: 11px; color: #6e7681; font-variant-numeric: tabular-nums; }
+    .sb-cnt.a { color: #b91c1c; font-weight: 600; } .sb-cnt.w { color: #b54708; }
+
+    /* ── MAIN ── */
+    .main { padding: 12px 24px 24px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+
+    /* ── DEMO BAR ── */
+    .demo-bar { display: flex; align-items: center; gap: 8px; padding: 5px 10px; background: #f6f7f9; border: 1px solid #e1e4e8; border-radius: 4px; font-size: 11px; color: #6e7681; }
+    .demo-bar span { font-weight: 600; color: #8c959f; }
+    .demo-btn { font-size: 11px; padding: 2px 8px; border: 1px solid #d0d7de; border-radius: 3px; background: white; color: #6e7681; cursor: pointer; font-family: inherit; }
+    .demo-btn.on { background: #e8eaee; color: #1f2328; border-color: #c1c5cc; font-weight: 500; }
+    .demo-btn:hover:not(.on) { background: #f6f8fa; }
+
+    /* ── HEADER ── */
+    .crumb    { font-size: 12px; color: #6e7681; padding: 4px 0 2px; }
+    .head     { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 1px solid #e1e4e8; }
+    .head h1  { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 3px; }
+    .head-meta { font-size: 12px; color: #6e7681; font-variant-numeric: tabular-nums; }
+    .head-meta .hl { color: #b54708; font-weight: 500; }
+    .head-btns { display: flex; gap: 6px; }
+    .btn      { font-size: 12px; padding: 5px 10px; border: 1px solid #d0d7de; background: white; color: #1f2328; border-radius: 4px; cursor: pointer; font-weight: 500; font-family: inherit; white-space: nowrap; }
+    .btn:hover { background: #f6f8fa; }
+    .btn.primary { background: #0969da; color: white; border-color: #0969da; }
+    .btn.primary:hover { background: #0860c7; }
+
+    /* ── ALERT BAR ── */
+    .alert-bar { display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; background: #ffebe9; border: 1px solid #ffc1ba; border-left: 3px solid #cf222e; border-radius: 4px; font-size: 13px; color: #6e1010; }
+
+    /* ── FILTER ROW ── */
+    .filter-row { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
+    .fi-search  { font-size: 12px; padding: 5px 10px; border: 1px solid #d0d7de; border-radius: 4px; background: white; font-family: inherit; width: 200px; outline: none; color: #1f2328; }
+    .fi-search:focus { border-color: #0969da; outline: 2px solid #ddf4ff; outline-offset: 0; }
+    .fi-search::placeholder { color: #8c959f; }
+    .filter-sep { width: 1px; height: 20px; background: #e1e4e8; margin: 0 2px; flex-shrink: 0; }
+    .f-btn  { font-size: 12px; padding: 5px 10px; border: 1px solid #d0d7de; background: white; color: #6e7681; border-radius: 4px; cursor: pointer; font-family: inherit; white-space: nowrap; }
+    .f-btn:hover { background: #f6f8fa; color: #1f2328; }
+    .f-btn.on { background: #ddf4ff; border-color: #0969da; color: #0969da; }
+    .f-btn.clr { color: #cf222e; border-color: #ffc1ba; }
+    .f-btn.clr:hover { background: #ffebe9; }
+    .filter-spacer { flex: 1; }
+    .seg  { display: inline-flex; border: 1px solid #d0d7de; border-radius: 4px; overflow: hidden; flex-shrink: 0; }
+    .sopt { padding: 5px 11px; font-size: 12px; color: #6e7681; background: white; border-right: 1px solid #d0d7de; cursor: pointer; font-family: inherit; white-space: nowrap; }
+    .sopt:last-child { border-right: none; }
+    .sopt.on { background: #1f2328; color: white; }
+    .sopt:hover:not(.on) { background: #f6f8fa; }
+
+    /* ── DROPDOWN ── */
+    .dd-wrap { position: relative; }
+    .dd-menu { position: absolute; top: calc(100% + 3px); left: 0; min-width: 170px; background: white; border: 1px solid #d0d7de; border-radius: 4px; box-shadow: 0 8px 24px rgba(15,23,42,0.11); z-index: 200; overflow: hidden; }
+    .dd-item { padding: 6px 12px; font-size: 12px; color: #1f2328; cursor: pointer; white-space: nowrap; }
+    .dd-item:hover { background: #f6f7f9; }
+    .dd-item.on { background: #ddf4ff; color: #0969da; font-weight: 500; }
+    .dd-div  { padding: 4px 12px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #8c959f; background: #fbfbfc; border-bottom: 1px solid #f0f1f3; }
+
+    /* ── BADGES ── */
+    .badge { font-size: 11px; font-weight: 500; padding: 1px 6px; border-radius: 3px; font-variant-numeric: tabular-nums; white-space: nowrap; display: inline-block; }
+    .badge.red    { background: #ffebe9; color: #cf222e; }
+    .badge.amber  { background: #fff8c5; color: #9a6700; }
+    .badge.green  { background: #dafbe1; color: #1a7f37; }
+    .badge.blue   { background: #ddf4ff; color: #0969da; }
+    .badge.gray   { background: #f6f8fa; color: #57606a; }
+
+    /* ── INITIALS ── */
+    .ini { width: 22px; height: 22px; border-radius: 50%; background: #d0d7de; color: #57606a; font-size: 10px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+    /* ── TABLE ── */
+    .tbl-wrap { background: white; border: 1px solid #e1e4e8; border-radius: 4px; overflow: hidden; }
+    .tbl { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .col-navn   { width: 210px; }
+    .col-rolle  { width: 155px; }
+    .col-selskab { width: 190px; }
+    .col-ansat  { width: 88px; }
+    .col-status { width: 72px; }
+    .col-sens   { width: 90px; }
+    .col-act    { width: 20px; }
+    .tbl th { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #6e7681; padding: 6px 12px; background: #fbfbfc; border-bottom: 1px solid #e1e4e8; text-align: left; cursor: pointer; user-select: none; white-space: nowrap; }
+    .tbl th:hover { color: #1f2328; }
+    .tbl th.sorted { color: #1f2328; }
+    .tbl td { font-size: 13px; padding: 6px 12px; border-bottom: 1px solid #f0f1f3; color: #1f2328; vertical-align: middle; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tbl tr:last-child td { border-bottom: none; }
+    .tbl tr:hover td { background: #f6f7f9; cursor: pointer; }
+    .td-sec { color: #6e7681; font-size: 12px; }
+    .chev   { color: #8c959f; }
+
+    /* ── GROUPED VIEW ── */
+    .group-hdr { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: #f6f7f9; border-bottom: 1px solid #e1e4e8; cursor: pointer; user-select: none; }
+    .group-hdr:hover { background: #ecedf0; }
+    .gh-toggle { font-size: 10px; color: #6e7681; width: 12px; flex-shrink: 0; }
+    .gh-name   { font-size: 12px; font-weight: 600; color: #1f2328; flex: 1; }
+    .gh-count  { font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 10px; background: #e1e4e8; color: #57606a; font-variant-numeric: tabular-nums; }
+
+    /* ── CARD VIEW ── */
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+    .p-card    { background: white; border: 1px solid #e1e4e8; border-radius: 4px; padding: 10px 12px; cursor: pointer; }
+    .p-card:hover { border-color: #0969da; background: #f8fbff; }
+    .pc-top    { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .pc-name   { font-size: 13px; font-weight: 500; color: #1f2328; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .pc-meta   { font-size: 11px; color: #6e7681; margin-bottom: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .pc-badges { display: flex; gap: 4px; flex-wrap: wrap; }
+
+    /* ── SKELETON ── */
+    .skel { background: linear-gradient(90deg,#f0f1f3 25%,#f6f7f9 50%,#f0f1f3 75%); background-size: 200% 100%; animation: shimmer 1.6s infinite; border-radius: 3px; display: inline-block; }
+    @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+
+    /* ── PAGINATION ── */
+    .pager      { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: white; border: 1px solid #e1e4e8; border-radius: 4px; }
+    .pager-info { font-size: 12px; color: #6e7681; font-variant-numeric: tabular-nums; }
+    .page-btn   { font-size: 11px; padding: 3px 8px; border: 1px solid #d0d7de; background: white; color: #1f2328; border-radius: 3px; cursor: pointer; font-family: inherit; }
+    .page-btn:hover:not(:disabled) { background: #f6f8fa; }
+    .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .psz-btn    { font-size: 11px; padding: 2px 7px; border: 1px solid #d0d7de; background: white; color: #6e7681; border-radius: 3px; cursor: pointer; font-family: inherit; }
+    .psz-btn.on { background: #e8eaee; color: #1f2328; border-color: #c1c5cc; font-weight: 500; }
+    .psz-btn:hover:not(.on) { background: #f6f8fa; }
+
+    /* ── EMPTY ── */
+    .empty { padding: 32px; text-align: center; color: #8c959f; font-size: 12px; }
+    .empty strong { display: block; color: #6e7681; font-size: 13px; font-weight: 500; margin-bottom: 6px; }
+
+    /* ── BOTTOM BAR ── */
+    .bot-bar { display: flex; justify-content: space-between; padding: 6px 0; font-size: 11px; color: #6e7681; }
+    .kbd { background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 3px; padding: 1px 5px; font-family: 'SF Mono','Fira Mono',monospace; font-size: 10px; color: #1f2328; }
+
+    /* ── TOAST ── */
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1f2328; color: white; padding: 9px 16px; border-radius: 4px; font-size: 13px; box-shadow: 0 4px 16px rgba(0,0,0,0.22); z-index: 9000; white-space: nowrap; animation: tin .15s ease; }
+    @keyframes tin { from{opacity:0;transform:translateX(-50%) translateY(5px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel">
+const { useState, useRef, useEffect } = React;
+
+/* ─── DATA ─── */
+const PERSONS = [
+  { id:1,  ini:'LH', navn:'Lars Hansen',        rolle:'CEO',               selskab:'Tandlæge Østerbro ApS', ansat:'14.01.18', status:'Aktiv',   sens:'INTERN'    },
+  { id:2,  ini:'MK', navn:'Marie Kristensen',   rolle:'Bestyrelsesformand',selskab:'Tandlæge Østerbro ApS', ansat:'01.03.20', status:'Aktiv',   sens:'FORTROLIG' },
+  { id:3,  ini:'PB', navn:'Peter Brandt',       rolle:'Tandlæge',          selskab:'Tandlæge Østerbro ApS', ansat:'15.06.19', status:'Aktiv',   sens:'STANDARD'  },
+  { id:4,  ini:'SO', navn:'Sara Olsen',         rolle:'Klinikassistent',   selskab:'Tandlæge Østerbro ApS', ansat:'08.03.22', status:'Aktiv',   sens:'STANDARD'  },
+  { id:5,  ini:'TH', navn:'Tina Hansen',        rolle:'Tandlæge',          selskab:'Klinik Aalborg',        ansat:'01.02.22', status:'Aktiv',   sens:'STANDARD'  },
+  { id:6,  ini:'EN', navn:'Erik Nielsen',       rolle:'Medejer',           selskab:'Klinik Aalborg',        ansat:'10.08.21', status:'Aktiv',   sens:'FORTROLIG' },
+  { id:7,  ini:'LK', navn:'Lene Kristiansen',   rolle:'CEO',               selskab:'Klinik Aalborg',        ansat:'01.03.19', status:'Opsagt',  sens:'INTERN'    },
+  { id:8,  ini:'HS', navn:'Henrik Sørensen',    rolle:'Direktør',          selskab:'Klinik Aarhus',         ansat:'15.03.23', status:'Aktiv',   sens:'INTERN'    },
+  { id:9,  ini:'JM', navn:'Jens Madsen',        rolle:'Klinikassistent',   selskab:'Klinik Aarhus',         ansat:'15.09.22', status:'Aktiv',   sens:'STANDARD'  },
+  { id:10, ini:'MA', navn:'Mette Andersen',     rolle:'Tandlæge',          selskab:'Klinik Aarhus',         ansat:'01.02.21', status:'Aktiv',   sens:'STANDARD'  },
+  { id:11, ini:'PL', navn:'Per Larsen',         rolle:'Medejer',           selskab:'Klinik Esbjerg',        ansat:'14.06.20', status:'Aktiv',   sens:'FORTROLIG' },
+  { id:12, ini:'RS', navn:'Rasmus Sørensen',    rolle:'Konsulent',         selskab:'Klinik Esbjerg',        ansat:'01.01.23', status:'Aktiv',   sens:'STANDARD'  },
+  { id:13, ini:'KM', navn:'Kirsten Møller',     rolle:'Bestyrelsesmedlem', selskab:'Klinik Holstebro',      ansat:'01.09.21', status:'Aktiv',   sens:'FORTROLIG' },
+  { id:14, ini:'MA2',navn:'Magnus Andreasen',   rolle:'Tandlæge',          selskab:'Klinik Holstebro',      ansat:'01.08.20', status:'Aktiv',   sens:'STANDARD'  },
+  { id:15, ini:'AC', navn:'Anders Christensen', rolle:'Tandlæge',          selskab:'Klinik Odense',         ansat:'01.04.21', status:'Aktiv',   sens:'STANDARD'  },
+  { id:16, ini:'HJ', navn:'Helle Jacobsen',     rolle:'Klinikassistent',   selskab:'Klinik Randers',        ansat:'01.06.23', status:'Aktiv',   sens:'STANDARD'  },
+  { id:17, ini:'TP', navn:'Thomas Poulsen',     rolle:'CEO',               selskab:'Klinik Randers',        ansat:'01.01.20', status:'Inaktiv', sens:'INTERN'    },
+];
+
+const UNIQUE_SELSKABER = [...new Set(PERSONS.map(p => p.selskab))].sort();
+const UNIQUE_ROLLER    = [...new Set(PERSONS.map(p => p.rolle))].sort();
+const STATUS_OPTS      = ['Alle','Aktiv','Inaktiv','Opsagt'];
+const SENS_CLS         = { STANDARD:'gray', INTERN:'blue', FORTROLIG:'amber' };
+const STATUS_CLS       = { Aktiv:'green', Inaktiv:'gray', Opsagt:'red' };
+
+/* ─── DROPDOWN ─── */
+function Dd({ label, opts, value, onChange, divider }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    function h(e) { if (!ref.current?.contains(e.target)) setOpen(false); }
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, []);
+  return (
+    <div className="dd-wrap" ref={ref}>
+      <button className={`f-btn${value && value !== 'Alle' ? ' on' : ''}`} onClick={() => setOpen(o => !o)}>
+        {value && value !== 'Alle' ? value : label} ▾
+      </button>
+      {open && (
+        <div className="dd-menu">
+          {divider && <div className="dd-div">{divider}</div>}
+          {opts.map(o => (
+            <div key={o} className={`dd-item${value === o ? ' on' : ''}`}
+              onClick={() => { onChange(o); setOpen(false); }}>{o}</div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── SIDEBAR ─── */
+function Sidebar() {
+  return (
+    <aside className="sb">
+      <div className="sb-logo">▣ ChainHub</div>
+      <div className="sb-sec">
+        <div className="sb-lab">Overblik</div>
+        <div className="sb-item">Forside <span className="sb-cnt a">5</span></div>
+        <div className="sb-item">Kalender <span className="sb-cnt">12</span></div>
+        <div className="sb-item">Søg</div>
+      </div>
+      <div className="sb-sec">
+        <div className="sb-lab">Portefølje</div>
+        <div className="sb-item">Selskaber <span className="sb-cnt">32</span></div>
+        <div className="sb-item">Kontrakter <span className="sb-cnt w">3</span></div>
+        <div className="sb-item">Sager <span className="sb-cnt a">7</span></div>
+        <div className="sb-item">Opgaver <span className="sb-cnt w">9</span></div>
+      </div>
+      <div className="sb-sec">
+        <div className="sb-lab">Ressourcer</div>
+        <div className="sb-item">Dokumenter <span className="sb-cnt">412</span></div>
+        <div className="sb-item active">Personer <span className="sb-cnt">184</span></div>
+        <div className="sb-item">Indstillinger</div>
+      </div>
+    </aside>
+  );
+}
+
+/* ─── SKELETON ROWS ─── */
+function SkeletonRows({ n = 8 }) {
+  return (
+    <div className="tbl-wrap">
+      {Array.from({ length: n }).map((_, i) => (
+        <div key={i} style={{ display: 'flex', gap: 12, padding: '7px 12px', borderBottom: i < n-1 ? '1px solid #f0f1f3' : 'none', alignItems: 'center' }}>
+          <span className="skel" style={{ width: 22, height: 22, borderRadius: '50%', flexShrink: 0 }}></span>
+          <span className="skel" style={{ width: 110, height: 12 }}></span>
+          <span className="skel" style={{ width: 90, height: 12, marginLeft: 20 }}></span>
+          <span className="skel" style={{ width: 130, height: 12, marginLeft: 20 }}></span>
+          <span className="skel" style={{ width: 60, height: 12, marginLeft: 'auto' }}></span>
+          <span className="skel" style={{ width: 50, height: 18, borderRadius: 3 }}></span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ─── PERSON ROW ─── */
+function PersonRow({ p, onToast }) {
+  return (
+    <tr onClick={() => onToast(`Åbner ${p.navn}`)}>
+      <td className="col-navn">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+          <div className="ini">{p.ini}</div>
+          <span>{p.navn}</span>
+        </div>
+      </td>
+      <td className="col-rolle">
+        <span className={`badge ${p.rolle==='Bestyrelsesformand'||p.rolle==='Bestyrelsesmedlem'||p.rolle==='Medejer'?'blue':p.rolle==='CEO'||p.rolle==='Direktør'?'blue':'gray'}`}>{p.rolle}</span>
+      </td>
+      <td className="col-selskab td-sec">{p.selskab}</td>
+      <td className="col-ansat td-sec" style={{ fontVariantNumeric: 'tabular-nums' }}>{p.ansat}</td>
+      <td className="col-status">
+        <span className={`badge ${STATUS_CLS[p.status] || 'gray'}`}>{p.status}</span>
+      </td>
+      <td className="col-sens">
+        <span className={`badge ${SENS_CLS[p.sens] || 'gray'}`} style={{ fontSize: 10 }}>{p.sens}</span>
+      </td>
+      <td className="col-act"><span className="chev">›</span></td>
+    </tr>
+  );
+}
+
+/* ─── GROUPED VIEW ─── */
+function GroupedView({ persons, onToast }) {
+  const [collapsed, setCollapsed] = useState(new Set());
+  const toggle = name => setCollapsed(prev => { const n = new Set(prev); n.has(name) ? n.delete(name) : n.add(name); return n; });
+  const groups = persons.reduce((acc, p) => { (acc[p.selskab] = acc[p.selskab] || []).push(p); return acc; }, {});
+  return (
+    <div className="tbl-wrap">
+      {Object.entries(groups).map(([co, rows]) => {
+        const open = !collapsed.has(co);
+        return (
+          <div key={co}>
+            <div className="group-hdr" onClick={() => toggle(co)}>
+              <span className="gh-toggle">{open ? '▾' : '▸'}</span>
+              <span className="gh-name">{co}</span>
+              <span className="gh-count">{rows.length}</span>
+            </div>
+            {open && (
+              <table className="tbl" style={{ tableLayout: 'fixed', width: '100%' }}>
+                <colgroup>
+                  <col style={{width:210}}/><col style={{width:155}}/><col style={{width:190}}/>
+                  <col style={{width:88}}/><col style={{width:72}}/><col style={{width:90}}/><col style={{width:20}}/>
+                </colgroup>
+                <tbody>
+                  {rows.map(p => <PersonRow key={p.id} p={p} onToast={onToast} />)}
+                </tbody>
+              </table>
+            )}
+          </div>
+        );
+      })}
+      {persons.length === 0 && <div className="empty"><strong>Ingen personer</strong>Juster filteret for at se flere.</div>}
+    </div>
+  );
+}
+
+/* ─── CARD VIEW ─── */
+function CardView({ persons, onToast }) {
+  if (persons.length === 0) return <div className="empty"><strong>Ingen personer matcher filteret</strong>Nulstil filteret for at se alle.</div>;
+  return (
+    <div className="card-grid">
+      {persons.map(p => (
+        <div key={p.id} className="p-card" onClick={() => onToast(`Åbner ${p.navn}`)}>
+          <div className="pc-top">
+            <div className="ini" style={{ width: 28, height: 28, fontSize: 11 }}>{p.ini}</div>
+            <div style={{ minWidth: 0 }}>
+              <div className="pc-name">{p.navn}</div>
+            </div>
+          </div>
+          <div className="pc-meta">{p.selskab}</div>
+          <div className="pc-badges">
+            <span className="badge blue" style={{ fontSize: 10 }}>{p.rolle}</span>
+            <span className={`badge ${STATUS_CLS[p.status]}`} style={{ fontSize: 10 }}>{p.status}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ─── MAIN ─── */
+function PersonerPage() {
+  const [demo,       setDemo]       = useState('normal');
+  const [viewMode,   setViewMode]   = useState('tabel');
+  const [search,     setSearch]     = useState('');
+  const [selskabFil, setSelskabFil] = useState('Alle');
+  const [rolleFil,   setRolleFil]   = useState('Alle');
+  const [statusFil,  setStatusFil]  = useState('Alle');
+  const [sortCol,    setSortCol]    = useState('navn');
+  const [sortDir,    setSortDir]    = useState('asc');
+  const [page,       setPage]       = useState(1);
+  const [pageSize,   setPageSize]   = useState(15);
+  const [toast,      setToast]      = useState(null);
+  const [toastKey,   setToastKey]   = useState(0);
+
+  const isSkeleton = demo === 'skeleton';
+  const isError    = demo === 'fejl';
+
+  function doToast(msg) { setToast(msg); setToastKey(k=>k+1); setTimeout(()=>setToast(null),2600); }
+
+  function handleSort(col) {
+    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortCol(col); setSortDir('asc'); }
+  }
+
+  const filtered = PERSONS.filter(p => {
+    const q = search.toLowerCase();
+    if (q && !p.navn.toLowerCase().includes(q) && !p.selskab.toLowerCase().includes(q) && !p.rolle.toLowerCase().includes(q)) return false;
+    if (selskabFil !== 'Alle' && p.selskab !== selskabFil) return false;
+    if (rolleFil   !== 'Alle' && p.rolle   !== rolleFil)   return false;
+    if (statusFil  !== 'Alle' && p.status  !== statusFil)  return false;
+    return true;
+  });
+
+  const sorted = [...filtered].sort((a, b) => {
+    const av = a[sortCol] ?? '', bv = b[sortCol] ?? '';
+    if (av < bv) return sortDir === 'asc' ? -1 : 1;
+    if (av > bv) return sortDir === 'asc' ?  1 : -1;
+    return 0;
+  });
+
+  const paged   = sorted.slice((page-1)*pageSize, page*pageSize);
+  const maxPage = Math.max(1, Math.ceil(sorted.length / pageSize));
+  const hasFilter = selskabFil !== 'Alle' || rolleFil !== 'Alle' || statusFil !== 'Alle' || search;
+
+  const Th = ({ col, label, cls }) => (
+    <th className={`${cls||''} ${sortCol === col ? 'sorted' : ''}`} onClick={() => handleSort(col)}>
+      {label}{sortCol === col ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''}
+    </th>
+  );
+
+  return (
+    <div className="layout">
+      <Sidebar />
+      <main className="main">
+
+        {/* Demo */}
+        <div className="demo-bar">
+          <span>Demo:</span>
+          {['normal','skeleton','fejl'].map(s => (
+            <button key={s} className={`demo-btn${demo===s?' on':''}`} onClick={()=>setDemo(s)}>{s}</button>
+          ))}
+        </div>
+
+        {/* Breadcrumb */}
+        <div className="crumb">Personer</div>
+
+        {/* Error */}
+        {isError && (
+          <div className="alert-bar">
+            <strong>Kunne ikke hente persondata</strong> — prøv igen eller kontakt support.
+            <button className="btn" style={{marginLeft:12}}>Prøv igen</button>
+          </div>
+        )}
+
+        {/* Header */}
+        <div className="head">
+          <div>
+            <h1>Personer</h1>
+            <div className="head-meta">
+              184 aktive
+              {' · '}
+              <span className="hl">3 opsagte / inaktive</span>
+              {' · '}
+              6 roller
+            </div>
+          </div>
+          <div className="head-btns">
+            <button className="btn primary" onClick={() => doToast('Tilføj person — åbner modal')}>+ Tilføj person</button>
+          </div>
+        </div>
+
+        {/* Filter row */}
+        {!isSkeleton && (
+          <div className="filter-row">
+            <input className="fi-search" placeholder="Søg personer..." value={search}
+              onChange={e => { setSearch(e.target.value); setPage(1); }} />
+            <Dd label="Selskab" opts={['Alle',...UNIQUE_SELSKABER]} value={selskabFil}
+              onChange={v => { setSelskabFil(v); setPage(1); }} />
+            <Dd label="Rolle" opts={['Alle',...UNIQUE_ROLLER]} value={rolleFil}
+              onChange={v => { setRolleFil(v); setPage(1); }} divider="Roller i systemet" />
+            <Dd label="Status" opts={STATUS_OPTS} value={statusFil}
+              onChange={v => { setStatusFil(v); setPage(1); }} />
+            {hasFilter && (
+              <button className="f-btn clr"
+                onClick={() => { setSearch(''); setSelskabFil('Alle'); setRolleFil('Alle'); setStatusFil('Alle'); }}>
+                Nulstil ×
+              </button>
+            )}
+            <div className="filter-sep"></div>
+            <div className="seg">
+              {[['tabel','Tabel'],['grouped','Grupperet'],['kort','Kort']].map(([v,l]) => (
+                <button key={v} className={`sopt${viewMode===v?' on':''}`}
+                  onClick={() => setViewMode(v)}>{l}</button>
+              ))}
+            </div>
+            <div className="filter-spacer"></div>
+            <button className="f-btn">Eksportér ▾</button>
+          </div>
+        )}
+
+        {hasFilter && !isSkeleton && (
+          <div style={{fontSize:11,color:'#6e7681'}}>
+            {sorted.length} resultat{sorted.length!==1?'er':''} — filtreret fra {PERSONS.length} personer
+          </div>
+        )}
+
+        {/* Content */}
+        {isSkeleton ? (
+          <SkeletonRows n={10} />
+        ) : viewMode === 'tabel' ? (
+          <div className="tbl-wrap">
+            {sorted.length === 0 ? (
+              <div className="empty">
+                <strong>Ingen personer matcher filteret</strong>
+                Juster søgningen eller nulstil filteret.
+              </div>
+            ) : (
+              <table className="tbl">
+                <colgroup>
+                  <col className="col-navn"/><col className="col-rolle"/><col className="col-selskab"/>
+                  <col className="col-ansat"/><col className="col-status"/><col className="col-sens"/><col className="col-act"/>
+                </colgroup>
+                <thead>
+                  <tr>
+                    <Th col="navn"    label="Navn" cls="col-navn" />
+                    <Th col="rolle"   label="Primær rolle" cls="col-rolle" />
+                    <Th col="selskab" label="Selskab" cls="col-selskab" />
+                    <Th col="ansat"   label="Ansat siden" cls="col-ansat" />
+                    <Th col="status"  label="Status" cls="col-status" />
+                    <Th col="sens"    label="Sensitivity" cls="col-sens" />
+                    <th className="col-act"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paged.map(p => <PersonRow key={p.id} p={p} onToast={doToast} />)}
+                </tbody>
+              </table>
+            )}
+          </div>
+        ) : viewMode === 'grouped' ? (
+          <GroupedView persons={sorted} onToast={doToast} />
+        ) : (
+          <CardView persons={sorted} onToast={doToast} />
+        )}
+
+        {/* Pagination */}
+        {!isSkeleton && viewMode === 'tabel' && sorted.length > 0 && (
+          <div className="pager">
+            <span className="pager-info">
+              {Math.min((page-1)*pageSize+1,sorted.length)}–{Math.min(page*pageSize,sorted.length)} af {sorted.length}
+            </span>
+            <div style={{display:'flex',gap:4,alignItems:'center'}}>
+              <button className="page-btn" disabled={page===1} onClick={()=>setPage(p=>p-1)}>←</button>
+              <span style={{fontSize:12,color:'#6e7681',padding:'0 4px'}}>{page} / {maxPage}</span>
+              <button className="page-btn" disabled={page===maxPage} onClick={()=>setPage(p=>p+1)}>→</button>
+            </div>
+            <div style={{display:'flex',gap:4,alignItems:'center'}}>
+              <span style={{fontSize:11,color:'#6e7681'}}>Vis:</span>
+              {[15,25,50].map(n => (
+                <button key={n} className={`psz-btn${pageSize===n?' on':''}`}
+                  onClick={()=>{setPageSize(n);setPage(1);}}>{n}</button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Bottom bar */}
+        <div className="bot-bar">
+          <span>
+            {isSkeleton ? 'Henter…' : `${sorted.length} personer vist · ${PERSONS.filter(p=>p.status==='Aktiv').length} aktive`}
+          </span>
+          <span>
+            <span className="kbd">⌘K</span> handling ·{' '}
+            <span className="kbd">N</span> ny person ·{' '}
+            <span className="kbd">F</span> filter
+          </span>
+        </div>
+
+      </main>
+      {toast && <div className="toast" key={toastKey}>✓ {toast}</div>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<PersonerPage />);
+</script>
+</body>
+</html>

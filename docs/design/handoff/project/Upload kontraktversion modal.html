@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload kontraktversion — ChainHub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #fafafa; color: #1f2328; }
+
+    /* ── SCENE ── */
+    .scene   { position: relative; min-height: 100vh; overflow: hidden; background: #fafafa; }
+    .bg      { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh;
+               opacity: 0.30; filter: blur(0.6px); pointer-events: none; user-select: none; }
+    .overlay { position: absolute; inset: 0; background: rgba(15,23,42,0.42);
+               backdrop-filter: blur(2px); display: flex; align-items: flex-start;
+               justify-content: center; padding: 80px 0 32px; z-index: 10; overflow-y: auto; }
+
+    /* ── SIDEBAR ── */
+    .sb      { background: #f6f7f9; border-right: 1px solid #e1e4e8; padding: 14px 8px; font-size: 13px; }
+    .sb-logo { font-weight: 600; padding: 4px 10px 16px; color: #1f2328; }
+    .sb-sec  { margin-bottom: 16px; }
+    .sb-lab  { font-size: 10px; color: #6e7681; padding: 0 10px 4px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+    .sb-item { display: flex; justify-content: space-between; padding: 4px 10px; border-radius: 4px; color: #1f2328; font-size: 13px; }
+    .sb-item.active { background: #e8eaee; font-weight: 500; }
+    .sb-cnt  { font-size: 11px; color: #6e7681; font-variant-numeric: tabular-nums; }
+    .sb-cnt.a { color: #b91c1c; font-weight: 600; } .sb-cnt.w { color: #b54708; }
+
+    /* ── BG MAIN ── */
+    .main-bg  { padding: 12px 24px; display: flex; flex-direction: column; gap: 12px; }
+    .crumb    { font-size: 12px; color: #6e7681; }
+    .ph       { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 10px; border-bottom: 1px solid #e1e4e8; }
+    .ph h1    { font-size: 18px; font-weight: 600; margin-bottom: 3px; }
+    .ph-meta  { font-size: 12px; color: #6e7681; }
+    .ph-btns  { display: flex; gap: 6px; }
+    .bbtn     { font-size: 12px; padding: 4px 10px; border: 1px solid #d0d7de; background: white; color: #1f2328; border-radius: 4px; }
+    .bbtn.p   { background: #0969da; color: white; border-color: #0969da; }
+    .strip    { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: #e1e4e8; border: 1px solid #e1e4e8; border-radius: 4px; overflow: hidden; }
+    .sc       { background: white; padding: 8px 12px; }
+    .sn       { font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1; }
+    .sn.w { color: #b54708; } .sn.a { color: #b91c1c; }
+    .sl       { font-size: 10px; color: #6e7681; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.4px; }
+    .grid3    { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 12px; }
+    .pnl      { background: white; border: 1px solid #e1e4e8; border-radius: 4px; overflow: hidden; }
+    .pnl-h    { padding: 6px 12px; border-bottom: 1px solid #e1e4e8; background: #fbfbfc; display: flex; justify-content: space-between; }
+    .pnl-t    { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .pnl-m    { font-size: 11px; color: #6e7681; }
+    .trow-bg  { display: grid; grid-template-columns: 60px 1fr 90px 14px; gap: 10px; padding: 6px 12px; font-size: 13px; border-bottom: 1px solid #f0f1f3; align-items: center; }
+    .trow-bg:last-child { border-bottom: none; }
+    .badge    { font-size: 11px; font-weight: 500; padding: 1px 6px; border-radius: 3px; font-variant-numeric: tabular-nums; text-align: center; }
+    .badge.red   { background: #ffebe9; color: #cf222e; }
+    .badge.green { background: #dafbe1; color: #1a7f37; }
+    .badge.gray  { background: #f6f8fa; color: #57606a; }
+    .badge.amber { background: #fff8c5; color: #9a6700; }
+    .b-meta   { color: #6e7681; font-size: 12px; }
+    .sep-dot  { color: #d0d7de; margin: 0 6px; }
+
+    /* ── MODAL ── */
+    .modal   { background: white; border: 1px solid #d0d7de; border-radius: 6px; width: 480px;
+               box-shadow: 0 16px 48px rgba(15,23,42,0.28); display: flex; flex-direction: column;
+               max-height: calc(100vh - 120px); flex-shrink: 0; }
+    .modal-h { padding: 14px 18px; border-bottom: 1px solid #e1e4e8; background: #fbfbfc;
+               display: flex; justify-content: space-between; align-items: flex-start; flex-shrink: 0; }
+    .modal-ti { font-size: 14px; font-weight: 600; color: #1f2328; }
+    .modal-su { font-size: 12px; color: #6e7681; margin-top: 2px; }
+    .modal-x  { background: none; border: none; font-size: 18px; color: #8c959f; cursor: pointer;
+                line-height: 1; padding: 0; margin-left: 12px; flex-shrink: 0; }
+    .modal-x:hover { color: #1f2328; }
+    .modal-bd { padding: 16px 18px; display: flex; flex-direction: column; gap: 13px; overflow-y: auto; flex: 1; }
+    .modal-ft { padding: 11px 18px; border-top: 1px solid #e1e4e8; background: #fbfbfc;
+                display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+
+    /* ── DROP ZONE ── */
+    .dropzone { height: 200px; border: 1.5px dashed #d0d7de; border-radius: 4px; background: white;
+                display: flex; flex-direction: column; align-items: center; justify-content: center;
+                gap: 5px; cursor: pointer; transition: border-color 0.1s, background 0.1s;
+                text-align: center; padding: 16px; user-select: none; }
+    .dropzone:hover, .dropzone.over { border: 1.5px solid #0969da; background: #ddf4ff; }
+    .dropzone.over .dz-icon { color: #0969da; }
+    .dz-icon  { font-size: 22px; color: #8c959f; line-height: 1; margin-bottom: 2px; transition: color 0.1s; }
+    .dz-label { font-size: 13px; color: #1f2328; font-weight: 500; }
+    .dz-sub   { font-size: 11px; color: #6e7681; }
+    .dz-max   { font-size: 10px; color: #8c959f; margin-top: 2px; }
+
+    /* File selected */
+    .file-row { display: flex; align-items: center; gap: 9px; padding: 9px 12px;
+                background: #f6f7f9; border: 1px solid #e1e4e8; border-radius: 4px; }
+    .file-ext { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 3px;
+                background: #f6f8fa; border: 1px solid #d0d7de; color: #57606a; flex-shrink: 0; }
+    .file-ext.pdf  { background: #ffebe9; color: #cf222e; border-color: #ffc1ba; }
+    .file-ext.docx { background: #ddf4ff; color: #0969da; border-color: #79c0ff; }
+    .file-ext.png,
+    .file-ext.jpg  { background: #dafbe1; color: #1a7f37; border-color: #a8f0c6; }
+    .file-name { font-size: 13px; font-weight: 500; color: #1f2328; flex: 1; min-width: 0;
+                 overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .file-size { font-size: 11px; color: #6e7681; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+    .file-change { font-size: 11px; color: #0969da; cursor: pointer; flex-shrink: 0; background: none;
+                   border: none; font-family: inherit; padding: 0; }
+    .file-change:hover { text-decoration: underline; }
+
+    /* ── FORM ── */
+    .field  { display: flex; flex-direction: column; gap: 4px; }
+    .frow   { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .fl     { font-size: 11px; font-weight: 600; color: #6e7681; text-transform: uppercase; letter-spacing: 0.4px; }
+    .req    { color: #cf222e; margin-left: 2px; }
+    .fi     { font-size: 13px; padding: 7px 10px; border: 1px solid #d0d7de; border-radius: 4px;
+              background: white; color: #1f2328; font-family: inherit; width: 100%; }
+    .fi:focus { outline: 2px solid #0969da; outline-offset: -1px; border-color: transparent; }
+    .fhint  { font-size: 11px; color: #6e7681; margin-top: 2px; }
+    .fhint.err { color: #cf222e; }
+
+    /* Change-type buttons with tooltip */
+    .ct-grid  { display: flex; flex-wrap: wrap; gap: 4px; }
+    .ct-wrap  { position: relative; display: inline-block; }
+    .ct-wrap:hover .ct-tip { opacity: 1; pointer-events: auto; }
+    .ct-tip   { position: absolute; bottom: calc(100% + 5px); left: 50%; transform: translateX(-50%);
+                background: #1f2328; color: white; font-size: 10px; padding: 5px 8px; border-radius: 3px;
+                white-space: nowrap; z-index: 500; opacity: 0; pointer-events: none;
+                transition: opacity 0.12s; line-height: 1.45; max-width: 200px; white-space: normal;
+                text-align: center; }
+    .ct-tip::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+                     border: 4px solid transparent; border-top-color: #1f2328; }
+    .rbtn   { padding: 5px 11px; font-size: 12px; color: #6e7681; background: white;
+              border: 1px solid #d0d7de; border-radius: 4px; cursor: pointer; font-family: inherit;
+              white-space: nowrap; transition: background 0.08s; }
+    .rbtn.on { background: #0969da; color: white; border-color: #0969da; }
+    .rbtn:hover:not(.on) { background: #f6f8fa; }
+
+    /* Toggle */
+    .toggle-row  { display: flex; align-items: center; justify-content: space-between; }
+    .toggle-lbl  { font-size: 13px; color: #1f2328; }
+    .toggle-sub  { font-size: 11px; color: #6e7681; margin-top: 2px; }
+    .toggle-sw   { position: relative; width: 34px; height: 20px; flex-shrink: 0; }
+    .toggle-sw input { opacity: 0; width: 0; height: 0; }
+    .toggle-track { position: absolute; inset: 0; border-radius: 10px; cursor: pointer;
+                    background: #d0d7de; transition: background 0.15s; }
+    .toggle-track.on { background: #0969da; }
+    .toggle-thumb { position: absolute; height: 14px; width: 14px; left: 3px; top: 3px;
+                    border-radius: 50%; background: white; transition: transform 0.15s;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.18); }
+    .toggle-track.on .toggle-thumb { transform: translateX(14px); }
+
+    /* AI banner */
+    .ai-banner { background: linear-gradient(135deg, #f3e8ff 0%, #ede9fe 100%);
+                 border: 1px solid #c4b5fd; border-radius: 4px; padding: 10px 12px; }
+    .ai-b-head { font-size: 10px; font-weight: 700; color: #7c3aed; text-transform: uppercase;
+                 letter-spacing: 0.5px; margin-bottom: 5px; }
+    .ai-b-body { font-size: 12px; color: #4c1d95; line-height: 1.5; }
+
+    /* Footer */
+    .kbd-hint { font-size: 11px; color: #8c959f; display: flex; align-items: center; gap: 4px; }
+    .kbd      { background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 3px;
+                padding: 1px 5px; font-family: 'SF Mono', 'Fira Mono', monospace; font-size: 10px; color: #1f2328; }
+    .f-btns   { display: flex; gap: 6px; }
+    .btn      { font-size: 12px; font-weight: 500; padding: 6px 12px; border: 1px solid #d0d7de;
+                background: white; color: #1f2328; border-radius: 4px; cursor: pointer; font-family: inherit; }
+    .btn:hover { background: #f6f8fa; }
+    .btn.p    { background: #0969da; color: white; border-color: #0969da; }
+    .btn.p:hover { background: #0860c7; }
+    .btn.p:disabled { background: #a5cef5; border-color: #a5cef5; cursor: not-allowed; }
+
+    /* Toast */
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+             background: #1f2328; color: white; padding: 9px 16px; border-radius: 4px;
+             font-size: 13px; box-shadow: 0 4px 16px rgba(0,0,0,0.22); z-index: 9000;
+             white-space: nowrap; animation: tin 0.15s ease; }
+    @keyframes tin { from { opacity:0; transform:translateX(-50%) translateY(5px); }
+                     to   { opacity:1; transform:translateX(-50%) translateY(0); } }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+/* ─── DATA ─── */
+const today = new Date().toISOString().split('T')[0];
+
+const CHANGE_TYPES = [
+  { label: 'NY VERSION',  tip: 'Erstatter forrige med ny forhandlet version' },
+  { label: 'REDAKTIONEL', tip: 'Sproglige rettelser — ingen materielle ændringer' },
+  { label: 'MATERIEL',    tip: 'Ændrer rettigheder eller forpligtelser' },
+  { label: 'ALLONGE',     tip: 'Tillæg til eksisterende kontrakt — ikke en erstatning' },
+];
+
+const VALID_EXTS = /\.(pdf|docx|png|jpg|jpeg)$/i;
+const VALID_TYPES = [
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'image/png', 'image/jpeg',
+];
+const MAX_BYTES = 10 * 1024 * 1024;
+
+/* ─── HELPERS ─── */
+function fmtSize(bytes) {
+  if (bytes < 1024)       return bytes + ' B';
+  if (bytes < 1024*1024)  return (bytes / 1024).toFixed(1).replace('.', ',') + ' KB';
+  return (bytes / (1024*1024)).toFixed(1).replace('.', ',') + ' MB';
+}
+function getExt(name) {
+  const m = name.match(/\.([a-zA-Z]+)$/);
+  return m ? m[1].toLowerCase() : 'fil';
+}
+
+/* ─── BACKGROUND ─── */
+function Sidebar() {
+  return (
+    <div className="sb">
+      <div className="sb-logo">▣ ChainHub</div>
+      <div className="sb-sec">
+        <div className="sb-lab">Overblik</div>
+        <div className="sb-item">Forside <span className="sb-cnt a">5</span></div>
+        <div className="sb-item">Kalender <span className="sb-cnt">12</span></div>
+        <div className="sb-item">Søg</div>
+      </div>
+      <div className="sb-sec">
+        <div className="sb-lab">Portefølje</div>
+        <div className="sb-item active">Selskaber <span className="sb-cnt">32</span></div>
+        <div className="sb-item">Kontrakter <span className="sb-cnt w">3</span></div>
+        <div className="sb-item">Sager <span className="sb-cnt a">7</span></div>
+        <div className="sb-item">Opgaver <span className="sb-cnt w">9</span></div>
+      </div>
+      <div className="sb-sec">
+        <div className="sb-lab">Ressourcer</div>
+        <div className="sb-item">Personer <span className="sb-cnt">184</span></div>
+        <div className="sb-item">Dokumenter <span className="sb-cnt">412</span></div>
+        <div className="sb-item">Indstillinger</div>
+      </div>
+    </div>
+  );
+}
+
+function BgMain() {
+  return (
+    <div className="main-bg">
+      <div className="crumb">Selskaber › Tandlæge Østerbro ApS</div>
+      <div className="ph">
+        <div>
+          <h1>Tandlæge Østerbro ApS</h1>
+          <div className="ph-meta">CVR 12345678<span className="sep-dot">·</span>Østerbrogade 142, 2100 Kbh Ø</div>
+        </div>
+        <div className="ph-btns">
+          <button className="bbtn">Rediger stamdata</button>
+          <button className="bbtn p">Tilføj data ▾</button>
+        </div>
+      </div>
+      <div className="strip">
+        <div className="sc"><div className="sn">51%</div><div className="sl">Kædeandel</div></div>
+        <div className="sc"><div className="sn w">6</div><div className="sl">Kontrakter</div></div>
+        <div className="sc"><div className="sn a">2</div><div className="sl">Åbne sager</div></div>
+        <div className="sc"><div className="sn">4</div><div className="sl">Personer</div></div>
+        <div className="sc"><div className="sn">18</div><div className="sl">Dokumenter</div></div>
+        <div className="sc"><div className="sn">2,4m</div><div className="sl">EBITDA YTD</div></div>
+      </div>
+      <div className="grid3">
+        <div className="pnl">
+          <div className="pnl-h"><span className="pnl-t">Kontrakter <span style={{background:'#e1e4e8',color:'#57606a',padding:'1px 6px',borderRadius:'8px',fontSize:'10px',fontWeight:500,textTransform:'none',letterSpacing:0,marginLeft:4}}>6</span></span><span className="pnl-m">sortér: udløb</span></div>
+          <div className="trow-bg"><span className="badge red">14d</span><span><strong>Lejekontrakt erhverv</strong> · <span className="b-meta">v3 · 24 sider</span></span><span className="badge gray">Aktiv</span><span style={{color:'#8c959f'}}>›</span></div>
+          <div className="trow-bg"><span className="badge gray">3år</span><span><strong>Ejeraftale</strong> · <span className="b-meta">Kædegruppe + Lars Hansen</span></span><span className="badge green">Aktiv</span><span style={{color:'#8c959f'}}>›</span></div>
+          <div className="trow-bg"><span className="badge gray">—</span><span><strong>Ansættelse · Lars Hansen</strong> · <span className="b-meta">CEO-aftale</span></span><span className="badge green">Aktiv</span><span style={{color:'#8c959f'}}>›</span></div>
+        </div>
+        <div className="pnl">
+          <div className="pnl-h"><span className="pnl-t">Dokumenter <span style={{background:'#e1e4e8',color:'#57606a',padding:'1px 6px',borderRadius:'8px',fontSize:'10px',fontWeight:500,textTransform:'none',letterSpacing:0,marginLeft:4}}>18</span></span><span className="pnl-m">12 AI-extracted</span></div>
+          <div className="trow-bg" style={{gridTemplateColumns:'50px 1fr 14px'}}><span className="badge gray">PDF</span><span><strong>lejekontrakt-v3.pdf</strong><br /><span className="b-meta">v3 · 2,4 MB · 14. mar</span></span><span style={{color:'#8c959f'}}>›</span></div>
+          <div className="trow-bg" style={{gridTemplateColumns:'50px 1fr 14px'}}><span className="badge gray">PDF</span><span><strong>lejekontrakt-v2.pdf</strong><br /><span className="b-meta">v2 · 2,2 MB · 3. jan 2024</span></span><span style={{color:'#8c959f'}}>›</span></div>
+        </div>
+        <div className="pnl">
+          <div className="pnl-h"><span className="pnl-t">AI Insight</span><span className="pnl-m">4t siden</span></div>
+          <div style={{margin:'8px',padding:'10px 12px',background:'linear-gradient(135deg,#f3e8ff,#ede9fe)',border:'1px solid #c4b5fd',borderRadius:'3px'}}>
+            <div style={{fontSize:'10px',fontWeight:700,color:'#7c3aed',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:5}}>⚡ Renewal-risk · 82% conf.</div>
+            <div style={{fontSize:'12px',color:'#4c1d95',lineHeight:1.45}}>Forventet markedsleje 10–12% over nuværende kontrakt.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── MAIN MODAL ─── */
+function UploadKontraktModal() {
+  const [file,          setFile]          = useState(null);
+  const [fileError,     setFileError]     = useState(null);
+  const [isDragging,    setIsDragging]    = useState(false);
+  const [changeType,    setChangeType]    = useState('NY VERSION');
+  const [versionNote,   setVersionNote]   = useState('');
+  const [effectiveDato, setEffectiveDato] = useState(today);
+  const [autoExtract,   setAutoExtract]   = useState(true);
+  const [toast,         setToast]         = useState(null);
+  const [toastKey,      setToastKey]      = useState(0);
+
+  const fileInputRef = useRef(null);
+  const stRef        = useRef({});
+
+  const canSubmit = !!file && !fileError && !!changeType;
+  stRef.current   = { canSubmit, file, changeType };
+
+  /* Keyboard */
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === 'Escape') doToast('Modal lukket');
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        const s = stRef.current;
+        if (s.canSubmit) doToast(`Upload startet · ${s.file.name} · ${s.changeType}`);
+      }
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
+
+  function doToast(msg) {
+    setToast(msg);
+    setToastKey(k => k + 1);
+    setTimeout(() => setToast(null), 3200);
+  }
+
+  /* File handling */
+  function validateAndSetFile(f) {
+    const validType = VALID_TYPES.includes(f.type) || VALID_EXTS.test(f.name);
+    if (!validType) { setFileError('Filtype ikke understøttet — kun PDF, DOCX, PNG og JPG.'); return; }
+    if (f.size > MAX_BYTES) { setFileError('Filen er for stor — max 10 MB.'); return; }
+    setFileError(null);
+    setFile(f);
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    setIsDragging(false);
+    const f = e.dataTransfer.files[0];
+    if (f) validateAndSetFile(f);
+  }
+
+  function handleDragOver(e)  { e.preventDefault(); setIsDragging(true); }
+  function handleDragLeave(e) {
+    if (!e.currentTarget.contains(e.relatedTarget)) setIsDragging(false);
+  }
+
+  function handleFileInput(e) {
+    const f = e.target.files[0];
+    if (f) validateAndSetFile(f);
+    e.target.value = '';
+  }
+
+  function handleSubmit() {
+    if (!canSubmit) return;
+    doToast(`Upload startet · ${file.name} · ${changeType}`);
+  }
+
+  const ext = file ? getExt(file.name) : '';
+
+  /* ── Render ── */
+  return (
+    <div className="scene">
+      <div className="bg"><Sidebar /><BgMain /></div>
+
+      <div className="overlay">
+        <div className="modal">
+
+          {/* Header */}
+          <div className="modal-h">
+            <div style={{flex:1, minWidth:0}}>
+              <div className="modal-ti">Upload kontraktversion · Lejekontrakt erhverv</div>
+              <div className="modal-su">Tandlæge Østerbro ApS · Aktuelt v3 · uploadet 14. mar 2026</div>
+            </div>
+            <button className="modal-x" onClick={() => doToast('Modal lukket')}>×</button>
+          </div>
+
+          {/* Body */}
+          <div className="modal-bd">
+
+            {/* Drop zone */}
+            <div className="field">
+              <label className="fl">Fil <span className="req">*</span></label>
+
+              {/* Hidden file input */}
+              <input ref={fileInputRef} type="file" accept=".pdf,.docx,.png,.jpg,.jpeg"
+                style={{display:'none'}} onChange={handleFileInput} />
+
+              {file ? (
+                /* File selected */
+                <div className="file-row">
+                  <span className={`file-ext ${ext}`}>{ext.toUpperCase()}</span>
+                  <span className="file-name">{file.name}</span>
+                  <span className="file-size">{fmtSize(file.size)}</span>
+                  <button className="file-change"
+                    onClick={() => { setFile(null); setFileError(null); }}>
+                    Skift fil
+                  </button>
+                </div>
+              ) : (
+                /* Drop zone */
+                <div
+                  className={`dropzone${isDragging ? ' over' : ''}`}
+                  onClick={() => fileInputRef.current?.click()}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
+                  <div className="dz-icon">↑</div>
+                  <div className="dz-label">Træk PDF, DOCX, PNG eller JPG hertil</div>
+                  <div className="dz-sub">eller klik for at vælge fra din computer</div>
+                  <div className="dz-max">Maks 10 MB</div>
+                </div>
+              )}
+
+              {fileError && <div className="fhint err">{fileError}</div>}
+            </div>
+
+            {/* Change type with tooltips */}
+            <div className="field">
+              <label className="fl">Ændringstype <span className="req">*</span></label>
+              <div className="ct-grid">
+                {CHANGE_TYPES.map(ct => (
+                  <div key={ct.label} className="ct-wrap">
+                    <button
+                      className={`rbtn${changeType === ct.label ? ' on' : ''}`}
+                      onClick={() => setChangeType(ct.label)}>
+                      {ct.label}
+                    </button>
+                    <div className="ct-tip">{ct.tip}</div>
+                  </div>
+                ))}
+              </div>
+              {changeType === 'MATERIEL' && (
+                <div className="fhint" style={{color:'#b54708', marginTop:3}}>
+                  Materiel ændring kræver bestyrelsesnotifikation og opdateret ejeraftale-reference.
+                </div>
+              )}
+            </div>
+
+            {/* Version note */}
+            <div className="field">
+              <label className="fl">Versionsnotat</label>
+              <textarea className="fi" rows={3} style={{resize:'none'}}
+                placeholder="Beskriv hvad der er ændret siden forrige version (v3)..."
+                value={versionNote}
+                onChange={e => setVersionNote(e.target.value)} />
+              <div className="fhint">Vises i versionshistorikken og sendes til relevante ejere.</div>
+            </div>
+
+            {/* Effective date */}
+            <div className="field" style={{maxWidth:200}}>
+              <label className="fl">Ikrafttrædelsesdato</label>
+              <input className="fi" type="date" value={effectiveDato}
+                onChange={e => setEffectiveDato(e.target.value)} />
+            </div>
+
+            {/* AI toggle */}
+            <div className="field">
+              <div className="toggle-row">
+                <div>
+                  <div className="toggle-lbl">Auto-extract via AI</div>
+                  <div className="toggle-sub">AI læser dokumentet og opdaterer kontrakt-felterne</div>
+                </div>
+                <div className="toggle-sw" onClick={() => setAutoExtract(v => !v)}>
+                  <div className={`toggle-track${autoExtract ? ' on' : ''}`}>
+                    <div className="toggle-thumb"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* AI extraction banner — live preview */}
+            {autoExtract && (
+              <div className="ai-banner">
+                <div className="ai-b-head">⚡ AI-extraction aktiveret</div>
+                <div className="ai-b-body">
+                  Kontrakten queues til extraction. Du får besked når review er klar — typisk 2–5 minutter. Ændringer træder ikke i kraft før du godkender review.
+                </div>
+              </div>
+            )}
+
+          </div>{/* /modal-bd */}
+
+          {/* Footer */}
+          <div className="modal-ft">
+            <div className="kbd-hint">
+              <span className="kbd">Esc</span> luk
+              <span style={{margin:'0 4px', color:'#d0d7de'}}>·</span>
+              <span className="kbd">⌘</span><span className="kbd">↵</span> upload
+            </div>
+            <div className="f-btns">
+              <button className="btn" onClick={() => doToast('Annulleret')}>Annuller</button>
+              <button className="btn p" disabled={!canSubmit} onClick={handleSubmit}>
+                Upload version
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {toast && <div className="toast" key={toastKey}>✓ {toast}</div>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<UploadKontraktModal />);
+</script>
+</body>
+</html>

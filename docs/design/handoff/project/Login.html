@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Log ind — ChainHub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #fafafa;
+      color: #1f2328;
+      font-size: 13px;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── DEMO BAR ── */
+    .demo-bar { display: flex; align-items: center; gap: 8px; padding: 5px 16px; background: #f6f7f9; border-bottom: 1px solid #e1e4e8; font-size: 11px; color: #6e7681; }
+    .demo-bar span { font-weight: 600; color: #8c959f; }
+    .demo-btn { font-size: 11px; padding: 2px 8px; border: 1px solid #d0d7de; border-radius: 3px; background: white; color: #6e7681; cursor: pointer; font-family: inherit; }
+    .demo-btn.on { background: #e8eaee; color: #1f2328; border-color: #c1c5cc; font-weight: 500; }
+    .demo-btn:hover:not(.on) { background: #f6f8fa; }
+
+    /* ── SCENE ── */
+    .scene {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 16px;
+      gap: 20px;
+    }
+
+    /* ── CARD ── */
+    .card {
+      width: 100%;
+      max-width: 360px;
+      background: white;
+      border: 1px solid #e1e4e8;
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(15,23,42,0.07);
+    }
+
+    /* ── LOGO AREA ── */
+    .logo-area {
+      padding: 24px 24px 16px;
+      border-bottom: 1px solid #e1e4e8;
+      background: #fbfbfc;
+      text-align: center;
+    }
+    .logo-mark { font-size: 22px; font-weight: 600; color: #1f2328; letter-spacing: -0.02em; }
+    .logo-sub  { font-size: 11px; color: #6e7681; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* ── FORM BODY ── */
+    .form-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; }
+
+    /* ── ERROR BANNER ── */
+    .err-banner { padding: 9px 12px; background: #ffebe9; border: 1px solid #ffc1ba; border-left: 3px solid #cf222e; border-radius: 4px; font-size: 12px; color: #6e1010; line-height: 1.45; }
+
+    /* ── FIELDS ── */
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    .fl    { font-size: 11px; font-weight: 600; color: #6e7681; text-transform: uppercase; letter-spacing: 0.4px; }
+    .fi-wrap { position: relative; }
+    .fi    { font-size: 13px; padding: 8px 10px; border: 1px solid #d0d7de; border-radius: 4px; background: white; color: #1f2328; font-family: inherit; width: 100%; outline: none; transition: border-color 0.1s, box-shadow 0.1s; }
+    .fi:focus { border-color: #0969da; box-shadow: 0 0 0 3px rgba(9,105,218,0.1); }
+    .fi.err { border-color: #cf222e; }
+    .fi.err:focus { box-shadow: 0 0 0 3px rgba(207,34,46,0.1); }
+    .fi-toggle { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #8c959f; cursor: pointer; font-size: 11px; font-family: inherit; padding: 2px; }
+    .fi-toggle:hover { color: #1f2328; }
+    .f-hint { font-size: 11px; color: #8c959f; margin-top: 2px; }
+    .f-hint.err { color: #cf222e; }
+
+    /* ── FORGOT LINK ── */
+    .forgot { display: flex; justify-content: flex-end; }
+    .forgot a { font-size: 11px; color: #0969da; text-decoration: none; }
+    .forgot a:hover { text-decoration: underline; }
+
+    /* ── SUBMIT BUTTON ── */
+    .submit-btn {
+      width: 100%; padding: 9px; font-size: 13px; font-weight: 600; font-family: inherit;
+      background: #0969da; color: white; border: none; border-radius: 4px; cursor: pointer;
+      transition: background 0.1s; letter-spacing: -0.01em;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .submit-btn:hover:not(:disabled) { background: #0860c7; }
+    .submit-btn:disabled { background: #a5cef5; cursor: not-allowed; }
+    .submit-btn .spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── FORM FOOTER ── */
+    .form-footer {
+      padding: 12px 24px;
+      border-top: 1px solid #e1e4e8;
+      background: #fbfbfc;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: #6e7681;
+    }
+    .kbd { background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 3px; padding: 1px 5px; font-family: 'SF Mono','Fira Mono',monospace; font-size: 10px; color: #1f2328; }
+
+    /* ── FOOTER NOTE ── */
+    .page-footer { font-size: 11px; color: #8c959f; text-align: center; }
+    .page-footer a { color: #6e7681; text-decoration: none; }
+    .page-footer a:hover { color: #1f2328; }
+    .sep-dot { margin: 0 8px; color: #d0d7de; }
+
+    /* ── SSO DIVIDER ── */
+    .divider { display: flex; align-items: center; gap: 10px; }
+    .div-line { flex: 1; height: 1px; background: #e1e4e8; }
+    .div-txt  { font-size: 11px; color: #8c959f; white-space: nowrap; }
+
+    /* ── SSO BUTTON ── */
+    .sso-btn { width: 100%; padding: 8px; font-size: 12px; font-weight: 500; font-family: inherit; background: white; color: #1f2328; border: 1px solid #d0d7de; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; }
+    .sso-btn:hover { background: #f6f8fa; border-color: #c1c5cc; }
+    .sso-icon { width: 16px; height: 16px; border-radius: 2px; background: #e8eaee; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: #57606a; flex-shrink: 0; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel">
+const { useState, useRef, useEffect } = React;
+
+function LoginPage() {
+  const [demo,       setDemo]       = useState('normal');
+  const [email,      setEmail]      = useState('');
+  const [password,   setPassword]   = useState('');
+  const [showPw,     setShowPw]     = useState(false);
+  const [loading,    setLoading]    = useState(false);
+  const [error,      setError]      = useState(null);
+  const emailRef = useRef(null);
+
+  const isLoading = demo === 'loading' || loading;
+  const isError   = demo === 'fejl';
+  const errMsg    = 'Forkert e-mail eller adgangskode. Tjek dine oplysninger og prøv igen.';
+
+  useEffect(() => { emailRef.current?.focus(); }, []);
+
+  useEffect(() => {
+    if (demo === 'normal')   { setError(null);   setLoading(false); }
+    if (demo === 'fejl')     { setError(errMsg);  setLoading(false); }
+    if (demo === 'loading')  { setError(null); }
+  }, [demo]);
+
+  function handleSubmit(e) {
+    e?.preventDefault();
+    if (!email.trim() || !password.trim()) return;
+    setLoading(true);
+    setError(null);
+    setTimeout(() => {
+      setLoading(false);
+      if (email === 'fejl@test.dk' || demo === 'fejl') {
+        setError(errMsg);
+      } else {
+        setError(null);
+        // Simulate redirect
+      }
+    }, 1400);
+  }
+
+  function onKey(e) {
+    if (e.key === 'Enter') handleSubmit();
+  }
+
+  const canSubmit = email.trim().length > 0 && password.trim().length > 0 && !isLoading;
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',minHeight:'100vh',margin:0,background:'#fafafa',fontFamily:'Inter,-apple-system,sans-serif'}}>
+      {/* Demo bar */}
+      <div className="demo-bar">
+        <span>Demo:</span>
+        {['normal','fejl','loading'].map(s => (
+          <button key={s} className={`demo-btn${demo===s?' on':''}`} onClick={() => setDemo(s)}>{s}</button>
+        ))}
+        <span style={{marginLeft:4,fontStyle:'italic'}}>vis login-tilstande</span>
+      </div>
+
+      <div className="scene">
+        <div className="card">
+
+          {/* Logo */}
+          <div className="logo-area">
+            <div className="logo-mark">▣ ChainHub</div>
+            <div className="logo-sub">Kædestyring</div>
+          </div>
+
+          {/* Form */}
+          <form className="form-body" onSubmit={handleSubmit}>
+
+            {(isError || error) && (
+              <div className="err-banner">
+                {errMsg}
+              </div>
+            )}
+
+            <div className="field">
+              <label className="fl">E-mail</label>
+              <input
+                ref={emailRef}
+                className={`fi${(isError || error) ? ' err' : ''}`}
+                type="email"
+                placeholder="din@email.dk"
+                value={email}
+                onChange={e => { setEmail(e.target.value); setError(null); }}
+                onKeyDown={onKey}
+                autoComplete="email"
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="field">
+              <label className="fl">Adgangskode</label>
+              <div className="fi-wrap">
+                <input
+                  className={`fi${(isError || error) ? ' err' : ''}`}
+                  type={showPw ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={e => { setPassword(e.target.value); setError(null); }}
+                  onKeyDown={onKey}
+                  autoComplete="current-password"
+                  disabled={isLoading}
+                  style={{paddingRight:52}}
+                />
+                <button type="button" className="fi-toggle"
+                  onClick={() => setShowPw(v => !v)}
+                  tabIndex={-1}>
+                  {showPw ? 'Skjul' : 'Vis'}
+                </button>
+              </div>
+            </div>
+
+            <div className="forgot">
+              <a href="#">Glemt adgangskode?</a>
+            </div>
+
+            <button type="submit" className="submit-btn" disabled={!canSubmit}>
+              {isLoading
+                ? <><span className="spinner"></span>Logger ind...</>
+                : 'Log ind'}
+            </button>
+
+            <div className="divider">
+              <div className="div-line"></div>
+              <span className="div-txt">eller</span>
+              <div className="div-line"></div>
+            </div>
+
+            <button type="button" className="sso-btn"
+              onClick={() => alert('SSO ikke tilgængeligt i demo')}>
+              <div className="sso-icon">MS</div>
+              Log ind med Microsoft
+            </button>
+
+          </form>
+
+          {/* Footer */}
+          <div className="form-footer">
+            <span><span className="kbd">↵</span> log ind</span>
+            <span>v2.4.1 · Plus</span>
+          </div>
+        </div>
+
+        {/* Page footer */}
+        <div className="page-footer">
+          <a href="#">Privatlivspolitik</a>
+          <span className="sep-dot">·</span>
+          <a href="#">Vilkår</a>
+          <span className="sep-dot">·</span>
+          <a href="#">Support</a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<LoginPage />);
+</script>
+</body>
+</html>

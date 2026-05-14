@@ -2,28 +2,23 @@ import { auth } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { canAccessCompany } from '@/lib/permissions'
-import { ArrowLeft } from 'lucide-react'
-import Link from 'next/link'
-import { CaseStatusForm } from '@/components/cases/CaseStatusForm'
+import { getCaseStatusLabel, getCaseTypeLabel, formatDate, daysUntil } from '@/lib/labels'
 import {
-  getCaseStatusLabel,
-  getCaseStatusStyle,
-  getCaseTypeLabel,
-  getPriorityLabel,
-  getTaskStatusLabel,
-  formatDate,
-} from '@/lib/labels'
+  CaseDetailB,
+  type CaseDetailData,
+  type CaseTaskData,
+  type CaseLinkData,
+  type CaseDocData,
+  type CaseActivityData,
+} from './case-detail-b'
 
 interface Props {
   params: { id: string }
 }
 
-const NEXT_STATUSES: Record<string, string[]> = {
-  NY: ['AKTIV'],
-  AKTIV: ['AFVENTER_EKSTERN', 'AFVENTER_KLIENT', 'LUKKET'],
-  AFVENTER_EKSTERN: ['AKTIV', 'LUKKET'],
-  AFVENTER_KLIENT: ['AKTIV', 'LUKKET'],
-  LUKKET: ['AKTIV', 'ARKIVERET'],
+const MONTHS = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec']
+function formatShortDate(d: Date): string {
+  return `${d.getDate()}. ${MONTHS[d.getMonth()]}`
 }
 
 export default async function CaseDetailPage({ params }: Props) {
@@ -42,7 +37,9 @@ export default async function CaseDetailPage({ params }: Props) {
       },
       case_contracts: {
         include: {
-          contract: { select: { id: true, display_name: true, system_type: true } },
+          contract: {
+            select: { id: true, display_name: true, system_type: true, status: true },
+          },
         },
       },
       case_persons: {
@@ -54,12 +51,17 @@ export default async function CaseDetailPage({ params }: Props) {
         where: { deleted_at: null },
         orderBy: { due_date: 'asc' },
       },
+      documents: {
+        where: { deleted_at: null },
+        orderBy: { uploaded_at: 'desc' },
+        take: 10,
+        include: { extraction: { select: { extraction_status: true } } },
+      },
     },
   })
 
   if (!caseItem) notFound()
 
-  // Tjek adgang til mindst ét tilknyttet selskab
   let hasAccess = false
   for (const cc of caseItem.case_companies) {
     const ok = await canAccessCompany(session.user.id, cc.company.id)
@@ -70,184 +72,143 @@ export default async function CaseDetailPage({ params }: Props) {
   }
   if (!hasAccess) notFound()
 
-  const nextStatuses = NEXT_STATUSES[caseItem.status] ?? []
-  // Sagsnummer er første linje i description-feltet
-  const descriptionLines = caseItem.description?.split('\n') ?? []
-  const caseNumber = descriptionLines[0]?.startsWith('CAS-') ? descriptionLines[0] : ''
-  const descriptionText = caseNumber
-    ? descriptionLines.slice(1).join('\n').trim()
-    : (caseItem.description ?? '')
-
-  const openTasks = caseItem.tasks.filter((t) => t.status !== 'LUKKET')
-  const today = new Date()
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-start gap-4">
-        <Link href="/cases" className="mt-1 rounded-md p-1 hover:bg-gray-100">
-          <ArrowLeft className="h-5 w-5 text-gray-500" />
-        </Link>
-        <div className="flex-1">
-          <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl font-bold text-gray-900">{caseItem.title}</h1>
-            <span
-              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getCaseStatusStyle(caseItem.status)}`}
-            >
-              {getCaseStatusLabel(caseItem.status)}
-            </span>
-          </div>
-          <p className="mt-0.5 text-sm text-gray-500">
-            {caseNumber && <span className="font-medium text-gray-700">{caseNumber}</span>}
-            {caseNumber && ' · '}
-            {getCaseTypeLabel(caseItem.case_type)}
-            {caseItem.case_subtype && ` → ${caseItem.case_subtype}`}
-          </p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Hoved-panel */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Sagsoverblik */}
-          <div className="rounded-lg border bg-white p-6 shadow-sm">
-            <h2 className="text-base font-semibold text-gray-900 mb-4">Sagsdetaljer</h2>
-            <dl className="grid grid-cols-2 gap-4">
-              <div>
-                <dt className="text-sm font-medium text-gray-500">Sensitivitet</dt>
-                <dd className="mt-1 text-sm text-gray-900">{caseItem.sensitivity}</dd>
-              </div>
-              <div>
-                <dt className="text-sm font-medium text-gray-500">Oprettet</dt>
-                <dd className="mt-1 text-sm text-gray-900">{formatDate(caseItem.created_at)}</dd>
-              </div>
-            </dl>
-            {descriptionText && (
-              <div className="mt-4 pt-4 border-t">
-                <dt className="text-sm font-medium text-gray-500">Beskrivelse</dt>
-                <dd className="mt-1 text-sm text-gray-700 whitespace-pre-wrap">
-                  {descriptionText}
-                </dd>
-              </div>
-            )}
-          </div>
-
-          {/* Tilknyttede selskaber */}
-          <div className="rounded-lg border bg-white p-6 shadow-sm">
-            <h2 className="text-base font-semibold text-gray-900 mb-3">
-              Selskaber ({caseItem.case_companies.length})
-            </h2>
-            <ul className="space-y-2">
-              {caseItem.case_companies.map((cc) => (
-                <li key={cc.company.id}>
-                  <Link
-                    href={`/companies/${cc.company.id}`}
-                    className="text-sm text-blue-600 hover:text-blue-800"
-                  >
-                    {cc.company.name}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Opgaver */}
-          <div className="rounded-lg border bg-white p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold text-gray-900">
-                Opgaver ({openTasks.length} åbne)
-              </h2>
-              <Link
-                href={`/tasks/new?caseId=${caseItem.id}`}
-                className="text-sm text-blue-600 hover:text-blue-800"
-              >
-                + Ny opgave
-              </Link>
-            </div>
-            {caseItem.tasks.length === 0 ? (
-              <p className="text-sm text-gray-500">Ingen opgaver tilknyttet endnu.</p>
-            ) : (
-              <ul className="divide-y divide-gray-200">
-                {caseItem.tasks.map((task) => {
-                  const isOverdue =
-                    task.due_date && new Date(task.due_date) < today && task.status !== 'LUKKET'
-                  return (
-                    <li key={task.id} className="py-3 flex items-center justify-between">
-                      <div>
-                        <p
-                          className={`text-sm font-medium ${isOverdue ? 'text-red-700' : 'text-gray-900'}`}
-                        >
-                          {task.title}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {task.due_date ? formatDate(task.due_date) : 'Ingen deadline'}
-                          {task.priority && ` · ${getPriorityLabel(task.priority)}`}
-                        </p>
-                      </div>
-                      <span className="text-xs text-gray-500">
-                        {getTaskStatusLabel(task.status)}
-                      </span>
-                    </li>
-                  )
-                })}
-              </ul>
-            )}
-          </div>
-
-          {/* Tilknyttede kontrakter */}
-          {caseItem.case_contracts.length > 0 && (
-            <div className="rounded-lg border bg-white p-6 shadow-sm">
-              <h2 className="text-base font-semibold text-gray-900 mb-3">
-                Kontrakter ({caseItem.case_contracts.length})
-              </h2>
-              <ul className="space-y-2">
-                {caseItem.case_contracts.map((cc) => (
-                  <li key={cc.contract.id}>
-                    <Link
-                      href={`/contracts/${cc.contract.id}`}
-                      className="text-sm text-blue-600 hover:text-blue-800"
-                    >
-                      {cc.contract.display_name}
-                    </Link>
-                    <span className="ml-2 text-xs text-gray-500">{cc.contract.system_type}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-
-        {/* Side-panel */}
-        <div className="space-y-6">
-          {nextStatuses.length > 0 && (
-            <CaseStatusForm
-              caseId={caseItem.id}
-              currentStatus={caseItem.status}
-              nextStatuses={nextStatuses}
-            />
-          )}
-
-          <div className="rounded-lg border bg-white p-4 shadow-sm">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">Parter</h3>
-            {caseItem.case_persons.length === 0 ? (
-              <p className="text-xs text-gray-500">Ingen parter tilknyttet</p>
-            ) : (
-              <ul className="space-y-1">
-                {caseItem.case_persons.map((cp) => (
-                  <li key={cp.person.id}>
-                    <Link
-                      href={`/persons/${cp.person.id}`}
-                      className="text-sm text-blue-600 hover:text-blue-800"
-                    >
-                      {cp.person.first_name} {cp.person.last_name}
-                    </Link>
-                    {cp.role && <span className="ml-1 text-xs text-gray-500">({cp.role})</span>}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
+  // User-navne (ansvarlig + task assignees)
+  const userIds = Array.from(
+    new Set(
+      [caseItem.responsible_id, ...caseItem.tasks.map((t) => t.assigned_to ?? null)].filter(
+        (id): id is string => !!id
+      )
+    )
   )
+  const users = userIds.length
+    ? await prisma.user.findMany({
+        where: { id: { in: userIds } },
+        select: { id: true, name: true, email: true },
+      })
+    : []
+  const userMap = new Map(users.map((u) => [u.id, u.name ?? u.email ?? 'Ukendt']))
+
+  // Strip-data
+  const dFrist = caseItem.due_date ? daysUntil(caseItem.due_date) : null
+  const fristShort =
+    caseItem.due_date == null
+      ? '—'
+      : dFrist != null && dFrist < 0
+        ? `${Math.abs(dFrist)}d for sent`
+        : dFrist != null
+          ? `${dFrist}d`
+          : '—'
+
+  const firstCompany = caseItem.case_companies[0]?.company
+  const isUrgent = dFrist != null && dFrist >= 0 && dFrist <= 3
+
+  const data: CaseDetailData = {
+    id: caseItem.id,
+    nr: caseItem.case_number ?? caseItem.id.slice(0, 6),
+    title: caseItem.title,
+    type: getCaseTypeLabel(caseItem.case_type),
+    rawType: caseItem.case_type,
+    status: getCaseStatusLabel(caseItem.status),
+    rawStatus: caseItem.status,
+    sensitivity: caseItem.sensitivity,
+    description: caseItem.description ?? '',
+    subtype: caseItem.case_subtype ?? null,
+    selskab: firstCompany?.name ?? '—',
+    selskabId: firstCompany?.id ?? null,
+    ansvarlig: caseItem.responsible_id ? (userMap.get(caseItem.responsible_id) ?? '—') : '—',
+    frist: caseItem.due_date ? formatDate(caseItem.due_date) : 'Ingen frist',
+    fristShort,
+    fristDays: dFrist,
+    isUrgent,
+    createdAt: formatDate(caseItem.created_at),
+    createdAtShort: formatShortDate(caseItem.created_at),
+    updatedAt: formatDate(caseItem.updated_at),
+    closedAt: caseItem.closed_at ? formatDate(caseItem.closed_at) : null,
+  }
+
+  const tasks: CaseTaskData[] = caseItem.tasks.map((t) => {
+    const dDue = t.due_date ? daysUntil(t.due_date) : null
+    const dueShort = !t.due_date
+      ? '—'
+      : dDue != null && dDue < 0
+        ? `${Math.abs(dDue)}d for sent`
+        : t.due_date
+          ? formatShortDate(t.due_date)
+          : '—'
+    return {
+      id: t.id,
+      title: t.title,
+      assignee: t.assigned_to ? (userMap.get(t.assigned_to) ?? '—') : '—',
+      due: dueShort,
+      dueDays: dDue,
+      done: t.status === 'LUKKET',
+      urgent: dDue != null && dDue >= 0 && dDue <= 3,
+    }
+  })
+
+  const links: CaseLinkData[] = [
+    ...caseItem.case_contracts.map((cc) => ({
+      key: `c-${cc.contract.id}`,
+      type: 'Kontrakt',
+      title: cc.contract.display_name,
+      sub: `${cc.contract.system_type}`,
+      badge: cc.contract.status === 'AKTIV' ? 'Aktiv' : cc.contract.status,
+      badgeTone: cc.contract.status === 'AKTIV' ? ('green' as const) : ('gray' as const),
+      href: `/contracts/${cc.contract.id}`,
+    })),
+    ...caseItem.case_persons.map((cp) => ({
+      key: `p-${cp.person.id}`,
+      type: 'Person',
+      title: `${cp.person.first_name} ${cp.person.last_name}`,
+      sub: 'Tilknyttet person',
+      badge: 'Person',
+      badgeTone: 'blue' as const,
+      href: `/persons/${cp.person.id}`,
+    })),
+  ]
+
+  const docs: CaseDocData[] = caseItem.documents.map((d) => {
+    const ext = (d.file_name.split('.').pop() ?? '').toUpperCase()
+    return {
+      id: d.id,
+      ext: ext.length > 0 && ext.length <= 4 ? ext : 'FIL',
+      navn: d.file_name,
+      aiStatus: d.extraction?.extraction_status ?? null,
+      date: formatShortDate(d.uploaded_at),
+    }
+  })
+
+  // Aktivitets-feed (lifecycle events)
+  const activity: CaseActivityData[] = [
+    {
+      key: `created-${caseItem.id}`,
+      who: 'System',
+      type: 'Oprettelse',
+      typeTone: 'green' as const,
+      detail: `Sag oprettet${data.description ? ' med beskrivelse' : ''}.`,
+      time: formatShortDate(caseItem.created_at),
+    },
+    ...caseItem.tasks.map((t) => ({
+      key: `task-${t.id}`,
+      who: t.assigned_to ? (userMap.get(t.assigned_to) ?? 'Ukendt') : 'System',
+      type: t.status === 'LUKKET' ? 'Opgave fuldført' : 'Opgave tilføjet',
+      typeTone: t.status === 'LUKKET' ? ('green' as const) : ('blue' as const),
+      detail: t.title,
+      time: formatShortDate(t.created_at),
+      _ts: t.created_at.getTime(),
+    })),
+    ...caseItem.documents.map((d) => ({
+      key: `doc-${d.id}`,
+      who: 'Bruger',
+      type: 'Dokument',
+      typeTone: 'gray' as const,
+      detail: `${d.file_name} uploadet`,
+      time: formatShortDate(d.uploaded_at),
+      _ts: d.uploaded_at.getTime(),
+    })),
+  ]
+    .sort((a, b) => ((b as { _ts?: number })._ts ?? 0) - ((a as { _ts?: number })._ts ?? 0))
+    .slice(0, 8)
+
+  return <CaseDetailB data={data} tasks={tasks} links={links} docs={docs} activity={activity} />
 }

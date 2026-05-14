@@ -211,7 +211,17 @@
       "Bash(/tmp/verify_all_actions.sh)",
       "Bash(chmod +x /tmp/verify_actions_final.sh)",
       "Bash(/tmp/verify_actions_final.sh)",
-      "Bash(git config *)"
+      "Bash(git config *)",
+      "WebFetch(domain:aws.amazon.com)",
+      "WebFetch(domain:www.microsoft.com)",
+      "WebFetch(domain:claude.com)",
+      "Bash(C:/Users/birke/.claude/plugins/cache/claude-plugins-official/superpowers/5.1.0/skills/brainstorming/scripts/start-server.sh *)",
+      "Bash(\"C:/Users/birke/.claude/plugins/cache/claude-plugins-official/superpowers/5.1.0/skills/brainstorming/scripts/stop-server.sh\" \"C:/Users/birke/OneDrive/Skrivebord/Code/chainhub/.superpowers/brainstorm/23611-1778418230\")",
+      "WebFetch(domain:api.anthropic.com)",
+      "Bash(cp \"C:\\\\Users\\\\birke\\\\.claude\\\\projects\\\\C--Users-birke-OneDrive-Skrivebord-Code-chainhub\\\\fad2513f-871c-47c4-a2fb-8dedf2e3c762\\\\tool-results\\\\webfetch-1778755587194-er8d3q.bin\" design.tar.gz)",
+      "Bash(tar -tzf design.tar.gz)",
+      "Bash(tar -xzf design.tar.gz)",
+      "Bash(echo \"EXITCODE=$?\")"
     ]
   }
 }

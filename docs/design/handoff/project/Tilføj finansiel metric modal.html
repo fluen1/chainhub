@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tilføj finansiel metric — ChainHub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #fafafa; color: #1f2328; }
+
+    /* ── SCENE ── */
+    .scene   { position: relative; min-height: 100vh; overflow: hidden; background: #fafafa; }
+    .bg      { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh;
+               opacity: 0.30; filter: blur(0.6px); pointer-events: none; user-select: none; }
+    .overlay { position: absolute; inset: 0; background: rgba(15,23,42,0.42);
+               backdrop-filter: blur(2px); display: flex; align-items: flex-start;
+               justify-content: center; padding: 80px 0 32px; z-index: 10; overflow-y: auto; }
+
+    /* ── SIDEBAR ── */
+    .sb      { background: #f6f7f9; border-right: 1px solid #e1e4e8; padding: 14px 8px; font-size: 13px; }
+    .sb-logo { font-weight: 600; padding: 4px 10px 16px; color: #1f2328; }
+    .sb-sec  { margin-bottom: 16px; }
+    .sb-lab  { font-size: 10px; color: #6e7681; padding: 0 10px 4px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+    .sb-item { display: flex; justify-content: space-between; padding: 4px 10px; border-radius: 4px; color: #1f2328; font-size: 13px; }
+    .sb-item.active { background: #e8eaee; font-weight: 500; }
+    .sb-cnt  { font-size: 11px; color: #6e7681; font-variant-numeric: tabular-nums; }
+    .sb-cnt.a { color: #b91c1c; font-weight: 600; } .sb-cnt.w { color: #b54708; }
+
+    /* ── BG MAIN ── */
+    .main-bg  { padding: 12px 24px; display: flex; flex-direction: column; gap: 12px; }
+    .crumb    { font-size: 12px; color: #6e7681; }
+    .ph       { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 10px; border-bottom: 1px solid #e1e4e8; }
+    .ph h1    { font-size: 18px; font-weight: 600; margin-bottom: 3px; }
+    .ph-meta  { font-size: 12px; color: #6e7681; font-variant-numeric: tabular-nums; }
+    .ph-btns  { display: flex; gap: 6px; }
+    .bbtn     { font-size: 12px; padding: 4px 10px; border: 1px solid #d0d7de; background: white; color: #1f2328; border-radius: 4px; }
+    .bbtn.p   { background: #0969da; color: white; border-color: #0969da; }
+    .strip    { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: #e1e4e8; border: 1px solid #e1e4e8; border-radius: 4px; overflow: hidden; }
+    .sc       { background: white; padding: 8px 12px; }
+    .sn       { font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1; }
+    .sn.w { color: #b54708; } .sn.a { color: #b91c1c; }
+    .sl       { font-size: 10px; color: #6e7681; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.4px; }
+    .grid3    { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 12px; }
+    .pnl      { background: white; border: 1px solid #e1e4e8; border-radius: 4px; overflow: hidden; }
+    .pnl-h    { padding: 6px 12px; border-bottom: 1px solid #e1e4e8; background: #fbfbfc; display: flex; justify-content: space-between; align-items: center; }
+    .pnl-t    { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .pnl-m    { font-size: 11px; color: #6e7681; }
+    .crow-bg  { display: flex; justify-content: space-between; padding: 4px 12px; font-size: 13px; }
+    .fin-bg   { display: flex; justify-content: space-between; padding: 4px 12px; font-size: 12px; }
+    .fin-bg span:first-child { color: #6e7681; }
+    .fin-bg span:last-child  { font-weight: 500; font-variant-numeric: tabular-nums; }
+    .sep-dot  { color: #d0d7de; margin: 0 6px; }
+
+    /* ── MODAL ── */
+    .modal   { background: white; border: 1px solid #d0d7de; border-radius: 6px; width: 480px;
+               box-shadow: 0 16px 48px rgba(15,23,42,0.28); display: flex; flex-direction: column;
+               max-height: calc(100vh - 120px); flex-shrink: 0; }
+    .modal-h { padding: 14px 18px; border-bottom: 1px solid #e1e4e8; background: #fbfbfc;
+               display: flex; justify-content: space-between; align-items: flex-start; flex-shrink: 0; }
+    .modal-ti { font-size: 14px; font-weight: 600; color: #1f2328; }
+    .modal-su { font-size: 12px; color: #6e7681; margin-top: 2px; }
+    .modal-x  { background: none; border: none; font-size: 18px; color: #8c959f; cursor: pointer;
+                line-height: 1; padding: 0; margin-left: 12px; flex-shrink: 0; }
+    .modal-x:hover { color: #1f2328; }
+    .modal-bd { padding: 16px 18px; display: flex; flex-direction: column; gap: 13px; overflow-y: auto; flex: 1; }
+    .modal-ft { padding: 11px 18px; border-top: 1px solid #e1e4e8; background: #fbfbfc;
+                display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+
+    /* ── FORM ── */
+    .field  { display: flex; flex-direction: column; gap: 4px; }
+    .frow   { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .fl     { font-size: 11px; font-weight: 600; color: #6e7681; text-transform: uppercase; letter-spacing: 0.4px; }
+    .req    { color: #cf222e; margin-left: 2px; }
+    .fi     { font-size: 13px; padding: 7px 10px; border: 1px solid #d0d7de; border-radius: 4px;
+              background: white; color: #1f2328; font-family: inherit; width: 100%; }
+    .fi:focus { outline: 2px solid #0969da; outline-offset: -1px; border-color: transparent; }
+    .fhint  { font-size: 11px; color: #6e7681; margin-top: 2px; }
+    .fhint.err { color: #cf222e; }
+
+    /* Role-style buttons */
+    .role-grid { display: flex; flex-wrap: wrap; gap: 4px; }
+    .rbtn  { padding: 5px 11px; font-size: 12px; color: #6e7681; background: white;
+             border: 1px solid #d0d7de; border-radius: 4px; cursor: pointer; font-family: inherit;
+             white-space: nowrap; transition: background 0.08s; }
+    .rbtn.on { background: #0969da; color: white; border-color: #0969da; }
+    .rbtn:hover:not(.on) { background: #f6f8fa; }
+
+    /* Segmented */
+    .seg   { display: inline-flex; border: 1px solid #d0d7de; border-radius: 4px; overflow: hidden; }
+    .sopt  { padding: 5px 10px; font-size: 12px; color: #6e7681; background: white;
+             border-right: 1px solid #d0d7de; cursor: pointer; font-family: inherit; white-space: nowrap; }
+    .sopt:last-child { border-right: none; }
+    .sopt.on { background: #0969da; color: white; }
+    .sopt:hover:not(.on) { background: #f6f8fa; }
+    .sopt.sm { padding: 5px 8px; font-size: 11px; }
+
+    /* Conflict boxes */
+    .warn-box { padding: 9px 12px; background: #fff8c5; border: 1px solid #d4a72c; border-left: 3px solid #9a6700;
+                border-radius: 4px; font-size: 12px; color: #4d2d00; line-height: 1.5; }
+    .info-box { padding: 9px 12px; background: #ddf4ff; border: 1px solid #79c0ff; border-left: 3px solid #0969da;
+                border-radius: 4px; font-size: 12px; color: #052f67; line-height: 1.5; }
+
+    /* Historik preview panel */
+    .ctx-pnl { background: #fbfbfc; border: 1px solid #e1e4e8; border-radius: 4px; padding: 10px 12px; }
+    .ctx-l   { font-size: 10px; font-weight: 600; color: #6e7681; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .hist-row { display: grid; grid-template-columns: 72px 1fr 72px; gap: 8px; padding: 3px 0;
+                font-size: 12px; align-items: center; border-bottom: 1px solid #f0f1f3; }
+    .hist-row:last-child { border-bottom: none; }
+    .hist-row.new-e { border-top: 1px dashed #d0d7de; border-bottom: none; margin-top: 5px; padding-top: 7px; color: #0969da; }
+    .hist-per { color: #6e7681; font-variant-numeric: tabular-nums; }
+    .hist-val { font-weight: 500; font-variant-numeric: tabular-nums; color: #1f2328; }
+    .hist-trn { font-variant-numeric: tabular-nums; font-size: 11px; text-align: right; }
+
+    /* Footer */
+    .kbd-hint { font-size: 11px; color: #8c959f; display: flex; align-items: center; gap: 4px; }
+    .kbd      { background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 3px;
+                padding: 1px 5px; font-family: 'SF Mono', 'Fira Mono', monospace; font-size: 10px; color: #1f2328; }
+    .f-btns   { display: flex; gap: 6px; }
+    .btn      { font-size: 12px; font-weight: 500; padding: 6px 12px; border: 1px solid #d0d7de;
+                background: white; color: #1f2328; border-radius: 4px; cursor: pointer; font-family: inherit; }
+    .btn:hover { background: #f6f8fa; }
+    .btn.p    { background: #0969da; color: white; border-color: #0969da; }
+    .btn.p:hover { background: #0860c7; }
+    .btn.p:disabled { background: #a5cef5; border-color: #a5cef5; cursor: not-allowed; }
+    .btn.warn-act { border-color: #9a6700; color: #9a6700; font-size: 11px; padding: 4px 10px; }
+    .btn.warn-act:hover { background: #fff8c5; }
+    .btn.warn-cancel { font-size: 11px; padding: 4px 10px; }
+
+    /* Toast */
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+             background: #1f2328; color: white; padding: 9px 16px; border-radius: 4px;
+             font-size: 13px; box-shadow: 0 4px 16px rgba(0,0,0,0.22); z-index: 9000;
+             white-space: nowrap; animation: tin 0.15s ease; }
+    @keyframes tin { from { opacity:0; transform:translateX(-50%) translateY(5px); }
+                     to   { opacity:1; transform:translateX(-50%) translateY(0); } }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+/* ─── DATA ─── */
+const METRIC_HISTORY = {
+  'Omsætning': [
+    { periode:'Q1 2026', val:1840000, enhed:'kr', m:'1,84m' },
+    { periode:'Q4 2025', val:1720000, enhed:'kr', m:'1,72m' },
+    { periode:'Q3 2025', val:1680000, enhed:'kr', m:'1,68m' },
+    { periode:'Q2 2025', val:1550000, enhed:'kr', m:'1,55m' },
+  ],
+  'EBITDA': [
+    { periode:'Q4 2025', val:584000, enhed:'kr', m:'584k' },
+    { periode:'Q3 2025', val:562000, enhed:'kr', m:'562k' },
+    { periode:'Q2 2025', val:527000, enhed:'kr', m:'527k' },
+  ],
+  'Margin': [
+    { periode:'Q4 2025', val:33.9, enhed:'%', m:'33,9%' },
+    { periode:'Q3 2025', val:33.5, enhed:'%', m:'33,5%' },
+    { periode:'Q2 2025', val:34.1, enhed:'%', m:'34,1%' },
+  ],
+};
+
+const PERIOD_OPTIONS = {
+  'Kvartal': ['Q2 2026','Q1 2026','Q4 2025','Q3 2025','Q2 2025','Q1 2025','Q4 2024','Q3 2024'],
+  'Måned':   ['Maj 2026','Apr 2026','Mar 2026','Feb 2026','Jan 2026','Dec 2025','Nov 2025','Okt 2025'],
+  'År':      ['2026','2025','2024','2023'],
+};
+
+const METRIC_DEFAULT_ENHED = { 'Omsætning':'kr', 'EBITDA':'kr', 'Margin':'%', 'Andet':'kr' };
+const METRIC_TYPES = ['Omsætning','EBITDA','Margin','Andet'];
+const ENHED_OPTS   = ['kr','kr/md','%','antal'];
+const KILDE_OPTS   = ['Manuel','CSV-import','E-conomic','Andet'];
+
+/* ─── HELPERS ─── */
+function parseDK(str) {
+  if (!str || !str.toString().trim()) return null;
+  const n = parseFloat(str.toString().replace(/\./g, '').replace(',', '.'));
+  return isNaN(n) ? null : n;
+}
+
+function fmtCompact(num, enhed) {
+  if (num === null || num === undefined || isNaN(num)) return '—';
+  if (enhed === '%') return num.toFixed(1).replace('.', ',') + '%';
+  if (enhed === 'antal') return num.toFixed(0);
+  const abs = Math.abs(num);
+  if (abs >= 1000000) return (num / 1000000).toFixed(2).replace('.', ',') + 'm';
+  if (abs >= 1000)    return Math.round(num / 1000) + 'k';
+  return num.toFixed(0);
+}
+
+function trendPct(curr, prev) {
+  if (prev === null || prev === undefined || prev === 0) return null;
+  return ((curr - prev) / Math.abs(prev)) * 100;
+}
+
+function TrendBadge({ pct }) {
+  if (pct === null) return <span className="hist-trn" style={{color:'#8c959f'}}>—</span>;
+  const up    = pct >= 0;
+  const color = up ? '#1a7f37' : '#cf222e';
+  const sign  = up ? '+' : '';
+  const arrow = up ? '↑' : '↓';
+  return (
+    <span className="hist-trn" style={{color}}>
+      {arrow} {sign}{Math.abs(pct).toFixed(1).replace('.', ',')}%
+    </span>
+  );
+}
+
+/* ─── BACKGROUND ─── */
+function Sidebar() {
+  return (
+    <div className="sb">
+      <div className="sb-logo">▣ ChainHub</div>
+      <div className="sb-sec">
+        <div className="sb-lab">Overblik</div>
+        <div className="sb-item">Forside <span className="sb-cnt a">5</span></div>
+        <div className="sb-item">Kalender <span className="sb-cnt">12</span></div>
+        <div className="sb-item">Søg</div>
+      </div>
+      <div className="sb-sec">
+        <div className="sb-lab">Portefølje</div>
+        <div className="sb-item active">Selskaber <span className="sb-cnt">32</span></div>
+        <div className="sb-item">Kontrakter <span className="sb-cnt w">3</span></div>
+        <div className="sb-item">Sager <span className="sb-cnt a">7</span></div>
+        <div className="sb-item">Opgaver <span className="sb-cnt w">9</span></div>
+      </div>
+      <div className="sb-sec">
+        <div className="sb-lab">Ressourcer</div>
+        <div className="sb-item">Personer <span className="sb-cnt">184</span></div>
+        <div className="sb-item">Dokumenter <span className="sb-cnt">412</span></div>
+        <div className="sb-item">Indstillinger</div>
+      </div>
+    </div>
+  );
+}
+
+function BgMain() {
+  return (
+    <div className="main-bg">
+      <div className="crumb">Selskaber › Tandlæge Østerbro ApS</div>
+      <div className="ph">
+        <div>
+          <h1>Tandlæge Østerbro ApS</h1>
+          <div className="ph-meta">CVR 12345678<span className="sep-dot">·</span>Østerbrogade 142, 2100 Kbh Ø<span className="sep-dot">·</span>Co-ejet med Lars Hansen</div>
+        </div>
+        <div className="ph-btns">
+          <button className="bbtn">Rediger stamdata</button>
+          <button className="bbtn p">Tilføj data ▾</button>
+        </div>
+      </div>
+      <div className="strip">
+        <div className="sc"><div className="sn">51%</div><div className="sl">Kædeandel</div></div>
+        <div className="sc"><div className="sn w">6</div><div className="sl">Kontrakter</div></div>
+        <div className="sc"><div className="sn a">2</div><div className="sl">Åbne sager</div></div>
+        <div className="sc"><div className="sn">4</div><div className="sl">Personer</div></div>
+        <div className="sc"><div className="sn">18</div><div className="sl">Dokumenter</div></div>
+        <div className="sc"><div className="sn">2,4m</div><div className="sl">EBITDA YTD</div></div>
+      </div>
+      <div className="grid3">
+        <div className="pnl">
+          <div className="pnl-h"><span className="pnl-t">Ejerskab</span><span className="pnl-m">2 ejere</span></div>
+          <div style={{padding:'6px 0'}}>
+            <div className="crow-bg"><span>Kædegruppe (Holding)</span><span>51%</span></div>
+            <div className="crow-bg"><span>Lars Hansen</span><span>49%</span></div>
+          </div>
+        </div>
+        <div className="pnl">
+          <div className="pnl-h"><span className="pnl-t">Finans</span><span className="pnl-m">Q1 2026</span></div>
+          <div style={{padding:'6px 0'}}>
+            <div className="fin-bg"><span>Omsætning Q1</span><span>1,84m</span></div>
+            <div className="fin-bg"><span>EBITDA Q1</span><span>612k</span></div>
+            <div className="fin-bg"><span>Margin</span><span>33,3%</span></div>
+            <div className="fin-bg"><span>YTD vs budget</span><span style={{color:'#1a7f37'}}>+4,2%</span></div>
+          </div>
+        </div>
+        <div className="pnl">
+          <div className="pnl-h"><span className="pnl-t">AI Insight</span><span className="pnl-m">4t siden</span></div>
+          <div style={{margin:'8px', padding:'10px 12px', background:'linear-gradient(135deg,#f3e8ff,#ede9fe)', border:'1px solid #c4b5fd', borderRadius:'3px'}}>
+            <div style={{fontSize:'10px',fontWeight:700,color:'#7c3aed',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:5}}>⚡ Renewal-risk · 82% conf.</div>
+            <div style={{fontSize:'12px',color:'#4c1d95',lineHeight:1.45}}>Forventet markedsleje 10–12% over nuværende kontrakt. Anbefaling: start forhandling nu.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── MAIN MODAL ─── */
+function AddFinansModal() {
+  const [metricType,  setMetricType]  = useState('');
+  const [andetMetric, setAndetMetric] = useState('');
+  const [beloebStr,   setBeloebStr]   = useState('');
+  const [enhed,       setEnhed]       = useState('kr');
+  const [periodeType, setPeriodeType] = useState('Kvartal');
+  const [specifPer,   setSpecifPer]   = useState('Q1 2026');
+  const [kilde,       setKilde]       = useState('Manuel');
+  const [note,        setNote]        = useState('');
+  const [conflictAck, setConflictAck] = useState(false);
+  const [toast,       setToast]       = useState(null);
+  const [toastKey,    setToastKey]    = useState(0);
+  const stRef = useRef({});
+
+  /* Reset conflictAck when key fields change */
+  useEffect(() => { setConflictAck(false); }, [metricType, specifPer]);
+
+  /* Auto-set enhed on metric change */
+  useEffect(() => {
+    if (METRIC_DEFAULT_ENHED[metricType]) setEnhed(METRIC_DEFAULT_ENHED[metricType]);
+  }, [metricType]);
+
+  /* Auto-set first period when period type changes */
+  useEffect(() => {
+    setSpecifPer(PERIOD_OPTIONS[periodeType][0]);
+  }, [periodeType]);
+
+  /* ── Derived ── */
+  const metricLabel   = metricType === 'Andet' ? (andetMetric.trim() || 'Andet') : metricType;
+  const beloebNum     = parseDK(beloebStr);
+  const beloebInvalid = beloebStr.trim() !== '' && beloebNum === null;
+  const historicData  = METRIC_HISTORY[metricType] || [];
+  const conflictEntry = historicData.find(h => h.periode === specifPer) || null;
+  const hasConflict   = !!conflictEntry;
+  const showHistorik  = !!metricType && metricType !== 'Andet' && historicData.length > 0;
+  const last3         = historicData.filter(h => h.periode !== specifPer).slice(0, 3);
+  const canSubmit     = !!metricType &&
+                        (metricType !== 'Andet' || !!andetMetric.trim()) &&
+                        beloebNum !== null &&
+                        !!specifPer &&
+                        (!hasConflict || conflictAck);
+
+  /* Trend for new entry vs most recent historik entry */
+  const newTrendPct = (beloebNum !== null && last3.length > 0)
+    ? trendPct(beloebNum, last3[0].val)
+    : null;
+
+  /* Stale-closure guard */
+  stRef.current = { canSubmit, metricLabel, specifPer, hasConflict, conflictAck };
+
+  /* Keyboard */
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === 'Escape') doToast('Modal lukket');
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        const s = stRef.current;
+        if (s.canSubmit) {
+          const verb = s.hasConflict && s.conflictAck ? 'erstattet' : 'tilføjet';
+          doToast(`Metric ${verb} · ${s.metricLabel} ${s.specifPer}`);
+        }
+      }
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
+
+  function doToast(msg) {
+    setToast(msg);
+    setToastKey(k => k + 1);
+    setTimeout(() => setToast(null), 3200);
+  }
+
+  function handleSubmit() {
+    if (!canSubmit) return;
+    const verb = hasConflict && conflictAck ? 'erstattet' : 'tilføjet';
+    doToast(`Metric ${verb} · ${metricLabel} ${specifPer}`);
+  }
+
+  /* ── Render ── */
+  return (
+    <div className="scene">
+      {/* Dimmed background */}
+      <div className="bg">
+        <Sidebar />
+        <BgMain />
+      </div>
+
+      {/* Backdrop + modal */}
+      <div className="overlay">
+        <div className="modal">
+
+          {/* Header */}
+          <div className="modal-h">
+            <div style={{flex:1, minWidth:0}}>
+              <div className="modal-ti">Tilføj finansiel metric · Tandlæge Østerbro ApS</div>
+              <div className="modal-su">Q1 2026 · Sidste rapport 28. apr · {Object.values(METRIC_HISTORY).reduce((a, arr) => a + arr.length, 0)} eksisterende målinger</div>
+            </div>
+            <button className="modal-x" onClick={() => doToast('Modal lukket')}>×</button>
+          </div>
+
+          {/* Body */}
+          <div className="modal-bd">
+
+            {/* 1. Metric-type */}
+            <div className="field">
+              <label className="fl">Metric-type <span className="req">*</span></label>
+              <div className="role-grid">
+                {METRIC_TYPES.map(m => (
+                  <button key={m} className={`rbtn${metricType === m ? ' on' : ''}`}
+                    onClick={() => setMetricType(m)}>{m}</button>
+                ))}
+              </div>
+              {metricType === 'Andet' && (
+                <input className="fi" style={{marginTop:7}} autoFocus
+                  placeholder="Angiv metric-navn..."
+                  value={andetMetric}
+                  onChange={e => setAndetMetric(e.target.value)} />
+              )}
+            </div>
+
+            {/* 2+3. Beløb + Enhed */}
+            <div className="frow" style={{gridTemplateColumns:'3fr 2fr'}}>
+              <div className="field">
+                <label className="fl">Beløb <span className="req">*</span></label>
+                <input className="fi" style={{fontVariantNumeric:'tabular-nums'}}
+                  placeholder="1.840.000,00"
+                  value={beloebStr}
+                  onChange={e => setBeloebStr(e.target.value)} />
+                {beloebInvalid && (
+                  <div className="fhint err">Ugyldigt format — brug komma som decimal (fx 1.840.000,00)</div>
+                )}
+              </div>
+              <div className="field">
+                <label className="fl">Enhed</label>
+                <div className="seg" style={{width:'100%'}}>
+                  {ENHED_OPTS.map(u => (
+                    <button key={u} className={`sopt sm${enhed === u ? ' on' : ''}`}
+                      style={{flex:1, textAlign:'center'}}
+                      onClick={() => setEnhed(u)}>{u}</button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* 4. Periode */}
+            <div className="frow">
+              <div className="field">
+                <label className="fl">Periode-type</label>
+                <div className="seg">
+                  {['Måned','Kvartal','År'].map(pt => (
+                    <button key={pt} className={`sopt${periodeType === pt ? ' on' : ''}`}
+                      style={{flex:1, textAlign:'center'}}
+                      onClick={() => setPeriodeType(pt)}>{pt}</button>
+                  ))}
+                </div>
+              </div>
+              <div className="field">
+                <label className="fl">Periode <span className="req">*</span></label>
+                <select className="fi" value={specifPer}
+                  onChange={e => setSpecifPer(e.target.value)}>
+                  {PERIOD_OPTIONS[periodeType].map(p => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* 5. Kilde */}
+            <div className="field">
+              <label className="fl">Kilde</label>
+              <div className="role-grid">
+                {KILDE_OPTS.map(k => (
+                  <button key={k} className={`rbtn${kilde === k ? ' on' : ''}`}
+                    onClick={() => setKilde(k)}>{k}</button>
+                ))}
+              </div>
+            </div>
+
+            {/* Conflict warning */}
+            {hasConflict && !conflictAck && (
+              <div className="warn-box">
+                <strong>{metricLabel} {specifPer} er allerede registreret ({conflictEntry.m}).</strong> Vil du erstatte den eksisterende registrering?
+                <div style={{display:'flex', gap:6, marginTop:9}}>
+                  <button className="btn warn-cancel" onClick={() => doToast('Annulleret')}>Annuller</button>
+                  <button className="btn warn-act" onClick={() => setConflictAck(true)}>Erstat eksisterende</button>
+                </div>
+              </div>
+            )}
+
+            {/* Conflict replace confirmed */}
+            {hasConflict && conflictAck && (
+              <div className="info-box">
+                Du erstatter <strong>{metricLabel} {specifPer}</strong> ({conflictEntry.m}) med den nye registrering.
+                <button style={{background:'none', border:'none', color:'#0969da', fontSize:11, cursor:'pointer', marginLeft:8, fontFamily:'inherit', padding:0}}
+                  onClick={() => setConflictAck(false)}>Fortryd</button>
+              </div>
+            )}
+
+            {/* Live preview: historik */}
+            {showHistorik && (
+              <div className="ctx-pnl">
+                <div className="ctx-l">Historik · {metricLabel.toUpperCase()}</div>
+
+                {last3.length === 0 && (
+                  <div style={{fontSize:12, color:'#8c959f', padding:'4px 0'}}>Ingen tidligere registreringer for denne periode-type.</div>
+                )}
+
+                {last3.map((entry, i) => {
+                  const prev    = last3[i + 1] || null;
+                  const pct     = prev ? trendPct(entry.val, prev.val) : null;
+                  return (
+                    <div key={entry.periode} className="hist-row">
+                      <span className="hist-per">{entry.periode}</span>
+                      <span className="hist-val">{entry.m}</span>
+                      <TrendBadge pct={pct} />
+                    </div>
+                  );
+                })}
+
+                {/* New entry row */}
+                {beloebNum !== null && specifPer && (
+                  <div className="hist-row new-e">
+                    <span style={{fontVariantNumeric:'tabular-nums'}}>{specifPer}</span>
+                    <span style={{fontWeight:500, fontVariantNumeric:'tabular-nums'}}>
+                      {fmtCompact(beloebNum, enhed)}
+                      <span style={{fontSize:10, fontWeight:400, marginLeft:4}}>(ny)</span>
+                    </span>
+                    {last3.length > 0
+                      ? <TrendBadge pct={newTrendPct} />
+                      : <span className="hist-trn" style={{color:'#8c959f'}}>—</span>}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 6. Note */}
+            <div className="field">
+              <label className="fl">Note (valgfri)</label>
+              <textarea className="fi" rows={2} style={{resize:'none'}}
+                placeholder="Fx kilde-reference, justering ift. ekstraordinære poster..."
+                value={note}
+                onChange={e => setNote(e.target.value)} />
+            </div>
+
+          </div>{/* /modal-bd */}
+
+          {/* Footer */}
+          <div className="modal-ft">
+            <div className="kbd-hint">
+              <span className="kbd">Esc</span> luk
+              <span style={{margin:'0 4px', color:'#d0d7de'}}>·</span>
+              <span className="kbd">⌘</span><span className="kbd">↵</span>
+              {hasConflict && conflictAck ? ' erstat' : ' tilføj'}
+            </div>
+            <div className="f-btns">
+              <button className="btn" onClick={() => doToast('Annulleret')}>Annuller</button>
+              <button className="btn p" disabled={!canSubmit} onClick={handleSubmit}>
+                {hasConflict && conflictAck ? 'Erstat metric' : 'Tilføj metric'}
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Toast */}
+      {toast && <div className="toast" key={toastKey}>✓ {toast}</div>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<AddFinansModal />);
+</script>
+</body>
+</html>

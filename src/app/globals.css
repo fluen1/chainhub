@@ -6,6 +6,7 @@
 
 @layer base {
   :root {
+    /* shadcn-style HSL-vars — bevaret for ikke-portede sider */
     --background: 210 20% 98%;
     --foreground: 220 20% 10%;
     --card: 0 0% 100%;
@@ -26,6 +27,38 @@
     --input: 215 15% 89%;
     --ring: 215 25% 27%;
     --radius: 0.5rem;
+
+    /* ------------------------------------------------------------
+       B-stil design-tokens (Linear/Superhuman dense)
+       Reference: docs/design/DESIGN-BRIEF-2026-05.md
+       ------------------------------------------------------------ */
+
+    /* Surfaces */
+    --b-canvas:       #fafafa;
+    --b-sidebar:      #f6f7f9;
+    --b-panel:        #ffffff;
+    --b-panel-h:      #fbfbfc;
+    --b-row-hover:    #f6f7f9;
+    --b-row-divider:  #f0f1f3;
+    --b-border:       #e1e4e8;
+    --b-border-strong:#d0d7de;
+
+    /* Tekst */
+    --b-text-1:       #1f2328;
+    --b-text-2:       #6e7681;
+    --b-text-3:       #8c959f;
+
+    /* Status — bg + fg */
+    --b-red-bg:       #ffebe9;  --b-red-fg:   #cf222e;
+    --b-amber-bg:     #fff8c5;  --b-amber-fg: #9a6700;
+    --b-green-bg:     #dafbe1;  --b-green-fg: #1a7f37;
+    --b-blue-bg:      #ddf4ff;  --b-blue-fg:  #0969da;
+    --b-gray-bg:      #f6f8fa;  --b-gray-fg:  #57606a;
+
+    /* AI insight (lilla — kun til AI-output) */
+    --b-ai-border:    #c4b5fd;
+    --b-ai-fg:        #4c1d95;
+    --b-ai-accent:    #7c3aed;
   }
 }
 
@@ -65,6 +98,27 @@
   }
   .card-hover {
     @apply hover:shadow-md hover:-translate-y-px transition-all duration-200;
+  }
+
+  /* ------------------------------------------------------------
+     B-stil: små utility-klasser som er for fiddly i Tailwind.
+     Komponent-niveau styling sker i src/components/ui/b/.
+     ------------------------------------------------------------ */
+  .b-tnum {
+    font-variant-numeric: tabular-nums;
+  }
+  .b-uplabel {
+    @apply text-[10px] font-semibold uppercase text-[color:var(--b-text-2)];
+    letter-spacing: 0.5px;
+  }
+  .b-kbd {
+    background: var(--b-gray-bg);
+    border: 1px solid var(--b-border-strong);
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-family: 'SF Mono', 'Fira Mono', ui-monospace, monospace;
+    font-size: 10px;
+    color: var(--b-text-1);
   }
 }
 

@@ -1,0 +1,184 @@
+<h2>"Tilføj ejer"-modal i B-stil</h2>
+<p class="subtitle">Mønster for alle P0 add-knapper. Modal opens above page, dimmed backdrop, focus-trap, Escape lukker, ⌘Enter submitter. Wired til addOwner-action.</p>
+
+<style>
+  .frame-card { background: white; border: 2px solid #e2e8f0; border-radius: 14px; overflow: hidden; }
+
+  /* Backdrop scene — viser company detail i baggrund (dimmed) */
+  .scene { position: relative; min-height: 720px; background: #fafafa; font-family: 'Inter', -apple-system, sans-serif; color: #1f2328; overflow: hidden; }
+
+  /* Background page (dimmed view of company detail) */
+  .bg-page { padding: 24px 32px; opacity: 0.35; filter: blur(0.5px); pointer-events: none; }
+  .bg-strip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: #e1e4e8; border: 1px solid #e1e4e8; border-radius: 4px; overflow: hidden; margin-bottom: 12px; }
+  .bg-cell { background: white; padding: 8px 12px; }
+  .bg-num { font-size: 16px; font-weight: 600; color: #1f2328; line-height: 1.1; }
+  .bg-lab { font-size: 10px; color: #6e7681; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.4px; }
+  .bg-pnl { background: white; border: 1px solid #e1e4e8; border-radius: 4px; padding: 12px; margin-bottom: 8px; }
+  .bg-pnl-h { font-size: 11px; font-weight: 600; color: #1f2328; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 6px; border-bottom: 1px solid #e1e4e8; margin-bottom: 6px; }
+  .bg-row { font-size: 13px; padding: 4px 0; display: flex; justify-content: space-between; }
+
+  /* Backdrop overlay */
+  .backdrop { position: absolute; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(2px); display: flex; align-items: flex-start; justify-content: center; padding-top: 100px; }
+
+  /* Modal */
+  .modal { background: white; border: 1px solid #d0d7de; border-radius: 6px; width: 480px; box-shadow: 0 16px 48px rgba(15, 23, 42, 0.25); overflow: hidden; }
+  .modal-h { padding: 14px 18px; border-bottom: 1px solid #e1e4e8; display: flex; justify-content: space-between; align-items: center; background: #fbfbfc; }
+  .modal-t { font-size: 14px; font-weight: 600; color: #1f2328; }
+  .modal-sub { font-size: 12px; color: #6e7681; margin-top: 2px; }
+  .modal-x { background: none; border: none; font-size: 16px; color: #6e7681; cursor: pointer; padding: 4px; }
+  .modal-x:hover { color: #1f2328; }
+
+  .modal-body { padding: 16px 18px; display: flex; flex-direction: column; gap: 14px; }
+
+  /* Form fields — dense, no chrome */
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .field-l { font-size: 11px; font-weight: 600; color: #6e7681; text-transform: uppercase; letter-spacing: 0.4px; }
+  .field-l .req { color: #cf222e; margin-left: 2px; }
+  .field-input { font-size: 13px; padding: 7px 10px; border: 1px solid #d0d7de; border-radius: 4px; background: white; color: #1f2328; font-family: inherit; }
+  .field-input:focus { outline: 2px solid #0969da; outline-offset: -1px; border-color: transparent; }
+  .field-hint { font-size: 11px; color: #6e7681; }
+
+  /* Pct input with visual indicator */
+  .pct-wrap { display: flex; align-items: center; gap: 10px; }
+  .pct-input { font-size: 13px; padding: 7px 10px; border: 1px solid #d0d7de; border-radius: 4px; background: white; color: #1f2328; width: 70px; text-align: right; font-variant-numeric: tabular-nums; }
+  .pct-suffix { font-size: 13px; color: #6e7681; }
+  .pct-bar { flex: 1; height: 6px; background: #f0f1f3; border-radius: 3px; overflow: hidden; position: relative; }
+  .pct-fill-existing { position: absolute; left: 0; top: 0; height: 100%; background: #d0d7de; }
+  .pct-fill-new { position: absolute; top: 0; height: 100%; background: #0969da; }
+  .pct-legend { font-size: 11px; color: #6e7681; display: flex; gap: 14px; }
+  .pct-legend-dot { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
+
+  /* Type selector — segmented */
+  .seg { display: inline-flex; border: 1px solid #d0d7de; border-radius: 4px; overflow: hidden; }
+  .seg-opt { padding: 6px 12px; font-size: 12px; color: #6e7681; background: white; border-right: 1px solid #d0d7de; cursor: pointer; }
+  .seg-opt:last-child { border-right: none; }
+  .seg-opt.active { background: #0969da; color: white; }
+  .seg-opt:hover:not(.active) { background: #f6f8fa; }
+
+  /* Existing ownership context */
+  .ctx-pnl { background: #fbfbfc; border: 1px solid #e1e4e8; border-radius: 4px; padding: 10px 12px; }
+  .ctx-l { font-size: 10px; font-weight: 600; color: #6e7681; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .ctx-row { font-size: 12px; padding: 3px 0; display: flex; justify-content: space-between; color: #1f2328; }
+  .ctx-row.warn { color: #b54708; font-weight: 500; }
+
+  /* Footer */
+  .modal-f { padding: 12px 18px; border-top: 1px solid #e1e4e8; background: #fbfbfc; display: flex; justify-content: space-between; align-items: center; }
+  .modal-f-hint { font-size: 11px; color: #6e7681; }
+  .modal-f-kbd { background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 3px; padding: 1px 5px; font-family: 'SF Mono', monospace; font-size: 10px; }
+  .modal-f-actions { display: flex; gap: 6px; }
+  .btn { font-size: 12px; padding: 6px 12px; border: 1px solid #d0d7de; background: white; color: #1f2328; border-radius: 4px; cursor: pointer; font-weight: 500; }
+  .btn:hover { background: #f6f8fa; }
+  .btn.primary { background: #0969da; color: white; border-color: #0969da; }
+  .btn.primary:hover { background: #0860c7; }
+
+  .pick-row { padding: 16px; background: #f8fafc; text-align: center; }
+  .pick-btn { padding: 10px 28px; font-size: 14px; font-weight: 600; border: 2px solid #2563eb; background: white; color: #2563eb; border-radius: 8px; cursor: pointer; }
+  .pick-btn:hover { background: #eff6ff; }
+  .pick-btn.selected { background: #2563eb; color: white; }
+</style>
+
+<div class="frame-card" data-choice="add-owner-modal-b" onclick="toggleSelect(this)">
+  <div class="scene">
+
+    <!-- Background (dimmed) -->
+    <div class="bg-page">
+      <div style="font-size: 18px; font-weight: 600; margin-bottom: 4px;">Tandlæge Østerbro ApS</div>
+      <div style="font-size: 12px; color: #6e7681; margin-bottom: 12px;">CVR 12345678 · Østerbrogade 142 · Co-ejet med Lars Hansen</div>
+      <div class="bg-strip">
+        <div class="bg-cell"><div class="bg-num">51%</div><div class="bg-lab">Kædeandel</div></div>
+        <div class="bg-cell"><div class="bg-num" style="color:#b54708">6</div><div class="bg-lab">Kontrakter</div></div>
+        <div class="bg-cell"><div class="bg-num" style="color:#b91c1c">2</div><div class="bg-lab">Sager</div></div>
+        <div class="bg-cell"><div class="bg-num">4</div><div class="bg-lab">Personer</div></div>
+        <div class="bg-cell"><div class="bg-num">18</div><div class="bg-lab">Dokumenter</div></div>
+        <div class="bg-cell"><div class="bg-num">2,4m</div><div class="bg-lab">EBITDA</div></div>
+      </div>
+      <div class="bg-pnl">
+        <div class="bg-pnl-h">Ejerskab · 2 ejere</div>
+        <div class="bg-row"><span>Kædegruppe (Holding)</span><span>51%</span></div>
+        <div class="bg-row"><span>Lars Hansen</span><span>49%</span></div>
+      </div>
+      <div class="bg-pnl">
+        <div class="bg-pnl-h">Personer · 4 aktive</div>
+        <div class="bg-row"><span>Lars Hansen · CEO</span><span>›</span></div>
+        <div class="bg-row"><span>Marie Kristensen · Bestyrelsesformand</span><span>›</span></div>
+      </div>
+    </div>
+
+    <!-- Backdrop overlay + modal -->
+    <div class="backdrop">
+      <div class="modal">
+        <div class="modal-h">
+          <div>
+            <div class="modal-t">Tilføj ejer · Tandlæge Østerbro ApS</div>
+            <div class="modal-sub">Eksisterende ejerskab: 100% (Kædegruppe 51% + Lars Hansen 49%)</div>
+          </div>
+          <button class="modal-x">×</button>
+        </div>
+
+        <div class="modal-body">
+
+          <div class="field">
+            <label class="field-l">Ejer-type</label>
+            <div class="seg">
+              <div class="seg-opt active">Person</div>
+              <div class="seg-opt">Selskab (CVR)</div>
+              <div class="seg-opt">Holding</div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-l">Person<span class="req">*</span></label>
+            <input class="field-input" placeholder="Søg person eller indtast navn" value="Marie Kristensen">
+            <div class="field-hint">Eksisterende person · CPR-knyttet · også bestyrelsesformand</div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label class="field-l">Andel<span class="req">*</span></label>
+              <div class="pct-wrap">
+                <input class="pct-input" value="10">
+                <span class="pct-suffix">%</span>
+              </div>
+            </div>
+            <div class="field">
+              <label class="field-l">Erhvervet</label>
+              <input class="field-input" type="date" value="2026-05-10">
+            </div>
+          </div>
+
+          <div class="ctx-pnl">
+            <div class="ctx-l">Fordeling efter tilføjelse</div>
+            <div class="pct-bar" style="margin-bottom: 8px;">
+              <div class="pct-fill-existing" style="width: 100%;"></div>
+              <div class="pct-fill-new" style="left: 90%; width: 10%; background: #b91c1c;"></div>
+            </div>
+            <div class="ctx-row"><span>Kædegruppe</span><span>51%</span></div>
+            <div class="ctx-row"><span>Lars Hansen</span><span>49% → 39% (-10)</span></div>
+            <div class="ctx-row"><span>Marie Kristensen <span style="color:#0969da">(ny)</span></span><span>0% → 10%</span></div>
+            <div class="ctx-row warn">⚠ Lars Hansens andel reduceres — kræver ejeraftale-tilføjelse</div>
+          </div>
+
+          <div class="field">
+            <label class="field-l">Note (valgfri)</label>
+            <textarea class="field-input" rows="2" placeholder="Fx baggrund for tilkøb, ejeraftale-reference..."></textarea>
+          </div>
+
+        </div>
+
+        <div class="modal-f">
+          <div class="modal-f-hint">
+            <span class="modal-f-kbd">Esc</span> luk · <span class="modal-f-kbd">⌘</span><span class="modal-f-kbd">↵</span> tilføj
+          </div>
+          <div class="modal-f-actions">
+            <button class="btn">Annuller</button>
+            <button class="btn primary">Tilføj ejer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="pick-row">
+    <button class="pick-btn">Klik for at vælge dette modal-mønster</button>
+  </div>
+</div>

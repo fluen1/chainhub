@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Min portefølje — ChainHub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #fafafa; color: #1f2328; font-size: 13px; -webkit-font-smoothing: antialiased; }
+
+    /* ── FRAME ── */
+    .b-frame { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; background: #fafafa; }
+
+    /* ── SIDEBAR ── */
+    .b-sidebar { background: #f6f7f9; border-right: 1px solid #e1e4e8; padding: 14px 8px; font-size: 13px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+    .b-logo { font-weight: 600; padding: 4px 10px 14px; color: #1f2328; }
+    .b-nav-section { margin-bottom: 16px; }
+    .b-nav-label { font-size: 10px; color: #6e7681; padding: 0 10px 4px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+    .b-nav-item { display: flex; justify-content: space-between; align-items: center; padding: 4px 10px; border-radius: 4px; color: #1f2328; cursor: pointer; }
+    .b-nav-item.active { background: #e8eaee; font-weight: 500; }
+    .b-nav-item:hover:not(.active) { background: #ecedf0; }
+    .b-nav-count { font-size: 11px; color: #6e7681; font-variant-numeric: tabular-nums; }
+    .b-nav-count.warn  { color: #b54708; }
+    .b-nav-count.alert { color: #b91c1c; font-weight: 600; }
+
+    /* ── MAIN ── */
+    .b-main { padding: 14px 24px; display: flex; flex-direction: column; gap: 14px; }
+
+    /* ── TOPBAR ── */
+    .b-topbar { display: flex; justify-content: space-between; align-items: center; padding: 4px 0 12px; border-bottom: 1px solid #e1e4e8; }
+    .b-topbar-title { font-size: 14px; font-weight: 600; color: #1f2328; }
+    .b-topbar-meta  { font-size: 12px; color: #6e7681; font-variant-numeric: tabular-nums; }
+
+    /* ── STRIP (now 6 cells) ── */
+    .b-strip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: #e1e4e8; border: 1px solid #e1e4e8; border-radius: 4px; overflow: hidden; }
+    .b-strip-cell { background: white; padding: 10px 12px; }
+    .b-strip-num { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; color: #1f2328; }
+    .b-strip-num.warn  { color: #b54708; }
+    .b-strip-num.alert { color: #b91c1c; }
+    .b-strip-num.green { color: #1a7f37; }
+    .b-strip-lab { font-size: 11px; color: #6e7681; margin-top: 4px; }
+
+    /* ── TWO-COL ── */
+    .b-cols { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; }
+    .b-panel { background: white; border: 1px solid #e1e4e8; border-radius: 4px; overflow: hidden; }
+    .b-panel-h { padding: 8px 12px; border-bottom: 1px solid #e1e4e8; display: flex; justify-content: space-between; align-items: center; }
+    .b-panel-t { font-size: 12px; font-weight: 600; color: #1f2328; text-transform: uppercase; letter-spacing: 0.4px; }
+    .b-panel-m { font-size: 11px; color: #6e7681; }
+
+    /* ── URGENCY FILTER INPUT ── */
+    .urgency-filter { padding: 6px 12px; border-bottom: 1px solid #f0f1f3; }
+    .urgency-filter input { width: 100%; font-size: 12px; padding: 5px 9px; border: 1px solid #d0d7de; border-radius: 4px; background: white; color: #1f2328; font-family: inherit; outline: none; }
+    .urgency-filter input:focus { border-color: #0969da; outline: 2px solid #ddf4ff; outline-offset: 0; }
+    .urgency-filter input::placeholder { color: #8c959f; }
+
+    /* ── URGENCY ROWS ── */
+    .b-row { display: grid; grid-template-columns: 50px 1fr 70px 14px; gap: 10px; padding: 7px 12px; border-bottom: 1px solid #f0f1f3; align-items: center; font-size: 13px; cursor: pointer; }
+    .b-row:hover { background: #f6f7f9; }
+    .b-row:last-child { border-bottom: none; }
+    .b-row-last { display: flex; align-items: center; gap: 10px; padding: 7px 12px; font-size: 12px; border-bottom: none; }
+    .b-badge { font-size: 11px; font-weight: 500; padding: 1px 6px; border-radius: 3px; text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .b-badge.red   { background: #ffebe9; color: #cf222e; }
+    .b-badge.amber { background: #fff8c5; color: #9a6700; }
+    .b-badge.blue  { background: #ddf4ff; color: #0969da; }
+    .b-badge.gray  { background: #f6f8fa; color: #57606a; }
+    .b-meta  { color: #6e7681; font-size: 12px; }
+    .b-chev  { color: #8c959f; }
+    .b-glabel { font-size: 10px; font-weight: 600; color: #6e7681; padding: 10px 12px 4px; text-transform: uppercase; letter-spacing: 0.4px; background: #fbfbfc; border-bottom: 1px solid #f0f1f3; }
+    .b-empty  { padding: 12px; font-size: 12px; color: #8c959f; text-align: center; }
+
+    /* ── HEATMAP ── */
+    .b-heatmap { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; padding: 12px; }
+    .b-cell { aspect-ratio: 1; border-radius: 2px; cursor: pointer; transition: transform 0.07s, box-shadow 0.07s; position: relative; }
+    .b-cell:hover { transform: scale(1.25); box-shadow: 0 2px 6px rgba(0,0,0,0.18); z-index: 1; }
+    .b-cell.l0 { background: #ebedf0; }
+    .b-cell.l1 { background: #c6e48b; }
+    .b-cell.l2 { background: #7bc96f; }
+    .b-cell.l3 { background: #239a3b; }
+    .b-cell.l4 { background: #196127; }
+    .b-cell.r1 { background: #fdb8b1; }
+    .b-cell.r2 { background: #f87171; }
+    .b-cell.r3 { background: #b91c1c; }
+    .b-heat-leg { padding: 0 12px 12px; font-size: 10px; color: #6e7681; display: flex; justify-content: space-between; }
+
+    /* ── HEATMAP TOOLTIP ── */
+    .hm-tooltip { position: fixed; background: #1f2328; color: white; padding: 6px 9px; border-radius: 4px; font-size: 11px; line-height: 1.45; pointer-events: none; z-index: 1000; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.22); }
+    .hmt-name   { font-weight: 600; }
+    .hmt-status { color: #8c959f; margin-top: 2px; }
+
+    /* ── TOP URGENCY LIST ── */
+    .b-urg-row { display: grid; grid-template-columns: 1fr 14px; gap: 8px; padding: 6px 12px; border-bottom: 1px solid #f0f1f3; align-items: center; font-size: 13px; cursor: pointer; }
+    .b-urg-row:hover { background: #f6f7f9; }
+    .b-urg-row:last-child { border-bottom: none; }
+
+    /* ── AKTIVITET FEED ── */
+    .act-panel { background: white; border: 1px solid #e1e4e8; border-radius: 4px; overflow: hidden; }
+    .act-panel-h { padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; }
+    .act-panel-h:hover { background: #f6f7f9; }
+    .act-panel-t { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; color: #1f2328; }
+    .act-panel-m { font-size: 11px; color: #6e7681; display: flex; align-items: center; gap: 6px; }
+    .act-toggle  { font-size: 10px; color: #8c959f; }
+    .act-row     { display: flex; justify-content: space-between; align-items: baseline; padding: 6px 12px; border-bottom: 1px solid #f0f1f3; gap: 12px; font-size: 12px; }
+    .act-row:last-child { border-bottom: none; }
+    .act-row:hover { background: #f6f7f9; cursor: pointer; }
+    .act-desc    { color: #1f2328; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .act-who     { font-weight: 500; }
+    .act-target  { color: #6e7681; }
+    .act-time    { font-size: 11px; color: #8c959f; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+
+    /* ── BOTTOM BAR ── */
+    .b-bot { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 11px; color: #6e7681; }
+    .b-kbd { background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 3px; padding: 1px 5px; font-family: 'SF Mono', 'Fira Mono', monospace; font-size: 10px; color: #1f2328; }
+    .sync-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #1a7f37; margin-right: 4px; vertical-align: middle; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel">
+const { useState, useCallback } = React;
+
+/* ─── HEATMAP DATA (32 selskaber) ─── */
+const HEATMAP = [
+  /* row 1 */
+  { level:'l3', name:'Klinik Vejle',         status:'OK · 0 åbne sager' },
+  { level:'l4', name:'Klinik Fredericia',    status:'OK · aktiv' },
+  { level:'l2', name:'Tandlæge Nørrebro',    status:'OK · 1 note' },
+  { level:'r2', name:'Tandlæge Østerbro ApS',status:'⚠ 2 sager · lejekontrakt udløber 14d' },
+  { level:'l3', name:'Klinik Herning',       status:'OK' },
+  { level:'l4', name:'Klinik Silkeborg',     status:'OK · aktiv' },
+  { level:'l2', name:'Klinik Viborg',        status:'OK' },
+  { level:'l3', name:'Klinik Skanderborg',   status:'OK' },
+  /* row 2 */
+  { level:'l4', name:'Klinik Aarhus C',      status:'OK · aktiv' },
+  { level:'r1', name:'Klinik Holstebro',     status:'⚠ Ansættelseskontrakt udløber 28d' },
+  { level:'l3', name:'Tandlæge Vesterbro',   status:'OK' },
+  { level:'l3', name:'Klinik Kolding',       status:'OK' },
+  { level:'l3', name:'Klinik Horsens',       status:'OK' },
+  { level:'l2', name:'Klinik Svendborg',     status:'OK · 1 opgave' },
+  { level:'l4', name:'Klinik Næstved',       status:'OK · aktiv' },
+  { level:'r3', name:'Klinik Aalborg',       status:'⚠ KRITISK · 3 sager · frist 3d' },
+  /* row 3 */
+  { level:'l3', name:'Klinik Aarhus N',      status:'OK' },
+  { level:'l4', name:'Klinik Randers',       status:'OK' },
+  { level:'l3', name:'Klinik Esbjerg',       status:'Q1-rapport afventer' },
+  { level:'l3', name:'Klinik Odense',        status:'Tilsynsbesøg planlagt ons' },
+  { level:'l2', name:'Klinik Frederiksberg', status:'OK · 1 note' },
+  { level:'l4', name:'Klinik Hellerup',      status:'OK · aktiv' },
+  { level:'l3', name:'Klinik Lyngby',        status:'OK' },
+  { level:'l3', name:'Klinik Glostrup',      status:'OK' },
+  /* row 4 */
+  { level:'l4', name:'Klinik Ballerup',      status:'OK · aktiv' },
+  { level:'r1', name:'Tandlæge Amager',      status:'⚠ Forsikring udløber 45d' },
+  { level:'l3', name:'Klinik Hvidovre',      status:'OK' },
+  { level:'l3', name:'Klinik Brøndby',       status:'OK' },
+  { level:'l3', name:'Klinik Taastrup',      status:'OK' },
+  { level:'l3', name:'Klinik Hillerød',      status:'OK' },
+  { level:'l4', name:'Klinik Helsingør',     status:'OK · aktiv' },
+  { level:'l3', name:'Klinik Køge',          status:'OK' },
+];
+
+/* ─── URGENCY DATA ─── */
+const URGENCY_GROUPS = [
+  { label: 'Forfaldent', items: [
+    { badge:'3d',  cls:'red',   name:'Klinik Aalborg',        desc:'Patientklage #2841',    type:'Frist' },
+    { badge:'14d', cls:'red',   name:'Tandlæge Østerbro ApS', desc:'Lejekontrakt erhverv',  type:'Udløb' },
+  ]},
+  { label: 'Denne uge', items: [
+    { badge:'7d',  cls:'amber', name:'Klinik Aarhus',         desc:'Bestyrelsesmøde Q2',    type:'Møde' },
+    { badge:'Ons', cls:'blue',  name:'Klinik Odense',         desc:'Tilsynsbesøg planlagt', type:'Besøg' },
+    { badge:'Tor', cls:'blue',  name:'Tandlæge Østerbro ApS', desc:'Forny lejekontrakt',    type:'Opg.' },
+    { badge:'Fre', cls:'blue',  name:'Klinik Esbjerg',        desc:'Q1-finansrapport',      type:'Opg.' },
+  ]},
+  { label: 'Næste uge', items: [
+    { badge:'28d', cls:'amber', name:'Klinik Holstebro',       desc:'Ansættelseskontrakt',  type:'Udløb' },
+  ]},
+];
+
+/* ─── AKTIVITET ─── */
+const ACTIVITY = [
+  { who:'Marie Kristensen', action:'tilføjede note',         target:'Ejeraftale · Klinik Esbjerg',             tid:'12 min siden' },
+  { who:'Philip',           action:'uploadede kontraktversion', target:'Lejekontrakt v3 · Tandlæge Østerbro', tid:'47 min siden' },
+  { who:'AI',               action:'gennemførte extraction',  target:'Klinik Aalborg · 4 felter',              tid:'1t 12 min siden' },
+  { who:'Philip',           action:'oprettede sag',           target:'#2842 Forhandling · Klinik Aarhus',      tid:'2t siden' },
+  { who:'System',           action:'sendte reminder',         target:'Ejeraftale fornyelse · Klinik Esbjerg',  tid:'3t 44 min siden' },
+  { who:'Marie Kristensen', action:'godkendte review',        target:'ejeraftale-final.pdf',                   tid:'5t siden' },
+  { who:'Philip',           action:'ændrede status',          target:'Kontrakt Aktiv · Klinik Odense',         tid:'8t siden' },
+  { who:'System',           action:'synkroniserede',          target:'Auto-refresh · 32 selskaber',            tid:'i går 23:45' },
+];
+
+/* ─── DASHBOARD ─── */
+function Dashboard() {
+  const [urgFilter,  setUrgFilter]  = useState('');
+  const [tooltip,    setTooltip]    = useState(null);
+  const [actOpen,    setActOpen]    = useState(false);
+
+  const handleCellMove = useCallback((e, cell) => {
+    setTooltip({ x: e.clientX + 14, y: e.clientY - 58, ...cell });
+  }, []);
+
+  const filteredGroups = URGENCY_GROUPS.map(g => ({
+    ...g,
+    items: g.items.filter(item => {
+      if (!urgFilter) return true;
+      const q = urgFilter.toLowerCase();
+      return item.name.toLowerCase().includes(q) || item.desc.toLowerCase().includes(q) || item.type.toLowerCase().includes(q);
+    }),
+  })).filter(g => g.items.length > 0);
+
+  const totalFiltered = filteredGroups.reduce((acc, g) => acc + g.items.length, 0);
+
+  return (
+    <div className="b-frame">
+
+      {/* ── SIDEBAR ── */}
+      <div className="b-sidebar">
+        <div className="b-logo">▣ ChainHub</div>
+        <div className="b-nav-section">
+          <div className="b-nav-label">Overblik</div>
+          <div className="b-nav-item active">Forside <span className="b-nav-count alert">5</span></div>
+          <div className="b-nav-item">Kalender <span className="b-nav-count">12</span></div>
+          <div className="b-nav-item">Søg</div>
+        </div>
+        <div className="b-nav-section">
+          <div className="b-nav-label">Portefølje</div>
+          <div className="b-nav-item">Selskaber <span className="b-nav-count">32</span></div>
+          <div className="b-nav-item">Kontrakter <span className="b-nav-count warn">3</span></div>
+          <div className="b-nav-item">Sager <span className="b-nav-count alert">7</span></div>
+          <div className="b-nav-item">Opgaver <span className="b-nav-count warn">9</span></div>
+        </div>
+        <div className="b-nav-section">
+          <div className="b-nav-label">Ressourcer</div>
+          <div className="b-nav-item">Dokumenter <span className="b-nav-count">412</span></div>
+          <div className="b-nav-item">Personer <span className="b-nav-count">184</span></div>
+          <div className="b-nav-item">Indstillinger</div>
+        </div>
+      </div>
+
+      {/* ── MAIN ── */}
+      <div className="b-main">
+
+        {/* Topbar */}
+        <div className="b-topbar">
+          <span className="b-topbar-title">Min portefølje · Søndag 11. maj 2026</span>
+          <span className="b-topbar-meta">Sidst opdateret 14:32 · auto-refresh on</span>
+        </div>
+
+        {/* Strip — 6 celler */}
+        <div className="b-strip">
+          <div className="b-strip-cell">
+            <div className="b-strip-num">32</div>
+            <div className="b-strip-lab">Selskaber</div>
+          </div>
+          <div className="b-strip-cell">
+            <div className="b-strip-num alert">3</div>
+            <div className="b-strip-lab">Udløber 30d</div>
+          </div>
+          <div className="b-strip-cell">
+            <div className="b-strip-num alert">7</div>
+            <div className="b-strip-lab">Åbne sager</div>
+          </div>
+          <div className="b-strip-cell">
+            <div className="b-strip-num warn">9</div>
+            <div className="b-strip-lab">Forfaldne opg.</div>
+          </div>
+          <div className="b-strip-cell">
+            <div className="b-strip-num">412</div>
+            <div className="b-strip-lab">Dokumenter</div>
+          </div>
+          {/* ← NY celle */}
+          <div className="b-strip-cell">
+            <div className="b-strip-num green">42,8m</div>
+            <div className="b-strip-lab">Omsætning YTD</div>
+          </div>
+        </div>
+
+        {/* 2-col */}
+        <div className="b-cols">
+
+          {/* Kræver opmærksomhed */}
+          <div className="b-panel">
+            <div className="b-panel-h">
+              <span className="b-panel-t">Kræver opmærksomhed</span>
+              <span className="b-panel-m">
+                {urgFilter ? `${totalFiltered} resultat${totalFiltered !== 1 ? 'er' : ''}` : '11 elementer'} · sortér: hastighed
+              </span>
+            </div>
+
+            {/* ← NY filter-input */}
+            <div className="urgency-filter">
+              <input
+                placeholder="Filtrér urgency-items..."
+                value={urgFilter}
+                onChange={e => setUrgFilter(e.target.value)}
+              />
+            </div>
+
+            {filteredGroups.length === 0 ? (
+              <div className="b-empty">Ingen elementer matcher "{urgFilter}"</div>
+            ) : (
+              filteredGroups.map(group => (
+                <div key={group.label}>
+                  <div className="b-glabel">{group.label}</div>
+                  {group.items.map((item, i) => (
+                    <div key={i} className="b-row">
+                      <span className={`b-badge ${item.cls}`}>{item.badge}</span>
+                      <span>
+                        <strong>{item.name}</strong>
+                        {' · '}
+                        <span className="b-meta">{item.desc}</span>
+                      </span>
+                      <span className="b-meta">{item.type}</span>
+                      <span className="b-chev">›</span>
+                    </div>
+                  ))}
+                </div>
+              ))
+            )}
+
+            {!urgFilter && (
+              <div className="b-row-last">
+                <span className="b-badge gray">+4</span>
+                <span className="b-meta">flere — vis hele listen</span>
+              </div>
+            )}
+          </div>
+
+          {/* Health-heatmap */}
+          <div className="b-panel">
+            <div className="b-panel-h">
+              <span className="b-panel-t">Health-heatmap</span>
+              <span className="b-panel-m">32 selskaber · grøn = OK</span>
+            </div>
+
+            {/* ← HEATMAP med tooltips */}
+            <div className="b-heatmap">
+              {HEATMAP.map((cell, i) => (
+                <div
+                  key={i}
+                  className={`b-cell ${cell.level}`}
+                  onMouseEnter={e => handleCellMove(e, cell)}
+                  onMouseMove={e  => handleCellMove(e, cell)}
+                  onMouseLeave={() => setTooltip(null)}
+                />
+              ))}
+            </div>
+
+            <div className="b-heat-leg">
+              <span>3 kritiske</span>
+              <span>29 OK / afventer</span>
+            </div>
+
+            <div className="b-glabel">Top urgency</div>
+            <div className="b-urg-row">
+              <span><strong>Aalborg</strong> · <span className="b-meta">3 åbne sager</span></span>
+              <span className="b-chev">›</span>
+            </div>
+            <div className="b-urg-row">
+              <span><strong>Holstebro</strong> · <span className="b-meta">2 udløb</span></span>
+              <span className="b-chev">›</span>
+            </div>
+            <div className="b-urg-row">
+              <span><strong>Esbjerg</strong> · <span className="b-meta">Q1-rapport mangler</span></span>
+              <span className="b-chev">›</span>
+            </div>
+          </div>
+        </div>
+
+        {/* ← NY sektion: Sidste aktivitet (kollapsibel) */}
+        <div className="act-panel">
+          <div className="act-panel-h" onClick={() => setActOpen(v => !v)}>
+            <span className="act-panel-t">Sidste aktivitet</span>
+            <span className="act-panel-m">
+              <span>{ACTIVITY.length} events · seneste 24 timer</span>
+              <span className="act-toggle">{actOpen ? '▾' : '▸'}</span>
+            </span>
+          </div>
+          {actOpen && ACTIVITY.map((a, i) => (
+            <div key={i} className="act-row">
+              <span className="act-desc">
+                <span className="act-who">{a.who}</span>
+                {' '}
+                {a.action}
+                {' · '}
+                <span className="act-target">{a.target}</span>
+              </span>
+              <span className="act-time">{a.tid}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Bottom bar — med "Sidst synkroniseret" */}
+        <div className="b-bot">
+          <span>
+            <span className="sync-dot"></span>
+            Sidst synkroniseret 14:32
+            {' · '}
+            32 selskaber · 184 kontrakter · 412 dokumenter
+          </span>
+          <span>
+            <span className="b-kbd">⌘K</span> handling ·{' '}
+            <span className="b-kbd">G</span> derhen ·{' '}
+            <span className="b-kbd">N</span> ny
+          </span>
+        </div>
+
+      </div>
+
+      {/* ── TOOLTIP ── */}
+      {tooltip && (
+        <div className="hm-tooltip" style={{ left: tooltip.x, top: tooltip.y }}>
+          <div className="hmt-name">{tooltip.name}</div>
+          <div className="hmt-status">{tooltip.status}</div>
+        </div>
+      )}
+
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<Dashboard />);
+</script>
+</body>
+</html>

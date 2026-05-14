@@ -2,12 +2,12 @@ import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { getCalendarEvents } from '@/actions/calendar'
-import { FullCalendar } from '@/components/calendar/full-calendar'
+import { CalendarPageB } from './calendar-b'
 
 export const metadata: Metadata = { title: 'Kalender' }
 
 interface CalendarPageProps {
-  searchParams: { month?: string; day?: string }
+  searchParams: { month?: string; view?: string }
 }
 
 export default async function CalendarPage({ searchParams }: CalendarPageProps) {
@@ -26,17 +26,31 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
     }
   }
 
-  const events = await getCalendarEvents(session.user.id, session.user.organizationId, year, month)
+  // Hent events for både den aktuelle måned (til grid) og næste måned (så
+  // "Kommende"-panelet stadig viser noget når brugeren navigerer ind i en
+  // tom måned).
+  const nextMonthDate = new Date(year, month, 1)
+  const [thisMonthEvents, nextMonthEvents] = await Promise.all([
+    getCalendarEvents(session.user.id, session.user.organizationId, year, month),
+    getCalendarEvents(
+      session.user.id,
+      session.user.organizationId,
+      nextMonthDate.getFullYear(),
+      nextMonthDate.getMonth() + 1
+    ),
+  ])
 
-  const selectedDay = searchParams.day ? parseInt(searchParams.day, 10) : null
+  const viewMode = searchParams.view === 'agenda' ? 'agenda' : 'maaned'
+  const todayISO = now.toISOString().slice(0, 10)
 
   return (
-    <FullCalendar
-      events={events}
+    <CalendarPageB
       year={year}
       month={month}
-      selectedDay={selectedDay}
-      todayISO={now.toISOString().slice(0, 10)}
+      monthEvents={thisMonthEvents}
+      nextMonthEvents={nextMonthEvents}
+      todayISO={todayISO}
+      viewMode={viewMode}
     />
   )
 }

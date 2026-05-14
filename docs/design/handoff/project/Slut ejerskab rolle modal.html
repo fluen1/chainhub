@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Slut ejerskab / rolle — ChainHub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #fafafa; color: #1f2328; }
+
+    /* ── SCENE ── */
+    .scene   { position: relative; min-height: 100vh; overflow: hidden; background: #fafafa; }
+    .bg      { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh;
+               opacity: 0.30; filter: blur(0.6px); pointer-events: none; user-select: none; }
+    .overlay { position: absolute; inset: 0; background: rgba(15,23,42,0.44);
+               backdrop-filter: blur(2px); display: flex; align-items: flex-start;
+               justify-content: center; padding: 80px 0 32px; z-index: 10; overflow-y: auto; }
+
+    /* ── SIDEBAR ── */
+    .sb      { background: #f6f7f9; border-right: 1px solid #e1e4e8; padding: 14px 8px; font-size: 13px; }
+    .sb-logo { font-weight: 600; padding: 4px 10px 16px; color: #1f2328; }
+    .sb-sec  { margin-bottom: 16px; }
+    .sb-lab  { font-size: 10px; color: #6e7681; padding: 0 10px 4px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+    .sb-item { display: flex; justify-content: space-between; padding: 4px 10px; border-radius: 4px; color: #1f2328; font-size: 13px; }
+    .sb-item.active { background: #e8eaee; font-weight: 500; }
+    .sb-cnt  { font-size: 11px; color: #6e7681; font-variant-numeric: tabular-nums; }
+    .sb-cnt.a { color: #b91c1c; font-weight: 600; } .sb-cnt.w { color: #b54708; }
+
+    /* ── BG MAIN ── */
+    .main-bg  { padding: 12px 24px; display: flex; flex-direction: column; gap: 12px; }
+    .crumb    { font-size: 12px; color: #6e7681; }
+    .ph       { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 10px; border-bottom: 1px solid #e1e4e8; }
+    .ph h1    { font-size: 18px; font-weight: 600; margin-bottom: 3px; }
+    .ph-meta  { font-size: 12px; color: #6e7681; }
+    .ph-btns  { display: flex; gap: 6px; }
+    .bbtn     { font-size: 12px; padding: 4px 10px; border: 1px solid #d0d7de; background: white; color: #1f2328; border-radius: 4px; }
+    .bbtn.p   { background: #0969da; color: white; border-color: #0969da; }
+    .strip    { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: #e1e4e8; border: 1px solid #e1e4e8; border-radius: 4px; overflow: hidden; }
+    .sc       { background: white; padding: 8px 12px; }
+    .sn       { font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1; }
+    .sn.w { color: #b54708; } .sn.a { color: #b91c1c; }
+    .sl       { font-size: 10px; color: #6e7681; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.4px; }
+    .grid3    { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 12px; }
+    .pnl-bg   { background: white; border: 1px solid #e1e4e8; border-radius: 4px; overflow: hidden; }
+    .pnl-bh   { padding: 6px 12px; border-bottom: 1px solid #e1e4e8; background: #fbfbfc; display: flex; justify-content: space-between; }
+    .pnl-bt   { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .pnl-bm   { font-size: 11px; color: #6e7681; }
+    .crow-bg  { display: flex; justify-content: space-between; padding: 5px 12px; font-size: 13px; align-items: center; }
+    .prow-bg  { display: grid; grid-template-columns: 22px 1fr; gap: 8px; padding: 5px 12px; align-items: center; font-size: 13px; border-bottom: 1px solid #f0f1f3; }
+    .prow-bg:last-child { border-bottom: none; }
+    .pinit    { width: 22px; height: 22px; border-radius: 50%; background: #d0d7de; color: #57606a; font-size: 10px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .sep-dot  { color: #d0d7de; margin: 0 6px; }
+
+    /* ── MODAL ── */
+    .modal   { background: white; border: 1px solid #d0d7de; border-radius: 6px; width: 380px;
+               box-shadow: 0 16px 48px rgba(15,23,42,0.30); display: flex; flex-direction: column;
+               max-height: calc(100vh - 120px); flex-shrink: 0; }
+    .modal-h { padding: 14px 18px; border-bottom: 1px solid #e1e4e8; background: #fbfbfc;
+               display: flex; justify-content: space-between; align-items: flex-start; flex-shrink: 0; }
+    .modal-ti { font-size: 14px; font-weight: 600; color: #1f2328; }
+    .modal-su { font-size: 12px; color: #6e7681; margin-top: 2px; line-height: 1.4; }
+    .modal-x  { background: none; border: none; font-size: 18px; color: #8c959f; cursor: pointer;
+                line-height: 1; padding: 0; margin-left: 12px; flex-shrink: 0; }
+    .modal-x:hover { color: #1f2328; }
+    .modal-bd { padding: 14px 18px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; flex: 1; }
+    .modal-ft { padding: 11px 18px; border-top: 1px solid #e1e4e8; background: #fbfbfc;
+                display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+
+    /* ── FORM ── */
+    .field  { display: flex; flex-direction: column; gap: 4px; }
+    .fl     { font-size: 11px; font-weight: 600; color: #6e7681; text-transform: uppercase; letter-spacing: 0.4px; }
+    .req    { color: #cf222e; margin-left: 2px; }
+    .fi     { font-size: 13px; padding: 7px 10px; border: 1px solid #d0d7de; border-radius: 4px;
+              background: white; color: #1f2328; font-family: inherit; width: 100%;
+              transition: border-color 0.1s, background 0.1s; }
+    .fi:focus { outline: 2px solid #0969da; outline-offset: -1px; border-color: transparent; }
+    .fi.confirm-ok   { border-color: #1a7f37; background: #dafbe1; }
+    .fi.confirm-ok:focus { outline: 2px solid #1a7f37; }
+    .fi.confirm-err:focus { outline: 2px solid #cf222e; }
+    .fhint  { font-size: 11px; color: #6e7681; margin-top: 2px; }
+    .fhint.err { color: #cf222e; }
+
+    /* Mode toggle */
+    .mode-bar { display: flex; align-items: center; gap: 8px; padding: 7px 10px;
+                background: #f6f7f9; border: 1px solid #e1e4e8; border-radius: 4px; }
+    .mode-lab { font-size: 10px; font-weight: 600; color: #8c959f; text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0; }
+    .seg    { display: inline-flex; border: 1px solid #d0d7de; border-radius: 4px; overflow: hidden; }
+    .sopt   { padding: 4px 10px; font-size: 12px; color: #6e7681; background: white;
+              border-right: 1px solid #d0d7de; cursor: pointer; font-family: inherit; }
+    .sopt:last-child { border-right: none; }
+    .sopt.on { background: #1f2328; color: white; }
+    .sopt:hover:not(.on) { background: #f6f8fa; }
+
+    /* Årsag buttons */
+    .role-grid { display: flex; flex-wrap: wrap; gap: 4px; }
+    .rbtn   { padding: 5px 10px; font-size: 12px; color: #6e7681; background: white;
+              border: 1px solid #d0d7de; border-radius: 4px; cursor: pointer; font-family: inherit; white-space: nowrap; }
+    .rbtn.on { background: #0969da; color: white; border-color: #0969da; }
+    .rbtn:hover:not(.on) { background: #f6f8fa; }
+
+    /* Live preview panel */
+    .ctx-pnl  { background: #fbfbfc; border: 1px solid #e1e4e8; border-radius: 4px; padding: 10px 12px; }
+    .ctx-l    { font-size: 10px; font-weight: 600; color: #6e7681; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .ctx-row  { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; font-size: 12px; color: #1f2328; }
+    .ctx-row.ending { color: #8c959f; text-decoration: line-through; }
+    .ctx-row.total  { border-top: 1px solid #e1e4e8; margin-top: 5px; padding-top: 7px; font-weight: 600; font-size: 12px; }
+    .ctx-row.total .cv { color: #cf222e; }
+    .ctx-warn { margin-top: 8px; padding: 7px 10px; background: #fff8c5; border: 1px solid #d4a72c;
+                border-left: 3px solid #9a6700; border-radius: 3px; font-size: 11px; color: #4d2d00; line-height: 1.45; }
+    .cv-end   { font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 3px;
+                background: #ffebe9; color: #cf222e; font-variant-numeric: tabular-nums; }
+    .cv-keep  { font-variant-numeric: tabular-nums; font-weight: 500; }
+
+    /* Confirm input */
+    .confirm-section { border-top: 1px solid #f0f1f3; padding-top: 12px; margin-top: 2px; }
+    .confirm-label   { font-size: 11px; font-weight: 600; color: #cf222e; text-transform: uppercase;
+                       letter-spacing: 0.4px; margin-bottom: 4px; }
+
+    /* Buttons */
+    .kbd-hint { font-size: 11px; color: #8c959f; display: flex; align-items: center; gap: 4px; }
+    .kbd      { background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 3px;
+                padding: 1px 5px; font-family: 'SF Mono', 'Fira Mono', monospace; font-size: 10px; color: #1f2328; }
+    .f-btns   { display: flex; gap: 6px; }
+    .btn      { font-size: 12px; font-weight: 500; padding: 6px 12px; border: 1px solid #d0d7de;
+                background: white; color: #1f2328; border-radius: 4px; cursor: pointer; font-family: inherit; }
+    .btn:hover { background: #f6f8fa; }
+    .btn.danger       { background: #cf222e; color: white; border-color: #cf222e; }
+    .btn.danger:hover { background: #b91c1c; border-color: #b91c1c; }
+    .btn.danger:disabled { background: #f1aeb5; border-color: #f1aeb5; cursor: not-allowed; }
+
+    /* Toast */
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+             background: #1f2328; color: white; padding: 9px 16px; border-radius: 4px;
+             font-size: 13px; box-shadow: 0 4px 16px rgba(0,0,0,0.22); z-index: 9000;
+             white-space: nowrap; animation: tin 0.15s ease; }
+    @keyframes tin { from { opacity:0; transform:translateX(-50%) translateY(5px); }
+                     to   { opacity:1; transform:translateX(-50%) translateY(0); } }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+const today = new Date().toISOString().split('T')[0];
+
+const MODES = {
+  ejerskab: {
+    titel:  'Slut ejerskab',
+    sub:    'Lars Hansen · 49% ejer · Tandlæge Østerbro ApS · aktiv siden 14. jan 2018',
+    aarsager: ['Salg', 'Død', 'Tilbagetrækning', 'Konkurs', 'Andet'],
+    btnLabel: 'Slut ejerskab',
+  },
+  rolle: {
+    titel:  'Slut rolle',
+    sub:    'Lars Hansen · CEO · Tandlæge Østerbro ApS · rolle aktiv siden 14. jan 2018',
+    aarsager: ['Opsigelse', 'Fyring', 'Pensionering', 'Fratrædelse', 'Andet'],
+    btnLabel: 'Slut rolle',
+  },
+};
+
+/* ─── BACKGROUND ─── */
+function Sidebar() {
+  return (
+    <div className="sb">
+      <div className="sb-logo">▣ ChainHub</div>
+      <div className="sb-sec">
+        <div className="sb-lab">Overblik</div>
+        <div className="sb-item">Forside <span className="sb-cnt a">5</span></div>
+        <div className="sb-item">Kalender <span className="sb-cnt">12</span></div>
+      </div>
+      <div className="sb-sec">
+        <div className="sb-lab">Portefølje</div>
+        <div className="sb-item active">Selskaber <span className="sb-cnt">32</span></div>
+        <div className="sb-item">Kontrakter <span className="sb-cnt w">3</span></div>
+        <div className="sb-item">Sager <span className="sb-cnt a">7</span></div>
+        <div className="sb-item">Opgaver <span className="sb-cnt w">9</span></div>
+      </div>
+      <div className="sb-sec">
+        <div className="sb-lab">Ressourcer</div>
+        <div className="sb-item">Personer <span className="sb-cnt">184</span></div>
+        <div className="sb-item">Dokumenter <span className="sb-cnt">412</span></div>
+        <div className="sb-item">Indstillinger</div>
+      </div>
+    </div>
+  );
+}
+
+function BgMain() {
+  return (
+    <div className="main-bg">
+      <div className="crumb">Selskaber › Tandlæge Østerbro ApS</div>
+      <div className="ph">
+        <div>
+          <h1>Tandlæge Østerbro ApS</h1>
+          <div className="ph-meta">CVR 12345678<span className="sep-dot">·</span>Østerbrogade 142, 2100 Kbh Ø<span className="sep-dot">·</span>Co-ejet med Lars Hansen</div>
+        </div>
+        <div className="ph-btns">
+          <button className="bbtn">Rediger stamdata</button>
+          <button className="bbtn p">Tilføj data ▾</button>
+        </div>
+      </div>
+      <div className="strip">
+        <div className="sc"><div className="sn">51%</div><div className="sl">Kædeandel</div></div>
+        <div className="sc"><div className="sn w">6</div><div className="sl">Kontrakter</div></div>
+        <div className="sc"><div className="sn a">2</div><div className="sl">Åbne sager</div></div>
+        <div className="sc"><div className="sn">4</div><div className="sl">Personer</div></div>
+        <div className="sc"><div className="sn">18</div><div className="sl">Dokumenter</div></div>
+        <div className="sc"><div className="sn">2,4m</div><div className="sl">EBITDA YTD</div></div>
+      </div>
+      <div className="grid3">
+        <div className="pnl-bg">
+          <div className="pnl-bh"><span className="pnl-bt">Ejerskab</span><span className="pnl-bm">2 ejere</span></div>
+          <div className="crow-bg"><span>Kædegruppe (Holding)</span><span style={{fontVariantNumeric:'tabular-nums',fontWeight:500}}>51%</span></div>
+          <div className="crow-bg" style={{color:'#cf222e'}}><span>Lars Hansen</span><span style={{fontVariantNumeric:'tabular-nums',fontWeight:500}}>49%</span></div>
+          <div style={{padding:'4px 12px 8px'}}>
+            <span style={{fontSize:'11px',padding:'1px 6px',borderRadius:'3px',background:'#dafbe1',color:'#1a7f37',fontWeight:500}}>Ejeraftale aktiv</span>
+          </div>
+        </div>
+        <div className="pnl-bg">
+          <div className="pnl-bh"><span className="pnl-bt">Personer</span><span className="pnl-bm">4 aktive</span></div>
+          {[['LH','Lars Hansen','CEO · medejer'],['MK','Marie Kristensen','Bestyrelsesformand'],['PB','Peter Brandt','Tandlæge'],['SO','Sara Olsen','Klinikassistent']].map(([ini,navn,rolle]) => (
+            <div key={ini} className="prow-bg">
+              <div className="pinit">{ini}</div>
+              <div><div style={{fontSize:'13px'}}>{navn}</div><div style={{fontSize:'11px',color:'#6e7681'}}>{rolle}</div></div>
+            </div>
+          ))}
+        </div>
+        <div className="pnl-bg">
+          <div className="pnl-bh"><span className="pnl-bt">AI Insight</span><span className="pnl-bm">4t siden</span></div>
+          <div style={{margin:'8px',padding:'10px 12px',background:'linear-gradient(135deg,#f3e8ff,#ede9fe)',border:'1px solid #c4b5fd',borderRadius:'3px'}}>
+            <div style={{fontSize:'10px',fontWeight:700,color:'#7c3aed',textTransform:'uppercase',letterSpacing:'0.5px',marginBottom:5}}>⚡ Renewal-risk · 82% conf.</div>
+            <div style={{fontSize:'12px',color:'#4c1d95',lineHeight:1.45}}>Forventet markedsleje 10–12% over nuværende kontrakt.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── LIVE PREVIEW ─── */
+function EjerskabPreview() {
+  return (
+    <div className="ctx-pnl">
+      <div className="ctx-l">Ejerskab efter slut</div>
+      <div className="ctx-row">
+        <span>Kædegruppe (Holding)</span>
+        <span className="cv-keep">51%</span>
+      </div>
+      <div className="ctx-row ending">
+        <span>Lars Hansen</span>
+        <span style={{display:'flex',alignItems:'center',gap:6}}>
+          <span className="cv-keep">49%</span>
+          <span className="cv-end">Afsluttes</span>
+        </span>
+      </div>
+      <div className="ctx-row total">
+        <span>Total efter slut</span>
+        <span className="cv" style={{color:'#cf222e', fontVariantNumeric:'tabular-nums'}}>51% <span style={{fontWeight:400,fontSize:11,color:'#8c959f'}}>(var 100%)</span></span>
+      </div>
+      <div className="ctx-warn">
+        ⚠ Selskabet vil mangle 49% ejer — tilføj ny ejer eller juster fordeling inden slut-datoen.
+      </div>
+    </div>
+  );
+}
+
+function RollePreview() {
+  return (
+    <div className="ctx-pnl">
+      <div className="ctx-l">Personliste efter slut</div>
+      <div className="ctx-row">
+        <span style={{display:'flex',alignItems:'center',gap:6}}>
+          <span style={{width:18,height:18,borderRadius:'50%',background:'#d0d7de',color:'#57606a',fontSize:'9px',fontWeight:600,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>LH</span>
+          Lars Hansen
+        </span>
+        <span style={{display:'flex',alignItems:'center',gap:6}}>
+          <span style={{fontSize:'11px',color:'#6e7681'}}>CEO</span>
+          <span className="cv-end">Afsluttes</span>
+        </span>
+      </div>
+      {[['MK','Marie Kristensen','Bestyrelsesformand'],['PB','Peter Brandt','Tandlæge'],['SO','Sara Olsen','Klinikassistent']].map(([ini,navn,rolle]) => (
+        <div key={ini} className="ctx-row">
+          <span style={{display:'flex',alignItems:'center',gap:6}}>
+            <span style={{width:18,height:18,borderRadius:'50%',background:'#d0d7de',color:'#57606a',fontSize:'9px',fontWeight:600,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{ini}</span>
+            {navn}
+          </span>
+          <span style={{fontSize:'11px',color:'#6e7681'}}>{rolle}</span>
+        </div>
+      ))}
+      <div className="ctx-warn">
+        ⚠ Selskabet vil ikke have en aktiv CEO — tilføj ny inden slut-datoen.
+      </div>
+    </div>
+  );
+}
+
+/* ─── MAIN MODAL ─── */
+function SlutModal() {
+  const [mode,       setMode]       = useState('ejerskab');
+  const [slutDato,   setSlutDato]   = useState(today);
+  const [aarsag,     setAarsag]     = useState('');
+  const [andetTekst, setAndetTekst] = useState('');
+  const [note,       setNote]       = useState('');
+  const [confirm,    setConfirm]    = useState('');
+  const [toast,      setToast]      = useState(null);
+  const [toastKey,   setToastKey]   = useState(0);
+  const stRef = useRef({});
+
+  /* Reset årsag when mode changes */
+  useEffect(() => { setAarsag(''); setAndetTekst(''); }, [mode]);
+
+  const cfg           = MODES[mode];
+  const confirmValid  = confirm === 'SLUT';
+  const confirmTyped  = confirm.length > 0;
+  const aarsagValid   = !!aarsag && (aarsag !== 'Andet' || !!andetTekst.trim());
+  const canSubmit     = !!slutDato && aarsagValid && confirmValid;
+
+  stRef.current = { canSubmit, mode, cfg };
+
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === 'Escape') doToast('Modal lukket');
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        const s = stRef.current;
+        if (s.canSubmit) doToast(`${s.cfg.titel} gennemført · Lars Hansen · ${today}`);
+      }
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
+
+  function doToast(msg) {
+    setToast(msg);
+    setToastKey(k => k + 1);
+    setTimeout(() => setToast(null), 3200);
+  }
+
+  function handleSubmit() {
+    if (!canSubmit) return;
+    doToast(`${cfg.titel} gennemført · Lars Hansen · ${slutDato}`);
+  }
+
+  const confirmInputClass = confirmValid
+    ? 'fi confirm-ok'
+    : (confirmTyped && !confirmValid ? 'fi confirm-err' : 'fi');
+
+  return (
+    <div className="scene">
+      <div className="bg"><Sidebar /><BgMain /></div>
+
+      <div className="overlay">
+        <div className="modal">
+
+          {/* Header */}
+          <div className="modal-h">
+            <div style={{flex:1, minWidth:0}}>
+              <div className="modal-ti">{cfg.titel}</div>
+              <div className="modal-su">{cfg.sub}</div>
+            </div>
+            <button className="modal-x" onClick={() => doToast('Modal lukket')}>×</button>
+          </div>
+
+          {/* Body */}
+          <div className="modal-bd">
+
+            {/* Mode toggle — viser parameterisering */}
+            <div className="mode-bar">
+              <span className="mode-lab">Type</span>
+              <div className="seg">
+                <button className={`sopt${mode === 'ejerskab' ? ' on' : ''}`}
+                  onClick={() => setMode('ejerskab')}>Ejerskab</button>
+                <button className={`sopt${mode === 'rolle' ? ' on' : ''}`}
+                  onClick={() => setMode('rolle')}>Rolle</button>
+              </div>
+            </div>
+
+            {/* Slut-dato */}
+            <div className="field" style={{maxWidth:180}}>
+              <label className="fl">Slut-dato <span className="req">*</span></label>
+              <input className="fi" type="date" value={slutDato} max={today}
+                onChange={e => setSlutDato(e.target.value)} />
+            </div>
+
+            {/* Årsag */}
+            <div className="field">
+              <label className="fl">Årsag <span className="req">*</span></label>
+              <div className="role-grid">
+                {cfg.aarsager.map(a => (
+                  <button key={a} className={`rbtn${aarsag === a ? ' on' : ''}`}
+                    onClick={() => setAarsag(a)}>{a}</button>
+                ))}
+              </div>
+              {aarsag === 'Andet' && (
+                <textarea className="fi" rows={2} style={{resize:'none', marginTop:7}} autoFocus
+                  placeholder="Beskriv årsagen..."
+                  value={andetTekst}
+                  onChange={e => setAndetTekst(e.target.value)} />
+              )}
+            </div>
+
+            {/* Note */}
+            <div className="field">
+              <label className="fl">Note (valgfri)</label>
+              <textarea className="fi" rows={2} style={{resize:'none'}}
+                placeholder="Fx aftale-reference, overdragelsesvilkår..."
+                value={note}
+                onChange={e => setNote(e.target.value)} />
+            </div>
+
+            {/* Live preview */}
+            {mode === 'ejerskab' ? <EjerskabPreview /> : <RollePreview />}
+
+            {/* Confirm step */}
+            <div className="confirm-section">
+              <div className="confirm-label">Bekræft destruktiv handling <span className="req">*</span></div>
+              <input
+                className={confirmInputClass}
+                placeholder="Skriv SLUT for at bekræfte"
+                value={confirm}
+                onChange={e => setConfirm(e.target.value)}
+                spellCheck={false}
+                autoComplete="off"
+              />
+              {confirmValid && (
+                <div className="fhint" style={{color:'#1a7f37', marginTop:3}}>Bekræftelse modtaget — knappen er aktiv.</div>
+              )}
+              {confirmTyped && !confirmValid && (
+                <div className="fhint err">Skriv SLUT med store bogstaver</div>
+              )}
+              {!confirmTyped && (
+                <div className="fhint">Skriv SLUT for at aktivere {mode === 'ejerskab' ? 'Slut ejerskab' : 'Slut rolle'}-knappen.</div>
+              )}
+            </div>
+
+          </div>{/* /modal-bd */}
+
+          {/* Footer */}
+          <div className="modal-ft">
+            <div className="kbd-hint">
+              <span className="kbd">Esc</span> luk
+              <span style={{margin:'0 4px', color:'#d0d7de'}}>·</span>
+              <span className="kbd">⌘</span><span className="kbd">↵</span> bekræft
+            </div>
+            <div className="f-btns">
+              <button className="btn" onClick={() => doToast('Annulleret')}>Annuller</button>
+              <button className="btn danger" disabled={!canSubmit} onClick={handleSubmit}>
+                {cfg.btnLabel}
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {toast && <div className="toast" key={toastKey}>✓ {toast}</div>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<SlutModal />);
+</script>
+</body>
+</html>

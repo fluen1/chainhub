@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Selskaber — ChainHub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #fafafa; color: #1f2328; font-size: 13px; -webkit-font-smoothing: antialiased; }
+    .layout { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+
+    /* ── SIDEBAR ── */
+    .sb      { background: #f6f7f9; border-right: 1px solid #e1e4e8; padding: 14px 8px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+    .sb-logo { font-weight: 600; padding: 4px 10px 16px; }
+    .sb-sec  { margin-bottom: 16px; }
+    .sb-lab  { font-size: 10px; color: #6e7681; padding: 0 10px 4px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+    .sb-item { display: flex; justify-content: space-between; align-items: center; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 13px; }
+    .sb-item.active { background: #e8eaee; font-weight: 500; }
+    .sb-item:hover:not(.active) { background: #ecedf0; }
+    .sb-cnt  { font-size: 11px; color: #6e7681; font-variant-numeric: tabular-nums; }
+    .sb-cnt.a { color: #b91c1c; font-weight: 600; } .sb-cnt.w { color: #b54708; }
+
+    /* ── MAIN ── */
+    .main { padding: 12px 24px 24px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+
+    /* ── DEMO BAR ── */
+    .demo-bar { display: flex; align-items: center; gap: 8px; padding: 5px 10px; background: #f6f7f9; border: 1px solid #e1e4e8; border-radius: 4px; font-size: 11px; color: #6e7681; }
+    .demo-bar span { font-weight: 600; color: #8c959f; }
+    .demo-btn { font-size: 11px; padding: 2px 8px; border: 1px solid #d0d7de; border-radius: 3px; background: white; color: #6e7681; cursor: pointer; font-family: inherit; }
+    .demo-btn.on { background: #e8eaee; color: #1f2328; border-color: #c1c5cc; font-weight: 500; }
+    .demo-btn:hover:not(.on) { background: #f6f8fa; }
+
+    /* ── HEADER ── */
+    .crumb    { font-size: 12px; color: #6e7681; padding: 4px 0 2px; }
+    .head     { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 1px solid #e1e4e8; }
+    .head h1  { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 3px; }
+    .head-meta { font-size: 12px; color: #6e7681; font-variant-numeric: tabular-nums; }
+    .hl-r { color: #b91c1c; font-weight: 500; }
+    .hl-a { color: #b54708; font-weight: 500; }
+    .sep-dot { margin: 0 8px; color: #d0d7de; }
+    .btn  { font-size: 12px; padding: 5px 10px; border: 1px solid #d0d7de; background: white; color: #1f2328; border-radius: 4px; cursor: pointer; font-weight: 500; font-family: inherit; white-space: nowrap; }
+    .btn:hover { background: #f6f8fa; }
+    .btn.primary { background: #0969da; color: white; border-color: #0969da; }
+    .btn.primary:hover { background: #0860c7; }
+
+    /* ── ALERT ── */
+    .alert-bar { display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; background: #ffebe9; border: 1px solid #ffc1ba; border-left: 3px solid #cf222e; border-radius: 4px; font-size: 13px; color: #6e1010; }
+
+    /* ── STRIP ── */
+    .strip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: #e1e4e8; border: 1px solid #e1e4e8; border-radius: 4px; overflow: hidden; }
+    .sc  { background: white; padding: 8px 12px; }
+    .sn  { font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1; color: #1f2328; }
+    .sn.a { color: #b91c1c; } .sn.w { color: #b54708; } .sn.g { color: #1a7f37; }
+    .sl  { font-size: 10px; color: #6e7681; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.4px; }
+
+    /* ── TWO-COL: main table + right rail ── */
+    .page-cols { display: grid; grid-template-columns: 1fr 200px; gap: 12px; align-items: start; }
+
+    /* ── FILTER ROW ── */
+    .filter-row { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
+    .fi-search  { font-size: 12px; padding: 5px 10px; border: 1px solid #d0d7de; border-radius: 4px; background: white; font-family: inherit; width: 185px; outline: none; color: #1f2328; }
+    .fi-search:focus { border-color: #0969da; outline: 2px solid #ddf4ff; outline-offset: 0; }
+    .fi-search::placeholder { color: #8c959f; }
+    .filter-sep { width: 1px; height: 20px; background: #e1e4e8; margin: 0 2px; flex-shrink: 0; }
+    .f-btn  { font-size: 12px; padding: 5px 10px; border: 1px solid #d0d7de; background: white; color: #6e7681; border-radius: 4px; cursor: pointer; font-family: inherit; white-space: nowrap; }
+    .f-btn:hover { background: #f6f8fa; color: #1f2328; }
+    .f-btn.on  { background: #ddf4ff; border-color: #0969da; color: #0969da; }
+    .f-btn.clr { color: #cf222e; border-color: #ffc1ba; }
+    .f-btn.clr:hover { background: #ffebe9; }
+    .filter-spacer { flex: 1; }
+    .seg   { display: inline-flex; border: 1px solid #d0d7de; border-radius: 4px; overflow: hidden; flex-shrink: 0; }
+    .sopt  { padding: 5px 10px; font-size: 12px; color: #6e7681; background: white; border-right: 1px solid #d0d7de; cursor: pointer; font-family: inherit; }
+    .sopt:last-child { border-right: none; }
+    .sopt.on { background: #1f2328; color: white; }
+    .sopt:hover:not(.on) { background: #f6f8fa; }
+
+    /* ── DROPDOWN ── */
+    .dd-wrap { position: relative; }
+    .dd-menu { position: absolute; top: calc(100% + 3px); left: 0; min-width: 150px; background: white; border: 1px solid #d0d7de; border-radius: 4px; box-shadow: 0 8px 24px rgba(15,23,42,0.11); z-index: 200; overflow: hidden; }
+    .dd-item { padding: 6px 12px; font-size: 12px; color: #1f2328; cursor: pointer; white-space: nowrap; }
+    .dd-item:hover { background: #f6f7f9; }
+    .dd-item.on { background: #ddf4ff; color: #0969da; font-weight: 500; }
+
+    /* ── BADGES ── */
+    .badge { font-size: 11px; font-weight: 500; padding: 1px 6px; border-radius: 3px; font-variant-numeric: tabular-nums; white-space: nowrap; display: inline-block; }
+    .badge.red    { background: #ffebe9; color: #cf222e; }
+    .badge.amber  { background: #fff8c5; color: #9a6700; }
+    .badge.green  { background: #dafbe1; color: #1a7f37; }
+    .badge.blue   { background: #ddf4ff; color: #0969da; }
+    .badge.gray   { background: #f6f8fa; color: #57606a; }
+
+    /* ── HEALTH DOT ── */
+    .h-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+
+    /* ── TABLE ── */
+    .tbl-wrap { background: white; border: 1px solid #e1e4e8; border-radius: 4px; overflow: hidden; }
+    .tbl { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .col-naam  { width: auto; }
+    .col-cvr   { width: 80px; }
+    .col-type  { width: 100px; }
+    .col-ejer  { width: 62px; }
+    .col-kontr { width: 80px; }
+    .col-sager { width: 68px; }
+    .col-ebit  { width: 84px; }
+    .col-hlth  { width: 72px; }
+    .col-act   { width: 20px; }
+    .tbl th { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #6e7681; padding: 6px 12px; background: #fbfbfc; border-bottom: 1px solid #e1e4e8; text-align: left; cursor: pointer; user-select: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tbl th:hover { color: #1f2328; }
+    .tbl th.sorted { color: #1f2328; }
+    .tbl td { font-size: 13px; padding: 6px 12px; border-bottom: 1px solid #f0f1f3; color: #1f2328; vertical-align: middle; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tbl tr:last-child td { border-bottom: none; }
+    .tbl tr:hover td { background: #f6f7f9; cursor: pointer; }
+    .td-sec { color: #6e7681; font-size: 12px; }
+    .td-r   { text-align: right; }
+    .chev   { color: #8c959f; }
+
+    /* ── CARD GRID ── */
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+    .co-card { background: white; border: 1px solid #e1e4e8; border-radius: 4px; padding: 10px 12px; cursor: pointer; }
+    .co-card:hover { border-color: #0969da; background: #f8fbff; }
+    .cc-top  { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+    .cc-name { font-size: 13px; font-weight: 500; color: #1f2328; line-height: 1.3; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cc-meta { font-size: 11px; color: #6e7681; margin-bottom: 6px; }
+    .cc-stats { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    /* ── RIGHT RAIL ── */
+    .rail { display: flex; flex-direction: column; gap: 10px; }
+    .pnl  { background: white; border: 1px solid #e1e4e8; border-radius: 4px; overflow: hidden; }
+    .pnl-h { padding: 6px 12px; border-bottom: 1px solid #e1e4e8; background: #fbfbfc; display: flex; justify-content: space-between; align-items: center; }
+    .pnl-t { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #1f2328; }
+    .pnl-m { font-size: 11px; color: #6e7681; }
+    .rail-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 12px; border-bottom: 1px solid #f0f1f3; font-size: 12px; cursor: pointer; }
+    .rail-row:hover { background: #f6f7f9; }
+    .rail-row:last-child { border-bottom: none; }
+    .rr-name { color: #1f2328; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .rr-val  { font-size: 11px; flex-shrink: 0; margin-left: 6px; }
+
+    /* ── HEATMAP (mini, right rail) ── */
+    .hm-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 2px; padding: 10px 12px 8px; }
+    .hm-cell { aspect-ratio: 1; border-radius: 2px; cursor: pointer; }
+    .hm-cell:hover { transform: scale(1.2); }
+    .hm-cell.g4 { background: #196127; } .hm-cell.g3 { background: #239a3b; }
+    .hm-cell.g2 { background: #7bc96f; } .hm-cell.g1 { background: #c6e48b; }
+    .hm-cell.r3 { background: #b91c1c; } .hm-cell.r2 { background: #f87171; }
+    .hm-cell.r1 { background: #fdb8b1; } .hm-cell.n  { background: #ebedf0; }
+    .hm-leg { padding: 0 12px 10px; font-size: 10px; color: #6e7681; display: flex; justify-content: space-between; }
+
+    /* ── GROUPED ── */
+    .grp-hdr { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: #f6f7f9; border-bottom: 1px solid #e1e4e8; cursor: pointer; user-select: none; }
+    .grp-hdr:hover { background: #ecedf0; }
+    .gh-tog  { font-size: 10px; color: #6e7681; width: 12px; flex-shrink: 0; }
+    .gh-name { font-size: 12px; font-weight: 600; color: #1f2328; flex: 1; }
+    .gh-cnt  { font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 10px; background: #e1e4e8; color: #57606a; font-variant-numeric: tabular-nums; }
+    .gh-cnt.a { background: #ffebe9; color: #cf222e; }
+
+    /* ── SKELETON ── */
+    .skel { background: linear-gradient(90deg,#f0f1f3 25%,#f6f7f9 50%,#f0f1f3 75%); background-size: 200% 100%; animation: shimmer 1.6s infinite; border-radius: 3px; display: inline-block; }
+    @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+
+    /* ── PAGER ── */
+    .pager      { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: white; border: 1px solid #e1e4e8; border-radius: 4px; }
+    .pager-info { font-size: 12px; color: #6e7681; font-variant-numeric: tabular-nums; }
+    .pg-btn  { font-size: 11px; padding: 3px 8px; border: 1px solid #d0d7de; background: white; color: #1f2328; border-radius: 3px; cursor: pointer; font-family: inherit; }
+    .pg-btn:hover:not(:disabled) { background: #f6f8fa; }
+    .pg-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .psz-btn { font-size: 11px; padding: 2px 7px; border: 1px solid #d0d7de; background: white; color: #6e7681; border-radius: 3px; cursor: pointer; font-family: inherit; }
+    .psz-btn.on { background: #e8eaee; color: #1f2328; border-color: #c1c5cc; font-weight: 500; }
+
+    /* ── EMPTY ── */
+    .empty { padding: 32px; text-align: center; color: #8c959f; font-size: 12px; }
+    .empty strong { display: block; color: #6e7681; font-size: 13px; font-weight: 500; margin-bottom: 6px; }
+
+    /* ── BOTTOM BAR ── */
+    .bot-bar { display: flex; justify-content: space-between; padding: 6px 0; font-size: 11px; color: #6e7681; }
+    .kbd { background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 3px; padding: 1px 5px; font-family: 'SF Mono','Fira Mono',monospace; font-size: 10px; color: #1f2328; }
+
+    /* ── TOAST ── */
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1f2328; color: white; padding: 9px 16px; border-radius: 4px; font-size: 13px; box-shadow: 0 4px 16px rgba(0,0,0,0.22); z-index: 9000; white-space: nowrap; animation: tin .15s ease; }
+    @keyframes tin { from{opacity:0;transform:translateX(-50%) translateY(5px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel">
+const { useState, useRef, useEffect } = React;
+
+/* ─── DATA ─── */
+const COMPANIES = [
+  { id:1,  navn:'Tandlæge Østerbro ApS', cvr:'12345678', type:'Tandlæge', region:'Kbh',      ejer:51, kontr:6,  kontrUdlob:1, sager:2, salerAlarm:true,  ebitda:'2,4m', health:'r2', score:2 },
+  { id:2,  navn:'Klinik Aalborg',         cvr:'22334455', type:'Tandlæge', region:'Nord',     ejer:60, kontr:5,  kontrUdlob:0, sager:3, salerAlarm:true,  ebitda:'1,9m', health:'r3', score:1 },
+  { id:3,  navn:'Klinik Aarhus C',        cvr:'33445566', type:'Tandlæge', region:'Midt',     ejer:55, kontr:7,  kontrUdlob:0, sager:1, salerAlarm:false, ebitda:'3,1m', health:'g4', score:5 },
+  { id:4,  navn:'Klinik Odense',          cvr:'44556677', type:'Tandlæge', region:'Syd',      ejer:65, kontr:4,  kontrUdlob:0, sager:0, salerAlarm:false, ebitda:'1,7m', health:'g3', score:4 },
+  { id:5,  navn:'Klinik Esbjerg',         cvr:'55667788', type:'Tandlæge', region:'Syd',      ejer:51, kontr:5,  kontrUdlob:0, sager:0, salerAlarm:false, ebitda:'1,5m', health:'g3', score:4 },
+  { id:6,  navn:'Klinik Holstebro',       cvr:'66778899', type:'Tandlæge', region:'Midt',     ejer:70, kontr:4,  kontrUdlob:1, sager:1, salerAlarm:false, ebitda:'1,2m', health:'r1', score:3 },
+  { id:7,  navn:'Klinik Randers',         cvr:'77889900', type:'Tandlæge', region:'Midt',     ejer:58, kontr:3,  kontrUdlob:0, sager:0, salerAlarm:false, ebitda:'1,1m', health:'g2', score:4 },
+  { id:8,  navn:'Klinik Silkeborg',       cvr:'88990011', type:'Tandlæge', region:'Midt',     ejer:100,kontr:4,  kontrUdlob:0, sager:0, salerAlarm:false, ebitda:'0,9m', health:'g3', score:4 },
+  { id:9,  navn:'Klinik Vejle',           cvr:'99001122', type:'Tandlæge', region:'Syd',      ejer:51, kontr:5,  kontrUdlob:0, sager:0, salerAlarm:false, ebitda:'1,3m', health:'g4', score:5 },
+  { id:10, navn:'Klinik Fredericia',      cvr:'10112233', type:'Tandlæge', region:'Syd',      ejer:60, kontr:3,  kontrUdlob:0, sager:0, salerAlarm:false, ebitda:'0,8m', health:'g4', score:5 },
+  { id:11, navn:'Klinik Herning',         cvr:'11223344', type:'Tandlæge', region:'Midt',     ejer:55, kontr:4,  kontrUdlob:0, sager:0, salerAlarm:false, ebitda:'1,0m', health:'g3', score:4 },
+  { id:12, navn:'Klinik Horsens',         cvr:'12233445', type:'Tandlæge', region:'Midt',     ejer:51, kontr:3,  kontrUdlob:0, sager:0, salerAlarm:false, ebitda:'0,7m', health:'g2', score:4 },
+  { id:13, navn:'Klinik Kolding',         cvr:'13344556', type:'Tandlæge', region:'Syd',      ejer:65, kontr:4,  kontrUdlob:0, sager:0, salerAlarm:false, ebitda:'1,1m', health:'g3', score:4 },
+  { id:14, navn:'Tandlæge Nørrebro',      cvr:'14455667', type:'Tandlæge', region:'Kbh',      ejer:51, kontr:5,  kontrUdlob:0, sager:0, salerAlarm:false, ebitda:'2,0m', health:'g2', score:4 },
+  { id:15, navn:'Tandlæge Vesterbro',     cvr:'15566778', type:'Tandlæge', region:'Kbh',      ejer:60, kontr:4,  kontrUdlob:0, sager:0, salerAlarm:false, ebitda:'1,8m', health:'g3', score:4 },
+  { id:16, navn:'Klinik Næstved',         cvr:'16677889', type:'Tandlæge', region:'Kbh',      ejer:100,kontr:3,  kontrUdlob:0, sager:0, salerAlarm:false, ebitda:'0,9m', health:'g4', score:5 },
+  { id:17, navn:'Klinik Svendborg',       cvr:'17788990', type:'Tandlæge', region:'Syd',      ejer:51, kontr:2,  kontrUdlob:0, sager:1, salerAlarm:false, ebitda:'0,6m', health:'g2', score:3 },
+  { id:18, navn:'Klinik Skanderborg',     cvr:'18899001', type:'Tandlæge', region:'Midt',     ejer:55, kontr:3,  kontrUdlob:0, sager:0, salerAlarm:false, ebitda:'0,8m', health:'g3', score:4 },
+];
+
+const UNIQUE_TYPE   = [...new Set(COMPANIES.map(c => c.type))].sort();
+const UNIQUE_REGION = [...new Set(COMPANIES.map(c => c.region))].sort();
+const EJER_OPTS     = ['Alle','100% ejet','Co-ejet (>50%)','Co-ejet (51%)'];
+
+function healthBadge(h) {
+  if (h === 'r3') return { cls:'red',   label:'Kritisk' };
+  if (h === 'r2') return { cls:'red',   label:'Advarsel' };
+  if (h === 'r1') return { cls:'amber', label:'Opmærks.' };
+  if (h === 'g4') return { cls:'green', label:'OK' };
+  if (h === 'g3') return { cls:'green', label:'OK' };
+  if (h === 'g2') return { cls:'blue',  label:'OK' };
+  return { cls:'gray', label:'Ukendt' };
+}
+
+/* ─── SIDEBAR ─── */
+function Sidebar() {
+  return (
+    <aside className="sb">
+      <div className="sb-logo">▣ ChainHub</div>
+      <div className="sb-sec">
+        <div className="sb-lab">Overblik</div>
+        <div className="sb-item">Forside <span className="sb-cnt a">5</span></div>
+        <div className="sb-item">Kalender <span className="sb-cnt">12</span></div>
+        <div className="sb-item">Søg</div>
+      </div>
+      <div className="sb-sec">
+        <div className="sb-lab">Portefølje</div>
+        <div className="sb-item active">Selskaber <span className="sb-cnt">32</span></div>
+        <div className="sb-item">Kontrakter <span className="sb-cnt w">3</span></div>
+        <div className="sb-item">Sager <span className="sb-cnt a">7</span></div>
+        <div className="sb-item">Opgaver <span className="sb-cnt w">9</span></div>
+      </div>
+      <div className="sb-sec">
+        <div className="sb-lab">Ressourcer</div>
+        <div className="sb-item">Dokumenter <span className="sb-cnt">412</span></div>
+        <div className="sb-item">Personer <span className="sb-cnt">184</span></div>
+        <div className="sb-item">Indstillinger</div>
+      </div>
+    </aside>
+  );
+}
+
+/* ─── DROPDOWN ─── */
+function Dd({ label, opts, value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    function h(e) { if (!ref.current?.contains(e.target)) setOpen(false); }
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, []);
+  return (
+    <div className="dd-wrap" ref={ref}>
+      <button className={`f-btn${value && value !== 'Alle' ? ' on' : ''}`} onClick={() => setOpen(o => !o)}>
+        {value && value !== 'Alle' ? value : label} ▾
+      </button>
+      {open && (
+        <div className="dd-menu">
+          {opts.map(o => (
+            <div key={o} className={`dd-item${value === o ? ' on' : ''}`}
+              onClick={() => { onChange(o); setOpen(false); }}>{o}</div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── TABLE ROW ─── */
+function CoRow({ c, onToast }) {
+  const hb = healthBadge(c.health);
+  return (
+    <tr onClick={() => onToast(`Åbner ${c.navn}`)}>
+      <td className="col-naam" style={{fontWeight:500}}>
+        <div style={{display:'flex',alignItems:'center',gap:7}}>
+          <span className="h-dot" style={{background: c.health.startsWith('r') ? (c.health==='r3'?'#b91c1c':'c.health'==='r2'?'#f87171':'#fdb8b1') : '#239a3b'}}></span>
+          {c.naam || c.navn}
+        </div>
+      </td>
+      <td className="col-cvr td-sec" style={{fontVariantNumeric:'tabular-nums'}}>{c.cvr}</td>
+      <td className="col-type td-sec">{c.type}</td>
+      <td className="col-ejer td-r" style={{fontVariantNumeric:'tabular-nums',fontWeight:500}}>{c.ejer}%</td>
+      <td className="col-kontr">
+        <span className={c.kontrUdlob > 0 ? 'badge amber' : 'td-sec'} style={c.kontrUdlob === 0 ? {fontSize:12,color:'#6e7681'} : {}}>{c.kontr}{c.kontrUdlob > 0 && ` (${c.kontrUdlob}⚠)`}</span>
+      </td>
+      <td className="col-sager">
+        {c.sager > 0
+          ? <span className={`badge ${c.salerAlarm ? 'red' : 'amber'}`}>{c.sager}</span>
+          : <span style={{color:'#d0d7de'}}>—</span>}
+      </td>
+      <td className="col-ebit td-r" style={{fontVariantNumeric:'tabular-nums',color:'#1a7f37',fontWeight:500}}>{c.ebitda}</td>
+      <td className="col-hlth"><span className={`badge ${hb.cls}`}>{hb.label}</span></td>
+      <td className="col-act"><span className="chev">›</span></td>
+    </tr>
+  );
+}
+
+/* ─── CARD VIEW ─── */
+function CardView({ companies, onToast }) {
+  if (companies.length === 0) return <div className="empty"><strong>Ingen selskaber matcher filteret</strong></div>;
+  return (
+    <div className="card-grid">
+      {companies.map(c => {
+        const hb = healthBadge(c.health);
+        return (
+          <div key={c.id} className="co-card" onClick={() => onToast(`Åbner ${c.navn}`)}>
+            <div className="cc-top">
+              <div className="cc-name">{c.navn}</div>
+              <span className={`badge ${hb.cls}`} style={{marginLeft:6,flexShrink:0}}>{hb.label}</span>
+            </div>
+            <div className="cc-meta">{c.type} · CVR {c.cvr} · {c.region}</div>
+            <div className="cc-stats">
+              <span className="badge gray">{c.ejer}%</span>
+              <span className={`badge ${c.kontrUdlob>0?'amber':'gray'}`}>{c.kontr} kontr.</span>
+              {c.sager > 0 && <span className={`badge ${c.salerAlarm?'red':'amber'}`}>{c.sager} sager</span>}
+              <span className="badge green">{c.ebitda}</span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ─── GROUPED VIEW ─── */
+function GroupedView({ companies, onToast }) {
+  const [collapsed, setCollapsed] = useState(new Set());
+  const toggle = name => setCollapsed(prev => { const n = new Set(prev); n.has(name)?n.delete(name):n.add(name); return n; });
+  const groups = companies.reduce((acc, c) => { (acc[c.region] = acc[c.region]||[]).push(c); return acc; }, {});
+  const regionLabels = { Kbh:'København', Nord:'Nordjylland', Midt:'Midtjylland', Syd:'Syd- og Sønderjylland' };
+  return (
+    <div className="tbl-wrap">
+      {Object.entries(groups).map(([region, rows]) => {
+        const hasAlarm = rows.some(r => r.salerAlarm || r.health.startsWith('r'));
+        const open = !collapsed.has(region);
+        return (
+          <div key={region}>
+            <div className="grp-hdr" onClick={() => toggle(region)}>
+              <span className="gh-tog">{open?'▾':'▸'}</span>
+              <span className="gh-name">{regionLabels[region] || region}</span>
+              <span className={`gh-cnt${hasAlarm?' a':''}`}>{rows.length}</span>
+              {hasAlarm && <span className="badge red" style={{fontSize:10}}>⚠</span>}
+            </div>
+            {open && (
+              <table className="tbl" style={{tableLayout:'fixed',width:'100%'}}>
+                <colgroup>
+                  <col/><col style={{width:80}}/><col style={{width:100}}/>
+                  <col style={{width:62}}/><col style={{width:80}}/><col style={{width:68}}/>
+                  <col style={{width:84}}/><col style={{width:72}}/><col style={{width:20}}/>
+                </colgroup>
+                <tbody>
+                  {rows.map(c => <CoRow key={c.id} c={c} onToast={onToast} />)}
+                </tbody>
+              </table>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ─── RIGHT RAIL ─── */
+function RightRail({ companies, onToast }) {
+  const critical  = companies.filter(c => c.health === 'r3' || c.health === 'r2');
+  const hmCells   = companies.map(c => c.health);
+
+  return (
+    <div className="rail">
+      {/* Mini heatmap */}
+      <div className="pnl">
+        <div className="pnl-h"><span className="pnl-t">Health</span><span className="pnl-m">{companies.length} sel.</span></div>
+        <div className="hm-grid">
+          {companies.map((c,i) => (
+            <div key={i} className={`hm-cell ${c.health}`}
+              title={c.navn}
+              onClick={() => onToast(c.navn)} />
+          ))}
+        </div>
+        <div className="hm-leg">
+          <span>{critical.length} kritiske</span>
+          <span>{companies.length - critical.length} OK</span>
+        </div>
+      </div>
+
+      {/* Kræver opmærksomhed */}
+      {critical.length > 0 && (
+        <div className="pnl">
+          <div className="pnl-h"><span className="pnl-t">Kritiske</span><span className="pnl-m">{critical.length}</span></div>
+          {critical.map((c,i) => {
+            const hb = healthBadge(c.health);
+            return (
+              <div key={i} className="rail-row" onClick={() => onToast(`Åbner ${c.navn}`)}>
+                <span className="rr-name">{c.navn}</span>
+                <span className={`badge ${hb.cls} rr-val`} style={{fontSize:10}}>{hb.label}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Portfolio fordeling */}
+      <div className="pnl">
+        <div className="pnl-h"><span className="pnl-t">Fordeling</span></div>
+        <div style={{padding:'6px 0'}}>
+          {[
+            {label:'100% ejet', val: companies.filter(c=>c.ejer===100).length, cls:'gray'},
+            {label:'Co-ejet',   val: companies.filter(c=>c.ejer<100).length,   cls:'blue'},
+            {label:'Region Kbh',val: companies.filter(c=>c.region==='Kbh').length, cls:'gray'},
+            {label:'Region Midt',val:companies.filter(c=>c.region==='Midt').length,cls:'gray'},
+            {label:'Region Syd', val:companies.filter(c=>c.region==='Syd').length, cls:'gray'},
+            {label:'Region Nord',val:companies.filter(c=>c.region==='Nord').length,cls:'gray'},
+          ].map(({label,val,cls}) => (
+            <div key={label} className="rail-row" style={{cursor:'default'}}>
+              <span className="rr-name" style={{color:'#6e7681',fontSize:11}}>{label}</span>
+              <span style={{fontSize:11,fontVariantNumeric:'tabular-nums',color:'#1f2328',fontWeight:500}}>{val}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── SKELETON ─── */
+function SkeletonRows({ n = 10 }) {
+  return (
+    <div className="tbl-wrap">
+      {Array.from({length:n}).map((_,i) => (
+        <div key={i} style={{display:'flex',gap:10,padding:'7px 12px',borderBottom:i<n-1?'1px solid #f0f1f3':'none',alignItems:'center'}}>
+          <span className="skel" style={{width:8,height:8,borderRadius:'50%',flexShrink:0}}></span>
+          <span className="skel" style={{width:180,height:12,flex:1}}></span>
+          <span className="skel" style={{width:70,height:12}}></span>
+          <span className="skel" style={{width:50,height:12}}></span>
+          <span className="skel" style={{width:40,height:12}}></span>
+          <span className="skel" style={{width:36,height:18,borderRadius:3}}></span>
+          <span className="skel" style={{width:50,height:18,borderRadius:3}}></span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ─── MAIN ─── */
+function SelskaborPage() {
+  const [demo,      setDemo]      = useState('normal');
+  const [viewMode,  setViewMode]  = useState('tabel');
+  const [search,    setSearch]    = useState('');
+  const [typeFil,   setTypeFil]   = useState('Alle');
+  const [regionFil, setRegionFil] = useState('Alle');
+  const [ejerFil,   setEjerFil]   = useState('Alle');
+  const [urgOnly,   setUrgOnly]   = useState(false);
+  const [sortCol,   setSortCol]   = useState('score');
+  const [sortDir,   setSortDir]   = useState('asc');
+  const [page,      setPage]      = useState(1);
+  const [pageSize,  setPageSize]  = useState(15);
+  const [toast,     setToast]     = useState(null);
+  const [toastKey,  setToastKey]  = useState(0);
+
+  const isSkeleton = demo === 'skeleton';
+  const isError    = demo === 'fejl';
+
+  function doToast(msg) { setToast(msg); setToastKey(k=>k+1); setTimeout(()=>setToast(null),2600); }
+
+  function handleSort(col) {
+    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortCol(col); setSortDir('asc'); }
+  }
+
+  const filtered = COMPANIES.filter(c => {
+    const q = search.toLowerCase();
+    if (q && !c.navn.toLowerCase().includes(q) && !c.cvr.includes(q) && !c.region.toLowerCase().includes(q)) return false;
+    if (typeFil   !== 'Alle' && c.type !== typeFil) return false;
+    if (regionFil !== 'Alle') {
+      const map = { 'København':'Kbh','Nordjylland':'Nord','Midtjylland':'Midt','Syd- og Sønderjylland':'Syd' };
+      if (c.region !== map[regionFil]) return false;
+    }
+    if (ejerFil === '100% ejet'       && c.ejer !== 100) return false;
+    if (ejerFil === 'Co-ejet (>50%)'  && c.ejer >= 100)  return false;
+    if (ejerFil === 'Co-ejet (51%)'   && c.ejer !== 51)  return false;
+    if (urgOnly && !c.salerAlarm && !c.health.startsWith('r') && c.kontrUdlob === 0) return false;
+    return true;
+  });
+
+  const sorted = [...filtered].sort((a,b) => {
+    const av = a[sortCol] ?? 0, bv = b[sortCol] ?? 0;
+    if (av < bv) return sortDir === 'asc' ? -1 : 1;
+    if (av > bv) return sortDir === 'asc' ?  1 : -1;
+    return 0;
+  });
+
+  const paged    = sorted.slice((page-1)*pageSize, page*pageSize);
+  const maxPage  = Math.max(1, Math.ceil(sorted.length / pageSize));
+  const hasFilter = typeFil !== 'Alle' || regionFil !== 'Alle' || ejerFil !== 'Alle' || search || urgOnly;
+
+  const critCount  = COMPANIES.filter(c => c.health === 'r3' || c.health === 'r2').length;
+  const ejendomPct = Math.round(COMPANIES.filter(c=>c.ejer===100).length/COMPANIES.length*100);
+  const totalEbit  = '42,8m';
+
+  const Th = ({ col, label, cls }) => (
+    <th className={`${cls||''} ${sortCol===col?'sorted':''}`} onClick={() => handleSort(col)}>
+      {label}{sortCol===col?(sortDir==='asc'?' ↑':' ↓'):''}
+    </th>
+  );
+
+  return (
+    <div className="layout">
+      <Sidebar />
+      <main className="main">
+
+        <div className="demo-bar">
+          <span>Demo:</span>
+          {['normal','skeleton','fejl'].map(s => (
+            <button key={s} className={`demo-btn${demo===s?' on':''}`} onClick={()=>setDemo(s)}>{s}</button>
+          ))}
+        </div>
+
+        <div className="crumb">Selskaber</div>
+
+        {isError && (
+          <div className="alert-bar">
+            <strong>Kunne ikke hente selskabsdata</strong> — prøv igen.
+            <button className="btn" style={{marginLeft:12}}>Prøv igen</button>
+          </div>
+        )}
+
+        <div className="head">
+          <div>
+            <h1>Selskaber</h1>
+            <div className="head-meta">
+              32 i porteføljen
+              <span className="sep-dot">·</span>
+              <span className="hl-r">{critCount} kræver opmærksomhed</span>
+              <span className="sep-dot">·</span>
+              Omsætning YTD <span style={{color:'#1a7f37',fontWeight:500}}>{totalEbit}</span>
+            </div>
+          </div>
+          <div style={{display:'flex',gap:6}}>
+            <button className="btn primary" onClick={() => doToast('Opret selskab')}>+ Opret selskab</button>
+          </div>
+        </div>
+
+        {!isSkeleton && (
+          <div className="strip">
+            <div className="sc"><div className="sn">32</div><div className="sl">I porteføljen</div></div>
+            <div className="sc"><div className="sn">21</div><div className="sl">Co-ejet</div></div>
+            <div className="sc"><div className="sn">11</div><div className="sl">100% ejet</div></div>
+            <div className="sc"><div className="sn a">{critCount}</div><div className="sl">Kræver opmærks.</div></div>
+            <div className="sc"><div className="sn">184</div><div className="sl">Pers. i alt</div></div>
+            <div className="sc"><div className="sn g">{totalEbit}</div><div className="sl">EBITDA YTD</div></div>
+          </div>
+        )}
+
+        {!isSkeleton && (
+          <div className="filter-row">
+            <input className="fi-search" placeholder="Søg selskaber..." value={search}
+              onChange={e => { setSearch(e.target.value); setPage(1); }} />
+            <Dd label="Type"   opts={['Alle',...UNIQUE_TYPE]}   value={typeFil}   onChange={v=>{setTypeFil(v);setPage(1);}} />
+            <Dd label="Region" opts={['Alle','København','Nordjylland','Midtjylland','Syd- og Sønderjylland']}
+              value={regionFil} onChange={v=>{setRegionFil(v);setPage(1);}} />
+            <Dd label="Ejerskab" opts={EJER_OPTS} value={ejerFil} onChange={v=>{setEjerFil(v);setPage(1);}} />
+            <button className={`f-btn${urgOnly?' on':''}`}
+              onClick={() => { setUrgOnly(v => !v); setPage(1); }}>
+              {urgOnly ? '⚠ Kritiske ×' : '⚠ Kritiske'}
+            </button>
+            {hasFilter && (
+              <button className="f-btn clr"
+                onClick={() => { setSearch(''); setTypeFil('Alle'); setRegionFil('Alle'); setEjerFil('Alle'); setUrgOnly(false); }}>
+                Nulstil ×
+              </button>
+            )}
+            <div className="filter-sep"></div>
+            <div className="seg">
+              {[['tabel','Tabel'],['grupperet','Regioner'],['kort','Kort']].map(([v,l]) => (
+                <button key={v} className={`sopt${viewMode===v?' on':''}`} onClick={() => setViewMode(v)}>{l}</button>
+              ))}
+            </div>
+            <div className="filter-spacer"></div>
+            <button className="f-btn">Eksportér ▾</button>
+          </div>
+        )}
+
+        {hasFilter && !isSkeleton && (
+          <div style={{fontSize:11,color:'#6e7681'}}>
+            {sorted.length} resultat{sorted.length!==1?'er':''} — filtreret fra {COMPANIES.length} selskaber
+          </div>
+        )}
+
+        {isSkeleton ? (
+          <SkeletonRows n={10} />
+        ) : (
+          <div className={viewMode !== 'kort' ? 'page-cols' : undefined}>
+            <div>
+              {viewMode === 'tabel' ? (
+                <div className="tbl-wrap">
+                  {sorted.length === 0
+                    ? <div className="empty"><strong>Ingen selskaber matcher filteret</strong>Nulstil filteret.</div>
+                    : (
+                      <table className="tbl">
+                        <colgroup>
+                          <col className="col-naam"/><col className="col-cvr"/><col className="col-type"/>
+                          <col className="col-ejer"/><col className="col-kontr"/><col className="col-sager"/>
+                          <col className="col-ebit"/><col className="col-hlth"/><col className="col-act"/>
+                        </colgroup>
+                        <thead>
+                          <tr>
+                            <Th col="navn"  label="Selskab"    cls="col-naam" />
+                            <Th col="cvr"   label="CVR"        cls="col-cvr" />
+                            <Th col="type"  label="Type"       cls="col-type" />
+                            <Th col="ejer"  label="Kæde %"     cls="col-ejer" />
+                            <Th col="kontr" label="Kontrakter" cls="col-kontr" />
+                            <Th col="sager" label="Sager"      cls="col-sager" />
+                            <Th col="ebitda" label="EBITDA"    cls="col-ebit" />
+                            <Th col="score" label="Health"     cls="col-hlth" />
+                            <th className="col-act"></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {paged.map(c => <CoRow key={c.id} c={c} onToast={doToast} />)}
+                        </tbody>
+                      </table>
+                    )}
+                </div>
+              ) : viewMode === 'grupperet' ? (
+                <GroupedView companies={sorted} onToast={doToast} />
+              ) : (
+                <CardView companies={sorted} onToast={doToast} />
+              )}
+
+              {viewMode !== 'kort' && sorted.length > 0 && (
+                <div className="pager" style={{marginTop:8}}>
+                  <span className="pager-info">
+                    {viewMode==='tabel'
+                      ? `${Math.min((page-1)*pageSize+1,sorted.length)}–${Math.min(page*pageSize,sorted.length)} af ${sorted.length}`
+                      : `${sorted.length} selskaber`}
+                  </span>
+                  {viewMode==='tabel' && (
+                    <>
+                      <div style={{display:'flex',gap:4,alignItems:'center'}}>
+                        <button className="pg-btn" disabled={page===1} onClick={()=>setPage(p=>p-1)}>←</button>
+                        <span style={{fontSize:12,color:'#6e7681',padding:'0 4px'}}>{page} / {maxPage}</span>
+                        <button className="pg-btn" disabled={page===maxPage} onClick={()=>setPage(p=>p+1)}>→</button>
+                      </div>
+                      <div style={{display:'flex',gap:4,alignItems:'center'}}>
+                        <span style={{fontSize:11,color:'#6e7681'}}>Vis:</span>
+                        {[15,25,50].map(n => (
+                          <button key={n} className={`psz-btn${pageSize===n?' on':''}`}
+                            onClick={()=>{setPageSize(n);setPage(1);}}>{n}</button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Right rail kun ved tabel+regioner */}
+            {(viewMode === 'tabel' || viewMode === 'grupperet') && (
+              <RightRail companies={COMPANIES} onToast={doToast} />
+            )}
+          </div>
+        )}
+
+        <div className="bot-bar">
+          <span>
+            {isSkeleton ? 'Henter…' : `${sorted.length} selskaber vist · ${COMPANIES.filter(c=>c.health.startsWith('g')).length} grønne`}
+          </span>
+          <span>
+            <span className="kbd">⌘K</span> handling ·{' '}
+            <span className="kbd">N</span> nyt selskab ·{' '}
+            <span className="kbd">F</span> filter
+          </span>
+        </div>
+
+      </main>
+      {toast && <div className="toast" key={toastKey}>✓ {toast}</div>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<SelskaborPage />);
+</script>
+</body>
+</html>

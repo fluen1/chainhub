@@ -1,0 +1,94 @@
+'use server'
+
+import { prisma } from '@/lib/db'
+
+// ────────────────────────────────────────────────────────────────────────────
+// Activity feed til dashboard "Sidste aktivitet"-panel.
+//
+// Aggregerer fra AuditLog. Skåret til seneste 10 events i organisationen,
+// med user-navn (resolvet i et separat batch — AuditLog har ingen relation).
+// ────────────────────────────────────────────────────────────────────────────
+
+export interface ActivityEvent {
+  id: string
+  who: string
+  action: string // dansk verbum, fx "oprettede"
+  target: string // dansk subjekt + kontext, fx "Kontrakt · v3"
+  time: string // relativ tid på dansk
+}
+
+const ACTION_VERB: Record<string, string> = {
+  CREATE: 'oprettede',
+  UPDATE: 'opdaterede',
+  END: 'afsluttede',
+  STATUS_CHANGE: 'ændrede status på',
+  EXPORT: 'eksporterede',
+  GDPR_EXPORT: 'GDPR-eksporterede',
+  GDPR_DELETE: 'GDPR-slettede',
+}
+
+const RESOURCE_LABEL: Record<string, string> = {
+  case: 'Sag',
+  contract: 'Kontrakt',
+  contract_version: 'Kontraktversion',
+  company: 'Selskab',
+  company_person: 'Personrelation',
+  ownership: 'Ejerskab',
+  person: 'Person',
+  document: 'Dokument',
+  task: 'Opgave',
+}
+
+function formatRelative(date: Date, now: Date): string {
+  const diffMs = now.getTime() - date.getTime()
+  const min = Math.floor(diffMs / 60000)
+  if (min < 1) return 'lige nu'
+  if (min < 60) return `${min} min siden`
+  const hr = Math.floor(min / 60)
+  if (hr < 24) {
+    const remMin = min % 60
+    return remMin > 0 ? `${hr}t ${remMin} min siden` : `${hr}t siden`
+  }
+  const d = Math.floor(hr / 24)
+  if (d === 1)
+    return `i går ${date.toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' })}`
+  return `${d} dage siden`
+}
+
+export async function getRecentActivity(organizationId: string): Promise<ActivityEvent[]> {
+  const logs = await prisma.auditLog.findMany({
+    where: { organization_id: organizationId },
+    orderBy: { created_at: 'desc' },
+    take: 10,
+    select: {
+      id: true,
+      user_id: true,
+      action: true,
+      resource_type: true,
+      resource_id: true,
+      created_at: true,
+    },
+  })
+
+  if (logs.length === 0) return []
+
+  const userIds = Array.from(new Set(logs.map((l) => l.user_id)))
+  const users = await prisma.user.findMany({
+    where: { id: { in: userIds } },
+    select: { id: true, name: true, email: true },
+  })
+  const userMap = new Map(users.map((u) => [u.id, u.name ?? u.email ?? 'Ukendt']))
+
+  const now = new Date()
+  return logs.map((l) => {
+    const verb = ACTION_VERB[l.action] ?? l.action.toLowerCase()
+    const resource = RESOURCE_LABEL[l.resource_type] ?? l.resource_type
+    return {
+      id: l.id,
+      who: userMap.get(l.user_id) ?? 'Ukendt',
+      action: verb,
+      target: resource,
+      time: formatRelative(l.created_at, now),
+    }
+  })
+}

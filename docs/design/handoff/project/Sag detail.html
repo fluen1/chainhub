@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>#2841 Patientklage — ChainHub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #fafafa; color: #1f2328; font-size: 13px; -webkit-font-smoothing: antialiased; }
+
+    .layout { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+
+    /* ── SIDEBAR ── */
+    .sb      { background: #f6f7f9; border-right: 1px solid #e1e4e8; padding: 14px 8px; font-size: 13px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+    .sb-logo { font-weight: 600; padding: 4px 10px 16px; }
+    .sb-sec  { margin-bottom: 16px; }
+    .sb-lab  { font-size: 10px; color: #6e7681; padding: 0 10px 4px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+    .sb-item { display: flex; justify-content: space-between; align-items: center; padding: 4px 10px; border-radius: 4px; cursor: pointer; }
+    .sb-item.active { background: #e8eaee; font-weight: 500; }
+    .sb-item:hover:not(.active) { background: #ecedf0; }
+    .sb-cnt  { font-size: 11px; color: #6e7681; font-variant-numeric: tabular-nums; }
+    .sb-cnt.a { color: #b91c1c; font-weight: 600; } .sb-cnt.w { color: #b54708; }
+
+    /* ── MAIN ── */
+    .main { padding: 12px 24px 32px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+
+    /* ── DEMO BAR ── */
+    .demo-bar { display: flex; align-items: center; gap: 8px; padding: 5px 10px; background: #f6f7f9; border: 1px solid #e1e4e8; border-radius: 4px; font-size: 11px; color: #6e7681; }
+    .demo-bar span { font-weight: 600; color: #8c959f; }
+    .demo-btn { font-size: 11px; padding: 2px 8px; border: 1px solid #d0d7de; border-radius: 3px; background: white; color: #6e7681; cursor: pointer; font-family: inherit; }
+    .demo-btn.on { background: #e8eaee; color: #1f2328; border-color: #c1c5cc; font-weight: 500; }
+    .demo-btn:hover:not(.on) { background: #f6f8fa; }
+
+    /* ── BREADCRUMB ── */
+    .crumb { font-size: 12px; color: #6e7681; padding: 4px 0 2px; }
+    .crumb a { color: #6e7681; text-decoration: none; }
+    .crumb a:hover { color: #1f2328; }
+    .crumb .sep { margin: 0 6px; color: #8c959f; }
+
+    /* ── HEADER ── */
+    .head     { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 10px; border-bottom: 1px solid #e1e4e8; }
+    .head h1  { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .head-meta { font-size: 12px; color: #6e7681; font-variant-numeric: tabular-nums; }
+    .sep-dot  { margin: 0 8px; color: #d0d7de; }
+    .head-r   { display: flex; gap: 6px; flex-shrink: 0; }
+    .btn      { font-size: 12px; padding: 5px 10px; border: 1px solid #d0d7de; background: white; color: #1f2328; border-radius: 4px; cursor: pointer; font-weight: 500; font-family: inherit; white-space: nowrap; }
+    .btn:hover { background: #f6f8fa; }
+    .btn.primary { background: #0969da; color: white; border-color: #0969da; }
+    .btn.primary:hover { background: #0860c7; }
+    .btn.danger  { color: #cf222e; border-color: #ffc1ba; }
+    .btn.danger:hover { background: #ffebe9; }
+
+    /* ── ALERT BAR ── */
+    .alert-bar { display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; background: #ffebe9; border: 1px solid #ffc1ba; border-left: 3px solid #cf222e; border-radius: 4px; font-size: 13px; color: #6e1010; }
+    .alert-bar-btns { display: flex; gap: 6px; }
+
+    /* ── STRIP ── */
+    .strip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: #e1e4e8; border: 1px solid #e1e4e8; border-radius: 4px; overflow: hidden; }
+    .sc   { background: white; padding: 8px 12px; }
+    .sn   { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.2; color: #1f2328; }
+    .sn.a { color: #b91c1c; } .sn.w { color: #b54708; } .sn.sm { font-size: 12px; }
+    .sl   { font-size: 10px; color: #6e7681; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.4px; }
+
+    /* ── PANELS ── */
+    .grid3   { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 12px; align-items: start; }
+    .grid2   { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+    .pnl     { background: white; border: 1px solid #e1e4e8; border-radius: 4px; overflow: hidden; }
+    .pnl-h   { padding: 6px 12px; border-bottom: 1px solid #e1e4e8; background: #fbfbfc; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .pnl-t   { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #1f2328; display: flex; align-items: center; gap: 5px; }
+    .pnl-m   { font-size: 11px; color: #6e7681; }
+    .pnl-foot { padding: 6px 12px; border-top: 1px solid #f0f1f3; background: #fbfbfc; display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #6e7681; }
+    .btn-add  { font-size: 11px; padding: 3px 8px; border: 1px dashed #d0d7de; background: transparent; color: #6e7681; border-radius: 3px; cursor: pointer; font-family: inherit; font-weight: 500; }
+    .btn-add:hover { border-style: solid; border-color: #0969da; color: #0969da; }
+    .link-action { font-size: 12px; color: #0969da; text-decoration: none; cursor: pointer; }
+    .link-action:hover { text-decoration: underline; }
+
+    /* ── BADGES ── */
+    .badge { font-size: 11px; font-weight: 500; padding: 1px 6px; border-radius: 3px; font-variant-numeric: tabular-nums; white-space: nowrap; display: inline-block; }
+    .badge.red    { background: #ffebe9; color: #cf222e; }
+    .badge.amber  { background: #fff8c5; color: #9a6700; }
+    .badge.green  { background: #dafbe1; color: #1a7f37; }
+    .badge.blue   { background: #ddf4ff; color: #0969da; }
+    .badge.gray   { background: #f6f8fa; color: #57606a; }
+    .badge.purple { background: #f3e8ff; color: #7c3aed; }
+
+    /* ── PLUS BADGE ── */
+    .plus { font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 3px; background: #f3e8ff; color: #7c3aed; letter-spacing: 0.4px; text-transform: uppercase; }
+
+    /* ── DETALJER ROWS ── */
+    .dt-row { display: grid; grid-template-columns: 110px 1fr; gap: 10px; padding: 5px 12px; font-size: 12px; border-bottom: 1px solid #f0f1f3; align-items: center; }
+    .dt-row:last-child { border-bottom: none; }
+    .dt-l { color: #6e7681; text-transform: uppercase; font-size: 10px; font-weight: 600; letter-spacing: 0.4px; }
+    .dt-v { color: #1f2328; font-variant-numeric: tabular-nums; }
+
+    /* ── LINKED ROWS ── */
+    .link-row { display: grid; grid-template-columns: 1fr auto 14px; gap: 8px; padding: 6px 12px; border-bottom: 1px solid #f0f1f3; align-items: center; font-size: 13px; cursor: pointer; }
+    .link-row:hover { background: #f6f7f9; }
+    .link-row:last-child { border-bottom: none; }
+    .lr-name { font-size: 13px; font-weight: 500; }
+    .lr-sub  { font-size: 11px; color: #6e7681; margin-top: 2px; }
+    .chev    { color: #8c959f; font-size: 12px; }
+
+    /* ── TASK ROWS ── */
+    .task-row { display: grid; grid-template-columns: 18px 1fr 65px 70px; gap: 10px; padding: 6px 12px; border-bottom: 1px solid #f0f1f3; align-items: center; font-size: 13px; cursor: pointer; }
+    .task-row:hover { background: #f6f7f9; }
+    .task-row:last-child { border-bottom: none; }
+    .task-cb  { width: 14px; height: 14px; border: 1px solid #d0d7de; border-radius: 3px; flex-shrink: 0; }
+
+    /* ── AI PANEL ── */
+    .ai-wrap { margin: 8px; border-radius: 3px; background: linear-gradient(135deg, #f3e8ff, #ede9fe); border: 1px solid #c4b5fd; padding: 10px 12px; }
+    .ai-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .ai-l    { font-size: 10px; font-weight: 700; color: #7c3aed; text-transform: uppercase; letter-spacing: 0.5px; }
+    .ai-conf { font-size: 10px; color: #7c3aed; font-variant-numeric: tabular-nums; }
+    .ai-body { font-size: 12px; color: #4c1d95; line-height: 1.5; }
+    .ai-row  { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; font-size: 11px; border-bottom: 1px solid #e9d5ff; }
+    .ai-row:last-child { border-bottom: none; }
+    .ai-cite { font-size: 11px; color: #7c3aed; margin-top: 6px; font-style: italic; }
+
+    /* ── ACTIVITY FEED ── */
+    .act-row  { padding: 8px 12px; border-bottom: 1px solid #f0f1f3; cursor: pointer; }
+    .act-row:hover { background: #f6f7f9; }
+    .act-row:last-child { border-bottom: none; }
+    .act-top  { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 3px; }
+    .act-who  { font-size: 12px; font-weight: 500; color: #1f2328; }
+    .act-type-lbl { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; margin-left: 6px; }
+    .act-type-lbl.blue   { color: #0969da; }
+    .act-type-lbl.purple { color: #7c3aed; }
+    .act-type-lbl.amber  { color: #9a6700; }
+    .act-type-lbl.green  { color: #1a7f37; }
+    .act-type-lbl.gray   { color: #57606a; }
+    .act-type-lbl.red    { color: #cf222e; }
+    .act-time { font-size: 11px; color: #8c959f; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+    .act-detail { font-size: 12px; color: #6e7681; line-height: 1.4; }
+    .act-detail.quote { color: #1f2328; font-style: italic; }
+
+    /* ── COMMENT INPUT ── */
+    .comment-wrap { padding: 10px 12px; background: #fbfbfc; border-top: 1px solid #e1e4e8; display: flex; flex-direction: column; gap: 7px; }
+    .comment-area { font-size: 12px; padding: 7px 10px; border: 1px solid #d0d7de; border-radius: 4px; background: white; font-family: inherit; resize: none; width: 100%; color: #1f2328; }
+    .comment-area:focus { outline: 2px solid #0969da; outline-offset: -1px; border-color: transparent; }
+    .comment-area::placeholder { color: #8c959f; }
+    .comment-actions { display: flex; justify-content: flex-end; gap: 6px; }
+
+    /* ── DOCUMENT ROWS ── */
+    .doc-row { display: grid; grid-template-columns: 42px 1fr 70px 60px 14px; gap: 10px; padding: 6px 12px; border-bottom: 1px solid #f0f1f3; align-items: center; font-size: 13px; cursor: pointer; }
+    .doc-row:hover { background: #f6f7f9; }
+    .doc-row:last-child { border-bottom: none; }
+    .td-sec { color: #6e7681; font-size: 12px; }
+
+    /* ── SKELETON ── */
+    .skel { background: linear-gradient(90deg,#f0f1f3 25%,#f6f7f9 50%,#f0f1f3 75%); background-size: 200% 100%; animation: shimmer 1.6s infinite; border-radius: 3px; display: inline-block; }
+    @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+    .sk-row { padding: 8px 12px; border-bottom: 1px solid #f0f1f3; display: flex; align-items: center; gap: 10px; }
+    .sk-row:last-child { border-bottom: none; }
+
+    /* ── EMPTY ── */
+    .empty { padding: 16px 12px; text-align: center; color: #8c959f; font-size: 12px; }
+    .empty strong { display: block; color: #6e7681; font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+
+    /* ── BOTTOM BAR ── */
+    .bot-bar { display: flex; justify-content: space-between; padding: 6px 0; font-size: 11px; color: #6e7681; }
+    .kbd { background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 3px; padding: 1px 5px; font-family: 'SF Mono','Fira Mono',monospace; font-size: 10px; color: #1f2328; }
+
+    /* ── TOAST ── */
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1f2328; color: white; padding: 9px 16px; border-radius: 4px; font-size: 13px; box-shadow: 0 4px 16px rgba(0,0,0,0.22); z-index: 9000; white-space: nowrap; animation: tin .15s ease; }
+    @keyframes tin { from{opacity:0;transform:translateX(-50%) translateY(5px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel">
+const { useState } = React;
+
+/* ─── DATA ─── */
+const SAG = {
+  nr: '#2841', type: 'Patientklage', selskab: 'Klinik Aalborg',
+  status: 'Åben', prioritet: 'Kritisk', frist: '13. maj 2026',
+  oprettet: '4. apr 2026', ansvarlig: 'Philip Birkenborg',
+  beskrivelse: 'Patient Mette Andersen (f. 1978) klager over behandlingsforløb 14.–28. mar 2026. Klage modtaget 3. apr via advokatbrev. Sagen håndteres af klinikchef + juridisk rådgiver.',
+  reference: 'Patientklage · Sundhedsstyrelsen ref. 2026-04-1892',
+};
+
+const TASKS = [
+  { id:1, tekst:'Kontakt patient og advokat om forligstilbud', ansvarlig:'Philip', frist:'13. maj', done:false, haster:true },
+  { id:2, tekst:'Indhent erklæring fra klinikchef',           ansvarlig:'Philip', frist:'15. maj', done:false, haster:false },
+  { id:3, tekst:'Send journaludskrift til advokat',           ansvarlig:'Marie',  frist:'12. maj', done:true,  haster:false },
+];
+
+const LINKED = [
+  { type:'Kontrakt', navn:'Lejekontrakt erhverv', selskab:'Klinik Aalborg', badge:'Aktiv', badgeCls:'green' },
+  { type:'Person',   navn:'Erik Nielsen',          selskab:'Medejer · Klinik Aalborg', badge:'CEO-kontakt', badgeCls:'blue' },
+];
+
+const DOCS = [
+  { ext:'PDF',  navn:'patientklage-brev.pdf',    ai:'AI ✓', date:'6. maj 2026',  aiCls:'green' },
+  { ext:'PDF',  navn:'journaludskrift-mar26.pdf', ai:'Afventer', date:'8. maj 2026', aiCls:'gray' },
+  { ext:'DOCX', navn:'internt-notat-2841.docx',  ai:'AI ✓', date:'9. maj 2026',  aiCls:'green' },
+];
+
+const ACTIVITY = [
+  { id:1, who:'Philip',    type:'Kommentar',   typeCls:'blue',   detail:'"Forhandlet med patientens advokat — venter på skriftligt forligstilbud. Forventer svar inden fredag."', time:'10. maj 13:44' },
+  { id:2, who:'System',    type:'AI-analyse',  typeCls:'purple', detail:'Sagsrisiko vurderet til HØJ · sandsynlighed for forlig 68% · 5 observationer gennemgået', time:'8. maj 09:00' },
+  { id:3, who:'Marie',     type:'Dokument',    typeCls:'gray',   detail:'journaludskrift-mar26.pdf uploadet · 4,2 MB · 31 sider', time:'8. maj 08:44' },
+  { id:4, who:'Marie',     type:'Dokument',    typeCls:'gray',   detail:'patientklage-brev.pdf uploadet · 2,1 MB', time:'6. maj 14:20' },
+  { id:5, who:'Philip',    type:'Eskalering',  typeCls:'red',    detail:'Videresendt til Juridisk rådgiver · Advokatfirma Hansen & Co.', time:'5. maj 10:30' },
+  { id:6, who:'Philip',    type:'Frist ændret',typeCls:'amber',  detail:'20. maj 2026 → 13. maj 2026 · fremrykket pga. advokatbrev', time:'5. maj 09:15' },
+  { id:7, who:'Philip',    type:'Oprettelse',  typeCls:'green',  detail:'Sag oprettet på baggrund af patientbrev modtaget 3. apr 2026', time:'4. apr 11:30' },
+];
+
+/* ─── SIDEBAR ─── */
+function Sidebar() {
+  return (
+    <aside className="sb">
+      <div className="sb-logo">▣ ChainHub</div>
+      <div className="sb-sec">
+        <div className="sb-lab">Overblik</div>
+        <div className="sb-item">Forside <span className="sb-cnt a">5</span></div>
+        <div className="sb-item">Kalender <span className="sb-cnt">12</span></div>
+        <div className="sb-item">Søg</div>
+      </div>
+      <div className="sb-sec">
+        <div className="sb-lab">Portefølje</div>
+        <div className="sb-item">Selskaber <span className="sb-cnt">32</span></div>
+        <div className="sb-item">Kontrakter <span className="sb-cnt w">3</span></div>
+        <div className="sb-item active">Sager <span className="sb-cnt a">7</span></div>
+        <div className="sb-item">Opgaver <span className="sb-cnt w">9</span></div>
+      </div>
+      <div className="sb-sec">
+        <div className="sb-lab">Ressourcer</div>
+        <div className="sb-item">Dokumenter <span className="sb-cnt">412</span></div>
+        <div className="sb-item">Personer <span className="sb-cnt">184</span></div>
+        <div className="sb-item">Indstillinger</div>
+      </div>
+    </aside>
+  );
+}
+
+/* ─── SKELETON ─── */
+function SkRows({ n = 4, cols = [140, 90, 60] }) {
+  return Array.from({ length: n }).map((_, i) => (
+    <div key={i} className="sk-row" style={{ borderBottom: i < n-1 ? '1px solid #f0f1f3' : 'none' }}>
+      {cols.map((w, j) => <span key={j} className="skel" style={{ width: w, height: 12 }}></span>)}
+    </div>
+  ));
+}
+
+/* ─── MAIN PAGE ─── */
+function SagDetail() {
+  const [demo,       setDemo]       = useState('normal');
+  const [comment,    setComment]    = useState('');
+  const [taskDone,   setTaskDone]   = useState(new Set([3]));
+  const [toast,      setToast]      = useState(null);
+  const [toastKey,   setToastKey]   = useState(0);
+
+  const isSkeleton = demo === 'skeleton';
+  const isError    = demo === 'fejl';
+
+  function doToast(msg) { setToast(msg); setToastKey(k=>k+1); setTimeout(()=>setToast(null),2600); }
+  function toggleTask(id) { setTaskDone(prev => { const n = new Set(prev); n.has(id)?n.delete(id):n.add(id); return n; }); }
+
+  function submitComment() {
+    if (!comment.trim()) return;
+    doToast(`Kommentar tilføjet: "${comment.slice(0,40)}${comment.length>40?'…':''}"`);
+    setComment('');
+  }
+
+  return (
+    <div className="layout">
+      <Sidebar />
+      <main className="main">
+
+        {/* Demo bar */}
+        <div className="demo-bar">
+          <span>Demo:</span>
+          {['normal','skeleton','fejl'].map(s => (
+            <button key={s} className={`demo-btn${demo===s?' on':''}`} onClick={()=>setDemo(s)}>{s}</button>
+          ))}
+        </div>
+
+        {/* Breadcrumb */}
+        <div className="crumb">
+          <a href="#">Sager</a><span className="sep">›</span>
+          {isSkeleton
+            ? <span className="skel" style={{width:160,height:12,display:'inline-block',verticalAlign:'middle'}}></span>
+            : <span>#2841 Patientklage · Klinik Aalborg</span>}
+        </div>
+
+        {/* Error */}
+        {isError && (
+          <div className="alert-bar">
+            <div><strong>Kunne ikke hente sagsdata</strong> — forbindelsesfejl. Prøv igen.</div>
+            <div className="alert-bar-btns">
+              <button className="btn">Prøv igen</button>
+            </div>
+          </div>
+        )}
+
+        {/* Urgency alert */}
+        {!isSkeleton && !isError && (
+          <div className="alert-bar">
+            <div><strong>Frist om 3 dage</strong> · forligstilbud fra advokat endnu ikke modtaget</div>
+            <div className="alert-bar-btns">
+              <button className="btn" onClick={()=>doToast('Åbner kontaktopgave')}>Se opgaver</button>
+              <button className="btn primary" onClick={()=>doToast('Eskalerer sag')}>Eskalér</button>
+            </div>
+          </div>
+        )}
+
+        {/* Header */}
+        <div className="head">
+          <div>
+            {isSkeleton ? (
+              <>
+                <div className="skel" style={{width:220,height:18,display:'block',marginBottom:8}}></div>
+                <div className="skel" style={{width:320,height:12,display:'block'}}></div>
+              </>
+            ) : (
+              <>
+                <h1>
+                  <span style={{color:'#6e7681',fontWeight:500}}>#2841</span>
+                  {' — '}
+                  Patientklage
+                  <span className="badge red">Kritisk</span>
+                  <span className="badge blue">Åben</span>
+                </h1>
+                <div className="head-meta">
+                  Klinik Aalborg
+                  <span className="sep-dot">·</span>
+                  Oprettet 4. apr 2026
+                  <span className="sep-dot">·</span>
+                  Ansvarlig: Philip Birkenborg
+                  <span className="sep-dot">·</span>
+                  Frist: 13. maj 2026
+                </div>
+              </>
+            )}
+          </div>
+          <div className="head-r">
+            <button className="btn" onClick={()=>doToast('Rediger sag')}>Rediger</button>
+            <button className="btn danger" onClick={()=>doToast('Luk sag — åbner bekræftelse')}>Luk sag</button>
+          </div>
+        </div>
+
+        {/* Strip */}
+        {isSkeleton ? (
+          <div className="strip">
+            {Array.from({length:6}).map((_,i) => (
+              <div key={i} className="sc">
+                <span className="skel" style={{width:50,height:14,display:'block'}}></span>
+                <span className="skel" style={{width:70,height:10,display:'block',marginTop:5}}></span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="strip">
+            <div className="sc"><div className="sn a" style={{fontSize:12}}>Kritisk</div><div className="sl">Prioritet</div></div>
+            <div className="sc"><div className="sn sm">Patientklage</div><div className="sl">Type</div></div>
+            <div className="sc"><div className="sn a">3d</div><div className="sl">Frist · 13. maj</div></div>
+            <div className="sc"><div className="sn sm">Åben</div><div className="sl">Status</div></div>
+            <div className="sc"><div className="sn sm">Philip B.</div><div className="sl">Ansvarlig</div></div>
+            <div className="sc"><div className="sn sm">4. apr</div><div className="sl">Oprettet</div></div>
+          </div>
+        )}
+
+        {/* 3-col: Detaljer + Tilknytninger + AI */}
+        <div className="grid3">
+
+          {/* Detaljer */}
+          <div className="pnl">
+            <div className="pnl-h"><span className="pnl-t">Detaljer</span></div>
+            {isSkeleton
+              ? <SkRows n={6} cols={[90,160]} />
+              : (
+                <>
+                  <div className="dt-row"><span className="dt-l">Beskrivelse</span><span className="dt-v" style={{fontSize:12,lineHeight:1.45,color:'#6e7681'}}>{SAG.beskrivelse}</span></div>
+                  <div className="dt-row"><span className="dt-l">Type</span><span className="dt-v"><span className="badge gray">{SAG.type}</span></span></div>
+                  <div className="dt-row"><span className="dt-l">Selskab</span><span className="dt-v">{SAG.selskab}</span></div>
+                  <div className="dt-row"><span className="dt-l">Prioritet</span><span className="dt-v"><span className="badge red">{SAG.prioritet}</span></span></div>
+                  <div className="dt-row"><span className="dt-l">Reference</span><span className="dt-v" style={{fontSize:11,color:'#6e7681'}}>{SAG.reference}</span></div>
+                  <div className="dt-row"><span className="dt-l">Ansvarlig</span><span className="dt-v">{SAG.ansvarlig}</span></div>
+                </>
+              )}
+            <div className="pnl-foot">
+              <span></span>
+              <button className="btn-add" onClick={()=>doToast('Rediger detaljer')}>Rediger</button>
+            </div>
+          </div>
+
+          {/* Tilknytninger */}
+          <div className="pnl">
+            <div className="pnl-h"><span className="pnl-t">Tilknytninger</span><span className="pnl-m">{isSkeleton?'…':LINKED.length+' elementer'}</span></div>
+            {isSkeleton
+              ? <SkRows n={3} cols={[130,60]} />
+              : LINKED.map((l,i) => (
+                <div key={i} className="link-row" onClick={()=>doToast(`Åbner ${l.navn}`)}>
+                  <div>
+                    <div className="lr-name">{l.navn}</div>
+                    <div className="lr-sub">{l.type} · {l.selskab}</div>
+                  </div>
+                  <span className={`badge ${l.badgeCls}`}>{l.badge}</span>
+                  <span className="chev">›</span>
+                </div>
+              ))}
+            <div className="pnl-foot">
+              <span></span>
+              <button className="btn-add" onClick={()=>doToast('Tilknyt element')}>+ Tilknyt</button>
+            </div>
+          </div>
+
+          {/* AI Analyse (Plus) */}
+          <div className="pnl">
+            <div className="pnl-h"><span className="pnl-t">AI Analyse <span className="plus">PLUS</span></span><span className="pnl-m">8. maj 09:00</span></div>
+            {isSkeleton
+              ? <div style={{padding:8}}><div className="skel" style={{width:'100%',height:120,borderRadius:4}}></div></div>
+              : (
+                <div style={{padding:0}}>
+                  <div className="ai-wrap">
+                    <div className="ai-head">
+                      <span className="ai-l">⚡ Sagsrisiko</span>
+                      <span className="ai-conf">68% forlig</span>
+                    </div>
+                    <div className="ai-body">
+                      Sagen ligner forligsklart mønster. Anbefaling: indhent erklæring fra klinikchef og send forligstilbud inden fristdato.
+                    </div>
+                    <div style={{marginTop:8}}>
+                      <div className="ai-row"><span style={{color:'#4c1d95'}}>Lignende sager:</span></div>
+                      <div className="ai-row"><span style={{color:'#4c1d95'}}>#2744 · Klinik Odense</span><span style={{color:'#7c3aed',fontSize:10}}>Forlig · 4 uger</span></div>
+                      <div className="ai-row"><span style={{color:'#4c1d95'}}>#2612 · Klinik Aarhus</span><span style={{color:'#7c3aed',fontSize:10}}>Forlig · 6 uger</span></div>
+                    </div>
+                    <div className="ai-cite">Baseret på 12 lignende patientklager 2023–2026</div>
+                  </div>
+                </div>
+              )}
+          </div>
+
+        </div>
+
+        {/* Opgaver (full-width) */}
+        <div className="pnl">
+          <div className="pnl-h">
+            <span className="pnl-t">Opgaver <span style={{background:'#e1e4e8',color:'#57606a',padding:'1px 6px',borderRadius:8,fontSize:10,fontWeight:500,textTransform:'none',letterSpacing:0,marginLeft:4}}>{isSkeleton?'…':TASKS.length}</span></span>
+            <span className="pnl-m">{isSkeleton?'…':`${TASKS.filter(t=>!taskDone.has(t.id)).length} åbne`}</span>
+          </div>
+          {isSkeleton
+            ? <SkRows n={3} cols={[14,200,80,70]} />
+            : TASKS.map(t => (
+              <div key={t.id} className="task-row" onClick={()=>toggleTask(t.id)}>
+                <div className="task-cb" style={{background:taskDone.has(t.id)?'#1a7f37':'white',borderColor:taskDone.has(t.id)?'#1a7f37':'#d0d7de',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                  {taskDone.has(t.id) && <span style={{color:'white',fontSize:9,fontWeight:700}}>✓</span>}
+                </div>
+                <span style={{textDecoration:taskDone.has(t.id)?'line-through':'none',color:taskDone.has(t.id)?'#8c959f':'#1f2328'}}>{t.tekst}</span>
+                <span className="td-sec">{t.ansvarlig}</span>
+                <span>
+                  {t.haster
+                    ? <span className="badge red">{t.frist}</span>
+                    : <span className="badge gray">{t.frist}</span>}
+                </span>
+              </div>
+            ))}
+          <div className="pnl-foot">
+            <span>{isSkeleton?'':`${TASKS.filter(t=>taskDone.has(t.id)).length} af ${TASKS.length} fuldført`}</span>
+            <button className="btn-add" onClick={()=>doToast('Tilføj opgave')}>+ Tilføj opgave</button>
+          </div>
+        </div>
+
+        {/* 2-col: Aktivitet + Dokumenter */}
+        <div className="grid2" style={{alignItems:'start'}}>
+
+          {/* Aktivitet feed */}
+          <div className="pnl">
+            <div className="pnl-h">
+              <span className="pnl-t">Aktivitet</span>
+              <span className="pnl-m">{isSkeleton?'…':`${ACTIVITY.length} events · nyeste øverst`}</span>
+            </div>
+            {isSkeleton
+              ? <SkRows n={5} cols={[80,130,80]} />
+              : ACTIVITY.map(a => (
+                <div key={a.id} className="act-row">
+                  <div className="act-top">
+                    <span>
+                      <span className="act-who">{a.who}</span>
+                      <span className={`act-type-lbl ${a.typeCls}`}>{a.type}</span>
+                    </span>
+                    <span className="act-time">{a.time}</span>
+                  </div>
+                  <div className={`act-detail${a.id===1?' quote':''}`}>{a.detail}</div>
+                </div>
+              ))}
+            <div className="comment-wrap">
+              <textarea className="comment-area" rows={2}
+                placeholder="Tilføj kommentar til sagen..."
+                value={comment}
+                onChange={e => setComment(e.target.value)}
+                onKeyDown={e => { if ((e.metaKey||e.ctrlKey) && e.key==='Enter') submitComment(); }}
+              />
+              <div className="comment-actions">
+                <span style={{fontSize:11,color:'#8c959f',alignSelf:'center'}}><span className="kbd">⌘</span><span className="kbd">↵</span></span>
+                <button className="btn primary" style={{fontSize:11,padding:'4px 10px'}} onClick={submitComment}>Gem</button>
+              </div>
+            </div>
+          </div>
+
+          {/* Dokumenter */}
+          <div className="pnl">
+            <div className="pnl-h">
+              <span className="pnl-t">Dokumenter <span style={{background:'#e1e4e8',color:'#57606a',padding:'1px 6px',borderRadius:8,fontSize:10,fontWeight:500,textTransform:'none',letterSpacing:0,marginLeft:4}}>{isSkeleton?'…':DOCS.length}</span></span>
+              <span className="pnl-m">{isSkeleton?'…':'2 AI-extracted'}</span>
+            </div>
+            {isSkeleton
+              ? <SkRows n={3} cols={[42,150,60,50]} />
+              : DOCS.length === 0
+                ? <div className="empty"><strong>Ingen dokumenter</strong>Upload det første dokument til denne sag.</div>
+                : DOCS.map((d,i) => (
+                  <div key={i} className="doc-row" onClick={()=>doToast(`Åbner ${d.navn}`)}>
+                    <span className="badge gray">{d.ext}</span>
+                    <span style={{fontWeight:500,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',fontSize:12}}>{d.navn}</span>
+                    <span className={`badge ${d.aiCls}`} style={{fontSize:10}}>{d.ai}</span>
+                    <span className="td-sec">{d.date}</span>
+                    <span className="chev">›</span>
+                  </div>
+                ))}
+            <div className="pnl-foot">
+              <span></span>
+              <button className="btn-add" onClick={()=>doToast('Upload dokument')}>+ Upload</button>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Bottom bar */}
+        <div className="bot-bar">
+          <span>{isSkeleton?'Henter…':'Sag #2841 · Klinik Aalborg · Sidst opdateret 10. maj 13:44'}</span>
+          <span>
+            <span className="kbd">⌘K</span> handling ·{' '}
+            <span className="kbd">E</span> rediger ·{' '}
+            <span className="kbd">C</span> kommentar
+          </span>
+        </div>
+
+      </main>
+      {toast && <div className="toast" key={toastKey}>✓ {toast}</div>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<SagDetail />);
+</script>
+</body>
+</html>
