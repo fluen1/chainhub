@@ -23,7 +23,6 @@ interface EditPersonDialogProps {
   }
 }
 
-
 export function EditPersonDialog({ open, onClose, person }: EditPersonDialogProps) {
   const [firstName, setFirstName] = useState(person.firstName)
   const [lastName, setLastName] = useState(person.lastName)
@@ -78,6 +77,7 @@ export function EditPersonDialog({ open, onClose, person }: EditPersonDialogProp
           onChange={setFirstName}
           placeholder="Fornavn"
           required
+          // eslint-disable-next-line jsx-a11y/no-autofocus -- modaler skal fokusere første felt
           autoFocus
         />
         <BTextField
