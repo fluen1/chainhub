@@ -15,7 +15,7 @@ export function buildDigestHtml(data: DigestData): string {
   const sections: string[] = []
 
   // Header
-  sections.push(`<h2>Godmorgen, ${userName.split(' ')[0]}</h2>`)
+  sections.push(`<h2>Hej ${userName.split(' ')[0]},</h2>`)
   sections.push(`<p>Her er dit daglige overblik fra ChainHub.</p>`)
 
   // Forfaldne opgaver
@@ -81,7 +81,10 @@ export function buildDigestHtml(data: DigestData): string {
   sections.push(`<hr>`)
   sections.push(`<p><a href="${appUrl}/dashboard">\u00c5bn ChainHub</a></p>`)
   sections.push(
-    `<p style="color: #9ca3af; font-size: 12px;">Denne email sendes automatisk fra ChainHub. Du kan ikke svare p\u00e5 den.</p>`
+    `<p style="color: #9ca3af; font-size: 12px;"><a href="${appUrl}/settings?section=notif" style="color: #9ca3af;">Afmeld daglig email-opdatering</a></p>`
+  )
+  sections.push(
+    `<p style="color: #9ca3af; font-size: 12px;">Denne email sendes automatisk. Svar venligst ikke \u2014 log i stedet ind p\u00e5 ChainHub.</p>`
   )
 
   return `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">${sections.join('\n')}</body></html>`
