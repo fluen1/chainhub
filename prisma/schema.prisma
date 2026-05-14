@@ -323,6 +323,7 @@ model User {
   avatar_url      String?
   microsoft_id    String?
   active          Boolean   @default(true)
+  last_login_at   DateTime?
   created_at      DateTime  @default(now())
   updated_at      DateTime  @updatedAt
   deleted_at      DateTime?
