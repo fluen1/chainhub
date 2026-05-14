@@ -7,7 +7,7 @@ export default async function NewCompanyPage() {
   const session = await auth()
   if (!session) redirect('/login')
 
-  const hasAccess = await canAccessModule(session.user.id, 'settings')
+  const hasAccess = await canAccessModule(session.user.id, 'settings', session.user.organizationId)
   if (!hasAccess) redirect('/companies')
 
   return <CreateCompanyForm />

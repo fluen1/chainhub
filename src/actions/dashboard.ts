@@ -19,6 +19,7 @@ import {
   type TimelineItem,
   type TimelineSectionData,
 } from '@/lib/dashboard-helpers'
+import { getContractTypeLabel } from '@/lib/labels'
 
 // Re-eksportér typer så eksisterende importers (`@/actions/dashboard`) fortsat virker.
 export type {
@@ -71,26 +72,28 @@ export async function getDashboardData(
     documentsCount,
     personsCount,
   ] = await Promise.all([
-    // Forfaldne opgaver (overdue section) — company_id er nullable, scope via org
+    // Forfaldne opgaver (overdue section) — scope: selskaber brugeren har adgang til + org-brede tasks (company_id=null)
     prisma.task.findMany({
       where: {
         organization_id: organizationId,
         deleted_at: null,
         status: { not: 'LUKKET' },
         due_date: { lt: today },
+        OR: [{ company_id: { in: companyIds } }, { company_id: null }],
       },
       orderBy: { due_date: 'asc' },
       take: 15,
       select: { id: true, title: true, due_date: true, company_id: true },
     }),
 
-    // Opgaver i dag + denne/næste uge — company_id er nullable, scope via org
+    // Opgaver i dag + denne/næste uge — scope: selskaber brugeren har adgang til + org-brede tasks (company_id=null)
     prisma.task.findMany({
       where: {
         organization_id: organizationId,
         deleted_at: null,
         status: { not: 'LUKKET' },
         due_date: { gte: today, lte: twoWeekEnd },
+        OR: [{ company_id: { in: companyIds } }, { company_id: null }],
       },
       orderBy: { due_date: 'asc' },
       take: 20,
@@ -220,13 +223,14 @@ export async function getDashboardData(
       select: { company_id: true, metric_type: true, value: true, period_year: true },
     }),
 
-    // Badge-counts — tasks kan mangle company_id, scope via org
+    // Badge-counts — scope: selskaber brugeren har adgang til + org-brede tasks (company_id=null)
     prisma.task.count({
       where: {
         organization_id: organizationId,
         deleted_at: null,
         status: { not: 'LUKKET' },
         due_date: { lt: today },
+        OR: [{ company_id: { in: companyIds } }, { company_id: null }],
       },
     }),
     prisma.document.count({
@@ -320,10 +324,10 @@ export async function getDashboardData(
     type: 'EJERAFTALE' | 'LEJEKONTRAKT_ERHVERV' | 'FORSIKRING' | 'ANSAETTELSE_FUNKTIONAER'
     label: string
   }> = [
-    { type: 'EJERAFTALE', label: 'Ejeraftale' },
-    { type: 'LEJEKONTRAKT_ERHVERV', label: 'Lejekontrakt' },
-    { type: 'FORSIKRING', label: 'Forsikring' },
-    { type: 'ANSAETTELSE_FUNKTIONAER', label: 'Ansættelse' },
+    { type: 'EJERAFTALE', label: getContractTypeLabel('EJERAFTALE') },
+    { type: 'LEJEKONTRAKT_ERHVERV', label: getContractTypeLabel('LEJEKONTRAKT_ERHVERV') },
+    { type: 'FORSIKRING', label: getContractTypeLabel('FORSIKRING') },
+    { type: 'ANSAETTELSE_FUNKTIONAER', label: getContractTypeLabel('ANSAETTELSE_FUNKTIONAER') },
   ]
   const totalCompanies = companies.length || 1
   const coverage: CoverageItem[] = REQUIRED_TYPES.map((req) => {

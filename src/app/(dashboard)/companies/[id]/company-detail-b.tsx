@@ -34,6 +34,7 @@ import {
   type PersonOption,
 } from '@/components/modals/b'
 import { AddDataDropdown } from './add-data-dropdown'
+import { EditStamdataDialog } from '@/components/companies/EditStamdataDialog'
 import { getCompanyPersonRoleLabel } from '@/lib/labels'
 import type { CompanyDetailData } from '@/actions/company-detail'
 
@@ -121,6 +122,7 @@ export function CompanyDetailB({
   const [addOwnerOpen, setAddOwnerOpen] = useState(false)
   const [addPersonOpen, setAddPersonOpen] = useState(false)
   const [addMetricOpen, setAddMetricOpen] = useState(false)
+  const [stamdataOpen, setStamdataOpen] = useState(false)
   const [endOwnership, setEndOwnership] = useState<OwnershipRow | null>(null)
   const [endRole, setEndRole] = useState<CompanyPersonRow | null>(null)
 
@@ -134,25 +136,41 @@ export function CompanyDetailB({
     return `${f.ebitda.value_k}k`
   }, [data.finance])
 
+  // Strip-celler respekterer visibleSections — finance-roller ser kun Kædeandel + EBITDA.
+  // Celler for moduler brugeren ikke har adgang til udelades helt (ingen 0-values).
   const stripCells: StripCellData[] = [
     { num: `${kaedePct}%`, label: 'Kædeandel' },
-    {
-      num: data.contracts.totalCount,
-      label: 'Kontrakter',
-      color: data.contracts.top.some((c) => c.badge.tone === 'red') ? 'amber' : 'default',
-    },
-    {
-      num: data.cases.totalCount,
-      label: 'Åbne sager',
-      color: data.cases.totalCount > 0 ? 'red' : 'default',
-    },
-    { num: data.persons.totalCount, label: 'Personer' },
-    { num: data.documents.rows.length, label: 'Dokumenter' },
-    {
-      num: ebitdaShort,
-      label: 'EBITDA',
-      color: ebitdaShort !== '—' ? 'green' : 'default',
-    },
+    ...(showContracts
+      ? [
+          {
+            num: data.contracts.totalCount,
+            label: 'Kontrakter',
+            color: (data.contracts.top.some((c) => c.badge.tone === 'red')
+              ? 'amber'
+              : 'default') as 'amber' | 'default',
+          },
+        ]
+      : []),
+    ...(showCases
+      ? [
+          {
+            num: data.cases.totalCount,
+            label: 'Åbne sager',
+            color: (data.cases.totalCount > 0 ? 'red' : 'default') as 'red' | 'default',
+          },
+        ]
+      : []),
+    ...(showPersons ? [{ num: data.persons.totalCount, label: 'Personer' }] : []),
+    ...(showDocuments ? [{ num: data.documents.rows.length, label: 'Dokumenter' }] : []),
+    ...(showFinance
+      ? [
+          {
+            num: ebitdaShort,
+            label: 'EBITDA',
+            color: (ebitdaShort !== '—' ? 'green' : 'default') as 'green' | 'default',
+          },
+        ]
+      : []),
   ]
 
   // Existing-owners-mapping til AddOwnerModal (filtrer end_date=null fra raw)
@@ -218,7 +236,7 @@ export function CompanyDetailB({
         actions={
           readOnly ? null : (
             <>
-              <BButton href={`/companies/${company.id}/stamdata`}>Rediger stamdata</BButton>
+              <BButton onClick={() => setStamdataOpen(true)}>Rediger stamdata</BButton>
               <AddDataDropdown
                 onAddOwner={() => setAddOwnerOpen(true)}
                 onAddPerson={() => setAddPersonOpen(true)}
@@ -421,9 +439,11 @@ export function CompanyDetailB({
                 {data.contracts.totalCount > data.contracts.top.length &&
                   ` · ${data.contracts.totalCount - data.contracts.top.length} flere`}
               </span>
-              <BAddButton href={`/contracts/new?company=${company.id}`}>
-                + Opret kontrakt
-              </BAddButton>
+              {!readOnly && (
+                <BAddButton href={`/contracts/new?company=${company.id}`}>
+                  + Opret kontrakt
+                </BAddButton>
+              )}
             </div>
           </PanelFooter>
         </Panel>
@@ -469,7 +489,9 @@ export function CompanyDetailB({
               <PanelFooter>
                 <div className="flex items-center justify-between">
                   <span />
-                  <BAddButton href={`/cases/new?company=${company.id}`}>+ Opret sag</BAddButton>
+                  {!readOnly && (
+                    <BAddButton href={`/cases/new?company=${company.id}`}>+ Opret sag</BAddButton>
+                  )}
                 </div>
               </PanelFooter>
             </Panel>
@@ -539,9 +561,11 @@ export function CompanyDetailB({
               <PanelFooter>
                 <div className="flex items-center justify-between">
                   <span />
-                  <BAddButton href={`/visits/new?company=${company.id}`}>
-                    + Planlæg besøg
-                  </BAddButton>
+                  {!readOnly && (
+                    <BAddButton href={`/visits/new?company=${company.id}`}>
+                      + Planlæg besøg
+                    </BAddButton>
+                  )}
                 </div>
               </PanelFooter>
             </Panel>
@@ -583,12 +607,17 @@ export function CompanyDetailB({
                   <strong className="font-medium">{d.fileName}</strong>
                   {d.meta && <span className="text-b-2"> · {d.meta}</span>}
                 </span>
-                {/* DocumentViewRow.badge.label fra getCompanyDetailData er enten "AI ✓"
-                  (når extraction.completed+reviewed) eller dårligt-passende "Arkiveret".
-                  Mapper "Arkiveret" → "Ikke AI" så terminologi matcher /documents. */}
-                <Badge tone={d.badge.label === 'AI ✓' ? 'green' : 'gray'}>
-                  {d.badge.label === 'AI ✓' ? 'AI ✓' : 'Ikke AI'}
-                </Badge>
+                {/* buildDocuments producerer 3 badge-tilstande:
+                  - label='Til review', tone='purple' → awaiting review
+                  - isAiExtracted=true, label='Arkiveret' → AI reviewed
+                  - isAiExtracted=false, label='Arkiveret' → ikke AI-behandlet */}
+                {d.badge.label === 'Til review' ? (
+                  <Badge tone="amber">Til review</Badge>
+                ) : d.isAiExtracted ? (
+                  <Badge tone="green">AI ✓</Badge>
+                ) : (
+                  <Badge tone="gray">Ikke AI</Badge>
+                )}
                 <span className="text-b-3">›</span>
               </Link>
             ))
@@ -601,7 +630,11 @@ export function CompanyDetailB({
               >
                 Se alle dokumenter →
               </Link>
-              <BAddButton href={`/documents?company=${company.id}`}>+ Upload dokument</BAddButton>
+              {!readOnly && (
+                <BAddButton href={`/documents/upload?company=${company.id}`}>
+                  + Upload dokument
+                </BAddButton>
+              )}
             </div>
           </PanelFooter>
         </Panel>
@@ -619,6 +652,22 @@ export function CompanyDetailB({
           </>
         }
       />
+
+      {/* Stamdata-modal (ikke section-gated — stamdata er altid tilgængeligt for non-readonly) */}
+      {!readOnly && (
+        <EditStamdataDialog
+          open={stamdataOpen}
+          onClose={() => setStamdataOpen(false)}
+          companyId={company.id}
+          initial={{
+            name: company.name,
+            cvr: company.cvr ?? null,
+            address: company.address ?? null,
+            postal_code: company.postal_code ?? null,
+            city: company.city ?? null,
+          }}
+        />
+      )}
 
       {/* Modaler — section-gated så rolle uden sektion-adgang ikke kan trigge */}
       {!readOnly && canSeeOwnership && showOwnership && (

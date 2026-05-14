@@ -12,15 +12,42 @@ import { zodCaseType, zodCaseSubtype } from '@/lib/zod-enums'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
+import {
+  Panel,
+  BButton,
+  BTextField,
+  BTextareaField,
+  BFieldRow,
+  BFieldWrap,
+  Breadcrumb,
+} from '@/components/ui/b'
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CreateCaseForm — B-stil port. Felter: title, caseType, caseSubtype,
+// sensitivity, companyIds (multi-check), description, notes.
+// ─────────────────────────────────────────────────────────────────────────────
 
 type SensitivityValue = 'PUBLIC' | 'STANDARD' | 'INTERN' | 'FORTROLIG' | 'STRENGT_FORTROLIG'
 
 const CASE_TYPES = Object.keys(CASE_TYPE_LABELS)
 
+const SENSITIVITY_OPTIONS: Array<{ value: SensitivityValue; label: string }> = [
+  { value: 'STANDARD', label: 'Standard' },
+  { value: 'INTERN', label: 'Intern' },
+  { value: 'FORTROLIG', label: 'Fortrolig' },
+  { value: 'STRENGT_FORTROLIG', label: 'Strengt fortrolig' },
+]
+
 export function CreateCaseForm() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [title, setTitle] = useState('')
+  const [titleError, setTitleError] = useState<string | null>(null)
   const [selectedType, setSelectedType] = useState('')
+  const [selectedSubtype, setSelectedSubtype] = useState('')
+  const [sensitivity, setSensitivity] = useState<SensitivityValue>('INTERN')
+  const [description, setDescription] = useState('')
+  const [notes, setNotes] = useState('')
   const [selectedCompanyIds, setSelectedCompanyIds] = useState<string[]>([])
   const [companies, setCompanies] = useState<{ id: string; name: string }[]>([])
 
@@ -39,22 +66,25 @@ export function CreateCaseForm() {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
+
+    if (!title.trim()) {
+      setTitleError('Titel er påkrævet')
+      return
+    }
     if (selectedCompanyIds.length === 0) {
       toast.error('Vælg mindst ét selskab')
       return
     }
+    setTitleError(null)
     setLoading(true)
 
-    const formData = new FormData(e.currentTarget)
-
-    const parsedCaseType = zodCaseType.safeParse(formData.get('caseType'))
+    const parsedCaseType = zodCaseType.safeParse(selectedType)
     if (!parsedCaseType.success) {
       setLoading(false)
       toast.error('Vælg en gyldig sagstype')
       return
     }
-    const rawSubtype = (formData.get('caseSubtype') as string) || ''
-    const parsedSubtype = rawSubtype ? zodCaseSubtype.safeParse(rawSubtype) : null
+    const parsedSubtype = selectedSubtype ? zodCaseSubtype.safeParse(selectedSubtype) : null
     if (parsedSubtype && !parsedSubtype.success) {
       setLoading(false)
       toast.error('Ugyldig undertype')
@@ -62,13 +92,13 @@ export function CreateCaseForm() {
     }
 
     const input: CreateCaseInput = {
-      title: formData.get('title') as string,
+      title: title.trim(),
       caseType: parsedCaseType.data,
       caseSubtype: parsedSubtype?.success ? parsedSubtype.data : undefined,
       companyIds: selectedCompanyIds,
-      sensitivity: formData.get('sensitivity') as SensitivityValue,
-      description: formData.get('description') as string,
-      notes: formData.get('notes') as string,
+      sensitivity,
+      description: description || undefined,
+      notes: notes || undefined,
     }
 
     const result = await createCase(input)
@@ -88,171 +118,170 @@ export function CreateCaseForm() {
   const subtypes = selectedType ? (CASE_SUBTYPE_BY_TYPE[selectedType] ?? []) : []
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href="/cases" className="rounded-md p-1 hover:bg-gray-100">
-          <ArrowLeft className="h-5 w-5 text-gray-500" />
+    <div className="mx-auto max-w-3xl space-y-3">
+      <Breadcrumb trail={[{ label: 'Sager', href: '/cases' }]} current="Ny sag" />
+
+      <div className="flex items-center gap-2">
+        <Link href="/cases" className="rounded-[4px] p-1 hover:bg-[#f6f8fa]">
+          <ArrowLeft className="h-4 w-4 text-b-2" />
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900">Opret sag</h1>
+        <span className="text-[16px] font-semibold text-b-1">Opret sag</span>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6 rounded-lg border bg-white p-6 shadow-sm">
-        <div className="space-y-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-900">Grunddata</h2>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        {/* Grunddata */}
+        <Panel>
+          <div className="flex flex-col gap-3.5 px-4 py-4">
+            <p
+              className="text-[10px] font-semibold uppercase text-b-2"
+              style={{ letterSpacing: '0.4px' }}
+            >
+              Grunddata
+            </p>
 
-          <div>
-            <label htmlFor="case-title" className="block text-sm font-medium text-gray-700">
-              Titel *
-            </label>
-            <input
-              id="case-title"
-              name="title"
-              type="text"
+            <BTextField
+              label="Titel"
+              value={title}
+              onChange={(v) => {
+                setTitle(v)
+                if (v.trim()) setTitleError(null)
+              }}
               required
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none"
               placeholder="fx Virksomhedskøb — Klinik Aarhus 2024"
+              error={titleError}
+              autoFocus
+              disabled={loading}
             />
-          </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <label htmlFor="case-caseType" className="block text-sm font-medium text-gray-700">
-                Sagstype *
-              </label>
-              <select
-                id="case-caseType"
-                name="caseType"
-                required
-                value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none"
-              >
-                <option value="">Vælg type...</option>
-                {CASE_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {CASE_TYPE_LABELS[t]}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <BFieldRow>
+              <BFieldWrap label="Sagstype" required>
+                <select
+                  value={selectedType}
+                  onChange={(e) => {
+                    setSelectedType(e.target.value)
+                    setSelectedSubtype('')
+                  }}
+                  required
+                  disabled={loading}
+                  className="rounded-[4px] border border-b-border-strong bg-white px-2.5 py-1.5 text-[13px] text-b-1 focus:border-transparent focus:outline focus:outline-2 focus:outline-b-blue-fg focus:outline-offset-[-1px] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <option value="">Vælg type...</option>
+                  {CASE_TYPES.map((t) => (
+                    <option key={t} value={t}>
+                      {CASE_TYPE_LABELS[t]}
+                    </option>
+                  ))}
+                </select>
+              </BFieldWrap>
 
-            <div>
-              <label htmlFor="case-caseSubtype" className="block text-sm font-medium text-gray-700">
-                Undertype
-                {selectedType && selectedType !== 'ANDET' && (
-                  <span className="ml-1 text-red-500">*</span>
-                )}
-              </label>
-              <select
-                id="case-caseSubtype"
-                name="caseSubtype"
-                disabled={!selectedType || selectedType === 'ANDET'}
+              <BFieldWrap
+                label="Undertype"
                 required={selectedType !== '' && selectedType !== 'ANDET'}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none disabled:bg-gray-50"
               >
-                <option value="">
-                  {selectedType === 'ANDET' ? 'Ingen undertype' : 'Vælg undertype...'}
-                </option>
-                {subtypes.map((s) => (
-                  <option key={s.value} value={s.value}>
-                    {s.label}
+                <select
+                  value={selectedSubtype}
+                  onChange={(e) => setSelectedSubtype(e.target.value)}
+                  disabled={!selectedType || selectedType === 'ANDET' || loading}
+                  required={selectedType !== '' && selectedType !== 'ANDET'}
+                  className="rounded-[4px] border border-b-border-strong bg-white px-2.5 py-1.5 text-[13px] text-b-1 focus:border-transparent focus:outline focus:outline-2 focus:outline-b-blue-fg focus:outline-offset-[-1px] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <option value="">
+                    {selectedType === 'ANDET' ? 'Ingen undertype' : 'Vælg undertype...'}
+                  </option>
+                  {subtypes.map((s) => (
+                    <option key={s.value} value={s.value}>
+                      {s.label}
+                    </option>
+                  ))}
+                </select>
+              </BFieldWrap>
+            </BFieldRow>
+
+            <BFieldWrap label="Sensitivitetsniveau">
+              <select
+                value={sensitivity}
+                onChange={(e) => setSensitivity(e.target.value as SensitivityValue)}
+                disabled={loading}
+                className="rounded-[4px] border border-b-border-strong bg-white px-2.5 py-1.5 text-[13px] text-b-1 focus:border-transparent focus:outline focus:outline-2 focus:outline-b-blue-fg focus:outline-offset-[-1px] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {SENSITIVITY_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
                   </option>
                 ))}
               </select>
-            </div>
-          </div>
+            </BFieldWrap>
 
-          <div>
-            <label htmlFor="case-sensitivity" className="block text-sm font-medium text-gray-700">
-              Sensitivitetsniveau
-            </label>
-            <select
-              id="case-sensitivity"
-              name="sensitivity"
-              defaultValue="INTERN"
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none"
-            >
-              <option value="STANDARD">Standard</option>
-              <option value="INTERN">Intern</option>
-              <option value="FORTROLIG">Fortrolig</option>
-              <option value="STRENGT_FORTROLIG">Strengt fortrolig</option>
-            </select>
-          </div>
-
-          <div>
-            <span id="case-companies-label" className="block text-sm font-medium text-gray-700">
-              Tilknyttede selskaber *
-            </span>
-            <div
-              role="group"
-              aria-labelledby="case-companies-label"
-              className="mt-2 space-y-2 max-h-48 overflow-y-auto rounded-md border border-gray-200 p-3"
-            >
-              {companies.length === 0 ? (
-                <p className="text-sm text-gray-500">Ingen selskaber tilgængelige</p>
-              ) : (
-                companies.map((c) => (
-                  <label key={c.id} className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedCompanyIds.includes(c.id)}
-                      onChange={() => toggleCompany(c.id)}
-                      className="rounded"
-                    />
-                    <span className="text-sm text-gray-700">{c.name}</span>
-                  </label>
-                ))
+            <BFieldWrap label="Tilknyttede selskaber" required>
+              <div
+                role="group"
+                aria-label="Tilknyttede selskaber"
+                className="max-h-40 overflow-y-auto rounded-[4px] border border-b-border-strong bg-white p-2"
+              >
+                {companies.length === 0 ? (
+                  <p className="py-1 text-[13px] text-b-3">Ingen selskaber tilgængelige</p>
+                ) : (
+                  companies.map((c) => (
+                    <label
+                      key={c.id}
+                      className="flex cursor-pointer items-center gap-2 rounded-[2px] px-1 py-1 hover:bg-b-row-hover"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedCompanyIds.includes(c.id)}
+                        onChange={() => toggleCompany(c.id)}
+                        disabled={loading}
+                        className="rounded"
+                      />
+                      <span className="text-[13px] text-b-1">{c.name}</span>
+                    </label>
+                  ))
+                )}
+              </div>
+              {selectedCompanyIds.length === 0 && (
+                <div className="text-[11px] text-b-red-fg">Vælg mindst ét selskab</div>
               )}
-            </div>
-            {selectedCompanyIds.length === 0 && (
-              <p className="mt-1 text-xs text-red-500">Vælg mindst ét selskab</p>
-            )}
+            </BFieldWrap>
           </div>
-        </div>
+        </Panel>
 
-        <div className="space-y-4 border-t pt-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-900">
-            Beskrivelse
-          </h2>
-          <div>
-            <label htmlFor="case-description" className="block text-sm font-medium text-gray-700">
+        {/* Beskrivelse */}
+        <Panel>
+          <div className="flex flex-col gap-3.5 px-4 py-4">
+            <p
+              className="text-[10px] font-semibold uppercase text-b-2"
+              style={{ letterSpacing: '0.4px' }}
+            >
               Beskrivelse
-            </label>
-            <textarea
-              id="case-description"
-              name="description"
-              rows={4}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none"
-              placeholder="Beskrivelse af sagen..."
-            />
-          </div>
-          <div>
-            <label htmlFor="case-notes" className="block text-sm font-medium text-gray-700">
-              Interne noter
-            </label>
-            <textarea
-              id="case-notes"
-              name="notes"
-              rows={2}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none"
-            />
-          </div>
-        </div>
+            </p>
 
-        <div className="flex justify-end gap-3 pt-2">
-          <Link
-            href="/cases"
-            className="rounded-md border border-gray-300 bg-white px-4 py-3 md:py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            Annullér
+            <BTextareaField
+              label="Beskrivelse"
+              value={description}
+              onChange={setDescription}
+              placeholder="Beskrivelse af sagen..."
+              rows={4}
+              disabled={loading}
+            />
+
+            <BTextareaField
+              label="Interne noter"
+              value={notes}
+              onChange={setNotes}
+              rows={2}
+              disabled={loading}
+            />
+          </div>
+        </Panel>
+
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-2">
+          <Link href="/cases">
+            <BButton disabled={loading}>Annullér</BButton>
           </Link>
-          <button
-            type="submit"
-            disabled={loading}
-            className="rounded-md bg-blue-600 px-4 py-3 md:py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-          >
+          <BButton type="submit" primary disabled={loading || !title.trim()}>
             {loading ? 'Opretter...' : 'Opret sag'}
-          </button>
+          </BButton>
         </div>
       </form>
     </div>

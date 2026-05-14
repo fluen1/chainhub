@@ -83,18 +83,16 @@ const SECTIONS_BY_ROLE: Record<string, SectionKey[]> = {
   COMPANY_READONLY: ['persons', 'contracts', 'cases', 'finance', 'documents', 'visits', 'insight'],
 }
 
-// Hardcoded senior-roller for Noeglepersoner-sektionen (hierarki-orden = prioritet)
+// Hardcoded senior-roller for Noeglepersoner-sektionen (hierarki-orden = prioritet).
+// Værdier matcher COMPANY_PERSON_ROLE_LABELS i labels.ts (lowercase DB-strings).
 export const KEY_PERSON_ROLES = [
-  'Partner',
-  'Medejer',
-  'CEO',
-  'Direktoer',
-  'CFO',
-  'Bestyrelsesformand',
-  'Bestyrelsesmedlem',
-  'Klinisk leder',
-  'Klinikchef',
-  'Stedfortraeder',
+  'direktoer',
+  'bestyrelsesformand',
+  'bestyrelsesmedlem',
+  'tegningsberettiget',
+  'leder',
+  'ekstern_advokat',
+  'ekstern_raadgiver',
 ] as const
 
 // -----------------------------------------------------------------

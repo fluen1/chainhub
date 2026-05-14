@@ -4,6 +4,11 @@ import { useState } from 'react'
 import { updateVisit } from '@/actions/visits'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import { Panel, PanelHeader, BButton, BTextareaField } from '@/components/ui/b'
+
+// ─────────────────────────────────────────────────────────────────────────────
+// VisitNotesForm — B-stil port. Inline noter + opsummering (hvis GENNEMFOERT).
+// ─────────────────────────────────────────────────────────────────────────────
 
 interface VisitNotesFormProps {
   visitId: string
@@ -44,38 +49,35 @@ export function VisitNotesForm({
   }
 
   return (
-    <div className="rounded-lg border bg-white p-6 shadow-sm space-y-4">
-      <h2 className="text-base font-semibold text-gray-900">Noter</h2>
-      <textarea
-        value={notes}
-        onChange={(e) => setNotes(e.target.value)}
-        rows={4}
-        className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-        placeholder="Tilføj noter..."
-      />
-
-      {showSummary && (
-        <>
-          <h2 className="text-base font-semibold text-gray-900 pt-2">Opsummering</h2>
-          <textarea
-            value={summary}
-            onChange={(e) => setSummary(e.target.value)}
-            rows={4}
-            className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-            placeholder="Opsummering af besøget..."
-          />
-        </>
-      )}
-
-      <div className="flex justify-end">
-        <button
-          onClick={handleSave}
+    <Panel>
+      <PanelHeader title="Noter" />
+      <div className="flex flex-col gap-3.5 px-4 py-4">
+        <BTextareaField
+          label="Feltnoter"
+          value={notes}
+          onChange={setNotes}
+          placeholder="Tilføj noter..."
+          rows={4}
           disabled={loading}
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-        >
-          {loading ? 'Gemmer...' : 'Gem'}
-        </button>
+        />
+
+        {showSummary && (
+          <BTextareaField
+            label="Opsummering"
+            value={summary}
+            onChange={setSummary}
+            placeholder="Opsummering af besøget..."
+            rows={4}
+            disabled={loading}
+          />
+        )}
+
+        <div className="flex justify-end">
+          <BButton primary onClick={handleSave} disabled={loading}>
+            {loading ? 'Gemmer...' : 'Gem noter'}
+          </BButton>
+        </div>
       </div>
-    </div>
+    </Panel>
   )
 }

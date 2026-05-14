@@ -20,7 +20,11 @@ export async function updateOrganization(
     const session = await auth()
     if (!session) return { error: 'Ikke autoriseret' }
 
-    const hasAccess = await canAccessModule(session.user.id, 'settings')
+    const hasAccess = await canAccessModule(
+      session.user.id,
+      'settings',
+      session.user.organizationId
+    )
     if (!hasAccess) return { error: 'Ingen adgang til indstillinger' }
 
     const parsed = updateOrganizationSchema.safeParse(input)

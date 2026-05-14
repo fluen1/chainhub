@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/db'
 import { getAccessibleCompanies } from '@/lib/permissions'
 import { createLogger } from '@/lib/logger'
+import { getVisitTypeLabel } from '@/lib/labels'
 import type { CalendarEvent } from '@/types/ui'
 
 // Cap på antal events pr. type for at undgå OOM / timeouts ved store kæder.
@@ -109,6 +110,7 @@ export async function getCalendarEvents(
       title: c.display_name,
       subtitle: c.company.name,
       type: 'expiry',
+      href: `/contracts/${c.id}`,
     })
   }
 
@@ -121,6 +123,7 @@ export async function getCalendarEvents(
       title: t.title,
       subtitle: 'Opgave',
       type: 'deadline',
+      href: `/tasks/${t.id}`,
     })
   }
 
@@ -130,8 +133,9 @@ export async function getCalendarEvents(
       id: `visit-${v.id}`,
       date: v.visit_date.toISOString().slice(0, 10),
       title: `Besøg — ${v.company.name}`,
-      subtitle: v.visit_type.toLowerCase().replace('_', ' '),
+      subtitle: getVisitTypeLabel(v.visit_type),
       type: 'meeting',
+      href: `/visits/${v.id}`,
     })
   }
 
@@ -144,6 +148,7 @@ export async function getCalendarEvents(
       title: ca.title,
       subtitle: 'Sagsfrist',
       type: 'case',
+      href: `/cases/${ca.id}`,
     })
   }
 

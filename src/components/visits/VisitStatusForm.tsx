@@ -5,19 +5,28 @@ import { updateVisit } from '@/actions/visits'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { VISIT_STATUS_LABELS } from '@/lib/labels'
+import { Panel, PanelHeader, BButton, AlertBar } from '@/components/ui/b'
+
+// ─────────────────────────────────────────────────────────────────────────────
+// VisitStatusForm — B-stil port.
+// - PLANLAGT: vis knapper til GENNEMFOERT / AFLYST
+// - GENNEMFOERT / AFLYST: vis info-tekst + "Genåbn besøg"-knap (kun owners)
+// ─────────────────────────────────────────────────────────────────────────────
 
 interface VisitStatusFormProps {
   visitId: string
   currentStatus: string
+  /** Kun GROUP_OWNER / GROUP_ADMIN kan genåbne afsluttede besøg */
+  canReopen?: boolean
 }
 
-export function VisitStatusForm({ visitId, currentStatus }: VisitStatusFormProps) {
+export function VisitStatusForm({
+  visitId,
+  currentStatus,
+  canReopen = false,
+}: VisitStatusFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
-
-  const nextStatuses = currentStatus === 'PLANLAGT' ? ['GENNEMFOERT', 'AFLYST'] : []
-
-  if (nextStatuses.length === 0) return null
 
   async function handleUpdate(newStatus: string) {
     setLoading(true)
@@ -38,29 +47,46 @@ export function VisitStatusForm({ visitId, currentStatus }: VisitStatusFormProps
     router.refresh()
   }
 
+  if (currentStatus === 'PLANLAGT') {
+    return (
+      <Panel>
+        <PanelHeader title="Opdatér status" />
+        <div className="flex flex-col gap-2 px-4 py-3">
+          <p className="text-[12px] text-b-2">
+            Nuværende:{' '}
+            <span className="font-medium text-b-1">
+              {VISIT_STATUS_LABELS[currentStatus] ?? currentStatus}
+            </span>
+          </p>
+          <div className="flex flex-col gap-1.5">
+            <BButton primary onClick={() => handleUpdate('GENNEMFOERT')} disabled={loading}>
+              {loading ? 'Opdaterer...' : 'Markér som gennemført'}
+            </BButton>
+            <BButton onClick={() => handleUpdate('AFLYST')} disabled={loading}>
+              {loading ? 'Opdaterer...' : 'Aflys besøg'}
+            </BButton>
+          </div>
+        </div>
+      </Panel>
+    )
+  }
+
+  // GENNEMFOERT eller AFLYST
   return (
-    <div className="rounded-lg border bg-white p-4 shadow-sm">
-      <h3 className="text-sm font-semibold text-gray-900 mb-3">Opdatér status</h3>
-      <p className="text-xs text-gray-500 mb-3">
-        Nuværende:{' '}
-        <span className="font-medium">{VISIT_STATUS_LABELS[currentStatus] ?? currentStatus}</span>
-      </p>
-      <div className="space-y-2">
-        {nextStatuses.map((status) => (
-          <button
-            key={status}
-            onClick={() => handleUpdate(status)}
-            disabled={loading}
-            className={`w-full rounded-md px-3 py-2 text-sm font-medium disabled:opacity-50 ${
-              status === 'GENNEMFOERT'
-                ? 'bg-green-600 text-white hover:bg-green-700'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            {loading ? 'Opdaterer...' : VISIT_STATUS_LABELS[status]}
-          </button>
-        ))}
+    <Panel>
+      <PanelHeader title="Status" />
+      <div className="flex flex-col gap-2 px-4 py-3">
+        <AlertBar tone={currentStatus === 'GENNEMFOERT' ? 'blue' : 'amber'}>
+          {currentStatus === 'GENNEMFOERT'
+            ? 'Besøget er gennemført og lukket.'
+            : 'Besøget er aflyst.'}
+        </AlertBar>
+        {canReopen && (
+          <BButton onClick={() => handleUpdate('PLANLAGT')} disabled={loading}>
+            {loading ? 'Opdaterer...' : 'Genåbn besøg'}
+          </BButton>
+        )}
       </div>
-    </div>
+    </Panel>
   )
 }

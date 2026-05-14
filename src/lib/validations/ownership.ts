@@ -11,6 +11,7 @@ export const addOwnerSchema = z.object({
   ownerType: z.enum(['PERSON', 'HOLDINGSELSKAB', 'ANDET_SELSKAB']),
   acquiredAt: z.string().optional(),
   contractId: z.string().min(1).optional().or(z.literal('')),
+  note: z.string().max(2000).optional(),
 })
 
 export const updateOwnershipSchema = z.object({
@@ -23,6 +24,7 @@ export const updateOwnershipSchema = z.object({
 export const endOwnershipSchema = z.object({
   ownershipId: z.string().min(1),
   endDate: z.string(),
+  note: z.string().max(2000).optional(),
 })
 
 export type AddOwnerInput = z.infer<typeof addOwnerSchema>

@@ -33,7 +33,11 @@ export async function createVisit(input: CreateVisitInput): Promise<ActionResult
   const parsed = createVisitSchema.safeParse(input)
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Ugyldigt input' }
 
-  const hasAccess = await canAccessCompany(session.user.id, parsed.data.companyId)
+  const hasAccess = await canAccessCompany(
+    session.user.id,
+    parsed.data.companyId,
+    session.user.organizationId
+  )
   if (!hasAccess) return { error: 'Ingen adgang til dette selskab' }
 
   try {
@@ -79,7 +83,11 @@ export async function updateVisit(input: UpdateVisitInput): Promise<ActionResult
   })
   if (!visit) return { error: 'Besøg ikke fundet' }
 
-  const hasAccess = await canAccessCompany(session.user.id, visit.company_id)
+  const hasAccess = await canAccessCompany(
+    session.user.id,
+    visit.company_id,
+    session.user.organizationId
+  )
   if (!hasAccess) return { error: 'Ingen adgang til dette selskab' }
 
   try {
@@ -119,7 +127,11 @@ export async function deleteVisit(visitId: string): Promise<ActionResult<void>> 
   })
   if (!visit) return { error: 'Besøg ikke fundet' }
 
-  const hasAccess = await canAccessCompany(session.user.id, visit.company_id)
+  const hasAccess = await canAccessCompany(
+    session.user.id,
+    visit.company_id,
+    session.user.organizationId
+  )
   if (!hasAccess) return { error: 'Ingen adgang' }
 
   await prisma.visit.update({

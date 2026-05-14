@@ -5,6 +5,7 @@ import { getDashboardData } from '@/actions/dashboard'
 import { getRecentActivity } from '@/actions/activity-feed'
 import { getSidebarData } from '@/lib/sidebar-data'
 import { formatMio } from '@/lib/labels'
+import { WEEKDAYS_DA_FULL_SUN, MONTH_NAMES_DA_LOWER } from '@/lib/calendar-constants'
 import {
   PageTopbar,
   Strip,
@@ -19,24 +20,8 @@ import { ActivityPanel } from '@/components/dashboard/b/ActivityPanel'
 
 export const metadata: Metadata = { title: 'Forside' }
 
-const DAYS = ['Søndag', 'Mandag', 'Tirsdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lørdag']
-const MONTHS = [
-  'januar',
-  'februar',
-  'marts',
-  'april',
-  'maj',
-  'juni',
-  'juli',
-  'august',
-  'september',
-  'oktober',
-  'november',
-  'december',
-]
-
 function formatDate(d: Date): string {
-  return `${DAYS[d.getDay()]} ${d.getDate()}. ${MONTHS[d.getMonth()]} ${d.getFullYear()}`
+  return `${WEEKDAYS_DA_FULL_SUN[d.getDay()]} ${d.getDate()}. ${MONTH_NAMES_DA_LOWER[d.getMonth()]} ${d.getFullYear()}`
 }
 
 function formatTime(d: Date): string {
@@ -52,7 +37,7 @@ export default async function DashboardPage() {
   const [data, sidebar, activity] = await Promise.all([
     getDashboardData(session.user.id, session.user.organizationId),
     getSidebarData(session.user.id, session.user.organizationId),
-    getRecentActivity(session.user.organizationId),
+    getRecentActivity(session.user.organizationId, session.user.id),
   ])
 
   const omsaetning = data.portfolioTotals.totalOmsaetning

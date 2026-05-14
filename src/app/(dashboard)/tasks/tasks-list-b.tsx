@@ -1,7 +1,9 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useMemo, useState, useRef, useCallback, useEffect, useTransition } from 'react'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
+import { toast } from 'sonner'
+import { ExportButton } from '@/components/ui/export-button'
 import {
   Breadcrumb,
   PageHeader,
@@ -23,9 +25,9 @@ import {
   type BadgeTone,
   Pager,
   BottomBar,
-  KbdHint,
   Panel,
 } from '@/components/ui/b'
+import { updateTaskStatus } from '@/actions/tasks'
 
 // ────────────────────────────────────────────────────────────────────────────
 // /tasks — klient-komponent.
@@ -50,8 +52,22 @@ export interface TaskRow {
 type ViewMode = 'flat' | 'grouped' | 'kanban'
 type SortKey = 'titel' | 'selskab' | 'type' | 'rawPrio' | 'rawStatus' | 'fristDays' | 'ansvarlig'
 
+// Fix #4: Tilføj 'I gang' til STATUS_OPTS
 const PRIO_OPTS = ['Alle', 'Kritisk', 'Høj', 'Mellem', 'Lav']
-const STATUS_OPTS = ['Alle', 'Ny', 'Afventer', 'Lukket']
+const STATUS_OPTS = ['Alle', 'Ny', 'I gang', 'Afventer', 'Lukket']
+
+// Fix #5: Alle kanban-kolonner — rækkefølge og mapping
+type KanbanColDef = {
+  title: string
+  rawStatus: string
+  tone: 'default' | 'amber' | 'blue' | 'green'
+}
+const KANBAN_COLS: KanbanColDef[] = [
+  { title: 'Åben', rawStatus: 'NY', tone: 'default' },
+  { title: 'I gang', rawStatus: 'AKTIV_TASK', tone: 'blue' },
+  { title: 'Afventer', rawStatus: 'AFVENTER', tone: 'amber' },
+  { title: 'Fuldført', rawStatus: 'LUKKET', tone: 'green' },
+]
 
 function prioTone(rawPrio: string): BadgeTone {
   switch (rawPrio) {
@@ -91,18 +107,48 @@ function fristTone(days: number): BadgeTone {
 
 export function TasksListB({ tasks, totalCount }: { tasks: TaskRow[]; totalCount: number }) {
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const [, startTransition] = useTransition()
 
-  const [viewMode, setViewMode] = useState<ViewMode>('flat')
-  const [search, setSearch] = useState('')
-  const [mineOnly, setMineOnly] = useState(false)
-  const [selskabFil, setSelskabFil] = useState('Alle')
-  const [typeFil, setTypeFil] = useState('Alle')
-  const [prioFil, setPrioFil] = useState('Alle')
-  const [statusFil, setStatusFil] = useState('Alle')
+  const [viewMode, setViewMode] = useState<ViewMode>(
+    () => (searchParams.get('view') as ViewMode) || 'flat'
+  )
+  const [search, setSearch] = useState(() => searchParams.get('search') ?? '')
+  const [mineOnly, setMineOnly] = useState(() => searchParams.get('mine') === '1')
+  const [selskabFil, setSelskabFil] = useState(() => searchParams.get('company') ?? 'Alle')
+  const [typeFil, setTypeFil] = useState(() => searchParams.get('type') ?? 'Alle')
+  const [prioFil, setPrioFil] = useState(() => searchParams.get('prio') ?? 'Alle')
+  const [statusFil, setStatusFil] = useState(() => searchParams.get('status') ?? 'Alle')
   const [sortCol, setSortCol] = useState<SortKey>('fristDays')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
-  const [page, setPage] = useState(1)
+  const [page, setPage] = useState(() => parseInt(searchParams.get('page') ?? '1', 10) || 1)
   const [pageSize, setPageSize] = useState(15)
+
+  function pushUrl(overrides: Record<string, string>) {
+    const sp = new URLSearchParams(searchParams.toString())
+    for (const [k, v] of Object.entries(overrides)) {
+      if (v === '' || v === 'Alle' || (v === '1' && k === 'page') || (v === '0' && k === 'mine'))
+        sp.delete(k)
+      else sp.set(k, v)
+    }
+    if (sp.get('view') === 'flat') sp.delete('view')
+    startTransition(() => {
+      router.push(`${pathname}?${sp.toString()}`, { scroll: false })
+    })
+  }
+
+  useEffect(() => {
+    setViewMode((searchParams.get('view') as ViewMode) || 'flat')
+    setSearch(searchParams.get('search') ?? '')
+    setMineOnly(searchParams.get('mine') === '1')
+    setSelskabFil(searchParams.get('company') ?? 'Alle')
+    setTypeFil(searchParams.get('type') ?? 'Alle')
+    setPrioFil(searchParams.get('prio') ?? 'Alle')
+    setStatusFil(searchParams.get('status') ?? 'Alle')
+    setPage(parseInt(searchParams.get('page') ?? '1', 10) || 1)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
 
   const uniqueSelskaber = useMemo(
     () =>
@@ -176,6 +222,15 @@ export function TasksListB({ tasks, totalCount }: { tasks: TaskRow[]; totalCount
     setPrioFil('Alle')
     setStatusFil('Alle')
     setPage(1)
+    pushUrl({
+      search: '',
+      mine: '0',
+      company: 'Alle',
+      type: 'Alle',
+      prio: 'Alle',
+      status: 'Alle',
+      page: '1',
+    })
   }
 
   function goTo(id: string) {
@@ -214,14 +269,17 @@ export function TasksListB({ tasks, totalCount }: { tasks: TaskRow[]; totalCount
           onChange={(v) => {
             setSearch(v)
             setPage(1)
+            pushUrl({ search: v, page: '1' })
           }}
           placeholder="Søg opgaver..."
         />
         <FilterButton
           active={mineOnly}
           onClick={() => {
-            setMineOnly((v) => !v)
+            const next = !mineOnly
+            setMineOnly(next)
             setPage(1)
+            pushUrl({ mine: next ? '1' : '0', page: '1' })
           }}
         >
           {mineOnly ? '✓ Mine opgaver' : 'Mine opgaver'}
@@ -233,6 +291,7 @@ export function TasksListB({ tasks, totalCount }: { tasks: TaskRow[]; totalCount
           onChange={(v) => {
             setSelskabFil(v)
             setPage(1)
+            pushUrl({ company: v, page: '1' })
           }}
         />
         <FilterDropdown
@@ -243,6 +302,7 @@ export function TasksListB({ tasks, totalCount }: { tasks: TaskRow[]; totalCount
           onChange={(v) => {
             setTypeFil(v)
             setPage(1)
+            pushUrl({ type: v, page: '1' })
           }}
         />
         <FilterDropdown
@@ -252,6 +312,7 @@ export function TasksListB({ tasks, totalCount }: { tasks: TaskRow[]; totalCount
           onChange={(v) => {
             setPrioFil(v)
             setPage(1)
+            pushUrl({ prio: v, page: '1' })
           }}
         />
         <FilterDropdown
@@ -261,13 +322,17 @@ export function TasksListB({ tasks, totalCount }: { tasks: TaskRow[]; totalCount
           onChange={(v) => {
             setStatusFil(v)
             setPage(1)
+            pushUrl({ status: v, page: '1' })
           }}
         />
         {hasFilter && <FilterReset onClick={resetFilters} />}
         <FilterSep />
         <SegmentedToggle<ViewMode>
           value={viewMode}
-          onChange={setViewMode}
+          onChange={(v) => {
+            setViewMode(v)
+            pushUrl({ view: v })
+          }}
           options={[
             { value: 'flat', label: 'Flat' },
             { value: 'grouped', label: 'Grupperet' },
@@ -275,7 +340,7 @@ export function TasksListB({ tasks, totalCount }: { tasks: TaskRow[]; totalCount
           ]}
         />
         <FilterSpacer />
-        <FilterButton>Eksportér ▾</FilterButton>
+        <ExportButton entity="tasks" label="Eksportér ▾" />
       </FilterRow>
 
       {hasFilter && (
@@ -295,7 +360,8 @@ export function TasksListB({ tasks, totalCount }: { tasks: TaskRow[]; totalCount
         />
       )}
       {viewMode === 'grouped' && <GroupedView tasks={sorted} onRowClick={goTo} />}
-      {viewMode === 'kanban' && <KanbanView tasks={filtered} onRowClick={goTo} />}
+      {/* Fix #6: KanbanView bruger sorted (ikke filtered) */}
+      {viewMode === 'kanban' && <KanbanView tasks={sorted} onRowClick={goTo} />}
 
       {viewMode !== 'kanban' && sorted.length > 0 && (
         <Pager
@@ -306,13 +372,21 @@ export function TasksListB({ tasks, totalCount }: { tasks: TaskRow[]; totalCount
           }
           page={viewMode === 'flat' ? safePage : undefined}
           maxPage={viewMode === 'flat' ? maxPage : undefined}
-          onPage={viewMode === 'flat' ? setPage : undefined}
+          onPage={
+            viewMode === 'flat'
+              ? (n) => {
+                  setPage(n)
+                  pushUrl({ page: String(n) })
+                }
+              : undefined
+          }
           pageSize={viewMode === 'flat' ? pageSize : undefined}
           onPageSize={
             viewMode === 'flat'
               ? (n) => {
                   setPageSize(n)
                   setPage(1)
+                  pushUrl({ page: '1' })
                 }
               : undefined
           }
@@ -326,17 +400,6 @@ export function TasksListB({ tasks, totalCount }: { tasks: TaskRow[]; totalCount
             {sorted.length} {sorted.length === 1 ? 'opgave' : 'opgaver'} vist ·{' '}
             {tasks.filter((t) => t.rawStatus === 'LUKKET').length} fuldført
             {hasFilter && ` · filtreret fra ${totalCount}`}
-          </>
-        }
-        right={
-          <>
-            <KbdHint k="⌘K" label="handling" />
-            <span>·</span>
-            <KbdHint k="N" label="ny opgave" />
-            <span>·</span>
-            <KbdHint k="F" label="filter" />
-            <span>·</span>
-            <KbdHint k="M" label="mine" />
           </>
         }
       />
@@ -536,34 +599,153 @@ function GroupedView({
 }
 
 // ────────────────────────────────────────────────────────────────────────────
+// Kanban med drag-drop, keyboard-nav og aria-live
+// ────────────────────────────────────────────────────────────────────────────
+
+type TaskStatus = 'NY' | 'AKTIV_TASK' | 'AFVENTER' | 'LUKKET'
+
+function statusLabel(rawStatus: string): string {
+  switch (rawStatus) {
+    case 'NY':
+      return 'Åben'
+    case 'AKTIV_TASK':
+      return 'I gang'
+    case 'AFVENTER':
+      return 'Afventer'
+    case 'LUKKET':
+      return 'Fuldført'
+    default:
+      return rawStatus
+  }
+}
+
+const KANBAN_STATUS_ORDER: TaskStatus[] = ['NY', 'AKTIV_TASK', 'AFVENTER', 'LUKKET']
 
 function KanbanView({ tasks, onRowClick }: { tasks: TaskRow[]; onRowClick: (id: string) => void }) {
-  const aaben = tasks.filter((t) => t.rawStatus === 'NY')
-  const igang = tasks.filter((t) => t.rawStatus === 'AKTIV_TASK')
-  const afvent = tasks.filter((t) => t.rawStatus === 'AFVENTER')
-  const fuldfort = tasks.filter((t) => t.rawStatus === 'LUKKET')
+  // Optimistisk lokal kopi af tasks
+  const [localTasks, setLocalTasks] = useState<TaskRow[]>(tasks)
+  // Synkroniser med ny server-data (fx ved route-refresh)
+  const prevTasksRef = useRef(tasks)
+  if (prevTasksRef.current !== tasks) {
+    prevTasksRef.current = tasks
+    setLocalTasks(tasks)
+  }
+
+  // Aria-live besked
+  const [liveMsg, setLiveMsg] = useState('')
+
+  // Grabbed-state til keyboard-navigation (max 1 ad gangen)
+  const [grabbedId, setGrabbedId] = useState<string | null>(null)
+
+  const moveTask = useCallback(
+    async (taskId: string, newStatus: TaskStatus) => {
+      const prev = localTasks
+      const task = prev.find((t) => t.id === taskId)
+      if (!task) return
+
+      // Optimistisk update
+      const updated = prev.map((t) =>
+        t.id === taskId ? { ...t, rawStatus: newStatus, status: statusLabel(newStatus) } : t
+      )
+      setLocalTasks(updated)
+      setLiveMsg(`Opgave "${task.titel}" flyttet til ${statusLabel(newStatus)}`)
+
+      const result = await updateTaskStatus({ taskId, status: newStatus })
+      if ('error' in result) {
+        // Rollback
+        setLocalTasks(prev)
+        setLiveMsg(`Opgave "${task.titel}" kunne ikke flyttes — prøv igen`)
+        toast.error(result.error ?? 'Status kunne ikke opdateres')
+      }
+    },
+    [localTasks]
+  )
+
+  const handleDrop = useCallback(
+    (colStatus: TaskStatus, e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault()
+      const taskId = e.dataTransfer.getData('task-id')
+      if (!taskId) return
+      const task = localTasks.find((t) => t.id === taskId)
+      if (!task || task.rawStatus === colStatus) return
+      void moveTask(taskId, colStatus)
+    },
+    [localTasks, moveTask]
+  )
+
+  const handleKeyboardMove = useCallback(
+    (taskId: string, direction: 'left' | 'right') => {
+      const task = localTasks.find((t) => t.id === taskId)
+      if (!task) return
+      const currentIdx = KANBAN_STATUS_ORDER.indexOf(task.rawStatus as TaskStatus)
+      if (currentIdx === -1) return
+      const nextIdx = direction === 'right' ? currentIdx + 1 : currentIdx - 1
+      if (nextIdx < 0 || nextIdx >= KANBAN_STATUS_ORDER.length) return
+      const newStatus = KANBAN_STATUS_ORDER[nextIdx]
+      void moveTask(taskId, newStatus)
+    },
+    [localTasks, moveTask]
+  )
 
   return (
-    <div className="grid gap-2.5 lg:grid-cols-4 lg:items-start">
-      <KanbanCol title="Åben" tone="default" items={aaben} onRowClick={onRowClick} />
-      <KanbanCol title="I gang" tone="blue" items={igang} onRowClick={onRowClick} />
-      <KanbanCol title="Afventer" tone="amber" items={afvent} onRowClick={onRowClick} />
-      <KanbanCol title="Fuldført" tone="green" items={fuldfort} onRowClick={onRowClick} />
-    </div>
+    <>
+      {/* Aria-live region — Fix #3 */}
+      <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+        {liveMsg}
+      </div>
+
+      <div className="grid gap-2.5 lg:grid-cols-4 lg:items-start">
+        {KANBAN_COLS.map((col) => {
+          const items = localTasks.filter((t) => t.rawStatus === col.rawStatus)
+          return (
+            <KanbanCol
+              key={col.rawStatus}
+              title={col.title}
+              tone={col.tone}
+              rawStatus={col.rawStatus as TaskStatus}
+              items={items}
+              onRowClick={onRowClick}
+              onDrop={handleDrop}
+              grabbedId={grabbedId}
+              onGrab={(id) => setGrabbedId(id)}
+              onRelease={() => {
+                setGrabbedId(null)
+                setLiveMsg('Flytning annulleret')
+              }}
+              onKeyboardMove={handleKeyboardMove}
+            />
+          )
+        })}
+      </div>
+    </>
   )
 }
 
 function KanbanCol({
   title,
   tone,
+  rawStatus,
   items,
   onRowClick,
+  onDrop,
+  grabbedId,
+  onGrab,
+  onRelease,
+  onKeyboardMove,
 }: {
   title: string
   tone: 'default' | 'amber' | 'blue' | 'green'
+  rawStatus: TaskStatus
   items: TaskRow[]
   onRowClick: (id: string) => void
+  onDrop: (colStatus: TaskStatus, e: React.DragEvent<HTMLDivElement>) => void
+  grabbedId: string | null
+  onGrab: (id: string) => void
+  onRelease: () => void
+  onKeyboardMove: (id: string, direction: 'left' | 'right') => void
 }) {
+  const [isDragOver, setIsDragOver] = useState(false)
+
   const headerCls =
     tone === 'amber'
       ? 'bg-b-amber-bg text-b-amber-fg'
@@ -595,45 +777,128 @@ function KanbanCol({
           {items.length}
         </span>
       </div>
-      {items.length === 0 ? (
-        <div className="px-3 py-2 text-[12px] text-b-3">Ingen</div>
-      ) : (
-        items.map((t) => {
-          const done = t.rawStatus === 'LUKKET'
-          return (
-            <button
+
+      {/* Drop-zone wrapper */}
+      <div
+        onDragOver={(e) => {
+          e.preventDefault()
+          setIsDragOver(true)
+        }}
+        onDragLeave={() => setIsDragOver(false)}
+        onDrop={(e) => {
+          setIsDragOver(false)
+          onDrop(rawStatus, e)
+        }}
+        className={`min-h-[48px] transition-colors ${isDragOver ? 'bg-b-row-hover ring-2 ring-inset ring-b-border' : ''}`}
+      >
+        {items.length === 0 ? (
+          <div className="px-3 py-2 text-[12px] text-b-3">Ingen</div>
+        ) : (
+          items.map((t) => (
+            <KanbanCard
               key={t.id}
-              type="button"
-              onClick={() => onRowClick(t.id)}
-              className={`flex w-full flex-col gap-1 border-b border-b-divider px-2.5 py-1.5 text-left last:border-b-0 hover:bg-b-row-hover ${
-                done ? 'opacity-60' : ''
-              }`}
-            >
-              <div
-                className={`line-clamp-2 text-[12px] font-medium ${
-                  done ? 'text-b-3 line-through' : 'text-b-1'
-                }`}
-              >
-                {t.titel}
-              </div>
-              <div className="truncate text-[11px] text-b-2">{t.selskab}</div>
-              <div className="flex flex-wrap gap-1">
-                <Badge tone={prioTone(t.rawPrio)} className="text-[10px]">
-                  {t.prio}
-                </Badge>
-                {t.frist !== '—' && (
-                  <Badge tone={fristTone(t.fristDays)} className="text-[10px]">
-                    {t.frist}
-                  </Badge>
-                )}
-                <Badge tone="gray" className="text-[10px]">
-                  {t.ansvarlig.split(' ')[0]}
-                </Badge>
-              </div>
-            </button>
-          )
-        })
-      )}
+              task={t}
+              isGrabbed={grabbedId === t.id}
+              onRowClick={onRowClick}
+              onGrab={onGrab}
+              onRelease={onRelease}
+              onKeyboardMove={onKeyboardMove}
+            />
+          ))
+        )}
+      </div>
     </Panel>
+  )
+}
+
+function KanbanCard({
+  task,
+  isGrabbed,
+  onRowClick,
+  onGrab,
+  onRelease,
+  onKeyboardMove,
+}: {
+  task: TaskRow
+  isGrabbed: boolean
+  onRowClick: (id: string) => void
+  onGrab: (id: string) => void
+  onRelease: () => void
+  onKeyboardMove: (id: string, direction: 'left' | 'right') => void
+}) {
+  const done = task.rawStatus === 'LUKKET'
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLButtonElement>) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      if (isGrabbed) {
+        // Space/Enter på allerede grabbed: naviger til detalje
+        onRelease()
+        onRowClick(task.id)
+      } else {
+        onGrab(task.id)
+      }
+    } else if (e.key === 'Escape') {
+      if (isGrabbed) {
+        e.preventDefault()
+        onRelease()
+      }
+    } else if (e.key === 'ArrowRight') {
+      if (isGrabbed) {
+        e.preventDefault()
+        onKeyboardMove(task.id, 'right')
+      }
+    } else if (e.key === 'ArrowLeft') {
+      if (isGrabbed) {
+        e.preventDefault()
+        onKeyboardMove(task.id, 'left')
+      }
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      draggable
+      aria-grabbed={isGrabbed}
+      aria-label={`${task.titel} — ${task.selskab}. Tryk Enter for at gribe, piletaster for at flytte.`}
+      onDragStart={(e) => {
+        e.dataTransfer.setData('task-id', task.id)
+        e.dataTransfer.effectAllowed = 'move'
+      }}
+      onClick={() => {
+        if (!isGrabbed) onRowClick(task.id)
+      }}
+      onKeyDown={handleKeyDown}
+      className={[
+        'flex w-full flex-col gap-1 border-b border-b-divider px-2.5 py-1.5 text-left last:border-b-0 hover:bg-b-row-hover',
+        done ? 'opacity-60' : '',
+        isGrabbed ? 'ring-2 ring-inset ring-b-blue-fg border-b-blue-fg bg-b-blue-bg' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      <div
+        className={`line-clamp-2 text-[12px] font-medium ${
+          done ? 'text-b-3 line-through' : 'text-b-1'
+        }`}
+      >
+        {task.titel}
+      </div>
+      <div className="truncate text-[11px] text-b-2">{task.selskab}</div>
+      <div className="flex flex-wrap gap-1">
+        <Badge tone={prioTone(task.rawPrio)} className="text-[10px]">
+          {task.prio}
+        </Badge>
+        {task.frist !== '—' && (
+          <Badge tone={fristTone(task.fristDays)} className="text-[10px]">
+            {task.frist}
+          </Badge>
+        )}
+        <Badge tone="gray" className="text-[10px]">
+          {task.ansvarlig.split(' ')[0]}
+        </Badge>
+      </div>
+    </button>
   )
 }

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import {
   Breadcrumb,
@@ -23,6 +24,10 @@ import {
   KbdHint,
 } from '@/components/ui/b'
 import { updateTaskStatus } from '@/actions/tasks'
+import { createCaseComment } from '@/actions/comments'
+import { escalateCase } from '@/actions/cases'
+import { CloseCaseDialog } from '@/components/cases/CloseCaseDialog'
+import { EditCaseDialog, type EditCaseInitial } from '@/components/cases/EditCaseDialog'
 
 // ────────────────────────────────────────────────────────────────────────────
 // /cases/[id] — klient-komponent.
@@ -38,6 +43,7 @@ export interface CaseDetailData {
   status: string
   rawStatus: string
   sensitivity: string
+  rawSensitivity: string
   description: string
   subtype: string | null
   selskab: string
@@ -51,6 +57,7 @@ export interface CaseDetailData {
   createdAtShort: string
   updatedAt: string
   closedAt: string | null
+  dueDate: string | null
 }
 
 export interface CaseTaskData {
@@ -126,9 +133,14 @@ export function CaseDetailB({
   docs: CaseDocData[]
   activity: CaseActivityData[]
 }) {
+  const router = useRouter()
   const [tasks, setTasks] = useState(initialTasks)
   const [comment, setComment] = useState('')
+  const [closeOpen, setCloseOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
   const [, startTransition] = useTransition()
+  const [commentPending, startCommentTransition] = useTransition()
+  const [escalatePending, startEscalateTransition] = useTransition()
 
   function toggleTask(taskId: string, currentDone: boolean) {
     // Optimistic
@@ -150,9 +162,40 @@ export function CaseDetailB({
 
   function submitComment() {
     if (!comment.trim()) return
-    // Kommentar-funktionalitet er ikke wired til server endnu — vis kun toast
-    toast.message('Kommentar gemt lokalt — server-wiring kommer senere')
+    const content = comment.trim()
     setComment('')
+    startCommentTransition(async () => {
+      const res = await createCaseComment({ caseId: data.id, content })
+      if ('error' in res) {
+        toast.error(res.error)
+        setComment(content)
+      } else {
+        toast.success('Kommentar gemt')
+        router.refresh()
+      }
+    })
+  }
+
+  function handleEscalate() {
+    startEscalateTransition(async () => {
+      const res = await escalateCase(data.id)
+      if ('error' in res) {
+        toast.error(res.error)
+      } else {
+        toast.success('Sag eskaleret')
+        router.refresh()
+      }
+    })
+  }
+
+  const editInitial: EditCaseInitial = {
+    id: data.id,
+    title: data.title,
+    description: data.description,
+    caseType: data.rawType,
+    caseSubtype: data.subtype,
+    sensitivity: data.rawSensitivity,
+    dueDate: data.dueDate,
   }
 
   const openTasks = tasks.filter((t) => !t.done).length
@@ -185,6 +228,13 @@ export function CaseDetailB({
 
   return (
     <>
+      <CloseCaseDialog
+        open={closeOpen}
+        onClose={() => setCloseOpen(false)}
+        caseId={data.id}
+        caseTitle={data.title}
+      />
+      <EditCaseDialog open={editOpen} onClose={() => setEditOpen(false)} initial={editInitial} />
       <Breadcrumb
         trail={[{ label: 'Sager', href: '/cases' }]}
         current={`${data.nr} ${data.title} · ${data.selskab}`}
@@ -196,7 +246,9 @@ export function CaseDetailB({
           actions={
             <>
               <BButton href="/tasks">Se opgaver</BButton>
-              <BButton primary>Eskalér</BButton>
+              <BButton primary onClick={handleEscalate} disabled={escalatePending}>
+                {escalatePending ? 'Eskalerer...' : 'Eskalér'}
+              </BButton>
             </>
           }
         >
@@ -239,11 +291,13 @@ export function CaseDetailB({
         }
         actions={
           <>
-            <BButton href={`/cases/${data.id}/edit`}>Rediger</BButton>
-            {data.rawStatus !== 'LUKKET' && (
-              <BButton primary onClick={() => toast.message('Luk-sag-flow er ikke wired endnu')}>
+            <BButton onClick={() => setEditOpen(true)}>Rediger</BButton>
+            {data.rawStatus !== 'LUKKET' ? (
+              <BButton primary onClick={() => setCloseOpen(true)}>
                 Luk sag
               </BButton>
+            ) : (
+              <BButton disabled>Luk sag</BButton>
             )}
           </>
         }
@@ -278,7 +332,7 @@ export function CaseDetailB({
           <PanelFooter>
             <div className="flex items-center justify-between">
               <span />
-              <BAddButton href={`/cases/${data.id}/edit`}>Rediger</BAddButton>
+              <BAddButton onClick={() => setEditOpen(true)}>Rediger</BAddButton>
             </div>
           </PanelFooter>
         </Panel>
@@ -311,7 +365,7 @@ export function CaseDetailB({
           <PanelFooter>
             <div className="flex items-center justify-between">
               <span />
-              <BAddButton>+ Tilknyt</BAddButton>
+              <BAddButton onClick={() => setEditOpen(true)}>+ Tilknyt</BAddButton>
             </div>
           </PanelFooter>
         </Panel>
@@ -469,8 +523,8 @@ export function CaseDetailB({
                   <KbdHint k="⌘" />
                   <KbdHint k="↵" />
                 </span>
-                <BButton primary onClick={submitComment}>
-                  Gem
+                <BButton primary onClick={submitComment} disabled={commentPending}>
+                  {commentPending ? 'Gemmer...' : 'Gem'}
                 </BButton>
               </div>
             </div>
@@ -529,7 +583,7 @@ export function CaseDetailB({
           <PanelFooter>
             <div className="flex items-center justify-between">
               <span />
-              <BAddButton>+ Upload</BAddButton>
+              <BAddButton href={`/documents?case=${data.id}`}>+ Upload</BAddButton>
             </div>
           </PanelFooter>
         </Panel>

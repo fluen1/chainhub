@@ -31,7 +31,11 @@ export async function addCompanyPerson(
   const parsed = addCompanyPersonSchema.safeParse(input)
   if (!parsed.success) return { error: 'Ugyldigt input: ' + parsed.error.issues[0]?.message }
 
-  const hasAccess = await canAccessCompany(session.user.id, parsed.data.companyId)
+  const hasAccess = await canAccessCompany(
+    session.user.id,
+    parsed.data.companyId,
+    session.user.organizationId
+  )
   if (!hasAccess) return { error: 'Ingen adgang til dette selskab' }
 
   try {
@@ -128,7 +132,11 @@ export async function endCompanyPerson(
     return { error: 'Tilknytning ikke fundet' }
   }
 
-  const hasAccess = await canAccessCompany(session.user.id, existing.company_id)
+  const hasAccess = await canAccessCompany(
+    session.user.id,
+    existing.company_id,
+    session.user.organizationId
+  )
   if (!hasAccess) return { error: 'Ingen adgang til dette selskab' }
 
   try {
@@ -149,6 +157,7 @@ export async function endCompanyPerson(
         companyId: existing.company_id,
         role: existing.role,
         endDate: parsed.data.endDate,
+        ...(parsed.data.note ? { note: parsed.data.note } : {}),
       },
     })
 

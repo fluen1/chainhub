@@ -63,7 +63,7 @@ export default async function DocumentsPage() {
   const session = await auth()
   if (!session) redirect('/login')
 
-  const hasAccess = await canAccessModule(session.user.id, 'documents')
+  const hasAccess = await canAccessModule(session.user.id, 'documents', session.user.organizationId)
   if (!hasAccess) redirect('/dashboard')
 
   const orgId = session.user.organizationId
@@ -112,6 +112,8 @@ export default async function DocumentsPage() {
       att,
       dato: formatDate(d.uploaded_at),
       datoSort: d.uploaded_at.getTime(),
+      contractName: d.contract?.display_name ?? null,
+      caseName: d.case ? `#${d.case.case_number ?? d.case.id.slice(0, 6)} ${d.case.title}` : null,
     }
   })
 

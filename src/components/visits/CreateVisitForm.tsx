@@ -7,6 +7,19 @@ import { VISIT_TYPE_LABELS } from '@/lib/labels'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
+import {
+  Panel,
+  BButton,
+  BTextField,
+  BTextareaField,
+  BFieldRow,
+  BFieldWrap,
+  Breadcrumb,
+} from '@/components/ui/b'
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CreateVisitForm — B-stil port. Felter: companyId, visitDate, visitType, notes.
+// ─────────────────────────────────────────────────────────────────────────────
 
 interface Company {
   id: string
@@ -17,39 +30,39 @@ interface CreateVisitFormProps {
   companies: Company[]
 }
 
+type VisitType =
+  | 'KVARTALSBESOEG'
+  | 'OPFOELGNING'
+  | 'AD_HOC'
+  | 'AUDIT'
+  | 'ONBOARDING'
+  | 'OVERDRAGELSE'
+
 export function CreateVisitForm({ companies }: CreateVisitFormProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const preselectedCompany = searchParams.get('company') ?? ''
   const preselectedDate = searchParams.get('visitDate') ?? ''
+
   const [loading, setLoading] = useState(false)
+  const [companyId, setCompanyId] = useState(preselectedCompany)
+  const [visitDate, setVisitDate] = useState(preselectedDate)
+  const [visitType, setVisitType] = useState('')
+  const [notes, setNotes] = useState('')
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    setLoading(true)
-
-    const formData = new FormData(e.currentTarget)
-    const companyId = formData.get('companyId') as string
-    const visitDate = formData.get('visitDate') as string
-    const visitType = formData.get('visitType') as string
-    const notes = formData.get('notes') as string
 
     if (!companyId) {
       toast.error('Vælg et selskab')
-      setLoading(false)
       return
     }
+    setLoading(true)
 
     const result = await createVisit({
       companyId,
       visitDate,
-      visitType: visitType as
-        | 'KVARTALSBESOEG'
-        | 'OPFOELGNING'
-        | 'AD_HOC'
-        | 'AUDIT'
-        | 'ONBOARDING'
-        | 'OVERDRAGELSE',
+      visitType: visitType as VisitType,
       notes: notes || undefined,
     })
 
@@ -65,99 +78,83 @@ export function CreateVisitForm({ companies }: CreateVisitFormProps) {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href="/calendar" className="rounded-md p-1 hover:bg-gray-100">
-          <ArrowLeft className="h-5 w-5 text-gray-500" />
+    <div className="mx-auto max-w-3xl space-y-3">
+      <Breadcrumb trail={[{ label: 'Kalender', href: '/calendar' }]} current="Planlæg besøg" />
+
+      <div className="flex items-center gap-2">
+        <Link href="/calendar" className="rounded-[4px] p-1 hover:bg-[#f6f8fa]">
+          <ArrowLeft className="h-4 w-4 text-b-2" />
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900">Planlæg besøg</h1>
+        <span className="text-[16px] font-semibold text-b-1">Planlæg besøg</span>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6 rounded-lg border bg-white p-6 shadow-sm">
-        <div className="space-y-4">
-          <div>
-            <label htmlFor="visit-companyId" className="block text-sm font-medium text-gray-700">
-              Selskab *
-            </label>
-            <select
-              id="visit-companyId"
-              name="companyId"
-              required
-              defaultValue={preselectedCompany}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none"
-            >
-              <option value="">Vælg selskab...</option>
-              {companies.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <label htmlFor="visit-visitDate" className="block text-sm font-medium text-gray-700">
-                Besøgsdato *
-              </label>
-              <input
-                id="visit-visitDate"
-                name="visitDate"
-                type="date"
-                required
-                defaultValue={preselectedDate}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="visit-visitType" className="block text-sm font-medium text-gray-700">
-                Besøgstype *
-              </label>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        <Panel>
+          <div className="flex flex-col gap-3.5 px-4 py-4">
+            <BFieldWrap label="Selskab" required>
               <select
-                id="visit-visitType"
-                name="visitType"
+                value={companyId}
+                onChange={(e) => setCompanyId(e.target.value)}
                 required
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none"
+                disabled={loading}
+                className="rounded-[4px] border border-b-border-strong bg-white px-2.5 py-1.5 text-[13px] text-b-1 focus:border-transparent focus:outline focus:outline-2 focus:outline-b-blue-fg focus:outline-offset-[-1px] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <option value="">Vælg type...</option>
-                {Object.entries(VISIT_TYPE_LABELS).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
+                <option value="">Vælg selskab...</option>
+                {companies.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
                   </option>
                 ))}
               </select>
-            </div>
-          </div>
+            </BFieldWrap>
 
-          <div>
-            <label htmlFor="visit-notes" className="block text-sm font-medium text-gray-700">
-              Noter
-            </label>
-            <textarea
-              id="visit-notes"
-              name="notes"
-              rows={4}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-3 md:py-2 text-sm focus:border-blue-500 focus:outline-none"
+            <BFieldRow>
+              <BTextField
+                label="Besøgsdato"
+                value={visitDate}
+                onChange={setVisitDate}
+                type="date"
+                required
+                disabled={loading}
+              />
+
+              <BFieldWrap label="Besøgstype" required>
+                <select
+                  value={visitType}
+                  onChange={(e) => setVisitType(e.target.value)}
+                  required
+                  disabled={loading}
+                  className="rounded-[4px] border border-b-border-strong bg-white px-2.5 py-1.5 text-[13px] text-b-1 focus:border-transparent focus:outline focus:outline-2 focus:outline-b-blue-fg focus:outline-offset-[-1px] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <option value="">Vælg type...</option>
+                  {Object.entries(VISIT_TYPE_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </BFieldWrap>
+            </BFieldRow>
+
+            <BTextareaField
+              label="Noter"
+              value={notes}
+              onChange={setNotes}
               placeholder="Eventuelle noter til besøget..."
+              rows={4}
+              disabled={loading}
             />
           </div>
-        </div>
+        </Panel>
 
-        <div className="flex justify-end gap-3 pt-2">
-          <Link
-            href="/calendar"
-            className="rounded-md border border-gray-300 bg-white px-4 py-3 md:py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            Annullér
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-2">
+          <Link href="/calendar">
+            <BButton disabled={loading}>Annullér</BButton>
           </Link>
-          <button
-            type="submit"
-            disabled={loading}
-            className="rounded-md bg-blue-600 px-4 py-3 md:py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-          >
+          <BButton type="submit" primary disabled={loading}>
             {loading ? 'Opretter...' : 'Planlæg besøg'}
-          </button>
+          </BButton>
         </div>
       </form>
     </div>

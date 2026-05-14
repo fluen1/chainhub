@@ -61,8 +61,8 @@ export function EndOwnershipRoleModal({
     if (!canSubmit) return
     startTransition(async () => {
       const result = isOwnership
-        ? await endOwnership({ ownershipId: id, endDate })
-        : await endCompanyPerson({ companyPersonId: id, endDate })
+        ? await endOwnership({ ownershipId: id, endDate, note: note.trim() || undefined })
+        : await endCompanyPerson({ companyPersonId: id, endDate, note: note.trim() || undefined })
 
       if ('error' in result) {
         toast.error(result.error)

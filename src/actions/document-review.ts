@@ -45,7 +45,11 @@ export async function approveDocumentReview(extractionId: string): Promise<Actio
   }
 
   if (extraction.document.company_id) {
-    const hasAccess = await canAccessCompany(session.user.id, extraction.document.company_id)
+    const hasAccess = await canAccessCompany(
+      session.user.id,
+      extraction.document.company_id,
+      session.user.organizationId
+    )
     if (!hasAccess) return { error: 'Ingen adgang til dette dokument' }
   }
 
@@ -93,7 +97,11 @@ export async function saveFieldDecision(params: {
   }
 
   if (extraction.document.company_id) {
-    const hasAccess = await canAccessCompany(session.user.id, extraction.document.company_id)
+    const hasAccess = await canAccessCompany(
+      session.user.id,
+      extraction.document.company_id,
+      session.user.organizationId
+    )
     if (!hasAccess) return { error: 'Ingen adgang til dette dokument' }
   }
 
@@ -176,7 +184,11 @@ export async function rejectDocumentExtraction(params: {
   }
 
   if (extraction.document.company_id) {
-    const hasAccess = await canAccessCompany(session.user.id, extraction.document.company_id)
+    const hasAccess = await canAccessCompany(
+      session.user.id,
+      extraction.document.company_id,
+      session.user.organizationId
+    )
     if (!hasAccess) return { error: 'Ingen adgang til dette dokument' }
   }
 

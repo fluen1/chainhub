@@ -6,6 +6,7 @@ import { canAccessModule } from '@/lib/permissions'
 import { getUserRoleLabel, formatDate } from '@/lib/labels'
 // formatDate bruges til organization.plan_expires_at + created_at nedenfor.
 import { SettingsPageB, type SettingsUser } from './settings-b'
+import { getSettingsAIUsage } from '@/actions/ai-usage'
 
 export const metadata: Metadata = { title: 'Indstillinger' }
 
@@ -27,7 +28,11 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
 
   const section = parseSection(searchParams.section)
 
-  const hasAccess = await canAccessModule(session.user.id, 'user_management')
+  const hasAccess = await canAccessModule(
+    session.user.id,
+    'user_management',
+    session.user.organizationId
+  )
 
   if (!hasAccess) {
     return (
@@ -43,7 +48,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
     )
   }
 
-  const [users, companies, organization] = await Promise.all([
+  const [users, companies, organization, aiUsage] = await Promise.all([
     prisma.user.findMany({
       where: {
         organization_id: session.user.organizationId,
@@ -51,6 +56,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
       },
       include: { roles: true },
       orderBy: { created_at: 'desc' },
+      // last_login_at hentes til "sidst aktiv"-kolonnen i BrugereSection
     }),
     prisma.company.findMany({
       where: {
@@ -72,6 +78,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
         created_at: true,
       },
     }),
+    getSettingsAIUsage(session.user.organizationId),
   ])
 
   // Mappede brugere — initialer + primær rolle-label
@@ -83,6 +90,10 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
       .join('')
       .slice(0, 2)
       .toUpperCase()
+
+    const lastLogin = u.last_login_at
+    const sidstAktiv = lastLogin ? formatDate(lastLogin) : 'Aldrig'
+
     return {
       id: u.id,
       navn: u.name ?? u.email,
@@ -90,15 +101,13 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
       initials: ini || '?',
       rolle: primary?.role ?? 'GROUP_READONLY',
       rolleLabel: primary ? getUserRoleLabel(primary.role) : 'Ukendt',
-      sidstAktiv: '—',
+      sidstAktiv,
       isSelf: u.id === session.user.id,
       active: u.active,
       companyIds: primary?.company_ids ?? [],
     }
   })
 
-  // AI-usage er ikke wired endnu — vis placeholder med 0/1000 indtil rigtig
-  // kvota-aggregator findes. Brugeren kan stadig se panel-strukturen.
   return (
     <SettingsPageB
       section={section}
@@ -121,7 +130,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
       companies={companies}
       users={mappedUsers}
       currentUserId={session.user.id}
-      aiUsage={{ used: 0, max: 1000, percent: 0 }}
+      aiUsage={aiUsage}
     />
   )
 }

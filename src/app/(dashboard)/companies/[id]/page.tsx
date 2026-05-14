@@ -25,7 +25,7 @@ export default async function CompanyDetailPage({ params }: { params: { id: stri
   // STRENGT_FORTROLIG-check for ownership-IDs så vi ikke lækker dem til brugere
   // uden adgang. Raw-queries gates desuden via data.visibleSections så roller
   // uden adgang til en sektion ikke får PII serialiseret ind i client-props.
-  const canSeeOwnership = await canAccessSensitivity(session.user.id, 'STRENGT_FORTROLIG')
+  const canSeeOwnership = await canAccessSensitivity(session.user.id, 'STRENGT_FORTROLIG', orgId)
   const wantOwnership = canSeeOwnership && data.visibleSections.has('ownership')
   const wantPersons = data.visibleSections.has('persons')
   const wantFinance = data.visibleSections.has('finance')

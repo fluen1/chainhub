@@ -137,6 +137,8 @@ export async function getCompanyDetailData(
   const role = pickHighestPriorityRole(roleRows)
   const visibleSections = sectionsForRole(role)
   const today = new Date()
+  const currentYear = today.getFullYear()
+  const previousYear = currentYear - 1
 
   const [
     company,
@@ -192,7 +194,7 @@ export async function getCompanyDetailData(
       where: {
         company_id: companyId,
         organization_id: organizationId,
-        period_year: 2025,
+        period_year: currentYear,
         period_type: 'HELAAR',
       },
     }),
@@ -200,7 +202,7 @@ export async function getCompanyDetailData(
       where: {
         company_id: companyId,
         organization_id: organizationId,
-        period_year: 2024,
+        period_year: previousYear,
         period_type: 'HELAAR',
       },
     }),
@@ -209,7 +211,7 @@ export async function getCompanyDetailData(
       where: {
         company_id: companyId,
         organization_id: organizationId,
-        period_year: 2025,
+        period_year: currentYear,
         period_type: { in: ['Q1', 'Q2', 'Q3', 'Q4'] },
         metric_type: 'OMSAETNING',
       },
@@ -793,7 +795,7 @@ async function buildSnapshot(params: BuildSnapshotParams): Promise<CompanySnapsh
       ? await prisma.financialMetric.findMany({
           where: {
             company_id: { in: peers.map((p) => p.id) },
-            period_year: 2025,
+            period_year: today.getFullYear(),
             period_type: 'HELAAR',
             metric_type: 'OMSAETNING',
           },

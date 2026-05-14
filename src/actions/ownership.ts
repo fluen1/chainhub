@@ -24,11 +24,19 @@ export async function addOwner(input: AddOwnerInput): Promise<ActionResult<Owner
   const parsed = addOwnerSchema.safeParse(input)
   if (!parsed.success) return { error: 'Ugyldigt input' }
 
-  const hasCompanyAccess = await canAccessCompany(session.user.id, parsed.data.companyId)
+  const hasCompanyAccess = await canAccessCompany(
+    session.user.id,
+    parsed.data.companyId,
+    session.user.organizationId
+  )
   if (!hasCompanyAccess) return { error: 'Ingen adgang til dette selskab' }
 
   // Ejerskab er STRENGT_FORTROLIG
-  const hasSensitivityAccess = await canAccessSensitivity(session.user.id, 'STRENGT_FORTROLIG')
+  const hasSensitivityAccess = await canAccessSensitivity(
+    session.user.id,
+    'STRENGT_FORTROLIG',
+    session.user.organizationId
+  )
   if (!hasSensitivityAccess) return { error: 'Du har ikke adgang til at se ejerskabsoplysninger' }
 
   try {
@@ -73,6 +81,7 @@ export async function addOwner(input: AddOwnerInput): Promise<ActionResult<Owner
       changes: {
         companyId: parsed.data.companyId,
         ownershipPct: Number(ownership.ownership_pct),
+        ...(parsed.data.note ? { note: parsed.data.note } : {}),
       },
     })
 
@@ -96,7 +105,11 @@ export async function updateOwnership(
   const parsed = updateOwnershipSchema.safeParse(input)
   if (!parsed.success) return { error: 'Ugyldigt input' }
 
-  const hasSensitivityAccess = await canAccessSensitivity(session.user.id, 'STRENGT_FORTROLIG')
+  const hasSensitivityAccess = await canAccessSensitivity(
+    session.user.id,
+    'STRENGT_FORTROLIG',
+    session.user.organizationId
+  )
   if (!hasSensitivityAccess) return { error: 'Ingen adgang' }
 
   // Verificér tenant isolation + læs før-værdier til audit
@@ -161,7 +174,11 @@ export async function endOwnership(input: EndOwnershipInput): Promise<ActionResu
   const parsed = endOwnershipSchema.safeParse(input)
   if (!parsed.success) return { error: 'Ugyldigt input' }
 
-  const hasSensitivityAccess = await canAccessSensitivity(session.user.id, 'STRENGT_FORTROLIG')
+  const hasSensitivityAccess = await canAccessSensitivity(
+    session.user.id,
+    'STRENGT_FORTROLIG',
+    session.user.organizationId
+  )
   if (!hasSensitivityAccess) return { error: 'Ingen adgang' }
 
   const existing = await prisma.ownership.findFirst({
@@ -185,7 +202,10 @@ export async function endOwnership(input: EndOwnershipInput): Promise<ActionResu
       resourceType: 'ownership',
       resourceId: ownership.id,
       sensitivity: 'STRENGT_FORTROLIG',
-      changes: { endDate: parsed.data.endDate },
+      changes: {
+        endDate: parsed.data.endDate,
+        ...(parsed.data.note ? { note: parsed.data.note } : {}),
+      },
     })
 
     revalidatePath(`/companies/${existing.company_id}`)

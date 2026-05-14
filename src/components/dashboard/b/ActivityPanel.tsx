@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import type { ActivityEvent } from '@/actions/activity-feed'
+import { Panel } from '@/components/ui/b'
 
 // ────────────────────────────────────────────────────────────────────────────
 // "Sidste aktivitet"-panel — kollapsibel, klik header for at åbne/lukke.
@@ -11,7 +12,7 @@ export function ActivityPanel({ events }: { events: ActivityEvent[] }) {
   const [open, setOpen] = useState(false)
 
   return (
-    <div className="overflow-hidden rounded-[4px] border border-b-border bg-b-panel">
+    <Panel>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -52,6 +53,6 @@ export function ActivityPanel({ events }: { events: ActivityEvent[] }) {
           )}
         </div>
       )}
-    </div>
+    </Panel>
   )
 }

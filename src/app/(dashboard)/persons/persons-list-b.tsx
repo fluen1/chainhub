@@ -1,8 +1,9 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useMemo, useState, useEffect, useTransition } from 'react'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { Mail, Phone, Building2 } from 'lucide-react'
+import { ExportButton } from '@/components/ui/export-button'
 import {
   Breadcrumb,
   PageHeader,
@@ -13,7 +14,6 @@ import {
   FilterReset,
   FilterSep,
   FilterSpacer,
-  FilterButton,
   SegmentedToggle,
   TableWrap,
   Th,
@@ -24,7 +24,6 @@ import {
   type BadgeTone,
   Pager,
   BottomBar,
-  KbdHint,
   Panel,
 } from '@/components/ui/b'
 
@@ -96,16 +95,43 @@ export function PersonsListB({
   totalCount: number
 }) {
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const [, startTransition] = useTransition()
 
-  const [viewMode, setViewMode] = useState<ViewMode>('tabel')
-  const [search, setSearch] = useState('')
-  const [selskabFil, setSelskabFil] = useState('Alle')
-  const [rolleFil, setRolleFil] = useState('Alle')
-  const [statusFil, setStatusFil] = useState('Alle')
+  const [viewMode, setViewMode] = useState<ViewMode>(
+    () => (searchParams.get('view') as ViewMode) || 'tabel'
+  )
+  const [search, setSearch] = useState(() => searchParams.get('search') ?? '')
+  const [selskabFil, setSelskabFil] = useState(() => searchParams.get('company') ?? 'Alle')
+  const [rolleFil, setRolleFil] = useState(() => searchParams.get('rolle') ?? 'Alle')
+  const [statusFil, setStatusFil] = useState(() => searchParams.get('status') ?? 'Alle')
   const [sortCol, setSortCol] = useState<SortKey>('navn')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
-  const [page, setPage] = useState(1)
+  const [page, setPage] = useState(() => parseInt(searchParams.get('page') ?? '1', 10) || 1)
   const [pageSize, setPageSize] = useState(15)
+
+  function pushUrl(overrides: Record<string, string>) {
+    const sp = new URLSearchParams(searchParams.toString())
+    for (const [k, v] of Object.entries(overrides)) {
+      if (v === '' || v === 'Alle' || (v === '1' && k === 'page')) sp.delete(k)
+      else sp.set(k, v)
+    }
+    if (sp.get('view') === 'tabel') sp.delete('view')
+    startTransition(() => {
+      router.push(`${pathname}?${sp.toString()}`, { scroll: false })
+    })
+  }
+
+  useEffect(() => {
+    setViewMode((searchParams.get('view') as ViewMode) || 'tabel')
+    setSearch(searchParams.get('search') ?? '')
+    setSelskabFil(searchParams.get('company') ?? 'Alle')
+    setRolleFil(searchParams.get('rolle') ?? 'Alle')
+    setStatusFil(searchParams.get('status') ?? 'Alle')
+    setPage(parseInt(searchParams.get('page') ?? '1', 10) || 1)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
 
   const uniqueSelskaber = useMemo(
     () =>
@@ -169,6 +195,7 @@ export function PersonsListB({
     setRolleFil('Alle')
     setStatusFil('Alle')
     setPage(1)
+    pushUrl({ search: '', company: 'Alle', rolle: 'Alle', status: 'Alle', page: '1' })
   }
 
   function goTo(id: string) {
@@ -207,6 +234,7 @@ export function PersonsListB({
           onChange={(v) => {
             setSearch(v)
             setPage(1)
+            pushUrl({ search: v, page: '1' })
           }}
           placeholder="Søg personer..."
         />
@@ -217,6 +245,7 @@ export function PersonsListB({
           onChange={(v) => {
             setSelskabFil(v)
             setPage(1)
+            pushUrl({ company: v, page: '1' })
           }}
         />
         <FilterDropdown
@@ -227,6 +256,7 @@ export function PersonsListB({
           onChange={(v) => {
             setRolleFil(v)
             setPage(1)
+            pushUrl({ rolle: v, page: '1' })
           }}
         />
         <FilterDropdown
@@ -236,13 +266,17 @@ export function PersonsListB({
           onChange={(v) => {
             setStatusFil(v)
             setPage(1)
+            pushUrl({ status: v, page: '1' })
           }}
         />
         {hasFilter && <FilterReset onClick={resetFilters} />}
         <FilterSep />
         <SegmentedToggle<ViewMode>
           value={viewMode}
-          onChange={setViewMode}
+          onChange={(v) => {
+            setViewMode(v)
+            pushUrl({ view: v })
+          }}
           options={[
             { value: 'tabel', label: 'Tabel' },
             { value: 'grouped', label: 'Grupperet' },
@@ -250,7 +284,7 @@ export function PersonsListB({
           ]}
         />
         <FilterSpacer />
-        <FilterButton>Eksportér ▾</FilterButton>
+        <ExportButton entity="persons" label="Eksportér ▾" />
       </FilterRow>
 
       {hasFilter && (
@@ -277,11 +311,15 @@ export function PersonsListB({
           info={`${Math.min((safePage - 1) * pageSize + 1, sorted.length)}–${Math.min(safePage * pageSize, sorted.length)} af ${sorted.length}`}
           page={safePage}
           maxPage={maxPage}
-          onPage={setPage}
+          onPage={(n) => {
+            setPage(n)
+            pushUrl({ page: String(n) })
+          }}
           pageSize={pageSize}
           onPageSize={(n) => {
             setPageSize(n)
             setPage(1)
+            pushUrl({ page: '1' })
           }}
           sizes={[15, 25, 50]}
         />
@@ -293,15 +331,6 @@ export function PersonsListB({
             {sorted.length} {sorted.length === 1 ? 'person' : 'personer'} vist · {activeCount}{' '}
             aktive
             {hasFilter && ` · filtreret fra ${totalCount}`}
-          </>
-        }
-        right={
-          <>
-            <KbdHint k="⌘K" label="handling" />
-            <span>·</span>
-            <KbdHint k="N" label="ny person" />
-            <span>·</span>
-            <KbdHint k="F" label="filter" />
           </>
         }
       />

@@ -314,7 +314,7 @@ export function buildTimelineSections(data: TimelineRawData): TimelineSectionDat
       title: t.title,
       subtitle: company ? `${company.name} · ${days}d over frist` : `${days}d over frist`,
       time: `${days}d over`,
-      href: '/tasks',
+      href: `/tasks/${t.id}`,
     })
   }
   for (const c of expiredContracts.slice(0, 3)) {
@@ -361,7 +361,7 @@ export function buildTimelineSections(data: TimelineRawData): TimelineSectionDat
       title: t.title,
       subtitle: company ? `${company.name} · Frist i dag` : 'Frist i dag',
       time: 'Frist',
-      href: '/tasks',
+      href: `/tasks/${t.id}`,
     })
   }
   for (const d of recentDocuments.slice(0, 2)) {

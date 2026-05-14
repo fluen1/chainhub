@@ -1,7 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 const mockTx = {
-  task: { update: vi.fn().mockResolvedValue({ id: 't-1' }) },
+  task: {
+    create: vi.fn().mockResolvedValue({ id: 't-1' }),
+    update: vi.fn().mockResolvedValue({ id: 't-1' }),
+  },
   taskHistory: { create: vi.fn().mockResolvedValue({}) },
 }
 
@@ -78,6 +81,33 @@ describe('createTask', () => {
   it('afviser tom titel', async () => {
     const result = await createTask({ title: '', priority: 'MELLEM' } as never)
     expect('error' in result).toBe(true)
+  })
+
+  it('ny opgave opretter TaskHistory i $transaction', async () => {
+    const result = await createTask({ title: 'Test', priority: 'MELLEM' } as never)
+    expect('data' in result).toBe(true)
+    // $transaction skal kaldes (indeholder task.create + taskHistory.create)
+    const { prisma } = await import('@/lib/db')
+    expect(prisma.$transaction).toHaveBeenCalled()
+    expect(mockTx.taskHistory.create).toHaveBeenCalled()
+  })
+
+  it('ny opgave med frist + assignee opretter 4 history-entries', async () => {
+    const result = await createTask({
+      title: 'Test',
+      priority: 'HOEJ',
+      dueDate: '2026-06-01',
+      assignedTo: UUID,
+    } as never)
+    expect('data' in result).toBe(true)
+    // STATUS + PRIORITY + ASSIGNEE + DUE_DATE = 4 kald
+    expect(mockTx.taskHistory.create).toHaveBeenCalledTimes(4)
+  })
+
+  it('ny opgave uden frist/assignee opretter 2 history-entries (STATUS + PRIORITY)', async () => {
+    const result = await createTask({ title: 'Minimal', priority: 'LAV' } as never)
+    expect('data' in result).toBe(true)
+    expect(mockTx.taskHistory.create).toHaveBeenCalledTimes(2)
   })
 })
 

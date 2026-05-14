@@ -8,6 +8,7 @@ import {
   getContractTypeLabel,
   formatDate,
 } from '@/lib/labels'
+import { canAccessModule, getAccessibleCompanies } from '@/lib/permissions'
 import { getPersonAIExtractions } from '@/actions/person-ai'
 import {
   PersonDetailB,
@@ -30,10 +31,12 @@ const FIELD_TO_LABEL: Record<string, string> = {
   notice_period_months: 'Opsigelsesvarsel',
   vacation_days: 'Ferie',
   start_date: 'Start-dato',
+  end_date: 'Slutdato',
   bonus: 'Bonus',
   pension: 'Pensionsbidrag',
   non_compete: 'Konkurrenceklausul',
   confidentiality: 'Tavshedspligt',
+  working_hours_weekly: 'Ugentlige timer',
 }
 
 function formatValue(v: unknown): string {
@@ -55,6 +58,17 @@ function yearsSince(d: Date | null): string {
 export default async function PersonDetailPage({ params }: { params: { id: string } }) {
   const session = await auth()
   if (!session) redirect('/login')
+
+  // Adgangscheck — fail-closed for ukendte roller
+  const hasPersonsAccess = await canAccessModule(
+    session.user.id,
+    'persons',
+    session.user.organizationId
+  )
+  if (!hasPersonsAccess) notFound()
+
+  // Admin-check til GdprPanel
+  const isAdmin = await canAccessModule(session.user.id, 'settings', session.user.organizationId)
 
   const person = await prisma.person.findFirst({
     where: {
@@ -201,12 +215,28 @@ export default async function PersonDetailPage({ params }: { params: { id: strin
     status: cp.case.status,
   }))
 
+  // Hent tilgængelige selskaber til modal-dropdowns
+  const accessibleCompanyIds = await getAccessibleCompanies(
+    session.user.id,
+    session.user.organizationId
+  )
+  const accessibleCompanies = await prisma.company.findMany({
+    where: {
+      id: { in: accessibleCompanyIds },
+      organization_id: session.user.organizationId,
+      deleted_at: null,
+    },
+    select: { id: true, name: true },
+    orderBy: { name: 'asc' },
+  })
+
   // Vælg første AI-extraction til vilkår-panel + flat vilkår-liste
+  // Sortér efter confidence (højeste først) — vigtigste vilkår øverst
   const firstExtraction = aiData[0] ?? null
   const aiVilkaar: PersonAIFieldData[] = firstExtraction
     ? Object.entries(firstExtraction.fields)
         .filter(([key]) => FIELD_TO_LABEL[key])
-        .slice(0, 6)
+        .sort(([, a], [, b]) => b.confidence - a.confidence)
         .map(([key, field]) => ({
           label: FIELD_TO_LABEL[key]!,
           value: formatValue(field.value),
@@ -258,6 +288,8 @@ export default async function PersonDetailPage({ params }: { params: { id: strin
       sager={sager}
       aiVilkaar={aiVilkaar}
       aiSourceDoc={firstExtraction ? firstExtraction.documentId : null}
+      isAdmin={isAdmin}
+      accessibleCompanies={accessibleCompanies}
     />
   )
 }

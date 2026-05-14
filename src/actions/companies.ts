@@ -41,7 +41,7 @@ export async function createCompany(input: CreateCompanyInput): Promise<ActionRe
     return { error: firstIssue?.message ?? 'Ugyldigt input' }
   }
 
-  const hasAccess = await canAccessModule(session.user.id, 'settings')
+  const hasAccess = await canAccessModule(session.user.id, 'settings', session.user.organizationId)
   if (!hasAccess) return { error: 'Du har ikke adgang til at oprette selskaber' }
 
   // Check for duplicate CVR in tenant
@@ -106,7 +106,11 @@ export async function updateCompany(input: UpdateCompanyInput): Promise<ActionRe
     return { error: firstIssue?.message ?? 'Ugyldigt input' }
   }
 
-  const hasAccess = await canAccessCompany(session.user.id, parsed.data.companyId)
+  const hasAccess = await canAccessCompany(
+    session.user.id,
+    parsed.data.companyId,
+    session.user.organizationId
+  )
   if (!hasAccess) return { error: 'Ingen adgang til dette selskab' }
 
   try {
@@ -148,7 +152,7 @@ export async function deleteCompany(companyId: string): Promise<ActionResult<voi
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
 
-  const hasAccess = await canAccessModule(session.user.id, 'settings')
+  const hasAccess = await canAccessModule(session.user.id, 'settings', session.user.organizationId)
   if (!hasAccess) return { error: 'Du har ikke adgang til at slette selskaber' }
 
   try {
@@ -187,7 +191,7 @@ export async function updateCompanyStamdata(
     return { error: firstIssue?.message ?? 'Ugyldigt input' }
   }
 
-  const hasAccess = await canAccessCompany(session.user.id, companyId)
+  const hasAccess = await canAccessCompany(session.user.id, companyId, session.user.organizationId)
   if (!hasAccess) return { error: 'Ingen adgang til dette selskab' }
 
   try {

@@ -8,6 +8,8 @@ export interface AuditEventInput {
   action: string
   resourceType: string
   resourceId: string
+  /** Sæt til det primære selskabs ID for at enable RBAC-scoping i activity-feed */
+  resourceCompanyId?: string
   sensitivity?: SensitivityLevel
   changes?: Record<string, unknown>
   ipAddress?: string
@@ -38,6 +40,7 @@ export async function recordAuditEvent(input: AuditEventInput): Promise<void> {
         action: input.action,
         resource_type: input.resourceType,
         resource_id: input.resourceId,
+        resource_company_id: input.resourceCompanyId ?? null,
         sensitivity: input.sensitivity,
         changes: input.changes as never,
         ip_address: input.ipAddress,

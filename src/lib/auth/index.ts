@@ -74,6 +74,16 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
+        // Opdater last_login_at — fail-silent, må ikke blokere login
+        try {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { last_login_at: new Date() },
+          })
+        } catch {
+          // Non-fatal: logtabellen er ikke kritisk for autentifikationsflowet
+        }
+
         return {
           id: user.id,
           email: user.email,
@@ -104,6 +114,26 @@ export const authOptions: NextAuthOptions = {
     strategy: 'jwt',
     maxAge: 8 * 60 * 60, // 8 hours
   },
+}
+
+// Development-mode NEXTAUTH_URL mismatch-detektion.
+// Logges som warning (ikke fejl) så dev-serveren stadig starter uden forhindringer.
+// Prodution: `process.env.NODE_ENV !== 'development'` giver no-op.
+export function warnNextauthUrlMismatch(requestOrigin: string): void {
+  if (process.env.NODE_ENV !== 'development') return
+  const configured = process.env.NEXTAUTH_URL
+  if (!configured) return
+  try {
+    const configuredOrigin = new URL(configured).origin
+    if (configuredOrigin !== requestOrigin) {
+      console.warn(
+        `[ChainHub auth] NEXTAUTH_URL mismatch: env=${configured}, request=${requestOrigin}\n` +
+          `  → Opdater NEXTAUTH_URL i .env.local til den faktiske dev-port. Se docs/DEVELOPER.md#port-konflikter`
+      )
+    }
+  } catch {
+    // Ugyldig URL i NEXTAUTH_URL — lad NextAuth selv håndtere fejlen
+  }
 }
 
 export async function auth() {

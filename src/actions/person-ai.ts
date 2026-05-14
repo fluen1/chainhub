@@ -67,7 +67,11 @@ export async function getPersonAIExtractions(
       if (!contract || contract.deleted_at) continue
 
       // Permission-check pr. contract — springer contracts over hvis ingen adgang
-      const hasAccess = await canAccessCompany(session.user.id, contract.company_id)
+      const hasAccess = await canAccessCompany(
+        session.user.id,
+        contract.company_id,
+        session.user.organizationId
+      )
       if (!hasAccess) continue
 
       for (const doc of contract.documents) {

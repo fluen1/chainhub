@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
+import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Breadcrumb,
@@ -10,9 +11,15 @@ import {
   PanelHeader,
   SegmentedToggle,
   BottomBar,
-  KbdHint,
 } from '@/components/ui/b'
 import type { CalendarEvent, CalendarEventType } from '@/types/ui'
+import {
+  MONTH_NAMES_DA,
+  MONTH_NAMES_DA_SHORT,
+  MONTH_NAMES_DA_LOWER,
+  WEEKDAYS_DA_SHORT,
+  WEEKDAYS_DA_FULL,
+} from '@/lib/calendar-constants'
 
 // ────────────────────────────────────────────────────────────────────────────
 // /calendar — klient-komponent.
@@ -20,38 +27,6 @@ import type { CalendarEvent, CalendarEventType } from '@/types/ui'
 // Month navigation håndteres via router (?month=YYYY-MM), så server re-fetcher.
 // View-toggle (?view=agenda) er også URL-state.
 // ────────────────────────────────────────────────────────────────────────────
-
-const MAANEDER = [
-  'januar',
-  'februar',
-  'marts',
-  'april',
-  'maj',
-  'juni',
-  'juli',
-  'august',
-  'september',
-  'oktober',
-  'november',
-  'december',
-]
-const MAANEDER_CAP = MAANEDER.map((m) => m[0].toUpperCase() + m.slice(1))
-const MAANEDER_SHORT = [
-  'jan',
-  'feb',
-  'mar',
-  'apr',
-  'maj',
-  'jun',
-  'jul',
-  'aug',
-  'sep',
-  'okt',
-  'nov',
-  'dec',
-]
-const UGEDAGE = ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn']
-const UGEDAGE_FULL = ['mandag', 'tirsdag', 'onsdag', 'torsdag', 'fredag', 'lørdag', 'søndag']
 
 // CalendarEventType → B-stil farver. Holdt afgrænset til design's 6 farver.
 type EvColor = 'blue' | 'amber' | 'red' | 'purple' | 'gray' | 'green'
@@ -63,11 +38,12 @@ function colorForType(t: CalendarEventType): EvColor {
     case 'deadline':
       return 'amber'
     case 'meeting':
-      return 'purple'
+      // Besøg/møder → blå (matcher legend "Besøg / Tilsyn")
+      return 'blue'
     case 'case':
       return 'red'
     case 'renewal':
-      return 'blue'
+      return 'green'
     default:
       return 'gray'
   }
@@ -137,8 +113,8 @@ function formatAgendaDate(dateString: string): string {
   const [y, m, d] = dateString.split('-').map(Number)
   const dow = new Date(y, m - 1, d).getDay()
   const dowEU = dow === 0 ? 6 : dow - 1
-  const cap = UGEDAGE_FULL[dowEU][0].toUpperCase() + UGEDAGE_FULL[dowEU].slice(1)
-  return `${cap} ${d}. ${MAANEDER[m - 1]}`
+  const cap = WEEKDAYS_DA_FULL[dowEU][0].toUpperCase() + WEEKDAYS_DA_FULL[dowEU].slice(1)
+  return `${cap} ${d}. ${MONTH_NAMES_DA_LOWER[m - 1]}`
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -224,7 +200,7 @@ export function CalendarPageB({
               ←
             </button>
             <span className="b-tnum text-[14px] font-medium text-b-1">
-              {MAANEDER_CAP[monthIdx]} {year}
+              {MONTH_NAMES_DA[monthIdx]} {year}
             </span>
             <button
               type="button"
@@ -285,17 +261,7 @@ export function CalendarPageB({
       <BottomBar
         left={
           <>
-            Kalender · {MAANEDER_CAP[monthIdx]} {year} · {monthEvents.length} begivenheder
-          </>
-        }
-        right={
-          <>
-            <KbdHint k="⌘K" label="handling" />
-            <span>·</span>
-            <KbdHint k="←" />
-            <KbdHint k="→" label="måned" />
-            <span>·</span>
-            <KbdHint k="T" label="i dag" />
+            Kalender · {MONTH_NAMES_DA[monthIdx]} {year} · {monthEvents.length} begivenheder
           </>
         }
       />
@@ -318,7 +284,7 @@ function MonthView({
     <div className="overflow-hidden rounded-[4px] border border-b-border bg-b-panel">
       {/* Ugedag-header */}
       <div className="grid grid-cols-7 border-b border-b-border bg-b-panel-h">
-        {UGEDAGE.map((d, i) => (
+        {WEEKDAYS_DA_SHORT.map((d, i) => (
           <div
             key={d}
             className={`px-2 py-1.5 text-[10px] font-semibold uppercase ${
@@ -361,13 +327,14 @@ function MonthView({
                 {visible.map((ev) => {
                   const c = colorForType(ev.type)
                   return (
-                    <div
+                    <Link
                       key={ev.id}
+                      href={ev.href}
                       title={`${ev.title} · ${ev.subtitle}`}
-                      className={`truncate rounded-[3px] px-1 py-px text-[10px] ${pillCls(c)}`}
+                      className={`truncate rounded-[3px] px-1 py-px text-[10px] no-underline hover:opacity-80 ${pillCls(c)}`}
                     >
                       {ev.title}
-                    </div>
+                    </Link>
                   )
                 })}
                 {more > 0 && <div className="text-[10px] text-b-2">+{more} mere</div>}
@@ -427,16 +394,17 @@ function AgendaView({ events, todayISO }: { events: CalendarEvent[]; todayISO: s
             {evs.map((ev) => {
               const c = colorForType(ev.type)
               return (
-                <div
+                <Link
                   key={ev.id}
-                  className="flex items-center gap-2.5 border-b border-b-divider px-3 py-1.5 last:border-b-0 hover:bg-b-row-hover"
+                  href={ev.href}
+                  className="flex items-center gap-2.5 border-b border-b-divider px-3 py-1.5 last:border-b-0 hover:bg-b-row-hover no-underline"
                 >
                   <span className={`h-2 w-2 shrink-0 rounded-full ${dotCls(c)}`} />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-[13px] font-medium text-b-1">{ev.title}</div>
                     <div className="truncate text-[11px] text-b-2">{ev.subtitle}</div>
                   </div>
-                </div>
+                </Link>
               )
             })}
           </div>
@@ -458,7 +426,7 @@ function RightPanel({ upcoming }: { upcoming: CalendarEvent[] }) {
         ) : (
           upcoming.map((ev, i) => {
             const [, m, d] = ev.date.split('-').map(Number)
-            const shortDate = `${d}. ${MAANEDER_SHORT[m - 1]}`
+            const shortDate = `${d}. ${MONTH_NAMES_DA_SHORT[m - 1]}`
             const c = colorForType(ev.type)
             return (
               <div
@@ -484,10 +452,11 @@ function RightPanel({ upcoming }: { upcoming: CalendarEvent[] }) {
       <Panel>
         <PanelHeader title="Legende" />
         <div className="py-1">
-          <LegendRow color="blue" label="Besøg / Tilsyn" />
-          <LegendRow color="purple" label="Bestyrelsesmøde" />
-          <LegendRow color="red" label="Sagsfrist / Udløb" />
-          <LegendRow color="amber" label="Opgave / Frist" />
+          {/* Farver afspejler colorForType — ingen mismatch */}
+          <LegendRow color={colorForType('meeting')} label="Besøg / Tilsyn" />
+          <LegendRow color={colorForType('expiry')} label="Kontraktudløb / Sagsfrist" />
+          <LegendRow color={colorForType('deadline')} label="Opgave / Frist" />
+          <LegendRow color={colorForType('renewal')} label="Fornyelse" />
           <LegendRow color="gray" label="Andet" />
         </div>
       </Panel>

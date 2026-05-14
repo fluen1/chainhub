@@ -2,17 +2,12 @@ import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
-import { getAccessibleCompanies } from '@/lib/permissions'
+import { getAccessibleCompanies, canAccessModule } from '@/lib/permissions'
 import { getTaskStatusLabel, getPriorityLabel, daysUntil } from '@/lib/labels'
+import { formatShortDate } from '@/lib/date-helpers'
 import { TasksListB, type TaskRow } from './tasks-list-b'
 
 export const metadata: Metadata = { title: 'Opgaver' }
-
-const MONTHS = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec']
-function formatShortDate(d: Date | null): string {
-  if (!d) return '—'
-  return `${d.getDate()}. ${MONTHS[d.getMonth()]}`
-}
 
 // Task har ingen "type"-felt — vi udleder kategori fra hvilke entiteter den er
 // tilknyttet: contract_id → "Kontrakt", case_id → "Sag", company_id → "Selskab",
@@ -34,6 +29,10 @@ export default async function TasksPage() {
 
   const orgId = session.user.organizationId
   const userId = session.user.id
+
+  const hasAccess = await canAccessModule(userId, 'tasks', orgId)
+  if (!hasAccess) redirect('/dashboard')
+
   const companyIds = await getAccessibleCompanies(userId, orgId)
 
   // Opgaver er org-scoped (company_id er nullable). Vi viser alle opgaver i org

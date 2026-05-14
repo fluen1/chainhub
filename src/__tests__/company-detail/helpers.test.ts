@@ -361,57 +361,57 @@ describe('selectKeyPersons', () => {
     expect(selectKeyPersons([])).toEqual([])
   })
 
-  it('filtrerer ikke-senior roller fra', () => {
+  it('filtrerer ikke-senior roller fra (ansat er ikke en noegleperson)', () => {
     const candidates = [
       {
-        role: 'Receptionist',
+        role: 'ansat',
         anciennity_start: new Date('2020-01-01'),
         person: { first_name: 'Anna', last_name: 'Hansen' },
       },
       {
-        role: 'Partner',
+        role: 'direktoer',
         anciennity_start: new Date('2020-01-01'),
         person: { first_name: 'Bent', last_name: 'Jensen' },
       },
     ]
     const result = selectKeyPersons(candidates)
     expect(result).toHaveLength(1)
-    expect(result[0].role).toBe('Partner')
+    expect(result[0].role).toBe('direktoer')
   })
 
-  it('sorterer efter rolle-hierarki (Partner foer Direktoer foer Klinikchef)', () => {
+  it('sorterer efter rolle-hierarki (direktoer foer bestyrelsesformand foer leder)', () => {
     const candidates = [
       {
-        role: 'Klinikchef',
+        role: 'leder',
         anciennity_start: new Date('2018-01-01'),
         person: { first_name: 'C', last_name: 'C' },
       },
       {
-        role: 'Direktoer',
+        role: 'bestyrelsesformand',
         anciennity_start: new Date('2018-01-01'),
         person: { first_name: 'B', last_name: 'B' },
       },
       {
-        role: 'Partner',
+        role: 'direktoer',
         anciennity_start: new Date('2018-01-01'),
         person: { first_name: 'A', last_name: 'A' },
       },
     ]
     const result = selectKeyPersons(candidates)
-    expect(result.map((r) => r.role)).toEqual(['Partner', 'Direktoer', 'Klinikchef'])
+    expect(result.map((r) => r.role)).toEqual(['direktoer', 'bestyrelsesformand', 'leder'])
   })
 
   it('inden for samme rolle: laengst-anciennitet (tidligst start) foerst', () => {
     const candidates = [
       {
-        role: 'Partner',
+        role: 'direktoer',
         anciennity_start: new Date('2020-01-01'),
-        person: { first_name: 'Ny', last_name: 'Partner' },
+        person: { first_name: 'Ny', last_name: 'Direktoer' },
       },
       {
-        role: 'Partner',
+        role: 'direktoer',
         anciennity_start: new Date('2010-01-01'),
-        person: { first_name: 'Gammel', last_name: 'Partner' },
+        person: { first_name: 'Gammel', last_name: 'Direktoer' },
       },
     ]
     const result = selectKeyPersons(candidates)
@@ -422,33 +422,37 @@ describe('selectKeyPersons', () => {
   it('begraenser til maks 3 selv ved flere kandidater', () => {
     const candidates = [
       {
-        role: 'Partner',
+        role: 'direktoer',
         anciennity_start: new Date('2015-01-01'),
         person: { first_name: 'A', last_name: 'A' },
       },
       {
-        role: 'Medejer',
+        role: 'bestyrelsesformand',
         anciennity_start: new Date('2016-01-01'),
         person: { first_name: 'B', last_name: 'B' },
       },
       {
-        role: 'CEO',
+        role: 'bestyrelsesmedlem',
         anciennity_start: new Date('2017-01-01'),
         person: { first_name: 'C', last_name: 'C' },
       },
       {
-        role: 'Direktoer',
+        role: 'tegningsberettiget',
         anciennity_start: new Date('2018-01-01'),
         person: { first_name: 'D', last_name: 'D' },
       },
       {
-        role: 'CFO',
+        role: 'leder',
         anciennity_start: new Date('2019-01-01'),
         person: { first_name: 'E', last_name: 'E' },
       },
     ]
     const result = selectKeyPersons(candidates)
     expect(result).toHaveLength(3)
-    expect(result.map((r) => r.role)).toEqual(['Partner', 'Medejer', 'CEO'])
+    expect(result.map((r) => r.role)).toEqual([
+      'direktoer',
+      'bestyrelsesformand',
+      'bestyrelsesmedlem',
+    ])
   })
 })

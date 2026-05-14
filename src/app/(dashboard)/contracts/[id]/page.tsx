@@ -12,6 +12,9 @@ import {
   daysUntil,
 } from '@/lib/labels'
 import { UploadVersionTrigger } from '@/components/modals/b/UploadVersionTrigger'
+import { ContractStatusButton } from '@/components/contracts/ContractStatusButton'
+import { ContractEditTrigger } from '@/components/contracts/ContractEditTrigger'
+import { AddContractPartyTrigger } from '@/components/contracts/AddContractPartyTrigger'
 import {
   Breadcrumb,
   PageHeader,
@@ -137,7 +140,11 @@ export default async function ContractDetailPage({ params }: Props) {
   const session = await auth()
   if (!session) redirect('/login')
 
-  const hasModuleAccess = await canAccessModule(session.user.id, 'contracts')
+  const hasModuleAccess = await canAccessModule(
+    session.user.id,
+    'contracts',
+    session.user.organizationId
+  )
   if (!hasModuleAccess) redirect('/dashboard')
 
   const orgId = session.user.organizationId
@@ -161,10 +168,10 @@ export default async function ContractDetailPage({ params }: Props) {
 
   if (!contract) notFound()
 
-  const canAccess = await canAccessCompany(session.user.id, contract.company_id)
+  const canAccess = await canAccessCompany(session.user.id, contract.company_id, orgId)
   if (!canAccess) notFound()
 
-  const hasSensitivity = await canAccessSensitivity(session.user.id, contract.sensitivity)
+  const hasSensitivity = await canAccessSensitivity(session.user.id, contract.sensitivity, orgId)
   if (!hasSensitivity) notFound()
 
   // Audit-log for følsomme kontrakter (uændret fra original)
@@ -188,7 +195,7 @@ export default async function ContractDetailPage({ params }: Props) {
   // Parallel: relaterede data + version-uploaders + extraction-data
   const uploaderIds = Array.from(new Set(contract.versions.map((v) => v.uploaded_by)))
 
-  const [cases, tasks, documents, extraction, uploaders] = await Promise.all([
+  const [cases, tasks, documents, extraction, uploaders, persons] = await Promise.all([
     prisma.case.findMany({
       where: {
         organization_id: orgId,
@@ -225,7 +232,7 @@ export default async function ContractDetailPage({ params }: Props) {
         organization_id: orgId,
         document: {
           organization_id: orgId,
-          company_id: contract.company_id,
+          contract_id: contract.id,
           deleted_at: null,
         },
       },
@@ -243,6 +250,12 @@ export default async function ContractDetailPage({ params }: Props) {
           select: { id: true, name: true, email: true },
         })
       : Promise.resolve([]),
+    prisma.person.findMany({
+      where: { organization_id: orgId, deleted_at: null },
+      orderBy: { last_name: 'asc' },
+      take: 200,
+      select: { id: true, first_name: true, last_name: true, email: true },
+    }),
   ])
 
   const uploaderMap = new Map(uploaders.map((u) => [u.id, u.name ?? u.email ?? 'Ukendt']))
@@ -415,7 +428,18 @@ export default async function ContractDetailPage({ params }: Props) {
         }
         actions={
           <>
-            <BButton href={`/contracts/${contract.id}/edit`}>Rediger</BButton>
+            <ContractStatusButton contractId={contract.id} currentStatus={contract.status} />
+            <ContractEditTrigger
+              contract={{
+                id: contract.id,
+                displayName: contract.display_name,
+                systemType: contract.system_type,
+                sensitivity: contract.sensitivity,
+                expiryDate: contract.expiry_date,
+                effectiveDate: contract.effective_date,
+                notes: contract.notes,
+              }}
+            />
             <UploadVersionTrigger
               contractId={contract.id}
               contractName={contract.display_name}
@@ -435,7 +459,11 @@ export default async function ContractDetailPage({ params }: Props) {
           tone="red"
           actions={
             <>
-              <BButton>Se dokument</BButton>
+              {currentVersion?.file_url ? (
+                <BButton href={currentVersion.file_url}>Se dokument</BButton>
+              ) : (
+                <BButton disabled>Se dokument</BButton>
+              )}
               <BButton primary href={`/tasks/new?contract=${contract.id}`}>
                 Start forny-flow
               </BButton>
@@ -683,7 +711,16 @@ export default async function ContractDetailPage({ params }: Props) {
           <PanelFooter>
             <div className="flex items-center justify-between">
               <span />
-              <BAddButton href={`/contracts/${contract.id}/parties/new`}>+ Tilføj part</BAddButton>
+              <AddContractPartyTrigger
+                contractId={contract.id}
+                contractName={contract.display_name}
+                persons={persons.map((p) => ({
+                  id: p.id,
+                  firstName: p.first_name,
+                  lastName: p.last_name,
+                  email: p.email,
+                }))}
+              />
             </div>
           </PanelFooter>
         </Panel>
@@ -744,12 +781,10 @@ export default async function ContractDetailPage({ params }: Props) {
             ))
           )}
           <PanelFooter>
-            <a
-              href={`/contracts/${contract.id}/activity`}
-              className="text-b-blue-fg no-underline hover:underline"
-            >
-              Vis fuld historik →
-            </a>
+            <span className="text-b-3">
+              Viser seneste {activityRows.length} begivenheder · versionshistorik vist separat
+              ovenfor
+            </span>
           </PanelFooter>
         </Panel>
       </div>

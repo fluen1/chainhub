@@ -19,7 +19,7 @@ export async function prepareGdprExport(
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
 
-  const hasAccess = await canAccessModule(session.user.id, 'settings')
+  const hasAccess = await canAccessModule(session.user.id, 'settings', session.user.organizationId)
   if (!hasAccess) return { error: 'Kun admin kan håndtere GDPR-eksport' }
 
   try {
@@ -50,7 +50,7 @@ export async function executeGdprDelete(
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
 
-  const hasAccess = await canAccessModule(session.user.id, 'settings')
+  const hasAccess = await canAccessModule(session.user.id, 'settings', session.user.organizationId)
   if (!hasAccess) return { error: 'Kun admin kan slette persondata' }
 
   try {

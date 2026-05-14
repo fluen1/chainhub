@@ -65,7 +65,7 @@ export async function getTaskDetailData(
 
   // Permissions — hvis opgave har company_id, tjek adgang
   if (task.company_id) {
-    const hasAccess = await canAccessCompany(userId, task.company_id)
+    const hasAccess = await canAccessCompany(userId, task.company_id, orgId)
     if (!hasAccess) return null
   }
 

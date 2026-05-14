@@ -3,7 +3,8 @@ import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { getAccessibleCompanies, canAccessModule, canAccessSensitivity } from '@/lib/permissions'
-import { getContractTypeLabel, getSensitivityLabel } from '@/lib/labels'
+import { getContractTypeLabel, getContractStatusLabel, getSensitivityLabel } from '@/lib/labels'
+import { formatShortDate } from '@/lib/date-helpers'
 import { ContractsListB, type ContractRow } from './contracts-list-b'
 
 export const metadata: Metadata = { title: 'Kontrakter' }
@@ -33,27 +34,11 @@ function extractValue(typeData: unknown): { value: string; unit: string } {
   return { value: '—', unit: '' }
 }
 
-function formatShortDate(d: Date | null): string {
-  if (!d) return '—'
-  const dd = String(d.getDate()).padStart(2, '0')
-  const mm = String(d.getMonth() + 1).padStart(2, '0')
-  const yy = String(d.getFullYear()).slice(-2)
-  return `${dd}.${mm}.${yy}`
-}
-
-function statusLabel(status: string): string {
-  if (status === 'AKTIV') return 'Aktiv'
-  if (status === 'UDLOEBET') return 'Udløbet'
-  if (status === 'OPSAGT') return 'Opsagt'
-  if (status === 'UDKAST') return 'Udkast'
-  return status
-}
-
 export default async function ContractsPage() {
   const session = await auth()
   if (!session) redirect('/login')
 
-  const hasAccess = await canAccessModule(session.user.id, 'contracts')
+  const hasAccess = await canAccessModule(session.user.id, 'contracts', session.user.organizationId)
   if (!hasAccess) redirect('/dashboard')
 
   const orgId = session.user.organizationId
@@ -107,7 +92,7 @@ export default async function ContractsPage() {
   // Filtrer efter sensitivitet
   const accessibleContracts = await Promise.all(
     rawContracts.map(async (c) => {
-      const ok = await canAccessSensitivity(session.user.id, c.sensitivity)
+      const ok = await canAccessSensitivity(session.user.id, c.sensitivity, orgId)
       return ok ? c : null
     })
   ).then((results) => results.filter((c): c is (typeof rawContracts)[number] => c !== null))
@@ -143,11 +128,11 @@ export default async function ContractsPage() {
       parter,
       vaerdi: value,
       unit,
-      effektiv: formatShortDate(c.effective_date),
+      effektiv: formatShortDate(c.effective_date) || '—',
       effektivSort: c.effective_date?.getTime() ?? 0,
       udlob,
       udlobDays,
-      status: statusLabel(c.status),
+      status: getContractStatusLabel(c.status),
       rawStatus: c.status,
       sensitivity: getSensitivityLabel(c.sensitivity).toUpperCase(),
     }

@@ -6,6 +6,12 @@ import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { formatFileSize } from '@/lib/labels'
+import { BButton, BTextField } from '@/components/ui/b'
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FileUpload — B-stil port. Drag-and-drop zone + titel-felt + upload-knap.
+// Funktionalitet bevaret 1:1 — kun visuelt porteret.
+// ─────────────────────────────────────────────────────────────────────────────
 
 interface FileUploadProps {
   companyId?: string
@@ -79,7 +85,7 @@ export function FileUpload({ companyId, caseId, className }: FileUploadProps) {
   }
 
   return (
-    <div className={cn('space-y-3', className)}>
+    <div className={cn('space-y-2', className)}>
       {/* Drop zone */}
       <div
         role="button"
@@ -96,12 +102,12 @@ export function FileUpload({ companyId, caseId, className }: FileUploadProps) {
           }
         }}
         className={cn(
-          'relative rounded-lg border-2 border-dashed p-6 text-center transition-colors cursor-pointer',
+          'relative rounded-[4px] border-2 border-dashed p-5 text-center transition-colors',
           isDragging
-            ? 'border-blue-400 bg-blue-50'
+            ? 'cursor-copy border-b-blue-fg bg-b-blue-bg'
             : selectedFile
-              ? 'border-gray-300 bg-white cursor-default'
-              : 'border-gray-300 hover:border-gray-400 bg-white'
+              ? 'cursor-default border-b-border bg-b-panel'
+              : 'cursor-pointer border-b-border bg-b-panel hover:border-b-border-strong hover:bg-b-row-hover'
         )}
       >
         <input
@@ -114,11 +120,11 @@ export function FileUpload({ companyId, caseId, className }: FileUploadProps) {
 
         {selectedFile ? (
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 min-w-0">
-              <FileIcon className="h-8 w-8 shrink-0 text-gray-400" />
+            <div className="flex min-w-0 items-center gap-3">
+              <FileIcon className="h-6 w-6 shrink-0 text-b-2" />
               <div className="min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">{selectedFile.name}</p>
-                <p className="text-xs text-gray-500">{formatFileSize(selectedFile.size)}</p>
+                <p className="truncate text-[13px] font-medium text-b-1">{selectedFile.name}</p>
+                <p className="text-[11px] text-b-3">{formatFileSize(selectedFile.size)}</p>
               </div>
             </div>
             <button
@@ -127,56 +133,47 @@ export function FileUpload({ companyId, caseId, className }: FileUploadProps) {
                 e.stopPropagation()
                 handleRemoveFile()
               }}
-              className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+              className="rounded-[4px] p-1 text-b-3 hover:bg-b-row-hover hover:text-b-1"
             >
-              <X className="h-5 w-5" />
+              <X className="h-4 w-4" />
             </button>
           </div>
         ) : (
           <div>
-            <Upload className="mx-auto h-8 w-8 text-gray-400" />
-            <p className="mt-2 text-sm font-medium text-gray-700">
+            <Upload className="mx-auto h-6 w-6 text-b-3" />
+            <p className="mt-1.5 text-[13px] font-medium text-b-2">
               Træk fil hertil eller klik for at vælge
             </p>
-            <p className="mt-1 text-xs text-gray-500">PDF, DOCX, PNG eller JPG — maks 10 MB</p>
+            <p className="mt-0.5 text-[11px] text-b-3">PDF, DOCX, PNG eller JPG — maks 10 MB</p>
           </div>
         )}
       </div>
 
-      {/* Title input + upload button */}
+      {/* Titel + upload knap */}
       {selectedFile && (
-        <div className="flex items-end gap-3">
+        <div className="flex items-end gap-2">
           <div className="flex-1">
-            <label htmlFor="doc-title" className="block text-sm font-medium text-gray-700 mb-1">
-              Titel (valgfrit)
-            </label>
-            <input
-              id="doc-title"
-              type="text"
+            <BTextField
+              label="Titel (valgfrit)"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={setTitle}
               placeholder={selectedFile.name}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              disabled={isUploading}
             />
           </div>
-          <button
-            type="button"
-            onClick={handleUpload}
-            disabled={isUploading}
-            className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+          <BButton primary onClick={handleUpload} disabled={isUploading} className="shrink-0">
             {isUploading ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 Uploader…
               </>
             ) : (
               <>
-                <Upload className="h-4 w-4" />
+                <Upload className="h-3.5 w-3.5" />
                 Upload
               </>
             )}
-          </button>
+          </BButton>
         </div>
       )}
     </div>

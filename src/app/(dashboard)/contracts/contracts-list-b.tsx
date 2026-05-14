@@ -1,7 +1,8 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useMemo, useState, useEffect, useTransition } from 'react'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
+import { ExportButton } from '@/components/ui/export-button'
 import {
   Breadcrumb,
   PageHeader,
@@ -12,7 +13,6 @@ import {
   FilterReset,
   FilterSep,
   FilterSpacer,
-  FilterButton,
   SegmentedToggle,
   TableWrap,
   Th,
@@ -24,7 +24,6 @@ import {
   type BadgeTone,
   Pager,
   BottomBar,
-  KbdHint,
   Panel,
 } from '@/components/ui/b'
 
@@ -141,16 +140,53 @@ function EmptyContractsView() {
 
 function ContractsListBContent({ contracts, totalContracts }: ContractsListBProps) {
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const [, startTransition] = useTransition()
 
-  const [viewMode, setViewMode] = useState<ViewMode>('flat')
-  const [search, setSearch] = useState('')
-  const [statusFil, setStatusFil] = useState('Alle')
-  const [selskabFil, setSelskabFil] = useState('Alle')
-  const [typeFil, setTypeFil] = useState('Alle')
+  // Læs initial state fra URL-params
+  const [viewMode, setViewMode] = useState<ViewMode>(
+    () => (searchParams.get('view') as ViewMode) || 'flat'
+  )
+  const [search, setSearch] = useState(() => searchParams.get('search') ?? '')
+  const [statusFil, setStatusFil] = useState(() => searchParams.get('status') ?? 'Alle')
+  const [selskabFil, setSelskabFil] = useState(() => searchParams.get('company') ?? 'Alle')
+  const [typeFil, setTypeFil] = useState(() => searchParams.get('type') ?? 'Alle')
   const [sortCol, setSortCol] = useState<SortKey>('udlobDays')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
-  const [page, setPage] = useState(1)
+  const [page, setPage] = useState(() => parseInt(searchParams.get('page') ?? '1', 10) || 1)
   const [pageSize, setPageSize] = useState(10)
+
+  // Synkronisér state → URL (optimistisk: state opdateres øjeblikkeligt)
+  function pushUrl(overrides: Record<string, string>) {
+    const sp = new URLSearchParams(searchParams.toString())
+    for (const [k, v] of Object.entries(overrides)) {
+      if (v === '' || v === 'Alle' || (v === '1' && k === 'page')) sp.delete(k)
+      else sp.set(k, v)
+    }
+    // view=flat er default — udelad fra URL
+    if (sp.get('view') === 'flat') sp.delete('view')
+    startTransition(() => {
+      router.push(`${pathname}?${sp.toString()}`, { scroll: false })
+    })
+  }
+
+  // Synk URL → state ved browser-navigation (popstate)
+  useEffect(() => {
+    const newView = (searchParams.get('view') as ViewMode) || 'flat'
+    const newSearch = searchParams.get('search') ?? ''
+    const newStatus = searchParams.get('status') ?? 'Alle'
+    const newCompany = searchParams.get('company') ?? 'Alle'
+    const newType = searchParams.get('type') ?? 'Alle'
+    const newPage = parseInt(searchParams.get('page') ?? '1', 10) || 1
+    setViewMode(newView)
+    setSearch(newSearch)
+    setStatusFil(newStatus)
+    setSelskabFil(newCompany)
+    setTypeFil(newType)
+    setPage(newPage)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
 
   const uniqueSelskaber = useMemo(
     () => Array.from(new Set(contracts.map((c) => c.selskab))).sort(),
@@ -221,6 +257,7 @@ function ContractsListBContent({ contracts, totalContracts }: ContractsListBProp
     setSelskabFil('Alle')
     setTypeFil('Alle')
     setPage(1)
+    pushUrl({ search: '', status: 'Alle', company: 'Alle', type: 'Alle', page: '1' })
   }
 
   function goTo(id: string) {
@@ -263,6 +300,7 @@ function ContractsListBContent({ contracts, totalContracts }: ContractsListBProp
           onChange={(v) => {
             setSearch(v)
             setPage(1)
+            pushUrl({ search: v, page: '1' })
           }}
           placeholder="Søg kontrakter..."
         />
@@ -273,6 +311,7 @@ function ContractsListBContent({ contracts, totalContracts }: ContractsListBProp
           onChange={(v) => {
             setSelskabFil(v)
             setPage(1)
+            pushUrl({ company: v, page: '1' })
           }}
         />
         <FilterDropdown
@@ -283,6 +322,7 @@ function ContractsListBContent({ contracts, totalContracts }: ContractsListBProp
           onChange={(v) => {
             setTypeFil(v)
             setPage(1)
+            pushUrl({ type: v, page: '1' })
           }}
         />
         <FilterDropdown
@@ -292,13 +332,17 @@ function ContractsListBContent({ contracts, totalContracts }: ContractsListBProp
           onChange={(v) => {
             setStatusFil(v)
             setPage(1)
+            pushUrl({ status: v, page: '1' })
           }}
         />
         {hasFilter && <FilterReset onClick={resetFilters} />}
         <FilterSep />
         <SegmentedToggle<ViewMode>
           value={viewMode}
-          onChange={setViewMode}
+          onChange={(v) => {
+            setViewMode(v)
+            pushUrl({ view: v })
+          }}
           options={[
             { value: 'flat', label: 'Flat' },
             { value: 'grouped', label: 'Grupperet' },
@@ -306,7 +350,7 @@ function ContractsListBContent({ contracts, totalContracts }: ContractsListBProp
           ]}
         />
         <FilterSpacer />
-        <FilterButton>Eksportér ▾</FilterButton>
+        <ExportButton entity="contracts" label="Eksportér ▾" />
       </FilterRow>
 
       {hasFilter && (
@@ -337,13 +381,21 @@ function ContractsListBContent({ contracts, totalContracts }: ContractsListBProp
           }
           page={viewMode === 'flat' ? safePage : undefined}
           maxPage={viewMode === 'flat' ? maxPage : undefined}
-          onPage={viewMode === 'flat' ? setPage : undefined}
+          onPage={
+            viewMode === 'flat'
+              ? (n) => {
+                  setPage(n)
+                  pushUrl({ page: String(n) })
+                }
+              : undefined
+          }
           pageSize={viewMode === 'flat' ? pageSize : undefined}
           onPageSize={
             viewMode === 'flat'
               ? (n) => {
                   setPageSize(n)
                   setPage(1)
+                  pushUrl({ page: '1' })
                 }
               : undefined
           }
@@ -356,15 +408,6 @@ function ContractsListBContent({ contracts, totalContracts }: ContractsListBProp
             {sorted.length} {sorted.length === 1 ? 'kontrakt' : 'kontrakter'} vist · {aiCount}{' '}
             AI-extracted
             {hasFilter && ` · filtreret fra ${totalContracts}`}
-          </>
-        }
-        right={
-          <>
-            <KbdHint k="⌘K" label="handling" />
-            <span>·</span>
-            <KbdHint k="N" label="ny kontrakt" />
-            <span>·</span>
-            <KbdHint k="F" label="filter" />
           </>
         }
       />

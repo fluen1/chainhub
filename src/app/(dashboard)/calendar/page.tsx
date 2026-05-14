@@ -6,20 +6,23 @@ import { CalendarPageB } from './calendar-b'
 
 export const metadata: Metadata = { title: 'Kalender' }
 
+// Next.js 15 kræver Promise<...> for searchParams. Next.js 14 accepterer
+// begge former. Vi bruger Promise-varianten proaktivt for fremtidssikring.
 interface CalendarPageProps {
-  searchParams: { month?: string; view?: string }
+  searchParams: Promise<{ month?: string; view?: string }>
 }
 
 export default async function CalendarPage({ searchParams }: CalendarPageProps) {
   const session = await auth()
   if (!session) redirect('/login')
 
+  const resolvedParams = await searchParams
   const now = new Date()
   let year = now.getFullYear()
   let month = now.getMonth() + 1
 
-  if (searchParams.month) {
-    const [y, m] = searchParams.month.split('-').map(Number)
+  if (resolvedParams.month) {
+    const [y, m] = resolvedParams.month.split('-').map(Number)
     if (y && m && m >= 1 && m <= 12) {
       year = y
       month = m
@@ -40,7 +43,7 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
     ),
   ])
 
-  const viewMode = searchParams.view === 'agenda' ? 'agenda' : 'maaned'
+  const viewMode = resolvedParams.view === 'agenda' ? 'agenda' : 'maaned'
   const todayISO = now.toISOString().slice(0, 10)
 
   return (
