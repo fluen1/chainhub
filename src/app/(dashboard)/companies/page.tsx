@@ -89,7 +89,7 @@ export default async function CompaniesPage() {
         FROM "Contract"
         WHERE organization_id = ${orgId}
           AND deleted_at IS NULL
-          AND status = 'UDLOBET'
+          AND status = 'UDLOEBET'
         GROUP BY company_id
       `,
       prisma.$queryRaw<Array<{ company_id: string; count: bigint }>>`

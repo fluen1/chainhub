@@ -165,6 +165,7 @@ export default async function DocumentReviewPage({ params }: { params: { id: str
           ownerships: true,
         },
       },
+      case: { select: { id: true, case_number: true, title: true } },
     },
   })
 
@@ -240,6 +241,10 @@ export default async function DocumentReviewPage({ params }: { params: { id: str
     promptVersion: extraction?.prompt_version ?? null,
     fields,
     decidedFieldNames,
+    contractName: doc.contract?.display_name ?? null,
+    caseName: doc.case
+      ? `#${doc.case.case_number ?? doc.case.id.slice(0, 6)} ${doc.case.title}`
+      : null,
   }
 
   return <ReviewClient document={reviewDoc} reviewQueue={reviewQueue} sourceBlocks={sourceBlocks} />

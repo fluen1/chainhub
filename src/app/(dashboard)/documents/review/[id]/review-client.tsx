@@ -21,6 +21,7 @@ import {
   rejectDocumentExtraction,
 } from '@/actions/document-review'
 import { EmptyState } from '@/components/ui/empty-state'
+import { DeleteDocumentButton } from '@/components/documents/DeleteDocumentButton'
 import type { SourceBlock } from './page'
 
 // ---------------------------------------------------------------
@@ -57,6 +58,8 @@ export interface ReviewDocument {
   promptVersion: string | null
   fields: ReviewField[]
   decidedFieldNames: string[]
+  contractName?: string | null
+  caseName?: string | null
 }
 
 export interface ReviewQueueItem {
@@ -499,9 +502,19 @@ export default function ReviewClient({
         <div className="bg-white rounded-xl ring-1 ring-slate-900/[0.06] shadow-[0_1px_2px_rgba(15,23,42,0.04)] p-5 mb-4">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
-              <h1 className="text-[18px] font-semibold tracking-tight text-slate-900 truncate">
-                {doc.fileName}
-              </h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-[18px] font-semibold tracking-tight text-slate-900 truncate">
+                  {doc.fileName}
+                </h1>
+                <DeleteDocumentButton
+                  documentId={doc.id}
+                  fileName={doc.fileName}
+                  contractName={doc.contractName}
+                  caseName={doc.caseName}
+                  variant="full"
+                  className="shrink-0 flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] font-medium text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                />
+              </div>
               <div className="flex items-center gap-3 text-[12px] text-slate-500 mt-1">
                 <span>{doc.companyName}</span>
                 <span>·</span>

@@ -28,6 +28,7 @@ import {
   KbdHint,
   PlusBadge,
 } from '@/components/ui/b'
+import { DeleteDocumentButton } from '@/components/documents/DeleteDocumentButton'
 
 // ────────────────────────────────────────────────────────────────────────────
 // /documents — klient-komponent.
@@ -49,6 +50,8 @@ export interface DocRow {
   att: number
   dato: string
   datoSort: number
+  contractName?: string | null
+  caseName?: string | null
 }
 
 type ViewMode = 'flat' | 'grouped'
@@ -399,6 +402,7 @@ function FlatTable({
               Dato
             </Th>
             <Th width={20}>{''}</Th>
+            <Th width={36}>{''}</Th>
           </tr>
         </thead>
         <tbody>
@@ -474,6 +478,14 @@ function DocTr({
       </Td>
       <Td width={20}>
         <span className="text-b-3">›</span>
+      </Td>
+      <Td width={36}>
+        <DeleteDocumentButton
+          documentId={d.id}
+          fileName={d.navn}
+          contractName={d.contractName}
+          caseName={d.caseName}
+        />
       </Td>
     </Tr>
   )
