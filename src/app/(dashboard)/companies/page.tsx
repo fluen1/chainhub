@@ -89,7 +89,8 @@ export default async function CompaniesPage() {
         FROM "Contract"
         WHERE organization_id = ${orgId}
           AND deleted_at IS NULL
-          AND status = 'UDLOEBET'
+          AND status = 'UDLOBET'
+          -- DB-enum-værdi er 'UDLOBET' (uden E). Prisma-enum-værdi er 'UDLOEBET' med @map("UDLOBET") til DB.
         GROUP BY company_id
       `,
       prisma.$queryRaw<Array<{ company_id: string; count: bigint }>>`
