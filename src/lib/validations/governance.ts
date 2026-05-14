@@ -26,6 +26,7 @@ export const addCompanyPersonSchema = z.object({
 export const endCompanyPersonSchema = z.object({
   companyPersonId: z.string().min(1),
   endDate: z.string(),
+  note: z.string().max(2000).optional(),
 })
 
 export type AddCompanyPersonInput = z.infer<typeof addCompanyPersonSchema>

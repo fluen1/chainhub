@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { ExportButton } from '@/components/ui/export-button'
 import {
   Breadcrumb,
   PageHeader,
@@ -12,7 +13,6 @@ import {
   FilterReset,
   FilterSep,
   FilterSpacer,
-  FilterButton,
   SegmentedToggle,
   TableWrap,
   Th,
@@ -306,7 +306,7 @@ function ContractsListBContent({ contracts, totalContracts }: ContractsListBProp
           ]}
         />
         <FilterSpacer />
-        <FilterButton>Eksportér ▾</FilterButton>
+        <ExportButton entity="contracts" label="Eksportér ▾" />
       </FilterRow>
 
       {hasFilter && (

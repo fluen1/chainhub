@@ -157,6 +157,7 @@ export async function endCompanyPerson(
         companyId: existing.company_id,
         role: existing.role,
         endDate: parsed.data.endDate,
+        ...(parsed.data.note ? { note: parsed.data.note } : {}),
       },
     })
 

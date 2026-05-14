@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { ExportButton } from '@/components/ui/export-button'
 import {
   Breadcrumb,
   PageHeader,
@@ -348,7 +349,7 @@ function CompaniesListBContent({ companies, canCreate, totalsExtra }: CompaniesL
           ]}
         />
         <FilterSpacer />
-        <FilterButton>Eksportér ▾</FilterButton>
+        <ExportButton entity="companies" label="Eksportér ▾" />
       </FilterRow>
 
       {hasFilter && (

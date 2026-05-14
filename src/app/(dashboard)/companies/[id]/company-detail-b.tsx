@@ -423,9 +423,11 @@ export function CompanyDetailB({
                 {data.contracts.totalCount > data.contracts.top.length &&
                   ` · ${data.contracts.totalCount - data.contracts.top.length} flere`}
               </span>
-              <BAddButton href={`/contracts/new?company=${company.id}`}>
-                + Opret kontrakt
-              </BAddButton>
+              {!readOnly && (
+                <BAddButton href={`/contracts/new?company=${company.id}`}>
+                  + Opret kontrakt
+                </BAddButton>
+              )}
             </div>
           </PanelFooter>
         </Panel>
@@ -471,7 +473,9 @@ export function CompanyDetailB({
               <PanelFooter>
                 <div className="flex items-center justify-between">
                   <span />
-                  <BAddButton href={`/cases/new?company=${company.id}`}>+ Opret sag</BAddButton>
+                  {!readOnly && (
+                    <BAddButton href={`/cases/new?company=${company.id}`}>+ Opret sag</BAddButton>
+                  )}
                 </div>
               </PanelFooter>
             </Panel>
@@ -541,9 +545,11 @@ export function CompanyDetailB({
               <PanelFooter>
                 <div className="flex items-center justify-between">
                   <span />
-                  <BAddButton href={`/visits/new?company=${company.id}`}>
-                    + Planlæg besøg
-                  </BAddButton>
+                  {!readOnly && (
+                    <BAddButton href={`/visits/new?company=${company.id}`}>
+                      + Planlæg besøg
+                    </BAddButton>
+                  )}
                 </div>
               </PanelFooter>
             </Panel>
@@ -585,12 +591,17 @@ export function CompanyDetailB({
                   <strong className="font-medium">{d.fileName}</strong>
                   {d.meta && <span className="text-b-2"> · {d.meta}</span>}
                 </span>
-                {/* DocumentViewRow.badge.label fra getCompanyDetailData er enten "AI ✓"
-                  (når extraction.completed+reviewed) eller dårligt-passende "Arkiveret".
-                  Mapper "Arkiveret" → "Ikke AI" så terminologi matcher /documents. */}
-                <Badge tone={d.badge.label === 'AI ✓' ? 'green' : 'gray'}>
-                  {d.badge.label === 'AI ✓' ? 'AI ✓' : 'Ikke AI'}
-                </Badge>
+                {/* buildDocuments producerer 3 badge-tilstande:
+                  - label='Til review', tone='purple' → awaiting review
+                  - isAiExtracted=true, label='Arkiveret' → AI reviewed
+                  - isAiExtracted=false, label='Arkiveret' → ikke AI-behandlet */}
+                {d.badge.label === 'Til review' ? (
+                  <Badge tone="amber">Til review</Badge>
+                ) : d.isAiExtracted ? (
+                  <Badge tone="green">AI ✓</Badge>
+                ) : (
+                  <Badge tone="gray">Ikke AI</Badge>
+                )}
                 <span className="text-b-3">›</span>
               </Link>
             ))
@@ -603,7 +614,11 @@ export function CompanyDetailB({
               >
                 Se alle dokumenter →
               </Link>
-              <BAddButton href={`/documents?company=${company.id}`}>+ Upload dokument</BAddButton>
+              {!readOnly && (
+                <BAddButton href={`/documents/upload?company=${company.id}`}>
+                  + Upload dokument
+                </BAddButton>
+              )}
             </div>
           </PanelFooter>
         </Panel>

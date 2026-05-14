@@ -3,6 +3,7 @@
 import { useMemo, useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
+import { ExportButton } from '@/components/ui/export-button'
 import {
   Breadcrumb,
   PageHeader,
@@ -291,7 +292,7 @@ export function TasksListB({ tasks, totalCount }: { tasks: TaskRow[]; totalCount
           ]}
         />
         <FilterSpacer />
-        <FilterButton>Eksportér ▾</FilterButton>
+        <ExportButton entity="tasks" label="Eksportér ▾" />
       </FilterRow>
 
       {hasFilter && (

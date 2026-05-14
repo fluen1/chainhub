@@ -116,6 +116,7 @@ export function AddOwnerModal({
         personEmail: createNew ? personEmail.trim() || undefined : undefined,
         ownershipPct: pct,
         acquiredAt: acquiredAt || undefined,
+        note: note.trim() || undefined,
       })
 
       if ('error' in result) {

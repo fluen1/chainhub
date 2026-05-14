@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { ExportButton } from '@/components/ui/export-button'
 import {
   Breadcrumb,
   PageHeader,
@@ -12,7 +13,6 @@ import {
   FilterReset,
   FilterSep,
   FilterSpacer,
-  FilterButton,
   SegmentedToggle,
   TableWrap,
   Th,
@@ -252,7 +252,7 @@ export function CasesListB({ cases, totalCount }: { cases: CaseRow[]; totalCount
           ]}
         />
         <FilterSpacer />
-        <FilterButton>Eksportér ▾</FilterButton>
+        <ExportButton entity="cases" label="Eksportér ▾" />
       </FilterRow>
 
       {hasFilter && (

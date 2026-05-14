@@ -81,6 +81,7 @@ export async function addOwner(input: AddOwnerInput): Promise<ActionResult<Owner
       changes: {
         companyId: parsed.data.companyId,
         ownershipPct: Number(ownership.ownership_pct),
+        ...(parsed.data.note ? { note: parsed.data.note } : {}),
       },
     })
 
@@ -201,7 +202,10 @@ export async function endOwnership(input: EndOwnershipInput): Promise<ActionResu
       resourceType: 'ownership',
       resourceId: ownership.id,
       sensitivity: 'STRENGT_FORTROLIG',
-      changes: { endDate: parsed.data.endDate },
+      changes: {
+        endDate: parsed.data.endDate,
+        ...(parsed.data.note ? { note: parsed.data.note } : {}),
+      },
     })
 
     revalidatePath(`/companies/${existing.company_id}`)

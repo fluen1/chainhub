@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Mail, Phone, Building2 } from 'lucide-react'
+import { ExportButton } from '@/components/ui/export-button'
 import {
   Breadcrumb,
   PageHeader,
@@ -13,7 +14,6 @@ import {
   FilterReset,
   FilterSep,
   FilterSpacer,
-  FilterButton,
   SegmentedToggle,
   TableWrap,
   Th,
@@ -250,7 +250,7 @@ export function PersonsListB({
           ]}
         />
         <FilterSpacer />
-        <FilterButton>Eksportér ▾</FilterButton>
+        <ExportButton entity="persons" label="Eksportér ▾" />
       </FilterRow>
 
       {hasFilter && (
