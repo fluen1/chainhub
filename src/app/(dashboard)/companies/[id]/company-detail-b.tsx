@@ -136,25 +136,41 @@ export function CompanyDetailB({
     return `${f.ebitda.value_k}k`
   }, [data.finance])
 
+  // Strip-celler respekterer visibleSections — finance-roller ser kun Kædeandel + EBITDA.
+  // Celler for moduler brugeren ikke har adgang til udelades helt (ingen 0-values).
   const stripCells: StripCellData[] = [
     { num: `${kaedePct}%`, label: 'Kædeandel' },
-    {
-      num: data.contracts.totalCount,
-      label: 'Kontrakter',
-      color: data.contracts.top.some((c) => c.badge.tone === 'red') ? 'amber' : 'default',
-    },
-    {
-      num: data.cases.totalCount,
-      label: 'Åbne sager',
-      color: data.cases.totalCount > 0 ? 'red' : 'default',
-    },
-    { num: data.persons.totalCount, label: 'Personer' },
-    { num: data.documents.rows.length, label: 'Dokumenter' },
-    {
-      num: ebitdaShort,
-      label: 'EBITDA',
-      color: ebitdaShort !== '—' ? 'green' : 'default',
-    },
+    ...(showContracts
+      ? [
+          {
+            num: data.contracts.totalCount,
+            label: 'Kontrakter',
+            color: (data.contracts.top.some((c) => c.badge.tone === 'red')
+              ? 'amber'
+              : 'default') as 'amber' | 'default',
+          },
+        ]
+      : []),
+    ...(showCases
+      ? [
+          {
+            num: data.cases.totalCount,
+            label: 'Åbne sager',
+            color: (data.cases.totalCount > 0 ? 'red' : 'default') as 'red' | 'default',
+          },
+        ]
+      : []),
+    ...(showPersons ? [{ num: data.persons.totalCount, label: 'Personer' }] : []),
+    ...(showDocuments ? [{ num: data.documents.rows.length, label: 'Dokumenter' }] : []),
+    ...(showFinance
+      ? [
+          {
+            num: ebitdaShort,
+            label: 'EBITDA',
+            color: (ebitdaShort !== '—' ? 'green' : 'default') as 'green' | 'default',
+          },
+        ]
+      : []),
   ]
 
   // Existing-owners-mapping til AddOwnerModal (filtrer end_date=null fra raw)
