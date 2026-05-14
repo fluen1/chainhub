@@ -74,16 +74,19 @@ export default async function TasksPage() {
 
   const rows: TaskRow[] = rawTasks.map((t) => {
     const dDue = t.due_date ? daysUntil(t.due_date) : null
-    const fristDays = dDue == null ? 9999 : dDue
+    const isClosed = t.status === 'LUKKET'
+    // Lukkede opgaver viser bare dato (eller "—"), aldrig "for sent" — overskreden
+    // frist på en lukket opgave er støj, ikke handlingsanvisende info.
+    const fristDays = isClosed ? 9999 : (dDue ?? 9999)
     let frist = '—'
     if (t.due_date && dDue != null) {
-      if (dDue < 0) frist = `${Math.abs(dDue)}d for sent`
+      if (isClosed) frist = formatShortDate(t.due_date)
+      else if (dDue < 0) frist = `${Math.abs(dDue)}d for sent`
       else frist = formatShortDate(t.due_date)
     }
 
     return {
       id: t.id,
-      nr: t.id.slice(0, 8),
       titel: t.title,
       selskab: t.company_id ? (companyMap.get(t.company_id) ?? '—') : '—',
       type: inferTaskType(t),

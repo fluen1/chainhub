@@ -101,7 +101,7 @@ export default async function CasesPage() {
     const firstCompany = c.case_companies[0]?.company
     return {
       id: c.id,
-      nr: c.case_number ?? c.id.slice(0, 6),
+      nr: c.case_number ?? '—',
       type: getCaseTypeLabel(c.case_type),
       rawType: c.case_type,
       title: c.title,

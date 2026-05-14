@@ -31,6 +31,7 @@ import {
   type ExistingMetric,
   type PersonOption,
 } from '@/components/modals/b'
+import { AddDataDropdown } from './add-data-dropdown'
 import { getCompanyPersonRoleLabel } from '@/lib/labels'
 import type { CompanyDetailData } from '@/actions/company-detail'
 
@@ -199,9 +200,12 @@ export function CompanyDetailB({
           readOnly ? null : (
             <>
               <BButton href={`/companies/${company.id}/stamdata`}>Rediger stamdata</BButton>
-              <BButton primary onClick={() => setAddOwnerOpen(true)}>
-                + Tilføj data
-              </BButton>
+              <AddDataDropdown
+                onAddOwner={() => setAddOwnerOpen(true)}
+                onAddPerson={() => setAddPersonOpen(true)}
+                onAddMetric={() => setAddMetricOpen(true)}
+                canAddOwner={canSeeOwnership}
+              />
             </>
           )
         }
@@ -293,7 +297,10 @@ export function CompanyDetailB({
 
         {/* Personer */}
         <Panel>
-          <PanelHeader title="Personer" meta={`${companyPersons.length} aktive`} />
+          <PanelHeader
+            title="Personer"
+            meta={`${companyPersons.length} ${companyPersons.length === 1 ? 'aktiv' : 'aktive'}`}
+          />
           {companyPersons.length === 0 ? (
             <div className="px-3 py-3 text-center text-[12px] text-b-3">
               Ingen personer tilknyttet
@@ -388,7 +395,7 @@ export function CompanyDetailB({
             <Link
               key={c.id}
               href={`/contracts/${c.id}`}
-              className={`grid grid-cols-[64px_1fr_120px_80px_14px] items-center gap-3 px-3 py-1.5 text-[13px] no-underline hover:bg-b-row-hover ${
+              className={`grid grid-cols-[88px_1fr_14px] items-center gap-3 px-3 py-1.5 text-[13px] no-underline hover:bg-b-row-hover ${
                 i < data.contracts.top.length - 1 ? 'border-b border-b-divider' : ''
               }`}
             >
@@ -397,8 +404,6 @@ export function CompanyDetailB({
                 <strong className="font-medium">{c.name}</strong>
                 {c.meta && <span className="text-b-2"> · {c.meta}</span>}
               </span>
-              <span className="truncate text-[11px] text-b-2">{iconToneToLabel(c.iconTone)}</span>
-              <Badge tone="green">Aktiv</Badge>
               <span className="text-b-3">›</span>
             </Link>
           ))
@@ -685,10 +690,4 @@ function visitBadgeTone(t: 'blue' | 'green' | 'slate'): BadgeTone {
   if (t === 'blue') return 'blue'
   if (t === 'green') return 'green'
   return 'gray'
-}
-
-function iconToneToLabel(tone: 'red' | 'amber' | 'green'): string {
-  if (tone === 'red') return 'Kritisk'
-  if (tone === 'amber') return 'Opmærks.'
-  return 'OK'
 }

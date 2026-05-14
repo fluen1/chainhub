@@ -26,7 +26,7 @@ export default async function TaskDetailPage({ params }: { params: { id: string 
 
   const view: TaskDetailViewData = {
     id: data.task.id,
-    nr: data.task.id.slice(0, 8),
+    nr: `#${data.task.id.slice(-4).toUpperCase()}`,
     title: data.task.title,
     description: data.task.description,
     status: data.task.status,

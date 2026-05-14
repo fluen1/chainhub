@@ -34,7 +34,6 @@ import {
 
 export interface TaskRow {
   id: string
-  nr: string
   titel: string
   selskab: string
   type: string
@@ -49,15 +48,7 @@ export interface TaskRow {
 }
 
 type ViewMode = 'flat' | 'grouped' | 'kanban'
-type SortKey =
-  | 'nr'
-  | 'titel'
-  | 'selskab'
-  | 'type'
-  | 'rawPrio'
-  | 'rawStatus'
-  | 'fristDays'
-  | 'ansvarlig'
+type SortKey = 'titel' | 'selskab' | 'type' | 'rawPrio' | 'rawStatus' | 'fristDays' | 'ansvarlig'
 
 const PRIO_OPTS = ['Alle', 'Kritisk', 'Høj', 'Mellem', 'Lav']
 const STATUS_OPTS = ['Alle', 'Ny', 'Afventer', 'Lukket']
@@ -125,12 +116,7 @@ export function TasksListB({ tasks, totalCount }: { tasks: TaskRow[]; totalCount
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     return tasks.filter((t) => {
-      if (
-        q &&
-        !t.titel.toLowerCase().includes(q) &&
-        !t.selskab.toLowerCase().includes(q) &&
-        !t.nr.toLowerCase().includes(q)
-      ) {
+      if (q && !t.titel.toLowerCase().includes(q) && !t.selskab.toLowerCase().includes(q)) {
         return false
       }
       if (mineOnly && !t.isMine) return false
@@ -386,9 +372,6 @@ function FlatTable({
       <table className="w-full table-fixed border-collapse">
         <thead>
           <tr>
-            <Th col="nr" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={84}>
-              Nr.
-            </Th>
             <Th col="titel" sortCol={sortCol} sortDir={sortDir} onSort={onSort}>
               Titel
             </Th>
@@ -435,9 +418,6 @@ function TaskTr({
   const done = t.rawStatus === 'LUKKET'
   return (
     <Tr onClick={onClick}>
-      <Td width={84} secondary>
-        {t.nr}
-      </Td>
       <Td>
         <span className={done ? 'text-b-3 line-through' : 'font-medium text-b-1'}>{t.titel}</span>
       </Td>
@@ -629,7 +609,6 @@ function KanbanCol({
                 done ? 'opacity-60' : ''
               }`}
             >
-              <div className="b-tnum text-[11px] text-b-3">{t.nr}</div>
               <div
                 className={`line-clamp-2 text-[12px] font-medium ${
                   done ? 'text-b-3 line-through' : 'text-b-1'

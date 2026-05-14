@@ -347,7 +347,7 @@ function FlatTable({
       <table className="w-full table-fixed border-collapse">
         <thead>
           <tr>
-            <Th col="nr" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={64}>
+            <Th col="nr" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={104}>
               Nr.
             </Th>
             <Th col="type" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={130}>
@@ -390,7 +390,7 @@ function CaseTr({
 }) {
   return (
     <Tr onClick={onClick}>
-      <Td width={64} secondary>
+      <Td width={104} secondary>
         {c.nr}
       </Td>
       <Td width={130}>

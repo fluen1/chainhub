@@ -17,6 +17,7 @@ import {
   KbdHint,
   AIBadge,
 } from '@/components/ui/b'
+import { EndRoleLink } from './end-role-link'
 
 // ────────────────────────────────────────────────────────────────────────────
 // /persons/[id] — server-component (ingen client interaktivitet behov for V1).
@@ -173,14 +174,7 @@ export function PersonDetailB({
             )}
           </>
         }
-        actions={
-          <>
-            <BButton href={`/persons/${person.id}/edit`}>Rediger</BButton>
-            <BButton primary href={`/persons/${person.id}/edit`}>
-              Slut rolle ▾
-            </BButton>
-          </>
-        }
+        actions={<BButton href={`/persons/${person.id}/edit`}>Rediger</BButton>}
       />
 
       <Strip cells={stripCells} />
@@ -189,29 +183,40 @@ export function PersonDetailB({
       <div className="grid gap-3 lg:grid-cols-3 lg:items-start">
         {/* Roller og tilknytninger */}
         <Panel>
-          <PanelHeader title="Roller og tilknytninger" meta={`${roller.length} aktive`} />
+          <PanelHeader
+            title="Roller og tilknytninger"
+            meta={`${roller.length} ${roller.length === 1 ? 'aktiv' : 'aktive'}`}
+          />
           {roller.length === 0 ? (
             <div className="px-3 py-3 text-center text-[12px] text-b-3">
               Ingen aktive roller — tilføj en rolle for at knytte personen til et selskab
             </div>
           ) : (
             roller.map((r, i) => (
-              <Link
+              <div
                 key={r.id}
-                href={`/companies/${r.selskabId}`}
-                className={`grid grid-cols-[1fr_auto_14px] items-center gap-2 px-3 py-1.5 no-underline hover:bg-b-row-hover ${
+                className={`grid grid-cols-[1fr_auto_auto_14px] items-center gap-2 px-3 py-1.5 hover:bg-b-row-hover ${
                   i < roller.length - 1 ? 'border-b border-b-divider' : ''
                 }`}
               >
-                <div className="min-w-0">
+                <Link href={`/companies/${r.selskabId}`} className="min-w-0 no-underline">
                   <div className="truncate text-[13px] font-medium text-b-1">{r.selskab}</div>
                   <div className="mt-px text-[11px] text-b-2">
                     {r.type} · aktiv siden {r.aktivSiden}
                   </div>
-                </div>
+                </Link>
                 <Badge tone={roleTone(r.rawRole)}>{r.rolle}</Badge>
-                <span className="text-b-3">›</span>
-              </Link>
+                <EndRoleLink
+                  companyPersonId={r.id}
+                  personName={person.fullName}
+                  roleLabel={r.rolle}
+                  selskab={r.selskab}
+                  startDate={r.aktivSiden}
+                />
+                <Link href={`/companies/${r.selskabId}`} className="text-b-3 no-underline">
+                  ›
+                </Link>
+              </div>
             ))
           )}
           <PanelFooter>

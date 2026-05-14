@@ -673,7 +673,10 @@ function RightRail({
   companies: CompanyRow[]
   onRowClick: (id: string) => void
 }) {
-  const critical = companies.filter((c) => c.health === 'critical' || c.health === 'warning')
+  // "Kræver opmærksomhed" inkluderer både critical (røde) og warning (amber)
+  // — fælles begreb i UI'et. Heatmap-tæller skelner og viser kun "kritiske"
+  // (røde) i counter-linjen så terminologi er konsistent med farve.
+  const needsAttention = companies.filter((c) => c.health === 'critical' || c.health === 'warning')
 
   const byRegion = useMemo(() => {
     const m = new Map<Region, number>()
@@ -706,18 +709,19 @@ function RightRail({
         </div>
       </Panel>
 
-      {critical.length > 0 && (
+      {needsAttention.length > 0 && (
         <Panel>
-          <PanelHeader title="Kritiske" meta={`${critical.length}`} />
-          {critical.slice(0, 8).map((c, i) => {
+          <PanelHeader title="Kræver opmærksomhed" meta={`${needsAttention.length}`} />
+          {needsAttention.slice(0, 8).map((c, i) => {
             const hb = healthLabel(c.health)
+            const list = needsAttention.slice(0, 8)
             return (
               <button
                 key={c.id}
                 type="button"
                 onClick={() => onRowClick(c.id)}
                 className={`flex w-full items-center justify-between gap-2 px-3 py-1 text-left hover:bg-b-row-hover ${
-                  i < critical.slice(0, 8).length - 1 ? 'border-b border-b-divider' : ''
+                  i < list.length - 1 ? 'border-b border-b-divider' : ''
                 }`}
               >
                 <span className="min-w-0 truncate text-[12px] text-b-1">{c.navn}</span>

@@ -223,7 +223,9 @@
       "Bash(tar -xzf design.tar.gz)",
       "Bash(echo \"EXITCODE=$?\")",
       "Bash(ls src/components/company-detail/)",
-      "Bash(ls src/components/finance/)"
+      "Bash(ls src/components/finance/)",
+      "Bash(PORT=3002 npm run dev)",
+      "mcp__plugin_playwright_playwright__browser_type"
     ]
   }
 }

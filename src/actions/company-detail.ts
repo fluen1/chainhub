@@ -486,7 +486,8 @@ function buildOwnership(
 ): OwnershipData | null {
   if (ownerships.length === 0) return null
 
-  let kaedegruppePct = 0
+  let companyOwnerPct = 0
+  let personOwnerPct = 0
   let maxPersonPct = 0
   let maxPerson: { first_name: string; last_name: string } | null = null
   let maxCompanyPct = 0
@@ -495,23 +496,29 @@ function buildOwnership(
   for (const o of ownerships) {
     const pct = Number(o.ownership_pct)
     if (o.owner_company_id) {
-      kaedegruppePct += pct
+      companyOwnerPct += pct
       if (pct > maxCompanyPct) {
         maxCompanyPct = pct
         holdingCompanyName = holdingCompanyNames.get(o.owner_company_id) ?? null
       }
     }
+    if (o.owner_person_id) personOwnerPct += pct
     if (o.owner_person_id && o.owner_person && pct > maxPersonPct) {
       maxPersonPct = pct
       maxPerson = o.owner_person
     }
   }
 
+  // Kædeandel = eksplicit holding-ejerskab. Hvis ingen holding-record findes,
+  // antages resten (efter person-ejere) at være kædens andel — det matcher
+  // domænemodellen hvor kædegruppen ofte ikke registreres som separat ejer.
+  const kaedegruppePct = companyOwnerPct > 0 ? companyOwnerPct : Math.max(0, 100 - personOwnerPct)
+
   let ejeraftaleStatus: { label: string; danger: boolean } | null = null
   if (ejeraftale) {
     if (ejeraftale.expiry_date && ejeraftale.expiry_date < today) {
       ejeraftaleStatus = {
-        label: `Udloebet ${formatDate(ejeraftale.expiry_date)}`,
+        label: `Udløbet ${formatDate(ejeraftale.expiry_date)}`,
         danger: true,
       }
     } else {
@@ -553,10 +560,10 @@ function buildContracts(
     const tone: 'red' | 'amber' | 'green' = expired ? 'red' : soon ? 'amber' : 'green'
     const meta = c.expiry_date
       ? expired
-        ? `Udloebet ${formatDate(c.expiry_date)}`
-        : `Udloeber ${formatDate(c.expiry_date)}`
-      : 'Ingen udloebsdato'
-    const badgeLabel = expired ? 'Udloebet' : soon ? 'Udloeber snart' : 'Aktiv'
+        ? `Udløbet ${formatDate(c.expiry_date)}`
+        : `Udløber ${formatDate(c.expiry_date)}`
+      : 'Ingen udløbsdato'
+    const badgeLabel = expired ? 'Udløbet' : soon ? 'Udløber snart' : 'Aktiv'
     return {
       id: c.id,
       iconLetters: c.system_type.slice(0, 2).toUpperCase(),
