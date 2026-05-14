@@ -116,6 +116,35 @@ describe('getSettingsAIUsage', () => {
   })
 })
 
+describe('getSettingsAIUsage konsolidering', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('kalder getCostCapStatus præcis én gang per kald', async () => {
+    await getSettingsAIUsage('org-1')
+
+    // Verificerer at vi ikke kalder getCostCapStatus mere end én gang
+    expect(getCostCapStatus).toHaveBeenCalledTimes(1)
+    expect(getCostCapStatus).toHaveBeenCalledWith('org-1')
+  })
+
+  it('returnerer capUsd og currentUsd fra getCostCapStatus — ingen separat USD-query', async () => {
+    const { prisma } = await import('@/lib/db')
+    vi.mocked(prisma.aIUsageLog.count).mockResolvedValue(0)
+    vi.mocked(getCostCapStatus).mockResolvedValue({
+      capUsd: 75,
+      currentUsd: 30,
+      percentage: 40,
+      threshold: '50-info',
+    })
+
+    const result = await getSettingsAIUsage('org-1')
+
+    expect(result.capUsd).toBe(75)
+    expect(result.currentUsd).toBe(30)
+    expect(result.threshold).toBe('50-info')
+  })
+})
+
 describe('AI-usage tærskel-logik', () => {
   it('threshold matcher cost-cap spec: ingen advarsel under 50%', async () => {
     const { prisma } = await import('@/lib/db')

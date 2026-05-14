@@ -78,9 +78,10 @@ export class R2StorageProvider implements StorageProvider {
   }
 
   async getDownloadUrl(key: string): Promise<string> {
-    // Presigned URL, 1 time
+    // Presigned URL, 24 timer — reducerer antallet af re-sign kald markant.
+    // Upload-URL'er (PutObject) har ingen presigned-URL-metode her, så 1h gælder fortsat der.
     return getSignedUrl(this.client, new GetObjectCommand({ Bucket: this.bucket, Key: key }), {
-      expiresIn: 3600,
+      expiresIn: 86400,
     })
   }
 }

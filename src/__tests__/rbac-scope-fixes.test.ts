@@ -78,6 +78,12 @@ vi.mock('@/lib/audit', () => ({
 
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
 
+// react.cache er RSC-only — brug noop i test-miljø
+vi.mock('react', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react')>()
+  return { ...actual, cache: (fn: unknown) => fn }
+})
+
 // ─────────────────────────────────────────────────────────
 // Fix 1: dashboard.ts — overdue/upcoming tasks company-scope
 // ─────────────────────────────────────────────────────────
@@ -202,11 +208,12 @@ describe('sidebar-data.ts — cases og tasks er company-scopet', () => {
 describe('activity-feed.ts — audit events er company-scopet', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('getRecentActivity kræver nu userId parameter', async () => {
+  it('getRecentActivity kræver userId parameter (+ optional preloadedCompanyIds)', async () => {
     const { getRecentActivity } = await import('@/actions/activity-feed')
-    // Funktionen eksisterer og accepterer 2 parametre
+    // Funktionen eksisterer med mindst 2 påkrævede parametre (userId tilføjet i Phase A)
+    // preloadedCompanyIds er optional (Phase L), så length >= 2
     expect(typeof getRecentActivity).toBe('function')
-    expect(getRecentActivity.length).toBe(2)
+    expect(getRecentActivity.length).toBeGreaterThanOrEqual(2)
   })
 
   it('audit query inkluderer OR resource_company_id scope', async () => {

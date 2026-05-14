@@ -39,6 +39,8 @@ export async function getSettingsAIUsage(organizationId: string): Promise<Settin
     const now = new Date()
     const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
 
+    // Hent settings én gang — undgår redundant findUnique da getCostCapStatus også kalder den.
+    // extractionCount og aiSettings hentes parallelt med getCostCapStatus.
     const [capStatus, extractionCount, aiSettings] = await Promise.all([
       getCostCapStatus(organizationId),
       prisma.aIUsageLog.count({
@@ -48,6 +50,8 @@ export async function getSettingsAIUsage(organizationId: string): Promise<Settin
           created_at: { gte: monthStart },
         },
       }),
+      // rate_limit_per_day er ikke eksponeret af getCostCapStatus, så vi henter det her.
+      // TODO: Refaktorér getCostCapStatus til at returnere fuld settings-model (næste sprint)
       prisma.organizationAISettings.findUnique({
         where: { organization_id: organizationId },
         select: { rate_limit_per_day: true },
