@@ -1,3 +1,6 @@
+'use client'
+
+import { useState } from 'react'
 import Link from 'next/link'
 import {
   Breadcrumb,
@@ -18,6 +21,11 @@ import {
   AIBadge,
 } from '@/components/ui/b'
 import { EndRoleLink } from './end-role-link'
+import { GdprPanel } from '@/components/persons/GdprPanel'
+import { EditPersonDialog } from '@/components/persons/EditPersonDialog'
+import { AddPersonRoleModal } from '@/components/persons/AddPersonRoleModal'
+import { AddPersonOwnershipModal } from '@/components/persons/AddPersonOwnershipModal'
+import { getCaseStatusLabel } from '@/lib/labels'
 
 // ────────────────────────────────────────────────────────────────────────────
 // /persons/[id] — server-component (ingen client interaktivitet behov for V1).
@@ -114,6 +122,11 @@ function contractStatusTone(status: string): BadgeTone {
   return 'gray'
 }
 
+interface AccessibleCompany {
+  id: string
+  name: string
+}
+
 export function PersonDetailB({
   person,
   roller,
@@ -122,6 +135,8 @@ export function PersonDetailB({
   sager,
   aiVilkaar,
   aiSourceDoc,
+  isAdmin,
+  accessibleCompanies,
 }: {
   person: PersonView
   roller: PersonRoleData[]
@@ -130,7 +145,13 @@ export function PersonDetailB({
   sager: PersonCaseData[]
   aiVilkaar: PersonAIFieldData[]
   aiSourceDoc: string | null
+  isAdmin: boolean
+  accessibleCompanies: AccessibleCompany[]
 }) {
+  const [editOpen, setEditOpen] = useState(false)
+  const [addRoleOpen, setAddRoleOpen] = useState(false)
+  const [addOwnershipOpen, setAddOwnershipOpen] = useState(false)
+
   const stripCells: StripCellData[] = [
     { num: person.activeRolesCount, label: 'Roller' },
     { num: person.companiesCount, label: 'Selskaber' },
@@ -174,7 +195,7 @@ export function PersonDetailB({
             )}
           </>
         }
-        actions={<BButton href={`/persons/${person.id}/edit`}>Rediger</BButton>}
+        actions={<BButton onClick={() => setEditOpen(true)}>Rediger</BButton>}
       />
 
       <Strip cells={stripCells} />
@@ -222,7 +243,7 @@ export function PersonDetailB({
           <PanelFooter>
             <div className="flex items-center justify-between">
               <span />
-              <BAddButton>+ Tilføj rolle</BAddButton>
+              <BAddButton onClick={() => setAddRoleOpen(true)}>+ Tilføj rolle</BAddButton>
             </div>
           </PanelFooter>
         </Panel>
@@ -273,7 +294,7 @@ export function PersonDetailB({
           <PanelFooter>
             <div className="flex items-center justify-between">
               <span />
-              <BAddButton>+ Tilføj ejerskab</BAddButton>
+              <BAddButton onClick={() => setAddOwnershipOpen(true)}>+ Tilføj ejerskab</BAddButton>
             </div>
           </PanelFooter>
         </Panel>
@@ -436,7 +457,7 @@ export function PersonDetailB({
                         : 'gray'
                   }
                 >
-                  {s.status}
+                  {getCaseStatusLabel(s.status)}
                 </Badge>
                 <span className="text-b-3">›</span>
               </Link>
@@ -513,11 +534,14 @@ export function PersonDetailB({
           <PanelFooter>
             <div className="flex items-center justify-between">
               <span />
-              <BAddButton href={`/persons/${person.id}/edit`}>Rediger</BAddButton>
+              <BAddButton onClick={() => setEditOpen(true)}>Rediger</BAddButton>
             </div>
           </PanelFooter>
         </Panel>
       </div>
+
+      {/* GDPR-panel — vises kun for admins */}
+      <GdprPanel personId={person.id} personFullName={person.fullName} isAdmin={isAdmin} />
 
       <BottomBar
         left={
@@ -536,6 +560,34 @@ export function PersonDetailB({
             <KbdHint k="G" label="derhen" />
           </>
         }
+      />
+
+      {/* Modaler */}
+      <EditPersonDialog
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        person={{
+          id: person.id,
+          firstName: person.firstName,
+          lastName: person.lastName,
+          email: person.email,
+          phone: person.phone,
+          notes: person.notes,
+        }}
+      />
+      <AddPersonRoleModal
+        open={addRoleOpen}
+        onClose={() => setAddRoleOpen(false)}
+        personId={person.id}
+        personFullName={person.fullName}
+        accessibleCompanies={accessibleCompanies}
+      />
+      <AddPersonOwnershipModal
+        open={addOwnershipOpen}
+        onClose={() => setAddOwnershipOpen(false)}
+        personId={person.id}
+        personFullName={person.fullName}
+        accessibleCompanies={accessibleCompanies}
       />
     </>
   )

@@ -34,6 +34,7 @@ import {
   type PersonOption,
 } from '@/components/modals/b'
 import { AddDataDropdown } from './add-data-dropdown'
+import { EditStamdataDialog } from '@/components/companies/EditStamdataDialog'
 import { getCompanyPersonRoleLabel } from '@/lib/labels'
 import type { CompanyDetailData } from '@/actions/company-detail'
 
@@ -121,6 +122,7 @@ export function CompanyDetailB({
   const [addOwnerOpen, setAddOwnerOpen] = useState(false)
   const [addPersonOpen, setAddPersonOpen] = useState(false)
   const [addMetricOpen, setAddMetricOpen] = useState(false)
+  const [stamdataOpen, setStamdataOpen] = useState(false)
   const [endOwnership, setEndOwnership] = useState<OwnershipRow | null>(null)
   const [endRole, setEndRole] = useState<CompanyPersonRow | null>(null)
 
@@ -218,7 +220,7 @@ export function CompanyDetailB({
         actions={
           readOnly ? null : (
             <>
-              <BButton href={`/companies/${company.id}/stamdata`}>Rediger stamdata</BButton>
+              <BButton onClick={() => setStamdataOpen(true)}>Rediger stamdata</BButton>
               <AddDataDropdown
                 onAddOwner={() => setAddOwnerOpen(true)}
                 onAddPerson={() => setAddPersonOpen(true)}
@@ -619,6 +621,22 @@ export function CompanyDetailB({
           </>
         }
       />
+
+      {/* Stamdata-modal (ikke section-gated — stamdata er altid tilgængeligt for non-readonly) */}
+      {!readOnly && (
+        <EditStamdataDialog
+          open={stamdataOpen}
+          onClose={() => setStamdataOpen(false)}
+          companyId={company.id}
+          initial={{
+            name: company.name,
+            cvr: company.cvr ?? null,
+            address: company.address ?? null,
+            postal_code: company.postal_code ?? null,
+            city: company.city ?? null,
+          }}
+        />
+      )}
 
       {/* Modaler — section-gated så rolle uden sektion-adgang ikke kan trigge */}
       {!readOnly && canSeeOwnership && showOwnership && (
