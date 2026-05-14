@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
-import { getAccessibleCompanies } from '@/lib/permissions'
+import { getAccessibleCompanies, canAccessModule } from '@/lib/permissions'
 import { getCompanyPersonRoleLabel, getInitials } from '@/lib/labels'
 import { formatShortDate } from '@/lib/date-helpers'
 import { PersonsListB, type PersonRow } from './persons-list-b'
@@ -14,6 +14,10 @@ export default async function PersonsPage() {
   if (!session) redirect('/login')
 
   const orgId = session.user.organizationId
+
+  const hasAccess = await canAccessModule(session.user.id, 'persons', orgId)
+  if (!hasAccess) redirect('/dashboard')
+
   const companyIds = await getAccessibleCompanies(session.user.id, orgId)
 
   const [rawPersons, totalCount] = await Promise.all([

@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
-import { getAccessibleCompanies } from '@/lib/permissions'
+import { getAccessibleCompanies, canAccessModule } from '@/lib/permissions'
 import { getCaseStatusLabel, getCaseTypeLabel } from '@/lib/labels'
 import { formatShortDate } from '@/lib/date-helpers'
 import { CasesListB, type CaseRow } from './cases-list-b'
@@ -14,6 +14,10 @@ export default async function CasesPage() {
   if (!session) redirect('/login')
 
   const orgId = session.user.organizationId
+
+  const hasAccess = await canAccessModule(session.user.id, 'cases', orgId)
+  if (!hasAccess) redirect('/dashboard')
+
   const companyIds = await getAccessibleCompanies(session.user.id, orgId)
 
   if (companyIds.length === 0) {
