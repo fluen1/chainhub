@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { getDashboardData } from '@/actions/dashboard'
 import { getRecentActivity } from '@/actions/activity-feed'
 import { getSidebarData } from '@/lib/sidebar-data'
+import { getAccessibleCompanies } from '@/lib/permissions'
 import { formatMio } from '@/lib/labels'
 import { WEEKDAYS_DA_FULL_SUN, MONTH_NAMES_DA_LOWER } from '@/lib/calendar-constants'
 import {
@@ -34,10 +35,13 @@ export default async function DashboardPage() {
 
   const now = new Date()
 
+  // Hent companyIds én gang — eliminerer 2 ud af 3 redundante DB-roundtrips
+  const companyIds = await getAccessibleCompanies(session.user.id, session.user.organizationId)
+
   const [data, sidebar, activity] = await Promise.all([
-    getDashboardData(session.user.id, session.user.organizationId),
-    getSidebarData(session.user.id, session.user.organizationId),
-    getRecentActivity(session.user.organizationId, session.user.id),
+    getDashboardData(session.user.id, session.user.organizationId, companyIds),
+    getSidebarData(session.user.id, session.user.organizationId, companyIds),
+    getRecentActivity(session.user.organizationId, session.user.id, companyIds),
   ])
 
   const omsaetning = data.portfolioTotals.totalOmsaetning

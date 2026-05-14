@@ -387,6 +387,7 @@ model Company {
   visits          Visit[]
   insights_cache  CompanyInsightsCache?
 
+  @@unique([organization_id, cvr])
   @@index([organization_id, deleted_at])
   @@index([organization_id, status])
   @@index([organization_id, parent_company_id])
@@ -405,6 +406,7 @@ model Ownership {
   contract_id      String?
   created_at       DateTime  @default(now())
   created_by       String
+  deleted_at       DateTime?
 
   company      Company   @relation(fields: [company_id], references: [id])
   owner_person Person?   @relation(fields: [owner_person_id], references: [id])
@@ -449,6 +451,7 @@ model CompanyPerson {
   contract_id      String?
   created_at       DateTime  @default(now())
   created_by       String
+  deleted_at       DateTime?
 
   company  Company   @relation(fields: [company_id], references: [id])
   person   Person    @relation(fields: [person_id], references: [id])
@@ -550,6 +553,7 @@ model ContractVersion {
   amends_clause   String?
   uploaded_at     DateTime   @default(now())
   uploaded_by     String
+  deleted_at      DateTime?
 
   contract Contract @relation(fields: [contract_id], references: [id])
 
@@ -715,14 +719,15 @@ model TaskHistory {
 }
 
 model Comment {
-  id              String   @id @default(uuid())
+  id              String    @id @default(uuid())
   organization_id String
   content         String
   task_id         String?
   case_id         String?
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
   created_by      String
+  deleted_at      DateTime?
 
   organization Organization @relation(fields: [organization_id], references: [id])
   task         Task?        @relation(fields: [task_id], references: [id])
@@ -730,6 +735,7 @@ model Comment {
 
   @@index([organization_id, task_id])
   @@index([organization_id, case_id])
+  @@index([organization_id, deleted_at])
 }
 
 model Deadline {
@@ -847,6 +853,8 @@ model AuditLog {
   @@index([organization_id, user_id])
   @@index([organization_id, resource_company_id])
   @@index([created_at])
+  // Compound til getRecentActivity: OR[resource_company_id IN ..., resource_company_id null] ORDER BY created_at DESC
+  @@index([organization_id, resource_company_id, created_at])
 }
 
 model Reminder {

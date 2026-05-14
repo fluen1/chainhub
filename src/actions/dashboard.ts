@@ -37,10 +37,13 @@ export type {
 // ---------------------------------------------------------------
 export async function getDashboardData(
   userId: string,
-  organizationId: string
+  organizationId: string,
+  preloadedCompanyIds?: string[]
 ): Promise<DashboardData> {
   const [companyIds, roleRows] = await Promise.all([
-    getAccessibleCompanies(userId, organizationId),
+    preloadedCompanyIds !== undefined
+      ? Promise.resolve(preloadedCompanyIds)
+      : getAccessibleCompanies(userId, organizationId),
     prisma.userRoleAssignment.findMany({
       where: { user_id: userId, organization_id: organizationId },
       select: { role: true },
