@@ -1,116 +1,123 @@
 import { auth } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
-import Link from 'next/link'
+import { prisma } from '@/lib/db'
+import { canAccessSensitivity } from '@/lib/permissions'
 import { getCompanyDetailData } from '@/actions/company-detail'
-import { CompanyHeader } from '@/components/company-detail/company-header'
-import { AlertBanner } from '@/components/company-detail/alert-banner'
-import { OwnershipSection } from '@/components/company-detail/ownership-section'
-import { ContractsSection } from '@/components/company-detail/contracts-section'
-import { FinanceSection } from '@/components/company-detail/finance-section'
-import { CasesSection } from '@/components/company-detail/cases-section'
-import { PersonsSection } from '@/components/company-detail/persons-section'
-import { VisitsSection } from '@/components/company-detail/visits-section'
-import { DocumentsSection } from '@/components/company-detail/documents-section'
-import { AiInsightCard } from '@/components/company-detail/ai-insight-card'
-import { EditStamdataDialog } from '@/components/company-detail/edit-stamdata-dialog'
+import { formatDate, daysUntil } from '@/lib/labels'
+import {
+  CompanyDetailB,
+  type OwnershipRow,
+  type CompanyPersonRow,
+  type MetricRow,
+  type PersonOptionRow,
+} from './company-detail-b'
 
 export default async function CompanyDetailPage({ params }: { params: { id: string } }) {
   const session = await auth()
   if (!session) redirect('/login')
 
-  const data = await getCompanyDetailData(params.id, session.user.id, session.user.organizationId)
+  const orgId = session.user.organizationId
+  const data = await getCompanyDetailData(params.id, session.user.id, orgId)
   if (!data) notFound()
 
-  const readOnly = data.role === 'GROUP_READONLY' || data.role === 'COMPANY_READONLY'
+  // Modal-wiring kræver raw IDs som ikke er i CompanyDetailData. Vi henter dem
+  // separat fra databasen her — billigt fordi vi allerede har company-adgang.
+  // STRENGT_FORTROLIG-check for ownership-IDs så vi ikke lækker dem til brugere
+  // uden adgang.
+  const canSeeOwnership = await canAccessSensitivity(session.user.id, 'STRENGT_FORTROLIG')
+
+  const [rawOwnerships, rawCompanyPersons, allMetrics, allPersons, expiringLease] =
+    await Promise.all([
+      canSeeOwnership
+        ? prisma.ownership.findMany({
+            where: { company_id: params.id, organization_id: orgId, end_date: null },
+            include: {
+              owner_person: { select: { id: true, first_name: true, last_name: true } },
+            },
+            orderBy: { effective_date: 'desc' },
+          })
+        : Promise.resolve([]),
+      prisma.companyPerson.findMany({
+        where: { company_id: params.id, organization_id: orgId, end_date: null },
+        include: { person: { select: { first_name: true, last_name: true } } },
+        orderBy: { start_date: 'desc' },
+      }),
+      prisma.financialMetric.findMany({
+        where: { company_id: params.id, organization_id: orgId },
+        orderBy: { period_year: 'desc' },
+      }),
+      // Alle personer i org (til select i AddOwner + AddPerson modaler).
+      // Skåret til 200 for at undgå rendering-bottleneck ved store kæder.
+      prisma.person.findMany({
+        where: { organization_id: orgId, deleted_at: null },
+        select: { id: true, first_name: true, last_name: true, email: true },
+        orderBy: [{ first_name: 'asc' }, { last_name: 'asc' }],
+        take: 200,
+      }),
+      prisma.contract.findFirst({
+        where: {
+          company_id: params.id,
+          organization_id: orgId,
+          deleted_at: null,
+          status: 'AKTIV',
+          system_type: 'LEJEKONTRAKT_ERHVERV',
+          expiry_date: { not: null },
+        },
+        orderBy: { expiry_date: 'asc' },
+      }),
+    ])
+
+  const ownerships: OwnershipRow[] = rawOwnerships.map((o) => ({
+    id: o.id,
+    pct: Number(o.ownership_pct),
+    name: o.owner_person
+      ? `${o.owner_person.first_name} ${o.owner_person.last_name}`
+      : (data.ownership?.holdingCompanyName ?? 'Holding'),
+    type: o.owner_person ? 'person' : 'holding',
+    effectiveDate: o.effective_date ? formatDate(o.effective_date) : null,
+  }))
+
+  const companyPersons: CompanyPersonRow[] = rawCompanyPersons.map((cp) => ({
+    id: cp.id,
+    name: `${cp.person.first_name} ${cp.person.last_name}`,
+    initials: `${cp.person.first_name[0] ?? ''}${cp.person.last_name[0] ?? ''}`.toUpperCase(),
+    role: cp.role,
+    employmentType: cp.employment_type,
+    startDate: cp.start_date ? formatDate(cp.start_date) : null,
+  }))
+
+  const metrics: MetricRow[] = allMetrics.map((m) => ({
+    metricType: m.metric_type as MetricRow['metricType'],
+    periodType: m.period_type as MetricRow['periodType'],
+    periodYear: m.period_year,
+    value: Number(m.value),
+  }))
+
+  const persons: PersonOptionRow[] = allPersons.map((p) => ({
+    id: p.id,
+    firstName: p.first_name,
+    lastName: p.last_name,
+    email: p.email,
+  }))
+
+  const expiringLeaseInfo =
+    expiringLease && expiringLease.expiry_date
+      ? {
+          contractId: expiringLease.id,
+          displayName: expiringLease.display_name,
+          daysUntilExpiry: daysUntil(expiringLease.expiry_date),
+        }
+      : null
 
   return (
-    <div className="mx-auto max-w-[1100px]">
-      <nav className="mb-4 text-xs text-gray-500">
-        <Link href="/companies" className="text-slate-500 no-underline hover:text-blue-600">
-          Selskaber
-        </Link>
-        <span className="mx-2">›</span>
-        <span className="font-medium text-slate-900">{data.company.name}</span>
-      </nav>
-
-      <CompanyHeader
-        name={data.company.name}
-        cvr={data.company.cvr}
-        city={data.company.city}
-        status={data.company.status}
-        foundedYear={data.company.founded_date?.getFullYear() ?? null}
-        statusBadge={data.statusBadge}
-        healthDimensions={data.healthDimensions}
-        showHealthDims={data.role !== 'COMPANY_MANAGER' && data.role !== 'COMPANY_READONLY'}
-        editStamdataButton={
-          <EditStamdataDialog
-            companyId={data.company.id}
-            initial={{
-              name: data.company.name,
-              cvr: data.company.cvr,
-              address: data.company.address,
-              city: data.company.city,
-              postal_code: data.company.postal_code,
-              founded_date: data.company.founded_date,
-            }}
-            disabled={readOnly}
-          />
-        }
-        createTaskHref={`/tasks/new?company=${data.company.id}`}
-        readOnly={readOnly}
-      />
-
-      {data.alerts.length > 0 && (
-        <div className="mb-4 flex flex-col gap-2">
-          {data.alerts.slice(0, 3).map((alert, i) => (
-            <AlertBanner
-              key={i}
-              severity={alert.severity}
-              title={alert.title}
-              sub={alert.sub}
-              actionLabel={alert.action_label}
-              actionHref={alert.action_href}
-            />
-          ))}
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {data.visibleSections.has('ownership') && <OwnershipSection data={data.ownership} />}
-        {data.visibleSections.has('contracts') && (
-          <ContractsSection
-            contracts={data.contracts.top}
-            totalCount={data.contracts.totalCount}
-            companyId={data.company.id}
-          />
-        )}
-        {data.visibleSections.has('finance') && <FinanceSection data={data.finance} />}
-        {data.visibleSections.has('cases') && (
-          <CasesSection cases={data.cases.top} totalCount={data.cases.totalCount} />
-        )}
-        {data.visibleSections.has('persons') && (
-          <PersonsSection
-            persons={data.persons.top}
-            totalCount={data.persons.totalCount}
-            companyId={data.company.id}
-          />
-        )}
-        {data.visibleSections.has('visits') && <VisitsSection visits={data.visits} />}
-        {data.visibleSections.has('documents') && (
-          <DocumentsSection
-            documents={data.documents.rows}
-            awaitingReviewCount={data.documents.awaitingReviewCount}
-          />
-        )}
-        {data.visibleSections.has('insight') && data.aiInsight && (
-          <div className="col-span-2">
-            <AiInsightCard
-              headlineMd={data.aiInsight.headline_md}
-              bodyMd={data.aiInsight.body_md}
-            />
-          </div>
-        )}
-      </div>
-    </div>
+    <CompanyDetailB
+      data={data}
+      ownerships={ownerships}
+      companyPersons={companyPersons}
+      metrics={metrics}
+      persons={persons}
+      canSeeOwnership={canSeeOwnership}
+      expiringLease={expiringLeaseInfo}
+    />
   )
 }
