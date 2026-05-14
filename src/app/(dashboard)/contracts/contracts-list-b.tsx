@@ -67,6 +67,29 @@ type SortKey =
 
 const STATUS_OPTS = ['Alle', 'Aktiv', 'Udløber 30d', 'Udløbet', 'Opsagt']
 
+// Map enum → display-label (case-insensitive) for URL-param normalisering.
+// Fx ?status=AKTIV og ?status=Aktiv → begge matches til 'Aktiv'.
+const STATUS_ENUM_MAP: Record<string, string> = {
+  aktiv: 'Aktiv',
+  'udlober 30d': 'Udløber 30d',
+  udloebet: 'Udløbet',
+  opsagt: 'Opsagt',
+}
+
+/**
+ * Normalisér ?status URL-param til en af STATUS_OPTS-værdier.
+ * Accepterer både enum (AKTIV) og display-label (Aktiv).
+ * ?status=AKTIV&expiresWithin=30d → 'Udløber 30d' (combined case).
+ */
+function normalizeStatusParam(status: string | null, expiresWithin: string | null): string {
+  if (!status && !expiresWithin) return 'Alle'
+  // ?expiresWithin=30d overskriver status-værdien → 'Udløber 30d'
+  if (expiresWithin === '30d') return 'Udløber 30d'
+  if (!status) return 'Alle'
+  const lower = status.toLowerCase()
+  return STATUS_ENUM_MAP[lower] ?? STATUS_OPTS.find((o) => o.toLowerCase() === lower) ?? 'Alle'
+}
+
 function udlobTone(days: number): BadgeTone {
   if (days < 0) return 'red'
   if (days <= 30) return 'red'
@@ -149,7 +172,9 @@ function ContractsListBContent({ contracts, totalContracts }: ContractsListBProp
     () => (searchParams.get('view') as ViewMode) || 'flat'
   )
   const [search, setSearch] = useState(() => searchParams.get('search') ?? '')
-  const [statusFil, setStatusFil] = useState(() => searchParams.get('status') ?? 'Alle')
+  const [statusFil, setStatusFil] = useState(() =>
+    normalizeStatusParam(searchParams.get('status'), searchParams.get('expiresWithin'))
+  )
   const [selskabFil, setSelskabFil] = useState(() => searchParams.get('company') ?? 'Alle')
   const [typeFil, setTypeFil] = useState(() => searchParams.get('type') ?? 'Alle')
   const [sortCol, setSortCol] = useState<SortKey>('udlobDays')
@@ -175,7 +200,10 @@ function ContractsListBContent({ contracts, totalContracts }: ContractsListBProp
   useEffect(() => {
     const newView = (searchParams.get('view') as ViewMode) || 'flat'
     const newSearch = searchParams.get('search') ?? ''
-    const newStatus = searchParams.get('status') ?? 'Alle'
+    const newStatus = normalizeStatusParam(
+      searchParams.get('status'),
+      searchParams.get('expiresWithin')
+    )
     const newCompany = searchParams.get('company') ?? 'Alle'
     const newType = searchParams.get('type') ?? 'Alle'
     const newPage = parseInt(searchParams.get('page') ?? '1', 10) || 1
