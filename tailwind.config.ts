@@ -69,6 +69,13 @@ const config: Config = {
           'ai-border': 'var(--b-ai-border)',
           'ai-fg': 'var(--b-ai-fg)',
           'ai-accent': 'var(--b-ai-accent)',
+          // Heatmap — GitHub-contribution palette (6 niveauer)
+          'heat-l1': 'var(--b-heat-l1)',
+          'heat-l2': 'var(--b-heat-l2)',
+          'heat-l3': 'var(--b-heat-l3)',
+          'heat-r1': 'var(--b-heat-r1)',
+          'heat-r2': 'var(--b-heat-r2)',
+          'heat-r3': 'var(--b-heat-r3)',
         },
       },
       borderRadius: {

@@ -15,12 +15,12 @@ import type { HeatmapCompany } from '@/lib/dashboard-helpers'
 // ────────────────────────────────────────────────────────────────────────────
 
 const LEVEL_CLASS: Record<'l1' | 'l2' | 'l3' | 'r1' | 'r2' | 'r3', string> = {
-  l1: 'bg-[#9be9a8]', // healthy + 0 sager
-  l2: 'bg-[#40c463]', // healthy + 1-2 sager
-  l3: 'bg-[#239a3b]', // healthy + 3+ sager
-  r1: 'bg-[#fdb8b1]', // warning + 0-2 sager
-  r2: 'bg-[#ef6f5e]', // warning + 3+ sager
-  r3: 'bg-[#b91c1c]', // critical
+  l1: 'bg-b-heat-l1', // healthy + 0 sager
+  l2: 'bg-b-heat-l2', // healthy + 1-2 sager
+  l3: 'bg-b-heat-l3', // healthy + 3+ sager
+  r1: 'bg-b-heat-r1', // warning + 0-2 sager
+  r2: 'bg-b-heat-r2', // warning + 3+ sager
+  r3: 'bg-b-heat-r3', // critical
 }
 
 function levelFor(c: HeatmapCompany): keyof typeof LEVEL_CLASS {
