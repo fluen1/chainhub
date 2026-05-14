@@ -268,6 +268,7 @@ export const TASK_STATUS_LABELS: Record<string, string> = {
 export const TASK_STATUS_STYLES: Record<string, string> = {
   NY: 'bg-gray-100 text-gray-600',
   AKTIV: 'bg-blue-50 text-blue-700',
+  AKTIV_TASK: 'bg-blue-50 text-blue-700',
   AFVENTER: 'bg-yellow-50 text-yellow-700',
   LUKKET: 'bg-gray-50 text-gray-500',
 }
@@ -386,7 +387,6 @@ export function getMetricTypeLabel(type: string): string {
 // ─── Periode type ─────────────────────────────────────────────────────────────
 
 export const PERIOD_TYPE_LABELS: Record<string, string> = {
-  HELAER: 'Helår',
   HELAAR: 'Helår',
   H1: '1. halvår',
   H2: '2. halvår',
@@ -614,4 +614,37 @@ export function relativeDate(daysUntilExpiry: number | null): string {
   if (daysUntilExpiry === 0) return 'I dag'
   if (daysUntilExpiry === 1) return 'I morgen'
   return `om ${daysUntilExpiry} dage`
+}
+
+// ─── Heatmap status ───────────────────────────────────────────────────────────
+
+/** Prefix-labels til HeatmapPanel tooltip og Top-urgency liste. */
+export const HEATMAP_STATUS_LABELS: Record<'critical' | 'warning' | 'ok', string> = {
+  critical: 'Kritisk',
+  warning: 'Advarsel',
+  ok: 'OK · aktiv',
+}
+
+// ─── Sundhedsstatus ───────────────────────────────────────────────────────────
+
+export const HEALTH_STATUS_LABELS: Record<string, string> = {
+  critical: 'Kritisk',
+  warning: 'Opmærksomhed',
+  healthy: 'OK',
+}
+
+export function getHealthStatusLabel(status: string): string {
+  return HEALTH_STATUS_LABELS[status] ?? status
+}
+
+// ─── Hjælpefunktion: Initialer ────────────────────────────────────────────────
+
+/**
+ * Returnerer initialer fra for- og efternavn: "PB", "??" ved tomme strenge.
+ * Bruges i personlister og avatar-komponenter.
+ */
+export function getInitials(firstName: string, lastName: string): string {
+  const f = firstName?.[0] ?? ''
+  const l = lastName?.[0] ?? ''
+  return (f + l).toUpperCase() || '?'
 }
