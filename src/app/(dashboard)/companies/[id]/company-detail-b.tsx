@@ -101,6 +101,23 @@ export function CompanyDetailB({
   const { company } = data
   const readOnly = data.role === 'GROUP_READONLY' || data.role === 'COMPANY_READONLY'
 
+  // Section-gates: paneler respekterer visibleSections fra getCompanyDetailData.
+  // Uden disse leaker GROUP_FINANCE-rollen Personer/Sager/Dokumenter selvom
+  // SECTIONS_BY_ROLE blokerer dem i strip-counts.
+  const showOwnership = data.visibleSections.has('ownership')
+  const showPersons = data.visibleSections.has('persons')
+  const showInsight = data.visibleSections.has('insight')
+  const showContracts = data.visibleSections.has('contracts')
+  const showCases = data.visibleSections.has('cases')
+  const showFinance = data.visibleSections.has('finance')
+  const showVisits = data.visibleSections.has('visits')
+  const showDocuments = data.visibleSections.has('documents')
+
+  const topGroupCount = [showOwnership, showPersons, showInsight].filter(Boolean).length
+  const midGroupCount = [showCases, showFinance, showVisits].filter(Boolean).length
+  const colsClass = (n: number) =>
+    n >= 3 ? 'lg:grid-cols-3' : n === 2 ? 'lg:grid-cols-2' : 'lg:grid-cols-1'
+
   const [addOwnerOpen, setAddOwnerOpen] = useState(false)
   const [addPersonOpen, setAddPersonOpen] = useState(false)
   const [addMetricOpen, setAddMetricOpen] = useState(false)
@@ -206,7 +223,9 @@ export function CompanyDetailB({
                 onAddOwner={() => setAddOwnerOpen(true)}
                 onAddPerson={() => setAddPersonOpen(true)}
                 onAddMetric={() => setAddMetricOpen(true)}
-                canAddOwner={canSeeOwnership}
+                canAddOwner={canSeeOwnership && showOwnership}
+                canAddPerson={showPersons}
+                canAddMetric={showFinance}
               />
             </>
           )
@@ -234,335 +253,359 @@ export function CompanyDetailB({
         )}
 
       {/* 3-col: Ejerskab + Personer + AI Insight */}
-      <div className="grid gap-3 lg:grid-cols-3 lg:items-start">
-        {/* Ejerskab */}
-        <Panel>
-          <PanelHeader
-            title="Ejerskab"
-            meta={`${ownerships.length} ${ownerships.length === 1 ? 'ejer' : 'ejere'}`}
-          />
-          {!canSeeOwnership ? (
-            <PanelEmpty>Du har ikke adgang til ejerskabsoplysninger</PanelEmpty>
-          ) : ownerships.length === 0 ? (
-            <PanelEmpty>Ingen ejere registreret</PanelEmpty>
-          ) : (
-            ownerships.map((o, i) => (
-              <div
-                key={o.id}
-                className={`flex items-center justify-between gap-2 px-3 py-1.5 text-[13px] ${
-                  i < ownerships.length - 1 ? 'border-b border-b-divider' : ''
-                }`}
-              >
-                <span className="truncate text-b-1">
-                  {o.name}
-                  {o.type === 'holding' && (
-                    <span className="ml-1 text-[11px] text-b-2">(Holding)</span>
-                  )}
-                </span>
-                <div className="flex shrink-0 items-center gap-2">
-                  <span className="b-tnum font-medium">{o.pct.toFixed(0)}%</span>
-                  {!readOnly && (
-                    <SlutLink onClick={() => setEndOwnership(o)} title="Slut ejerskab" />
-                  )}
-                </div>
-              </div>
-            ))
-          )}
-          {data.ownership?.ejeraftaleStatus && (
-            <div className="flex items-center justify-between border-t border-b-divider px-3 py-1.5 text-[12px]">
-              <span className="text-b-2">Ejeraftale</span>
-              <Badge tone={data.ownership.ejeraftaleStatus.danger ? 'red' : 'green'}>
-                {data.ownership.ejeraftaleStatus.label}
-              </Badge>
-            </div>
-          )}
-          <PanelFooter>
-            <div className="flex items-center justify-between">
-              <span>Total {ownerships.reduce((s, o) => s + o.pct, 0).toFixed(0)}%</span>
-              {!readOnly && canSeeOwnership && (
-                <BAddButton onClick={() => setAddOwnerOpen(true)}>+ Tilføj ejer</BAddButton>
-              )}
-            </div>
-          </PanelFooter>
-        </Panel>
-
-        {/* Personer */}
-        <Panel>
-          <PanelHeader
-            title="Personer"
-            meta={`${companyPersons.length} ${companyPersons.length === 1 ? 'aktiv' : 'aktive'}`}
-          />
-          {companyPersons.length === 0 ? (
-            <PanelEmpty>Ingen personer tilknyttet</PanelEmpty>
-          ) : (
-            companyPersons.slice(0, 6).map((cp, i) => (
-              <div
-                key={cp.id}
-                className={`grid grid-cols-[24px_1fr_auto] items-center gap-2.5 px-3 py-1.5 ${
-                  i < Math.min(companyPersons.length, 6) - 1 ? 'border-b border-b-divider' : ''
-                }`}
-              >
-                <span className="inline-flex h-5 w-5 items-center justify-center rounded-[4px] bg-b-border text-[10px] font-semibold text-b-gray-fg">
-                  {cp.initials}
-                </span>
-                <div className="min-w-0">
-                  <div className="truncate text-[13px] text-b-1">{cp.name}</div>
-                  <div className="mt-px text-[11px] text-b-2">
-                    {getCompanyPersonRoleLabel(cp.role)}
-                    {cp.startDate && ` · ans. ${cp.startDate}`}
+      {topGroupCount > 0 && (
+        <div className={`grid gap-3 ${colsClass(topGroupCount)} lg:items-start`}>
+          {/* Ejerskab */}
+          {showOwnership && (
+            <Panel>
+              <PanelHeader
+                title="Ejerskab"
+                meta={`${ownerships.length} ${ownerships.length === 1 ? 'ejer' : 'ejere'}`}
+              />
+              {!canSeeOwnership ? (
+                <PanelEmpty>Du har ikke adgang til ejerskabsoplysninger</PanelEmpty>
+              ) : ownerships.length === 0 ? (
+                <PanelEmpty>Ingen ejere registreret</PanelEmpty>
+              ) : (
+                ownerships.map((o, i) => (
+                  <div
+                    key={o.id}
+                    className={`flex items-center justify-between gap-2 px-3 py-1.5 text-[13px] ${
+                      i < ownerships.length - 1 ? 'border-b border-b-divider' : ''
+                    }`}
+                  >
+                    <span className="truncate text-b-1">
+                      {o.name}
+                      {o.type === 'holding' && (
+                        <span className="ml-1 text-[11px] text-b-2">(Holding)</span>
+                      )}
+                    </span>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className="b-tnum font-medium">{o.pct.toFixed(0)}%</span>
+                      {!readOnly && (
+                        <SlutLink onClick={() => setEndOwnership(o)} title="Slut ejerskab" />
+                      )}
+                    </div>
                   </div>
-                </div>
-                {!readOnly && <SlutLink onClick={() => setEndRole(cp)} title="Slut rolle" />}
-              </div>
-            ))
-          )}
-          <PanelFooter>
-            <div className="flex items-center justify-between">
-              <span>
-                {companyPersons.length > 6 && `+${companyPersons.length - 6} flere · `}
-                <Link href="/persons" className="text-b-blue-fg no-underline hover:underline">
-                  Se alle →
-                </Link>
-              </span>
-              {!readOnly && (
-                <BAddButton onClick={() => setAddPersonOpen(true)}>+ Tilføj person</BAddButton>
+                ))
               )}
-            </div>
-          </PanelFooter>
-        </Panel>
-
-        {/* AI Insight */}
-        <Panel>
-          <PanelHeader
-            title={
-              <span className="flex items-center gap-1.5">
-                AI Insight <PlusBadge />
-              </span>
-            }
-            meta={data.aiInsight ? 'AI-beregnet' : 'Ingen analyse'}
-          />
-          {data.aiInsight ? (
-            <div className="p-2">
-              <AIInsightCard label={`⚡ ${data.aiInsight.headline_md}`}>
-                {data.aiInsight.body_md}
-              </AIInsightCard>
-            </div>
-          ) : (
-            <PanelEmpty>AI-analyse er ikke konfigureret eller cap-blokeret</PanelEmpty>
+              {data.ownership?.ejeraftaleStatus && (
+                <div className="flex items-center justify-between border-t border-b-divider px-3 py-1.5 text-[12px]">
+                  <span className="text-b-2">Ejeraftale</span>
+                  <Badge tone={data.ownership.ejeraftaleStatus.danger ? 'red' : 'green'}>
+                    {data.ownership.ejeraftaleStatus.label}
+                  </Badge>
+                </div>
+              )}
+              <PanelFooter>
+                <div className="flex items-center justify-between">
+                  <span>Total {ownerships.reduce((s, o) => s + o.pct, 0).toFixed(0)}%</span>
+                  {!readOnly && canSeeOwnership && (
+                    <BAddButton onClick={() => setAddOwnerOpen(true)}>+ Tilføj ejer</BAddButton>
+                  )}
+                </div>
+              </PanelFooter>
+            </Panel>
           )}
-        </Panel>
-      </div>
+
+          {/* Personer */}
+          {showPersons && (
+            <Panel>
+              <PanelHeader
+                title="Personer"
+                meta={`${companyPersons.length} ${companyPersons.length === 1 ? 'aktiv' : 'aktive'}`}
+              />
+              {companyPersons.length === 0 ? (
+                <PanelEmpty>Ingen personer tilknyttet</PanelEmpty>
+              ) : (
+                companyPersons.slice(0, 6).map((cp, i) => (
+                  <div
+                    key={cp.id}
+                    className={`grid grid-cols-[24px_1fr_auto] items-center gap-2.5 px-3 py-1.5 ${
+                      i < Math.min(companyPersons.length, 6) - 1 ? 'border-b border-b-divider' : ''
+                    }`}
+                  >
+                    <span className="inline-flex h-5 w-5 items-center justify-center rounded-[4px] bg-b-border text-[10px] font-semibold text-b-gray-fg">
+                      {cp.initials}
+                    </span>
+                    <div className="min-w-0">
+                      <div className="truncate text-[13px] text-b-1">{cp.name}</div>
+                      <div className="mt-px text-[11px] text-b-2">
+                        {getCompanyPersonRoleLabel(cp.role)}
+                        {cp.startDate && ` · ans. ${cp.startDate}`}
+                      </div>
+                    </div>
+                    {!readOnly && <SlutLink onClick={() => setEndRole(cp)} title="Slut rolle" />}
+                  </div>
+                ))
+              )}
+              <PanelFooter>
+                <div className="flex items-center justify-between">
+                  <span>
+                    {companyPersons.length > 6 && `+${companyPersons.length - 6} flere · `}
+                    <Link href="/persons" className="text-b-blue-fg no-underline hover:underline">
+                      Se alle →
+                    </Link>
+                  </span>
+                  {!readOnly && (
+                    <BAddButton onClick={() => setAddPersonOpen(true)}>+ Tilføj person</BAddButton>
+                  )}
+                </div>
+              </PanelFooter>
+            </Panel>
+          )}
+
+          {/* AI Insight */}
+          {showInsight && (
+            <Panel>
+              <PanelHeader
+                title={
+                  <span className="flex items-center gap-1.5">
+                    AI Insight <PlusBadge />
+                  </span>
+                }
+                meta={data.aiInsight ? 'AI-beregnet' : 'Ingen analyse'}
+              />
+              {data.aiInsight ? (
+                <div className="p-2">
+                  <AIInsightCard label={`⚡ ${data.aiInsight.headline_md}`}>
+                    {data.aiInsight.body_md}
+                  </AIInsightCard>
+                </div>
+              ) : (
+                <PanelEmpty>AI-analyse er ikke konfigureret eller cap-blokeret</PanelEmpty>
+              )}
+            </Panel>
+          )}
+        </div>
+      )}
 
       {/* Kontrakter (full-width) */}
-      <Panel>
-        <PanelHeader
-          title={
-            <span className="flex items-center gap-2">
-              Kontrakter
-              <span className="rounded-[8px] bg-b-border px-1.5 py-px text-[10px] font-medium text-b-gray-fg">
-                {data.contracts.totalCount}
-              </span>
-            </span>
-          }
-          meta="sortér: udløb"
-        />
-        {data.contracts.top.length === 0 ? (
-          <PanelEmpty>Ingen aktive kontrakter</PanelEmpty>
-        ) : (
-          data.contracts.top.map((c, i) => (
-            <Link
-              key={c.id}
-              href={`/contracts/${c.id}`}
-              className={`grid grid-cols-[88px_1fr_14px] items-center gap-3 px-3 py-1.5 text-[13px] no-underline hover:bg-b-row-hover ${
-                i < data.contracts.top.length - 1 ? 'border-b border-b-divider' : ''
-              }`}
-            >
-              <Badge tone={c.badge.tone}>{c.badge.label}</Badge>
-              <span className="truncate">
-                <strong className="font-medium">{c.name}</strong>
-                {c.meta && <span className="text-b-2"> · {c.meta}</span>}
-              </span>
-              <span className="text-b-3">›</span>
-            </Link>
-          ))
-        )}
-        <PanelFooter>
-          <div className="flex items-center justify-between">
-            <span>
-              {data.contracts.totalCount} aktive
-              {data.contracts.totalCount > data.contracts.top.length &&
-                ` · ${data.contracts.totalCount - data.contracts.top.length} flere`}
-            </span>
-            <BAddButton href={`/contracts/new?company=${company.id}`}>+ Opret kontrakt</BAddButton>
-          </div>
-        </PanelFooter>
-      </Panel>
-
-      {/* 3-col: Sager + Finans + Besøg */}
-      <div className="grid gap-3 lg:grid-cols-3 lg:items-start">
-        {/* Sager */}
+      {showContracts && (
         <Panel>
           <PanelHeader
             title={
               <span className="flex items-center gap-2">
-                Sager
+                Kontrakter
                 <span className="rounded-[8px] bg-b-border px-1.5 py-px text-[10px] font-medium text-b-gray-fg">
-                  {data.cases.totalCount}
+                  {data.contracts.totalCount}
                 </span>
               </span>
             }
-            meta="åbne"
+            meta="sortér: udløb"
           />
-          {data.cases.top.length === 0 ? (
-            <PanelEmpty>Ingen åbne sager</PanelEmpty>
+          {data.contracts.top.length === 0 ? (
+            <PanelEmpty>Ingen aktive kontrakter</PanelEmpty>
           ) : (
-            data.cases.top.slice(0, 4).map((c, i) => (
+            data.contracts.top.map((c, i) => (
               <Link
                 key={c.id}
-                href={`/cases/${c.id}`}
-                className={`grid grid-cols-[50px_1fr_14px] items-center gap-2 px-3 py-1.5 text-[13px] no-underline hover:bg-b-row-hover ${
-                  i < Math.min(data.cases.top.length, 4) - 1 ? 'border-b border-b-divider' : ''
+                href={`/contracts/${c.id}`}
+                className={`grid grid-cols-[88px_1fr_14px] items-center gap-3 px-3 py-1.5 text-[13px] no-underline hover:bg-b-row-hover ${
+                  i < data.contracts.top.length - 1 ? 'border-b border-b-divider' : ''
                 }`}
               >
                 <Badge tone={c.badge.tone}>{c.badge.label}</Badge>
-                <div className="min-w-0">
-                  <div className="truncate text-b-1">{c.title}</div>
-                  {c.meta && <div className="text-[11px] text-b-2">{c.meta}</div>}
-                </div>
+                <span className="truncate">
+                  <strong className="font-medium">{c.name}</strong>
+                  {c.meta && <span className="text-b-2"> · {c.meta}</span>}
+                </span>
                 <span className="text-b-3">›</span>
               </Link>
             ))
           )}
           <PanelFooter>
             <div className="flex items-center justify-between">
-              <span />
-              <BAddButton href={`/cases/new?company=${company.id}`}>+ Opret sag</BAddButton>
+              <span>
+                {data.contracts.totalCount} aktive
+                {data.contracts.totalCount > data.contracts.top.length &&
+                  ` · ${data.contracts.totalCount - data.contracts.top.length} flere`}
+              </span>
+              <BAddButton href={`/contracts/new?company=${company.id}`}>
+                + Opret kontrakt
+              </BAddButton>
             </div>
           </PanelFooter>
         </Panel>
+      )}
 
-        {/* Finans */}
-        <Panel>
-          <PanelHeader title="Finans" meta={data.finance ? 'Seneste år' : 'Ingen data'} />
-          {data.finance ? (
-            <div className="px-3 py-2">
-              <FinRow
-                label="Omsætning"
-                value={`${data.finance.omsaetning.value_mio.toFixed(1).replace('.', ',')}m`}
-              />
-              <FinRow label="EBITDA" value={`${data.finance.ebitda.value_k}k`} />
-              <FinRow
-                label="Margin"
-                value={`${data.finance.margin_pct.toFixed(1).replace('.', ',')}%`}
-              />
-              <FinRow
-                label="Status"
-                value={
-                  <Badge tone={data.finance.statusBadge.tone}>
-                    {data.finance.statusBadge.label}
-                  </Badge>
+      {/* 3-col: Sager + Finans + Besøg */}
+      {midGroupCount > 0 && (
+        <div className={`grid gap-3 ${colsClass(midGroupCount)} lg:items-start`}>
+          {/* Sager */}
+          {showCases && (
+            <Panel>
+              <PanelHeader
+                title={
+                  <span className="flex items-center gap-2">
+                    Sager
+                    <span className="rounded-[8px] bg-b-border px-1.5 py-px text-[10px] font-medium text-b-gray-fg">
+                      {data.cases.totalCount}
+                    </span>
+                  </span>
                 }
-                isLast
+                meta="åbne"
               />
-            </div>
-          ) : (
-            <PanelEmpty>Tilføj første finansiel metric</PanelEmpty>
-          )}
-          <PanelFooter>
-            <div className="flex items-center justify-between">
-              <span />
-              {!readOnly && (
-                <BAddButton onClick={() => setAddMetricOpen(true)}>+ Tilføj metric</BAddButton>
+              {data.cases.top.length === 0 ? (
+                <PanelEmpty>Ingen åbne sager</PanelEmpty>
+              ) : (
+                data.cases.top.slice(0, 4).map((c, i) => (
+                  <Link
+                    key={c.id}
+                    href={`/cases/${c.id}`}
+                    className={`grid grid-cols-[50px_1fr_14px] items-center gap-2 px-3 py-1.5 text-[13px] no-underline hover:bg-b-row-hover ${
+                      i < Math.min(data.cases.top.length, 4) - 1 ? 'border-b border-b-divider' : ''
+                    }`}
+                  >
+                    <Badge tone={c.badge.tone}>{c.badge.label}</Badge>
+                    <div className="min-w-0">
+                      <div className="truncate text-b-1">{c.title}</div>
+                      {c.meta && <div className="text-[11px] text-b-2">{c.meta}</div>}
+                    </div>
+                    <span className="text-b-3">›</span>
+                  </Link>
+                ))
               )}
-            </div>
-          </PanelFooter>
-        </Panel>
+              <PanelFooter>
+                <div className="flex items-center justify-between">
+                  <span />
+                  <BAddButton href={`/cases/new?company=${company.id}`}>+ Opret sag</BAddButton>
+                </div>
+              </PanelFooter>
+            </Panel>
+          )}
 
-        {/* Besøg */}
+          {/* Finans */}
+          {showFinance && (
+            <Panel>
+              <PanelHeader title="Finans" meta={data.finance ? 'Seneste år' : 'Ingen data'} />
+              {data.finance ? (
+                <div className="px-3 py-2">
+                  <FinRow
+                    label="Omsætning"
+                    value={`${data.finance.omsaetning.value_mio.toFixed(1).replace('.', ',')}m`}
+                  />
+                  <FinRow label="EBITDA" value={`${data.finance.ebitda.value_k}k`} />
+                  <FinRow
+                    label="Margin"
+                    value={`${data.finance.margin_pct.toFixed(1).replace('.', ',')}%`}
+                  />
+                  <FinRow
+                    label="Status"
+                    value={
+                      <Badge tone={data.finance.statusBadge.tone}>
+                        {data.finance.statusBadge.label}
+                      </Badge>
+                    }
+                    isLast
+                  />
+                </div>
+              ) : (
+                <PanelEmpty>Tilføj første finansiel metric</PanelEmpty>
+              )}
+              <PanelFooter>
+                <div className="flex items-center justify-between">
+                  <span />
+                  {!readOnly && (
+                    <BAddButton onClick={() => setAddMetricOpen(true)}>+ Tilføj metric</BAddButton>
+                  )}
+                </div>
+              </PanelFooter>
+            </Panel>
+          )}
+
+          {/* Besøg */}
+          {showVisits && (
+            <Panel>
+              <PanelHeader title="Besøg" meta={`${data.visits.length} planlagt`} />
+              {data.visits.length === 0 ? (
+                <PanelEmpty>Ingen besøg</PanelEmpty>
+              ) : (
+                data.visits.slice(0, 4).map((v, i) => (
+                  <div
+                    key={v.id}
+                    className={`flex items-center justify-between gap-2 px-3 py-1.5 text-[13px] ${
+                      i < Math.min(data.visits.length, 4) - 1 ? 'border-b border-b-divider' : ''
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <div className="truncate text-b-1">{v.typeLabel}</div>
+                      {v.meta && <div className="text-[11px] text-b-2">{v.meta}</div>}
+                    </div>
+                    <Badge tone={visitBadgeTone(v.badge.tone)}>{v.badge.label}</Badge>
+                  </div>
+                ))
+              )}
+              <PanelFooter>
+                <div className="flex items-center justify-between">
+                  <span />
+                  <BAddButton href={`/visits/new?company=${company.id}`}>
+                    + Planlæg besøg
+                  </BAddButton>
+                </div>
+              </PanelFooter>
+            </Panel>
+          )}
+        </div>
+      )}
+
+      {/* Dokumenter (full-width) */}
+      {showDocuments && (
         <Panel>
-          <PanelHeader title="Besøg" meta={`${data.visits.length} planlagt`} />
-          {data.visits.length === 0 ? (
-            <PanelEmpty>Ingen besøg</PanelEmpty>
+          <PanelHeader
+            title={
+              <span className="flex items-center gap-2">
+                Dokumenter
+                <span className="rounded-[8px] bg-b-border px-1.5 py-px text-[10px] font-medium text-b-gray-fg">
+                  {data.documents.rows.length}
+                </span>
+              </span>
+            }
+            meta={
+              data.documents.awaitingReviewCount > 0
+                ? `${data.documents.awaitingReviewCount} afventer review`
+                : 'Alle behandlet'
+            }
+          />
+          {data.documents.rows.length === 0 ? (
+            <PanelEmpty>Ingen dokumenter uploadet endnu</PanelEmpty>
           ) : (
-            data.visits.slice(0, 4).map((v, i) => (
-              <div
-                key={v.id}
-                className={`flex items-center justify-between gap-2 px-3 py-1.5 text-[13px] ${
-                  i < Math.min(data.visits.length, 4) - 1 ? 'border-b border-b-divider' : ''
+            data.documents.rows.map((d, i) => (
+              <Link
+                key={d.id}
+                href={`/documents/review/${d.id}`}
+                className={`grid grid-cols-[60px_1fr_96px_14px] items-center gap-2 px-3 py-1.5 text-[13px] no-underline hover:bg-b-row-hover ${
+                  i < data.documents.rows.length - 1 ? 'border-b border-b-divider' : ''
                 }`}
               >
-                <div className="min-w-0">
-                  <div className="truncate text-b-1">{v.typeLabel}</div>
-                  {v.meta && <div className="text-[11px] text-b-2">{v.meta}</div>}
-                </div>
-                <Badge tone={visitBadgeTone(v.badge.tone)}>{v.badge.label}</Badge>
-              </div>
+                <Badge tone="gray">{d.fileName.split('.').pop()?.toUpperCase() ?? 'FIL'}</Badge>
+                <span className="truncate">
+                  <strong className="font-medium">{d.fileName}</strong>
+                  {d.meta && <span className="text-b-2"> · {d.meta}</span>}
+                </span>
+                {/* DocumentViewRow.badge.label fra getCompanyDetailData er enten "AI ✓"
+                  (når extraction.completed+reviewed) eller dårligt-passende "Arkiveret".
+                  Mapper "Arkiveret" → "Ikke AI" så terminologi matcher /documents. */}
+                <Badge tone={d.badge.label === 'AI ✓' ? 'green' : 'gray'}>
+                  {d.badge.label === 'AI ✓' ? 'AI ✓' : 'Ikke AI'}
+                </Badge>
+                <span className="text-b-3">›</span>
+              </Link>
             ))
           )}
           <PanelFooter>
             <div className="flex items-center justify-between">
-              <span />
-              <BAddButton href={`/visits/new?company=${company.id}`}>+ Planlæg besøg</BAddButton>
+              <Link
+                href={`/documents?company=${company.id}`}
+                className="text-b-blue-fg no-underline hover:underline"
+              >
+                Se alle dokumenter →
+              </Link>
+              <BAddButton href={`/documents?company=${company.id}`}>+ Upload dokument</BAddButton>
             </div>
           </PanelFooter>
         </Panel>
-      </div>
-
-      {/* Dokumenter (full-width) */}
-      <Panel>
-        <PanelHeader
-          title={
-            <span className="flex items-center gap-2">
-              Dokumenter
-              <span className="rounded-[8px] bg-b-border px-1.5 py-px text-[10px] font-medium text-b-gray-fg">
-                {data.documents.rows.length}
-              </span>
-            </span>
-          }
-          meta={
-            data.documents.awaitingReviewCount > 0
-              ? `${data.documents.awaitingReviewCount} afventer review`
-              : 'Alle behandlet'
-          }
-        />
-        {data.documents.rows.length === 0 ? (
-          <PanelEmpty>Ingen dokumenter uploadet endnu</PanelEmpty>
-        ) : (
-          data.documents.rows.map((d, i) => (
-            <Link
-              key={d.id}
-              href={`/documents/review/${d.id}`}
-              className={`grid grid-cols-[60px_1fr_96px_14px] items-center gap-2 px-3 py-1.5 text-[13px] no-underline hover:bg-b-row-hover ${
-                i < data.documents.rows.length - 1 ? 'border-b border-b-divider' : ''
-              }`}
-            >
-              <Badge tone="gray">{d.fileName.split('.').pop()?.toUpperCase() ?? 'FIL'}</Badge>
-              <span className="truncate">
-                <strong className="font-medium">{d.fileName}</strong>
-                {d.meta && <span className="text-b-2"> · {d.meta}</span>}
-              </span>
-              {/* DocumentViewRow.badge.label fra getCompanyDetailData er enten "AI ✓"
-                  (når extraction.completed+reviewed) eller dårligt-passende "Arkiveret".
-                  Mapper "Arkiveret" → "Ikke AI" så terminologi matcher /documents. */}
-              <Badge tone={d.badge.label === 'AI ✓' ? 'green' : 'gray'}>
-                {d.badge.label === 'AI ✓' ? 'AI ✓' : 'Ikke AI'}
-              </Badge>
-              <span className="text-b-3">›</span>
-            </Link>
-          ))
-        )}
-        <PanelFooter>
-          <div className="flex items-center justify-between">
-            <Link
-              href={`/documents?company=${company.id}`}
-              className="text-b-blue-fg no-underline hover:underline"
-            >
-              Se alle dokumenter →
-            </Link>
-            <BAddButton href={`/documents?company=${company.id}`}>+ Upload dokument</BAddButton>
-          </div>
-        </PanelFooter>
-      </Panel>
+      )}
 
       <BottomBar
         left={`${company.name} · CVR ${company.cvr ?? '—'}`}
@@ -577,8 +620,8 @@ export function CompanyDetailB({
         }
       />
 
-      {/* Modaler */}
-      {!readOnly && canSeeOwnership && (
+      {/* Modaler — section-gated så rolle uden sektion-adgang ikke kan trigge */}
+      {!readOnly && canSeeOwnership && showOwnership && (
         <AddOwnerModal
           open={addOwnerOpen}
           onClose={() => setAddOwnerOpen(false)}
@@ -588,7 +631,7 @@ export function CompanyDetailB({
           persons={personOptions}
         />
       )}
-      {!readOnly && (
+      {!readOnly && showPersons && (
         <AddPersonModal
           open={addPersonOpen}
           onClose={() => setAddPersonOpen(false)}
@@ -598,7 +641,7 @@ export function CompanyDetailB({
           persons={personOptions}
         />
       )}
-      {!readOnly && (
+      {!readOnly && showFinance && (
         <AddMetricModal
           open={addMetricOpen}
           onClose={() => setAddMetricOpen(false)}
@@ -607,7 +650,7 @@ export function CompanyDetailB({
           existing={existingMetrics}
         />
       )}
-      {endOwnership && (
+      {endOwnership && showOwnership && (
         <EndOwnershipRoleModal
           open
           onClose={() => setEndOwnership(null)}
@@ -619,7 +662,7 @@ export function CompanyDetailB({
           }`}
         />
       )}
-      {endRole && (
+      {endRole && showPersons && (
         <EndOwnershipRoleModal
           open
           onClose={() => setEndRole(null)}

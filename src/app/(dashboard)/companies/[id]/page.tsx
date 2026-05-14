@@ -23,12 +23,20 @@ export default async function CompanyDetailPage({ params }: { params: { id: stri
   // Modal-wiring kræver raw IDs som ikke er i CompanyDetailData. Vi henter dem
   // separat fra databasen her — billigt fordi vi allerede har company-adgang.
   // STRENGT_FORTROLIG-check for ownership-IDs så vi ikke lækker dem til brugere
-  // uden adgang.
+  // uden adgang. Raw-queries gates desuden via data.visibleSections så roller
+  // uden adgang til en sektion ikke får PII serialiseret ind i client-props.
   const canSeeOwnership = await canAccessSensitivity(session.user.id, 'STRENGT_FORTROLIG')
+  const wantOwnership = canSeeOwnership && data.visibleSections.has('ownership')
+  const wantPersons = data.visibleSections.has('persons')
+  const wantFinance = data.visibleSections.has('finance')
+  const wantContracts = data.visibleSections.has('contracts')
+  // AddOwnerModal og AddPersonModal har brug for person-select; hent kun hvis
+  // mindst én af de to add-flows er tilgængelige.
+  const wantPersonOptions = wantOwnership || wantPersons
 
   const [rawOwnerships, rawCompanyPersons, allMetrics, allPersons, expiringLease] =
     await Promise.all([
-      canSeeOwnership
+      wantOwnership
         ? prisma.ownership.findMany({
             where: { company_id: params.id, organization_id: orgId, end_date: null },
             include: {
@@ -37,34 +45,42 @@ export default async function CompanyDetailPage({ params }: { params: { id: stri
             orderBy: { effective_date: 'desc' },
           })
         : Promise.resolve([]),
-      prisma.companyPerson.findMany({
-        where: { company_id: params.id, organization_id: orgId, end_date: null },
-        include: { person: { select: { first_name: true, last_name: true } } },
-        orderBy: { start_date: 'desc' },
-      }),
-      prisma.financialMetric.findMany({
-        where: { company_id: params.id, organization_id: orgId },
-        orderBy: { period_year: 'desc' },
-      }),
+      wantPersons
+        ? prisma.companyPerson.findMany({
+            where: { company_id: params.id, organization_id: orgId, end_date: null },
+            include: { person: { select: { first_name: true, last_name: true } } },
+            orderBy: { start_date: 'desc' },
+          })
+        : Promise.resolve([]),
+      wantFinance
+        ? prisma.financialMetric.findMany({
+            where: { company_id: params.id, organization_id: orgId },
+            orderBy: { period_year: 'desc' },
+          })
+        : Promise.resolve([]),
       // Alle personer i org (til select i AddOwner + AddPerson modaler).
       // Skåret til 200 for at undgå rendering-bottleneck ved store kæder.
-      prisma.person.findMany({
-        where: { organization_id: orgId, deleted_at: null },
-        select: { id: true, first_name: true, last_name: true, email: true },
-        orderBy: [{ first_name: 'asc' }, { last_name: 'asc' }],
-        take: 200,
-      }),
-      prisma.contract.findFirst({
-        where: {
-          company_id: params.id,
-          organization_id: orgId,
-          deleted_at: null,
-          status: 'AKTIV',
-          system_type: 'LEJEKONTRAKT_ERHVERV',
-          expiry_date: { not: null },
-        },
-        orderBy: { expiry_date: 'asc' },
-      }),
+      wantPersonOptions
+        ? prisma.person.findMany({
+            where: { organization_id: orgId, deleted_at: null },
+            select: { id: true, first_name: true, last_name: true, email: true },
+            orderBy: [{ first_name: 'asc' }, { last_name: 'asc' }],
+            take: 200,
+          })
+        : Promise.resolve([]),
+      wantContracts
+        ? prisma.contract.findFirst({
+            where: {
+              company_id: params.id,
+              organization_id: orgId,
+              deleted_at: null,
+              status: 'AKTIV',
+              system_type: 'LEJEKONTRAKT_ERHVERV',
+              expiry_date: { not: null },
+            },
+            orderBy: { expiry_date: 'asc' },
+          })
+        : Promise.resolve(null),
     ])
 
   const ownerships: OwnershipRow[] = rawOwnerships.map((o) => ({

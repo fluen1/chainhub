@@ -14,6 +14,8 @@ export interface AddDataDropdownProps {
   onAddPerson: () => void
   onAddMetric: () => void
   canAddOwner: boolean
+  canAddPerson: boolean
+  canAddMetric: boolean
 }
 
 export function AddDataDropdown({
@@ -21,6 +23,8 @@ export function AddDataDropdown({
   onAddPerson,
   onAddMetric,
   canAddOwner,
+  canAddPerson,
+  canAddMetric,
 }: AddDataDropdownProps) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -39,6 +43,8 @@ export function AddDataDropdown({
       document.removeEventListener('keydown', escHandler)
     }
   }, [])
+
+  if (!canAddOwner && !canAddPerson && !canAddMetric) return null
 
   return (
     <div ref={ref} className="relative inline-block">
@@ -59,26 +65,30 @@ export function AddDataDropdown({
               + Tilføj ejer
             </button>
           )}
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false)
-              onAddPerson()
-            }}
-            className="block w-full whitespace-nowrap px-3 py-2 text-left text-[12px] text-b-1 hover:bg-b-row-hover"
-          >
-            + Tilføj person
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false)
-              onAddMetric()
-            }}
-            className="block w-full whitespace-nowrap px-3 py-2 text-left text-[12px] text-b-1 hover:bg-b-row-hover"
-          >
-            + Tilføj finansiel metric
-          </button>
+          {canAddPerson && (
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false)
+                onAddPerson()
+              }}
+              className="block w-full whitespace-nowrap px-3 py-2 text-left text-[12px] text-b-1 hover:bg-b-row-hover"
+            >
+              + Tilføj person
+            </button>
+          )}
+          {canAddMetric && (
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false)
+                onAddMetric()
+              }}
+              className="block w-full whitespace-nowrap px-3 py-2 text-left text-[12px] text-b-1 hover:bg-b-row-hover"
+            >
+              + Tilføj finansiel metric
+            </button>
+          )}
         </div>
       )}
     </div>
