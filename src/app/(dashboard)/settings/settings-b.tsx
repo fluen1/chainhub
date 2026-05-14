@@ -42,6 +42,7 @@ export interface SettingsUser {
   initials: string
   rolle: string
   rolleLabel: string
+  /** "Aldrig" for nye brugere, formateret dato ellers */
   sidstAktiv: string
   isSelf: boolean
   active: boolean
@@ -91,7 +92,14 @@ export function SettingsPageB({
   companies: Array<{ id: string; name: string }>
   users: SettingsUser[]
   currentUserId: string
-  aiUsage: { used: number; max: number; percent: number }
+  aiUsage: {
+    used: number
+    max: number
+    percent: number
+    threshold?: 'none' | '50-info' | '75-warn' | '90-alert' | 'exceeded'
+    capUsd?: number
+    currentUsd?: number
+  }
 }) {
   const sectionLabel = SECTIONS.find((s) => s.key === section)?.label ?? ''
 
@@ -112,23 +120,11 @@ export function SettingsPageB({
           ) : section === 'ai' ? (
             <AISection usage={aiUsage} />
           ) : section === 'notif' ? (
-            <ComingSoonSection
-              title="Notifikationer"
-              sub="E-mail og push-notifikationer"
-              body="Konfigurérbare notifikationer (kontraktudløb, sagsfrister, AI-review) kommer i en senere version."
-            />
+            <NotifikationerSection />
           ) : section === 'integr' ? (
-            <ComingSoonSection
-              title="Integrationer"
-              sub="E-conomic, Slack, Microsoft 365 mfl."
-              body="Integration-konfiguration kommer når de respektive klienter er tilgængelige."
-            />
+            <IntegrationerSection />
           ) : section === 'sikkerhed' ? (
-            <ComingSoonSection
-              title="Sikkerhed"
-              sub="2FA, session-timeout, audit log"
-              body="Sikkerhedsindstillinger er under udvikling. Audit log findes i databasen og kan eksporteres på forespørgsel."
-            />
+            <SikkerhedSection />
           ) : section === 'faktura' ? (
             <FakturaSection org={organization} />
           ) : null}
@@ -330,15 +326,35 @@ function BrugereSection({
 
 // ────────────────────────────────────────────────────────────────────────────
 
-function AISection({ usage }: { usage: { used: number; max: number; percent: number } }) {
+function AISection({
+  usage,
+}: {
+  usage: {
+    used: number
+    max: number
+    percent: number
+    threshold?: 'none' | '50-info' | '75-warn' | '90-alert' | 'exceeded'
+    capUsd?: number
+    currentUsd?: number
+  }
+}) {
+  // Tærskler matcher cost-cap spec: none / 50-info / 75-warn / 90-alert / exceeded
   const fillTone =
-    usage.percent >= 80 ? 'bg-b-red-fg' : usage.percent >= 60 ? 'bg-b-amber-fg' : 'bg-b-green-fg'
+    usage.percent >= 90
+      ? 'bg-b-red-fg'
+      : usage.percent >= 75
+        ? 'bg-b-amber-fg'
+        : usage.percent >= 50
+          ? 'bg-b-amber-fg'
+          : 'bg-b-green-fg'
   const pctColor =
-    usage.percent >= 80
+    usage.percent >= 90
       ? 'text-b-red-fg'
-      : usage.percent >= 60
+      : usage.percent >= 75
         ? 'text-b-amber-fg'
-        : 'text-b-green-fg'
+        : usage.percent >= 50
+          ? 'text-b-amber-fg'
+          : 'text-b-green-fg'
 
   return (
     <>
@@ -366,8 +382,23 @@ function AISection({ usage }: { usage: { used: number; max: number; percent: num
           </div>
           <div className="b-tnum mt-2 flex justify-between text-[11px] text-b-2">
             <span>{usage.used.toLocaleString('da-DK')} extractions brugt</span>
-            <span>{usage.max.toLocaleString('da-DK')} pr. måned (Plus)</span>
+            <span>{usage.max.toLocaleString('da-DK')} pr. måned</span>
           </div>
+          {usage.threshold && usage.threshold !== 'none' && (
+            <div
+              className={`mt-2 rounded-[4px] px-2.5 py-1.5 text-[11px] ${
+                usage.threshold === 'exceeded' || usage.threshold === '90-alert'
+                  ? 'bg-b-red-bg text-b-red-fg'
+                  : 'bg-b-amber-bg text-b-amber-fg'
+              }`}
+            >
+              {usage.threshold === 'exceeded'
+                ? 'Månedlig cost-cap er nået — nye AI-kald er blokeret. Kontakt support.'
+                : usage.threshold === '90-alert'
+                  ? `90% af cost-cap brugt (${usage.currentUsd?.toFixed(2) ?? '—'} / ${usage.capUsd?.toFixed(0) ?? '—'} USD).`
+                  : `${usage.threshold === '75-warn' ? '75' : '50'}% af cost-cap nået (${usage.currentUsd?.toFixed(2) ?? '—'} USD brugt).`}
+            </div>
+          )}
         </div>
         <PanelFooter>
           <div className="flex items-center justify-between">
@@ -384,49 +415,22 @@ function AISection({ usage }: { usage: { used: number; max: number; percent: num
 
       <Panel>
         <PanelHeader title="AI-funktioner" />
-        <ToggleRow
-          name="Auto-extraction ved upload"
-          sub="Dokumenter analyseres automatisk ved upload — kræver review"
-          enabled
-        />
-        <ToggleRow
-          name="AI Insights på selskabsdetaljer"
-          sub="Renewal-risk, markedsanalyse og anbefalinger"
-          enabled
-        />
-        <ToggleRow
-          name="Sagsrisikovurdering"
-          sub="AI analyserer sager og foreslår sandsynlighed for forlig"
-          enabled
-        />
+        <div className="px-3 py-3">
+          <p className="text-[13px] text-b-2">
+            AI-funktioner er aktiveret globalt for jeres tier. Kontakt support for at deaktivere
+            specifikke funktioner.
+          </p>
+          <ul className="mt-2 space-y-1 text-[12px] text-b-3">
+            <li>· Auto-extraction ved dokumentupload (kræver review)</li>
+            <li>· AI Insights på selskabsdetaljer (renewal-risk, markedsanalyse)</li>
+            <li>· Sagsrisikovurdering (sandsynlighed for forlig)</li>
+          </ul>
+        </div>
         <PanelFooter>
-          <span>AI-output kræver altid menneskelig godkendelse — toggles gemmes ikke endnu</span>
+          <span>AI-output kræver altid menneskelig godkendelse</span>
         </PanelFooter>
       </Panel>
     </>
-  )
-}
-
-function ToggleRow({ name, sub, enabled }: { name: string; sub: string; enabled: boolean }) {
-  return (
-    <div className="flex items-center justify-between border-b border-b-divider px-3 py-2 last:border-b-0">
-      <div className="min-w-0 pr-3">
-        <div className="text-[13px] font-medium text-b-1">{name}</div>
-        <div className="mt-px text-[11px] text-b-2">{sub}</div>
-      </div>
-      <div
-        className={`relative h-4 w-7 rounded-full transition-colors ${
-          enabled ? 'bg-b-blue-fg' : 'bg-b-border-strong'
-        }`}
-        title="Toggle er placeholder — server-state kommer senere"
-      >
-        <div
-          className={`absolute top-0.5 h-3 w-3 rounded-full bg-white transition-all ${
-            enabled ? 'left-3.5' : 'left-0.5'
-          }`}
-        />
-      </div>
-    </div>
   )
 }
 
@@ -455,22 +459,140 @@ function FakturaSection({ org }: { org: SettingsOrg | null }) {
           isLast
         />
         <PanelFooter>
-          <span>Detaljeret faktura-historik kommer i en senere version</span>
+          <span>Tier-skift og faktura-historik kommer i en senere version</span>
+        </PanelFooter>
+      </Panel>
+
+      <Panel>
+        <PanelHeader title="Under udvikling" />
+        <div className="px-3 py-3">
+          <p className="text-[12px] text-b-3">
+            Følgende funktioner er planlagt til en kommende version:
+          </p>
+          <ul className="mt-2 space-y-1 text-[12px] text-b-3">
+            <li>· Skift abonnementsplan (Free → Plus → Enterprise)</li>
+            <li>· Download faktura-PDF for de seneste 12 måneder</li>
+            <li>· Opdater betalingsmetode og faktureringsadresse</li>
+            <li>· Se forbrug pr. modul og bruger</li>
+          </ul>
+        </div>
+      </Panel>
+    </>
+  )
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Stub-sektioner — under udvikling, men med konkrete roadmap-punkter
+// ────────────────────────────────────────────────────────────────────────────
+
+function NotifikationerSection() {
+  return (
+    <>
+      <PageHeader title="Notifikationer" meta="E-mail og push-notifikationer" />
+      <Panel>
+        <PanelHeader title="Under udvikling" />
+        <div className="px-3 py-3">
+          <p className="text-[12px] text-b-3">
+            Notifikationssystemet er under udvikling. Planlagte funktioner:
+          </p>
+          <ul className="mt-2 space-y-1.5 text-[12px] text-b-3">
+            <li>
+              <span className="font-medium text-b-2">E-mail-digest</span> — daglig eller ugentlig
+              opsummering af udløbende kontrakter og åbne sager
+            </li>
+            <li>
+              <span className="font-medium text-b-2">Push-notifikationer</span> — browser-
+              notifikationer ved kontraktudløb, sagsfrister og AI-review-klar
+            </li>
+            <li>
+              <span className="font-medium text-b-2">Slack-integration</span> — besked til kanal ved
+              kritiske hændelser (cap nået, sag eskaleret)
+            </li>
+            <li>
+              <span className="font-medium text-b-2">Pr. bruger konfiguration</span> — hver bruger
+              vælger hvilke hændelser der notificeres
+            </li>
+          </ul>
+        </div>
+        <PanelFooter>
+          <span>Kontakt support for at prioritere specifikke notifikationstyper</span>
         </PanelFooter>
       </Panel>
     </>
   )
 }
 
-function ComingSoonSection({ title, sub, body }: { title: string; sub: string; body: string }) {
+function IntegrationerSection() {
   return (
     <>
-      <PageHeader title={title} meta={sub} />
+      <PageHeader title="Integrationer" meta="E-conomic, Slack, Microsoft 365 mfl." />
       <Panel>
-        <div className="px-3 py-8 text-center">
-          <div className="text-[13px] font-medium text-b-2">Funktion under udvikling</div>
-          <div className="mx-auto mt-1.5 max-w-md text-[12px] leading-relaxed text-b-3">{body}</div>
+        <PanelHeader title="Under udvikling" />
+        <div className="px-3 py-3">
+          <p className="text-[12px] text-b-3">
+            Integrationskonfiguration kommer når de respektive klienter er tilgængelige. Planlagte
+            integrationer:
+          </p>
+          <ul className="mt-2 space-y-1.5 text-[12px] text-b-3">
+            <li>
+              <span className="font-medium text-b-2">E-conomic</span> — synkroniser faktura-data og
+              selskabsøkonomi direkte til ChainHub
+            </li>
+            <li>
+              <span className="font-medium text-b-2">Microsoft 365</span> — hent kontrakter fra
+              SharePoint, kalendersynk, Teams-notifikationer
+            </li>
+            <li>
+              <span className="font-medium text-b-2">Slack</span> — tovejs notifikationer og
+              godkendelsesflow direkte i Slack
+            </li>
+            <li>
+              <span className="font-medium text-b-2">Zapier / Make</span> — no-code automatisering
+              til eksisterende workflows
+            </li>
+          </ul>
         </div>
+        <PanelFooter>
+          <span>Kontakt support for at anmode om specifik integration</span>
+        </PanelFooter>
+      </Panel>
+    </>
+  )
+}
+
+function SikkerhedSection() {
+  return (
+    <>
+      <PageHeader title="Sikkerhed" meta="2FA, session-timeout, audit log" />
+      <Panel>
+        <PanelHeader title="Under udvikling" />
+        <div className="px-3 py-3">
+          <p className="text-[12px] text-b-3">
+            Sikkerhedsindstillinger er under udvikling. Audit log gemmes løbende og kan eksporteres
+            på forespørgsel. Planlagte funktioner:
+          </p>
+          <ul className="mt-2 space-y-1.5 text-[12px] text-b-3">
+            <li>
+              <span className="font-medium text-b-2">To-faktor autentifikation (2FA)</span> — TOTP
+              via autentifikator-app for alle brugere
+            </li>
+            <li>
+              <span className="font-medium text-b-2">SSO via SAML 2.0</span> — log ind med Microsoft
+              Entra ID, Okta eller anden identity provider
+            </li>
+            <li>
+              <span className="font-medium text-b-2">Session-timeout</span> — konfigurér automatisk
+              logout efter X minutters inaktivitet
+            </li>
+            <li>
+              <span className="font-medium text-b-2">Audit log export</span> — hent CSV-log over
+              alle brugerhandlinger (hvem, hvad, hvornår)
+            </li>
+          </ul>
+        </div>
+        <PanelFooter>
+          <span>Audit log er tilgængelig i databasen og kan udtrækkes på forespørgsel</span>
+        </PanelFooter>
       </Panel>
     </>
   )

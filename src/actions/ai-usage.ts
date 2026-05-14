@@ -7,6 +7,71 @@ import { getCostCapStatus } from '@/lib/ai/cost-cap'
 import { captureError } from '@/lib/logger'
 import type { ActionResult } from '@/types/actions'
 
+// ────────────────────────────────────────────────────────────────────────────
+// Settings-side AI-usage widget
+// ────────────────────────────────────────────────────────────────────────────
+
+export interface SettingsAIUsage {
+  /** Antal extraction-kald denne måned */
+  used: number
+  /** Månedlig kvota (antal extractions) */
+  max: number
+  /** 0–100 — clamped */
+  percent: number
+  /** USD-based threshold fra cost-cap spec */
+  threshold: 'none' | '50-info' | '75-warn' | '90-alert' | 'exceeded'
+  /** Faktisk cost-cap i USD (til visning) */
+  capUsd: number
+  /** Forbrug i USD denne måned */
+  currentUsd: number
+}
+
+/**
+ * Henter AI-usage til settings-sidens widget. Kombinerer extraction-count
+ * (brugte kald) med cost-cap status (tærskler).
+ *
+ * Max extractions: Hentes fra OrganizationAISettings.rate_limit_per_day.
+ * TODO Plus-tier-mapping når tier-model er aktiveret — indtil da bruges
+ * rate_limit_per_day som månedlig proxy (default 1000).
+ */
+export async function getSettingsAIUsage(organizationId: string): Promise<SettingsAIUsage> {
+  try {
+    const now = new Date()
+    const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
+
+    const [capStatus, extractionCount, aiSettings] = await Promise.all([
+      getCostCapStatus(organizationId),
+      prisma.aIUsageLog.count({
+        where: {
+          organization_id: organizationId,
+          feature: 'extraction',
+          created_at: { gte: monthStart },
+        },
+      }),
+      prisma.organizationAISettings.findUnique({
+        where: { organization_id: organizationId },
+        select: { rate_limit_per_day: true },
+      }),
+    ])
+
+    // TODO Plus-tier-mapping når tier-model er aktiveret
+    const max = aiSettings?.rate_limit_per_day ?? 1000
+    const percent = max > 0 ? Math.min(100, Math.round((extractionCount / max) * 100)) : 0
+
+    return {
+      used: extractionCount,
+      max,
+      percent,
+      threshold: capStatus.threshold,
+      capUsd: capStatus.capUsd,
+      currentUsd: capStatus.currentUsd,
+    }
+  } catch {
+    // Fail-safe: returner tomme tal frem for at crashe siden
+    return { used: 0, max: 1000, percent: 0, threshold: 'none', capUsd: 50, currentUsd: 0 }
+  }
+}
+
 export interface AIUsageDashboardData {
   totalCostUsd: number
   capUsd: number
