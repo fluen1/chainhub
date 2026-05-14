@@ -57,6 +57,7 @@ export interface CaseDetailData {
   updatedAt: string
   closedAt: string | null
   dueDate: string | null
+  responsibleId: string | null
 }
 
 export interface CaseTaskData {
@@ -224,6 +225,7 @@ export function CaseDetailB({
     caseSubtype: data.subtype,
     sensitivity: data.rawSensitivity,
     dueDate: data.dueDate,
+    assignedTo: data.responsibleId,
   }
 
   const openTasks = tasks.filter((t) => !t.done).length

@@ -159,42 +159,52 @@ export function ContractStatusButton({ contractId, currentStatus }: ContractStat
             const needsNote = status === 'OPSAGT' || status === 'UDLOEBET'
             return (
               <div key={status} role="option" aria-selected={false}>
-                <button
-                  ref={(el) => {
-                    itemRefs.current[idx] = el
-                  }}
-                  type="button"
-                  onClick={() => {
-                    if (needsNote) {
-                      // Vis note-felt — submit sker via separat knap
-                      return
-                    }
-                    handleStatusChange(status)
-                  }}
-                  className="w-full px-2.5 py-1.5 text-left text-[13px] text-b-1 hover:bg-b-row-hover focus:bg-b-row-hover focus:outline-none"
-                >
-                  {getContractStatusLabel(status)}
-                  {needsNote && <span className="ml-1 text-[11px] text-b-2">· kræver note</span>}
-                </button>
-
-                {needsNote && (
-                  <div className="border-t border-b-divider px-2.5 py-2">
+                {needsNote ? (
+                  // OPSAGT/UDLOEBET: note-felt vises altid, Bekræft validerer
+                  <div className="px-2.5 py-2">
+                    <div className="mb-1.5 text-[12px] font-medium text-b-1">
+                      {getContractStatusLabel(status)}
+                      <span className="ml-1 text-[11px] text-b-2">· note påkrævet</span>
+                    </div>
                     <textarea
+                      ref={(el) => {
+                        // Giv focus til note-felt som det første aktive element
+                        if (el && idx === 0) {
+                          itemRefs.current[idx] = null
+                        }
+                      }}
                       value={note}
                       onChange={(e) => setNote(e.target.value)}
-                      placeholder={`Note til ${getContractStatusLabel(status).toLowerCase()} (valgfri)...`}
+                      placeholder={`Begrund ${getContractStatusLabel(status).toLowerCase()}...`}
                       rows={2}
                       className="mb-1.5 w-full resize-none rounded-[4px] border border-b-border-strong bg-white px-2 py-1 text-[12px] text-b-1 placeholder:text-b-3 focus:border-transparent focus:outline focus:outline-2 focus:outline-b-blue-fg focus:outline-offset-[-1px]"
                     />
                     <button
                       type="button"
                       disabled={submitting}
-                      onClick={() => handleStatusChange(status)}
+                      onClick={() => {
+                        if (!note.trim()) {
+                          toast.error('Note er påkrævet for denne statusændring')
+                          return
+                        }
+                        handleStatusChange(status)
+                      }}
                       className="w-full rounded-[4px] bg-b-blue-fg px-2 py-1 text-[12px] font-medium text-white hover:bg-[#0860c7] disabled:opacity-50"
                     >
                       Bekræft: {getContractStatusLabel(status)}
                     </button>
                   </div>
+                ) : (
+                  <button
+                    ref={(el) => {
+                      itemRefs.current[idx] = el
+                    }}
+                    type="button"
+                    onClick={() => handleStatusChange(status)}
+                    className="w-full px-2.5 py-1.5 text-left text-[13px] text-b-1 hover:bg-b-row-hover focus:bg-b-row-hover focus:outline-none"
+                  >
+                    {getContractStatusLabel(status)}
+                  </button>
                 )}
               </div>
             )

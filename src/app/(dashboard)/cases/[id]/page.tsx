@@ -148,6 +148,7 @@ export default async function CaseDetailPage({ params }: Props) {
     updatedAt: formatDate(caseItem.updated_at),
     closedAt: caseItem.closed_at ? formatDate(caseItem.closed_at) : null,
     dueDate: caseItem.due_date ? caseItem.due_date.toISOString().slice(0, 10) : null,
+    responsibleId: caseItem.responsible_id ?? null,
   }
 
   const tasks: CaseTaskData[] = caseItem.tasks.map((t) => {
