@@ -411,7 +411,7 @@ function FlatTable({
             <Th col="navn" sortCol={sortCol} sortDir={sortDir} onSort={onSort}>
               Selskab
             </Th>
-            <Th col="cvr" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={80}>
+            <Th col="cvr" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={104}>
               CVR
             </Th>
             <Th col="type" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={92}>
@@ -422,13 +422,13 @@ function FlatTable({
               sortCol={sortCol}
               sortDir={sortDir}
               onSort={onSort}
-              width={62}
+              width={74}
               alignRight
             >
               Kæde %
             </Th>
-            <Th col="kontrakter" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={80}>
-              Kontrakter
+            <Th col="kontrakter" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={94}>
+              Kontr.
             </Th>
             <Th col="sager" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={62}>
               Sager
@@ -469,16 +469,16 @@ function CompanyTr({ c, onClick }: { c: CompanyRow; onClick: () => void }) {
           <span className="truncate font-medium text-b-1">{c.navn}</span>
         </div>
       </Td>
-      <Td width={80} secondary>
+      <Td width={104} secondary>
         {c.cvr}
       </Td>
       <Td width={92} secondary>
         {c.type}
       </Td>
-      <Td width={62} alignRight>
+      <Td width={74} alignRight>
         <span className="font-medium">{c.kaedePct}%</span>
       </Td>
-      <Td width={80}>
+      <Td width={94}>
         {c.kontrakterUdlob > 0 || c.kontrakterExpired > 0 ? (
           <Badge tone={c.kontrakterExpired > 0 ? 'red' : 'amber'}>
             {c.kontrakter} ({c.kontrakterUdlob + c.kontrakterExpired}⚠)

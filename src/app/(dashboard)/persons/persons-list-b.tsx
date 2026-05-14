@@ -342,14 +342,14 @@ function FlatTable({
             <Th col="selskab" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={190}>
               Selskab
             </Th>
-            <Th col="ansatSort" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={88}>
-              Ansat siden
+            <Th col="ansatSort" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={104}>
+              Ansat
             </Th>
-            <Th col="status" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={72}>
+            <Th col="status" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={84}>
               Status
             </Th>
-            <Th col="sens" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={90}>
-              Sensitivity
+            <Th col="sens" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={104}>
+              Sens.
             </Th>
             <Th width={20}>{''}</Th>
           </tr>
@@ -393,13 +393,13 @@ function PersonTr({
           {p.selskab}
         </Td>
       )}
-      <Td width={88} secondary>
+      <Td width={104} secondary>
         {p.ansat}
       </Td>
-      <Td width={72}>
+      <Td width={84}>
         <Badge tone={statusTone(p.status)}>{p.status}</Badge>
       </Td>
-      <Td width={90}>
+      <Td width={104}>
         <Badge tone={sensitivityTone(p.sens)} className="text-[10px]">
           {p.sens}
         </Badge>

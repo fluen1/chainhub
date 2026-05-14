@@ -353,18 +353,18 @@ function FlatTable({
             <Th col="type" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={130}>
               Type
             </Th>
-            <Th col="selskab" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={170}>
+            <Th col="selskab" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={200}>
               Selskab
             </Th>
             <Th>Beskrivelse</Th>
             <Th col="status" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={108}>
               Status
             </Th>
-            <Th col="fristDays" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={74}>
+            <Th col="fristDays" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={84}>
               Frist
             </Th>
-            <Th col="ansvarlig" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={88}>
-              Ansvarlig
+            <Th col="ansvarlig" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={110}>
+              Ansv.
             </Th>
             <Th width={20}>{''}</Th>
           </tr>
@@ -397,7 +397,7 @@ function CaseTr({
         <span className="font-medium">{c.type}</span>
       </Td>
       {!hideSelskab && (
-        <Td width={170} secondary>
+        <Td width={200} secondary>
           {c.selskab}
         </Td>
       )}
@@ -405,14 +405,14 @@ function CaseTr({
       <Td width={108}>
         <Badge tone={statusTone(c.status)}>{c.status}</Badge>
       </Td>
-      <Td width={74}>
+      <Td width={84}>
         {c.frist === '—' ? (
           <span className="text-b-border-strong">—</span>
         ) : (
           <Badge tone={fristTone(c.fristDays)}>{c.frist}</Badge>
         )}
       </Td>
-      <Td width={88} secondary>
+      <Td width={110} secondary>
         {c.ansvarlig}
       </Td>
       <Td width={20}>

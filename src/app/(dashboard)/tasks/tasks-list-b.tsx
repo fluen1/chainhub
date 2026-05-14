@@ -382,16 +382,16 @@ function FlatTable({
               Type
             </Th>
             <Th col="rawPrio" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={80}>
-              Prioritet
+              Prio
             </Th>
-            <Th col="rawStatus" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={88}>
+            <Th col="rawStatus" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={92}>
               Status
             </Th>
-            <Th col="fristDays" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={92}>
+            <Th col="fristDays" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={110}>
               Frist
             </Th>
-            <Th col="ansvarlig" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={88}>
-              Ansvarlig
+            <Th col="ansvarlig" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={110}>
+              Ansv.
             </Th>
             <Th width={20}>{''}</Th>
           </tr>
@@ -432,17 +432,17 @@ function TaskTr({
       <Td width={80}>
         <Badge tone={prioTone(t.rawPrio)}>{t.prio}</Badge>
       </Td>
-      <Td width={88}>
+      <Td width={92}>
         <Badge tone={statusTone(t.rawStatus)}>{t.status}</Badge>
       </Td>
-      <Td width={92}>
+      <Td width={110}>
         {t.frist === '—' ? (
           <span className="text-b-border-strong">—</span>
         ) : (
           <Badge tone={fristTone(t.fristDays)}>{t.frist}</Badge>
         )}
       </Td>
-      <Td width={88} secondary>
+      <Td width={110} secondary>
         {t.ansvarlig}
       </Td>
       <Td width={20}>

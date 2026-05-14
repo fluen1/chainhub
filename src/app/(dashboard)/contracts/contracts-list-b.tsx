@@ -87,6 +87,13 @@ function sensitivityTone(sens: string): BadgeTone {
   return 'gray'
 }
 
+// Forkort sensitivity-label så den passer i badge uden overflow.
+// STRENGT FORTROLIG → STRENGT (samme tone, samme mening).
+function shortSens(sens: string): string {
+  if (sens === 'STRENGT FORTROLIG') return 'STRENGT'
+  return sens
+}
+
 export function ContractsListB({
   contracts,
   totalContracts,
@@ -384,8 +391,8 @@ function FlatTable({
             <Th col="status" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={72}>
               Status
             </Th>
-            <Th col="sensitivity" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={84}>
-              Sensitivity
+            <Th col="sensitivity" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={104}>
+              Sens.
             </Th>
             <Th width={20}>{''}</Th>
           </tr>
@@ -447,9 +454,9 @@ function ContractTr({
       <Td width={72}>
         <Badge tone={statusTone(c.status)}>{c.status}</Badge>
       </Td>
-      <Td width={84}>
+      <Td width={104}>
         <Badge tone={sensitivityTone(c.sensitivity)} className="text-[10px]">
-          {c.sensitivity}
+          {shortSens(c.sensitivity)}
         </Badge>
       </Td>
       <Td width={20}>

@@ -558,7 +558,7 @@ export function CompanyDetailB({
             <Link
               key={d.id}
               href={`/documents/review/${d.id}`}
-              className={`grid grid-cols-[60px_1fr_80px_80px_14px] items-center gap-2 px-3 py-1.5 text-[13px] no-underline hover:bg-b-row-hover ${
+              className={`grid grid-cols-[60px_1fr_96px_14px] items-center gap-2 px-3 py-1.5 text-[13px] no-underline hover:bg-b-row-hover ${
                 i < data.documents.rows.length - 1 ? 'border-b border-b-divider' : ''
               }`}
             >
@@ -567,8 +567,12 @@ export function CompanyDetailB({
                 <strong className="font-medium">{d.fileName}</strong>
                 {d.meta && <span className="text-b-2"> · {d.meta}</span>}
               </span>
-              <Badge tone={d.badge.tone === 'purple' ? 'gray' : 'green'}>{d.badge.label}</Badge>
-              <span className="text-[11px] text-b-2"></span>
+              {/* DocumentViewRow.badge.label fra getCompanyDetailData er enten "AI ✓"
+                  (når extraction.completed+reviewed) eller dårligt-passende "Arkiveret".
+                  Mapper "Arkiveret" → "Ikke AI" så terminologi matcher /documents. */}
+              <Badge tone={d.badge.label === 'AI ✓' ? 'green' : 'gray'}>
+                {d.badge.label === 'AI ✓' ? 'AI ✓' : 'Ikke AI'}
+              </Badge>
               <span className="text-b-3">›</span>
             </Link>
           ))

@@ -386,16 +386,16 @@ function FlatTable({
             <Th col="tilknytning" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={160}>
               Tilknyttet
             </Th>
-            <Th col="aiStatus" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={88}>
-              AI-status
+            <Th col="aiStatus" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={94}>
+              AI
             </Th>
-            <Th col="konf" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={84}>
-              Konfidens
+            <Th col="konf" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={94}>
+              Konf.
             </Th>
-            <Th col="att" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={92}>
-              Opmærks.
+            <Th col="att" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={96}>
+              Felt
             </Th>
-            <Th col="datoSort" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={100}>
+            <Th col="datoSort" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={110}>
               Dato
             </Th>
             <Th width={20}>{''}</Th>
@@ -437,24 +437,24 @@ function DocTr({
       <Td width={160} secondary>
         {d.tilknytning}
       </Td>
-      <Td width={88}>
+      <Td width={94}>
         <Badge tone={aiStatusTone(d.aiStatus)}>{d.aiStatus}</Badge>
       </Td>
-      <Td width={84}>
+      <Td width={94}>
         {d.konf == null ? (
           <span className="text-b-border-strong">—</span>
         ) : (
-          <Badge tone={konfTone(d.konf)}>{`AI ${d.konf}%`}</Badge>
+          <Badge tone={konfTone(d.konf)}>{`${d.konf}%`}</Badge>
         )}
       </Td>
-      <Td width={92}>
+      <Td width={96}>
         {d.att === 0 ? (
           <span className="text-b-border-strong">—</span>
         ) : (
           <Badge tone={attTone(d.att)}>{d.att === 1 ? '1 felt' : `${d.att} felter`}</Badge>
         )}
       </Td>
-      <Td width={100} secondary>
+      <Td width={110} secondary>
         {d.dato}
       </Td>
       <Td width={20}>
