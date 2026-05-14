@@ -7,12 +7,23 @@ import {
   getUpcomingTasks,
 } from '@/lib/notifications/deadlines'
 import { buildDigestHtml, buildDigestSubject } from '@/lib/email/templates/digest'
+import { timingSafeEqual } from 'crypto'
+import { captureError } from '@/lib/logger'
 
 export async function POST(request: NextRequest) {
-  // Auth: tjek cron-hemmelighed
+  // Auth: timing-safe sammenligning af cron-hemmelighed (forhindrer timing-angreb)
   const authHeader = request.headers.get('authorization')
   const cronSecret = process.env.DIGEST_CRON_SECRET
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+  if (!cronSecret) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const expected = `Bearer ${cronSecret}`
+  const provided = authHeader ?? ''
+  // Buffer-længder SKAL matche — ellers er comparisons altid false (og returnerer 401 korrekt)
+  if (
+    provided.length !== expected.length ||
+    !timingSafeEqual(Buffer.from(provided), Buffer.from(expected))
+  ) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -87,10 +98,12 @@ export async function POST(request: NextRequest) {
 
       results.push({ email: user.email, status: 'sent' })
     } catch (error) {
+      // Log fuld stack internt — returner generisk besked i response (ingen info-lækage)
+      captureError(error, { namespace: 'cron:daily-digest', extra: { userId: user.id } })
       results.push({
         email: user.email,
         status: 'error',
-        reason: String(error),
+        reason: 'Digest-afsendelse fejlede',
       })
     }
   }

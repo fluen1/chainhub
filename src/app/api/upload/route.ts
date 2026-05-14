@@ -8,6 +8,7 @@ import { createQueue, JOB_NAMES } from '@/lib/ai/queue'
 import type { ExtractDocumentPayload } from '@/lib/ai/jobs/extract-document'
 import { createLogger } from '@/lib/ai/logger'
 import { checkUploadRateLimit } from '@/lib/ai/rate-limit'
+import { recordAuditEvent } from '@/lib/audit'
 
 const log = createLogger('api:upload')
 
@@ -69,10 +70,37 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  // Tenant-verifikation: caseId og contractId skal tilhøre brugerens organisation
+  // Forhindrer IDOR: bruger kan ikke knytte dokument til anden orgs sag/kontrakt
+  if (caseId) {
+    const validCase = await prisma.case.findFirst({
+      where: { id: caseId, organization_id: session.user.organizationId, deleted_at: null },
+      select: { id: true },
+    })
+    if (!validCase) {
+      return NextResponse.json({ error: 'Sag ikke fundet' }, { status: 403 })
+    }
+  }
+  if (contractId) {
+    const validContract = await prisma.contract.findFirst({
+      where: {
+        id: contractId,
+        organization_id: session.user.organizationId,
+        deleted_at: null,
+      },
+      select: { id: true },
+    })
+    if (!validContract) {
+      return NextResponse.json({ error: 'Kontrakt ikke fundet' }, { status: 403 })
+    }
+  }
+
   const documentId = randomUUID()
   const orgId = session.user.organizationId
   const storage = getStorageProvider()
-  const key = `${orgId}/${documentId}/${file.name}`
+  // Brug documentId i storage-key i stedet for rå filnavn (forhindrer path traversal)
+  const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+  const key = `${orgId}/${documentId}/${sanitizedFileName}`
 
   const bytes = await file.arrayBuffer()
   const buffer = Buffer.from(bytes)
@@ -143,6 +171,17 @@ export async function POST(request: NextRequest) {
       )
     }
   }
+
+  // Audit: log upload-hændelse
+  await recordAuditEvent({
+    organizationId: orgId,
+    userId: session.user.id,
+    action: 'UPLOAD',
+    resourceType: 'DOCUMENT',
+    resourceId: document.id,
+    resourceCompanyId: companyId ?? undefined,
+    sensitivity: 'INTERN',
+  })
 
   return NextResponse.json({ data: document })
 }
