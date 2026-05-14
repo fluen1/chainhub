@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
+import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Breadcrumb,
@@ -10,7 +11,6 @@ import {
   PanelHeader,
   SegmentedToggle,
   BottomBar,
-  KbdHint,
 } from '@/components/ui/b'
 import type { CalendarEvent, CalendarEventType } from '@/types/ui'
 import {
@@ -38,11 +38,12 @@ function colorForType(t: CalendarEventType): EvColor {
     case 'deadline':
       return 'amber'
     case 'meeting':
-      return 'purple'
+      // Besøg/møder → blå (matcher legend "Besøg / Tilsyn")
+      return 'blue'
     case 'case':
       return 'red'
     case 'renewal':
-      return 'blue'
+      return 'green'
     default:
       return 'gray'
   }
@@ -263,16 +264,6 @@ export function CalendarPageB({
             Kalender · {MONTH_NAMES_DA[monthIdx]} {year} · {monthEvents.length} begivenheder
           </>
         }
-        right={
-          <>
-            <KbdHint k="⌘K" label="handling" />
-            <span>·</span>
-            <KbdHint k="←" />
-            <KbdHint k="→" label="måned" />
-            <span>·</span>
-            <KbdHint k="T" label="i dag" />
-          </>
-        }
       />
     </>
   )
@@ -336,13 +327,14 @@ function MonthView({
                 {visible.map((ev) => {
                   const c = colorForType(ev.type)
                   return (
-                    <div
+                    <Link
                       key={ev.id}
+                      href={ev.href}
                       title={`${ev.title} · ${ev.subtitle}`}
-                      className={`truncate rounded-[3px] px-1 py-px text-[10px] ${pillCls(c)}`}
+                      className={`truncate rounded-[3px] px-1 py-px text-[10px] no-underline hover:opacity-80 ${pillCls(c)}`}
                     >
                       {ev.title}
-                    </div>
+                    </Link>
                   )
                 })}
                 {more > 0 && <div className="text-[10px] text-b-2">+{more} mere</div>}
@@ -402,16 +394,17 @@ function AgendaView({ events, todayISO }: { events: CalendarEvent[]; todayISO: s
             {evs.map((ev) => {
               const c = colorForType(ev.type)
               return (
-                <div
+                <Link
                   key={ev.id}
-                  className="flex items-center gap-2.5 border-b border-b-divider px-3 py-1.5 last:border-b-0 hover:bg-b-row-hover"
+                  href={ev.href}
+                  className="flex items-center gap-2.5 border-b border-b-divider px-3 py-1.5 last:border-b-0 hover:bg-b-row-hover no-underline"
                 >
                   <span className={`h-2 w-2 shrink-0 rounded-full ${dotCls(c)}`} />
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-[13px] font-medium text-b-1">{ev.title}</div>
                     <div className="truncate text-[11px] text-b-2">{ev.subtitle}</div>
                   </div>
-                </div>
+                </Link>
               )
             })}
           </div>
@@ -459,10 +452,11 @@ function RightPanel({ upcoming }: { upcoming: CalendarEvent[] }) {
       <Panel>
         <PanelHeader title="Legende" />
         <div className="py-1">
-          <LegendRow color="blue" label="Besøg / Tilsyn" />
-          <LegendRow color="purple" label="Bestyrelsesmøde" />
-          <LegendRow color="red" label="Sagsfrist / Udløb" />
-          <LegendRow color="amber" label="Opgave / Frist" />
+          {/* Farver afspejler colorForType — ingen mismatch */}
+          <LegendRow color={colorForType('meeting')} label="Besøg / Tilsyn" />
+          <LegendRow color={colorForType('expiry')} label="Kontraktudløb / Sagsfrist" />
+          <LegendRow color={colorForType('deadline')} label="Opgave / Frist" />
+          <LegendRow color={colorForType('renewal')} label="Fornyelse" />
           <LegendRow color="gray" label="Andet" />
         </div>
       </Panel>

@@ -110,6 +110,7 @@ export async function getCalendarEvents(
       title: c.display_name,
       subtitle: c.company.name,
       type: 'expiry',
+      href: `/contracts/${c.id}`,
     })
   }
 
@@ -122,6 +123,7 @@ export async function getCalendarEvents(
       title: t.title,
       subtitle: 'Opgave',
       type: 'deadline',
+      href: `/tasks/${t.id}`,
     })
   }
 
@@ -133,6 +135,7 @@ export async function getCalendarEvents(
       title: `Besøg — ${v.company.name}`,
       subtitle: getVisitTypeLabel(v.visit_type),
       type: 'meeting',
+      href: `/visits/${v.id}`,
     })
   }
 
@@ -145,6 +148,7 @@ export async function getCalendarEvents(
       title: ca.title,
       subtitle: 'Sagsfrist',
       type: 'case',
+      href: `/cases/${ca.id}`,
     })
   }
 

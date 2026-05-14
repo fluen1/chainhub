@@ -11,6 +11,7 @@ export interface CalendarEvent {
   subtitle: string
   type: CalendarEventType
   aiExtracted?: boolean
+  href: string // Link til entiteten (task, kontrakt, sag, besøg)
 }
 
 export type InsightType = 'critical' | 'warning' | 'info' | 'coverage'

@@ -10,6 +10,7 @@ const events: CalendarEvent[] = [
     title: 'Udløb lejekontrakt',
     subtitle: 'Tandlæge Østerbro',
     type: 'expiry',
+    href: '/contracts/e1',
   },
   {
     id: 'e2',
@@ -17,6 +18,7 @@ const events: CalendarEvent[] = [
     title: 'Bestyrelsesmøde',
     subtitle: 'TandlægeGruppen',
     type: 'meeting',
+    href: '/visits/e2',
   },
   {
     id: 'e3',
@@ -25,6 +27,7 @@ const events: CalendarEvent[] = [
     subtitle: 'Lejeforhandling',
     type: 'deadline',
     aiExtracted: true,
+    href: '/tasks/e3',
   },
 ]
 
