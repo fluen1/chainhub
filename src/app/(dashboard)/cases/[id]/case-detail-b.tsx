@@ -21,10 +21,9 @@ import {
   AIInsightCard,
   PlusBadge,
   BottomBar,
-  KbdHint,
 } from '@/components/ui/b'
 import { updateTaskStatus } from '@/actions/tasks'
-import { createCaseComment } from '@/actions/comments'
+import { createCaseComment, deleteComment } from '@/actions/comments'
 import { escalateCase } from '@/actions/cases'
 import { CloseCaseDialog } from '@/components/cases/CloseCaseDialog'
 import { EditCaseDialog, type EditCaseInitial } from '@/components/cases/EditCaseDialog'
@@ -97,6 +96,14 @@ export interface CaseActivityData {
   time: string
 }
 
+export interface CaseCommentData {
+  id: string
+  content: string
+  authorId: string
+  authorName: string
+  createdAt: string
+}
+
 function statusTone(rawStatus: string): BadgeTone {
   switch (rawStatus) {
     case 'NY':
@@ -126,21 +133,27 @@ export function CaseDetailB({
   links,
   docs,
   activity,
+  comments: initialComments,
+  currentUserId,
 }: {
   data: CaseDetailData
   tasks: CaseTaskData[]
   links: CaseLinkData[]
   docs: CaseDocData[]
   activity: CaseActivityData[]
+  comments: CaseCommentData[]
+  currentUserId: string
 }) {
   const router = useRouter()
   const [tasks, setTasks] = useState(initialTasks)
+  const [comments, setComments] = useState(initialComments)
   const [comment, setComment] = useState('')
   const [closeOpen, setCloseOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [, startTransition] = useTransition()
   const [commentPending, startCommentTransition] = useTransition()
   const [escalatePending, startEscalateTransition] = useTransition()
+  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null)
 
   function toggleTask(taskId: string, currentDone: boolean) {
     // Optimistic
@@ -173,6 +186,21 @@ export function CaseDetailB({
         toast.success('Kommentar gemt')
         router.refresh()
       }
+    })
+  }
+
+  function handleDeleteComment(commentId: string) {
+    setDeletingCommentId(commentId)
+    // Optimistic remove
+    const prev = comments
+    setComments((c) => c.filter((x) => x.id !== commentId))
+    startTransition(async () => {
+      const res = await deleteComment(commentId)
+      if ('error' in res) {
+        toast.error(res.error)
+        setComments(prev)
+      }
+      setDeletingCommentId(null)
     })
   }
 
@@ -480,9 +508,12 @@ export function CaseDetailB({
 
       {/* 2-col: Aktivitet + Dokumenter */}
       <div className="grid gap-3 lg:grid-cols-2 lg:items-start">
-        {/* Aktivitet */}
+        {/* Aktivitet + Kommentarer */}
         <Panel>
-          <PanelHeader title="Aktivitet" meta={`${activity.length} events · nyeste øverst`} />
+          <PanelHeader
+            title="Aktivitet"
+            meta={`${activity.length} events · ${comments.length} kommentarer`}
+          />
           {activity.length === 0 ? (
             <div className="px-3 py-3 text-center text-[12px] text-b-3">Ingen aktivitet</div>
           ) : (
@@ -506,6 +537,48 @@ export function CaseDetailB({
               </div>
             ))
           )}
+
+          {/* Kommentarer */}
+          {comments.length > 0 && (
+            <>
+              <div className="border-t border-b-divider bg-b-panel-h px-3 py-1">
+                <span
+                  className="text-[10px] font-semibold uppercase text-b-2"
+                  style={{ letterSpacing: '0.4px' }}
+                >
+                  Kommentarer
+                </span>
+              </div>
+              {comments.map((c, i) => (
+                <div
+                  key={c.id}
+                  className={`px-3 py-2 text-[12px] ${
+                    i < comments.length - 1 ? 'border-b border-b-divider' : ''
+                  }`}
+                >
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="font-medium text-b-1">{c.authorName}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="b-tnum text-[11px] text-b-3">{c.createdAt}</span>
+                      {c.authorId === currentUserId && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteComment(c.id)}
+                          disabled={deletingCommentId === c.id}
+                          aria-label="Slet kommentar"
+                          className="text-[11px] text-b-3 hover:text-b-red-fg disabled:opacity-50"
+                        >
+                          Slet
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="mt-0.5 text-b-2">{c.content}</div>
+                </div>
+              ))}
+            </>
+          )}
+
           <PanelFooter className="!p-0">
             <div className="border-t border-b-border bg-b-panel p-2">
               <textarea
@@ -518,13 +591,9 @@ export function CaseDetailB({
                 placeholder="Tilføj kommentar til sagen..."
                 className="w-full resize-none rounded-[4px] border border-b-border-strong bg-white px-2.5 py-1.5 text-[12px] text-b-1 placeholder:text-b-3 focus:border-b-blue-fg focus:outline-none focus:ring-2 focus:ring-b-blue-bg"
               />
-              <div className="mt-1.5 flex items-center justify-end gap-2">
-                <span className="text-[11px] text-b-3">
-                  <KbdHint k="⌘" />
-                  <KbdHint k="↵" />
-                </span>
+              <div className="mt-1.5 flex items-center justify-end">
                 <BButton primary onClick={submitComment} disabled={commentPending}>
-                  {commentPending ? 'Gemmer...' : 'Gem'}
+                  {commentPending ? 'Gemmer...' : 'Gem kommentar'}
                 </BButton>
               </div>
             </div>
@@ -593,15 +662,6 @@ export function CaseDetailB({
         left={
           <>
             Sag {data.nr} · {data.selskab} · Sidst opdateret {data.updatedAt}
-          </>
-        }
-        right={
-          <>
-            <KbdHint k="⌘K" label="handling" />
-            <span>·</span>
-            <KbdHint k="E" label="rediger" />
-            <span>·</span>
-            <KbdHint k="C" label="kommentar" />
           </>
         }
       />
