@@ -9,7 +9,7 @@ import { Panel } from '@/components/ui/b'
 // ────────────────────────────────────────────────────────────────────────────
 
 export function ActivityPanel({ events }: { events: ActivityEvent[] }) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(true)
 
   return (
     <Panel>

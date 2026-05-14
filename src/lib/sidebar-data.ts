@@ -53,7 +53,8 @@ export const getSidebarData = cache(
       deleted_at: null as null,
     }
 
-    const twoWeekEnd = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+    // "Udløber 30d" strip-KPI: 30 dage fremfor 14 (matcher dashboard-label)
+    const twoWeekEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
 
     const [
       companiesCount,

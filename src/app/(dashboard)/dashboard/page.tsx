@@ -7,14 +7,7 @@ import { getSidebarData } from '@/lib/sidebar-data'
 import { getAccessibleCompanies } from '@/lib/permissions'
 import { formatMio } from '@/lib/labels'
 import { WEEKDAYS_DA_FULL_SUN, MONTH_NAMES_DA_LOWER } from '@/lib/calendar-constants'
-import {
-  PageTopbar,
-  Strip,
-  BottomBar,
-  SyncDot,
-  KbdHint,
-  type StripCellData,
-} from '@/components/ui/b'
+import { PageTopbar, Strip, BottomBar, SyncDot, type StripCellData } from '@/components/ui/b'
 import { UrgencyPanel } from '@/components/dashboard/b/UrgencyPanel'
 import { HeatmapPanel } from '@/components/dashboard/b/HeatmapPanel'
 import { ActivityPanel } from '@/components/dashboard/b/ActivityPanel'
@@ -49,23 +42,26 @@ export default async function DashboardPage() {
   // 6-cell strip: Selskaber · Udløber 30d · Åbne sager · Forfaldne opg.
   //               · Dokumenter · Omsætning YTD
   const stripCells: StripCellData[] = [
-    { num: sidebar.companiesCount, label: 'Selskaber' },
+    { num: sidebar.companiesCount, label: 'Selskaber', href: '/companies' },
     {
       num: sidebar.expiringContractsCount,
       label: 'Udløber 30d',
       color: sidebar.expiringContractsCount > 0 ? 'red' : 'default',
+      href: '/contracts?status=AKTIV&expiresWithin=30d',
     },
     {
       num: sidebar.casesCount,
       label: 'Åbne sager',
       color: sidebar.casesCount > 0 ? 'red' : 'default',
+      href: '/cases?status=AKTIV',
     },
     {
       num: sidebar.overdueTasksCount,
       label: 'Forfaldne opg.',
       color: sidebar.overdueTasksCount > 0 ? 'amber' : 'default',
+      href: '/tasks?overdue=true',
     },
-    { num: sidebar.documentsCount, label: 'Dokumenter' },
+    { num: sidebar.documentsCount, label: 'Dokumenter', href: '/documents' },
     { num: `${formatMio(omsaetning)}m`, label: 'Omsætning YTD', color: 'green' },
   ]
 
@@ -91,15 +87,6 @@ export default async function DashboardPage() {
             <SyncDot />
             Sidst synkroniseret {formatTime(now)} · {sidebar.companiesCount} selskaber ·{' '}
             {sidebar.documentsCount} dokumenter
-          </>
-        }
-        right={
-          <>
-            <KbdHint k="⌘K" label="handling" />
-            <span>·</span>
-            <KbdHint k="G" label="derhen" />
-            <span>·</span>
-            <KbdHint k="N" label="ny" />
           </>
         }
       />
