@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import type { SidebarBadge } from '@/types/ui'
+import { BrandMark } from '@/components/ui/b'
 
 // ────────────────────────────────────────────────────────────────────────────
 // B-stil sidebar (Linear/Superhuman dense, 220px lys)
@@ -60,7 +61,9 @@ export function BSidebar({ badges }: BSidebarProps) {
 
   return (
     <aside className="sticky top-0 h-screen w-[220px] shrink-0 overflow-y-auto border-r border-b-border bg-b-sidebar px-2 py-3.5 text-[13px]">
-      <div className="px-2.5 pb-3.5 pt-1 text-b-1 font-semibold">▣ ChainHub</div>
+      <div className="px-2.5 pb-3.5 pt-1">
+        <BrandMark withText />
+      </div>
 
       {SECTIONS.map((section) => (
         <div key={section.label} className="mb-4">

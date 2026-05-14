@@ -6,7 +6,7 @@
 
 export function PageTopbar({ title, meta }: { title: React.ReactNode; meta?: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between border-b border-b-border pb-3 pt-1">
+    <div className="-mx-6 flex items-center justify-between border-b border-b-border-strong bg-b-canvas px-6 pb-3 pt-1">
       <h1 className="text-[14px] font-semibold text-b-1">{title}</h1>
       {meta && <span className="b-tnum text-[12px] text-b-2">{meta}</span>}
     </div>

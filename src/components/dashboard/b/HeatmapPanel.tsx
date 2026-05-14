@@ -8,22 +8,27 @@ import type { HeatmapCompany } from '@/lib/dashboard-helpers'
 // ────────────────────────────────────────────────────────────────────────────
 // Health-heatmap — én celle pr. selskab.
 //
-// Farve mapper fra healthStatus: healthy = grøn (l3/l4), warning = amber (r1),
+// Farve mapper fra healthStatus + openCaseCount: jo flere åbne sager, jo
+// dybere farve. Healthy = grøn (l1-l3), warning = amber (r1/r2),
 // critical = rød (r3). Tooltip følger musen og viser selskab + status.
 // "Top urgency"-rækken viser top-3 selskaber med åbne sager.
 // ────────────────────────────────────────────────────────────────────────────
 
-const LEVEL_CLASS: Record<'l3' | 'l4' | 'r1' | 'r3', string> = {
-  l3: 'bg-[#239a3b]', // healthy
-  l4: 'bg-[#196127]', // healthy + aktiv
-  r1: 'bg-[#fdb8b1]', // warning
+const LEVEL_CLASS: Record<'l1' | 'l2' | 'l3' | 'r1' | 'r2' | 'r3', string> = {
+  l1: 'bg-[#9be9a8]', // healthy + 0 sager
+  l2: 'bg-[#40c463]', // healthy + 1-2 sager
+  l3: 'bg-[#239a3b]', // healthy + 3+ sager
+  r1: 'bg-[#fdb8b1]', // warning + 0-2 sager
+  r2: 'bg-[#ef6f5e]', // warning + 3+ sager
   r3: 'bg-[#b91c1c]', // critical
 }
 
 function levelFor(c: HeatmapCompany): keyof typeof LEVEL_CLASS {
   if (c.healthStatus === 'critical') return 'r3'
-  if (c.healthStatus === 'warning') return 'r1'
-  return c.openCaseCount === 0 ? 'l4' : 'l3'
+  if (c.healthStatus === 'warning') return c.openCaseCount >= 3 ? 'r2' : 'r1'
+  if (c.openCaseCount === 0) return 'l1'
+  if (c.openCaseCount <= 2) return 'l2'
+  return 'l3'
 }
 
 function statusFor(c: HeatmapCompany): string {

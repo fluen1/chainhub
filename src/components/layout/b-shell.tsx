@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { Menu } from 'lucide-react'
 import { BSidebar } from './b-sidebar'
+import { BrandMark } from '@/components/ui/b'
 import type { SidebarBadge } from '@/types/ui'
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -120,7 +121,7 @@ export function BShell({ badges, children }: Props) {
           >
             <Menu className="h-4 w-4" aria-hidden />
           </button>
-          <span className="text-[13px] font-semibold text-b-1">▣ ChainHub</span>
+          <BrandMark withText />
         </div>
 
         <main

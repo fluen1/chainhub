@@ -10,7 +10,7 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-sans)', ...defaultTheme.fontFamily.sans],
+        sans: ['"Inter Variable"', 'Inter', ...defaultTheme.fontFamily.sans],
       },
       borderColor: {
         border: 'hsl(var(--border))',

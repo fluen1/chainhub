@@ -59,11 +59,21 @@ function LoginForm() {
         <div className="w-full max-w-[360px] overflow-hidden rounded-[6px] border border-b-border bg-b-panel shadow-[0_4px_16px_rgba(15,23,42,0.07)]">
           {/* Logo-område */}
           <div className="border-b border-b-border bg-b-panel-h px-6 pb-4 pt-6 text-center">
-            <div
-              className="text-[22px] font-semibold text-b-1"
-              style={{ letterSpacing: '-0.02em' }}
-            >
-              ▣ ChainHub
+            <div className="flex items-center justify-center gap-2 text-[22px] font-semibold text-b-1">
+              <svg viewBox="0 0 14 14" width={20} height={20} aria-hidden className="shrink-0">
+                <rect
+                  x="1"
+                  y="1"
+                  width="12"
+                  height="12"
+                  rx="1.5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.2"
+                />
+                <rect x="4.5" y="4.5" width="5" height="5" rx="0.5" fill="currentColor" />
+              </svg>
+              <span style={{ letterSpacing: '-0.02em' }}>ChainHub</span>
             </div>
             <div
               className="mt-0.5 text-[11px] uppercase text-b-2"
