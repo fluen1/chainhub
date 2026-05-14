@@ -2,32 +2,48 @@ import { auth } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { canAccessCompany } from '@/lib/permissions'
-import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
-import { getVisitTypeLabel, getVisitStatusLabel, getVisitStatusStyle } from '@/lib/labels'
+import { getVisitTypeLabel, getVisitStatusLabel } from '@/lib/labels'
 import { formatDanishDate } from '@/lib/date-helpers'
 import { VisitStatusForm } from '@/components/visits/VisitStatusForm'
 import { VisitNotesForm } from '@/components/visits/VisitNotesForm'
+import { Breadcrumb, PageTopbar, Panel, PanelHeader, Badge } from '@/components/ui/b'
+
+// ─────────────────────────────────────────────────────────────────────────────
+// /visits/[id] — B-stil port. Breadcrumb + PageTopbar + Panels.
+// ─────────────────────────────────────────────────────────────────────────────
 
 interface Props {
   params: { id: string }
+}
+
+const STATUS_TONE: Record<string, 'green' | 'amber' | 'gray'> = {
+  PLANLAGT: 'amber',
+  GENNEMFOERT: 'green',
+  AFLYST: 'gray',
 }
 
 export default async function VisitDetailPage({ params }: Props) {
   const session = await auth()
   if (!session) redirect('/login')
 
-  const visit = await prisma.visit.findFirst({
-    where: {
-      id: params.id,
-      organization_id: session.user.organizationId,
-      deleted_at: null,
-    },
-    include: {
-      company: { select: { id: true, name: true } },
-      visitor: { select: { id: true, name: true } },
-    },
-  })
+  const [visit, userRoles] = await Promise.all([
+    prisma.visit.findFirst({
+      where: {
+        id: params.id,
+        organization_id: session.user.organizationId,
+        deleted_at: null,
+      },
+      include: {
+        company: { select: { id: true, name: true } },
+        visitor: { select: { id: true, name: true } },
+      },
+    }),
+    prisma.userRoleAssignment.findMany({
+      where: { user_id: session.user.id, organization_id: session.user.organizationId },
+      select: { role: true },
+    }),
+  ])
 
   if (!visit) notFound()
 
@@ -38,63 +54,87 @@ export default async function VisitDetailPage({ params }: Props) {
   )
   if (!hasAccess) notFound()
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-start gap-4">
-        <Link href="/calendar" className="mt-1 rounded-md p-1 hover:bg-gray-100">
-          <ArrowLeft className="h-5 w-5 text-gray-500" />
-        </Link>
-        <div className="flex-1">
-          <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl font-bold text-gray-900">Besøg hos {visit.company.name}</h1>
-            <span
-              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getVisitStatusStyle(visit.status)}`}
-            >
-              {getVisitStatusLabel(visit.status)}
-            </span>
-          </div>
-          <p className="mt-0.5 text-sm text-gray-500">{formatDanishDate(visit.visit_date)}</p>
-        </div>
-      </div>
+  const canReopen = userRoles.some((r) => ['GROUP_OWNER', 'GROUP_ADMIN'].includes(r.role))
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Hoved-panel */}
-        <div className="lg:col-span-2 space-y-6">
+  const statusLabel = getVisitStatusLabel(visit.status)
+  const statusTone = STATUS_TONE[visit.status] ?? 'gray'
+
+  return (
+    <div className="space-y-3">
+      <Breadcrumb
+        trail={[{ label: 'Kalender', href: '/calendar' }]}
+        current={`Besøg · ${visit.company.name}`}
+      />
+
+      <PageTopbar
+        title={`Besøg hos ${visit.company.name}`}
+        meta={formatDanishDate(visit.visit_date)}
+      />
+
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+        {/* Hoved-kolonne */}
+        <div className="flex flex-col gap-3 lg:col-span-2">
           {/* Besøgsdetaljer */}
-          <div className="rounded-lg border bg-white p-6 shadow-sm">
-            <h2 className="text-base font-semibold text-gray-900 mb-4">Besøgsdetaljer</h2>
-            <dl className="grid grid-cols-2 gap-4">
+          <Panel>
+            <PanelHeader
+              title="Besøgsdetaljer"
+              actions={<Badge tone={statusTone}>{statusLabel}</Badge>}
+            />
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-3 px-4 py-3 text-[13px]">
               <div>
-                <dt className="text-sm font-medium text-gray-500">Selskab</dt>
-                <dd className="mt-1 text-sm text-gray-900">
+                <dt
+                  className="text-[11px] font-semibold uppercase text-b-2"
+                  style={{ letterSpacing: '0.4px' }}
+                >
+                  Selskab
+                </dt>
+                <dd className="mt-0.5 text-b-1">
                   <Link
                     href={`/companies/${visit.company.id}`}
-                    className="text-blue-600 hover:text-blue-800"
+                    className="text-b-blue-fg no-underline hover:underline"
                   >
                     {visit.company.name}
                   </Link>
                 </dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">Besøgsdato</dt>
-                <dd className="mt-1 text-sm text-gray-900">{formatDanishDate(visit.visit_date)}</dd>
+                <dt
+                  className="text-[11px] font-semibold uppercase text-b-2"
+                  style={{ letterSpacing: '0.4px' }}
+                >
+                  Besøgsdato
+                </dt>
+                <dd className="mt-0.5 text-b-1">{formatDanishDate(visit.visit_date)}</dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">Type</dt>
-                <dd className="mt-1 text-sm text-gray-900">
-                  {getVisitTypeLabel(visit.visit_type)}
-                </dd>
+                <dt
+                  className="text-[11px] font-semibold uppercase text-b-2"
+                  style={{ letterSpacing: '0.4px' }}
+                >
+                  Type
+                </dt>
+                <dd className="mt-0.5 text-b-1">{getVisitTypeLabel(visit.visit_type)}</dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">Besøgt af</dt>
-                <dd className="mt-1 text-sm text-gray-900">{visit.visitor.name}</dd>
+                <dt
+                  className="text-[11px] font-semibold uppercase text-b-2"
+                  style={{ letterSpacing: '0.4px' }}
+                >
+                  Besøgt af
+                </dt>
+                <dd className="mt-0.5 text-b-1">{visit.visitor.name}</dd>
               </div>
               <div>
-                <dt className="text-sm font-medium text-gray-500">Oprettet</dt>
-                <dd className="mt-1 text-sm text-gray-900">{formatDanishDate(visit.created_at)}</dd>
+                <dt
+                  className="text-[11px] font-semibold uppercase text-b-2"
+                  style={{ letterSpacing: '0.4px' }}
+                >
+                  Oprettet
+                </dt>
+                <dd className="mt-0.5 text-b-1">{formatDanishDate(visit.created_at)}</dd>
               </div>
             </dl>
-          </div>
+          </Panel>
 
           {/* Noter + opsummering */}
           <VisitNotesForm
@@ -105,27 +145,28 @@ export default async function VisitDetailPage({ params }: Props) {
           />
         </div>
 
-        {/* Side-panel */}
-        <div className="space-y-6">
-          <VisitStatusForm visitId={visit.id} currentStatus={visit.status} />
+        {/* Side-kolonne */}
+        <div className="flex flex-col gap-3">
+          <VisitStatusForm visitId={visit.id} currentStatus={visit.status} canReopen={canReopen} />
 
-          <div className="rounded-lg border bg-white p-4 shadow-sm">
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">Hurtige handlinger</h3>
-            <div className="space-y-2">
+          {/* Hurtige handlinger */}
+          <Panel>
+            <PanelHeader title="Hurtige handlinger" />
+            <div className="flex flex-col gap-1.5 px-4 py-3">
               <Link
                 href={`/companies/${visit.company.id}`}
-                className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-center text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="block w-full rounded-[4px] border border-b-border-strong bg-b-panel px-3 py-1.5 text-center text-[12px] font-medium text-b-1 no-underline hover:bg-b-row-hover"
               >
                 Gå til selskab
               </Link>
               <Link
                 href={`/companies/${visit.company.id}/visits`}
-                className="block w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-center text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="block w-full rounded-[4px] border border-b-border-strong bg-b-panel px-3 py-1.5 text-center text-[12px] font-medium text-b-1 no-underline hover:bg-b-row-hover"
               >
                 Se alle besøg for selskabet
               </Link>
             </div>
-          </div>
+          </Panel>
         </div>
       </div>
     </div>
