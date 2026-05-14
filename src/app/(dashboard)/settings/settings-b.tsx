@@ -11,7 +11,6 @@ import {
   Badge,
   type BadgeTone,
   BottomBar,
-  KbdHint,
 } from '@/components/ui/b'
 import { OrganizationForm } from '@/components/settings/organization-form'
 import { CreateUserForm } from '@/components/settings/CreateUserForm'
@@ -136,13 +135,6 @@ export function SettingsPageB({
           organization
             ? `${organization.name} · ${organization.plan} · ${currentUserIdToEmail(users, currentUserId)}`
             : '—'
-        }
-        right={
-          <>
-            <KbdHint k="⌘K" label="handling" />
-            <span>·</span>
-            <KbdHint k="S" label="gem" />
-          </>
         }
       />
     </>

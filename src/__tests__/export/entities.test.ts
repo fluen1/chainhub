@@ -8,6 +8,8 @@ vi.mock('@/lib/db', () => ({
     task: { findMany: vi.fn().mockResolvedValue([]) },
     person: { findMany: vi.fn().mockResolvedValue([]) },
     visit: { findMany: vi.fn().mockResolvedValue([]) },
+    // Finansdata-kolonnerne i fetchCompaniesForExport kræver financialMetric
+    financialMetric: { findMany: vi.fn().mockResolvedValue([]) },
   },
 }))
 
@@ -27,7 +29,7 @@ const scope: ExportScope = { organizationId: 'org-1' }
 describe('fetchCompaniesForExport', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('returnerer filename + columns + rows', async () => {
+  it('returnerer filename + columns + rows inkl. finansdata', async () => {
     const { prisma } = await import('@/lib/db')
     vi.mocked(prisma.company.findMany).mockImplementation((() =>
       Promise.resolve([
@@ -42,11 +44,16 @@ describe('fetchCompaniesForExport', () => {
           created_at: new Date('2026-01-01'),
         },
       ])) as never)
+    vi.mocked(prisma.financialMetric.findMany).mockImplementation((() =>
+      Promise.resolve([])) as never)
     const result = await fetchCompaniesForExport(scope)
     expect(result.filename).toMatch(/^chainhub-selskaber-\d{4}-\d{2}-\d{2}$/)
     expect(result.rows).toHaveLength(1)
     expect(result.columns.find((c) => c.header === 'Navn')).toBeDefined()
     expect(result.columns.find((c) => c.header === 'CVR')).toBeDefined()
+    expect(result.columns.find((c) => c.header === 'Omsætning (kr)')).toBeDefined()
+    expect(result.columns.find((c) => c.header === 'Omsætning YoY (%)')).toBeDefined()
+    expect(result.columns.find((c) => c.header === 'EBITDA YoY (%)')).toBeDefined()
   })
 
   it('filtrerer via visibleCompanyIds', async () => {

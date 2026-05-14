@@ -17,7 +17,6 @@ import {
   type BadgeTone,
   PlusBadge,
   BottomBar,
-  KbdHint,
   AIBadge,
 } from '@/components/ui/b'
 import dynamic from 'next/dynamic'
@@ -552,15 +551,6 @@ export function PersonDetailB({
             {person.fullName} · {person.companiesCount}{' '}
             {person.companiesCount === 1 ? 'selskab' : 'selskaber'} · {person.contractsCount}{' '}
             kontrakter
-          </>
-        }
-        right={
-          <>
-            <KbdHint k="⌘K" label="handling" />
-            <span>·</span>
-            <KbdHint k="E" label="rediger" />
-            <span>·</span>
-            <KbdHint k="G" label="derhen" />
           </>
         }
       />

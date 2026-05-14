@@ -29,6 +29,7 @@ vi.mock('@/lib/db', () => ({
     case: {
       findFirst: vi.fn(),
       findMany: vi.fn().mockResolvedValue([]),
+      update: vi.fn().mockResolvedValue({ id: 'd4e5f6a7-b8c9-4012-9def-012345678901' }),
     },
     financialMetric: {
       findMany: vi.fn().mockResolvedValue([]),
@@ -61,6 +62,7 @@ vi.mock('@/lib/db', () => ({
 
 vi.mock('@/lib/permissions', () => ({
   canAccessCompany: vi.fn().mockResolvedValue(true),
+  canAccessModule: vi.fn().mockResolvedValue(true),
   getAccessibleCompanies: vi.fn().mockResolvedValue([]),
 }))
 
@@ -141,22 +143,17 @@ describe('updateCase: assignedTo-felt', () => {
         sensitivity: 'INTERN',
         case_companies: [{ company_id: UUID_COMPANY }],
       })) as never)
-    vi.mocked(prisma.case as unknown as Record<string, unknown>).update = vi
-      .fn()
-      .mockResolvedValue({
-        id: UUID_CASE,
-        responsible_id: 'user-2',
-      })
 
     const result = await updateCase({
       caseId: UUID_CASE,
       assignedTo: 'user-2',
     })
 
-    // Enten data eller ingen fejl — action skal acceptere assignedTo
+    // Action skal acceptere assignedTo uden Zod-fejl
     if ('error' in result) {
-      // Tillad fejl hvis mock er ufuldstændig — men IKKE schema-fejl
       expect(result.error).not.toMatch(/assignedTo/)
+    } else {
+      expect('data' in result).toBe(true)
     }
   })
 

@@ -26,7 +26,6 @@ import {
   type BadgeTone,
   Pager,
   BottomBar,
-  KbdHint,
   Panel,
   PanelHeader,
 } from '@/components/ui/b'
@@ -410,15 +409,6 @@ function CompaniesListBContent({ companies, canCreate, totalsExtra }: CompaniesL
             {sorted.length} {sorted.length === 1 ? 'selskab' : 'selskaber'} vist ·{' '}
             {companies.filter((c) => c.health === 'healthy').length} grønne
             {hasFilter && ` · filtreret fra ${totalCount}`}
-          </>
-        }
-        right={
-          <>
-            <KbdHint k="⌘K" label="handling" />
-            <span>·</span>
-            <KbdHint k="N" label="nyt selskab" />
-            <span>·</span>
-            <KbdHint k="F" label="filter" />
           </>
         }
       />

@@ -25,7 +25,6 @@ import {
   type BadgeTone,
   Pager,
   BottomBar,
-  KbdHint,
   PlusBadge,
 } from '@/components/ui/b'
 import { DeleteDocumentButton } from '@/components/documents/DeleteDocumentButton'
@@ -334,15 +333,6 @@ export function DocumentsListB({ documents }: { documents: DocRow[] }) {
             {sorted.length} {sorted.length === 1 ? 'dokument' : 'dokumenter'} vist · {aiCount}{' '}
             AI-extracted
             {hasFilter && ` · filtreret fra ${totalCount}`}
-          </>
-        }
-        right={
-          <>
-            <KbdHint k="⌘K" label="handling" />
-            <span>·</span>
-            <KbdHint k="U" label="upload" />
-            <span>·</span>
-            <KbdHint k="F" label="filter" />
           </>
         }
       />
