@@ -411,6 +411,17 @@ function FlatTable({
   )
 }
 
+// Et dokument "kræver opmærksomhed" hvis det har 3+ felter under review eller
+// AI-konfidensen er <60%. Disse rækker får en subtle amber bg-tint så reviewer
+// hurtigt kan spotte hvor der skal fokuseres — uden at vente på AttentionPanel
+// (som skjules ved aktive filtre).
+function needsAttention(d: DocRow): boolean {
+  if (d.att >= 3) return true
+  if (d.konf != null && d.konf < 60) return true
+  if (d.aiStatus === 'Review') return true
+  return false
+}
+
 function DocTr({
   d,
   onClick,
@@ -420,8 +431,12 @@ function DocTr({
   onClick: () => void
   hideSelskab?: boolean
 }) {
+  const attention = needsAttention(d)
   return (
-    <Tr onClick={onClick}>
+    <Tr
+      onClick={onClick}
+      className={attention ? 'bg-b-amber-bg/40 hover:bg-b-amber-bg/60' : undefined}
+    >
       <Td width={52}>
         <Badge tone={extTone(d.ext)}>{d.ext}</Badge>
       </Td>

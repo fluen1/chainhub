@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Mail, Phone, Building2 } from 'lucide-react'
 import {
   Breadcrumb,
   PageHeader,
@@ -46,6 +47,9 @@ export interface PersonRow {
   ansatSort: number
   status: string
   sens: string
+  email: string | null
+  phone: string | null
+  selskabsCount: number
 }
 
 type ViewMode = 'tabel' | 'grouped' | 'kort'
@@ -509,23 +513,54 @@ function CardView({
           onClick={() => onRowClick(p.id)}
           className="flex flex-col gap-2 rounded-[4px] border border-b-border bg-b-panel p-2.5 text-left hover:border-b-border-strong hover:bg-b-row-hover"
         >
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-start gap-2.5">
             <InitialsBox ini={p.ini} size="md" />
-            <div className="min-w-0">
-              <div className="truncate text-[13px] font-medium text-b-1">{p.navn}</div>
-              <div className="truncate text-[11px] text-b-2">{p.selskab}</div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-2">
+                <div className="truncate text-[13px] font-medium text-b-1">{p.navn}</div>
+                <Badge tone={statusTone(p.status)} className="shrink-0 text-[10px]">
+                  {p.status}
+                </Badge>
+              </div>
+              {p.rolle !== '—' && (
+                <div className="mt-0.5 truncate text-[11px] text-b-2">{p.rolle}</div>
+              )}
             </div>
           </div>
-          <div className="flex flex-wrap gap-1">
-            {p.rolle !== '—' && (
-              <Badge tone={roleTone(p.rawRole)} className="text-[10px]">
-                {p.rolle}
-              </Badge>
-            )}
-            <Badge tone={statusTone(p.status)} className="text-[10px]">
-              {p.status}
-            </Badge>
-          </div>
+
+          {/* Kontakt-rækker: skjul linje hvis intet data */}
+          {(p.email || p.phone) && (
+            <div className="flex flex-col gap-0.5 border-t border-b-divider pt-1.5 text-[11px] text-b-2">
+              {p.email && (
+                <div className="flex items-center gap-1.5">
+                  <Mail className="h-3 w-3 shrink-0" aria-hidden />
+                  <span className="truncate">{p.email}</span>
+                </div>
+              )}
+              {p.phone && (
+                <div className="flex items-center gap-1.5">
+                  <Phone className="h-3 w-3 shrink-0" aria-hidden />
+                  <span className="truncate">{p.phone}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Selskab + ansat — med chip hvis personen er aktiv i flere lokationer */}
+          {p.selskab !== '—' && (
+            <div className="flex items-center justify-between gap-2 text-[11px] text-b-2">
+              <div className="flex min-w-0 items-center gap-1.5">
+                <Building2 className="h-3 w-3 shrink-0" aria-hidden />
+                <span className="truncate">{p.selskab}</span>
+                {p.selskabsCount > 1 && (
+                  <span className="b-tnum shrink-0 rounded-[8px] bg-b-border px-1.5 py-px text-[10px] font-medium text-b-gray-fg">
+                    +{p.selskabsCount - 1}
+                  </span>
+                )}
+              </div>
+              {p.ansat !== '—' && <span className="b-tnum shrink-0">ans. {p.ansat}</span>}
+            </div>
+          )}
         </button>
       ))}
     </div>

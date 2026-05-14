@@ -54,6 +54,10 @@ export default async function PersonsPage() {
     const activeCp = p.company_persons.find((cp) => !cp.end_date) ?? p.company_persons[0]
     const role = activeCp?.role ?? null
     const status = activeCp == null ? 'Inaktiv' : activeCp.end_date ? 'Opsagt' : 'Aktiv'
+    // Unikke aktive selskaber — én person kan have rolle i flere lokationer
+    const uniqueCompanies = new Set(
+      p.company_persons.filter((cp) => !cp.end_date).map((cp) => cp.company.id)
+    )
 
     return {
       id: p.id,
@@ -68,6 +72,9 @@ export default async function PersonsPage() {
       status,
       // Person har ingen direkte sensitivity. Default STANDARD.
       sens: 'STANDARD',
+      email: p.email,
+      phone: p.phone,
+      selskabsCount: uniqueCompanies.size,
     }
   })
 
