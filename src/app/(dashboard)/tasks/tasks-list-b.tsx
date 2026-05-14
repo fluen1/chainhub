@@ -1,7 +1,7 @@
 'use client'
 
-import { useMemo, useState, useRef, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useMemo, useState, useRef, useCallback, useEffect, useTransition } from 'react'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { toast } from 'sonner'
 import { ExportButton } from '@/components/ui/export-button'
 import {
@@ -25,7 +25,6 @@ import {
   type BadgeTone,
   Pager,
   BottomBar,
-  KbdHint,
   Panel,
 } from '@/components/ui/b'
 import { updateTaskStatus } from '@/actions/tasks'
@@ -108,18 +107,48 @@ function fristTone(days: number): BadgeTone {
 
 export function TasksListB({ tasks, totalCount }: { tasks: TaskRow[]; totalCount: number }) {
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const [, startTransition] = useTransition()
 
-  const [viewMode, setViewMode] = useState<ViewMode>('flat')
-  const [search, setSearch] = useState('')
-  const [mineOnly, setMineOnly] = useState(false)
-  const [selskabFil, setSelskabFil] = useState('Alle')
-  const [typeFil, setTypeFil] = useState('Alle')
-  const [prioFil, setPrioFil] = useState('Alle')
-  const [statusFil, setStatusFil] = useState('Alle')
+  const [viewMode, setViewMode] = useState<ViewMode>(
+    () => (searchParams.get('view') as ViewMode) || 'flat'
+  )
+  const [search, setSearch] = useState(() => searchParams.get('search') ?? '')
+  const [mineOnly, setMineOnly] = useState(() => searchParams.get('mine') === '1')
+  const [selskabFil, setSelskabFil] = useState(() => searchParams.get('company') ?? 'Alle')
+  const [typeFil, setTypeFil] = useState(() => searchParams.get('type') ?? 'Alle')
+  const [prioFil, setPrioFil] = useState(() => searchParams.get('prio') ?? 'Alle')
+  const [statusFil, setStatusFil] = useState(() => searchParams.get('status') ?? 'Alle')
   const [sortCol, setSortCol] = useState<SortKey>('fristDays')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
-  const [page, setPage] = useState(1)
+  const [page, setPage] = useState(() => parseInt(searchParams.get('page') ?? '1', 10) || 1)
   const [pageSize, setPageSize] = useState(15)
+
+  function pushUrl(overrides: Record<string, string>) {
+    const sp = new URLSearchParams(searchParams.toString())
+    for (const [k, v] of Object.entries(overrides)) {
+      if (v === '' || v === 'Alle' || (v === '1' && k === 'page') || (v === '0' && k === 'mine'))
+        sp.delete(k)
+      else sp.set(k, v)
+    }
+    if (sp.get('view') === 'flat') sp.delete('view')
+    startTransition(() => {
+      router.push(`${pathname}?${sp.toString()}`, { scroll: false })
+    })
+  }
+
+  useEffect(() => {
+    setViewMode((searchParams.get('view') as ViewMode) || 'flat')
+    setSearch(searchParams.get('search') ?? '')
+    setMineOnly(searchParams.get('mine') === '1')
+    setSelskabFil(searchParams.get('company') ?? 'Alle')
+    setTypeFil(searchParams.get('type') ?? 'Alle')
+    setPrioFil(searchParams.get('prio') ?? 'Alle')
+    setStatusFil(searchParams.get('status') ?? 'Alle')
+    setPage(parseInt(searchParams.get('page') ?? '1', 10) || 1)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
 
   const uniqueSelskaber = useMemo(
     () =>
@@ -193,6 +222,15 @@ export function TasksListB({ tasks, totalCount }: { tasks: TaskRow[]; totalCount
     setPrioFil('Alle')
     setStatusFil('Alle')
     setPage(1)
+    pushUrl({
+      search: '',
+      mine: '0',
+      company: 'Alle',
+      type: 'Alle',
+      prio: 'Alle',
+      status: 'Alle',
+      page: '1',
+    })
   }
 
   function goTo(id: string) {
@@ -231,14 +269,17 @@ export function TasksListB({ tasks, totalCount }: { tasks: TaskRow[]; totalCount
           onChange={(v) => {
             setSearch(v)
             setPage(1)
+            pushUrl({ search: v, page: '1' })
           }}
           placeholder="Søg opgaver..."
         />
         <FilterButton
           active={mineOnly}
           onClick={() => {
-            setMineOnly((v) => !v)
+            const next = !mineOnly
+            setMineOnly(next)
             setPage(1)
+            pushUrl({ mine: next ? '1' : '0', page: '1' })
           }}
         >
           {mineOnly ? '✓ Mine opgaver' : 'Mine opgaver'}
@@ -250,6 +291,7 @@ export function TasksListB({ tasks, totalCount }: { tasks: TaskRow[]; totalCount
           onChange={(v) => {
             setSelskabFil(v)
             setPage(1)
+            pushUrl({ company: v, page: '1' })
           }}
         />
         <FilterDropdown
@@ -260,6 +302,7 @@ export function TasksListB({ tasks, totalCount }: { tasks: TaskRow[]; totalCount
           onChange={(v) => {
             setTypeFil(v)
             setPage(1)
+            pushUrl({ type: v, page: '1' })
           }}
         />
         <FilterDropdown
@@ -269,6 +312,7 @@ export function TasksListB({ tasks, totalCount }: { tasks: TaskRow[]; totalCount
           onChange={(v) => {
             setPrioFil(v)
             setPage(1)
+            pushUrl({ prio: v, page: '1' })
           }}
         />
         <FilterDropdown
@@ -278,13 +322,17 @@ export function TasksListB({ tasks, totalCount }: { tasks: TaskRow[]; totalCount
           onChange={(v) => {
             setStatusFil(v)
             setPage(1)
+            pushUrl({ status: v, page: '1' })
           }}
         />
         {hasFilter && <FilterReset onClick={resetFilters} />}
         <FilterSep />
         <SegmentedToggle<ViewMode>
           value={viewMode}
-          onChange={setViewMode}
+          onChange={(v) => {
+            setViewMode(v)
+            pushUrl({ view: v })
+          }}
           options={[
             { value: 'flat', label: 'Flat' },
             { value: 'grouped', label: 'Grupperet' },
@@ -324,13 +372,21 @@ export function TasksListB({ tasks, totalCount }: { tasks: TaskRow[]; totalCount
           }
           page={viewMode === 'flat' ? safePage : undefined}
           maxPage={viewMode === 'flat' ? maxPage : undefined}
-          onPage={viewMode === 'flat' ? setPage : undefined}
+          onPage={
+            viewMode === 'flat'
+              ? (n) => {
+                  setPage(n)
+                  pushUrl({ page: String(n) })
+                }
+              : undefined
+          }
           pageSize={viewMode === 'flat' ? pageSize : undefined}
           onPageSize={
             viewMode === 'flat'
               ? (n) => {
                   setPageSize(n)
                   setPage(1)
+                  pushUrl({ page: '1' })
                 }
               : undefined
           }
@@ -344,17 +400,6 @@ export function TasksListB({ tasks, totalCount }: { tasks: TaskRow[]; totalCount
             {sorted.length} {sorted.length === 1 ? 'opgave' : 'opgaver'} vist ·{' '}
             {tasks.filter((t) => t.rawStatus === 'LUKKET').length} fuldført
             {hasFilter && ` · filtreret fra ${totalCount}`}
-          </>
-        }
-        right={
-          <>
-            <KbdHint k="⌘K" label="handling" />
-            <span>·</span>
-            <KbdHint k="N" label="ny opgave" />
-            <span>·</span>
-            <KbdHint k="F" label="filter" />
-            <span>·</span>
-            <KbdHint k="M" label="mine" />
           </>
         }
       />

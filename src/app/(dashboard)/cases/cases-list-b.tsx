@@ -1,7 +1,7 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useMemo, useState, useEffect, useTransition } from 'react'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { ExportButton } from '@/components/ui/export-button'
 import {
   Breadcrumb,
@@ -23,7 +23,6 @@ import {
   type BadgeTone,
   Pager,
   BottomBar,
-  KbdHint,
   Panel,
 } from '@/components/ui/b'
 
@@ -88,16 +87,43 @@ function statusTone(status: string): BadgeTone {
 
 export function CasesListB({ cases, totalCount }: { cases: CaseRow[]; totalCount: number }) {
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const [, startTransition] = useTransition()
 
-  const [viewMode, setViewMode] = useState<ViewMode>('flat')
-  const [search, setSearch] = useState('')
-  const [selskabFil, setSelskabFil] = useState('Alle')
-  const [typeFil, setTypeFil] = useState('Alle')
-  const [statusFil, setStatusFil] = useState('Alle')
+  const [viewMode, setViewMode] = useState<ViewMode>(
+    () => (searchParams.get('view') as ViewMode) || 'flat'
+  )
+  const [search, setSearch] = useState(() => searchParams.get('search') ?? '')
+  const [selskabFil, setSelskabFil] = useState(() => searchParams.get('company') ?? 'Alle')
+  const [typeFil, setTypeFil] = useState(() => searchParams.get('type') ?? 'Alle')
+  const [statusFil, setStatusFil] = useState(() => searchParams.get('status') ?? 'Alle')
   const [sortCol, setSortCol] = useState<SortKey>('fristDays')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
-  const [page, setPage] = useState(1)
+  const [page, setPage] = useState(() => parseInt(searchParams.get('page') ?? '1', 10) || 1)
   const [pageSize, setPageSize] = useState(10)
+
+  function pushUrl(overrides: Record<string, string>) {
+    const sp = new URLSearchParams(searchParams.toString())
+    for (const [k, v] of Object.entries(overrides)) {
+      if (v === '' || v === 'Alle' || (v === '1' && k === 'page')) sp.delete(k)
+      else sp.set(k, v)
+    }
+    if (sp.get('view') === 'flat') sp.delete('view')
+    startTransition(() => {
+      router.push(`${pathname}?${sp.toString()}`, { scroll: false })
+    })
+  }
+
+  useEffect(() => {
+    setViewMode((searchParams.get('view') as ViewMode) || 'flat')
+    setSearch(searchParams.get('search') ?? '')
+    setSelskabFil(searchParams.get('company') ?? 'Alle')
+    setTypeFil(searchParams.get('type') ?? 'Alle')
+    setStatusFil(searchParams.get('status') ?? 'Alle')
+    setPage(parseInt(searchParams.get('page') ?? '1', 10) || 1)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
 
   const uniqueSelskaber = useMemo(
     () =>
@@ -171,6 +197,7 @@ export function CasesListB({ cases, totalCount }: { cases: CaseRow[]; totalCount
     setTypeFil('Alle')
     setStatusFil('Alle')
     setPage(1)
+    pushUrl({ search: '', company: 'Alle', type: 'Alle', status: 'Alle', page: '1' })
   }
 
   function goTo(id: string) {
@@ -209,6 +236,7 @@ export function CasesListB({ cases, totalCount }: { cases: CaseRow[]; totalCount
           onChange={(v) => {
             setSearch(v)
             setPage(1)
+            pushUrl({ search: v, page: '1' })
           }}
           placeholder="Søg sager..."
         />
@@ -219,6 +247,7 @@ export function CasesListB({ cases, totalCount }: { cases: CaseRow[]; totalCount
           onChange={(v) => {
             setSelskabFil(v)
             setPage(1)
+            pushUrl({ company: v, page: '1' })
           }}
         />
         <FilterDropdown
@@ -229,6 +258,7 @@ export function CasesListB({ cases, totalCount }: { cases: CaseRow[]; totalCount
           onChange={(v) => {
             setTypeFil(v)
             setPage(1)
+            pushUrl({ type: v, page: '1' })
           }}
         />
         <FilterDropdown
@@ -238,13 +268,17 @@ export function CasesListB({ cases, totalCount }: { cases: CaseRow[]; totalCount
           onChange={(v) => {
             setStatusFil(v)
             setPage(1)
+            pushUrl({ status: v, page: '1' })
           }}
         />
         {hasFilter && <FilterReset onClick={resetFilters} />}
         <FilterSep />
         <SegmentedToggle<ViewMode>
           value={viewMode}
-          onChange={setViewMode}
+          onChange={(v) => {
+            setViewMode(v)
+            pushUrl({ view: v })
+          }}
           options={[
             { value: 'flat', label: 'Flat' },
             { value: 'grouped', label: 'Grupperet' },
@@ -283,13 +317,21 @@ export function CasesListB({ cases, totalCount }: { cases: CaseRow[]; totalCount
           }
           page={viewMode === 'flat' ? safePage : undefined}
           maxPage={viewMode === 'flat' ? maxPage : undefined}
-          onPage={viewMode === 'flat' ? setPage : undefined}
+          onPage={
+            viewMode === 'flat'
+              ? (n) => {
+                  setPage(n)
+                  pushUrl({ page: String(n) })
+                }
+              : undefined
+          }
           pageSize={viewMode === 'flat' ? pageSize : undefined}
           onPageSize={
             viewMode === 'flat'
               ? (n) => {
                   setPageSize(n)
                   setPage(1)
+                  pushUrl({ page: '1' })
                 }
               : undefined
           }
@@ -301,15 +343,6 @@ export function CasesListB({ cases, totalCount }: { cases: CaseRow[]; totalCount
           <>
             {sorted.length} {sorted.length === 1 ? 'sag' : 'sager'} vist · {closedCount} afsluttet
             {hasFilter && ` · filtreret fra ${totalCount}`}
-          </>
-        }
-        right={
-          <>
-            <KbdHint k="⌘K" label="handling" />
-            <span>·</span>
-            <KbdHint k="N" label="ny sag" />
-            <span>·</span>
-            <KbdHint k="F" label="filter" />
           </>
         }
       />
