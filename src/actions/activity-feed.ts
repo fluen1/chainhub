@@ -1,6 +1,7 @@
 'use server'
 
 import { prisma } from '@/lib/db'
+import { getAccessibleCompanies } from '@/lib/permissions'
 
 // ────────────────────────────────────────────────────────────────────────────
 // Activity feed til dashboard "Sidste aktivitet"-panel.
@@ -55,9 +56,19 @@ function formatRelative(date: Date, now: Date): string {
   return `${d} dage siden`
 }
 
-export async function getRecentActivity(organizationId: string): Promise<ActivityEvent[]> {
+export async function getRecentActivity(
+  organizationId: string,
+  userId: string
+): Promise<ActivityEvent[]> {
+  // Hent accessible companies for RBAC-scope
+  const companyIds = await getAccessibleCompanies(userId, organizationId)
+
   const logs = await prisma.auditLog.findMany({
-    where: { organization_id: organizationId },
+    where: {
+      organization_id: organizationId,
+      // Scope: events der vedrører selskaber brugeren har adgang til, eller org-brede events (company_id=null)
+      OR: [{ resource_company_id: { in: companyIds } }, { resource_company_id: null }],
+    },
     orderBy: { created_at: 'desc' },
     take: 10,
     select: {

@@ -827,21 +827,24 @@ model TimeEntry {
 }
 
 model AuditLog {
-  id              String            @id @default(uuid())
-  organization_id String
-  user_id         String
-  action          String
-  resource_type   String
-  resource_id     String
-  sensitivity     SensitivityLevel?
-  changes         Json?
-  ip_address      String?
-  created_at      DateTime          @default(now())
+  id                  String            @id @default(uuid())
+  organization_id     String
+  user_id             String
+  action              String
+  resource_type       String
+  resource_id         String
+  // Nullable: sættes til det primære selskab ressourcen tilhører (bruges til RBAC-scoping i activity-feed)
+  resource_company_id String?
+  sensitivity         SensitivityLevel?
+  changes             Json?
+  ip_address          String?
+  created_at          DateTime          @default(now())
 
   organization Organization @relation(fields: [organization_id], references: [id])
 
   @@index([organization_id, resource_type, resource_id])
   @@index([organization_id, user_id])
+  @@index([organization_id, resource_company_id])
   @@index([created_at])
 }
 

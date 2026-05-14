@@ -52,7 +52,7 @@ export default async function DashboardPage() {
   const [data, sidebar, activity] = await Promise.all([
     getDashboardData(session.user.id, session.user.organizationId),
     getSidebarData(session.user.id, session.user.organizationId),
-    getRecentActivity(session.user.organizationId),
+    getRecentActivity(session.user.organizationId, session.user.id),
   ])
 
   const omsaetning = data.portfolioTotals.totalOmsaetning

@@ -76,18 +76,28 @@ export async function getSidebarData(userId: string, organizationId: string): Pr
             organization_id: organizationId,
             deleted_at: null,
             status: { in: ['NY', 'AKTIV', 'AFVENTER_EKSTERN', 'AFVENTER_KLIENT'] },
+            // Scope: kun sager tilknyttet selskaber brugeren har adgang til
+            case_companies: { some: { company_id: { in: companyIds } } },
           },
         })
       : Promise.resolve(0),
+    // Opgave-count: scope via accessible companies + org-brede tasks (company_id=null)
     prisma.task.count({
-      where: { organization_id: organizationId, deleted_at: null, status: { not: 'LUKKET' } },
+      where: {
+        organization_id: organizationId,
+        deleted_at: null,
+        status: { not: 'LUKKET' },
+        OR: [{ company_id: { in: companyIds } }, { company_id: null }],
+      },
     }),
+    // Forfaldne opgaver: samme scope
     prisma.task.count({
       where: {
         organization_id: organizationId,
         deleted_at: null,
         status: { not: 'LUKKET' },
         due_date: { lt: today },
+        OR: [{ company_id: { in: companyIds } }, { company_id: null }],
       },
     }),
     // Udløbende kontrakter (næste 14 dage)

@@ -81,7 +81,10 @@ export async function runSearch(
   if (trimmed.length < MIN_SEARCH_LENGTH) return null
 
   const companyIds = await getAccessibleCompanies(userId, orgId)
-  const canSeeSensitive = await canAccessSensitivity(userId, 'FORTROLIG' as SensitivityLevel)
+  const [canSeeFortrolig, canSeeStrengtFortrolig] = await Promise.all([
+    canAccessSensitivity(userId, 'FORTROLIG' as SensitivityLevel),
+    canAccessSensitivity(userId, 'STRENGT_FORTROLIG' as SensitivityLevel),
+  ])
 
   // Hvis brugeren ikke har adgang til nogen selskaber, returner tomt resultat
   if (companyIds.length === 0) {
@@ -99,10 +102,17 @@ export async function runSearch(
 
   const insensitive = { contains: trimmed, mode: 'insensitive' as const }
 
-  // Sensitivity-filter — kun FORTROLIG/STRENGT_FORTROLIG gemmes væk hvis bruger ikke har adgang
-  const sensitivityFilter = canSeeSensitive
-    ? undefined
-    : { notIn: ['FORTROLIG', 'STRENGT_FORTROLIG'] as SensitivityLevel[] }
+  // Sensitivity-filter — bygges dynamisk baseret på brugerens adgangsniveau
+  // STRENGT_FORTROLIG kræver GROUP_OWNER/GROUP_ADMIN/GROUP_LEGAL
+  // FORTROLIG kræver derudover GROUP_FINANCE, GROUP_READONLY, COMPANY_MANAGER
+  let sensitivityFilter: { notIn: SensitivityLevel[] } | undefined
+  if (!canSeeStrengtFortrolig && !canSeeFortrolig) {
+    sensitivityFilter = { notIn: ['FORTROLIG', 'STRENGT_FORTROLIG'] as SensitivityLevel[] }
+  } else if (!canSeeStrengtFortrolig) {
+    sensitivityFilter = { notIn: ['STRENGT_FORTROLIG'] as SensitivityLevel[] }
+  } else {
+    sensitivityFilter = undefined
+  }
 
   const [companies, contracts, cases, persons, tasks, documents] = await Promise.all([
     // Selskaber — scope: accessible
@@ -146,16 +156,30 @@ export async function runSearch(
       orderBy: { title: 'asc' },
     }),
 
-    // Personer — scope: personer tilknyttet mindst ét accessible selskab ELLER uden selskabs-tilknytning
+    // Personer — scope: tilknyttet mindst ét accessible selskab (company_persons) ELLER direkte org-oprettet (ingen tilknytning)
+    // Valg: vi inkluderer personer UDEN selskabs-tilknytning (org-brede kontakter oprettet af admin)
+    // men IKKE personer tilknyttet selskaber brugeren ikke har adgang til.
     prisma.person.findMany({
       where: {
         organization_id: orgId,
         deleted_at: null,
         OR: [
-          { first_name: insensitive },
-          { last_name: insensitive },
-          { email: insensitive },
-          { notes: insensitive },
+          // Match på søgeterm
+          ...[
+            { first_name: insensitive },
+            { last_name: insensitive },
+            { email: insensitive },
+            { notes: insensitive },
+          ],
+        ],
+        AND: [
+          {
+            // Scope: person tilknyttet accessible selskaber ELLER ingen selskabs-tilknytning
+            OR: [
+              { company_persons: { some: { company_id: { in: companyIds } } } },
+              { company_persons: { none: {} } },
+            ],
+          },
         ],
       },
       select: {
