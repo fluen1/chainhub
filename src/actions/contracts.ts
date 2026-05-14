@@ -39,10 +39,18 @@ export async function createContract(input: CreateContractInput): Promise<Action
   const parsed = createContractSchema.safeParse(input)
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Ugyldigt input' }
 
-  const hasCompanyAccess = await canAccessCompany(session.user.id, parsed.data.companyId)
+  const hasCompanyAccess = await canAccessCompany(
+    session.user.id,
+    parsed.data.companyId,
+    session.user.organizationId
+  )
   if (!hasCompanyAccess) return { error: 'Ingen adgang til dette selskab' }
 
-  const hasSensitivityAccess = await canAccessSensitivity(session.user.id, parsed.data.sensitivity)
+  const hasSensitivityAccess = await canAccessSensitivity(
+    session.user.id,
+    parsed.data.sensitivity,
+    session.user.organizationId
+  )
   if (!hasSensitivityAccess) return { error: 'Du har ikke adgang til dette sensitivitetsniveau' }
 
   // Tjek minimum-sensitivitet for system_type
@@ -130,7 +138,11 @@ export async function updateContractStatus(
   })
   if (!contract) return { error: 'Kontrakt ikke fundet' }
 
-  const hasSensitivityAccess = await canAccessSensitivity(session.user.id, contract.sensitivity)
+  const hasSensitivityAccess = await canAccessSensitivity(
+    session.user.id,
+    contract.sensitivity,
+    session.user.organizationId
+  )
   if (!hasSensitivityAccess) return { error: 'Ingen adgang til denne kontrakt' }
 
   // Valider transition
@@ -185,7 +197,7 @@ export async function deleteContract(contractId: string): Promise<ActionResult<v
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
 
-  const hasAccess = await canAccessModule(session.user.id, 'settings')
+  const hasAccess = await canAccessModule(session.user.id, 'settings', session.user.organizationId)
   if (!hasAccess) return { error: 'Ingen adgang' }
 
   const contract = await prisma.contract.findFirst({
@@ -266,7 +278,11 @@ export async function getContractList(options: {
     // Filter contracts brugeren ikke har sensitivity-adgang til
     const filteredContracts: Contract[] = []
     for (const contract of contracts) {
-      const hasAccess = await canAccessSensitivity(options.userId, contract.sensitivity)
+      const hasAccess = await canAccessSensitivity(
+        options.userId,
+        contract.sensitivity,
+        options.organizationId
+      )
       if (hasAccess) filteredContracts.push(contract)
     }
 

@@ -82,8 +82,8 @@ export async function runSearch(
 
   const companyIds = await getAccessibleCompanies(userId, orgId)
   const [canSeeFortrolig, canSeeStrengtFortrolig] = await Promise.all([
-    canAccessSensitivity(userId, 'FORTROLIG' as SensitivityLevel),
-    canAccessSensitivity(userId, 'STRENGT_FORTROLIG' as SensitivityLevel),
+    canAccessSensitivity(userId, 'FORTROLIG' as SensitivityLevel, orgId),
+    canAccessSensitivity(userId, 'STRENGT_FORTROLIG' as SensitivityLevel, orgId),
   ])
 
   // Hvis brugeren ikke har adgang til nogen selskaber, returner tomt resultat

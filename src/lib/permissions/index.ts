@@ -30,22 +30,30 @@ const GROUP_ROLES: UserRole[] = [
   'GROUP_READONLY',
 ]
 
-async function getUserRoles(userId: string): Promise<
+async function getUserRoles(
+  userId: string,
+  organizationId: string
+): Promise<
   Array<{
     role: UserRole
     scope: string
     company_ids: string[]
   }>
 > {
+  // organization_id-filter forhindrer cross-tenant rolle-leak ved UUID-kollision
   const assignments = await prisma.userRoleAssignment.findMany({
-    where: { user_id: userId },
+    where: { user_id: userId, organization_id: organizationId },
     select: { role: true, scope: true, company_ids: true },
   })
   return assignments
 }
 
-export async function canAccessCompany(userId: string, companyId: string): Promise<boolean> {
-  const roles = await getUserRoles(userId)
+export async function canAccessCompany(
+  userId: string,
+  companyId: string,
+  organizationId: string
+): Promise<boolean> {
+  const roles = await getUserRoles(userId, organizationId)
 
   for (const assignment of roles) {
     // Group-level roles with ALL scope can access everything
@@ -67,9 +75,10 @@ export async function canAccessCompany(userId: string, companyId: string): Promi
 
 export async function canAccessSensitivity(
   userId: string,
-  level: SensitivityLevel
+  level: SensitivityLevel,
+  organizationId: string
 ): Promise<boolean> {
-  const roles = await getUserRoles(userId)
+  const roles = await getUserRoles(userId, organizationId)
   const userRoles = roles.map((r) => r.role)
 
   // STRENGT_FORTROLIG — only specific group roles
@@ -90,7 +99,7 @@ export async function getAccessibleCompanies(
   userId: string,
   organizationId: string
 ): Promise<string[]> {
-  const roles = await getUserRoles(userId)
+  const roles = await getUserRoles(userId, organizationId)
 
   // If any role has ALL scope, return all companies
   for (const assignment of roles) {
@@ -114,8 +123,12 @@ export async function getAccessibleCompanies(
   return Array.from(companyIds)
 }
 
-export async function canAccessModule(userId: string, module: string): Promise<boolean> {
-  const roles = await getUserRoles(userId)
+export async function canAccessModule(
+  userId: string,
+  module: string,
+  organizationId: string
+): Promise<boolean> {
+  const roles = await getUserRoles(userId, organizationId)
   const userRoles = roles.map((r) => r.role)
 
   switch (module) {
@@ -145,8 +158,37 @@ export async function canAccessModule(userId: string, module: string): Promise<b
           r === 'COMPANY_LEGAL' ||
           r === 'COMPANY_READONLY'
       )
+    // Spec linje 139-156: Dokumenter og Opgaver — alle roller inkl. COMPANY_*
+    case 'documents':
+    case 'tasks':
+    case 'companies':
+      return userRoles.some(
+        (r) =>
+          r === 'GROUP_OWNER' ||
+          r === 'GROUP_ADMIN' ||
+          r === 'GROUP_LEGAL' ||
+          r === 'GROUP_FINANCE' ||
+          r === 'GROUP_READONLY' ||
+          r === 'COMPANY_MANAGER' ||
+          r === 'COMPANY_LEGAL' ||
+          r === 'COMPANY_READONLY'
+      )
+    // Spec linje 139-156: Personer — alle roller inkl. COMPANY_*
+    case 'persons':
+      return userRoles.some(
+        (r) =>
+          r === 'GROUP_OWNER' ||
+          r === 'GROUP_ADMIN' ||
+          r === 'GROUP_LEGAL' ||
+          r === 'GROUP_FINANCE' ||
+          r === 'GROUP_READONLY' ||
+          r === 'COMPANY_MANAGER' ||
+          r === 'COMPANY_LEGAL' ||
+          r === 'COMPANY_READONLY'
+      )
     default:
-      return true // companies, tasks, persons, documents — all authenticated
+      // FAIL-CLOSED: ukendte moduler afvises. Tilføj eksplicit case for nye moduler.
+      return false
   }
 }
 

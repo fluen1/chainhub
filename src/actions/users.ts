@@ -23,7 +23,11 @@ export async function getOrganizationUsers(): Promise<ActionResult<UserWithRoles
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
 
-  const hasAccess = await canAccessModule(session.user.id, 'user_management')
+  const hasAccess = await canAccessModule(
+    session.user.id,
+    'user_management',
+    session.user.organizationId
+  )
   if (!hasAccess) return { error: 'Du har ikke adgang til brugerstyring' }
 
   try {
@@ -55,7 +59,11 @@ export async function createUser(input: CreateUserInput): Promise<ActionResult<U
     return { error: firstError }
   }
 
-  const hasAccess = await canAccessModule(session.user.id, 'user_management')
+  const hasAccess = await canAccessModule(
+    session.user.id,
+    'user_management',
+    session.user.organizationId
+  )
   if (!hasAccess) return { error: 'Du har ikke adgang til at oprette brugere' }
 
   const normalizedEmail = parsed.data.email.trim().toLowerCase()
@@ -142,7 +150,11 @@ export async function updateUserRole(input: UpdateUserRoleInput): Promise<Action
     return { error: 'Ugyldigt input' }
   }
 
-  const hasAccess = await canAccessModule(session.user.id, 'user_management')
+  const hasAccess = await canAccessModule(
+    session.user.id,
+    'user_management',
+    session.user.organizationId
+  )
   if (!hasAccess) return { error: 'Du har ikke adgang til at ændre brugerroller' }
 
   // Verify user belongs to organization
@@ -197,7 +209,11 @@ export async function toggleUserActive(userId: string): Promise<ActionResult<voi
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
 
-  const hasAccess = await canAccessModule(session.user.id, 'user_management')
+  const hasAccess = await canAccessModule(
+    session.user.id,
+    'user_management',
+    session.user.organizationId
+  )
   if (!hasAccess) return { error: 'Du har ikke adgang til at ændre brugerstatus' }
 
   // Cannot deactivate yourself

@@ -64,7 +64,7 @@ export default async function CaseDetailPage({ params }: Props) {
 
   let hasAccess = false
   for (const cc of caseItem.case_companies) {
-    const ok = await canAccessCompany(session.user.id, cc.company.id)
+    const ok = await canAccessCompany(session.user.id, cc.company.id, session.user.organizationId)
     if (ok) {
       hasAccess = true
       break

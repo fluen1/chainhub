@@ -27,7 +27,11 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
 
   const section = parseSection(searchParams.section)
 
-  const hasAccess = await canAccessModule(session.user.id, 'user_management')
+  const hasAccess = await canAccessModule(
+    session.user.id,
+    'user_management',
+    session.user.organizationId
+  )
 
   if (!hasAccess) {
     return (

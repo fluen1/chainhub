@@ -53,7 +53,7 @@ export default async function ContractsPage() {
   const session = await auth()
   if (!session) redirect('/login')
 
-  const hasAccess = await canAccessModule(session.user.id, 'contracts')
+  const hasAccess = await canAccessModule(session.user.id, 'contracts', session.user.organizationId)
   if (!hasAccess) redirect('/dashboard')
 
   const orgId = session.user.organizationId
@@ -107,7 +107,7 @@ export default async function ContractsPage() {
   // Filtrer efter sensitivitet
   const accessibleContracts = await Promise.all(
     rawContracts.map(async (c) => {
-      const ok = await canAccessSensitivity(session.user.id, c.sensitivity)
+      const ok = await canAccessSensitivity(session.user.id, c.sensitivity, orgId)
       return ok ? c : null
     })
   ).then((results) => results.filter((c): c is (typeof rawContracts)[number] => c !== null))

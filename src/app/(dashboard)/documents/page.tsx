@@ -63,7 +63,7 @@ export default async function DocumentsPage() {
   const session = await auth()
   if (!session) redirect('/login')
 
-  const hasAccess = await canAccessModule(session.user.id, 'documents')
+  const hasAccess = await canAccessModule(session.user.id, 'documents', session.user.organizationId)
   if (!hasAccess) redirect('/dashboard')
 
   const orgId = session.user.organizationId

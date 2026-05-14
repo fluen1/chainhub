@@ -59,7 +59,11 @@ export async function POST(request: NextRequest) {
 
   // Permission check if company specified
   if (companyId) {
-    const hasAccess = await canAccessCompany(session.user.id, companyId)
+    const hasAccess = await canAccessCompany(
+      session.user.id,
+      companyId,
+      session.user.organizationId
+    )
     if (!hasAccess) {
       return NextResponse.json({ error: 'Ingen adgang til dette selskab' }, { status: 403 })
     }

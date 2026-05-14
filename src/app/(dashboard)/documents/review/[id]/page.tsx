@@ -172,7 +172,11 @@ export default async function DocumentReviewPage({ params }: { params: { id: str
 
   // Permission check
   if (doc.company_id) {
-    const hasAccess = await canAccessCompany(session.user.id, doc.company_id)
+    const hasAccess = await canAccessCompany(
+      session.user.id,
+      doc.company_id,
+      session.user.organizationId
+    )
     if (!hasAccess) notFound()
   }
 

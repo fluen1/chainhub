@@ -40,10 +40,18 @@ export async function createContractVersion(
   })
   if (!contract) return { error: 'Kontrakt ikke fundet' }
 
-  const hasCompanyAccess = await canAccessCompany(session.user.id, contract.company_id)
+  const hasCompanyAccess = await canAccessCompany(
+    session.user.id,
+    contract.company_id,
+    session.user.organizationId
+  )
   if (!hasCompanyAccess) return { error: 'Ingen adgang til dette selskab' }
 
-  const hasSensitivity = await canAccessSensitivity(session.user.id, contract.sensitivity)
+  const hasSensitivity = await canAccessSensitivity(
+    session.user.id,
+    contract.sensitivity,
+    session.user.organizationId
+  )
   if (!hasSensitivity) return { error: 'Ingen adgang til denne kontrakt' }
 
   // Get next version number

@@ -106,7 +106,7 @@ export async function deletePerson(personId: string): Promise<ActionResult<void>
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
 
-  const hasAccess = await canAccessModule(session.user.id, 'settings')
+  const hasAccess = await canAccessModule(session.user.id, 'settings', session.user.organizationId)
   if (!hasAccess) return { error: 'Ingen adgang' }
 
   // Tjek aktive tilknytninger

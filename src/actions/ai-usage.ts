@@ -29,7 +29,11 @@ export async function getAIUsageDashboard(): Promise<ActionResult<AIUsageDashboa
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
 
-  const hasAccess = await canAccessModule(session.user.id, 'user_management')
+  const hasAccess = await canAccessModule(
+    session.user.id,
+    'user_management',
+    session.user.organizationId
+  )
   if (!hasAccess) return { error: 'Kun admin har adgang til AI-forbrug' }
 
   try {

@@ -30,10 +30,14 @@ export async function upsertFinancialMetric(
   const parsed = upsertMetricSchema.safeParse(input)
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Ugyldigt input' }
 
-  const hasFinance = await canAccessModule(session.user.id, 'finance')
+  const hasFinance = await canAccessModule(session.user.id, 'finance', session.user.organizationId)
   if (!hasFinance) return { error: 'Ingen adgang til økonomi-modulet' }
 
-  const hasCompany = await canAccessCompany(session.user.id, parsed.data.companyId)
+  const hasCompany = await canAccessCompany(
+    session.user.id,
+    parsed.data.companyId,
+    session.user.organizationId
+  )
   if (!hasCompany) return { error: 'Ingen adgang til dette selskab' }
 
   try {
@@ -100,10 +104,14 @@ export async function createDividendRecord(
   const parsed = dividendSchema.safeParse(input)
   if (!parsed.success) return { error: 'Ugyldigt input' }
 
-  const hasFinance = await canAccessModule(session.user.id, 'finance')
+  const hasFinance = await canAccessModule(session.user.id, 'finance', session.user.organizationId)
   if (!hasFinance) return { error: 'Ingen adgang til økonomi-modulet' }
 
-  const hasCompany = await canAccessCompany(session.user.id, parsed.data.companyId)
+  const hasCompany = await canAccessCompany(
+    session.user.id,
+    parsed.data.companyId,
+    session.user.organizationId
+  )
   if (!hasCompany) return { error: 'Ingen adgang til dette selskab' }
 
   try {

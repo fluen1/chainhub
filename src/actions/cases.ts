@@ -48,12 +48,16 @@ export async function createCase(input: CreateCaseInput): Promise<ActionResult<C
   const parsed = createCaseSchema.safeParse(input)
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Ugyldigt input' }
 
-  const hasModule = await canAccessModule(session.user.id, 'cases')
+  const hasModule = await canAccessModule(session.user.id, 'cases', session.user.organizationId)
   if (!hasModule) return { error: 'Ingen adgang til sagsstyring' }
 
   // Tjek adgang til alle tilknyttede selskaber
   for (const companyId of parsed.data.companyIds) {
-    const hasAccess = await canAccessCompany(session.user.id, companyId)
+    const hasAccess = await canAccessCompany(
+      session.user.id,
+      companyId,
+      session.user.organizationId
+    )
     if (!hasAccess) return { error: `Ingen adgang til selskab ${companyId}` }
   }
 
@@ -173,7 +177,7 @@ export async function deleteCase(caseId: string): Promise<ActionResult<void>> {
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
 
-  const hasModule = await canAccessModule(session.user.id, 'settings')
+  const hasModule = await canAccessModule(session.user.id, 'settings', session.user.organizationId)
   if (!hasModule) return { error: 'Ingen adgang' }
 
   const existingCase = await prisma.case.findFirst({

@@ -16,7 +16,7 @@ export async function GET(): Promise<Response> {
     return NextResponse.json({ error: 'Ikke autoriseret' }, { status: 401 })
   }
 
-  const hasAccess = await canAccessModule(session.user.id, 'settings')
+  const hasAccess = await canAccessModule(session.user.id, 'settings', session.user.organizationId)
   if (!hasAccess) {
     return NextResponse.json({ error: 'Kun admin' }, { status: 403 })
   }

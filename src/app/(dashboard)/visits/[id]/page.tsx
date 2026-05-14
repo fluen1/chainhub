@@ -31,7 +31,11 @@ export default async function VisitDetailPage({ params }: Props) {
 
   if (!visit) notFound()
 
-  const hasAccess = await canAccessCompany(session.user.id, visit.company_id)
+  const hasAccess = await canAccessCompany(
+    session.user.id,
+    visit.company_id,
+    session.user.organizationId
+  )
   if (!hasAccess) notFound()
 
   return (

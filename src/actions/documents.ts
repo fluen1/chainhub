@@ -20,7 +20,11 @@ export async function deleteDocument(documentId: string): Promise<ActionResult<v
   if (!doc) return { error: 'Dokument ikke fundet' }
 
   if (doc.company_id) {
-    const hasAccess = await canAccessCompany(session.user.id, doc.company_id)
+    const hasAccess = await canAccessCompany(
+      session.user.id,
+      doc.company_id,
+      session.user.organizationId
+    )
     if (!hasAccess) return { error: 'Ingen adgang til dette dokument' }
   }
 

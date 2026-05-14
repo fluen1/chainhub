@@ -26,7 +26,7 @@ export async function GET(
     return Response.json({ error: 'Ikke autoriseret' }, { status: 401 })
   }
 
-  const canExport = await canAccessModule(session.user.id, 'settings')
+  const canExport = await canAccessModule(session.user.id, 'settings', session.user.organizationId)
   if (!canExport) {
     return Response.json({ error: 'Kun admin kan eksportere data' }, { status: 403 })
   }

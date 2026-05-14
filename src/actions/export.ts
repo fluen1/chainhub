@@ -23,7 +23,7 @@ export async function prepareExport(
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
 
-  const canExport = await canAccessModule(session.user.id, 'settings')
+  const canExport = await canAccessModule(session.user.id, 'settings', session.user.organizationId)
   if (!canExport) return { error: 'Kun admin kan eksportere data' }
 
   try {

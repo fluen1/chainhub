@@ -137,7 +137,11 @@ export default async function ContractDetailPage({ params }: Props) {
   const session = await auth()
   if (!session) redirect('/login')
 
-  const hasModuleAccess = await canAccessModule(session.user.id, 'contracts')
+  const hasModuleAccess = await canAccessModule(
+    session.user.id,
+    'contracts',
+    session.user.organizationId
+  )
   if (!hasModuleAccess) redirect('/dashboard')
 
   const orgId = session.user.organizationId
@@ -161,10 +165,10 @@ export default async function ContractDetailPage({ params }: Props) {
 
   if (!contract) notFound()
 
-  const canAccess = await canAccessCompany(session.user.id, contract.company_id)
+  const canAccess = await canAccessCompany(session.user.id, contract.company_id, orgId)
   if (!canAccess) notFound()
 
-  const hasSensitivity = await canAccessSensitivity(session.user.id, contract.sensitivity)
+  const hasSensitivity = await canAccessSensitivity(session.user.id, contract.sensitivity, orgId)
   if (!hasSensitivity) notFound()
 
   // Audit-log for følsomme kontrakter (uændret fra original)

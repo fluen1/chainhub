@@ -28,7 +28,11 @@ export async function createTask(input: CreateTaskInput): Promise<ActionResult<T
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Ugyldigt input' }
 
   if (parsed.data.companyId) {
-    const hasAccess = await canAccessCompany(session.user.id, parsed.data.companyId)
+    const hasAccess = await canAccessCompany(
+      session.user.id,
+      parsed.data.companyId,
+      session.user.organizationId
+    )
     if (!hasAccess) return { error: 'Ingen adgang til dette selskab' }
   }
 
@@ -289,7 +293,11 @@ export async function deleteTask(taskId: string): Promise<ActionResult<void>> {
   if (!task) return { error: 'Opgave ikke fundet' }
 
   if (task.created_by !== session.user.id) {
-    const hasAdmin = await canAccessCompany(session.user.id, task.company_id ?? '')
+    const hasAdmin = await canAccessCompany(
+      session.user.id,
+      task.company_id ?? '',
+      session.user.organizationId
+    )
     if (!hasAdmin) return { error: 'Ingen adgang til at slette denne opgave' }
   }
 
