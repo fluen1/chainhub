@@ -559,7 +559,7 @@ export default function ReviewClient({
         </div>
 
         {/* Split layout */}
-        <div className="grid grid-cols-[1.6fr_1fr] gap-4 flex-1 min-h-0">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-4 flex-1 min-h-0">
           {/* === LEFT: Mock PDF preview === */}
           <div className="bg-white rounded-xl ring-1 ring-slate-900/[0.06] shadow-[0_1px_2px_rgba(15,23,42,0.04)] flex flex-col [overflow:clip]">
             <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-100">
