@@ -27,11 +27,7 @@ export function ContractEditTrigger({ contract }: ContractEditTriggerProps) {
   return (
     <>
       <BButton onClick={() => setOpen(true)}>Rediger</BButton>
-      <EditContractDialog
-        open={open}
-        onClose={() => setOpen(false)}
-        contract={contract}
-      />
+      <EditContractDialog open={open} onClose={() => setOpen(false)} contract={contract} />
     </>
   )
 }

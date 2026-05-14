@@ -2,13 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import {
-  BModal,
-  BTextField,
-  BTextareaField,
-  BFieldWrap,
-  BFieldRow,
-} from '@/components/ui/b'
+import { BModal, BTextField, BTextareaField, BFieldWrap, BFieldRow } from '@/components/ui/b'
 import { updateContract } from '@/actions/contracts'
 import { SENSITIVITY_LABELS, CONTRACT_TYPE_LABELS } from '@/lib/labels'
 
@@ -150,12 +144,7 @@ export function EditContractDialog({ open, onClose, contract }: EditContractDial
           value={effectiveDate}
           onChange={setEffectiveDate}
         />
-        <BTextField
-          label="Udløbsdato"
-          type="date"
-          value={expiryDate}
-          onChange={setExpiryDate}
-        />
+        <BTextField label="Udløbsdato" type="date" value={expiryDate} onChange={setExpiryDate} />
       </BFieldRow>
 
       <BTextareaField

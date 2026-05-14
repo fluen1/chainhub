@@ -3,13 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import {
-  BModal,
-  BTextField,
-  BFieldWrap,
-  BSegmentedField,
-  BFieldRow,
-} from '@/components/ui/b'
+import { BModal, BTextField, BFieldWrap, BSegmentedField, BFieldRow } from '@/components/ui/b'
 import { addContractParty } from '@/actions/contracts'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -85,10 +79,7 @@ export function AddContractPartyModal({
 
   const effectiveRole = roleInContract === '__custom__' ? customRole : roleInContract
 
-  const isValid =
-    partyType === 'PERSON'
-      ? personId.length > 0
-      : counterpartyName.trim().length > 0
+  const isValid = partyType === 'PERSON' ? personId.length > 0 : counterpartyName.trim().length > 0
 
   function handleClose() {
     setPartyType('PERSON')

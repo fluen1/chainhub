@@ -57,9 +57,8 @@ describe('updateContract', () => {
 
   it('happy path opdaterer display_name', async () => {
     const { prisma } = await import('@/lib/db')
-    vi.mocked(prisma.contract.findFirst).mockImplementation(
-      (() => Promise.resolve(CONTRACT_FIXTURE)) as never
-    )
+    vi.mocked(prisma.contract.findFirst).mockImplementation((() =>
+      Promise.resolve(CONTRACT_FIXTURE)) as never)
     const result = await updateContract({
       contractId: UUID_1,
       displayName: 'Nyt navn',
@@ -75,9 +74,8 @@ describe('updateContract', () => {
 
   it('afviser uden company-adgang', async () => {
     const { prisma } = await import('@/lib/db')
-    vi.mocked(prisma.contract.findFirst).mockImplementation(
-      (() => Promise.resolve(CONTRACT_FIXTURE)) as never
-    )
+    vi.mocked(prisma.contract.findFirst).mockImplementation((() =>
+      Promise.resolve(CONTRACT_FIXTURE)) as never)
     const perms = await import('@/lib/permissions')
     vi.mocked(perms.canAccessCompany).mockResolvedValueOnce(false)
     const result = await updateContract({ contractId: UUID_1, displayName: 'X' })
@@ -86,9 +84,8 @@ describe('updateContract', () => {
 
   it('afviser uden sensitivity-adgang', async () => {
     const { prisma } = await import('@/lib/db')
-    vi.mocked(prisma.contract.findFirst).mockImplementation(
-      (() => Promise.resolve({ ...CONTRACT_FIXTURE, sensitivity: 'STRENGT_FORTROLIG' })) as never
-    )
+    vi.mocked(prisma.contract.findFirst).mockImplementation((() =>
+      Promise.resolve({ ...CONTRACT_FIXTURE, sensitivity: 'STRENGT_FORTROLIG' })) as never)
     const perms = await import('@/lib/permissions')
     vi.mocked(perms.canAccessSensitivity).mockResolvedValueOnce(false)
     const result = await updateContract({ contractId: UUID_1, displayName: 'X' })
@@ -97,9 +94,7 @@ describe('updateContract', () => {
 
   it('afviser hvis kontrakt ikke findes', async () => {
     const { prisma } = await import('@/lib/db')
-    vi.mocked(prisma.contract.findFirst).mockImplementation(
-      (() => Promise.resolve(null)) as never
-    )
+    vi.mocked(prisma.contract.findFirst).mockImplementation((() => Promise.resolve(null)) as never)
     const result = await updateContract({ contractId: UUID_1, displayName: 'X' })
     expect('error' in result).toBe(true)
     if ('error' in result) {
@@ -109,9 +104,8 @@ describe('updateContract', () => {
 
   it('skriver auditLog ved opdatering', async () => {
     const { prisma } = await import('@/lib/db')
-    vi.mocked(prisma.contract.findFirst).mockImplementation(
-      (() => Promise.resolve(CONTRACT_FIXTURE)) as never
-    )
+    vi.mocked(prisma.contract.findFirst).mockImplementation((() =>
+      Promise.resolve(CONTRACT_FIXTURE)) as never)
     await updateContract({ contractId: UUID_1, displayName: 'Opdateret navn' })
     expect(prisma.auditLog.create).toHaveBeenCalled()
   })
@@ -124,9 +118,8 @@ describe('addContractParty', () => {
 
   it('happy path tilføjer person-part', async () => {
     const { prisma } = await import('@/lib/db')
-    vi.mocked(prisma.contract.findFirst).mockImplementation(
-      (() => Promise.resolve(CONTRACT_FIXTURE)) as never
-    )
+    vi.mocked(prisma.contract.findFirst).mockImplementation((() =>
+      Promise.resolve(CONTRACT_FIXTURE)) as never)
     const result = await addContractParty({
       contractId: UUID_1,
       personId: 'person-1',
@@ -146,9 +139,8 @@ describe('addContractParty', () => {
 
   it('happy path tilføjer ekstern part', async () => {
     const { prisma } = await import('@/lib/db')
-    vi.mocked(prisma.contract.findFirst).mockImplementation(
-      (() => Promise.resolve(CONTRACT_FIXTURE)) as never
-    )
+    vi.mocked(prisma.contract.findFirst).mockImplementation((() =>
+      Promise.resolve(CONTRACT_FIXTURE)) as never)
     const result = await addContractParty({
       contractId: UUID_1,
       counterpartyName: 'Udlejningsselskabet A/S',
@@ -184,9 +176,8 @@ describe('addContractParty', () => {
 
   it('afviser uden company-adgang', async () => {
     const { prisma } = await import('@/lib/db')
-    vi.mocked(prisma.contract.findFirst).mockImplementation(
-      (() => Promise.resolve(CONTRACT_FIXTURE)) as never
-    )
+    vi.mocked(prisma.contract.findFirst).mockImplementation((() =>
+      Promise.resolve(CONTRACT_FIXTURE)) as never)
     const perms = await import('@/lib/permissions')
     vi.mocked(perms.canAccessCompany).mockResolvedValueOnce(false)
     const result = await addContractParty({
@@ -198,9 +189,8 @@ describe('addContractParty', () => {
 
   it('afviser uden sensitivity-adgang', async () => {
     const { prisma } = await import('@/lib/db')
-    vi.mocked(prisma.contract.findFirst).mockImplementation(
-      (() => Promise.resolve({ ...CONTRACT_FIXTURE, sensitivity: 'STRENGT_FORTROLIG' })) as never
-    )
+    vi.mocked(prisma.contract.findFirst).mockImplementation((() =>
+      Promise.resolve({ ...CONTRACT_FIXTURE, sensitivity: 'STRENGT_FORTROLIG' })) as never)
     const perms = await import('@/lib/permissions')
     vi.mocked(perms.canAccessSensitivity).mockResolvedValueOnce(false)
     const result = await addContractParty({
@@ -212,9 +202,8 @@ describe('addContractParty', () => {
 
   it('skriver auditLog ved tilføjelse', async () => {
     const { prisma } = await import('@/lib/db')
-    vi.mocked(prisma.contract.findFirst).mockImplementation(
-      (() => Promise.resolve(CONTRACT_FIXTURE)) as never
-    )
+    vi.mocked(prisma.contract.findFirst).mockImplementation((() =>
+      Promise.resolve(CONTRACT_FIXTURE)) as never)
     await addContractParty({
       contractId: UUID_1,
       counterpartyName: 'Ekstern A/S',
@@ -225,9 +214,7 @@ describe('addContractParty', () => {
   it('isolation: afviser forkert organisation (kontrakt ikke fundet)', async () => {
     const { prisma } = await import('@/lib/db')
     // findFirst returnerer null — kontrakt tilhører anden org
-    vi.mocked(prisma.contract.findFirst).mockImplementation(
-      (() => Promise.resolve(null)) as never
-    )
+    vi.mocked(prisma.contract.findFirst).mockImplementation((() => Promise.resolve(null)) as never)
     const result = await addContractParty({
       contractId: UUID_1,
       counterpartyName: 'Ekstern A/S',
