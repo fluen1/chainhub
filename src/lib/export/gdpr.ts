@@ -34,10 +34,18 @@ export async function gdprExportPerson(
   if (!person) return null
 
   const [companyPersons, ownerships, contractParties, casePersons] = await Promise.all([
-    prisma.companyPerson.findMany({ where: { person_id: personId } }),
-    prisma.ownership.findMany({ where: { owner_person_id: personId } }),
-    prisma.contractParty.findMany({ where: { person_id: personId } }),
-    prisma.casePerson.findMany({ where: { person_id: personId } }),
+    prisma.companyPerson.findMany({
+      where: { person_id: personId, organization_id: organizationId },
+    }),
+    prisma.ownership.findMany({
+      where: { owner_person_id: personId, organization_id: organizationId },
+    }),
+    prisma.contractParty.findMany({
+      where: { person_id: personId, organization_id: organizationId },
+    }),
+    prisma.casePerson.findMany({
+      where: { person_id: personId, organization_id: organizationId },
+    }),
   ])
 
   // Comments har FK til User (ikke Person) — vi logger dem IKKE i standard-export.

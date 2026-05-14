@@ -13,7 +13,8 @@ vi.mock('@/lib/db', () => ({
     comment: {
       findFirst: vi.fn(),
       create: vi.fn().mockResolvedValue({ id: 'comment-1' }),
-      delete: vi.fn().mockResolvedValue({}),
+      // soft-delete via update (ikke hard delete)
+      update: vi.fn().mockResolvedValue({ id: 'comment-1', deleted_at: new Date() }),
     },
   },
 }))

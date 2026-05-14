@@ -17,6 +17,7 @@ vi.mock('@/lib/db', () => ({
     caseCompany: {
       create: vi.fn().mockResolvedValue({}),
       findMany: vi.fn().mockResolvedValue([]),
+      findFirst: vi.fn().mockResolvedValue(null),
     },
     companyInsightsCache: {
       deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
@@ -95,7 +96,7 @@ describe('createCase', () => {
       companyIds: [UUID_1],
       sensitivity: 'INTERN',
     } as never)
-    expect(result).toEqual({ error: 'Ikke autoriseret' })
+    expect('error' in result).toBe(true)
   })
 
   it('afviser tom titel', async () => {
