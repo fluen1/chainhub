@@ -16,6 +16,8 @@ export interface ActivityEvent {
   action: string // dansk verbum, fx "oprettede"
   target: string // dansk subjekt + kontext, fx "Kontrakt · v3"
   time: string // relativ tid på dansk
+  resource_type: string // bruges til klikbar link-routing i UI
+  resource_id: string // bruges til klikbar link-routing i UI
 }
 
 const ACTION_VERB: Record<string, string> = {
@@ -59,8 +61,12 @@ function formatRelative(date: Date, now: Date): string {
 export async function getRecentActivity(
   organizationId: string,
   userId: string,
-  preloadedCompanyIds?: string[]
+  preloadedCompanyIds?: string[],
+  since?: Date
 ): Promise<ActivityEvent[]> {
+  // Default: 24 timer tilbage fra nu
+  const sinceDate = since ?? new Date(Date.now() - 24 * 60 * 60 * 1000)
+
   // Hent accessible companies for RBAC-scope — brug preloaded liste hvis tilgængelig
   const companyIds =
     preloadedCompanyIds !== undefined
@@ -70,11 +76,12 @@ export async function getRecentActivity(
   const logs = await prisma.auditLog.findMany({
     where: {
       organization_id: organizationId,
+      created_at: { gte: sinceDate },
       // Scope: events der vedrører selskaber brugeren har adgang til, eller org-brede events (company_id=null)
       OR: [{ resource_company_id: { in: companyIds } }, { resource_company_id: null }],
     },
     orderBy: { created_at: 'desc' },
-    take: 10,
+    take: 20,
     select: {
       id: true,
       user_id: true,
@@ -104,6 +111,8 @@ export async function getRecentActivity(
       action: verb,
       target: resource,
       time: formatRelative(l.created_at, now),
+      resource_type: l.resource_type,
+      resource_id: l.resource_id,
     }
   })
 }
