@@ -1,8 +1,14 @@
 import { auth } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
-import { canAccessCompany } from '@/lib/permissions'
-import { getCaseStatusLabel, getCaseTypeLabel, formatDate, daysUntil } from '@/lib/labels'
+import { canAccessCompany, canAccessSensitivity, canAccessModule } from '@/lib/permissions'
+import {
+  getCaseStatusLabel,
+  getCaseTypeLabel,
+  getSensitivityLabel,
+  formatDate,
+  daysUntil,
+} from '@/lib/labels'
 import {
   CaseDetailB,
   type CaseDetailData,
@@ -72,6 +78,18 @@ export default async function CaseDetailPage({ params }: Props) {
   }
   if (!hasAccess) notFound()
 
+  // Tjek modul-adgang
+  const hasModule = await canAccessModule(session.user.id, 'cases', session.user.organizationId)
+  if (!hasModule) notFound()
+
+  // Tjek sensitivity-adgang
+  const hasSensitivity = await canAccessSensitivity(
+    session.user.id,
+    caseItem.sensitivity,
+    session.user.organizationId
+  )
+  if (!hasSensitivity) notFound()
+
   // User-navne (ansvarlig + task assignees)
   const userIds = Array.from(
     new Set(
@@ -110,7 +128,8 @@ export default async function CaseDetailPage({ params }: Props) {
     rawType: caseItem.case_type,
     status: getCaseStatusLabel(caseItem.status),
     rawStatus: caseItem.status,
-    sensitivity: caseItem.sensitivity,
+    sensitivity: getSensitivityLabel(caseItem.sensitivity),
+    rawSensitivity: caseItem.sensitivity,
     description: caseItem.description ?? '',
     subtype: caseItem.case_subtype ?? null,
     selskab: firstCompany?.name ?? '—',
@@ -124,6 +143,7 @@ export default async function CaseDetailPage({ params }: Props) {
     createdAtShort: formatShortDate(caseItem.created_at),
     updatedAt: formatDate(caseItem.updated_at),
     closedAt: caseItem.closed_at ? formatDate(caseItem.closed_at) : null,
+    dueDate: caseItem.due_date ? caseItem.due_date.toISOString().slice(0, 10) : null,
   }
 
   const tasks: CaseTaskData[] = caseItem.tasks.map((t) => {

@@ -2,7 +2,7 @@
 
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { canAccessModule } from '@/lib/permissions'
+import { canAccessCompany, canAccessModule, canAccessSensitivity } from '@/lib/permissions'
 import {
   createPersonSchema,
   updatePersonSchema,
@@ -11,8 +11,31 @@ import {
 } from '@/lib/validations/person'
 import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
-import type { Person } from '@prisma/client'
+import type { CompanyPerson, Ownership, Person } from '@prisma/client'
 import { captureError } from '@/lib/logger'
+import { recordAuditEvent } from '@/lib/audit'
+import { z } from 'zod'
+
+// ─── Zod schemas for nye actions ───────────────────────────────────────────
+
+const addPersonRoleSchema = z.object({
+  personId: z.string().min(1),
+  companyId: z.string().min(1),
+  role: z.string().min(1),
+  startDate: z.string().optional(),
+  note: z.string().optional(),
+})
+
+const addPersonOwnershipSchema = z.object({
+  personId: z.string().min(1),
+  companyId: z.string().min(1),
+  sharePercent: z.coerce.number().min(0.01).max(100),
+  acquiredDate: z.string().optional(),
+  note: z.string().optional(),
+})
+
+export type AddPersonRoleInput = z.infer<typeof addPersonRoleSchema>
+export type AddPersonOwnershipInput = z.infer<typeof addPersonOwnershipSchema>
 
 export async function createPerson(input: CreatePersonInput): Promise<ActionResult<Person>> {
   const session = await auth()
@@ -186,5 +209,155 @@ export async function searchPersons(
       extra: { query },
     })
     return { error: 'Søgning fejlede' }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// addPersonRole — tilknyt person til selskab med en bestemt rolle.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function addPersonRole(
+  input: AddPersonRoleInput
+): Promise<ActionResult<CompanyPerson>> {
+  const session = await auth()
+  if (!session) return { error: 'Ikke autoriseret' }
+
+  const parsed = addPersonRoleSchema.safeParse(input)
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Ugyldigt input' }
+
+  // Tjek selskabsadgang
+  const hasCompanyAccess = await canAccessCompany(
+    session.user.id,
+    parsed.data.companyId,
+    session.user.organizationId
+  )
+  if (!hasCompanyAccess) return { error: 'Ingen adgang til dette selskab' }
+
+  // Verificér at personen tilhører organisationen
+  const person = await prisma.person.findFirst({
+    where: {
+      id: parsed.data.personId,
+      organization_id: session.user.organizationId,
+      deleted_at: null,
+    },
+    select: { id: true },
+  })
+  if (!person) return { error: 'Person ikke fundet' }
+
+  try {
+    const companyPerson = await prisma.companyPerson.create({
+      data: {
+        organization_id: session.user.organizationId,
+        company_id: parsed.data.companyId,
+        person_id: parsed.data.personId,
+        role: parsed.data.role,
+        start_date: parsed.data.startDate ? new Date(parsed.data.startDate) : new Date(),
+        created_by: session.user.id,
+      },
+    })
+
+    await recordAuditEvent({
+      organizationId: session.user.organizationId,
+      userId: session.user.id,
+      action: 'CREATE',
+      resourceType: 'company_person',
+      resourceId: companyPerson.id,
+      resourceCompanyId: parsed.data.companyId,
+      sensitivity: 'STANDARD',
+      changes: {
+        personId: parsed.data.personId,
+        companyId: parsed.data.companyId,
+        role: parsed.data.role,
+      },
+    })
+
+    revalidatePath(`/persons/${parsed.data.personId}`)
+    revalidatePath(`/companies/${parsed.data.companyId}`)
+    return { data: companyPerson }
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:addPersonRole',
+      extra: { personId: parsed.data.personId, companyId: parsed.data.companyId },
+    })
+    return { error: 'Rolle kunne ikke tilføjes — prøv igen' }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// addPersonOwnership — registrér ejerskab for person i selskab.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function addPersonOwnership(
+  input: AddPersonOwnershipInput
+): Promise<ActionResult<Ownership>> {
+  const session = await auth()
+  if (!session) return { error: 'Ikke autoriseret' }
+
+  const parsed = addPersonOwnershipSchema.safeParse(input)
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Ugyldigt input' }
+
+  // Ejerskab kræver selskabsadgang
+  const hasCompanyAccess = await canAccessCompany(
+    session.user.id,
+    parsed.data.companyId,
+    session.user.organizationId
+  )
+  if (!hasCompanyAccess) return { error: 'Ingen adgang til dette selskab' }
+
+  // Ejerskab er STRENGT_FORTROLIG
+  const hasSensitivityAccess = await canAccessSensitivity(
+    session.user.id,
+    'STRENGT_FORTROLIG',
+    session.user.organizationId
+  )
+  if (!hasSensitivityAccess) return { error: 'Du har ikke adgang til at registrere ejerskab' }
+
+  // Verificér at personen tilhører organisationen
+  const person = await prisma.person.findFirst({
+    where: {
+      id: parsed.data.personId,
+      organization_id: session.user.organizationId,
+      deleted_at: null,
+    },
+    select: { id: true },
+  })
+  if (!person) return { error: 'Person ikke fundet' }
+
+  try {
+    const ownership = await prisma.ownership.create({
+      data: {
+        organization_id: session.user.organizationId,
+        company_id: parsed.data.companyId,
+        owner_person_id: parsed.data.personId,
+        ownership_pct: parsed.data.sharePercent,
+        effective_date: parsed.data.acquiredDate ? new Date(parsed.data.acquiredDate) : null,
+        created_by: session.user.id,
+      },
+    })
+
+    await recordAuditEvent({
+      organizationId: session.user.organizationId,
+      userId: session.user.id,
+      action: 'CREATE',
+      resourceType: 'ownership',
+      resourceId: ownership.id,
+      resourceCompanyId: parsed.data.companyId,
+      sensitivity: 'STRENGT_FORTROLIG',
+      changes: {
+        personId: parsed.data.personId,
+        companyId: parsed.data.companyId,
+        ownershipPct: parsed.data.sharePercent,
+      },
+    })
+
+    revalidatePath(`/persons/${parsed.data.personId}`)
+    revalidatePath(`/companies/${parsed.data.companyId}`)
+    return { data: ownership }
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:addPersonOwnership',
+      extra: { personId: parsed.data.personId, companyId: parsed.data.companyId },
+    })
+    return { error: 'Ejerskab kunne ikke registreres — prøv igen' }
   }
 }
