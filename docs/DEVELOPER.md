@@ -4,6 +4,53 @@ Detaljeret guide til nye udviklere. README giver overblikket; denne fil går dyb
 
 ---
 
+## Port-konflikter og NEXTAUTH_URL
+
+Next.js vælger automatisk næste ledige port hvis 3000 er optaget (fx af en anden dev-server, Docker-container eller Teams). Det giver usynlige auth-fejl fordi `NEXTAUTH_URL` i `.env.local` stadig peger på port 3000.
+
+**Symptomer:**
+
+- Login-siden redirecter forkert efter autentificering
+- NextAuth-callbacks returnerer 401 eller 404
+- `getServerSession` returnerer `null` trods gyldigt login
+
+**Fix:**
+
+1. Se hvilken port dev-serveren faktisk bruger:
+
+   ```
+   npm run dev
+   # Output: "ready - started server on 0.0.0.0:3001, url: http://localhost:3001"
+   ```
+
+2. Opdater `.env.local`:
+
+   ```env
+   NEXTAUTH_URL=http://localhost:3001
+   ```
+
+3. Genstart dev-serveren (`Ctrl+C` → `npm run dev`) så NextAuth læser den nye URL.
+
+**Forebyg konflikten:**
+
+Find og stop processen der bruger port 3000 (PowerShell):
+
+```powershell
+netstat -ano | findstr :3000
+# Notér PID i sidste kolonne
+taskkill /PID <PID> /F
+```
+
+**Runtime-advarsel (development-mode):**
+
+I development-mode logger `src/lib/auth/index.ts` en advarsel i konsollen hvis `NEXTAUTH_URL` ikke matcher den faktiske request-origin. Hold øje med:
+
+```
+[ChainHub auth] NEXTAUTH_URL mismatch: env=http://localhost:3000, request=http://localhost:3001
+```
+
+---
+
 ## Windows + OneDrive
 
 Projekt-dir ligger under OneDrive på den primære udviklers maskine. Det giver 3 kendte gotchas:
