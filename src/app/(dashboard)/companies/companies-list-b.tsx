@@ -145,7 +145,7 @@ function EmptyCompaniesView({ canCreate }: { canCreate: boolean }) {
             </BButton>
           ) : (
             <p className="text-[12px] text-b-3">
-              Bed en GROUP_OWNER eller GROUP_ADMIN om at oprette det første selskab.
+              Bed en kædeejer eller administrator om at oprette det første selskab.
             </p>
           )}
         </div>

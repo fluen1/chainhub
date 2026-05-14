@@ -381,7 +381,7 @@ function AISection({
             />
           </div>
           <div className="b-tnum mt-2 flex justify-between text-[11px] text-b-2">
-            <span>{usage.used.toLocaleString('da-DK')} extractions brugt</span>
+            <span>{usage.used.toLocaleString('da-DK')} analyser brugt</span>
             <span>{usage.max.toLocaleString('da-DK')} pr. måned</span>
           </div>
           {usage.threshold && usage.threshold !== 'none' && (
@@ -393,10 +393,10 @@ function AISection({
               }`}
             >
               {usage.threshold === 'exceeded'
-                ? 'Månedlig cost-cap er nået — nye AI-kald er blokeret. Kontakt support.'
+                ? 'Månedlig kvota er nået — nye AI-analyser er blokeret. Kontakt support.'
                 : usage.threshold === '90-alert'
-                  ? `90% af cost-cap brugt (${usage.currentUsd?.toFixed(2) ?? '—'} / ${usage.capUsd?.toFixed(0) ?? '—'} USD).`
-                  : `${usage.threshold === '75-warn' ? '75' : '50'}% af cost-cap nået (${usage.currentUsd?.toFixed(2) ?? '—'} USD brugt).`}
+                  ? `90% af kvota brugt (AI-omkostning: $${usage.currentUsd?.toFixed(2) ?? '—'} / $${usage.capUsd?.toFixed(0) ?? '—'}).`
+                  : `${usage.threshold === '75-warn' ? '75' : '50'}% af kvota nået (AI-omkostning: $${usage.currentUsd?.toFixed(2) ?? '—'} brugt).`}
             </div>
           )}
         </div>
@@ -404,7 +404,7 @@ function AISection({
           <div className="flex items-center justify-between">
             <span>
               Nulstilles første dag i næste måned · {Math.max(0, usage.max - usage.used)}{' '}
-              extractions tilbage
+              analyser tilbage
             </span>
             <Link href="/settings/ai-usage" className="text-b-blue-fg no-underline hover:underline">
               Se detaljeret brug →
@@ -459,7 +459,7 @@ function FakturaSection({ org }: { org: SettingsOrg | null }) {
           isLast
         />
         <PanelFooter>
-          <span>Tier-skift og faktura-historik kommer i en senere version</span>
+          <span>Abonnementsskift og faktura-historik kommer i en senere version</span>
         </PanelFooter>
       </Panel>
 

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
 import {
   Breadcrumb,
   PageHeader,
@@ -37,6 +38,17 @@ import { AddDataDropdown } from './add-data-dropdown'
 import { EditStamdataDialog } from '@/components/companies/EditStamdataDialog'
 import { getCompanyPersonRoleLabel } from '@/lib/labels'
 import type { CompanyDetailData } from '@/actions/company-detail'
+
+// Lazy-load leaflet-map — Leaflet kræver `window` (browser-only), ~150 kB.
+// ssr: false forhindrer SSR-crash; loading-skeleton matcher panel-højde.
+// Eksporteres til brug i fremtidige geografi-paneler på denne side.
+export const LazyLeafletMap = dynamic(
+  () => import('@/components/companies/leaflet-map').then((m) => m.default),
+  {
+    ssr: false,
+    loading: () => <div className="h-48 animate-pulse bg-b-panel-h" />,
+  }
+)
 
 // ────────────────────────────────────────────────────────────────────────────
 // /companies/[id] — B-stil detail-side med 4 wired modaler.

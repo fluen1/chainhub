@@ -20,9 +20,12 @@ import {
   KbdHint,
   AIBadge,
 } from '@/components/ui/b'
+import dynamic from 'next/dynamic'
 import { EndRoleLink } from './end-role-link'
-import { GdprPanel } from '@/components/persons/GdprPanel'
 import { EditPersonDialog } from '@/components/persons/EditPersonDialog'
+
+// Lazy-load GdprPanel — kun vist for admins, splittes fra hoved-bundle
+const GdprPanel = dynamic(() => import('@/components/persons/GdprPanel').then(m => m.GdprPanel))
 import { AddPersonRoleModal } from '@/components/persons/AddPersonRoleModal'
 import { AddPersonOwnershipModal } from '@/components/persons/AddPersonOwnershipModal'
 import { getCaseStatusLabel } from '@/lib/labels'

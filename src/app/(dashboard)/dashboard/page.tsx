@@ -69,7 +69,7 @@ export default async function DashboardPage() {
     <>
       <PageTopbar
         title={`Min portefølje · ${formatDate(now)}`}
-        meta={`Sidst opdateret ${formatTime(now)} · auto-refresh on`}
+        meta={`Sidst opdateret ${formatTime(now)} · automatisk opdatering`}
       />
 
       <Strip cells={stripCells} />
