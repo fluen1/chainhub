@@ -1,6 +1,8 @@
 import { cn } from '@/lib/utils'
 
 // BottomBar — sidens bund-meta-linje. Renderes som sidste element i b-main.
+// `mt-auto` skubber baren til viewport-bunden når sideindholdet er kortere end
+// skærmen, men lader den flyde med ved længere indhold (b-main er flex-col).
 //
 // Brug:
 //   <BottomBar
@@ -18,7 +20,12 @@ export function BottomBar({
   className?: string
 }) {
   return (
-    <div className={cn('flex items-center justify-between py-1.5 text-[11px] text-b-2', className)}>
+    <div
+      className={cn(
+        'mt-auto flex items-center justify-between border-t border-b-border pt-2 text-[11px] text-b-2',
+        className
+      )}
+    >
       <span>{left}</span>
       <span className="flex items-center gap-2">{right}</span>
     </div>

@@ -289,7 +289,8 @@ export default async function ContractDetailPage({ params }: Props) {
     },
     {
       num: currentVersion ? `v${currentVersion.version_number}` : '—',
-      label: 'Aktuel version',
+      label: currentVersion ? 'Aktuel version' : 'Ingen versioner endnu',
+      color: currentVersion ? 'default' : 'amber',
     },
     {
       num: (
@@ -306,7 +307,8 @@ export default async function ContractDetailPage({ params }: Props) {
     },
     {
       num: contract.parties.length,
-      label: 'Parter',
+      label: contract.parties.length === 0 ? 'Parter · mangler' : 'Parter',
+      color: contract.parties.length === 0 ? 'amber' : 'default',
     },
   ]
 
@@ -662,8 +664,9 @@ export default async function ContractDetailPage({ params }: Props) {
         <Panel>
           <PanelHeader title="Parter" meta={`${partyRows.length} parter`} />
           {partyRows.length === 0 ? (
-            <div className="px-3 py-3 text-center text-[12px] text-b-3">
-              Ingen parter registreret
+            <div className="px-3 py-4 text-center text-[12px] text-b-2">
+              <div className="font-medium text-b-1">Ingen parter registreret endnu</div>
+              <div className="mt-0.5 text-b-3">Tilføj parter for at signere og spore ansvar</div>
             </div>
           ) : (
             partyRows.map((p, i) => (

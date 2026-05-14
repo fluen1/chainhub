@@ -31,16 +31,24 @@ export function Strip({ cells, className }: { cells: StripCellData[]; className?
       style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
     >
       {cells.map((c, i) => (
-        <div key={i} className="bg-b-panel px-3 py-2.5">
+        <div key={i} className="min-w-0 bg-b-panel px-3 py-2.5">
           <div
             className={cn(
-              'b-tnum text-[18px] font-semibold leading-none',
+              'b-tnum truncate text-[18px] font-semibold leading-none',
               numColor[c.color ?? 'default']
             )}
+            title={
+              typeof c.num === 'string' || typeof c.num === 'number' ? String(c.num) : undefined
+            }
           >
             {c.num}
           </div>
-          <div className="mt-1 text-[11px] text-b-2">{c.label}</div>
+          <div
+            className="mt-1 truncate text-[11px] text-b-2"
+            title={typeof c.label === 'string' ? c.label : undefined}
+          >
+            {c.label}
+          </div>
         </div>
       ))}
     </div>
