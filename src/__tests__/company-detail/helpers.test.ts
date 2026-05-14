@@ -37,55 +37,92 @@ describe('pickHighestPriorityRole', () => {
 // -----------------------------------------------------------------
 
 describe('sectionsForRole', () => {
+  // Reference: docs/spec/roller-og-tilladelser.md linje 139-156
+
   it('GROUP_OWNER ser alle 8 sektioner', () => {
     const sections = sectionsForRole('GROUP_OWNER')
     expect(sections.size).toBe(8)
     expect(sections.has('ownership')).toBe(true)
-    expect(sections.has('contracts')).toBe(true)
-    expect(sections.has('finance')).toBe(true)
-    expect(sections.has('cases')).toBe(true)
     expect(sections.has('persons')).toBe(true)
-    expect(sections.has('visits')).toBe(true)
+    expect(sections.has('contracts')).toBe(true)
+    expect(sections.has('cases')).toBe(true)
+    expect(sections.has('finance')).toBe(true)
     expect(sections.has('documents')).toBe(true)
+    expect(sections.has('visits')).toBe(true)
     expect(sections.has('insight')).toBe(true)
   })
 
-  it('GROUP_LEGAL ser 5 sektioner og IKKE finance/persons/visits', () => {
-    const sections = sectionsForRole('GROUP_LEGAL')
-    expect(sections.size).toBe(5)
+  it('GROUP_ADMIN ser alle 8 sektioner (kun fakturering ekskluderet, og det er ikke en company-detail-sektion)', () => {
+    const sections = sectionsForRole('GROUP_ADMIN')
+    expect(sections.size).toBe(8)
     expect(sections.has('ownership')).toBe(true)
+    expect(sections.has('contracts')).toBe(true)
+    expect(sections.has('finance')).toBe(true)
+  })
+
+  it('GROUP_LEGAL ser 7 sektioner og IKKE finance', () => {
+    const sections = sectionsForRole('GROUP_LEGAL')
+    expect(sections.size).toBe(7)
+    expect(sections.has('ownership')).toBe(true)
+    expect(sections.has('persons')).toBe(true)
     expect(sections.has('contracts')).toBe(true)
     expect(sections.has('cases')).toBe(true)
     expect(sections.has('documents')).toBe(true)
+    expect(sections.has('visits')).toBe(true)
     expect(sections.has('insight')).toBe(true)
     expect(sections.has('finance')).toBe(false)
-    expect(sections.has('persons')).toBe(false)
-    expect(sections.has('visits')).toBe(false)
   })
 
-  it('GROUP_FINANCE ser 3 sektioner (contracts, finance, insight)', () => {
+  it('GROUP_FINANCE ser persons + finance + documents (IKKE ownership/contracts/cases)', () => {
     const sections = sectionsForRole('GROUP_FINANCE')
-    expect(sections.size).toBe(3)
-    expect(sections.has('contracts')).toBe(true)
+    expect(sections.has('persons')).toBe(true)
     expect(sections.has('finance')).toBe(true)
-    expect(sections.has('insight')).toBe(true)
-  })
-
-  it('GROUP_ADMIN ser 4 sektioner og IKKE insight', () => {
-    const sections = sectionsForRole('GROUP_ADMIN')
-    expect(sections.size).toBe(4)
-    expect(sections.has('ownership')).toBe(true)
-    expect(sections.has('persons')).toBe(true)
-    expect(sections.has('visits')).toBe(true)
     expect(sections.has('documents')).toBe(true)
-    expect(sections.has('insight')).toBe(false)
+    expect(sections.has('visits')).toBe(true)
+    expect(sections.has('insight')).toBe(true)
+    expect(sections.has('ownership')).toBe(false)
+    expect(sections.has('contracts')).toBe(false)
+    expect(sections.has('cases')).toBe(false)
   })
 
-  it('COMPANY_MANAGER ser 2 sektioner (persons, visits)', () => {
-    const sections = sectionsForRole('COMPANY_MANAGER')
-    expect(sections.size).toBe(2)
+  it('GROUP_READONLY ser alt UNDTAGEN ownership', () => {
+    const sections = sectionsForRole('GROUP_READONLY')
+    expect(sections.has('ownership')).toBe(false)
     expect(sections.has('persons')).toBe(true)
-    expect(sections.has('visits')).toBe(true)
+    expect(sections.has('contracts')).toBe(true)
+    expect(sections.has('cases')).toBe(true)
+    expect(sections.has('finance')).toBe(true)
+    expect(sections.has('documents')).toBe(true)
+  })
+
+  it('COMPANY_MANAGER ser alt UNDTAGEN ownership', () => {
+    const sections = sectionsForRole('COMPANY_MANAGER')
+    expect(sections.has('ownership')).toBe(false)
+    expect(sections.has('persons')).toBe(true)
+    expect(sections.has('contracts')).toBe(true)
+    expect(sections.has('cases')).toBe(true)
+    expect(sections.has('finance')).toBe(true)
+    expect(sections.has('documents')).toBe(true)
+  })
+
+  it('COMPANY_LEGAL ser contracts+cases+persons+documents (IKKE ownership/finance)', () => {
+    const sections = sectionsForRole('COMPANY_LEGAL')
+    expect(sections.has('ownership')).toBe(false)
+    expect(sections.has('finance')).toBe(false)
+    expect(sections.has('persons')).toBe(true)
+    expect(sections.has('contracts')).toBe(true)
+    expect(sections.has('cases')).toBe(true)
+    expect(sections.has('documents')).toBe(true)
+  })
+
+  it('COMPANY_READONLY ser alt UNDTAGEN ownership', () => {
+    const sections = sectionsForRole('COMPANY_READONLY')
+    expect(sections.has('ownership')).toBe(false)
+    expect(sections.has('persons')).toBe(true)
+    expect(sections.has('contracts')).toBe(true)
+    expect(sections.has('cases')).toBe(true)
+    expect(sections.has('finance')).toBe(true)
+    expect(sections.has('documents')).toBe(true)
   })
 
   it('ukendt rolle falder tilbage til GROUP_OWNER med 8 sektioner', () => {

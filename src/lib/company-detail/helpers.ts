@@ -41,34 +41,46 @@ const ROLE_PRIORITY: Record<string, number> = {
   COMPANY_READONLY: 40,
 }
 
-// Proto's roleConfig mapped til ChainHub's rolle-navne
+// SECTIONS_BY_ROLE — afledt direkte af modul-matrixen i
+// docs/spec/roller-og-tilladelser.md (linje 139-156). visits følger persons
+// (operational data); insight er tværgående AI-feature og gives til alle
+// roller med mindst én datasektion.
+//
+// Spec-summary (✅ = ser, ❌ = ser ikke):
+//                    OWNR ADMN LEGL FIN  RO   MGR  C_LEG C_RO
+// ownership          ✅   ✅   ✅   ❌   ❌   ❌   ❌    ❌
+// persons            ✅   ✅   ✅   ✅   ✅   ✅   ✅    ✅
+// contracts          ✅   ✅   ✅   ❌   ✅   ✅   ✅    ✅
+// cases              ✅   ✅   ✅   ❌   ✅   ✅   ✅    ✅
+// finance            ✅   ✅   ❌   ✅   ✅   ✅   ❌    ✅
+// documents          ✅   ✅   ✅   ✅   ✅   ✅   ✅    ✅
 const SECTIONS_BY_ROLE: Record<string, SectionKey[]> = {
   GROUP_OWNER: [
     'ownership',
-    'contracts',
-    'finance',
-    'cases',
     'persons',
-    'visits',
+    'contracts',
+    'cases',
+    'finance',
     'documents',
+    'visits',
     'insight',
   ],
-  GROUP_ADMIN: ['ownership', 'persons', 'visits', 'documents'],
-  GROUP_LEGAL: ['ownership', 'contracts', 'cases', 'documents', 'insight'],
-  COMPANY_LEGAL: ['ownership', 'contracts', 'cases', 'documents', 'insight'],
-  GROUP_FINANCE: ['contracts', 'finance', 'insight'],
-  COMPANY_MANAGER: ['persons', 'visits'],
-  GROUP_READONLY: [
+  GROUP_ADMIN: [
     'ownership',
-    'contracts',
-    'finance',
-    'cases',
     'persons',
-    'visits',
+    'contracts',
+    'cases',
+    'finance',
     'documents',
+    'visits',
     'insight',
   ],
-  COMPANY_READONLY: ['persons', 'visits'],
+  GROUP_LEGAL: ['ownership', 'persons', 'contracts', 'cases', 'documents', 'visits', 'insight'],
+  GROUP_FINANCE: ['persons', 'finance', 'documents', 'visits', 'insight'],
+  GROUP_READONLY: ['persons', 'contracts', 'cases', 'finance', 'documents', 'visits', 'insight'],
+  COMPANY_MANAGER: ['persons', 'contracts', 'cases', 'finance', 'documents', 'visits', 'insight'],
+  COMPANY_LEGAL: ['persons', 'contracts', 'cases', 'documents', 'visits', 'insight'],
+  COMPANY_READONLY: ['persons', 'contracts', 'cases', 'finance', 'documents', 'visits', 'insight'],
 }
 
 // Hardcoded senior-roller for Noeglepersoner-sektionen (hierarki-orden = prioritet)
