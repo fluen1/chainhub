@@ -186,6 +186,27 @@ export async function canAccessModule(
           r === 'COMPANY_LEGAL' ||
           r === 'COMPANY_READONLY'
       )
+    // Export: compliance/rapport-brug — GROUP_OWNER, GROUP_ADMIN, GROUP_LEGAL, GROUP_FINANCE
+    // GDPR-export (prepareGdprExport) er admin-only og bruger 'settings'-modulet separat.
+    case 'export':
+      return userRoles.some(
+        (r) =>
+          r === 'GROUP_OWNER' || r === 'GROUP_ADMIN' || r === 'GROUP_LEGAL' || r === 'GROUP_FINANCE'
+      )
+    // Users-list: bruges af assignee-dropdowns i cases/tasks/contracts.
+    // Tilgængeligt for alle der kan redigere i mindst ét modul.
+    case 'users-list':
+      return userRoles.some(
+        (r) =>
+          r === 'GROUP_OWNER' ||
+          r === 'GROUP_ADMIN' ||
+          r === 'GROUP_LEGAL' ||
+          r === 'GROUP_FINANCE' ||
+          r === 'GROUP_READONLY' ||
+          r === 'COMPANY_MANAGER' ||
+          r === 'COMPANY_LEGAL' ||
+          r === 'COMPANY_READONLY'
+      )
     default:
       // FAIL-CLOSED: ukendte moduler afvises. Tilføj eksplicit case for nye moduler.
       return false
