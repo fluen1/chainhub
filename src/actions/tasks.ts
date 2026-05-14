@@ -17,7 +17,7 @@ import {
 } from '@/lib/validations/case'
 import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
-import type { Task } from '@prisma/client'
+import type { Task, TaskHistoryField } from '@prisma/client'
 import { captureError } from '@/lib/logger'
 
 export async function createTask(input: CreateTaskInput): Promise<ActionResult<Task>> {
@@ -37,19 +37,74 @@ export async function createTask(input: CreateTaskInput): Promise<ActionResult<T
   }
 
   try {
-    const task = await prisma.task.create({
-      data: {
-        organization_id: session.user.organizationId,
-        title: parsed.data.title,
-        description: parsed.data.description || null,
-        assigned_to: parsed.data.assignedTo || null,
-        due_date: parsed.data.dueDate ? new Date(parsed.data.dueDate) : null,
-        priority: parsed.data.priority,
-        status: 'NY',
-        case_id: parsed.data.caseId || null,
-        company_id: parsed.data.companyId || null,
-        created_by: session.user.id,
-      },
+    const task = await prisma.$transaction(async (tx) => {
+      const created = await tx.task.create({
+        data: {
+          organization_id: session.user.organizationId,
+          title: parsed.data.title,
+          description: parsed.data.description || null,
+          assigned_to: parsed.data.assignedTo || null,
+          due_date: parsed.data.dueDate ? new Date(parsed.data.dueDate) : null,
+          priority: parsed.data.priority,
+          status: 'NY',
+          case_id: parsed.data.caseId || null,
+          company_id: parsed.data.companyId || null,
+          created_by: session.user.id,
+        },
+      })
+
+      // Opret initial TaskHistory for alle satte felter
+      const historyEntries: Array<{
+        organization_id: string
+        task_id: string
+        field_name: TaskHistoryField
+        old_value: string | null
+        new_value: string | null
+        changed_by: string
+      }> = [
+        {
+          organization_id: session.user.organizationId,
+          task_id: created.id,
+          field_name: 'STATUS',
+          old_value: null,
+          new_value: 'NY',
+          changed_by: session.user.id,
+        },
+        {
+          organization_id: session.user.organizationId,
+          task_id: created.id,
+          field_name: 'PRIORITY',
+          old_value: null,
+          new_value: parsed.data.priority,
+          changed_by: session.user.id,
+        },
+      ]
+
+      if (parsed.data.assignedTo) {
+        historyEntries.push({
+          organization_id: session.user.organizationId,
+          task_id: created.id,
+          field_name: 'ASSIGNEE',
+          old_value: null,
+          new_value: parsed.data.assignedTo,
+          changed_by: session.user.id,
+        })
+      }
+
+      if (parsed.data.dueDate) {
+        historyEntries.push({
+          organization_id: session.user.organizationId,
+          task_id: created.id,
+          field_name: 'DUE_DATE',
+          old_value: null,
+          new_value: parsed.data.dueDate,
+          changed_by: session.user.id,
+        })
+      }
+
+      await Promise.all(historyEntries.map((entry) => tx.taskHistory.create({ data: entry })))
+
+      return created
     })
 
     revalidatePath('/tasks')
