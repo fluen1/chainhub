@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useEffect, useRef, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -23,8 +23,8 @@ import {
   BottomBar,
 } from '@/components/ui/b'
 import { updateTaskStatus } from '@/actions/tasks'
+import { updateCaseStatus, escalateCase } from '@/actions/cases'
 import { createCaseComment, deleteComment } from '@/actions/comments'
-import { escalateCase } from '@/actions/cases'
 import { CloseCaseDialog } from '@/components/cases/CloseCaseDialog'
 import { EditCaseDialog, type EditCaseInitial } from '@/components/cases/EditCaseDialog'
 
@@ -105,19 +105,40 @@ export interface CaseCommentData {
   createdAt: string
 }
 
-function statusTone(rawStatus: string): BadgeTone {
-  switch (rawStatus) {
-    case 'NY':
-    case 'AKTIV':
-      return 'blue'
-    case 'AFVENTER_EKSTERN':
-    case 'AFVENTER_KLIENT':
-      return 'amber'
-    case 'LUKKET':
-      return 'green'
-    default:
-      return 'gray'
-  }
+// Gyldige sagsstatus-transitioner (spejler CASE_TRANSITIONS i actions/cases.ts)
+const CASE_TRANSITIONS: Record<string, string[]> = {
+  NY: ['AKTIV'],
+  AKTIV: ['AFVENTER_EKSTERN', 'AFVENTER_KLIENT', 'LUKKET'],
+  AFVENTER_EKSTERN: ['AKTIV', 'LUKKET'],
+  AFVENTER_KLIENT: ['AKTIV', 'LUKKET'],
+  LUKKET: ['AKTIV', 'ARKIVERET'],
+  ARKIVERET: [],
+}
+
+type CaseStatusValue =
+  | 'NY'
+  | 'AKTIV'
+  | 'AFVENTER_EKSTERN'
+  | 'AFVENTER_KLIENT'
+  | 'LUKKET'
+  | 'ARKIVERET'
+
+const CASE_STATUS_LABELS: Record<CaseStatusValue, string> = {
+  NY: 'Ny',
+  AKTIV: 'Aktiv',
+  AFVENTER_EKSTERN: 'Afventer ekstern',
+  AFVENTER_KLIENT: 'Afventer klient',
+  LUKKET: 'Lukket',
+  ARKIVERET: 'Arkiveret',
+}
+
+const CASE_STATUS_DOT: Record<CaseStatusValue, string> = {
+  NY: 'bg-b-border-strong',
+  AKTIV: 'bg-b-blue-fg',
+  AFVENTER_EKSTERN: 'bg-b-amber-fg',
+  AFVENTER_KLIENT: 'bg-b-amber-fg',
+  LUKKET: 'bg-b-green-fg',
+  ARKIVERET: 'bg-b-border-strong',
 }
 
 function fristTone(days: number | null): BadgeTone {
@@ -151,10 +172,27 @@ export function CaseDetailB({
   const [comment, setComment] = useState('')
   const [closeOpen, setCloseOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
+  const [caseStatus, setCaseStatus] = useState<CaseStatusValue>(data.rawStatus as CaseStatusValue)
   const [, startTransition] = useTransition()
   const [commentPending, startCommentTransition] = useTransition()
   const [escalatePending, startEscalateTransition] = useTransition()
+  const [statusPending, startStatusTransition] = useTransition()
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null)
+
+  function changeStatus(newStatus: CaseStatusValue) {
+    const prev = caseStatus
+    setCaseStatus(newStatus)
+    startStatusTransition(async () => {
+      const res = await updateCaseStatus({ caseId: data.id, status: newStatus })
+      if ('error' in res) {
+        setCaseStatus(prev)
+        toast.error(res.error)
+      } else {
+        toast.success(`Status ændret til ${CASE_STATUS_LABELS[newStatus]}`)
+        router.refresh()
+      }
+    })
+  }
 
   function toggleTask(taskId: string, currentDone: boolean) {
     // Optimistic
@@ -298,11 +336,7 @@ export function CaseDetailB({
           </span>
         }
         statusBadge={
-          <span className="flex items-center gap-1.5">
-            <Badge tone={statusTone(data.rawStatus)} className="text-[11px]">
-              {data.status}
-            </Badge>
-          </span>
+          <CaseStatusPill value={caseStatus} onChange={changeStatus} pending={statusPending} />
         }
         meta={
           <>
@@ -322,7 +356,7 @@ export function CaseDetailB({
         actions={
           <>
             <BButton onClick={() => setEditOpen(true)}>Rediger</BButton>
-            {data.rawStatus !== 'LUKKET' ? (
+            {caseStatus !== 'LUKKET' ? (
               <BButton primary onClick={() => setCloseOpen(true)}>
                 Luk sag
               </BButton>
@@ -681,6 +715,71 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
         {label}
       </span>
       <span className="text-[13px] text-b-1">{value}</span>
+    </div>
+  )
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// CaseStatusPill — inline dropdown der ændrer sagsstatus (2 klik vs 3).
+// Viser kun gyldige næste-trin per CASE_TRANSITIONS.
+// ────────────────────────────────────────────────────────────────────────────
+
+function CaseStatusPill({
+  value,
+  onChange,
+  pending,
+}: {
+  value: CaseStatusValue
+  onChange: (v: CaseStatusValue) => void
+  pending: boolean
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function h(e: MouseEvent) {
+      if (!ref.current?.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', h)
+    return () => document.removeEventListener('mousedown', h)
+  }, [])
+
+  const validNext = (CASE_TRANSITIONS[value] ?? []) as CaseStatusValue[]
+
+  return (
+    <div ref={ref} className="relative inline-block">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        disabled={pending || validNext.length === 0}
+        className="inline-flex items-center gap-1 rounded-[4px] border border-b-border-strong bg-white px-2 py-0.5 text-[11px] text-b-1 hover:bg-[#f6f8fa] disabled:opacity-60"
+      >
+        <span
+          className={`h-1.5 w-1.5 rounded-full ${CASE_STATUS_DOT[value] ?? 'bg-b-border-strong'}`}
+        />
+        {CASE_STATUS_LABELS[value] ?? value}
+        {validNext.length > 0 && ' ▾'}
+      </button>
+      {open && validNext.length > 0 && (
+        <div className="absolute left-0 top-[calc(100%+3px)] z-50 min-w-[160px] overflow-hidden rounded-[4px] border border-b-border-strong bg-white shadow-[0_8px_24px_rgba(15,23,42,0.11)]">
+          {validNext.map((next) => (
+            <button
+              key={next}
+              type="button"
+              onClick={() => {
+                onChange(next)
+                setOpen(false)
+              }}
+              className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] text-b-1 hover:bg-b-row-hover"
+            >
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${CASE_STATUS_DOT[next] ?? 'bg-b-border-strong'}`}
+              />
+              {CASE_STATUS_LABELS[next]}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
