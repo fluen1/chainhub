@@ -263,6 +263,15 @@ export function CompanyDetailB({
 
       <Strip cells={stripCells} />
 
+      {/* AlertBar: kritisk selskabsstatus — vises når healthStatus=critical */}
+      {data.statusBadge.severity === 'critical' && (
+        <AlertBar tone="red">
+          <strong>Selskabet er kritisk</strong>
+          {': '}
+          {buildCriticalReason(data.cases.totalCount, data.tasks.overdueCount)}
+        </AlertBar>
+      )}
+
       {expiringLease &&
         expiringLease.daysUntilExpiry >= 0 &&
         expiringLease.daysUntilExpiry <= 30 && (
@@ -535,8 +544,15 @@ export function CompanyDetailB({
                         {data.finance.statusBadge.label}
                       </Badge>
                     }
-                    isLast
                   />
+                  {data.finance.peerRank && (
+                    <FinRow
+                      label="Rang"
+                      value={`${data.finance.peerRank.rank} af ${data.finance.peerRank.total} selskaber`}
+                      isLast
+                    />
+                  )}
+                  {!data.finance.peerRank && <div className="py-1" />}
                 </div>
               ) : (
                 <PanelEmpty>Tilføj første finansiel metric</PanelEmpty>
@@ -780,4 +796,19 @@ function visitBadgeTone(t: 'blue' | 'green' | 'slate'): BadgeTone {
   if (t === 'blue') return 'blue'
   if (t === 'green') return 'green'
   return 'gray'
+}
+
+// buildCriticalReason — bygger en dansk, handlingsanvisende årsagstekst baseret
+// på tilgængelige tæller. Returnerer den mest præcise kombination.
+function buildCriticalReason(openCases: number, overdueTasks: number): string {
+  if (overdueTasks > 0 && openCases > 0) {
+    return `${overdueTasks} ${overdueTasks === 1 ? 'forfalden opgave' : 'forfaldne opgaver'} og ${openCases} ${openCases === 1 ? 'åben sag' : 'åbne sager'}`
+  }
+  if (overdueTasks > 0) {
+    return `${overdueTasks} ${overdueTasks === 1 ? 'forfalden opgave' : 'forfaldne opgaver'}`
+  }
+  if (openCases > 0) {
+    return `${openCases} ${openCases === 1 ? 'åben sag' : 'åbne sager'}`
+  }
+  return 'se detaljer nedenfor'
 }

@@ -60,11 +60,11 @@ describe('prepareExport', () => {
     expect(result).toEqual({ error: 'Ikke autoriseret' })
   })
 
-  it('afviser ikke-admin brugere', async () => {
+  it('afviser brugere uden export-adgang', async () => {
     const perms = await import('@/lib/permissions')
     vi.mocked(perms.canAccessModule).mockResolvedValueOnce(false)
 
     const result = await prepareExport({ entity: 'cases' })
-    expect(result).toEqual({ error: 'Kun admin kan eksportere data' })
+    expect(result).toEqual({ error: 'Du har ikke adgang til at eksportere data' })
   })
 })

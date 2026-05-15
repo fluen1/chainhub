@@ -33,6 +33,8 @@ export default async function TasksPage() {
   const hasAccess = await canAccessModule(userId, 'tasks', orgId)
   if (!hasAccess) redirect('/dashboard')
 
+  const canExport = await canAccessModule(userId, 'export', orgId)
+
   const companyIds = await getAccessibleCompanies(userId, orgId)
 
   // Opgaver er org-scoped (company_id er nullable). Vi viser alle opgaver i org
@@ -100,5 +102,5 @@ export default async function TasksPage() {
     }
   })
 
-  return <TasksListB tasks={rows} totalCount={totalCount} />
+  return <TasksListB tasks={rows} totalCount={totalCount} canExport={canExport} />
 }

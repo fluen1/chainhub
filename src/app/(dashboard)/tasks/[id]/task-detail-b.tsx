@@ -440,7 +440,7 @@ export function TaskDetailB({ data }: { data: TaskDetailViewData }) {
             <PanelFooter>
               <div className="flex items-center justify-between">
                 <span />
-                <BAddButton>+ Tilknyt</BAddButton>
+                <BAddButton onClick={() => setEditOpen(true)}>+ Tilknyt</BAddButton>
               </div>
             </PanelFooter>
           </Panel>

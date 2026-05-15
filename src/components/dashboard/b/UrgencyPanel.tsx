@@ -22,6 +22,15 @@ const colorToTone: Record<TimelineColor, BadgeTone> = {
   gray: 'gray',
 }
 
+// Kortform-labels til urgency-kolonne — erstatter akronymerne fra split(' ')[0].
+const SECTION_SHORT_LABEL: Record<string, string> = {
+  Forfaldne: 'Frist',
+  'I dag': 'I dag',
+  'Denne uge': '7d',
+  'Næste uge': '14d',
+  'Næste 2 uger': '28d',
+}
+
 function badgeForItem(section: TimelineSectionData['id'], time: string, color: TimelineColor) {
   // "time" er allerede formateret af helper'en (fx "3d", "om 7d", "Ons").
   // Reducerer til kort form til badge-cellen.
@@ -96,7 +105,9 @@ export function UrgencyPanel({ sections }: { sections: TimelineSectionData[] }) 
                     <strong className="font-medium">{item.title}</strong>
                     <span className="text-b-2"> · {item.subtitle}</span>
                   </span>
-                  <span className="text-[12px] text-b-2">{section.label.split(' ')[0]}</span>
+                  <span className="text-[12px] text-b-2">
+                    {SECTION_SHORT_LABEL[section.label] ?? section.label}
+                  </span>
                   <span className="text-b-3">›</span>
                 </Link>
               )

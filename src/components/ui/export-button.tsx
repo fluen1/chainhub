@@ -9,6 +9,8 @@ import type { ExportableEntity } from '@/lib/export/entities'
 interface Props {
   entity: ExportableEntity
   label?: string
+  /** Skjul knappen hvis brugeren ikke har eksport-adgang (UI-gate; server-side check sker i prepareExport). */
+  canExport?: boolean
 }
 
 /**
@@ -19,9 +21,17 @@ interface Props {
  * 2. `prepareExport` action kaldes — validerer session + admin + skriver audit-log
  * 3. Ved success: browser navigerer til download-URL (fil-download starter)
  * 4. Ved fejl: toast med handlingsanvisende dansk besked
+ *
+ * Props:
+ * - `canExport`: Hvis `false` skjules knappen. Udeladt (undefined) = vis altid
+ *   (bagudkompatibel — eksisterende brug uden prop er uændret).
  */
-export function ExportButton({ entity, label = 'Eksportér CSV' }: Props) {
+export function ExportButton({ entity, label = 'Eksportér CSV', canExport }: Props) {
   const [isPending, setIsPending] = useState(false)
+
+  // Skjul knap hvis canExport eksplicit er sat til false (UI-gate).
+  // Check sker EFTER hooks for at overholde rules-of-hooks.
+  if (canExport === false) return null
 
   async function handleClick() {
     setIsPending(true)

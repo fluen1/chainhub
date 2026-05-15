@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { createUser } from '@/actions/users'
 import { toast } from 'sonner'
 import { USER_ROLE_LABELS } from '@/lib/labels'
-import { cn } from '@/lib/utils'
+import { BButton, BTextField, BFieldWrap, Panel } from '@/components/ui/b'
 
 const ROLES = [
   'GROUP_OWNER',
@@ -16,6 +16,20 @@ const ROLES = [
   'COMPANY_LEGAL',
   'COMPANY_READONLY',
 ] as const
+
+const ROLE_HINTS: Record<string, string> = {
+  GROUP_OWNER: 'Fuld adgang til alle moduler og indstillinger',
+  GROUP_ADMIN: 'Administrer brugere + alle moduler',
+  GROUP_LEGAL: 'Kontrakter + sager + dokumenter',
+  GROUP_FINANCE: 'Finansdata + eksport',
+  GROUP_READONLY: 'Læs-adgang til alle moduler',
+  COMPANY_MANAGER: 'Fuld adgang til tildelt selskab',
+  COMPANY_LEGAL: 'Kontrakter + sager for tildelt selskab',
+  COMPANY_READONLY: 'Læs-adgang til tildelt selskab',
+}
+
+const selectBase =
+  'rounded-[4px] border border-b-border-strong bg-white px-2.5 py-1.5 text-[13px] text-b-1 focus:border-transparent focus:outline focus:outline-2 focus:outline-b-blue-fg focus:outline-offset-[-1px] disabled:cursor-not-allowed disabled:opacity-60'
 
 interface Company {
   id: string
@@ -29,10 +43,21 @@ interface CreateUserFormProps {
 export function CreateUserForm({ companies }: CreateUserFormProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [role, setRole] = useState<string>('GROUP_READONLY')
   const [selectedCompanyIds, setSelectedCompanyIds] = useState<string[]>([])
 
   const isCompanyRole = role.startsWith('COMPANY_')
+
+  function reset() {
+    setName('')
+    setEmail('')
+    setPassword('')
+    setRole('GROUP_READONLY')
+    setSelectedCompanyIds([])
+  }
 
   function toggleCompany(companyId: string) {
     setSelectedCompanyIds((prev) =>
@@ -44,12 +69,10 @@ export function CreateUserForm({ companies }: CreateUserFormProps) {
     e.preventDefault()
     setLoading(true)
 
-    const formData = new FormData(e.currentTarget)
-
     const result = await createUser({
-      email: formData.get('email') as string,
-      name: formData.get('name') as string,
-      password: formData.get('password') as string,
+      email,
+      name,
+      password,
       role: role as (typeof ROLES)[number],
       companyIds: isCompanyRole ? selectedCompanyIds : [],
     })
@@ -63,154 +86,140 @@ export function CreateUserForm({ companies }: CreateUserFormProps) {
 
     toast.success('Bruger oprettet')
     setOpen(false)
-    setRole('GROUP_READONLY')
-    setSelectedCompanyIds([])
+    reset()
   }
 
   if (!open) {
     return (
-      <button
-        onClick={() => setOpen(true)}
-        className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-      >
+      <BButton primary onClick={() => setOpen(true)}>
         Opret bruger
-      </button>
+      </BButton>
     )
   }
 
   return (
-    <div className="rounded-lg border bg-white p-6 shadow-sm">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">Opret ny bruger</h2>
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <span className="text-[16px] font-semibold text-b-1">Opret ny bruger</span>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-              Navn *
-            </label>
-            <input
-              id="name"
-              name="name"
-              type="text"
-              required
-              minLength={2}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              placeholder="Fulde navn"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-              Email *
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              placeholder="bruger@virksomhed.dk"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-              Adgangskode *
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              required
-              minLength={8}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              placeholder="Mindst 8 tegn"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="role" className="block text-sm font-medium text-gray-700">
-              Rolle *
-            </label>
-            <select
-              id="role"
-              value={role}
-              onChange={(e) => {
-                setRole(e.target.value)
-                if (!e.target.value.startsWith('COMPANY_')) {
-                  setSelectedCompanyIds([])
-                }
-              }}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        <Panel>
+          <div className="flex flex-col gap-3.5 px-4 py-4">
+            <p
+              className="text-[10px] font-semibold uppercase text-b-2"
+              style={{ letterSpacing: '0.4px' }}
             >
-              {ROLES.map((r) => (
-                <option key={r} value={r}>
-                  {USER_ROLE_LABELS[r] ?? r}
-                </option>
-              ))}
-            </select>
+              Brugerinformation
+            </p>
+
+            <BTextField
+              label="Navn"
+              value={name}
+              onChange={setName}
+              required
+              placeholder="Fulde navn"
+              disabled={loading}
+              autoFocus
+            />
+
+            <BTextField
+              label="E-mail"
+              value={email}
+              onChange={setEmail}
+              required
+              type="email"
+              placeholder="bruger@virksomhed.dk"
+              disabled={loading}
+            />
+
+            <BTextField
+              label="Adgangskode"
+              value={password}
+              onChange={setPassword}
+              required
+              type="password"
+              placeholder="Mindst 8 tegn"
+              hint="Mindst 8 tegn"
+              disabled={loading}
+            />
+
+            <BFieldWrap label="Rolle" required hint={role ? ROLE_HINTS[role] : undefined}>
+              <select
+                value={role}
+                onChange={(e) => {
+                  setRole(e.target.value)
+                  if (!e.target.value.startsWith('COMPANY_')) {
+                    setSelectedCompanyIds([])
+                  }
+                }}
+                disabled={loading}
+                className={selectBase}
+              >
+                {ROLES.map((r) => (
+                  <option key={r} value={r}>
+                    {USER_ROLE_LABELS[r] ?? r}
+                  </option>
+                ))}
+              </select>
+            </BFieldWrap>
           </div>
-        </div>
+        </Panel>
 
         {isCompanyRole && (
-          <div>
-            <span
-              id="user-companies-label"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Tildelte selskaber
-            </span>
-            {companies.length === 0 ? (
-              <p className="text-sm text-gray-500">Ingen selskaber fundet</p>
-            ) : (
-              <div
-                role="group"
-                aria-labelledby="user-companies-label"
-                className="grid grid-cols-1 gap-1 sm:grid-cols-2 max-h-48 overflow-y-auto rounded-md border border-gray-200 p-2"
+          <Panel>
+            <div className="flex flex-col gap-2 px-4 py-4">
+              <p
+                className="text-[10px] font-semibold uppercase text-b-2"
+                style={{ letterSpacing: '0.4px' }}
               >
-                {companies.map((company) => (
-                  <label
-                    key={company.id}
-                    className={cn(
-                      'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer hover:bg-gray-50',
-                      selectedCompanyIds.includes(company.id) && 'bg-blue-50'
-                    )}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedCompanyIds.includes(company.id)}
-                      onChange={() => toggleCompany(company.id)}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    {company.name}
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
+                Tildelte selskaber
+              </p>
+              {companies.length === 0 ? (
+                <p className="text-[13px] text-b-2">Ingen selskaber fundet</p>
+              ) : (
+                <div
+                  role="group"
+                  aria-label="Tildelte selskaber"
+                  className="flex max-h-48 flex-col gap-1 overflow-y-auto"
+                >
+                  {companies.map((company) => (
+                    <label
+                      key={company.id}
+                      className="flex cursor-pointer items-center gap-2 rounded-[4px] px-2 py-1.5 text-[13px] text-b-1 hover:bg-b-row-hover"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedCompanyIds.includes(company.id)}
+                        onChange={() => toggleCompany(company.id)}
+                        className="rounded border-b-border-strong"
+                      />
+                      {company.name}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          </Panel>
         )}
 
-        <div className="flex justify-end gap-3 pt-2">
-          <button
-            type="button"
+        <div className="flex items-center justify-end gap-2">
+          <BButton
             onClick={() => {
               setOpen(false)
-              setRole('GROUP_READONLY')
-              setSelectedCompanyIds([])
+              reset()
             }}
-            className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            disabled={loading}
           >
             Annuller
-          </button>
-          <button
+          </BButton>
+          <BButton
             type="submit"
-            disabled={loading}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            primary
+            disabled={loading || !name.trim() || !email.trim() || !password}
           >
             {loading ? 'Opretter...' : 'Opret bruger'}
-          </button>
+          </BButton>
         </div>
       </form>
     </div>

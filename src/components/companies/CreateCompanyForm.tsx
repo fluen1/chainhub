@@ -36,6 +36,7 @@ export function CreateCompanyForm() {
   const [notes, setNotes] = useState('')
 
   const [nameError, setNameError] = useState<string | null>(null)
+  const [cvrError, setCvrError] = useState<string | null>(null)
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -45,6 +46,12 @@ export function CreateCompanyForm() {
       return
     }
     setNameError(null)
+
+    if (cvr && !/^\d{8}$/.test(cvr)) {
+      setCvrError('CVR skal være 8 cifre')
+      return
+    }
+    setCvrError(null)
     setLoading(true)
 
     try {
@@ -115,9 +122,17 @@ export function CreateCompanyForm() {
               <BTextField
                 label="CVR-nummer"
                 value={cvr}
-                onChange={setCvr}
+                onChange={(v) => {
+                  setCvr(v)
+                  if (v && !/^\d{8}$/.test(v)) {
+                    setCvrError('CVR skal være 8 cifre')
+                  } else {
+                    setCvrError(null)
+                  }
+                }}
                 placeholder="12345678"
                 hint="8 cifre"
+                error={cvrError}
                 disabled={loading}
               />
               <BFieldWrap label="Selskabsform">
@@ -203,7 +218,7 @@ export function CreateCompanyForm() {
           <Link href="/companies">
             <BButton disabled={loading}>Annuller</BButton>
           </Link>
-          <BButton type="submit" primary disabled={loading || !name.trim()}>
+          <BButton type="submit" primary disabled={loading || !name.trim() || !!cvrError}>
             {loading ? 'Opretter...' : 'Opret selskab'}
           </BButton>
         </div>

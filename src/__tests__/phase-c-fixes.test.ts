@@ -1,7 +1,7 @@
 /**
  * Phase C — regression tests for 5 kritiske fixes (2026-05-14)
  *
- * 1. UDLOEBET typo (SQL literal — verificeres via SQL literal check nedenfor)
+ * 1. UDLOBET SQL literal — Prisma @map-DB-navn (audit-fund var falsk positiv)
  * 2. Finance dynamisk år — getCompanyDetailData bruger currentYear, ikke hardcoded 2025/2024
  * 3. KEY_PERSON_ROLES lowercase DB-strings (via selectKeyPersons)
  * 4. addOwner — note sendes via audit-log
@@ -11,18 +11,21 @@
 import { describe, it, expect, vi } from 'vitest'
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Fix 1: UDLOEBET typo — verificer at SQL literal er korrekt
+// Fix 1: UDLOBET SQL literal — raw SQL bruger @map-DB-navnet, ikke Prisma-navnet
+// Schema: enum ContractStatus { UDLOEBET @map("UDLOBET") } — DB-værdi er 'UDLOBET'
+// Hotfix 941b415 reverterede Phase C's første-fix (audit var falsk positiv)
 // ──────────────────────────────────────────────────────────────────────────────
 
-describe('Fix 1: UDLOEBET SQL literal', () => {
-  it('companies/page.tsx indeholder korrekt SQL-enum UDLOEBET (ikke UDLOBET)', async () => {
-    // Statisk analyse: læs kildefilen og verificer at den ikke indeholder typo
+describe('Fix 1: UDLOBET SQL literal (Prisma @map → DB-navn)', () => {
+  it('companies/page.tsx bruger DB-værdien UDLOBET (uden E) i raw SQL', async () => {
     const fs = await import('fs')
     const path = await import('path')
     const filePath = path.resolve(process.cwd(), 'src/app/(dashboard)/companies/page.tsx')
     const content = fs.readFileSync(filePath, 'utf-8')
-    expect(content).not.toMatch(/'UDLOBET'/) // typo — mangler E
-    expect(content).toMatch(/'UDLOEBET'/) // korrekt
+    // Raw SQL skal bruge DB-navnet 'UDLOBET' (uden E)
+    expect(content).toMatch(/status\s*=\s*'UDLOBET'/)
+    // ... og må IKKE bruge Prisma-navnet 'UDLOEBET' som SQL-literal
+    expect(content).not.toMatch(/status\s*=\s*'UDLOEBET'/)
   })
 })
 

@@ -105,7 +105,16 @@ function fristTone(days: number): BadgeTone {
   return 'gray'
 }
 
-export function TasksListB({ tasks, totalCount }: { tasks: TaskRow[]; totalCount: number }) {
+export function TasksListB({
+  tasks,
+  totalCount,
+  canExport,
+}: {
+  tasks: TaskRow[]
+  totalCount: number
+  /** Skjul eksport-knap hvis brugeren ikke har eksport-adgang */
+  canExport?: boolean
+}) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -340,7 +349,7 @@ export function TasksListB({ tasks, totalCount }: { tasks: TaskRow[]; totalCount
           ]}
         />
         <FilterSpacer />
-        <ExportButton entity="tasks" label="Eksportér ▾" />
+        <ExportButton entity="tasks" label="Eksportér ▾" canExport={canExport} />
       </FilterRow>
 
       {hasFilter && (
@@ -621,6 +630,14 @@ function statusLabel(rawStatus: string): string {
 
 const KANBAN_STATUS_ORDER: TaskStatus[] = ['NY', 'AKTIV_TASK', 'AFVENTER', 'LUKKET']
 
+// Mobile kanban tab-bar: status-labels matcher KANBAN_COLS
+const KANBAN_MOBILE_TABS: Array<{ value: string; label: string }> = [
+  { value: 'NY', label: 'Åben' },
+  { value: 'AKTIV_TASK', label: 'I gang' },
+  { value: 'AFVENTER', label: 'Afventer' },
+  { value: 'LUKKET', label: 'Fuldført' },
+]
+
 function KanbanView({ tasks, onRowClick }: { tasks: TaskRow[]; onRowClick: (id: string) => void }) {
   // Optimistisk lokal kopi af tasks
   const [localTasks, setLocalTasks] = useState<TaskRow[]>(tasks)
@@ -636,6 +653,9 @@ function KanbanView({ tasks, onRowClick }: { tasks: TaskRow[]; onRowClick: (id: 
 
   // Grabbed-state til keyboard-navigation (max 1 ad gangen)
   const [grabbedId, setGrabbedId] = useState<string | null>(null)
+
+  // Mobil kolonne-valg: viser kun én kolonne ad gangen på <lg
+  const [selectedKanbanStatus, setSelectedKanbanStatus] = useState<string>('NY')
 
   const moveTask = useCallback(
     async (taskId: string, newStatus: TaskStatus) => {
@@ -694,26 +714,41 @@ function KanbanView({ tasks, onRowClick }: { tasks: TaskRow[]; onRowClick: (id: 
         {liveMsg}
       </div>
 
+      {/* Mobil tab-bar: synlig på <lg, skjult på >=lg */}
+      <div className="mb-2.5 lg:hidden" data-testid="kanban-mobile-tabs">
+        <SegmentedToggle<string>
+          value={selectedKanbanStatus}
+          onChange={setSelectedKanbanStatus}
+          options={KANBAN_MOBILE_TABS}
+        />
+      </div>
+
+      {/* Desktop: 4-kolonne grid (>=lg). Mobil: vis kun valgt kolonne */}
       <div className="grid gap-2.5 lg:grid-cols-4 lg:items-start">
         {KANBAN_COLS.map((col) => {
           const items = localTasks.filter((t) => t.rawStatus === col.rawStatus)
+          const isVisibleOnMobile = col.rawStatus === selectedKanbanStatus
           return (
-            <KanbanCol
+            <div
               key={col.rawStatus}
-              title={col.title}
-              tone={col.tone}
-              rawStatus={col.rawStatus as TaskStatus}
-              items={items}
-              onRowClick={onRowClick}
-              onDrop={handleDrop}
-              grabbedId={grabbedId}
-              onGrab={(id) => setGrabbedId(id)}
-              onRelease={() => {
-                setGrabbedId(null)
-                setLiveMsg('Flytning annulleret')
-              }}
-              onKeyboardMove={handleKeyboardMove}
-            />
+              className={isVisibleOnMobile ? 'block lg:block' : 'hidden lg:block'}
+            >
+              <KanbanCol
+                title={col.title}
+                tone={col.tone}
+                rawStatus={col.rawStatus as TaskStatus}
+                items={items}
+                onRowClick={onRowClick}
+                onDrop={handleDrop}
+                grabbedId={grabbedId}
+                onGrab={(id) => setGrabbedId(id)}
+                onRelease={() => {
+                  setGrabbedId(null)
+                  setLiveMsg('Flytning annulleret')
+                }}
+                onKeyboardMove={handleKeyboardMove}
+              />
+            </div>
           )
         })}
       </div>

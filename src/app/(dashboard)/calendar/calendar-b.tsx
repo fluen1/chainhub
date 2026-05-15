@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
@@ -138,6 +138,20 @@ export function CalendarPageB({
   const params = useSearchParams()
 
   const monthIdx = month - 1 // 0-indexed til Date
+
+  // Mobil: skift automatisk til agenda-view ved første mount på <md,
+  // medmindre brugeren eksplicit har valgt et view via ?view-param.
+  useEffect(() => {
+    if (params.get('view')) return // respekter eksplicit valg
+    if (viewMode === 'agenda') return // allerede agenda — intet at gøre
+    const mq = window.matchMedia('(max-width: 767px)')
+    if (mq.matches) {
+      const sp = new URLSearchParams(params.toString())
+      sp.set('view', 'agenda')
+      router.replace(`/calendar?${sp.toString()}`)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // kun ved mount
 
   // Index events efter dato → for hurtig lookup i grid
   const eventsByDate = useMemo(() => {

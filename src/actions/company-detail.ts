@@ -52,6 +52,7 @@ export interface CompanyDetailData {
   contracts: { top: ContractViewRow[]; totalCount: number }
   finance: FinanceViewData | null
   cases: { top: CaseViewRow[]; totalCount: number }
+  tasks: { overdueCount: number }
   persons: { top: PersonViewRow[]; totalCount: number }
   visits: VisitViewRow[]
   documents: { rows: DocumentViewRow[]; awaitingReviewCount: number }
@@ -81,6 +82,7 @@ export interface FinanceViewData {
   resultat: { value_k: number; positive: boolean }
   quarterly: Array<{ label: string; fraction: number }>
   statusBadge: { label: string; tone: 'green' | 'amber' | 'red' }
+  peerRank: { rank: number; total: number } | null
 }
 
 export interface CaseViewRow {
@@ -156,6 +158,8 @@ export async function getCompanyDetailData(
     visitsRaw,
     documentsRaw,
     aiCacheRow,
+    overdueTasksCount,
+    peerOmsaetningRaw,
   ] = await Promise.all([
     prisma.company.findFirst({
       where: { id: companyId, organization_id: organizationId, deleted_at: null },
@@ -256,6 +260,26 @@ export async function getCompanyDetailData(
       include: { extraction: { select: { extraction_status: true, reviewed_at: true } } },
     }),
     prisma.companyInsightsCache.findUnique({ where: { company_id: companyId } }),
+    // Forfaldne opgaver for dette selskab (due_date < i dag og ikke lukket)
+    prisma.task.count({
+      where: {
+        company_id: companyId,
+        organization_id: organizationId,
+        deleted_at: null,
+        status: { notIn: ['LUKKET'] },
+        due_date: { lt: today },
+      },
+    }),
+    // Peer-omsaetning: alle selskaber i org med helår-omsaetning for rangberegning
+    prisma.financialMetric.findMany({
+      where: {
+        organization_id: organizationId,
+        period_year: currentYear,
+        period_type: 'HELAAR',
+        metric_type: 'OMSAETNING',
+      },
+      select: { company_id: true, value: true },
+    }),
   ])
 
   if (!company) return null
@@ -366,6 +390,9 @@ export async function getCompanyDetailData(
     }
   }
 
+  // Peer-rang: sum omsaetning pr. selskab, sortér faldende, find rang for dette selskab
+  const peerRank = computePeerRank(companyId, finance2025Sum.omsaetning, peerOmsaetningRaw)
+
   // Byg view-data pr. sektion (kun dem der er synlige)
   const ownership = visibleSections.has('ownership')
     ? buildOwnership(ownerships, ejeraftale, today, holdingCompanyNames)
@@ -374,7 +401,7 @@ export async function getCompanyDetailData(
     ? buildContracts(contractsRaw, today, contractsTotal)
     : { top: [], totalCount: 0 }
   const financeView = visibleSections.has('finance')
-    ? buildFinance(finance2025Sum, finance2024Sum, quarterlyRaw)
+    ? buildFinance(finance2025Sum, finance2024Sum, quarterlyRaw, peerRank)
     : null
   const casesView = visibleSections.has('cases')
     ? buildCases(casesRaw, casesTotal)
@@ -407,6 +434,7 @@ export async function getCompanyDetailData(
     contracts: contractsView,
     finance: financeView,
     cases: casesView,
+    tasks: { overdueCount: overdueTasksCount },
     persons: personsView,
     visits: visitsView,
     documents: documentsView,
@@ -581,7 +609,8 @@ function buildContracts(
 function buildFinance(
   sum2025: FinanceSum,
   sum2024: FinanceSum,
-  quarterly: Array<{ period_type: string; value: Prisma.Decimal }>
+  quarterly: Array<{ period_type: string; value: Prisma.Decimal }>,
+  peerRank: { rank: number; total: number } | null
 ): FinanceViewData | null {
   if (sum2025.omsaetning === null || sum2025.ebitda === null) return null
 
@@ -623,7 +652,39 @@ function buildFinance(
     resultat: { value_k: resultat / 1_000, positive: resultat >= 0 },
     quarterly: qData,
     statusBadge,
+    peerRank,
   }
+}
+
+// computePeerRank — beregner rangering af dette selskab efter omsaetning blandt
+// alle selskaber i organisationen. Rang 1 = højest omsaetning.
+// Returnerer null hvis dette selskab ikke har omsaetnings-data.
+function computePeerRank(
+  companyId: string,
+  thisOmsaetning: number | null,
+  allMetrics: Array<{ company_id: string; value: Prisma.Decimal }>
+): { rank: number; total: number } | null {
+  if (thisOmsaetning === null) return null
+
+  // Summér omsaetning pr. selskab (kan have flere rækker pr. selskab)
+  const byCompany = new Map<string, number>()
+  for (const m of allMetrics) {
+    byCompany.set(m.company_id, (byCompany.get(m.company_id) ?? 0) + Number(m.value))
+  }
+  // Sikr at dette selskab er med selv om det ikke optræder i allMetrics endnu
+  if (!byCompany.has(companyId)) {
+    byCompany.set(companyId, thisOmsaetning)
+  }
+
+  const total = byCompany.size
+  if (total <= 1) return null // Kun 1 selskab — rangering giver ikke mening
+
+  // Sortér faldende og find rang (1-baseret)
+  const sorted = Array.from(byCompany.values()).sort((a, b) => b - a)
+  const thisVal = byCompany.get(companyId) ?? 0
+  const rank = sorted.findIndex((v) => v <= thisVal) + 1
+
+  return { rank, total }
 }
 
 function buildCases(
