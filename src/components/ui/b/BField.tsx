@@ -80,7 +80,7 @@ interface TextFieldProps {
   hint?: React.ReactNode
   error?: string | null
   disabled?: boolean
-  type?: 'text' | 'email' | 'tel' | 'date' | 'number'
+  type?: 'text' | 'email' | 'tel' | 'date' | 'number' | 'password'
   autoFocus?: boolean
 }
 

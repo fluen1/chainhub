@@ -14,6 +14,7 @@ import { zodContractSystemType } from '@/lib/zod-enums'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
+import { getSensitivityLabel } from '@/lib/labels'
 import {
   Panel,
   BButton,
@@ -63,13 +64,21 @@ export function CreateContractForm() {
   const [reminder30, setReminder30] = useState(true)
   const [reminder7, setReminder7] = useState(true)
   const [companies, setCompanies] = useState<{ id: string; name: string }[]>([])
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [displayNameError, setDisplayNameError] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/companies-list')
-      .then((r) => r.json())
-      .then((data) => setCompanies(data.companies ?? []))
-      .catch(() => {})
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`)
+        return r.json()
+      })
+      .then((data: { companies?: { id: string; name: string }[] }) =>
+        setCompanies(data.companies ?? [])
+      )
+      .catch(() =>
+        setLoadError('Kunne ikke hente selskaber. Genindlæs siden eller kontakt support.')
+      )
   }, [])
 
   useEffect(() => {
@@ -155,22 +164,38 @@ export function CreateContractForm() {
               Grunddata
             </p>
 
-            <BFieldWrap label="Tilknyttet selskab" required>
-              <select
-                value={companyId}
-                onChange={(e) => setCompanyId(e.target.value)}
-                required
-                disabled={loading}
-                className="rounded-[4px] border border-b-border-strong bg-white px-2.5 py-1.5 text-[13px] text-b-1 focus:border-transparent focus:outline focus:outline-2 focus:outline-b-blue-fg focus:outline-offset-[-1px] disabled:cursor-not-allowed disabled:opacity-60"
+            {loadError ? (
+              <div
+                role="alert"
+                className="rounded-[4px] border border-b-red-fg bg-red-50 px-3 py-2 text-[13px] text-b-red-fg"
               >
-                <option value="">Vælg selskab...</option>
-                {companies.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </BFieldWrap>
+                {loadError}
+              </div>
+            ) : companies.length === 0 ? (
+              <div className="rounded-[4px] border border-b-border bg-b-panel-h px-3 py-2 text-[13px] text-b-2">
+                Du har ingen selskaber endnu. Opret et selskab først →{' '}
+                <Link href="/companies/new" className="text-b-blue-fg underline hover:no-underline">
+                  Opret selskab
+                </Link>
+              </div>
+            ) : (
+              <BFieldWrap label="Tilknyttet selskab" required>
+                <select
+                  value={companyId}
+                  onChange={(e) => setCompanyId(e.target.value)}
+                  required
+                  disabled={loading}
+                  className="rounded-[4px] border border-b-border-strong bg-white px-2.5 py-1.5 text-[13px] text-b-1 focus:border-transparent focus:outline focus:outline-2 focus:outline-b-blue-fg focus:outline-offset-[-1px] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <option value="">Vælg selskab...</option>
+                  {companies.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </BFieldWrap>
+            )}
 
             <BFieldRow>
               <BFieldWrap
@@ -178,7 +203,7 @@ export function CreateContractForm() {
                 required
                 hint={
                   selectedType
-                    ? `Min. sensitivitet: ${SENSITIVITY_MINIMUM[selectedType as ContractSystemTypeKey] ?? 'STANDARD'}`
+                    ? `Min. fortrolighed: ${getSensitivityLabel(SENSITIVITY_MINIMUM[selectedType as ContractSystemTypeKey] ?? 'STANDARD')}${SENSITIVITY_MINIMUM[selectedType as ContractSystemTypeKey] === 'STRENGT_FORTROLIG' ? ' — kræver strengeste fortrolighedsniveau.' : '.'}`
                     : undefined
                 }
               >
@@ -334,7 +359,11 @@ export function CreateContractForm() {
           <Link href="/contracts">
             <BButton disabled={loading}>Annuller</BButton>
           </Link>
-          <BButton type="submit" primary disabled={loading || !displayName.trim()}>
+          <BButton
+            type="submit"
+            primary
+            disabled={loading || !displayName.trim() || !!loadError || companies.length === 0}
+          >
             {loading ? 'Opretter...' : 'Opret kontrakt'}
           </BButton>
         </div>

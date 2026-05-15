@@ -140,8 +140,8 @@ export function BModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="w-full overflow-hidden rounded-[6px] border border-b-border-strong bg-white shadow-[0_16px_48px_rgba(15,23,42,0.25)] max-w-[calc(100vw-16px)] sm:max-w-none"
-        style={{ width }}
+        className="w-full overflow-hidden rounded-[6px] border border-b-border-strong bg-white shadow-[0_16px_48px_rgba(15,23,42,0.25)] max-w-[calc(100vw-16px)]"
+        style={{ maxWidth: width }}
       >
         <form onSubmit={handleSubmit}>
           {/* Header */}
