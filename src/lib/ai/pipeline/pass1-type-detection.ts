@@ -18,7 +18,7 @@ export async function detectDocumentType(
   const messageContent = buildMessageContent(content)
 
   const response = await client.complete({
-    model: 'claude-haiku-4-5',
+    model: 'gpt-5-nano',
     max_tokens: 256,
     system: `Du er ekspert i at klassificere danske juridiske dokumenter.
 Klassificér dokumentet som en af følgende typer:

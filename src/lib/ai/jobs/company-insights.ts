@@ -125,7 +125,7 @@ Hvis klyngen har faerre end 3 peers, undgaa sammenligninger og fokuser paa YoY.`
 // -----------------------------------------------------------------
 
 const TIMEOUT_MS = 8000
-const MODEL: ClaudeModel = 'claude-haiku-4-5'
+const MODEL: ClaudeModel = 'gpt-5-nano'
 
 export interface GenerateInsightsContext {
   organizationId: string
@@ -192,7 +192,7 @@ export async function generateCompanyInsights(
         organizationId: context.organizationId,
         feature: 'insights',
         model: MODEL,
-        provider: 'anthropic',
+        provider: 'openai',
         inputTokens: response.usage.input_tokens,
         outputTokens: response.usage.output_tokens,
         cacheReadTokens,

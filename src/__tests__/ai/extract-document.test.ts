@@ -90,7 +90,7 @@ describe('extractDocument enforcement', () => {
       type_detection: { detected_type: 'EJERAFTALE', confidence: 0.95, alternatives: [] },
       extraction_run1: {
         fields: { field_a: 'value' },
-        model_used: 'claude-sonnet-4-6',
+        model_used: 'gpt-5-mini',
         raw_response: {},
       },
       extraction_run2: null,
@@ -121,8 +121,8 @@ describe('extractDocument enforcement', () => {
     expect(recordAIUsage).toHaveBeenCalledWith({
       organizationId: 'org-1',
       feature: 'extraction',
-      model: 'claude-sonnet-4-6',
-      provider: 'anthropic',
+      model: 'gpt-5-mini',
+      provider: 'openai',
       inputTokens: 500,
       outputTokens: 250,
       cacheReadTokens: 300,

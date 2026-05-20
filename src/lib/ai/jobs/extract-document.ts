@@ -349,8 +349,8 @@ export async function extractDocument(
   await recordAIUsage({
     organizationId: payload.organization_id,
     feature: 'extraction',
-    model: result.extraction_run1.model_used ?? 'claude-sonnet-4-6',
-    provider: 'anthropic',
+    model: result.extraction_run1.model_used ?? 'gpt-5-mini',
+    provider: 'openai',
     inputTokens: result.total_input_tokens,
     outputTokens: result.total_output_tokens,
     cacheReadTokens: result.total_cache_read_tokens,

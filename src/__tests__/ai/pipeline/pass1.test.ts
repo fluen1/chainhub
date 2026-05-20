@@ -12,10 +12,10 @@ beforeAll(async () => {
 
 function mockClient(response: Partial<ClaudeResponse>): ClaudeClient {
   return {
-    providerName: 'anthropic',
+    providerName: 'openai',
     complete: vi.fn().mockResolvedValue({
       id: 'msg_test',
-      model: 'claude-haiku-4-5',
+      model: 'gpt-5-nano',
       stop_reason: 'tool_use',
       content: [
         {
@@ -49,16 +49,16 @@ describe('Pass 1: Type detection', () => {
     expect(result.detected_type).toBe('EJERAFTALE')
     expect(result.confidence).toBe(0.92)
     expect(result.alternatives).toHaveLength(1)
-    expect(result.model_used).toContain('haiku')
+    expect(result.model_used).toContain('gpt-5-nano')
     expect(result.input_tokens).toBeGreaterThan(0)
   })
 
   it('maps UNKNOWN to MINIMAL', async () => {
     const client: ClaudeClient = {
-      providerName: 'anthropic',
+      providerName: 'openai',
       complete: vi.fn().mockResolvedValue({
         id: 'msg_test',
-        model: 'claude-haiku-4-5',
+        model: 'gpt-5-nano',
         stop_reason: 'tool_use',
         content: [
           {
@@ -79,10 +79,10 @@ describe('Pass 1: Type detection', () => {
 
   it('handles missing tool_use response gracefully', async () => {
     const client: ClaudeClient = {
-      providerName: 'anthropic',
+      providerName: 'openai',
       complete: vi.fn().mockResolvedValue({
         id: 'msg_test',
-        model: 'claude-haiku-4-5',
+        model: 'gpt-5-nano',
         stop_reason: 'end_turn',
         content: [{ type: 'text', text: 'I could not classify.' }],
         usage: { input_tokens: 100, output_tokens: 30 },

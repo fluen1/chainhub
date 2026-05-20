@@ -3,7 +3,6 @@ import type { ExtractionContent } from '@/lib/ai/content-loader'
 import type { ContractSchema } from '@/lib/ai/schemas/types'
 import type { SchemaExtractionResult, ExtractedField } from './types'
 import { createLogger } from '@/lib/ai/logger'
-import { withCacheControl, canCacheForModel } from '@/lib/ai/cache-control'
 
 const log = createLogger('pass2-schema-extraction')
 
@@ -20,7 +19,7 @@ export async function extractWithSchema(
   const temperature = options.temperature ?? 0.2
 
   // Byg message content baseret på filtype
-  const messageContent = buildContent(content, schema.user_prompt_prefix, schema.extraction_model)
+  const messageContent = buildContent(content, schema.user_prompt_prefix)
 
   const response = await client.complete({
     model: schema.extraction_model,
@@ -28,7 +27,7 @@ export async function extractWithSchema(
     temperature,
     system: schema.system_prompt,
     messages: [{ role: 'user', content: messageContent }],
-    tools: [withCacheControl(schema.tool_definition)],
+    tools: [schema.tool_definition],
     tool_choice: { type: 'tool', name: schema.tool_definition.name },
   })
 
@@ -41,7 +40,7 @@ export async function extractWithSchema(
       fields: {},
       additional_findings: [],
       extraction_warnings: [
-        { warning: 'Claude returnerede ikke struktureret output', severity: 'high' },
+        { warning: 'Modellen returnerede ikke struktureret output', severity: 'high' },
       ],
       model_used: response.model,
       input_tokens: response.usage.input_tokens,
@@ -132,14 +131,9 @@ export async function extractWithSchema(
 
 function buildContent(
   content: ExtractionContent,
-  userPromptPrefix: string,
-  extractionModel: ContractSchema['extraction_model']
+  userPromptPrefix: string
 ): string | ClaudeContentBlock[] {
   if (content.type === 'pdf_binary') {
-    // Verificeret: PDF-tokens ≈ 3800 pr. side (tekst 2000-2500 + image ~1600)
-    const estimatedTokens = content.page_count * 3800
-    const shouldCache = canCacheForModel(extractionModel, estimatedTokens)
-
     const docBlock: ClaudeContentBlock = {
       type: 'document',
       source: {
@@ -147,7 +141,6 @@ function buildContent(
         media_type: 'application/pdf',
         data: content.data.toString('base64'),
       },
-      ...(shouldCache ? { cache_control: { type: 'ephemeral' as const } } : {}),
     }
     return [docBlock, { type: 'text', text: userPromptPrefix }]
   }

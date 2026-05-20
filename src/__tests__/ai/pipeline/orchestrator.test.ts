@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // Mock all pass modules and dependencies before importing orchestrator
 vi.mock('@/lib/ai/client', () => ({
-  createClaudeClient: vi.fn(() => ({ providerName: 'anthropic', complete: vi.fn() })),
+  createClaudeClient: vi.fn(() => ({ providerName: 'openai', complete: vi.fn() })),
   computeCostUsd: vi.fn(() => 0.042),
 }))
 
@@ -63,7 +63,7 @@ const mockSchema = {
   contract_type: 'EJERAFTALE',
   schema_version: 'v1.0.0',
   display_name: 'Ejeraftale',
-  extraction_model: 'claude-haiku-4-5',
+  extraction_model: 'gpt-5-nano',
   sanity_rules: [],
   tool_definition: {},
   field_metadata: {},
@@ -88,7 +88,7 @@ const mockRun1 = {
   },
   additional_findings: [{ finding: 'Found penalty clause', source_page: 3, importance: 'high' }],
   extraction_warnings: [{ warning: 'Signature page missing', severity: 'low' }],
-  model_used: 'claude-haiku-4-5',
+  model_used: 'gpt-5-nano',
   input_tokens: 1000,
   output_tokens: 200,
   raw_response: {},
@@ -111,7 +111,7 @@ const mockRun2 = {
   },
   additional_findings: [],
   extraction_warnings: [],
-  model_used: 'claude-haiku-4-5',
+  model_used: 'gpt-5-nano',
   input_tokens: 950,
   output_tokens: 190,
   raw_response: {},
@@ -174,7 +174,7 @@ describe('Pipeline Orchestrator', () => {
       detected_type: 'EJERAFTALE',
       confidence: 0.93,
       alternatives: [],
-      model_used: 'claude-haiku-4-5',
+      model_used: 'gpt-5-nano',
       input_tokens: 500,
       output_tokens: 50,
     })
@@ -199,7 +199,7 @@ describe('Pipeline Orchestrator', () => {
         detected_type: 'EJERAFTALE',
         confidence: 0.93,
         alternatives: [],
-        model_used: 'claude-haiku-4-5',
+        model_used: 'gpt-5-nano',
         input_tokens: 500,
         output_tokens: 50,
       }
@@ -285,7 +285,7 @@ describe('Pipeline Orchestrator', () => {
       detected_type: 'UNKNOWN_TYPE',
       confidence: 0.3,
       alternatives: [],
-      model_used: 'claude-haiku-4-5',
+      model_used: 'gpt-5-nano',
       input_tokens: 500,
       output_tokens: 50,
     })
@@ -302,7 +302,7 @@ describe('Pipeline Orchestrator', () => {
       detected_type: 'UNKNOWN_TYPE',
       confidence: 0.3,
       alternatives: [],
-      model_used: 'claude-haiku-4-5',
+      model_used: 'gpt-5-nano',
       input_tokens: 500,
       output_tokens: 50,
     })

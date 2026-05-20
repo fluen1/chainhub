@@ -225,7 +225,24 @@
       "Bash(ls src/components/company-detail/)",
       "Bash(ls src/components/finance/)",
       "Bash(PORT=3002 npm run dev)",
-      "mcp__plugin_playwright_playwright__browser_type"
+      "mcp__plugin_playwright_playwright__browser_type",
+      "PowerShell(npm run *)",
+      "PowerShell(Get-NetTCPConnection *)",
+      "Bash(git fetch *)",
+      "Bash(git checkout *)",
+      "Bash(git merge *)",
+      "Bash(git branch *)",
+      "PowerShell(npx prisma db push 2>&1 | Select-Object -First 20)",
+      "PowerShell(npx prisma db push 2>&1 | Select-Object -First 8)",
+      "PowerShell(echo \"y\" | npx prisma db push --accept-data-loss 2>&1 | Select-Object -First 12)",
+      "PowerShell($env:NEXTAUTH_URL = \"http://localhost:3010\"; npx next start -p 3010)",
+      "Bash(git stash *)",
+      "PowerShell(npx tsc --noEmit 2>&1 | Select-Object -Last 5)",
+      "Skill(superpowers:brainstorming)",
+      "mcp__brave-search__brave_web_search",
+      "Bash(npm uninstall *)",
+      "Bash(PYTHONIOENCODING=utf-8 python3 /c/Users/birke/AppData/Local/Temp/extract_tools.py)",
+      "Read(//c/Users/birke/.claude/**)"
     ]
   }
 }

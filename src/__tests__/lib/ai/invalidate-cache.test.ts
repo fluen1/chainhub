@@ -24,7 +24,7 @@ describe('invalidateCompanyInsightsCache', () => {
         where: { company_id: anyCompany.id },
         update: {
           alerts: [],
-          model_name: 'claude-haiku-4-5',
+          model_name: 'gpt-5-nano',
           total_cost_usd: 0,
           generated_at: new Date(),
         },
@@ -32,7 +32,7 @@ describe('invalidateCompanyInsightsCache', () => {
           organization_id: anyCompany.organization_id,
           company_id: anyCompany.id,
           alerts: [],
-          model_name: 'claude-haiku-4-5',
+          model_name: 'gpt-5-nano',
           total_cost_usd: 0,
         },
       })

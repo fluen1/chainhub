@@ -31,7 +31,7 @@ const mockSchema: ContractSchema = {
   },
   system_prompt: 'Test prompt',
   user_prompt_prefix: 'Extract fields.',
-  extraction_model: 'claude-sonnet-4-6',
+  extraction_model: 'gpt-5-mini',
   sanity_rules: [],
   cross_validation_rules: [],
 }
@@ -45,10 +45,10 @@ const testContent: ExtractionContent = {
 describe('Pass 2: Schema extraction', () => {
   it('extracts fields from tool_use response', async () => {
     const client: ClaudeClient = {
-      providerName: 'anthropic',
+      providerName: 'openai',
       complete: vi.fn().mockResolvedValue({
         id: 'msg_1',
-        model: 'claude-sonnet-4-6',
+        model: 'gpt-5-mini',
         stop_reason: 'tool_use',
         content: [
           {
@@ -82,10 +82,10 @@ describe('Pass 2: Schema extraction', () => {
 
   it('handles missing tool_use gracefully', async () => {
     const client: ClaudeClient = {
-      providerName: 'anthropic',
+      providerName: 'openai',
       complete: vi.fn().mockResolvedValue({
         id: 'msg_1',
-        model: 'claude-sonnet-4-6',
+        model: 'gpt-5-mini',
         stop_reason: 'end_turn',
         content: [{ type: 'text', text: 'Could not extract.' }],
         usage: { input_tokens: 100, output_tokens: 20 },
@@ -100,10 +100,10 @@ describe('Pass 2: Schema extraction', () => {
 
   it('handles unwrapped field values (fallback)', async () => {
     const client: ClaudeClient = {
-      providerName: 'anthropic',
+      providerName: 'openai',
       complete: vi.fn().mockResolvedValue({
         id: 'msg_1',
-        model: 'claude-sonnet-4-6',
+        model: 'gpt-5-mini',
         stop_reason: 'tool_use',
         content: [
           {
@@ -129,7 +129,7 @@ describe('Pass 2: Schema extraction', () => {
   it('passes temperature option to Claude', async () => {
     const completeFn = vi.fn().mockResolvedValue({
       id: 'msg_1',
-      model: 'claude-sonnet-4-6',
+      model: 'gpt-5-mini',
       stop_reason: 'tool_use',
       content: [
         {
@@ -145,7 +145,7 @@ describe('Pass 2: Schema extraction', () => {
       ],
       usage: { input_tokens: 100, output_tokens: 50 },
     })
-    const client: ClaudeClient = { providerName: 'anthropic', complete: completeFn }
+    const client: ClaudeClient = { providerName: 'openai', complete: completeFn }
 
     await extractWithSchema(testContent, mockSchema, client, { temperature: 0.4 })
     expect(completeFn).toHaveBeenCalledWith(expect.objectContaining({ temperature: 0.4 }))
@@ -153,10 +153,10 @@ describe('Pass 2: Schema extraction', () => {
 
   it('sætter null-felter for felter ikke returneret af Claude', async () => {
     const client: ClaudeClient = {
-      providerName: 'anthropic',
+      providerName: 'openai',
       complete: vi.fn().mockResolvedValue({
         id: 'msg_1',
-        model: 'claude-sonnet-4-6',
+        model: 'gpt-5-mini',
         stop_reason: 'tool_use',
         content: [
           {
@@ -180,7 +180,7 @@ describe('Pass 2: Schema extraction', () => {
   it('sender korrekt tool_choice til Claude', async () => {
     const completeFn = vi.fn().mockResolvedValue({
       id: 'msg_1',
-      model: 'claude-sonnet-4-6',
+      model: 'gpt-5-mini',
       stop_reason: 'tool_use',
       content: [
         {
@@ -192,7 +192,7 @@ describe('Pass 2: Schema extraction', () => {
       ],
       usage: { input_tokens: 100, output_tokens: 30 },
     })
-    const client: ClaudeClient = { providerName: 'anthropic', complete: completeFn }
+    const client: ClaudeClient = { providerName: 'openai', complete: completeFn }
 
     await extractWithSchema(testContent, mockSchema, client)
     expect(completeFn).toHaveBeenCalledWith(
@@ -204,10 +204,10 @@ describe('Pass 2: Schema extraction', () => {
 
   it('inkluderer additional_findings og extraction_warnings fra svar', async () => {
     const client: ClaudeClient = {
-      providerName: 'anthropic',
+      providerName: 'openai',
       complete: vi.fn().mockResolvedValue({
         id: 'msg_1',
-        model: 'claude-sonnet-4-6',
+        model: 'gpt-5-mini',
         stop_reason: 'tool_use',
         content: [
           {

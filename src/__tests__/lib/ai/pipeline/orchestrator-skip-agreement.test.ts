@@ -5,7 +5,7 @@ vi.mock('@/lib/ai/pipeline/pass1-type-detection', () => ({
     detected_type: 'MINIMAL',
     confidence: 0.9,
     alternatives: [],
-    model_used: 'claude-haiku-4-5',
+    model_used: 'gpt-5-nano',
     input_tokens: 100,
     output_tokens: 10,
   })),
@@ -23,7 +23,7 @@ vi.mock('@/lib/ai/pipeline/pass3-source-verification', () => ({
 vi.mock('@/lib/ai/pipeline/pass4-sanity-checks', () => ({ runSanityChecks: () => [] }))
 vi.mock('@/lib/ai/pipeline/pass5-cross-validation', () => ({ crossValidate: async () => [] }))
 vi.mock('@/lib/ai/client', () => ({
-  createClaudeClient: () => ({ providerName: 'anthropic', complete: vi.fn() }),
+  createClaudeClient: () => ({ providerName: 'openai', complete: vi.fn() }),
   computeCostUsd: () => 0.01,
 }))
 
@@ -32,7 +32,7 @@ vi.mock('@/lib/ai/schemas/registry', () => ({
     contract_type: 'MINIMAL',
     schema_version: 'v1.0.0',
     display_name: 'Minimal',
-    extraction_model: 'claude-sonnet-4-6',
+    extraction_model: 'gpt-5-mini',
     sanity_rules: [],
     tool_definition: {},
     field_metadata: {},
@@ -65,7 +65,7 @@ describe('orchestrator — skip_agreement default', () => {
       fields: { party: { value: 'X', claude_confidence: 0.9, source_page: 1, source_text: 'x' } },
       additional_findings: [],
       extraction_warnings: [],
-      model_used: 'claude-sonnet-4-6',
+      model_used: 'gpt-5-mini',
       input_tokens: 1000,
       output_tokens: 500,
       raw_response: {},
@@ -84,7 +84,7 @@ describe('orchestrator — skip_agreement default', () => {
       fields: { party: { value: 'X', claude_confidence: 0.4, source_page: 1, source_text: 'x' } },
       additional_findings: [],
       extraction_warnings: [],
-      model_used: 'claude-sonnet-4-6',
+      model_used: 'gpt-5-mini',
       input_tokens: 1000,
       output_tokens: 500,
       raw_response: {},
@@ -103,7 +103,7 @@ describe('orchestrator — skip_agreement default', () => {
       fields: { party: { value: 'X', claude_confidence: 0.99, source_page: 1, source_text: 'x' } },
       additional_findings: [],
       extraction_warnings: [],
-      model_used: 'claude-sonnet-4-6',
+      model_used: 'gpt-5-mini',
       input_tokens: 1000,
       output_tokens: 500,
       raw_response: {},

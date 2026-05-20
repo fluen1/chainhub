@@ -14,7 +14,7 @@ export interface RecordUsageInput {
   organizationId: string
   feature: AIFeature
   model: string
-  provider: 'anthropic' | 'bedrock'
+  provider: 'openai' | 'anthropic' | 'bedrock'
   inputTokens: number
   outputTokens: number
   cacheReadTokens?: number

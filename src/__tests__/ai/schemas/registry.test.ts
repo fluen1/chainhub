@@ -32,7 +32,7 @@ describe('schema registry', () => {
       field_metadata: {},
       system_prompt: 'test prompt',
       user_prompt_prefix: 'test prefix',
-      extraction_model: 'claude-sonnet-4-6',
+      extraction_model: 'gpt-5-mini',
       sanity_rules: [],
       cross_validation_rules: [],
     }
