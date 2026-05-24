@@ -19,8 +19,10 @@ export async function GET(
     return NextResponse.json({ error: 'Ikke autoriseret' }, { status: 401 })
   }
 
-  // Zod UUID-validering — forhindrer injection og giver klar fejlbesked
-  const uuidResult = z.string().uuid().safeParse(params.personId)
+  // UUID-shape-validering (lempelig — accepterer seed-ids som "00000000-...")
+  // Forhindrer injection uden at afvise gyldige IDs uden version-byte.
+  const uuidShape = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  const uuidResult = z.string().regex(uuidShape).safeParse(params.personId)
   if (!uuidResult.success) {
     return NextResponse.json({ error: 'Ugyldigt person-ID format' }, { status: 400 })
   }
