@@ -23,9 +23,16 @@ export interface ActivityEvent {
 const ACTION_VERB: Record<string, string> = {
   CREATE: 'oprettede',
   UPDATE: 'opdaterede',
+  DELETE: 'slettede',
   END: 'afsluttede',
+  CLOSE: 'lukkede',
+  ESCALATE: 'eskalerede',
   STATUS_CHANGE: 'ændrede status på',
+  COMMENT_CREATE: 'kommenterede',
+  VIEW: 'åbnede',
+  UPLOAD: 'uploadede',
   EXPORT: 'eksporterede',
+  BACKUP: 'tog backup af',
   GDPR_EXPORT: 'GDPR-eksporterede',
   GDPR_DELETE: 'GDPR-slettede',
 }
