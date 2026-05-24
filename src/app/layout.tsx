@@ -19,7 +19,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="da">
       <body className="font-sans text-[13px] text-b-1 antialiased">
         {children}
-        <Toaster position="top-right" richColors />
+        <Toaster
+          position="top-right"
+          richColors
+          duration={5000}
+          toastOptions={{
+            // Error-toasts skal stå længere — fejl er handlingsanvisende og må
+            // ikke forsvinde før brugeren har nået at læse dem.
+            classNames: { error: 'min-w-[320px]' },
+          }}
+        />
       </body>
     </html>
   )
