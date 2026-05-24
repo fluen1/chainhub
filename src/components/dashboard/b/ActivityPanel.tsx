@@ -19,9 +19,12 @@ const RESOURCE_ROUTES: Record<string, string> = {
   document: '/documents',
 }
 
+// Resource-typer der ikke har en egen detail-side (export-events, ownership-
+// records osv) — vi linker ikke til dem.
 function eventHref(event: ActivityEvent): string | null {
-  const base = RESOURCE_ROUTES[event.resource_type]
-  if (!base || !event.resource_id) return null
+  if (!event.resource_id) return null
+  const base = RESOURCE_ROUTES[event.resource_type.toLowerCase()]
+  if (!base) return null
   return `${base}/${event.resource_id}`
 }
 

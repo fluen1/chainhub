@@ -47,6 +47,10 @@ const RESOURCE_LABEL: Record<string, string> = {
   person: 'Person',
   document: 'Dokument',
   task: 'Opgave',
+  // Audit-log API'er bruger uppercase nogle steder
+  PERSON: 'Person',
+  DOCUMENT: 'Dokument',
+  EXPORT: 'Eksport',
 }
 
 function formatRelative(date: Date, now: Date): string {
