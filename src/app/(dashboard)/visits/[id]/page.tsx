@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
@@ -8,6 +9,18 @@ import { formatDanishDate } from '@/lib/date-helpers'
 import { VisitStatusForm } from '@/components/visits/VisitStatusForm'
 import { VisitNotesForm } from '@/components/visits/VisitNotesForm'
 import { Breadcrumb, PageTopbar, Panel, PanelHeader, Badge } from '@/components/ui/b'
+
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const session = await auth()
+  if (!session) return { title: 'Besøg' }
+  const visit = await prisma.visit.findFirst({
+    where: { id: params.id, organization_id: session.user.organizationId, deleted_at: null },
+    select: { company: { select: { name: true } }, visit_date: true },
+  })
+  if (!visit) return { title: 'Besøg' }
+  const date = visit.visit_date.toISOString().slice(0, 10)
+  return { title: `Besøg · ${visit.company.name} · ${date}` }
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // /visits/[id] — B-stil port. Breadcrumb + PageTopbar + Panels.

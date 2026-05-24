@@ -1,9 +1,12 @@
+import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { getAccessibleCompanies } from '@/lib/permissions'
 import { CreateVisitForm } from '@/components/visits/CreateVisitForm'
 import { Suspense } from 'react'
+
+export const metadata: Metadata = { title: 'Planlæg besøg' }
 
 export default async function NewVisitPage() {
   const session = await auth()
