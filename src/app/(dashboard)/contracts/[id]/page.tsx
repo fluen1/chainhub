@@ -1,8 +1,19 @@
+import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { prisma } from '@/lib/db'
 import { canAccessCompany, canAccessSensitivity, canAccessModule } from '@/lib/permissions'
+
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const session = await auth()
+  if (!session) return { title: 'Kontrakt' }
+  const contract = await prisma.contract.findFirst({
+    where: { id: params.id, organization_id: session.user.organizationId, deleted_at: null },
+    select: { display_name: true },
+  })
+  return { title: contract?.display_name ?? 'Kontrakt' }
+}
 import {
   getContractTypeLabel,
   getContractStatusLabel,

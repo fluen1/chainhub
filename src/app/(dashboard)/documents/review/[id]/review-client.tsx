@@ -759,7 +759,9 @@ export default function ReviewClient({
                     title={
                       allDecided
                         ? 'Godkend dokumentet og fortsæt'
-                        : `Behandl de ${totalNeedsDecision - decidedCount} resterende felter før du kan godkende`
+                        : totalNeedsDecision - decidedCount === 1
+                          ? 'Behandl det resterende felt før du kan godkende'
+                          : `Behandl de ${totalNeedsDecision - decidedCount} resterende felter før du kan godkende`
                     }
                     onClick={handleApprove}
                     className={cn(
@@ -783,7 +785,9 @@ export default function ReviewClient({
               {/* Helper text under disabled Godkend */}
               {!allDecided && totalNeedsDecision > 0 && (
                 <div className="px-4 pb-3 -mt-1 text-right text-[10px] text-slate-400">
-                  Behandl de {totalNeedsDecision - decidedCount} resterende felter for at godkende
+                  {totalNeedsDecision - decidedCount === 1
+                    ? 'Behandl det resterende felt for at godkende'
+                    : `Behandl de ${totalNeedsDecision - decidedCount} resterende felter for at godkende`}
                 </div>
               )}
             </div>

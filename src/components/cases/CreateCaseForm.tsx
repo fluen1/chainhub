@@ -279,7 +279,17 @@ export function CreateCaseForm() {
           <Link href="/cases">
             <BButton disabled={loading}>Annuller</BButton>
           </Link>
-          <BButton type="submit" primary disabled={loading || !title.trim()}>
+          <BButton
+            type="submit"
+            primary
+            disabled={
+              loading ||
+              !title.trim() ||
+              !selectedType ||
+              (selectedType !== 'ANDET' && !selectedSubtype) ||
+              selectedCompanyIds.length === 0
+            }
+          >
             {loading ? 'Opretter...' : 'Opret sag'}
           </BButton>
         </div>

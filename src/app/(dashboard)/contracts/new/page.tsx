@@ -1,7 +1,10 @@
+import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { CreateContractForm } from '@/components/contracts/CreateContractForm'
 import { Suspense } from 'react'
+
+export const metadata: Metadata = { title: 'Ny kontrakt' }
 
 export default async function NewContractPage() {
   const session = await auth()

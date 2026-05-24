@@ -1,7 +1,10 @@
+import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { CreateTaskForm } from '@/components/tasks/CreateTaskForm'
 import { Suspense } from 'react'
+
+export const metadata: Metadata = { title: 'Ny opgave' }
 
 export default async function NewTaskPage() {
   const session = await auth()

@@ -1,7 +1,10 @@
+import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { CreateCaseForm } from '@/components/cases/CreateCaseForm'
 import { Suspense } from 'react'
+
+export const metadata: Metadata = { title: 'Ny sag' }
 
 export default async function NewCasePage() {
   const session = await auth()

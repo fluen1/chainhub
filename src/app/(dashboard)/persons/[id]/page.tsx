@@ -20,7 +20,16 @@ import {
   type PersonAIFieldData,
 } from './person-detail-b'
 
-export const metadata: Metadata = { title: 'Person' }
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const session = await auth()
+  if (!session) return { title: 'Person' }
+  const person = await prisma.person.findFirst({
+    where: { id: params.id, organization_id: session.user.organizationId, deleted_at: null },
+    select: { first_name: true, last_name: true },
+  })
+  if (!person) return { title: 'Person' }
+  return { title: `${person.first_name} ${person.last_name}` }
+}
 
 // Map fra extracted_fields-nøgle → dansk vilkår-label.
 // Vi viser kun ansættelses-relevante felter; ejeraftale-extractions ignoreres.

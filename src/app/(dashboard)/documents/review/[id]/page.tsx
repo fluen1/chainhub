@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
@@ -7,6 +8,16 @@ import { getSchema } from '@/lib/ai/schemas/registry'
 import type { ContractSchema } from '@/lib/ai/schemas/types'
 import ReviewClient from './review-client'
 import type { ReviewDocument, ReviewField, ReviewQueueItem } from './review-client'
+
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const session = await auth()
+  if (!session) return { title: 'Review' }
+  const doc = await prisma.document.findFirst({
+    where: { id: params.id, organization_id: session.user.organizationId, deleted_at: null },
+    select: { file_name: true, title: true },
+  })
+  return { title: `Review · ${doc?.file_name ?? doc?.title ?? 'dokument'}` }
+}
 
 // ---------------------------------------------------------------
 // Helpers — map extracted_fields JSON → ReviewField[]
@@ -88,7 +99,7 @@ function mapExtractedFields(
       id: key,
       fieldName: key,
       fieldLabel,
-      extractedValue: field.value != null ? String(field.value) : null,
+      extractedValue: formatExtractedValue(field.value),
       existingValue,
       confidence,
       confidenceLevel,
@@ -111,6 +122,29 @@ function formatFieldLabel(key: string): string {
     .replace(/_/g, ' ')
     .replace(/([a-z])([A-Z])/g, '$1 $2')
     .replace(/^./, (c) => c.toUpperCase())
+}
+
+// Pænere visning af komplekse felter (arrays/objekter) end String(value),
+// der giver "[object Object],[object Object]". Holder primitives uændret.
+function formatExtractedValue(value: unknown): string | null {
+  if (value == null) return null
+  if (typeof value === 'string') return value
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+  if (Array.isArray(value)) {
+    if (value.length === 0) return '(tom liste)'
+    const items = value.map((item) => {
+      if (item && typeof item === 'object' && !Array.isArray(item)) {
+        const obj = item as Record<string, unknown>
+        const label = obj.name ?? obj.title ?? obj.label ?? null
+        if (label != null) return String(label)
+        return JSON.stringify(obj)
+      }
+      return String(item)
+    })
+    return items.join(', ')
+  }
+  if (typeof value === 'object') return JSON.stringify(value)
+  return String(value)
 }
 
 // ---------------------------------------------------------------

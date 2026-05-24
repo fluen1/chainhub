@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
@@ -11,6 +12,16 @@ import {
   type MetricRow,
   type PersonOptionRow,
 } from './company-detail-b'
+
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const session = await auth()
+  if (!session) return { title: 'Selskab' }
+  const company = await prisma.company.findFirst({
+    where: { id: params.id, organization_id: session.user.organizationId, deleted_at: null },
+    select: { name: true },
+  })
+  return { title: company?.name ?? 'Selskab' }
+}
 
 export default async function CompanyDetailPage({ params }: { params: { id: string } }) {
   const session = await auth()

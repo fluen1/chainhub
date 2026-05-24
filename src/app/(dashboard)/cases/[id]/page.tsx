@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
 import { prisma } from '@/lib/db'
@@ -22,6 +23,17 @@ import {
 
 interface Props {
   params: { id: string }
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const session = await auth()
+  if (!session) return { title: 'Sag' }
+  const c = await prisma.case.findFirst({
+    where: { id: params.id, organization_id: session.user.organizationId, deleted_at: null },
+    select: { title: true, case_number: true },
+  })
+  if (!c) return { title: 'Sag' }
+  return { title: c.case_number ? `${c.case_number} · ${c.title}` : c.title }
 }
 
 export default async function CaseDetailPage({ params }: Props) {
