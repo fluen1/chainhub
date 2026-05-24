@@ -460,7 +460,7 @@ export function CompanyDetailB({
                   ` · ${data.contracts.totalCount - data.contracts.top.length} flere`}
               </span>
               {!readOnly && (
-                <BAddButton href={`/contracts/new?company=${company.id}`}>
+                <BAddButton href={`/contracts/new?companyId=${company.id}`}>
                   + Opret kontrakt
                 </BAddButton>
               )}

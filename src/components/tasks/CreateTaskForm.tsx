@@ -34,6 +34,7 @@ export function CreateTaskForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const preselectedCaseId = searchParams.get('caseId') ?? ''
+  const preselectedCompanyId = searchParams.get('companyId') ?? ''
   const preselectedDueDate = searchParams.get('dueDate') ?? ''
 
   const [loading, setLoading] = useState(false)
@@ -42,7 +43,7 @@ export function CreateTaskForm() {
   const [dueDate, setDueDate] = useState(preselectedDueDate)
   const [priority, setPriority] = useState<Priority>('MELLEM')
   const [caseId, setCaseId] = useState(preselectedCaseId)
-  const [companyId, setCompanyId] = useState('')
+  const [companyId, setCompanyId] = useState(preselectedCompanyId)
   const [assignedTo, setAssignedTo] = useState('')
   const [titleError, setTitleError] = useState<string | null>(null)
 

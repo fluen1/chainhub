@@ -537,7 +537,7 @@ export function CaseDetailB({
             <span>
               {tasks.filter((t) => t.done).length} af {totalTasks} fuldført
             </span>
-            <BAddButton href={`/tasks/new?case=${data.id}`}>+ Tilføj opgave</BAddButton>
+            <BAddButton href={`/tasks/new?caseId=${data.id}`}>+ Tilføj opgave</BAddButton>
           </div>
         </PanelFooter>
       </Panel>
