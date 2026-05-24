@@ -570,7 +570,7 @@ export function CompanyDetailB({
 
           {/* Besøg */}
           {showVisits && (
-            <Panel>
+            <Panel id="besoeg">
               <PanelHeader title="Besøg" meta={`${data.visits.length} planlagt`} />
               {data.visits.length === 0 ? (
                 <PanelEmpty>Ingen besøg</PanelEmpty>

@@ -13,9 +13,18 @@ import { cn } from '@/lib/utils'
 //
 // Alle paneler er hvide med 1px #e1e4e8 border og 4px radius.
 
-export function Panel({ children, className }: { children: React.ReactNode; className?: string }) {
+export function Panel({
+  children,
+  className,
+  id,
+}: {
+  children: React.ReactNode
+  className?: string
+  id?: string
+}) {
   return (
     <div
+      id={id}
       className={cn('overflow-hidden rounded-[4px] border border-b-border bg-b-panel', className)}
     >
       {children}
