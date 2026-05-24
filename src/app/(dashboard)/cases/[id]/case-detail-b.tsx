@@ -429,7 +429,7 @@ export function CaseDetailB({
           <PanelFooter>
             <div className="flex items-center justify-between">
               <span />
-              <BAddButton onClick={() => setEditOpen(true)}>+ Tilknyt</BAddButton>
+              <BAddButton href={`/tasks/new?caseId=${data.id}`}>+ Tilknyt opgave</BAddButton>
             </div>
           </PanelFooter>
         </Panel>
