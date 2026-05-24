@@ -173,7 +173,7 @@ export default async function VisitDetailPage({ params }: Props) {
                 Gå til selskab
               </Link>
               <Link
-                href={`/companies/${visit.company.id}/visits`}
+                href={`/companies/${visit.company.id}#besoeg`}
                 className="block w-full rounded-[4px] border border-b-border-strong bg-b-panel px-3 py-1.5 text-center text-[12px] font-medium text-b-1 no-underline hover:bg-b-row-hover"
               >
                 Se alle besøg for selskabet

@@ -125,6 +125,7 @@ export function TasksListB({
   )
   const [search, setSearch] = useState(() => searchParams.get('search') ?? '')
   const [mineOnly, setMineOnly] = useState(() => searchParams.get('mine') === '1')
+  const [overdueOnly, setOverdueOnly] = useState(() => searchParams.get('overdue') === 'true')
   const [selskabFil, setSelskabFil] = useState(() => searchParams.get('company') ?? 'Alle')
   const [typeFil, setTypeFil] = useState(() => searchParams.get('type') ?? 'Alle')
   const [prioFil, setPrioFil] = useState(() => searchParams.get('prio') ?? 'Alle')
@@ -151,6 +152,7 @@ export function TasksListB({
     setViewMode((searchParams.get('view') as ViewMode) || 'flat')
     setSearch(searchParams.get('search') ?? '')
     setMineOnly(searchParams.get('mine') === '1')
+    setOverdueOnly(searchParams.get('overdue') === 'true')
     setSelskabFil(searchParams.get('company') ?? 'Alle')
     setTypeFil(searchParams.get('type') ?? 'Alle')
     setPrioFil(searchParams.get('prio') ?? 'Alle')
@@ -175,13 +177,14 @@ export function TasksListB({
         return false
       }
       if (mineOnly && !t.isMine) return false
+      if (overdueOnly && (t.fristDays >= 0 || t.rawStatus === 'LUKKET')) return false
       if (selskabFil !== 'Alle' && t.selskab !== selskabFil) return false
       if (typeFil !== 'Alle' && t.type !== typeFil) return false
       if (prioFil !== 'Alle' && t.prio !== prioFil) return false
       if (statusFil !== 'Alle' && t.status !== statusFil) return false
       return true
     })
-  }, [tasks, search, mineOnly, selskabFil, typeFil, prioFil, statusFil])
+  }, [tasks, search, mineOnly, overdueOnly, selskabFil, typeFil, prioFil, statusFil])
 
   const sorted = useMemo(() => {
     const arr = [...filtered]

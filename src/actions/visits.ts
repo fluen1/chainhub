@@ -55,7 +55,7 @@ export async function createVisit(input: CreateVisitInput): Promise<ActionResult
     })
 
     revalidatePath('/visits')
-    revalidatePath(`/companies/${parsed.data.companyId}/visits`)
+    revalidatePath(`/companies/${parsed.data.companyId}`)
     revalidatePath('/dashboard')
     return { data: { id: visit.id } }
   } catch (err) {
@@ -102,7 +102,7 @@ export async function updateVisit(input: UpdateVisitInput): Promise<ActionResult
 
     revalidatePath('/visits')
     revalidatePath(`/visits/${parsed.data.visitId}`)
-    revalidatePath(`/companies/${visit.company_id}/visits`)
+    revalidatePath(`/companies/${visit.company_id}`)
     revalidatePath('/dashboard')
     return { data: { id: updated.id } }
   } catch (err) {
@@ -141,7 +141,7 @@ export async function deleteVisit(visitId: string): Promise<ActionResult<void>> 
   })
 
   revalidatePath('/visits')
-  revalidatePath(`/companies/${visit.company_id}/visits`)
+  revalidatePath(`/companies/${visit.company_id}`)
   revalidatePath('/dashboard')
   return { data: undefined }
 }

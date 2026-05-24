@@ -60,6 +60,22 @@ const STATUS_OPTS = [
   'Arkiveret',
 ]
 
+// Map fra raw enum til display-label (matcher getCaseStatusLabel)
+const STATUS_ENUM_MAP: Record<string, string> = {
+  ny: 'Ny',
+  aktiv: 'Aktiv',
+  afventer_ekstern: 'Afventer ekstern',
+  afventer_klient: 'Afventer klient',
+  lukket: 'Lukket',
+  arkiveret: 'Arkiveret',
+}
+
+function normalizeStatusParam(status: string | null): string {
+  if (!status) return 'Alle'
+  const lower = status.toLowerCase()
+  return STATUS_ENUM_MAP[lower] ?? STATUS_OPTS.find((o) => o.toLowerCase() === lower) ?? 'Alle'
+}
+
 function fristTone(days: number): BadgeTone {
   if (days < 0) return 'red'
   if (days <= 3) return 'red'
@@ -97,7 +113,7 @@ export function CasesListB({ cases, totalCount }: { cases: CaseRow[]; totalCount
   const [search, setSearch] = useState(() => searchParams.get('search') ?? '')
   const [selskabFil, setSelskabFil] = useState(() => searchParams.get('company') ?? 'Alle')
   const [typeFil, setTypeFil] = useState(() => searchParams.get('type') ?? 'Alle')
-  const [statusFil, setStatusFil] = useState(() => searchParams.get('status') ?? 'Alle')
+  const [statusFil, setStatusFil] = useState(() => normalizeStatusParam(searchParams.get('status')))
   const [sortCol, setSortCol] = useState<SortKey>('fristDays')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const [page, setPage] = useState(() => parseInt(searchParams.get('page') ?? '1', 10) || 1)
@@ -120,7 +136,7 @@ export function CasesListB({ cases, totalCount }: { cases: CaseRow[]; totalCount
     setSearch(searchParams.get('search') ?? '')
     setSelskabFil(searchParams.get('company') ?? 'Alle')
     setTypeFil(searchParams.get('type') ?? 'Alle')
-    setStatusFil(searchParams.get('status') ?? 'Alle')
+    setStatusFil(normalizeStatusParam(searchParams.get('status')))
     setPage(parseInt(searchParams.get('page') ?? '1', 10) || 1)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
