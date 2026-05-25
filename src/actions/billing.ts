@@ -1,13 +1,19 @@
 'use server'
 
+import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { getStripe } from '@/lib/stripe'
 import { captureError } from '@/lib/logger'
 import { env } from '@/lib/env'
+import { canAccessModule } from '@/lib/permissions'
 import type { ActionResult } from '@/types/actions'
 
 const BASE_URL = env.NEXTAUTH_URL ?? 'http://localhost:3000'
+
+const checkoutSchema = z.object({
+  priceId: z.string().min(1, 'Ugyldig pris-ID'),
+})
 
 // ────────────────────────────────────────────────────────────────────────────
 // getBillingPageData — hent faktureringsdata til billing-siden
@@ -23,6 +29,9 @@ export interface BillingPageData {
 export async function getBillingPageData(): Promise<ActionResult<BillingPageData>> {
   const session = await auth()
   if (!session?.user) return { error: 'Ikke autoriseret' }
+
+  const hasAccess = await canAccessModule(session.user.id, 'billing', session.user.organizationId)
+  if (!hasAccess) return { error: 'Du har ikke adgang til fakturering' }
 
   const org = await prisma.organization.findUnique({
     where: { id: session.user.organizationId },
@@ -69,6 +78,12 @@ export async function createCheckoutSession(
 ): Promise<ActionResult<{ url: string }>> {
   const session = await auth()
   if (!session?.user) return { error: 'Ikke autoriseret' }
+
+  const hasAccess = await canAccessModule(session.user.id, 'billing', session.user.organizationId)
+  if (!hasAccess) return { error: 'Du har ikke adgang til fakturering' }
+
+  const parsed = checkoutSchema.safeParse({ priceId })
+  if (!parsed.success) return { error: 'Ugyldig pris-ID' }
 
   const stripe = getStripe()
   if (!stripe) return { error: 'Betaling er ikke konfigureret' }
@@ -129,6 +144,9 @@ export async function createCheckoutSession(
 export async function createPortalSession(): Promise<ActionResult<{ url: string }>> {
   const session = await auth()
   if (!session?.user) return { error: 'Ikke autoriseret' }
+
+  const hasAccess = await canAccessModule(session.user.id, 'billing', session.user.organizationId)
+  if (!hasAccess) return { error: 'Du har ikke adgang til fakturering' }
 
   const stripe = getStripe()
   if (!stripe) return { error: 'Betaling er ikke konfigureret' }

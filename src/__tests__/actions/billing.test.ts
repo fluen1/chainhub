@@ -16,6 +16,9 @@ vi.mock('@/lib/db', () => ({
   },
 }))
 vi.mock('@/lib/stripe', () => ({ getStripe: vi.fn().mockReturnValue(null) }))
+vi.mock('@/lib/permissions', () => ({
+  canAccessModule: vi.fn().mockResolvedValue(true),
+}))
 
 import { auth } from '@/lib/auth'
 import { createCheckoutSession, createPortalSession } from '@/actions/billing'
