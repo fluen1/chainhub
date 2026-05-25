@@ -314,6 +314,7 @@ model Organization {
   comments              Comment[]
   task_history          TaskHistory[]
   invite_tokens         InviteToken[]
+  company_notes         CompanyNote[]
 
   @@index([id])
 }
@@ -341,6 +342,7 @@ model User {
   task_history_changes TaskHistory[]     @relation("TaskHistoryChangedBy")
   password_reset_tokens PasswordResetToken[]
   accounts              Account[]
+  company_notes         CompanyNote[]  @relation("CompanyNoteAuthor")
 
   @@unique([organization_id, email])
   @@index([organization_id, deleted_at])
@@ -426,10 +428,32 @@ model Company {
   visits          Visit[]
   insights_cache  CompanyInsightsCache?
 
+  company_notes   CompanyNote[]
+
   @@unique([organization_id, cvr])
   @@index([organization_id, deleted_at])
   @@index([organization_id, status])
   @@index([organization_id, parent_company_id])
+}
+
+model CompanyNote {
+  id              String    @id @default(uuid())
+  organization_id String
+  company_id      String
+  content         String
+  pinned          Boolean   @default(false)
+  created_by      String
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  deleted_at      DateTime?
+
+  organization Organization @relation(fields: [organization_id], references: [id])
+  company      Company      @relation(fields: [company_id], references: [id])
+  author       User         @relation("CompanyNoteAuthor", fields: [created_by], references: [id])
+
+  @@index([company_id, deleted_at])
+  @@index([organization_id])
+  @@map("company_notes")
 }
 
 model Ownership {

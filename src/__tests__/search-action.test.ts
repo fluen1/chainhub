@@ -51,6 +51,7 @@ describe.runIf(!!process.env.DATABASE_URL)('runSearch', () => {
     expect(result).toHaveProperty('persons')
     expect(result).toHaveProperty('tasks')
     expect(result).toHaveProperty('documents')
+    expect(result).toHaveProperty('notes')
     expect(result).toHaveProperty('totalCount')
     expect(result).toHaveProperty('query')
   })

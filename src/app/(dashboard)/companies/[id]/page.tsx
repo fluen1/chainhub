@@ -1,7 +1,12 @@
 import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
-import { getCompanyDetailData, getCompanyDetailPageExtras, getCompanyName } from '@/actions/company-detail'
+import {
+  getCompanyDetailData,
+  getCompanyDetailPageExtras,
+  getCompanyName,
+} from '@/actions/company-detail'
+import { getCompanyNotes } from '@/actions/company-notes'
 import { formatDate, daysUntil } from '@/lib/labels'
 import {
   CompanyDetailB,
@@ -34,7 +39,14 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
   const extras = await getCompanyDetailPageExtras(id, data.visibleSections)
   if (!extras) notFound()
 
-  const { rawOwnerships, rawCompanyPersons, allMetrics, allPersons, expiringLease, canSeeOwnership } = extras
+  const {
+    rawOwnerships,
+    rawCompanyPersons,
+    allMetrics,
+    allPersons,
+    expiringLease,
+    canSeeOwnership,
+  } = extras
 
   const ownerships: OwnershipRow[] = rawOwnerships.map((o) => ({
     id: o.id,
@@ -78,6 +90,9 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
         }
       : null
 
+  const notesResult = await getCompanyNotes(id)
+  const companyNotes = notesResult.data ?? []
+
   return (
     <CompanyDetailB
       data={data}
@@ -87,6 +102,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
       persons={persons}
       canSeeOwnership={canSeeOwnership}
       expiringLease={expiringLeaseInfo}
+      notes={companyNotes}
     />
   )
 }

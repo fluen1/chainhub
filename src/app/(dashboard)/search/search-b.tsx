@@ -21,7 +21,7 @@ import {
 // Type-pills filtrerer klient-side. Empty state viser quick-searches + tip.
 // ────────────────────────────────────────────────────────────────────────────
 
-export type ResultType = 'selskab' | 'kontrakt' | 'sag' | 'opgave' | 'person' | 'dokument'
+export type ResultType = 'selskab' | 'kontrakt' | 'sag' | 'opgave' | 'person' | 'dokument' | 'notat'
 
 export interface SearchResultRow {
   id: string
@@ -39,6 +39,7 @@ const TYPE_LABEL: Record<ResultType, string> = {
   opgave: 'Opgaver',
   person: 'Personer',
   dokument: 'Dokumenter',
+  notat: 'Noter',
 }
 
 const TYPE_ICON: Record<ResultType, string> = {
@@ -48,6 +49,7 @@ const TYPE_ICON: Record<ResultType, string> = {
   opgave: 'OPG',
   person: 'PER',
   dokument: 'DOK',
+  notat: 'NOT',
 }
 
 const TYPE_ICON_BG: Record<ResultType, string> = {
@@ -57,9 +59,18 @@ const TYPE_ICON_BG: Record<ResultType, string> = {
   opgave: 'bg-b-amber-bg text-b-amber-fg',
   person: 'bg-[#f3e8ff] text-b-ai-accent',
   dokument: 'bg-b-green-bg text-b-green-fg',
+  notat: 'bg-amber-50 text-amber-700',
 }
 
-const TYPE_ORDER: ResultType[] = ['selskab', 'kontrakt', 'sag', 'opgave', 'person', 'dokument']
+const TYPE_ORDER: ResultType[] = [
+  'selskab',
+  'kontrakt',
+  'sag',
+  'opgave',
+  'person',
+  'dokument',
+  'notat',
+]
 
 const QUICK_SEARCHES = ['lejekontrakt', 'patientklage', 'tandlæge', 'bestyrelse', 'ejeraftale']
 
@@ -96,9 +107,11 @@ export function SearchPageB({
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
 
   // Sync ?q= → input når server giver ny query (fx fra recent-search-klik)
-  useEffect(() => {
+  const [prevQuery, setPrevQuery] = useState(query)
+  if (prevQuery !== query) {
+    setPrevQuery(query)
     setInput(query)
-  }, [query])
+  }
 
   // Debounce: opdatér ?q= 200ms efter sidste tasten
   useEffect(() => {

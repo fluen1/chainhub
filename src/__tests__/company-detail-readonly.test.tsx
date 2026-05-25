@@ -133,6 +133,7 @@ const BASE_PROPS = {
   persons: [],
   canSeeOwnership: true,
   expiringLease: null,
+  notes: [],
 }
 
 describe('CompanyDetailB readonly-gating', () => {

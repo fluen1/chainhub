@@ -63,6 +63,14 @@ export interface SearchDocumentRow {
   companyName: string | null
 }
 
+export interface SearchNoteRow {
+  id: string
+  content: string
+  companyId: string
+  companyName: string
+  createdAt: Date
+}
+
 export interface SearchResults {
   query: string
   companies: SearchCompanyRow[]
@@ -71,6 +79,7 @@ export interface SearchResults {
   persons: SearchPersonRow[]
   tasks: SearchTaskRow[]
   documents: SearchDocumentRow[]
+  notes: SearchNoteRow[]
   totalCount: number
 }
 
@@ -107,6 +116,7 @@ export async function runSearch(query: string): Promise<SearchResults | null> {
       persons: [],
       tasks: [],
       documents: [],
+      notes: [],
       totalCount: 0,
     }
   }
@@ -125,7 +135,7 @@ export async function runSearch(query: string): Promise<SearchResults | null> {
     sensitivityFilter = undefined
   }
 
-  const [companies, contracts, cases, persons, tasks, documents] = await Promise.all([
+  const [companies, contracts, cases, persons, tasks, documents, companyNotes] = await Promise.all([
     // Selskaber — scope: accessible
     prisma.company.findMany({
       where: {
@@ -244,6 +254,19 @@ export async function runSearch(query: string): Promise<SearchResults | null> {
       take: RESULTS_PER_TYPE,
       orderBy: { uploaded_at: 'desc' },
     }),
+
+    // Company notes — scope: accessible companies
+    prisma.companyNote.findMany({
+      where: {
+        organization_id: orgId,
+        company_id: { in: companyIds },
+        deleted_at: null,
+        content: insensitive,
+      },
+      include: { company: { select: { id: true, name: true } } },
+      take: RESULTS_PER_TYPE,
+      orderBy: { created_at: 'desc' },
+    }),
   ])
 
   return {
@@ -290,12 +313,20 @@ export async function runSearch(query: string): Promise<SearchResults | null> {
       companyId: d.company?.id ?? null,
       companyName: d.company?.name ?? null,
     })),
+    notes: companyNotes.map((n) => ({
+      id: n.id,
+      content: n.content.length > 120 ? n.content.slice(0, 120) + '…' : n.content,
+      companyId: n.company.id,
+      companyName: n.company.name,
+      createdAt: n.created_at,
+    })),
     totalCount:
       companies.length +
       contracts.length +
       cases.length +
       persons.length +
       tasks.length +
-      documents.length,
+      documents.length +
+      companyNotes.length,
   }
 }

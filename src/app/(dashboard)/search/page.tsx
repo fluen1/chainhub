@@ -100,6 +100,16 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       badge: { tone: 'gray', label: 'Dokument' },
     })
   }
+  for (const n of raw.notes) {
+    rows.push({
+      id: `no-${n.id}`,
+      type: 'notat',
+      title: n.content,
+      sub: n.companyName,
+      href: `/companies/${n.companyId}`,
+      badge: { tone: 'amber', label: 'Notat' },
+    })
+  }
 
   return <SearchPageB query={query} results={rows} totalCount={raw.totalCount} />
 }

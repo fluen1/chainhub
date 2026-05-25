@@ -56,6 +56,9 @@ vi.mock('@/lib/db', () => ({
     userRoleAssignment: {
       findMany: vi.fn().mockResolvedValue([{ role: 'GROUP_READONLY' }]),
     },
+    companyNote: {
+      findMany: vi.fn().mockResolvedValue([]),
+    },
   },
 }))
 

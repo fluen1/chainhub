@@ -35,8 +35,10 @@ import {
 } from '@/components/modals/b'
 import { AddDataDropdown } from './add-data-dropdown'
 import { EditStamdataDialog } from '@/components/companies/EditStamdataDialog'
+import { NotesSection } from '@/components/companies/notes-section-b'
 import { getCompanyPersonRoleLabel } from '@/lib/labels'
 import type { CompanyDetailData } from '@/actions/company-detail'
+import type { CompanyNoteWithAuthor } from '@/actions/company-notes'
 
 // Lazy-load leaflet-map — Leaflet kræver `window` (browser-only), ~150 kB.
 // ssr: false forhindrer SSR-crash; loading-skeleton matcher panel-højde.
@@ -99,6 +101,7 @@ interface Props {
   persons: PersonOptionRow[]
   canSeeOwnership: boolean
   expiringLease: ExpiringLeaseInfo | null
+  notes: CompanyNoteWithAuthor[]
 }
 
 export function CompanyDetailB({
@@ -109,6 +112,7 @@ export function CompanyDetailB({
   persons,
   canSeeOwnership,
   expiringLease,
+  notes,
 }: Props) {
   const { company } = data
   const readOnly = data.role === 'GROUP_READONLY' || data.role === 'COMPANY_READONLY'
@@ -671,6 +675,9 @@ export function CompanyDetailB({
           </PanelFooter>
         </Panel>
       )}
+
+      {/* Noter — altid synlige (ikke section-gated) */}
+      <NotesSection companyId={company.id} notes={notes} readOnly={readOnly} />
 
       <BottomBar left={`${company.name} · CVR ${company.cvr ?? '—'}`} />
 
