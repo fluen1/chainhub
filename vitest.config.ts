@@ -18,10 +18,16 @@ export default defineConfig({
         functions: 80,
       },
     },
+    server: {
+      deps: {
+        inline: ['next-auth'],
+      },
+    },
   },
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
     },
+    conditions: ['node', 'import'],
   },
 })
