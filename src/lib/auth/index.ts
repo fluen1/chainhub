@@ -4,6 +4,8 @@ const cache: <T extends (...args: unknown[]) => unknown>(fn: T) => T =
   typeof reactCache === 'function' ? (reactCache as typeof cache) : (fn) => fn
 import NextAuth, { type NextAuthOptions, type DefaultSession, getServerSession } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
+import GoogleProvider from 'next-auth/providers/google'
+import { PrismaAdapter } from '@auth/prisma-adapter'
 import { prisma } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 import { isLoginRateLimited, recordFailedLoginAttempt } from '@/lib/auth/login-rate-limit'
@@ -30,7 +32,16 @@ declare module 'next-auth/jwt' {
 }
 
 export const authOptions: NextAuthOptions = {
+  adapter: PrismaAdapter(prisma) as NextAuthOptions['adapter'],
   providers: [
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ? [
+          GoogleProvider({
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          }),
+        ]
+      : []),
     CredentialsProvider({
       name: 'credentials',
       credentials: {
@@ -108,10 +119,92 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async signIn({ user, account }) {
+      if (account?.provider === 'credentials') return true
+      if (!user.email) return false
+
+      const normalizedEmail = user.email.trim().toLowerCase()
+
+      const matchingUsers = await prisma.user.findMany({
+        where: {
+          email: { equals: normalizedEmail, mode: 'insensitive' },
+          deleted_at: null,
+          active: true,
+        },
+        take: 2,
+      })
+
+      if (matchingUsers.length > 1) return false
+
+      if (matchingUsers.length === 1) {
+        const existingUser = matchingUsers[0]!
+        try {
+          await prisma.user.update({
+            where: { id: existingUser.id },
+            data: { last_login_at: new Date() },
+          })
+        } catch {
+          // Non-fatal
+        }
+        return true
+      }
+
+      const nameParts = (user.name ?? normalizedEmail.split('@')[0] ?? 'Bruger').trim().split(/\s+/)
+      const lastName = nameParts[nameParts.length - 1] ?? nameParts[0]
+      const orgName = `${lastName} Holding`
+      const planExpiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+
+      await prisma.$transaction(async (tx) => {
+        const org = await tx.organization.create({
+          data: { name: orgName, plan: 'trial', plan_expires_at: planExpiresAt },
+        })
+
+        const newUser = await tx.user.create({
+          data: {
+            organization_id: org.id,
+            name: user.name ?? normalizedEmail.split('@')[0] ?? 'Bruger',
+            email: normalizedEmail,
+            avatar_url: (user as { image?: string | null }).image ?? null,
+            active: true,
+            last_login_at: new Date(),
+          },
+        })
+
+        await tx.userRoleAssignment.create({
+          data: {
+            organization_id: org.id,
+            user_id: newUser.id,
+            role: 'GROUP_OWNER',
+            scope: 'ALL',
+            company_ids: [],
+            created_by: newUser.id,
+          },
+        })
+
+        user.id = newUser.id
+      })
+
+      return true
+    },
+    async jwt({ token, user, account }) {
       if (user) {
-        token.id = user.id
-        token.organizationId = user.organizationId
+        if (account?.provider === 'credentials') {
+          token.id = user.id
+          token.organizationId = user.organizationId
+        } else {
+          const dbUser = await prisma.user.findFirst({
+            where: {
+              email: { equals: token.email ?? '', mode: 'insensitive' },
+              deleted_at: null,
+              active: true,
+            },
+            select: { id: true, organization_id: true },
+          })
+          if (dbUser) {
+            token.id = dbUser.id
+            token.organizationId = dbUser.organization_id
+          }
+        }
       }
       return token
     },
