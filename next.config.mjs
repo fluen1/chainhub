@@ -4,6 +4,10 @@ import { withSentryConfig } from '@sentry/nextjs'
 const nextConfig = {
   // Skjul sourcemaps fra production bundle (kun Sentry har adgang)
   productionBrowserSourceMaps: false,
+  // Tree-shake store icon-biblioteker — kun importerede ikoner medtages
+  experimental: {
+    optimizePackageImports: ['lucide-react'],
+  },
 }
 
 // Sentry-konfiguration. Deaktiveret hvis ingen DSN er konfigureret.
