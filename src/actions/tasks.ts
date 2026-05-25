@@ -298,11 +298,12 @@ export async function updateTaskStatus(input: UpdateTaskStatusInput): Promise<Ac
       organization_id: session.user.organizationId,
       deleted_at: null,
     },
+    select: { id: true, status: true, case_id: true },
   })
   if (!task) return { error: 'Opgave ikke fundet' }
 
   if (task.status === parsed.data.status) {
-    return { data: task }
+    return { data: task as unknown as Task }
   }
 
   const rlSts = await checkActionRateLimit(session.user.organizationId)
@@ -355,9 +356,10 @@ export async function updateTaskPriority(
       organization_id: session.user.organizationId,
       deleted_at: null,
     },
+    select: { id: true, priority: true },
   })
   if (!task) return { error: 'Opgave ikke fundet' }
-  if (task.priority === parsed.data.priority) return { data: task }
+  if (task.priority === parsed.data.priority) return { data: task as unknown as Task }
 
   const rlPrio = await checkActionRateLimit(session.user.organizationId)
   if (rlPrio.limited) return { error: 'For mange handlinger. Vent venligst.' }
@@ -407,10 +409,14 @@ export async function updateTaskAssignee(
       organization_id: session.user.organizationId,
       deleted_at: null,
     },
-    include: { assignee: { select: { name: true } } },
+    select: {
+      id: true,
+      assigned_to: true,
+      assignee: { select: { name: true } },
+    },
   })
   if (!task) return { error: 'Opgave ikke fundet' }
-  if (task.assigned_to === parsed.data.assignedTo) return { data: task }
+  if (task.assigned_to === parsed.data.assignedTo) return { data: task as unknown as Task }
 
   const rlAssign = await checkActionRateLimit(session.user.organizationId)
   if (rlAssign.limited) return { error: 'For mange handlinger. Vent venligst.' }
@@ -475,6 +481,7 @@ export async function updateTaskDueDate(
       organization_id: session.user.organizationId,
       deleted_at: null,
     },
+    select: { id: true, due_date: true },
   })
   if (!task) return { error: 'Opgave ikke fundet' }
 
@@ -484,7 +491,7 @@ export async function updateTaskDueDate(
   const newDueDate = parsed.data.dueDate ? new Date(parsed.data.dueDate) : null
   const oldIso = task.due_date ? task.due_date.toISOString().slice(0, 10) : null
   const newIso = newDueDate ? newDueDate.toISOString().slice(0, 10) : null
-  if (oldIso === newIso) return { data: task }
+  if (oldIso === newIso) return { data: task as unknown as Task }
 
   try {
     const updated = await prisma.$transaction(async (tx) => {
@@ -522,6 +529,7 @@ export async function deleteTask(taskId: string): Promise<ActionResult<void>> {
 
   const task = await prisma.task.findFirst({
     where: { id: taskId, organization_id: session.user.organizationId, deleted_at: null },
+    select: { id: true, created_by: true, company_id: true, case_id: true },
   })
   if (!task) return { error: 'Opgave ikke fundet' }
 

@@ -229,6 +229,7 @@ export async function updatePerson(input: UpdatePersonInput): Promise<ActionResu
       organization_id: session.user.organizationId,
       deleted_at: null,
     },
+    select: { id: true },
   })
   if (!existing) return { error: 'Person ikke fundet' }
 
@@ -300,6 +301,7 @@ export async function deletePerson(personId: string): Promise<ActionResult<void>
   // Tenant isolation
   const person = await prisma.person.findFirst({
     where: { id: personId, organization_id: session.user.organizationId },
+    select: { id: true },
   })
   if (!person) return { error: 'Person ikke fundet' }
 

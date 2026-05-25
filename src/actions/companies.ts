@@ -57,6 +57,7 @@ export async function createCompany(input: CreateCompanyInput): Promise<ActionRe
         cvr: parsed.data.cvr,
         deleted_at: null,
       },
+      select: { id: true, name: true },
     })
     if (existing) {
       return { error: `CVR ${parsed.data.cvr} er allerede registreret (se ${existing.name})` }
