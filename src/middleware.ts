@@ -16,6 +16,7 @@ export const config = {
     '/persons/:path*',
     '/documents/:path*',
     '/settings/:path*',
+    '/billing/:path*',
     '/calendar/:path*',
     '/search/:path*',
   ],
