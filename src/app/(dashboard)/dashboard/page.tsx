@@ -35,9 +35,9 @@ export default async function DashboardPage() {
   const since24h = new Date(now.getTime() - 24 * 60 * 60 * 1000)
 
   const [data, sidebar, activity] = await Promise.all([
-    getDashboardData(session.user.id, session.user.organizationId, companyIds),
+    getDashboardData(companyIds),
     getSidebarData(session.user.id, session.user.organizationId, companyIds),
-    getRecentActivity(session.user.organizationId, session.user.id, companyIds, since24h),
+    getRecentActivity(companyIds, since24h),
   ])
 
   const omsaetning = data.portfolioTotals.totalOmsaetning

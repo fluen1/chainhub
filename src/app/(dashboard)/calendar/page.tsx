@@ -34,13 +34,8 @@ export default async function CalendarPage({ searchParams }: CalendarPageProps) 
   // tom måned).
   const nextMonthDate = new Date(year, month, 1)
   const [thisMonthEvents, nextMonthEvents] = await Promise.all([
-    getCalendarEvents(session.user.id, session.user.organizationId, year, month),
-    getCalendarEvents(
-      session.user.id,
-      session.user.organizationId,
-      nextMonthDate.getFullYear(),
-      nextMonthDate.getMonth() + 1
-    ),
+    getCalendarEvents(year, month),
+    getCalendarEvents(nextMonthDate.getFullYear(), nextMonthDate.getMonth() + 1),
   ])
 
   const viewMode = resolvedParams.view === 'agenda' ? 'agenda' : 'maaned'

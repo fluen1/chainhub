@@ -25,6 +25,7 @@ import {
 import { isAIEnabled } from '@/lib/ai/feature-flags'
 import { checkCostCap } from '@/lib/ai/cost-cap'
 import { createLogger } from '@/lib/logger'
+import { auth } from '@/lib/auth'
 
 const log = createLogger('action:company-detail')
 
@@ -122,11 +123,12 @@ export interface DocumentViewRow {
 
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000
 
-export async function getCompanyDetailData(
-  companyId: string,
-  userId: string,
-  organizationId: string
-): Promise<CompanyDetailData | null> {
+export async function getCompanyDetailData(companyId: string): Promise<CompanyDetailData | null> {
+  const session = await auth()
+  if (!session) return null
+  const userId = session.user.id
+  const organizationId = session.user.organizationId
+
   const [accessibleIds, roleRows] = await Promise.all([
     getAccessibleCompanies(userId, organizationId),
     prisma.userRoleAssignment.findMany({

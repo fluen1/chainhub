@@ -9,6 +9,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 // FÆLLES MOCKS
 // ─────────────────────────────────────────────────────────
 
+vi.mock('@/lib/auth', () => ({
+  auth: vi.fn().mockResolvedValue({ user: { id: 'user-1', organizationId: 'org-1' } }),
+}))
+
 vi.mock('@/lib/db', () => ({
   prisma: {
     task: {
@@ -94,7 +98,7 @@ describe('dashboard.ts — task queries er company-scopet', () => {
   it('overdue tasks query inkluderer OR company_id scope', async () => {
     const { getDashboardData } = await import('@/actions/dashboard')
     const { prisma } = await import('@/lib/db')
-    await getDashboardData('user-1', 'org-1')
+    await getDashboardData()
 
     const taskFindManyCalls = vi.mocked(prisma.task.findMany).mock.calls
     // Første findMany er overdue tasks
@@ -115,7 +119,7 @@ describe('dashboard.ts — task queries er company-scopet', () => {
   it('upcoming tasks query inkluderer OR company_id scope', async () => {
     const { getDashboardData } = await import('@/actions/dashboard')
     const { prisma } = await import('@/lib/db')
-    await getDashboardData('user-1', 'org-1')
+    await getDashboardData()
 
     const taskFindManyCalls = vi.mocked(prisma.task.findMany).mock.calls
     // Anden findMany er upcoming tasks
@@ -129,7 +133,7 @@ describe('dashboard.ts — task queries er company-scopet', () => {
   it('overdueTasksCount badge query inkluderer OR company_id scope', async () => {
     const { getDashboardData } = await import('@/actions/dashboard')
     const { prisma } = await import('@/lib/db')
-    await getDashboardData('user-1', 'org-1')
+    await getDashboardData()
 
     const countCalls = vi.mocked(prisma.task.count).mock.calls
     // count-kaldet for overdue badge
@@ -142,7 +146,7 @@ describe('dashboard.ts — task queries er company-scopet', () => {
     const perms = await import('@/lib/permissions')
     vi.mocked(perms.getAccessibleCompanies).mockResolvedValueOnce([])
     const { getDashboardData } = await import('@/actions/dashboard')
-    const data = await getDashboardData('readonly-user', 'org-1')
+    const data = await getDashboardData()
     expect(data.heatmap).toHaveLength(0)
   })
 })
@@ -208,18 +212,16 @@ describe('sidebar-data.ts — cases og tasks er company-scopet', () => {
 describe('activity-feed.ts — audit events er company-scopet', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('getRecentActivity kræver userId parameter (+ optional preloadedCompanyIds)', async () => {
+  it('getRecentActivity er en funktion (henter session internt)', async () => {
     const { getRecentActivity } = await import('@/actions/activity-feed')
-    // Funktionen eksisterer med mindst 2 påkrævede parametre (userId tilføjet i Phase A)
-    // preloadedCompanyIds er optional (Phase L), så length >= 2
+    // Funktionen henter nu session internt — ingen påkrævede params
     expect(typeof getRecentActivity).toBe('function')
-    expect(getRecentActivity.length).toBeGreaterThanOrEqual(2)
   })
 
   it('audit query inkluderer OR resource_company_id scope', async () => {
     const { getRecentActivity } = await import('@/actions/activity-feed')
     const { prisma } = await import('@/lib/db')
-    await getRecentActivity('org-1', 'user-1')
+    await getRecentActivity()
 
     const auditCalls = vi.mocked(prisma.auditLog.findMany).mock.calls
     expect(auditCalls.length).toBeGreaterThan(0)
@@ -236,7 +238,7 @@ describe('activity-feed.ts — audit events er company-scopet', () => {
     vi.mocked(perms.getAccessibleCompanies).mockResolvedValueOnce([])
     const { getRecentActivity } = await import('@/actions/activity-feed')
     const { prisma } = await import('@/lib/db')
-    await getRecentActivity('org-1', 'restricted-user')
+    await getRecentActivity()
 
     const auditCalls = vi.mocked(prisma.auditLog.findMany).mock.calls
     const where = auditCalls[0]?.[0]?.where
@@ -245,7 +247,7 @@ describe('activity-feed.ts — audit events er company-scopet', () => {
 
   it('returnerer [] når der ikke er logs', async () => {
     const { getRecentActivity } = await import('@/actions/activity-feed')
-    const result = await getRecentActivity('org-1', 'user-1')
+    const result = await getRecentActivity()
     expect(result).toEqual([])
   })
 })
@@ -268,7 +270,7 @@ describe('search.ts — sensitivity og persons er korrekt scopet', () => {
 
     const { runSearch } = await import('@/actions/search')
     const { prisma } = await import('@/lib/db')
-    await runSearch('test', 'finance-user', 'org-1')
+    await runSearch('test')
 
     const contractCalls = vi.mocked(prisma.contract.findMany).mock.calls
     const where = contractCalls[0]?.[0]?.where
@@ -283,7 +285,7 @@ describe('search.ts — sensitivity og persons er korrekt scopet', () => {
 
     const { runSearch } = await import('@/actions/search')
     const { prisma } = await import('@/lib/db')
-    await runSearch('test', 'legal-user', 'org-1')
+    await runSearch('test')
 
     const contractCalls = vi.mocked(prisma.contract.findMany).mock.calls
     const where = contractCalls[0]?.[0]?.where
@@ -298,7 +300,7 @@ describe('search.ts — sensitivity og persons er korrekt scopet', () => {
 
     const { runSearch } = await import('@/actions/search')
     const { prisma } = await import('@/lib/db')
-    await runSearch('test', 'owner-user', 'org-1')
+    await runSearch('test')
 
     const contractCalls = vi.mocked(prisma.contract.findMany).mock.calls
     const where = contractCalls[0]?.[0]?.where
@@ -311,7 +313,7 @@ describe('search.ts — sensitivity og persons er korrekt scopet', () => {
 
     const { runSearch } = await import('@/actions/search')
     const { prisma } = await import('@/lib/db')
-    await runSearch('test', 'user-1', 'org-1')
+    await runSearch('test')
 
     const personCalls = vi.mocked(prisma.person.findMany).mock.calls
     expect(personCalls.length).toBeGreaterThan(0)
@@ -333,7 +335,7 @@ describe('search.ts — sensitivity og persons er korrekt scopet', () => {
 
     const { runSearch } = await import('@/actions/search')
     const { prisma } = await import('@/lib/db')
-    await runSearch('test', 'user-1', 'org-1')
+    await runSearch('test')
 
     const personCalls = vi.mocked(prisma.person.findMany).mock.calls
     const where = personCalls[0]?.[0]?.where
@@ -347,7 +349,7 @@ describe('search.ts — sensitivity og persons er korrekt scopet', () => {
 
   it('returnerer null for kort query', async () => {
     const { runSearch } = await import('@/actions/search')
-    const result = await runSearch('a', 'user-1', 'org-1')
+    const result = await runSearch('a')
     expect(result).toBeNull()
   })
 })

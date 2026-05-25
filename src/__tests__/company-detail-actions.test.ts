@@ -1,4 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+
+vi.mock('@/lib/auth', () => ({
+  auth: vi.fn(),
+}))
+
+import { auth } from '@/lib/auth'
 import { getCompanyDetailData } from '@/actions/company-detail'
 import { generateCompanyInsights } from '@/lib/ai/jobs/company-insights'
 import { isAIEnabled } from '@/lib/ai/feature-flags'
@@ -22,10 +28,13 @@ describe.runIf(!!process.env.DATABASE_URL)('getCompanyDetailData', () => {
     vi.mocked(generateCompanyInsights).mockClear()
     vi.mocked(isAIEnabled).mockResolvedValue(true)
     vi.mocked(checkCostCap).mockResolvedValue({ allowed: true })
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: seedUserId, organizationId: seedOrgId },
+    } as never)
   })
 
   it('returnerer null for selskab udenfor adgang', async () => {
-    const result = await getCompanyDetailData('nonexistent-id', seedUserId, seedOrgId)
+    const result = await getCompanyDetailData('nonexistent-id')
     expect(result).toBeNull()
   })
 
@@ -36,7 +45,7 @@ describe.runIf(!!process.env.DATABASE_URL)('getCompanyDetailData', () => {
     })
     if (!firstCompany) return
 
-    const result = await getCompanyDetailData(firstCompany.id, seedUserId, seedOrgId)
+    const result = await getCompanyDetailData(firstCompany.id)
     expect(result).not.toBeNull()
     if (result) {
       expect(result.company.id).toBe(firstCompany.id)
@@ -59,7 +68,7 @@ describe.runIf(!!process.env.DATABASE_URL)('getCompanyDetailData', () => {
     // Ryd cache for at tvinge regen-path
     await prisma.companyInsightsCache.deleteMany({ where: { company_id: firstCompany.id } })
 
-    const result = await getCompanyDetailData(firstCompany.id, seedUserId, seedOrgId)
+    const result = await getCompanyDetailData(firstCompany.id)
     expect(result).not.toBeNull()
     expect(generateCompanyInsights).not.toHaveBeenCalled()
     if (result) {
@@ -78,7 +87,7 @@ describe.runIf(!!process.env.DATABASE_URL)('getCompanyDetailData', () => {
     if (!firstCompany) return
     await prisma.companyInsightsCache.deleteMany({ where: { company_id: firstCompany.id } })
 
-    const result = await getCompanyDetailData(firstCompany.id, seedUserId, seedOrgId)
+    const result = await getCompanyDetailData(firstCompany.id)
     expect(result).not.toBeNull()
     expect(generateCompanyInsights).not.toHaveBeenCalled()
     if (result) {
@@ -88,15 +97,13 @@ describe.runIf(!!process.env.DATABASE_URL)('getCompanyDetailData', () => {
   })
 
   // RBAC-regression: verificér at action respekterer sectionsForRole.
-  // Tidligere leaker B-stil UI persons/cases/etc selvom strip-counts var 0.
-  // Disse tests sikrer at server-laget IKKE leaker rå data via prop-bundle.
-  // Bruger pure GROUP_FINANCE-testbruger oprettet i beforeAll, så vi ikke
-  // er afhængige af at seed indeholder en role-isoleret bruger.
-
   describe('RBAC: sectionsForRole respekteres', () => {
     const financeTestUserId = '68cb1977-eb26-43d7-9a6a-9ce952d2dcfe'
 
     it('GROUP_FINANCE: contracts/cases/ownership tom (spec linje 139-156)', async () => {
+      vi.mocked(auth).mockResolvedValueOnce({
+        user: { id: financeTestUserId, organizationId: seedOrgId },
+      } as never)
       const { prisma } = await import('@/lib/db')
       const user = await prisma.user.findFirst({ where: { id: financeTestUserId } })
       if (!user) return // skip når bruger ikke findes (CI uden manuel setup)
@@ -106,7 +113,7 @@ describe.runIf(!!process.env.DATABASE_URL)('getCompanyDetailData', () => {
       })
       if (!firstCompany) return
 
-      const result = await getCompanyDetailData(firstCompany.id, financeTestUserId, seedOrgId)
+      const result = await getCompanyDetailData(firstCompany.id)
       expect(result).not.toBeNull()
       if (result) {
         // GROUP_FINANCE må ikke se ownership/contracts/cases per spec
@@ -123,6 +130,9 @@ describe.runIf(!!process.env.DATABASE_URL)('getCompanyDetailData', () => {
     })
 
     it('GROUP_FINANCE: finance/persons/documents synlige', async () => {
+      vi.mocked(auth).mockResolvedValueOnce({
+        user: { id: financeTestUserId, organizationId: seedOrgId },
+      } as never)
       const { prisma } = await import('@/lib/db')
       const user = await prisma.user.findFirst({ where: { id: financeTestUserId } })
       if (!user) return
@@ -132,7 +142,7 @@ describe.runIf(!!process.env.DATABASE_URL)('getCompanyDetailData', () => {
       })
       if (!firstCompany) return
 
-      const result = await getCompanyDetailData(firstCompany.id, financeTestUserId, seedOrgId)
+      const result = await getCompanyDetailData(firstCompany.id)
       expect(result).not.toBeNull()
       if (result) {
         expect(result.visibleSections.has('finance')).toBe(true)

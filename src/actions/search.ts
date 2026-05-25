@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db'
 import { getAccessibleCompanies, canAccessSensitivity } from '@/lib/permissions'
 import { MIN_SEARCH_LENGTH, RESULTS_PER_TYPE } from '@/lib/search/constants'
 import type { SensitivityLevel } from '@prisma/client'
+import { auth } from '@/lib/auth'
 
 // -----------------------------------------------------------------
 // Output-typer
@@ -72,11 +73,12 @@ export interface SearchResults {
 // Server action
 // -----------------------------------------------------------------
 
-export async function runSearch(
-  query: string,
-  userId: string,
-  orgId: string
-): Promise<SearchResults | null> {
+export async function runSearch(query: string): Promise<SearchResults | null> {
+  const session = await auth()
+  if (!session) return null
+  const userId = session.user.id
+  const orgId = session.user.organizationId
+
   const trimmed = query.trim()
   if (trimmed.length < MIN_SEARCH_LENGTH) return null
 

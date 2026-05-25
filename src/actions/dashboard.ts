@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/db'
 import { getAccessibleCompanies } from '@/lib/permissions'
+import { auth } from '@/lib/auth'
 import type { InlineKpi, SidebarBadge } from '@/types/ui'
 import {
   buildInlineKpis,
@@ -35,11 +36,12 @@ export type {
 // ---------------------------------------------------------------
 // Hoved-aggregator — én query-parallel batch
 // ---------------------------------------------------------------
-export async function getDashboardData(
-  userId: string,
-  organizationId: string,
-  preloadedCompanyIds?: string[]
-): Promise<DashboardData> {
+export async function getDashboardData(preloadedCompanyIds?: string[]): Promise<DashboardData> {
+  const session = await auth()
+  if (!session) return emptyDashboardData('GROUP_READONLY')
+  const userId = session.user.id
+  const organizationId = session.user.organizationId
+
   const [companyIds, roleRows] = await Promise.all([
     preloadedCompanyIds !== undefined
       ? Promise.resolve(preloadedCompanyIds)

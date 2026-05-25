@@ -11,7 +11,7 @@ export default async function TaskDetailPage({ params }: { params: { id: string 
   const session = await auth()
   if (!session) redirect('/login')
 
-  const data = await getTaskDetailData(params.id, session.user.id, session.user.organizationId)
+  const data = await getTaskDetailData(params.id)
   if (!data) notFound()
 
   const dDue = data.task.due_date ? daysUntil(data.task.due_date) : null

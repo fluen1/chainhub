@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
+vi.mock('@/lib/auth', () => ({
+  auth: vi.fn().mockResolvedValue({ user: { id: 'user-1', organizationId: 'org-1' } }),
+}))
+
 vi.mock('@/lib/db', () => ({
   prisma: {
     auditLog: {
@@ -22,22 +26,23 @@ describe('getRecentActivity', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('returnerer tom liste når ingen logs', async () => {
-    const result = await getRecentActivity('org-1', 'user-1')
+    const result = await getRecentActivity()
     expect(result).toEqual([])
   })
 
   it('bruger preloadedCompanyIds og kalder IKKE getAccessibleCompanies igen', async () => {
     const preloaded = ['company-a', 'company-b']
 
-    await getRecentActivity('org-1', 'user-1', preloaded)
+    await getRecentActivity(preloaded)
 
     // Med preloadedCompanyIds skal getAccessibleCompanies ikke kaldes
     expect(getAccessibleCompanies).not.toHaveBeenCalled()
   })
 
   it('kalder getAccessibleCompanies når ingen preloadedCompanyIds', async () => {
-    await getRecentActivity('org-1', 'user-1')
+    await getRecentActivity()
 
+    // userId og orgId hentes fra session internt
     expect(getAccessibleCompanies).toHaveBeenCalledWith('user-1', 'org-1')
     expect(getAccessibleCompanies).toHaveBeenCalledTimes(1)
   })
@@ -58,7 +63,7 @@ describe('getRecentActivity', () => {
       { id: 'user-1', name: 'Philip', email: 'philip@example.com' },
     ] as never)
 
-    const result = await getRecentActivity('org-1', 'user-1', ['company-1'])
+    const result = await getRecentActivity(['company-1'])
 
     expect(result).toHaveLength(1)
     expect(result[0].who).toBe('Philip')
@@ -73,10 +78,7 @@ describe('getRecentActivity preload-eliminering', () => {
   it('sparede DB-kald: to kald med preloaded = 0 ekstra getAccessibleCompanies', async () => {
     const preloaded = ['comp-1', 'comp-2', 'comp-3']
 
-    await Promise.all([
-      getRecentActivity('org-1', 'user-1', preloaded),
-      getRecentActivity('org-1', 'user-1', preloaded),
-    ])
+    await Promise.all([getRecentActivity(preloaded), getRecentActivity(preloaded)])
 
     // Ingen af de to kald måtte have kaldt getAccessibleCompanies
     expect(getAccessibleCompanies).not.toHaveBeenCalled()

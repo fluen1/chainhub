@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
+vi.mock('@/lib/auth', () => ({
+  auth: vi.fn().mockResolvedValue({ user: { id: 'user-1', organizationId: 'org-1' } }),
+}))
+
 vi.mock('@/lib/db', () => ({
   prisma: {
     task: { findFirst: vi.fn() },
@@ -45,7 +49,7 @@ describe('getTaskDetailData', () => {
   it('happy path returnerer fuldt objekt', async () => {
     const { prisma } = await import('@/lib/db')
     vi.mocked(prisma.task.findFirst).mockImplementation((() => Promise.resolve(baseTask)) as never)
-    const result = await getTaskDetailData(UUID, 'user-1', 'org-1')
+    const result = await getTaskDetailData(UUID)
     expect(result).not.toBeNull()
     expect(result!.task.id).toBe(UUID)
     expect(result!.availableAssignees.length).toBe(1)
@@ -54,7 +58,7 @@ describe('getTaskDetailData', () => {
   it('returnerer null hvis task ikke fundet', async () => {
     const { prisma } = await import('@/lib/db')
     vi.mocked(prisma.task.findFirst).mockImplementation((() => Promise.resolve(null)) as never)
-    const result = await getTaskDetailData(UUID, 'user-1', 'org-1')
+    const result = await getTaskDetailData(UUID)
     expect(result).toBeNull()
   })
 
@@ -63,14 +67,14 @@ describe('getTaskDetailData', () => {
     vi.mocked(prisma.task.findFirst).mockImplementation((() => Promise.resolve(baseTask)) as never)
     const perms = await import('@/lib/permissions')
     vi.mocked(perms.canAccessCompany).mockResolvedValueOnce(false)
-    const result = await getTaskDetailData(UUID, 'user-1', 'org-1')
+    const result = await getTaskDetailData(UUID)
     expect(result).toBeNull()
   })
 
   it('parallel batch henter alle 5 typer', async () => {
     const { prisma } = await import('@/lib/db')
     vi.mocked(prisma.task.findFirst).mockImplementation((() => Promise.resolve(baseTask)) as never)
-    await getTaskDetailData(UUID, 'user-1', 'org-1')
+    await getTaskDetailData(UUID)
     expect(prisma.company.findFirst).toHaveBeenCalled()
     expect(prisma.comment.findMany).toHaveBeenCalled()
     expect(prisma.taskHistory.findMany).toHaveBeenCalled()
@@ -80,7 +84,7 @@ describe('getTaskDetailData', () => {
   it('comments + history capped ved 50', async () => {
     const { prisma } = await import('@/lib/db')
     vi.mocked(prisma.task.findFirst).mockImplementation((() => Promise.resolve(baseTask)) as never)
-    await getTaskDetailData(UUID, 'user-1', 'org-1')
+    await getTaskDetailData(UUID)
     const commentsCall = vi.mocked(prisma.comment.findMany).mock.calls[0]
     const historyCall = vi.mocked(prisma.taskHistory.findMany).mock.calls[0]
     expect(commentsCall![0]?.take).toBe(50)

@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/db'
 import { canAccessCompany } from '@/lib/permissions'
+import { auth } from '@/lib/auth'
 import {
   deriveTaskUrgency,
   formatHistoryEntry,
@@ -44,11 +45,12 @@ export interface TaskDetailData {
 // Server action — henter alt detalje-data i én parallel batch
 // -----------------------------------------------------------------
 
-export async function getTaskDetailData(
-  taskId: string,
-  userId: string,
-  orgId: string
-): Promise<TaskDetailData | null> {
+export async function getTaskDetailData(taskId: string): Promise<TaskDetailData | null> {
+  const session = await auth()
+  if (!session) return null
+  const userId = session.user.id
+  const orgId = session.user.organizationId
+
   const task = await prisma.task.findFirst({
     where: {
       id: taskId,

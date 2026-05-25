@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/db'
 import { getAccessibleCompanies } from '@/lib/permissions'
+import { auth } from '@/lib/auth'
 
 // ────────────────────────────────────────────────────────────────────────────
 // Activity feed til dashboard "Sidste aktivitet"-panel.
@@ -70,11 +71,14 @@ function formatRelative(date: Date, now: Date): string {
 }
 
 export async function getRecentActivity(
-  organizationId: string,
-  userId: string,
   preloadedCompanyIds?: string[],
   since?: Date
 ): Promise<ActivityEvent[]> {
+  const session = await auth()
+  if (!session) return []
+  const userId = session.user.id
+  const organizationId = session.user.organizationId
+
   // Default: 24 timer tilbage fra nu
   const sinceDate = since ?? new Date(Date.now() - 24 * 60 * 60 * 1000)
 

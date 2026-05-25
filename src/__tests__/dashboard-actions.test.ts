@@ -1,4 +1,10 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+
+vi.mock('@/lib/auth', () => ({
+  auth: vi.fn(),
+}))
+
+import { auth } from '@/lib/auth'
 import { getDashboardData } from '@/actions/dashboard'
 
 // Smoke test: uses seed-brugeren philip@chainhub.dk via org-id
@@ -7,8 +13,14 @@ describe.runIf(!!process.env.DATABASE_URL)('getDashboardData', () => {
   const seedUserId = '00000000-0000-0000-0000-000000000010'
   const seedOrgId = '00000000-0000-0000-0000-000000000001'
 
+  beforeEach(() => {
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: seedUserId, organizationId: seedOrgId },
+    } as never)
+  })
+
   it('returnerer DashboardData shape', async () => {
-    const data = await getDashboardData(seedUserId, seedOrgId)
+    const data = await getDashboardData()
     expect(data).toHaveProperty('badges')
     expect(data).toHaveProperty('inlineKpis')
     expect(data.timelineSections).toHaveLength(4)
@@ -17,7 +29,10 @@ describe.runIf(!!process.env.DATABASE_URL)('getDashboardData', () => {
   })
 
   it('håndterer bruger uden selskaber', async () => {
-    const data = await getDashboardData('nonexistent-user-id', seedOrgId)
+    vi.mocked(auth).mockResolvedValueOnce({
+      user: { id: 'nonexistent-user-id', organizationId: seedOrgId },
+    } as never)
+    const data = await getDashboardData()
     expect(data.heatmap).toHaveLength(0)
     expect(data.timelineSections.every((s) => s.items.length === 0)).toBe(true)
   })

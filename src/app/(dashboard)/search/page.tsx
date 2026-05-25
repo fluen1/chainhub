@@ -26,13 +26,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   if (!session) redirect('/login')
 
   const query = searchParams.q?.trim() ?? ''
-  const orgId = session.user.organizationId
 
   if (query.length < MIN_SEARCH_LENGTH) {
     return <SearchPageB query={query} results={null} totalCount={0} />
   }
 
-  const raw = await runSearch(query, session.user.id, orgId)
+  const raw = await runSearch(query)
   if (!raw) {
     return <SearchPageB query={query} results={null} totalCount={0} />
   }

@@ -5,6 +5,7 @@ import { getAccessibleCompanies } from '@/lib/permissions'
 import { createLogger } from '@/lib/logger'
 import { getVisitTypeLabel } from '@/lib/labels'
 import type { CalendarEvent } from '@/types/ui'
+import { auth } from '@/lib/auth'
 
 // Cap på antal events pr. type for at undgå OOM / timeouts ved store kæder.
 // 500 events/type/måned er rigeligt for 50 lokationer × 10 events/måned.
@@ -13,12 +14,12 @@ const CALENDAR_MAX_EVENTS_PER_TYPE = 500
 
 const log = createLogger('action:calendar')
 
-export async function getCalendarEvents(
-  userId: string,
-  organizationId: string,
-  year: number,
-  month: number
-): Promise<CalendarEvent[]> {
+export async function getCalendarEvents(year: number, month: number): Promise<CalendarEvent[]> {
+  const session = await auth()
+  if (!session) return []
+  const userId = session.user.id
+  const organizationId = session.user.organizationId
+
   const companyIds = await getAccessibleCompanies(userId, organizationId)
   if (companyIds.length === 0) return []
 

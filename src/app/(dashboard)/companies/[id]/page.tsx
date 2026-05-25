@@ -28,7 +28,7 @@ export default async function CompanyDetailPage({ params }: { params: { id: stri
   if (!session) redirect('/login')
 
   const orgId = session.user.organizationId
-  const data = await getCompanyDetailData(params.id, session.user.id, orgId)
+  const data = await getCompanyDetailData(params.id)
   if (!data) notFound()
 
   // Modal-wiring kræver raw IDs som ikke er i CompanyDetailData. Vi henter dem

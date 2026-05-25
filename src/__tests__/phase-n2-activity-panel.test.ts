@@ -9,6 +9,10 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
+vi.mock('@/lib/auth', () => ({
+  auth: vi.fn().mockResolvedValue({ user: { id: 'user-1', organizationId: 'org-1' } }),
+}))
+
 vi.mock('@/lib/db', () => ({
   prisma: {
     auditLog: {
@@ -35,7 +39,7 @@ describe('getRecentActivity — created_at WHERE-klausul (since-param)', () => {
     const { prisma } = await import('@/lib/db')
     const since = new Date('2026-05-15T00:00:00Z')
 
-    await getRecentActivity('org-1', 'user-1', ['company-1'], since)
+    await getRecentActivity(['company-1'], since)
 
     expect(vi.mocked(prisma.auditLog.findMany)).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -50,7 +54,7 @@ describe('getRecentActivity — created_at WHERE-klausul (since-param)', () => {
     const { prisma } = await import('@/lib/db')
     const beforeCall = new Date(Date.now() - 25 * 60 * 60 * 1000)
 
-    await getRecentActivity('org-1', 'user-1', ['company-1'])
+    await getRecentActivity(['company-1'])
 
     const callArg = vi.mocked(prisma.auditLog.findMany).mock.calls[0][0] as {
       where: { created_at: { gte: Date } }
@@ -63,7 +67,7 @@ describe('getRecentActivity — created_at WHERE-klausul (since-param)', () => {
   })
 
   it('returnerer tom liste ved ingen logs selvom since er sat', async () => {
-    const result = await getRecentActivity('org-1', 'user-1', ['c-1'], new Date())
+    const result = await getRecentActivity(['c-1'], new Date())
     expect(result).toEqual([])
   })
 
@@ -83,7 +87,7 @@ describe('getRecentActivity — created_at WHERE-klausul (since-param)', () => {
       { id: 'user-1', name: 'Philip', email: 'philip@example.com' },
     ] as never)
 
-    const result = await getRecentActivity('org-1', 'user-1', ['c-1'], new Date(0))
+    const result = await getRecentActivity(['c-1'], new Date(0))
 
     expect(result[0].resource_type).toBe('contract')
     expect(result[0].resource_id).toBe('contract-99')
