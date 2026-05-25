@@ -66,7 +66,26 @@ export function serializeError(err: unknown): Record<string, unknown> {
 }
 
 /**
+ * Tilføj en Sentry breadcrumb for et log-event.
+ * Bruges til at give fejlrapporter i Sentry kontekst om hvad der skete
+ * op til en fejl. No-op hvis Sentry ikke er konfigureret.
+ */
+export function addLogBreadcrumb(
+  level: 'info' | 'warn' | 'error',
+  message: string,
+  data?: Record<string, unknown>
+): void {
+  Sentry.addBreadcrumb({
+    category: 'pino',
+    message,
+    level: level === 'error' ? 'error' : level === 'warn' ? 'warning' : 'info',
+    data,
+  })
+}
+
+/**
  * Log fejl både til Pino (stdout) og til Sentry (hvis DSN er sat).
+ * Tilføjer også en breadcrumb til Sentry for fejl-kontekst.
  * Sentry-integration er no-op hvis Sentry ikke er konfigureret.
  */
 export function captureError(
@@ -76,6 +95,12 @@ export function captureError(
   const namespace = context?.namespace ?? 'app'
   const log = createLogger(namespace)
   log.error({ err: serializeError(err), ...context?.extra }, 'captured error')
+
+  // Breadcrumb giver kontekst i Sentry-fejlrapporter
+  addLogBreadcrumb('error', err instanceof Error ? err.message : String(err), {
+    namespace,
+    ...context?.extra,
+  })
 
   // Send til Sentry — Sentry er no-op hvis DSN ikke er sat (enabled=false i config)
   if (err instanceof Error) {
