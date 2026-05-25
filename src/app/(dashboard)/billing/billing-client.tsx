@@ -16,6 +16,8 @@ interface BillingClientProps {
   planExpiresAt: string | null
   starterPriceId: string
   professionalPriceId: string
+  checkoutSuccess?: boolean
+  checkoutCanceled?: boolean
 }
 
 export function BillingClient({
@@ -25,6 +27,8 @@ export function BillingClient({
   planExpiresAt,
   starterPriceId,
   professionalPriceId,
+  checkoutSuccess,
+  checkoutCanceled,
 }: BillingClientProps) {
   const [loadingPrice, setLoadingPrice] = useState<string | null>(null)
   const [loadingPortal, setLoadingPortal] = useState(false)
@@ -68,6 +72,18 @@ export function BillingClient({
 
   return (
     <div className="flex flex-col gap-3">
+      {checkoutSuccess && (
+        <div className="rounded-[4px] border border-b-green-border bg-b-green-bg px-3 py-2.5 text-[13px] text-b-green-fg">
+          <strong>Betaling gennemført!</strong> Dit abonnement er nu aktivt. Det kan tage et øjeblik
+          at opdatere.
+        </div>
+      )}
+      {checkoutCanceled && (
+        <div className="rounded-[4px] border border-b-amber-border bg-b-amber-bg px-3 py-2.5 text-[13px] text-b-amber-fg">
+          Betalingen blev annulleret. Du kan prøve igen når du er klar.
+        </div>
+      )}
+
       <PageHeader
         title="Abonnement"
         meta={trialDaysLeft !== null ? `${trialDaysLeft} dage tilbage af prøveperioden` : planLabel}

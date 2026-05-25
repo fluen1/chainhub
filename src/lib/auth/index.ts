@@ -184,7 +184,7 @@ export const authOptions: NextAuthOptions = {
         user.id = newUser.id
       })
 
-      return true
+      return '/signup/organization'
     },
     async jwt({ token, user, account }) {
       if (user) {

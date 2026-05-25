@@ -11,7 +11,12 @@ const PROFESSIONAL_PRICE_ID = env.STRIPE_PROFESSIONAL_PRICE_ID ?? ''
 // /billing — abonnementsstyring
 // ────────────────────────────────────────────────────────────────────────────
 
-export default async function BillingPage() {
+interface BillingPageProps {
+  searchParams: Promise<{ success?: string; canceled?: string }>
+}
+
+export default async function BillingPage({ searchParams }: BillingPageProps) {
+  const params = await searchParams
   const result = await getBillingPageData()
 
   if (result.error) redirect('/dashboard')
@@ -28,6 +33,8 @@ export default async function BillingPage() {
         planExpiresAt={planExpiresAt}
         starterPriceId={STARTER_PRICE_ID}
         professionalPriceId={PROFESSIONAL_PRICE_ID}
+        checkoutSuccess={params.success === '1'}
+        checkoutCanceled={params.canceled === '1'}
       />
     </div>
   )
