@@ -6,12 +6,17 @@ import { canAccessModule } from '@/lib/permissions'
 import {
   createUserSchema,
   updateUserRoleSchema,
+  inviteUserSchema,
+  acceptInviteSchema,
   type CreateUserInput,
   type UpdateUserRoleInput,
+  type InviteUserInput,
+  type AcceptInviteInput,
 } from '@/lib/validations/user'
+import { sendInviteEmail } from '@/lib/email/resend'
 import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
-import type { User, UserRoleAssignment } from '@prisma/client'
+import type { User, UserRoleAssignment, UserRole } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import { captureError } from '@/lib/logger'
 
@@ -333,5 +338,153 @@ export async function toggleUserActive(userId: string): Promise<ActionResult<voi
       extra: { userId },
     })
     return { error: 'Brugerstatus kunne ikke ændres — prøv igen' }
+  }
+}
+
+export async function inviteUser(input: InviteUserInput): Promise<ActionResult<{ success: true }>> {
+  const session = await auth()
+  if (!session) return { error: 'Ikke autoriseret' }
+
+  const parsed = inviteUserSchema.safeParse(input)
+  if (!parsed.success) {
+    const firstError = parsed.error.issues[0]?.message ?? 'Ugyldigt input'
+    return { error: firstError }
+  }
+
+  const hasAccess = await canAccessModule(
+    session.user.id,
+    'user_management',
+    session.user.organizationId
+  )
+  if (!hasAccess) return { error: 'Du har ikke adgang til at invitere brugere' }
+
+  const normalizedEmail = parsed.data.email.trim().toLowerCase()
+
+  // Tjek om brugeren allerede eksisterer i organisationen
+  const existing = await prisma.user.findFirst({
+    where: {
+      email: { equals: normalizedEmail, mode: 'insensitive' },
+      organization_id: session.user.organizationId,
+      deleted_at: null,
+    },
+  })
+  if (existing) {
+    return { error: `En bruger med email ${normalizedEmail} er allerede medlem af organisationen` }
+  }
+
+  // Hent organisation og inviter-navn til email
+  const [organization, inviter] = await Promise.all([
+    prisma.organization.findUnique({
+      where: { id: session.user.organizationId },
+      select: { name: true },
+    }),
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { name: true },
+    }),
+  ])
+
+  const token = crypto.randomUUID()
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 dage
+
+  try {
+    await prisma.inviteToken.create({
+      data: {
+        token,
+        email: normalizedEmail,
+        role: parsed.data.role,
+        organization_id: session.user.organizationId,
+        expires_at: expiresAt,
+        created_by: session.user.id,
+      },
+    })
+
+    const baseUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3000'
+    const inviteUrl = `${baseUrl}/invite?token=${token}`
+    const orgName = organization?.name ?? 'ChainHub'
+    const inviterName = inviter?.name ?? session.user.name ?? 'En kollega'
+
+    await sendInviteEmail(normalizedEmail, inviteUrl, orgName, inviterName)
+
+    return { data: { success: true } }
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:inviteUser',
+      extra: { email: normalizedEmail, role: parsed.data.role },
+    })
+    return { error: 'Invitationen kunne ikke sendes — prøv igen' }
+  }
+}
+
+export async function acceptInvite(
+  input: AcceptInviteInput
+): Promise<ActionResult<{ email: string }>> {
+  const parsed = acceptInviteSchema.safeParse(input)
+  if (!parsed.success) {
+    const firstError = parsed.error.issues[0]?.message ?? 'Ugyldigt input'
+    return { error: firstError }
+  }
+
+  const inviteToken = await prisma.inviteToken.findUnique({
+    where: { token: parsed.data.token },
+  })
+
+  if (!inviteToken) return { error: 'Invite-linket er ugyldigt' }
+  if (inviteToken.used_at) return { error: 'Invite-linket er allerede brugt' }
+  if (inviteToken.expires_at < new Date()) return { error: 'Invite-linket er udløbet' }
+
+  // Tjek om email allerede er i brug
+  const existingUser = await prisma.user.findFirst({
+    where: {
+      email: { equals: inviteToken.email, mode: 'insensitive' },
+      deleted_at: null,
+    },
+  })
+  if (existingUser) {
+    return {
+      error: 'Emailen er allerede registreret — log ind eller kontakt din administrator',
+    }
+  }
+
+  try {
+    const passwordHash = await bcrypt.hash(parsed.data.password, 12)
+
+    const isGroupRole = inviteToken.role.startsWith('GROUP_')
+    const scope = isGroupRole ? 'ALL' : 'ASSIGNED'
+
+    await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          organization_id: inviteToken.organization_id,
+          email: inviteToken.email,
+          name: parsed.data.name,
+          password_hash: passwordHash,
+        },
+      })
+
+      await tx.userRoleAssignment.create({
+        data: {
+          organization_id: inviteToken.organization_id,
+          user_id: newUser.id,
+          role: inviteToken.role as UserRole,
+          scope,
+          company_ids: [],
+          created_by: inviteToken.created_by,
+        },
+      })
+
+      await tx.inviteToken.update({
+        where: { id: inviteToken.id },
+        data: { used_at: new Date() },
+      })
+    })
+
+    return { data: { email: inviteToken.email } }
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:acceptInvite',
+      extra: { token: parsed.data.token },
+    })
+    return { error: 'Kontoen kunne ikke oprettes — prøv igen' }
   }
 }

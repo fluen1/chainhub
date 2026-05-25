@@ -6,6 +6,31 @@ export const resend = resendApiKey ? new Resend(resendApiKey) : null
 
 export const DIGEST_FROM = process.env.DIGEST_FROM_EMAIL ?? 'ChainHub <noreply@chainhub.dk>'
 
+export async function sendInviteEmail(
+  to: string,
+  inviteUrl: string,
+  orgName: string,
+  inviterName: string
+): Promise<void> {
+  if (!resend) {
+    console.warn('RESEND_API_KEY ikke konfigureret — invite email springes over')
+    return
+  }
+
+  await resend.emails.send({
+    from: DIGEST_FROM,
+    to,
+    subject: `Du er inviteret til ${orgName} — ChainHub`,
+    html: `
+      <h2>Hej,</h2>
+      <p>${inviterName} har inviteret dig til <strong>${orgName}</strong> på ChainHub.</p>
+      <p><a href="${inviteUrl}" style="background:#2563eb;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;">Acceptér invitation</a></p>
+      <p>Linket udløber om 7 dage.</p>
+      <p>Venlig hilsen,<br/>ChainHub</p>
+    `,
+  })
+}
+
 export async function sendPasswordResetEmail(
   to: string,
   resetUrl: string,
