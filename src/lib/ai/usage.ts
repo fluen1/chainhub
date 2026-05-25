@@ -9,6 +9,10 @@ export type AIFeature =
   | 'portfolio_insights'
   | 'search_ai'
   | 'calendar_events'
+  | 'entity_matching'
+  | 'autofill'
+  | 'alerts'
+  | 'assistant'
 
 export interface RecordUsageInput {
   organizationId: string
