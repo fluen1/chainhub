@@ -133,7 +133,16 @@ export async function getTasksPaginated(
       orderBy,
       skip,
       take,
-      include: {
+      select: {
+        id: true,
+        title: true,
+        company_id: true,
+        contract_id: true,
+        case_id: true,
+        due_date: true,
+        status: true,
+        priority: true,
+        assigned_to: true,
         assignee: { select: { id: true, name: true } },
         case: { select: { id: true, title: true } },
       },

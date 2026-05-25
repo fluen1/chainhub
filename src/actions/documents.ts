@@ -256,10 +256,10 @@ export async function getDocumentReviewPageData(
         extraction_status: 'completed',
       },
     },
-    include: {
-      extraction: {
-        select: { id: true },
-      },
+    select: {
+      id: true,
+      file_name: true,
+      title: true,
     },
     orderBy: { uploaded_at: 'asc' },
   })
@@ -299,6 +299,7 @@ export async function deleteDocument(documentId: string): Promise<ActionResult<v
       organization_id: session.user.organizationId,
       deleted_at: null,
     },
+    select: { id: true, company_id: true },
   })
   if (!doc) return { error: 'Dokument ikke fundet' }
 
