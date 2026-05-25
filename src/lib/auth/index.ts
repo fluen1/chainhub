@@ -2,6 +2,7 @@ import NextAuth, { type NextAuthOptions, type DefaultSession, getServerSession }
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { prisma } from '@/lib/db'
 import bcrypt from 'bcryptjs'
+import { checkLoginRateLimit } from '@/lib/auth/login-rate-limit'
 
 declare module 'next-auth' {
   interface Session extends DefaultSession {
@@ -35,6 +36,14 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           return null
+        }
+
+        const rateCheck = checkLoginRateLimit(credentials.email as string)
+        if (!rateCheck.allowed) {
+          const minutter = Math.ceil((rateCheck.retryAfterMs ?? 0) / 60000)
+          throw new Error(
+            `For mange loginforsøg — prøv igen om ${minutter} minut${minutter === 1 ? '' : 'ter'}`
+          )
         }
 
         const normalizedEmail = credentials.email.trim().toLowerCase()
