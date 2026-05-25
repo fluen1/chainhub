@@ -58,6 +58,7 @@ export function DeleteDocumentButton({
       <button
         type="button"
         title="Slet dokument"
+        aria-label="Slet dokument"
         onClick={(e) => {
           e.stopPropagation()
           setOpen(true)

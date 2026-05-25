@@ -123,6 +123,7 @@ export function CompanyPersonList({
                         type="date"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
+                        aria-label="Slutdato for tilknytning"
                         className="rounded border border-gray-300 px-2 py-1 text-xs"
                       />
                       <button

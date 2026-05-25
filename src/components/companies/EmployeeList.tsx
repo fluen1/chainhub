@@ -83,6 +83,7 @@ function EmployeeRow({ cp, showActions }: { cp: PersonItem; showActions: boolean
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
+                aria-label="Slutdato for rolle"
                 className="rounded border border-gray-200 px-2 py-1 text-xs focus:border-gray-300 focus:outline-none"
               />
               <button
@@ -209,6 +210,7 @@ export function EmployeeList({
                 placeholder="Søg ansatte..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                aria-label="Søg ansatte"
                 className="h-8 w-44 rounded-md border border-gray-200 pl-8 pr-3 text-xs text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300"
               />
             </div>

@@ -71,6 +71,7 @@ export function SearchAndFilter({
           placeholder={placeholder}
           defaultValue={currentSearch}
           onChange={handleSearchChange}
+          aria-label="Søg"
           className={cn(
             'w-full rounded-md border border-gray-200 bg-white py-2 pl-9 pr-8 text-sm',
             'placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500',
@@ -80,6 +81,7 @@ export function SearchAndFilter({
         {currentSearch && (
           <button
             onClick={clearSearch}
+            aria-label="Ryd søgning"
             className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
           >
             <X className="h-4 w-4" />

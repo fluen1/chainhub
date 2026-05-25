@@ -78,6 +78,7 @@ export function UrgencyPanel({ sections }: { sections: TimelineSectionData[] }) 
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           placeholder="Filtrér urgency-items..."
+          aria-label="Filtrér urgency-elementer"
           className="w-full rounded-[4px] border border-b-border-strong bg-white px-2.5 py-1 text-[12px] text-b-1 placeholder:text-b-3 focus:border-b-blue-fg focus:outline-none focus:ring-2 focus:ring-b-blue-bg"
         />
       </div>

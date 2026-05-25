@@ -118,6 +118,7 @@ export function OwnershipList({ ownerships, title, showActions }: OwnershipListP
                         type="date"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
+                        aria-label="Slutdato for ejerskab"
                         className="rounded border border-gray-300 px-2 py-1 text-xs"
                       />
                       <button

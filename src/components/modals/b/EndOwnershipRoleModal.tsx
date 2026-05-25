@@ -138,6 +138,7 @@ export function EndOwnershipRoleModal({
           value={confirmText}
           onChange={(e) => setConfirmText(e.target.value)}
           placeholder="Skriv SLUT for at bekræfte"
+          aria-label="Bekræft handling ved at skrive SLUT"
           className={`w-full rounded-[4px] border bg-white px-2.5 py-1.5 text-[13px] focus:outline focus:outline-2 focus:outline-offset-[-1px] ${
             confirmOk
               ? 'border-b-green-fg focus:outline-b-green-fg'

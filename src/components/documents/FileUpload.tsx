@@ -133,6 +133,7 @@ export function FileUpload({ companyId, caseId, className }: FileUploadProps) {
                 e.stopPropagation()
                 handleRemoveFile()
               }}
+              aria-label="Fjern valgt fil"
               className="rounded-[4px] p-1 text-b-3 hover:bg-b-row-hover hover:text-b-1"
             >
               <X className="h-4 w-4" />

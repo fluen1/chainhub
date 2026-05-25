@@ -169,6 +169,7 @@ export function UploadVersionForm({ contractId, companyId }: UploadVersionFormPr
                     setSelectedFile(null)
                     if (fileInputRef.current) fileInputRef.current.value = ''
                   }}
+                  aria-label="Fjern valgt fil"
                   className="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
                 >
                   <X className="h-4 w-4" />
