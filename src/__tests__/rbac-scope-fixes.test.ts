@@ -212,12 +212,6 @@ describe('sidebar-data.ts — cases og tasks er company-scopet', () => {
 describe('activity-feed.ts — audit events er company-scopet', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('getRecentActivity er en funktion (henter session internt)', async () => {
-    const { getRecentActivity } = await import('@/actions/activity-feed')
-    // Funktionen henter nu session internt — ingen påkrævede params
-    expect(typeof getRecentActivity).toBe('function')
-  })
-
   it('audit query inkluderer OR resource_company_id scope', async () => {
     const { getRecentActivity } = await import('@/actions/activity-feed')
     const { prisma } = await import('@/lib/db')

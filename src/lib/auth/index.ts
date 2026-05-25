@@ -1,3 +1,7 @@
+// cache() er Next.js-specifik og ikke tilgængelig i Vitest — fallback til identity
+import { cache as reactCache } from 'react'
+const cache: <T extends (...args: unknown[]) => unknown>(fn: T) => T =
+  typeof reactCache === 'function' ? (reactCache as typeof cache) : (fn) => fn
 import NextAuth, { type NextAuthOptions, type DefaultSession, getServerSession } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { prisma } from '@/lib/db'
@@ -146,8 +150,6 @@ export function warnNextauthUrlMismatch(requestOrigin: string): void {
   }
 }
 
-export async function auth() {
-  return getServerSession(authOptions)
-}
+export const auth = cache(() => getServerSession(authOptions))
 
 export default NextAuth(authOptions)
