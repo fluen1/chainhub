@@ -298,7 +298,6 @@ describe('Fix 11: Annullér → Annuller konsistens', () => {
     'src/components/companies/AddOwnerForm.tsx',
     'src/components/companies/OwnershipList.tsx',
     'src/components/companies/EmployeeList.tsx',
-    'src/components/companies/OwnershipListNew.tsx',
     'src/components/companies/CompanyPersonList.tsx',
     'src/components/companies/AddCompanyPersonForm.tsx',
     'src/components/companies/CreateCompanyForm.tsx',
