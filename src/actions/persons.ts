@@ -2,7 +2,12 @@
 
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { canAccessCompany, canAccessModule, canAccessSensitivity } from '@/lib/permissions'
+import {
+  canAccessCompany,
+  canAccessModule,
+  canAccessSensitivity,
+  getAccessibleCompanies,
+} from '@/lib/permissions'
 import {
   createPersonSchema,
   updatePersonSchema,
@@ -11,10 +16,129 @@ import {
 } from '@/lib/validations/person'
 import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
-import type { CompanyPerson, Ownership, Person } from '@prisma/client'
+import type { CompanyPerson, Ownership, Person, Prisma } from '@prisma/client'
 import { captureError } from '@/lib/logger'
 import { recordAuditEvent } from '@/lib/audit'
 import { z } from 'zod'
+import { parsePaginationParams } from '@/lib/pagination'
+import { getCompanyPersonRoleLabel, getInitials } from '@/lib/labels'
+import { formatShortDate } from '@/lib/date-helpers'
+
+// ────────────────────────────────────────────────────────────────────────────
+// getPersonsPaginated — server-side pagineret liste til /persons
+// RBAC-filteret (accessible companies) flyttes ind i WHERE-klausulen
+// så paginering tæller korrekt og vi undgår at fetche al data.
+// ────────────────────────────────────────────────────────────────────────────
+
+export interface PersonRow {
+  id: string
+  ini: string
+  navn: string
+  rolle: string
+  rawRole: string | null
+  selskab: string
+  companyId: string | null
+  ansat: string
+  ansatSort: number
+  status: string
+  sens: string
+  email: string | null
+  phone: string | null
+  selskabsCount: number
+}
+
+export interface PersonPaginationParams {
+  page?: number
+  pageSize?: number
+  search?: string
+  status?: string
+  rolle?: string
+  company?: string
+}
+
+export async function getPersonsPaginated(
+  params: PersonPaginationParams
+): Promise<{ rows: PersonRow[]; totalCount: number; page: number; pageSize: number }> {
+  const session = await auth()
+  if (!session) return { rows: [], totalCount: 0, page: 1, pageSize: 15 }
+
+  const orgId = session.user.organizationId
+  const userId = session.user.id
+  const { page, skip, take } = parsePaginationParams(
+    String(params.page ?? 1),
+    params.pageSize ?? 15
+  )
+
+  const companyIds = await getAccessibleCompanies(userId, orgId)
+
+  // Byg WHERE-klausulen — RBAC-filter i DB, ikke post-fetch
+  const where: Prisma.PersonWhereInput = {
+    organization_id: orgId,
+    deleted_at: null,
+    // Person vises hvis: ingen selskabsrelation (orphan) ELLER relation til accessible selskab
+    OR: [
+      { company_persons: { none: {} } },
+      { company_persons: { some: { company_id: { in: companyIds } } } },
+    ],
+  }
+
+  if (params.search?.trim()) {
+    const q = params.search.trim()
+    where.AND = [
+      {
+        OR: [
+          { first_name: { contains: q, mode: 'insensitive' } },
+          { last_name: { contains: q, mode: 'insensitive' } },
+          { email: { contains: q, mode: 'insensitive' } },
+        ],
+      },
+    ]
+  }
+
+  const [rawPersons, totalCount] = await Promise.all([
+    prisma.person.findMany({
+      where,
+      include: {
+        company_persons: {
+          include: { company: { select: { id: true, name: true } } },
+          orderBy: { start_date: 'desc' },
+        },
+      },
+      orderBy: [{ first_name: 'asc' }, { last_name: 'asc' }],
+      skip,
+      take,
+    }),
+    prisma.person.count({ where }),
+  ])
+
+  const rows: PersonRow[] = rawPersons.map((p) => {
+    const activeCp = p.company_persons.find((cp) => !cp.end_date) ?? p.company_persons[0]
+    const role = activeCp?.role ?? null
+    const status = activeCp == null ? 'Inaktiv' : activeCp.end_date ? 'Opsagt' : 'Aktiv'
+    const uniqueCompanies = new Set(
+      p.company_persons.filter((cp) => !cp.end_date).map((cp) => cp.company.id)
+    )
+
+    return {
+      id: p.id,
+      ini: getInitials(p.first_name, p.last_name),
+      navn: `${p.first_name} ${p.last_name}`,
+      rolle: role ? getCompanyPersonRoleLabel(role) : '—',
+      rawRole: role,
+      selskab: activeCp?.company.name ?? '—',
+      companyId: activeCp?.company.id ?? null,
+      ansat: activeCp?.start_date ? formatShortDate(activeCp.start_date) : '—',
+      ansatSort: activeCp?.start_date?.getTime() ?? 0,
+      status,
+      sens: 'STANDARD',
+      email: p.email,
+      phone: p.phone,
+      selskabsCount: uniqueCompanies.size,
+    }
+  })
+
+  return { rows, totalCount, page, pageSize: take }
+}
 
 // ─── Zod schemas for nye actions ───────────────────────────────────────────
 

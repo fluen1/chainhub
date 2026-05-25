@@ -10,7 +10,6 @@ import {
   BButton,
   FilterRow,
   FilterSearch,
-  FilterDropdown,
   FilterReset,
   FilterSep,
   FilterSpacer,
@@ -54,8 +53,6 @@ export interface PersonRow {
 type ViewMode = 'tabel' | 'grouped' | 'kort'
 type SortKey = 'navn' | 'rolle' | 'selskab' | 'ansatSort' | 'status' | 'sens'
 
-const STATUS_OPTS = ['Alle', 'Aktiv', 'Opsagt', 'Inaktiv']
-
 function statusTone(status: string): BadgeTone {
   switch (status) {
     case 'Aktiv':
@@ -90,9 +87,13 @@ function roleTone(rawRole: string | null): BadgeTone {
 export function PersonsListB({
   persons,
   totalCount,
+  page: initialPage = 1,
+  pageSize: initialPageSize = 15,
 }: {
   persons: PersonRow[]
   totalCount: number
+  page?: number
+  pageSize?: number
 }) {
   const router = useRouter()
   const pathname = usePathname()
@@ -103,13 +104,11 @@ export function PersonsListB({
     () => (searchParams.get('view') as ViewMode) || 'tabel'
   )
   const [search, setSearch] = useState(() => searchParams.get('search') ?? '')
-  const [selskabFil, setSelskabFil] = useState(() => searchParams.get('company') ?? 'Alle')
-  const [rolleFil, setRolleFil] = useState(() => searchParams.get('rolle') ?? 'Alle')
-  const [statusFil, setStatusFil] = useState(() => searchParams.get('status') ?? 'Alle')
   const [sortCol, setSortCol] = useState<SortKey>('navn')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
-  const [page, setPage] = useState(() => parseInt(searchParams.get('page') ?? '1', 10) || 1)
-  const [pageSize, setPageSize] = useState(15)
+  // page og pageSize er nu drevet af server — vi sporer kun lokalt til UI-sync
+  const [page, setPage] = useState(initialPage)
+  const [pageSize] = useState(initialPageSize)
 
   function pushUrl(overrides: Record<string, string>) {
     const sp = new URLSearchParams(searchParams.toString())
@@ -126,45 +125,13 @@ export function PersonsListB({
   useEffect(() => {
     setViewMode((searchParams.get('view') as ViewMode) || 'tabel')
     setSearch(searchParams.get('search') ?? '')
-    setSelskabFil(searchParams.get('company') ?? 'Alle')
-    setRolleFil(searchParams.get('rolle') ?? 'Alle')
-    setStatusFil(searchParams.get('status') ?? 'Alle')
-    setPage(parseInt(searchParams.get('page') ?? '1', 10) || 1)
+    setPage(initialPage)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams])
+  }, [searchParams, initialPage])
 
-  const uniqueSelskaber = useMemo(
-    () =>
-      Array.from(new Set(persons.map((p) => p.selskab).filter((s) => s !== '—'))).sort((a, b) =>
-        a.localeCompare(b, 'da-DK')
-      ),
-    [persons]
-  )
-  const uniqueRoller = useMemo(
-    () => Array.from(new Set(persons.map((p) => p.rolle).filter((r) => r !== '—'))).sort(),
-    [persons]
-  )
-
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase()
-    return persons.filter((p) => {
-      if (
-        q &&
-        !p.navn.toLowerCase().includes(q) &&
-        !p.selskab.toLowerCase().includes(q) &&
-        !p.rolle.toLowerCase().includes(q)
-      ) {
-        return false
-      }
-      if (selskabFil !== 'Alle' && p.selskab !== selskabFil) return false
-      if (rolleFil !== 'Alle' && p.rolle !== rolleFil) return false
-      if (statusFil !== 'Alle' && p.status !== statusFil) return false
-      return true
-    })
-  }, [persons, search, selskabFil, rolleFil, statusFil])
-
+  // Sortering er klient-side inden for den aktuelle side
   const sorted = useMemo(() => {
-    const arr = [...filtered]
+    const arr = [...persons]
     arr.sort((a, b) => {
       const av = a[sortCol] as string | number
       const bv = b[sortCol] as string | number
@@ -173,13 +140,12 @@ export function PersonsListB({
       return 0
     })
     return arr
-  }, [filtered, sortCol, sortDir])
+  }, [persons, sortCol, sortDir])
 
   const activeCount = useMemo(() => persons.filter((p) => p.status === 'Aktiv').length, [persons])
   const inactiveCount = useMemo(() => persons.filter((p) => p.status !== 'Aktiv').length, [persons])
 
-  const hasFilter =
-    selskabFil !== 'Alle' || rolleFil !== 'Alle' || statusFil !== 'Alle' || search.length > 0
+  const hasFilter = search.length > 0
 
   function handleSort(col: SortKey) {
     if (sortCol === col) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
@@ -191,20 +157,17 @@ export function PersonsListB({
 
   function resetFilters() {
     setSearch('')
-    setSelskabFil('Alle')
-    setRolleFil('Alle')
-    setStatusFil('Alle')
-    setPage(1)
-    pushUrl({ search: '', company: 'Alle', rolle: 'Alle', status: 'Alle', page: '1' })
+    pushUrl({ search: '', page: '1' })
   }
 
   function goTo(id: string) {
     router.push(`/persons/${id}`)
   }
 
-  const maxPage = Math.max(1, Math.ceil(sorted.length / pageSize))
+  const maxPage = Math.max(1, Math.ceil(totalCount / pageSize))
   const safePage = Math.min(page, maxPage)
-  const paged = sorted.slice((safePage - 1) * pageSize, safePage * pageSize)
+  // Data er allerede pagineret fra server — vis alle rækker i den aktuelle side
+  const paged = sorted
 
   return (
     <>
@@ -218,7 +181,7 @@ export function PersonsListB({
             {' · '}
             <span className="text-b-2">{inactiveCount} opsagte / inaktive</span>
             {' · '}
-            {uniqueRoller.length} roller
+            {totalCount} i alt
           </>
         }
         actions={
@@ -237,37 +200,6 @@ export function PersonsListB({
             pushUrl({ search: v, page: '1' })
           }}
           placeholder="Søg personer..."
-        />
-        <FilterDropdown
-          label="Selskab"
-          options={['Alle', ...uniqueSelskaber]}
-          value={selskabFil}
-          onChange={(v) => {
-            setSelskabFil(v)
-            setPage(1)
-            pushUrl({ company: v, page: '1' })
-          }}
-        />
-        <FilterDropdown
-          label="Rolle"
-          divider="Roller i systemet"
-          options={['Alle', ...uniqueRoller]}
-          value={rolleFil}
-          onChange={(v) => {
-            setRolleFil(v)
-            setPage(1)
-            pushUrl({ rolle: v, page: '1' })
-          }}
-        />
-        <FilterDropdown
-          label="Status"
-          options={STATUS_OPTS}
-          value={statusFil}
-          onChange={(v) => {
-            setStatusFil(v)
-            setPage(1)
-            pushUrl({ status: v, page: '1' })
-          }}
         />
         {hasFilter && <FilterReset onClick={resetFilters} />}
         <FilterSep />
@@ -289,8 +221,7 @@ export function PersonsListB({
 
       {hasFilter && (
         <div className="text-[11px] text-b-2">
-          {sorted.length} {sorted.length === 1 ? 'resultat' : 'resultater'} — filtreret fra{' '}
-          {totalCount} personer
+          {totalCount} {totalCount === 1 ? 'resultat' : 'resultater'} — søgning aktiv
         </div>
       )}
 
@@ -306,9 +237,9 @@ export function PersonsListB({
       {viewMode === 'grouped' && <GroupedView persons={sorted} onRowClick={goTo} />}
       {viewMode === 'kort' && <CardView persons={sorted} onRowClick={goTo} />}
 
-      {viewMode === 'tabel' && sorted.length > 0 && (
+      {viewMode === 'tabel' && totalCount > 0 && (
         <Pager
-          info={`${Math.min((safePage - 1) * pageSize + 1, sorted.length)}–${Math.min(safePage * pageSize, sorted.length)} af ${sorted.length}`}
+          info={`${Math.min((safePage - 1) * pageSize + 1, totalCount)}–${Math.min(safePage * pageSize, totalCount)} af ${totalCount}`}
           page={safePage}
           maxPage={maxPage}
           onPage={(n) => {
@@ -317,9 +248,7 @@ export function PersonsListB({
           }}
           pageSize={pageSize}
           onPageSize={(n) => {
-            setPageSize(n)
-            setPage(1)
-            pushUrl({ page: '1' })
+            pushUrl({ pageSize: String(n), page: '1' })
           }}
           sizes={[15, 25, 50]}
         />
@@ -328,9 +257,8 @@ export function PersonsListB({
       <BottomBar
         left={
           <>
-            {sorted.length} {sorted.length === 1 ? 'person' : 'personer'} vist · {activeCount}{' '}
-            aktive
-            {hasFilter && ` · filtreret fra ${totalCount}`}
+            {totalCount} {totalCount === 1 ? 'person' : 'personer'} · {activeCount} aktive på siden
+            {hasFilter && ` · søgning aktiv`}
           </>
         }
       />
