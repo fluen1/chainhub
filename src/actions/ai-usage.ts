@@ -70,7 +70,8 @@ export async function getSettingsAIUsage(organizationId: string): Promise<Settin
       capUsd: capStatus.capUsd,
       currentUsd: capStatus.currentUsd,
     }
-  } catch {
+  } catch (err) {
+    captureError(err, { namespace: 'action:getSettingsAIUsage', extra: { organizationId } })
     // Fail-safe: returner tomme tal frem for at crashe siden
     return { used: 0, max: 1000, percent: 0, threshold: 'none', capUsd: 50, currentUsd: 0 }
   }

@@ -4,15 +4,13 @@ import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { canAccessCompany } from '@/lib/permissions'
-import { createLogger } from '@/lib/logger'
+import { captureError } from '@/lib/logger'
 import type { ActionResult } from '@/types/actions'
 
 // Løs UUID-validering: accepterer alle 8-4-4-4-12 hex-formater inkl. nil-UUIDs (seed-data)
 const uuidSchema = z
   .string()
   .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
-
-const log = createLogger('action:person-ai')
 
 export interface PersonContractExtraction {
   contractId: string
@@ -117,10 +115,7 @@ export async function getPersonAIExtractions(
 
     return { data: result }
   } catch (err) {
-    log.error(
-      { err: err instanceof Error ? err.message : String(err), personId },
-      'getPersonAIExtractions failed'
-    )
+    captureError(err, { namespace: 'action:getPersonAIExtractions', extra: { personId } })
     return { error: 'Kunne ikke hente AI-ekstraktioner' }
   }
 }
