@@ -8,6 +8,7 @@ import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
 import type { Prisma } from '@prisma/client'
 import { checkActionRateLimit } from '@/lib/rate-limit'
+import { submitForReviewSchema, reviewDocumentSchema } from '@/lib/validations/document-review'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Page-data queries (flyt Prisma-kald ud af page.tsx)
@@ -322,5 +323,82 @@ export async function deleteDocument(documentId: string): Promise<ActionResult<v
 
   revalidatePath('/documents')
   if (doc.company_id) revalidatePath(`/companies/${doc.company_id}/documents`)
+  return { data: undefined }
+}
+
+export async function submitDocumentForReview(input: unknown): Promise<ActionResult<void>> {
+  const session = await auth()
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
+
+  const parsed = submitForReviewSchema.safeParse(input)
+  if (!parsed.success) return { error: 'Ugyldigt input' }
+
+  const doc = await prisma.document.findFirst({
+    where: {
+      id: parsed.data.documentId,
+      organization_id: session.user.organizationId,
+      deleted_at: null,
+    },
+    select: { id: true, status: true, company_id: true },
+  })
+  if (!doc) return { error: 'Dokument ikke fundet' }
+  if (doc.status !== 'KLADDE') return { error: 'Kun kladde-dokumenter kan sendes til godkendelse' }
+
+  if (doc.company_id) {
+    const hasAccess = await canAccessCompany(
+      session.user.id,
+      doc.company_id,
+      session.user.organizationId
+    )
+    if (!hasAccess) return { error: 'Ingen adgang til dette dokument' }
+  }
+
+  await prisma.document.update({
+    where: { id: parsed.data.documentId },
+    data: { status: 'TIL_REVIEW' },
+  })
+
+  revalidatePath('/documents')
+  return { data: undefined }
+}
+
+export async function reviewDocument(input: unknown): Promise<ActionResult<void>> {
+  const session = await auth()
+  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
+
+  const parsed = reviewDocumentSchema.safeParse(input)
+  if (!parsed.success) return { error: 'Ugyldigt input' }
+
+  const doc = await prisma.document.findFirst({
+    where: {
+      id: parsed.data.documentId,
+      organization_id: session.user.organizationId,
+      deleted_at: null,
+    },
+    select: { id: true, status: true, company_id: true },
+  })
+  if (!doc) return { error: 'Dokument ikke fundet' }
+  if (doc.status !== 'TIL_REVIEW') return { error: 'Kun dokumenter til godkendelse kan reviewes' }
+
+  if (doc.company_id) {
+    const hasAccess = await canAccessCompany(
+      session.user.id,
+      doc.company_id,
+      session.user.organizationId
+    )
+    if (!hasAccess) return { error: 'Ingen adgang til dette dokument' }
+  }
+
+  await prisma.document.update({
+    where: { id: parsed.data.documentId },
+    data: {
+      status: parsed.data.decision,
+      reviewed_at: new Date(),
+      reviewed_by: session.user.id,
+      review_comment: parsed.data.comment || null,
+    },
+  })
+
+  revalidatePath('/documents')
   return { data: undefined }
 }

@@ -637,6 +637,38 @@ export function getHealthStatusLabel(status: string): string {
   return HEALTH_STATUS_LABELS[status] ?? status
 }
 
+// ─── Dokumentstatus ──────────────────────────────────────────────────────────
+
+export function getDocumentStatusLabel(status: string): string {
+  switch (status) {
+    case 'KLADDE':
+      return 'Kladde'
+    case 'TIL_REVIEW':
+      return 'Til godkendelse'
+    case 'GODKENDT':
+      return 'Godkendt'
+    case 'AFVIST':
+      return 'Afvist'
+    default:
+      return status
+  }
+}
+
+export function getDocumentStatusColor(status: string): string {
+  switch (status) {
+    case 'KLADDE':
+      return 'bg-zinc-100 text-zinc-600'
+    case 'TIL_REVIEW':
+      return 'bg-amber-50 text-amber-700'
+    case 'GODKENDT':
+      return 'bg-green-50 text-green-700'
+    case 'AFVIST':
+      return 'bg-red-50 text-red-700'
+    default:
+      return 'bg-zinc-100 text-zinc-600'
+  }
+}
+
 // ─── Hjælpefunktion: Initialer ────────────────────────────────────────────────
 
 /**
