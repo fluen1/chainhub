@@ -2,7 +2,7 @@
 
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { canAccessCompany, canAccessModule, canAccessSensitivity } from '@/lib/permissions'
+import { canAccessCompany, canAccessModule, canAccessSensitivity, getAccessibleCompanies } from '@/lib/permissions'
 import {
   createCaseSchema,
   updateCaseStatusSchema,
@@ -481,4 +481,233 @@ export async function deleteCase(caseId: string): Promise<ActionResult<void>> {
 
   revalidatePath('/cases')
   return { data: undefined }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Page-data queries (flyt Prisma-kald ud af page.tsx)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface CaseListRow {
+  id: string
+  nr: string
+  type: string
+  rawType: string
+  title: string
+  desc: string
+  companyId: string | null
+  selskab: string
+  status: string
+  rawStatus: string
+  frist: string
+  fristDays: number
+  ansvarlig: string
+  updatedAt: number
+}
+
+export interface CasesPageData {
+  cases: CaseListRow[]
+  totalCount: number
+}
+
+export async function getCasesPageData(): Promise<CasesPageData> {
+  const session = await auth()
+  if (!session) return { cases: [], totalCount: 0 }
+
+  const orgId = session.user.organizationId
+
+  const hasAccess = await canAccessModule(session.user.id, 'cases', orgId)
+  if (!hasAccess) return { cases: [], totalCount: 0 }
+
+  const companyIds = await getAccessibleCompanies(session.user.id, orgId)
+  if (companyIds.length === 0) return { cases: [], totalCount: 0 }
+
+  const caseCompanyLinks = await prisma.caseCompany.findMany({
+    where: {
+      organization_id: orgId,
+      company_id: { in: companyIds },
+    },
+    select: { case_id: true },
+    distinct: ['case_id'],
+  })
+  const caseIds = caseCompanyLinks.map((cc) => cc.case_id)
+  if (caseIds.length === 0) return { cases: [], totalCount: 0 }
+
+  const [rawCases, totalCount] = await Promise.all([
+    prisma.case.findMany({
+      where: {
+        organization_id: orgId,
+        deleted_at: null,
+        id: { in: caseIds },
+      },
+      include: {
+        case_companies: {
+          take: 1,
+          include: { company: { select: { id: true, name: true } } },
+        },
+      },
+      orderBy: { due_date: 'asc' },
+    }),
+    prisma.case.count({
+      where: { organization_id: orgId, deleted_at: null, id: { in: caseIds } },
+    }),
+  ])
+
+  const responsibleIds = Array.from(
+    new Set(rawCases.map((c) => c.responsible_id).filter((id): id is string => !!id))
+  )
+  const users = responsibleIds.length
+    ? await prisma.user.findMany({
+        where: { id: { in: responsibleIds } },
+        select: { id: true, name: true, email: true },
+      })
+    : []
+  const userMap = new Map(users.map((u) => [u.id, u.name ?? u.email ?? 'Ukendt']))
+
+  const today = new Date()
+  const { getCaseStatusLabel, getCaseTypeLabel } = await import('@/lib/labels')
+  const { formatShortDate } = await import('@/lib/date-helpers')
+
+  const cases: CaseListRow[] = rawCases.map((c) => {
+    const dueMs = c.due_date?.getTime() ?? null
+    const fristDays =
+      dueMs != null ? Math.ceil((dueMs - today.getTime()) / (1000 * 60 * 60 * 24)) : 9999
+
+    const firstCompany = c.case_companies[0]?.company
+    return {
+      id: c.id,
+      nr: c.case_number ?? '—',
+      type: getCaseTypeLabel(c.case_type),
+      rawType: c.case_type,
+      title: c.title,
+      desc: c.description ?? '',
+      companyId: firstCompany?.id ?? null,
+      selskab: firstCompany?.name ?? '—',
+      status: getCaseStatusLabel(c.status),
+      rawStatus: c.status,
+      frist: c.due_date ? formatShortDate(c.due_date) : '—',
+      fristDays,
+      ansvarlig: c.responsible_id ? (userMap.get(c.responsible_id) ?? '—') : '—',
+      updatedAt: c.updated_at.getTime(),
+    }
+  })
+
+  return { cases, totalCount }
+}
+
+export async function getCaseTitle(caseId: string): Promise<string> {
+  const session = await auth()
+  if (!session) return 'Sag'
+  const c = await prisma.case.findFirst({
+    where: { id: caseId, organization_id: session.user.organizationId, deleted_at: null },
+    select: { title: true, case_number: true },
+  })
+  if (!c) return 'Sag'
+  return c.case_number ? `${c.case_number} · ${c.title}` : c.title
+}
+
+export type RawCaseDetail = Awaited<ReturnType<typeof getRawCaseDetail>>
+
+async function getRawCaseDetail(id: string, orgId: string) {
+  return prisma.case.findFirst({
+    where: {
+      id,
+      organization_id: orgId,
+      deleted_at: null,
+    },
+    include: {
+      case_companies: {
+        include: { company: { select: { id: true, name: true } } },
+      },
+      case_contracts: {
+        include: {
+          contract: {
+            select: { id: true, display_name: true, system_type: true, status: true },
+          },
+        },
+      },
+      case_persons: {
+        include: {
+          person: { select: { id: true, first_name: true, last_name: true } },
+        },
+      },
+      tasks: {
+        where: { deleted_at: null },
+        orderBy: { due_date: 'asc' },
+      },
+      documents: {
+        where: { deleted_at: null },
+        orderBy: { uploaded_at: 'desc' },
+        take: 10,
+        include: { extraction: { select: { extraction_status: true } } },
+      },
+    },
+  })
+}
+
+export interface CaseDetailPageData {
+  caseItem: NonNullable<RawCaseDetail>
+  comments: Array<{
+    id: string
+    content: string
+    created_by: string
+    created_at: Date
+    author: { id: string; name: string | null; email: string }
+  }>
+  userMap: Map<string, string>
+  currentUserId: string
+}
+
+export async function getCaseDetailPageData(caseId: string): Promise<CaseDetailPageData | null> {
+  const session = await auth()
+  if (!session) return null
+
+  const orgId = session.user.organizationId
+
+  const caseItem = await getRawCaseDetail(caseId, orgId)
+  if (!caseItem) return null
+
+  // Adgangscheck — mindst én tilknyttet selskab tilgængeligt
+  let hasAccess = false
+  for (const cc of caseItem.case_companies) {
+    const ok = await canAccessCompany(session.user.id, cc.company.id, orgId)
+    if (ok) {
+      hasAccess = true
+      break
+    }
+  }
+  if (!hasAccess) return null
+
+  const hasModule = await canAccessModule(session.user.id, 'cases', orgId)
+  if (!hasModule) return null
+
+  const hasSensitivity = await canAccessSensitivity(session.user.id, caseItem.sensitivity, orgId)
+  if (!hasSensitivity) return null
+
+  const commentsRaw = await prisma.comment.findMany({
+    where: { case_id: caseId, organization_id: orgId, deleted_at: null },
+    orderBy: { created_at: 'desc' },
+    include: { author: { select: { id: true, name: true, email: true } } },
+  })
+
+  const userIds = Array.from(
+    new Set(
+      [caseItem.responsible_id, ...caseItem.tasks.map((t) => t.assigned_to ?? null)].filter(
+        (id): id is string => !!id
+      )
+    )
+  )
+  const users = userIds.length
+    ? await prisma.user.findMany({
+        where: { id: { in: userIds } },
+        select: { id: true, name: true, email: true },
+      })
+    : []
+  const userMap = new Map(users.map((u) => [u.id, u.name ?? u.email ?? 'Ukendt']))
+
+  return {
+    caseItem,
+    comments: commentsRaw,
+    userMap,
+    currentUserId: session.user.id,
+  }
 }

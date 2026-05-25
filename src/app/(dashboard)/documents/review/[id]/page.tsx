@@ -1,13 +1,12 @@
 import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
-import { prisma } from '@/lib/db'
-import { canAccessCompany } from '@/lib/permissions'
 import { getExistingValue, type ContractWithRelations } from '@/lib/ai/review/existing-values'
 import { getSchema } from '@/lib/ai/schemas/registry'
 import type { ContractSchema } from '@/lib/ai/schemas/types'
 import ReviewClient from './review-client'
 import type { ReviewDocument, ReviewField, ReviewQueueItem } from './review-client'
+import { getDocumentReviewPageData, getDocumentTitle } from '@/actions/documents'
 
 export async function generateMetadata({
   params,
@@ -15,13 +14,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>
 }): Promise<Metadata> {
   const { id } = await params
-  const session = await auth()
-  if (!session) return { title: 'Review' }
-  const doc = await prisma.document.findFirst({
-    where: { id, organization_id: session.user.organizationId, deleted_at: null },
-    select: { file_name: true, title: true },
-  })
-  return { title: `Review · ${doc?.file_name ?? doc?.title ?? 'dokument'}` }
+  return { title: await getDocumentTitle(id) }
 }
 
 // ---------------------------------------------------------------
@@ -188,61 +181,11 @@ export default async function DocumentReviewPage({ params }: { params: Promise<{
   const session = await auth()
   if (!session) redirect('/login')
 
-  const orgId = session.user.organizationId
+  const pageData = await getDocumentReviewPageData(id)
+  if (!pageData) notFound()
 
-  const doc = await prisma.document.findFirst({
-    where: {
-      id,
-      organization_id: orgId,
-      deleted_at: null,
-    },
-    include: {
-      company: { select: { name: true } },
-      extraction: true,
-      contract: {
-        include: {
-          parties: { include: { person: true } },
-          ownerships: true,
-        },
-      },
-      case: { select: { id: true, case_number: true, title: true } },
-    },
-  })
-
-  if (!doc) notFound()
-
-  // Permission check
-  if (doc.company_id) {
-    const hasAccess = await canAccessCompany(
-      session.user.id,
-      doc.company_id,
-      session.user.organizationId
-    )
-    if (!hasAccess) notFound()
-  }
-
-  // Build review queue — other documents awaiting review
-  const reviewQueueDocs = await prisma.document.findMany({
-    where: {
-      organization_id: orgId,
-      deleted_at: null,
-      extraction: {
-        reviewed_at: null,
-        extraction_status: 'completed',
-      },
-    },
-    include: {
-      extraction: {
-        select: { id: true },
-      },
-    },
-    orderBy: { uploaded_at: 'asc' },
-  })
-
-  const reviewQueue: ReviewQueueItem[] = reviewQueueDocs.map((d) => ({
-    id: d.id,
-    fileName: d.file_name || d.title,
-  }))
+  const { doc, reviewQueue: reviewQueueRaw } = pageData
+  const reviewQueue: ReviewQueueItem[] = reviewQueueRaw
 
   // Map data for client
   const extraction = doc.extraction

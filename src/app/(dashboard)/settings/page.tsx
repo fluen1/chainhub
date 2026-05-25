@@ -1,12 +1,12 @@
 import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { prisma } from '@/lib/db'
 import { canAccessModule } from '@/lib/permissions'
 import { getUserRoleLabel, formatDate } from '@/lib/labels'
 // formatDate bruges til organization.plan_expires_at + created_at nedenfor.
 import { SettingsPageB, type SettingsUser } from './settings-b'
 import { getSettingsAIUsage } from '@/actions/ai-usage'
+import { getSettingsPageData } from '@/actions/users'
 
 export const metadata: Metadata = { title: 'Indstillinger' }
 
@@ -49,38 +49,14 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
     )
   }
 
-  const [users, companies, organization, aiUsage] = await Promise.all([
-    prisma.user.findMany({
-      where: {
-        organization_id: session.user.organizationId,
-        deleted_at: null,
-      },
-      include: { roles: true },
-      orderBy: { created_at: 'desc' },
-      // last_login_at hentes til "sidst aktiv"-kolonnen i BrugereSection
-    }),
-    prisma.company.findMany({
-      where: {
-        organization_id: session.user.organizationId,
-        deleted_at: null,
-      },
-      select: { id: true, name: true },
-      orderBy: { name: 'asc' },
-    }),
-    prisma.organization.findUnique({
-      where: { id: session.user.organizationId },
-      select: {
-        id: true,
-        name: true,
-        cvr: true,
-        plan: true,
-        plan_expires_at: true,
-        chain_structure: true,
-        created_at: true,
-      },
-    }),
+  const [rawData, aiUsage] = await Promise.all([
+    getSettingsPageData(),
     getSettingsAIUsage(session.user.organizationId),
   ])
+
+  const users = rawData?.users ?? []
+  const companies = rawData?.companies ?? []
+  const organization = rawData?.organization ?? null
 
   // Mappede brugere — initialer + primær rolle-label
   const mappedUsers: SettingsUser[] = users.map((u) => {

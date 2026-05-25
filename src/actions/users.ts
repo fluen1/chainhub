@@ -205,6 +205,69 @@ export async function updateUserRole(input: UpdateUserRoleInput): Promise<Action
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Page-data queries (flyt Prisma-kald ud af page.tsx)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface SettingsPageRawData {
+  users: (User & { roles: UserRoleAssignment[] })[]
+  companies: Array<{ id: string; name: string }>
+  organization: {
+    id: string
+    name: string
+    cvr: string | null
+    plan: string | null
+    plan_expires_at: Date | null
+    chain_structure: boolean
+    created_at: Date
+  } | null
+}
+
+export async function getSettingsPageData(): Promise<SettingsPageRawData | null> {
+  const session = await auth()
+  if (!session) return null
+
+  const hasAccess = await canAccessModule(
+    session.user.id,
+    'user_management',
+    session.user.organizationId
+  )
+  if (!hasAccess) return null
+
+  const [users, companies, organization] = await Promise.all([
+    prisma.user.findMany({
+      where: {
+        organization_id: session.user.organizationId,
+        deleted_at: null,
+      },
+      include: { roles: true },
+      orderBy: { created_at: 'desc' },
+    }),
+    prisma.company.findMany({
+      where: {
+        organization_id: session.user.organizationId,
+        deleted_at: null,
+      },
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    }),
+    prisma.organization.findUnique({
+      where: { id: session.user.organizationId },
+      select: {
+        id: true,
+        name: true,
+        cvr: true,
+        plan: true,
+        plan_expires_at: true,
+        chain_structure: true,
+        created_at: true,
+      },
+    }),
+  ])
+
+  return { users, companies, organization }
+}
+
 export async function toggleUserActive(userId: string): Promise<ActionResult<void>> {
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }

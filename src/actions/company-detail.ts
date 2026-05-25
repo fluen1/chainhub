@@ -3,7 +3,7 @@
 import { z } from 'zod'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
-import { getAccessibleCompanies } from '@/lib/permissions'
+import { getAccessibleCompanies, canAccessSensitivity } from '@/lib/permissions'
 
 // Løs UUID-validering: accepterer alle 8-4-4-4-12 hex-formater inkl. nil-UUIDs (seed-data)
 const uuidSchema = z
@@ -977,4 +977,138 @@ async function buildSnapshot(params: BuildSnapshotParams): Promise<CompanySnapsh
     persons: snapshotPersons,
     documents: snapshotDocuments,
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// getCompanyDetailPageExtras — henter conditional Prisma-kald fra [id]/page.tsx
+// Bruges til ownerships, companyPersons, financials, persons og expiringLease
+// som gates af visibleSections og canSeeOwnership.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface CompanyDetailExtras {
+  rawOwnerships: Array<{
+    id: string
+    ownership_pct: unknown
+    effective_date: Date | null
+    owner_person: { id: string; first_name: string; last_name: string } | null
+  }>
+  rawCompanyPersons: Array<{
+    id: string
+    role: string
+    employment_type: string | null
+    start_date: Date | null
+    person: { first_name: string; last_name: string }
+  }>
+  allMetrics: Array<{
+    metric_type: string
+    period_type: string
+    period_year: number
+    value: unknown
+  }>
+  allPersons: Array<{
+    id: string
+    first_name: string
+    last_name: string
+    email: string | null
+  }>
+  expiringLease: {
+    id: string
+    display_name: string
+    expiry_date: Date | null
+  } | null
+  canSeeOwnership: boolean
+}
+
+export async function getCompanyDetailPageExtras(
+  companyId: string,
+  visibleSections: Set<string>
+): Promise<CompanyDetailExtras | null> {
+  const session = await auth()
+  if (!session) return null
+
+  const orgId = session.user.organizationId
+
+  const canSeeOwnership = await canAccessSensitivity(session.user.id, 'STRENGT_FORTROLIG', orgId)
+  const wantOwnership = canSeeOwnership && visibleSections.has('ownership')
+  const wantPersons = visibleSections.has('persons')
+  const wantFinance = visibleSections.has('finance')
+  const wantContracts = visibleSections.has('contracts')
+  const wantPersonOptions = wantOwnership || wantPersons
+
+  const [rawOwnerships, rawCompanyPersons, allMetrics, allPersons, expiringLease] =
+    await Promise.all([
+      wantOwnership
+        ? prisma.ownership.findMany({
+            where: { company_id: companyId, organization_id: orgId, end_date: null },
+            include: {
+              owner_person: { select: { id: true, first_name: true, last_name: true } },
+            },
+            orderBy: { effective_date: 'desc' },
+          })
+        : Promise.resolve([]),
+      wantPersons
+        ? prisma.companyPerson.findMany({
+            where: { company_id: companyId, organization_id: orgId, end_date: null },
+            include: { person: { select: { first_name: true, last_name: true } } },
+            orderBy: { start_date: 'desc' },
+          })
+        : Promise.resolve([]),
+      wantFinance
+        ? prisma.financialMetric.findMany({
+            where: { company_id: companyId, organization_id: orgId },
+            orderBy: { period_year: 'desc' },
+          })
+        : Promise.resolve([]),
+      wantPersonOptions
+        ? prisma.person.findMany({
+            where: { organization_id: orgId, deleted_at: null },
+            select: { id: true, first_name: true, last_name: true, email: true },
+            orderBy: [{ first_name: 'asc' }, { last_name: 'asc' }],
+            take: 200,
+          })
+        : Promise.resolve([]),
+      wantContracts
+        ? prisma.contract.findFirst({
+            where: {
+              company_id: companyId,
+              organization_id: orgId,
+              deleted_at: null,
+              status: 'AKTIV',
+              system_type: 'LEJEKONTRAKT_ERHVERV',
+              expiry_date: { not: null },
+            },
+            orderBy: { expiry_date: 'asc' },
+          })
+        : Promise.resolve(null),
+    ])
+
+  return {
+    rawOwnerships,
+    rawCompanyPersons,
+    allMetrics: allMetrics.map((m) => ({
+      metric_type: m.metric_type,
+      period_type: m.period_type,
+      period_year: m.period_year,
+      value: m.value,
+    })),
+    allPersons,
+    expiringLease: expiringLease
+      ? {
+          id: expiringLease.id,
+          display_name: expiringLease.display_name,
+          expiry_date: expiringLease.expiry_date,
+        }
+      : null,
+    canSeeOwnership,
+  }
+}
+
+export async function getCompanyName(companyId: string): Promise<string | null> {
+  const session = await auth()
+  if (!session) return null
+  const company = await prisma.company.findFirst({
+    where: { id: companyId, organization_id: session.user.organizationId, deleted_at: null },
+    select: { name: true },
+  })
+  return company?.name ?? null
 }

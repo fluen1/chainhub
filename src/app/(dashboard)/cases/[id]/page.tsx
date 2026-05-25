@@ -1,8 +1,6 @@
 import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
-import { prisma } from '@/lib/db'
-import { canAccessCompany, canAccessSensitivity, canAccessModule } from '@/lib/permissions'
 import {
   getCaseStatusLabel,
   getCaseTypeLabel,
@@ -20,6 +18,7 @@ import {
   type CaseActivityData,
   type CaseCommentData,
 } from './case-detail-b'
+import { getCaseDetailPageData, getCaseTitle } from '@/actions/cases'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -27,14 +26,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params
-  const session = await auth()
-  if (!session) return { title: 'Sag' }
-  const c = await prisma.case.findFirst({
-    where: { id, organization_id: session.user.organizationId, deleted_at: null },
-    select: { title: true, case_number: true },
-  })
-  if (!c) return { title: 'Sag' }
-  return { title: c.case_number ? `${c.case_number} · ${c.title}` : c.title }
+  return { title: await getCaseTitle(id) }
 }
 
 export default async function CaseDetailPage({ params }: Props) {
@@ -42,87 +34,10 @@ export default async function CaseDetailPage({ params }: Props) {
   const session = await auth()
   if (!session) redirect('/login')
 
-  const caseItem = await prisma.case.findFirst({
-    where: {
-      id,
-      organization_id: session.user.organizationId,
-      deleted_at: null,
-    },
-    include: {
-      case_companies: {
-        include: { company: { select: { id: true, name: true } } },
-      },
-      case_contracts: {
-        include: {
-          contract: {
-            select: { id: true, display_name: true, system_type: true, status: true },
-          },
-        },
-      },
-      case_persons: {
-        include: {
-          person: { select: { id: true, first_name: true, last_name: true } },
-        },
-      },
-      tasks: {
-        where: { deleted_at: null },
-        orderBy: { due_date: 'asc' },
-      },
-      documents: {
-        where: { deleted_at: null },
-        orderBy: { uploaded_at: 'desc' },
-        take: 10,
-        include: { extraction: { select: { extraction_status: true } } },
-      },
-    },
-  })
+  const pageData = await getCaseDetailPageData(id)
+  if (!pageData) notFound()
 
-  if (!caseItem) notFound()
-
-  let hasAccess = false
-  for (const cc of caseItem.case_companies) {
-    const ok = await canAccessCompany(session.user.id, cc.company.id, session.user.organizationId)
-    if (ok) {
-      hasAccess = true
-      break
-    }
-  }
-  if (!hasAccess) notFound()
-
-  // Tjek modul-adgang
-  const hasModule = await canAccessModule(session.user.id, 'cases', session.user.organizationId)
-  if (!hasModule) notFound()
-
-  // Tjek sensitivity-adgang
-  const hasSensitivity = await canAccessSensitivity(
-    session.user.id,
-    caseItem.sensitivity,
-    session.user.organizationId
-  )
-  if (!hasSensitivity) notFound()
-
-  // Hent kommentarer (nyeste øverst)
-  const commentsRaw = await prisma.comment.findMany({
-    where: { case_id: id, organization_id: session.user.organizationId, deleted_at: null },
-    orderBy: { created_at: 'desc' },
-    include: { author: { select: { id: true, name: true, email: true } } },
-  })
-
-  // User-navne (ansvarlig + task assignees)
-  const userIds = Array.from(
-    new Set(
-      [caseItem.responsible_id, ...caseItem.tasks.map((t) => t.assigned_to ?? null)].filter(
-        (id): id is string => !!id
-      )
-    )
-  )
-  const users = userIds.length
-    ? await prisma.user.findMany({
-        where: { id: { in: userIds } },
-        select: { id: true, name: true, email: true },
-      })
-    : []
-  const userMap = new Map(users.map((u) => [u.id, u.name ?? u.email ?? 'Ukendt']))
+  const { caseItem, comments: commentsRaw, userMap, currentUserId } = pageData
 
   // Strip-data
   const dFrist = caseItem.due_date ? daysUntil(caseItem.due_date) : null
@@ -256,8 +171,6 @@ export default async function CaseDetailPage({ params }: Props) {
     authorName: c.author.name ?? c.author.email ?? 'Ukendt',
     createdAt: formatShortDate(c.created_at),
   }))
-
-  const currentUserId = session.user.id
 
   return (
     <CaseDetailB

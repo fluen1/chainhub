@@ -1,9 +1,8 @@
 import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { prisma } from '@/lib/db'
-import { getAccessibleCompanies } from '@/lib/permissions'
 import { CompaniesListB, type CompanyRow } from './companies-list-b'
+import { getCompaniesPageData } from '@/actions/companies'
 
 export const metadata: Metadata = { title: 'Selskaber' }
 
@@ -34,88 +33,19 @@ export default async function CompaniesPage() {
   const session = await auth()
   if (!session) redirect('/login')
 
-  const orgId = session.user.organizationId
-  // Hent companyIds og userRoles parallelt — userRoles skal også med selv om
-  // companyIds er tomt, så ny kunde med 0 selskaber alligevel ser "+ Opret"-CTA
-  // hvis deres rolle tillader det.
-  const [companyIds, userRolesInitial] = await Promise.all([
-    getAccessibleCompanies(session.user.id, orgId),
-    prisma.userRoleAssignment.findMany({
-      where: { user_id: session.user.id },
-      select: { role: true },
-    }),
-  ])
-  const canCreateInitial = userRolesInitial.some((r) =>
-    ['GROUP_OWNER', 'GROUP_ADMIN', 'GROUP_LEGAL'].includes(r.role)
-  )
+  const rawData = await getCompaniesPageData()
 
-  if (companyIds.length === 0) {
+  if (!rawData || rawData.companies.length === 0) {
     return (
-      <CompaniesListB companies={[]} canCreate={canCreateInitial} totalsExtra={{ persons: 0 }} />
+      <CompaniesListB
+        companies={[]}
+        canCreate={rawData?.canCreate ?? false}
+        totalsExtra={{ persons: 0 }}
+      />
     )
   }
 
-  const now = new Date()
-  const ninetyDaysFromNow = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000)
-
-  const [companies, openCaseCounts, expiredCounts, expiringCounts, financials, personsCount] =
-    await Promise.all([
-      prisma.company.findMany({
-        where: {
-          organization_id: orgId,
-          id: { in: companyIds },
-          deleted_at: null,
-        },
-        include: {
-          _count: { select: { contracts: { where: { deleted_at: null } } } },
-          ownerships: {
-            where: { end_date: null },
-            select: { ownership_pct: true, owner_person_id: true, owner_company_id: true },
-          },
-        },
-        orderBy: { name: 'asc' },
-      }),
-      prisma.$queryRaw<Array<{ company_id: string; count: bigint }>>`
-        SELECT cc.company_id, COUNT(DISTINCT c.id)::bigint as count
-        FROM "CaseCompany" cc
-        JOIN "Case" c ON c.id = cc.case_id
-        WHERE c.organization_id = ${orgId}
-          AND c.deleted_at IS NULL
-          AND c.status NOT IN ('LUKKET', 'ARKIVERET')
-        GROUP BY cc.company_id
-      `,
-      prisma.$queryRaw<Array<{ company_id: string; count: bigint }>>`
-        SELECT company_id, COUNT(id)::bigint as count
-        FROM "Contract"
-        WHERE organization_id = ${orgId}
-          AND deleted_at IS NULL
-          AND status = 'UDLOBET'
-          -- DB-enum-værdi er 'UDLOBET' (uden E). Prisma-enum-værdi er 'UDLOEBET' med @map("UDLOBET") til DB.
-        GROUP BY company_id
-      `,
-      prisma.$queryRaw<Array<{ company_id: string; count: bigint }>>`
-        SELECT company_id, COUNT(id)::bigint as count
-        FROM "Contract"
-        WHERE organization_id = ${orgId}
-          AND deleted_at IS NULL
-          AND status = 'AKTIV'
-          AND expiry_date IS NOT NULL
-          AND expiry_date <= ${ninetyDaysFromNow}
-          AND expiry_date > ${now}
-        GROUP BY company_id
-      `,
-      prisma.financialMetric.findMany({
-        where: {
-          organization_id: orgId,
-          company_id: { in: companyIds },
-          period_type: 'HELAAR',
-        },
-        orderBy: { period_year: 'desc' },
-      }),
-      prisma.person.count({
-        where: { organization_id: orgId, deleted_at: null },
-      }),
-    ])
+  const { companies, openCaseCounts, expiredCounts, expiringCounts, financials, personsCount, canCreate } = rawData
 
   const openCaseMap = new Map(openCaseCounts.map((r) => [r.company_id, Number(r.count)]))
   const expiredMap = new Map(expiredCounts.map((r) => [r.company_id, Number(r.count)]))
@@ -133,8 +63,6 @@ export default async function CompaniesPage() {
     }
     finMap.set(f.company_id, existing)
   }
-
-  const canCreate = canCreateInitial
 
   const rows: CompanyRow[] = companies.map((company) => {
     const expired = expiredMap.get(company.id) ?? 0

@@ -17,10 +17,11 @@ import { describe, it, expect, vi } from 'vitest'
 // ──────────────────────────────────────────────────────────────────────────────
 
 describe('Fix 1: UDLOBET SQL literal (Prisma @map → DB-navn)', () => {
-  it('companies/page.tsx bruger DB-værdien UDLOBET (uden E) i raw SQL', async () => {
+  it('actions/companies.ts bruger DB-værdien UDLOBET (uden E) i raw SQL', async () => {
     const fs = await import('fs')
     const path = await import('path')
-    const filePath = path.resolve(process.cwd(), 'src/app/(dashboard)/companies/page.tsx')
+    // SQL er flyttet fra companies/page.tsx til actions/companies.ts (refactor task 4.4)
+    const filePath = path.resolve(process.cwd(), 'src/actions/companies.ts')
     const content = fs.readFileSync(filePath, 'utf-8')
     // Raw SQL skal bruge DB-navnet 'UDLOBET' (uden E)
     expect(content).toMatch(/status\s*=\s*'UDLOBET'/)

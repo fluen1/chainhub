@@ -1,9 +1,7 @@
 import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
-import { prisma } from '@/lib/db'
-import { canAccessSensitivity } from '@/lib/permissions'
-import { getCompanyDetailData } from '@/actions/company-detail'
+import { getCompanyDetailData, getCompanyDetailPageExtras, getCompanyName } from '@/actions/company-detail'
 import { formatDate, daysUntil } from '@/lib/labels'
 import {
   CompanyDetailB,
@@ -19,13 +17,8 @@ export async function generateMetadata({
   params: Promise<{ id: string }>
 }): Promise<Metadata> {
   const { id } = await params
-  const session = await auth()
-  if (!session) return { title: 'Selskab' }
-  const company = await prisma.company.findFirst({
-    where: { id, organization_id: session.user.organizationId, deleted_at: null },
-    select: { name: true },
-  })
-  return { title: company?.name ?? 'Selskab' }
+  const name = await getCompanyName(id)
+  return { title: name ?? 'Selskab' }
 }
 
 export default async function CompanyDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -33,72 +26,15 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
   const session = await auth()
   if (!session) redirect('/login')
 
-  const orgId = session.user.organizationId
   const data = await getCompanyDetailData(id)
   if (!data) notFound()
 
   // Modal-wiring kræver raw IDs som ikke er i CompanyDetailData. Vi henter dem
-  // separat fra databasen her — billigt fordi vi allerede har company-adgang.
-  // STRENGT_FORTROLIG-check for ownership-IDs så vi ikke lækker dem til brugere
-  // uden adgang. Raw-queries gates desuden via data.visibleSections så roller
-  // uden adgang til en sektion ikke får PII serialiseret ind i client-props.
-  const canSeeOwnership = await canAccessSensitivity(session.user.id, 'STRENGT_FORTROLIG', orgId)
-  const wantOwnership = canSeeOwnership && data.visibleSections.has('ownership')
-  const wantPersons = data.visibleSections.has('persons')
-  const wantFinance = data.visibleSections.has('finance')
-  const wantContracts = data.visibleSections.has('contracts')
-  // AddOwnerModal og AddPersonModal har brug for person-select; hent kun hvis
-  // mindst én af de to add-flows er tilgængelige.
-  const wantPersonOptions = wantOwnership || wantPersons
+  // via action der gater på visibleSections og canSeeOwnership.
+  const extras = await getCompanyDetailPageExtras(id, data.visibleSections)
+  if (!extras) notFound()
 
-  const [rawOwnerships, rawCompanyPersons, allMetrics, allPersons, expiringLease] =
-    await Promise.all([
-      wantOwnership
-        ? prisma.ownership.findMany({
-            where: { company_id: id, organization_id: orgId, end_date: null },
-            include: {
-              owner_person: { select: { id: true, first_name: true, last_name: true } },
-            },
-            orderBy: { effective_date: 'desc' },
-          })
-        : Promise.resolve([]),
-      wantPersons
-        ? prisma.companyPerson.findMany({
-            where: { company_id: id, organization_id: orgId, end_date: null },
-            include: { person: { select: { first_name: true, last_name: true } } },
-            orderBy: { start_date: 'desc' },
-          })
-        : Promise.resolve([]),
-      wantFinance
-        ? prisma.financialMetric.findMany({
-            where: { company_id: id, organization_id: orgId },
-            orderBy: { period_year: 'desc' },
-          })
-        : Promise.resolve([]),
-      // Alle personer i org (til select i AddOwner + AddPerson modaler).
-      // Skåret til 200 for at undgå rendering-bottleneck ved store kæder.
-      wantPersonOptions
-        ? prisma.person.findMany({
-            where: { organization_id: orgId, deleted_at: null },
-            select: { id: true, first_name: true, last_name: true, email: true },
-            orderBy: [{ first_name: 'asc' }, { last_name: 'asc' }],
-            take: 200,
-          })
-        : Promise.resolve([]),
-      wantContracts
-        ? prisma.contract.findFirst({
-            where: {
-              company_id: id,
-              organization_id: orgId,
-              deleted_at: null,
-              status: 'AKTIV',
-              system_type: 'LEJEKONTRAKT_ERHVERV',
-              expiry_date: { not: null },
-            },
-            orderBy: { expiry_date: 'asc' },
-          })
-        : Promise.resolve(null),
-    ])
+  const { rawOwnerships, rawCompanyPersons, allMetrics, allPersons, expiringLease, canSeeOwnership } = extras
 
   const ownerships: OwnershipRow[] = rawOwnerships.map((o) => ({
     id: o.id,

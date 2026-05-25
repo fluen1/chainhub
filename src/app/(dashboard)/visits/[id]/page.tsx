@@ -1,14 +1,13 @@
 import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
-import { prisma } from '@/lib/db'
-import { canAccessCompany } from '@/lib/permissions'
 import Link from 'next/link'
 import { getVisitTypeLabel, getVisitStatusLabel } from '@/lib/labels'
 import { formatDanishDate } from '@/lib/date-helpers'
 import { VisitStatusForm } from '@/components/visits/VisitStatusForm'
 import { VisitNotesForm } from '@/components/visits/VisitNotesForm'
 import { Breadcrumb, PageTopbar, Panel, PanelHeader, Badge } from '@/components/ui/b'
+import { getVisitDetailPageData, getVisitTitle } from '@/actions/visits'
 
 export async function generateMetadata({
   params,
@@ -16,15 +15,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>
 }): Promise<Metadata> {
   const { id } = await params
-  const session = await auth()
-  if (!session) return { title: 'Besøg' }
-  const visit = await prisma.visit.findFirst({
-    where: { id, organization_id: session.user.organizationId, deleted_at: null },
-    select: { company: { select: { name: true } }, visit_date: true },
-  })
-  if (!visit) return { title: 'Besøg' }
-  const date = visit.visit_date.toISOString().slice(0, 10)
-  return { title: `Besøg · ${visit.company.name} · ${date}` }
+  return { title: await getVisitTitle(id) }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -46,34 +37,10 @@ export default async function VisitDetailPage({ params }: Props) {
   const session = await auth()
   if (!session) redirect('/login')
 
-  const [visit, userRoles] = await Promise.all([
-    prisma.visit.findFirst({
-      where: {
-        id,
-        organization_id: session.user.organizationId,
-        deleted_at: null,
-      },
-      include: {
-        company: { select: { id: true, name: true } },
-        visitor: { select: { id: true, name: true } },
-      },
-    }),
-    prisma.userRoleAssignment.findMany({
-      where: { user_id: session.user.id, organization_id: session.user.organizationId },
-      select: { role: true },
-    }),
-  ])
+  const pageData = await getVisitDetailPageData(id)
+  if (!pageData) notFound()
 
-  if (!visit) notFound()
-
-  const hasAccess = await canAccessCompany(
-    session.user.id,
-    visit.company_id,
-    session.user.organizationId
-  )
-  if (!hasAccess) notFound()
-
-  const canReopen = userRoles.some((r) => ['GROUP_OWNER', 'GROUP_ADMIN'].includes(r.role))
+  const { visit, canReopen } = pageData
 
   const statusLabel = getVisitStatusLabel(visit.status)
   const statusTone = STATUS_TONE[visit.status] ?? 'gray'

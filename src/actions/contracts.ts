@@ -686,3 +686,181 @@ export async function getContractList(options: {
     return { error: 'Kontraktliste kunne ikke hentes' }
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Page-data queries (flyt Prisma-kald ud af page.tsx)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type RawContractDetail = Awaited<ReturnType<typeof getRawContractDetail>>
+
+async function getRawContractDetail(contractId: string, orgId: string) {
+  return prisma.contract.findFirst({
+    where: {
+      id: contractId,
+      organization_id: orgId,
+      deleted_at: null,
+    },
+    include: {
+      company: { select: { id: true, name: true } },
+      parties: {
+        include: {
+          person: { select: { id: true, first_name: true, last_name: true } },
+        },
+      },
+      versions: { orderBy: { version_number: 'desc' }, take: 10 },
+    },
+  })
+}
+
+export interface ContractDetailPageData {
+  contract: NonNullable<RawContractDetail>
+  cases: Array<{
+    id: string
+    title: string
+    case_number: string | null
+    status: string
+    created_at: Date
+  }>
+  tasks: Array<{
+    id: string
+    title: string
+    due_date: Date | null
+    status: string
+  }>
+  documents: Array<{
+    id: string
+    file_name: string
+    uploaded_at: Date
+  }>
+  extraction: {
+    extracted_fields: unknown
+    pipeline_checkpoint: unknown
+    updated_at: Date
+    document: { file_name: string } | null
+  } | null
+  uploaderMap: Map<string, string>
+  persons: Array<{
+    id: string
+    first_name: string
+    last_name: string
+    email: string | null
+  }>
+}
+
+export async function getContractDetailPageData(
+  contractId: string
+): Promise<ContractDetailPageData | null> {
+  const session = await auth()
+  if (!session) return null
+
+  const orgId = session.user.organizationId
+
+  const hasModuleAccess = await canAccessModule(session.user.id, 'contracts', orgId)
+  if (!hasModuleAccess) return null
+
+  const contract = await getRawContractDetail(contractId, orgId)
+  if (!contract) return null
+
+  const canAccess = await canAccessCompany(session.user.id, contract.company_id, orgId)
+  if (!canAccess) return null
+
+  const hasSensitivity = await canAccessSensitivity(session.user.id, contract.sensitivity, orgId)
+  if (!hasSensitivity) return null
+
+  // Audit-log for følsomme kontrakter
+  if (contract.sensitivity === 'STRENGT_FORTROLIG' || contract.sensitivity === 'FORTROLIG') {
+    await prisma.auditLog.create({
+      data: {
+        organization_id: orgId,
+        user_id: session.user.id,
+        action: 'VIEW',
+        resource_type: 'contract',
+        resource_id: contract.id,
+        sensitivity: contract.sensitivity,
+      },
+    })
+    await prisma.contract.update({
+      where: { id: contract.id },
+      data: { last_viewed_at: new Date(), last_viewed_by: session.user.id },
+    })
+  }
+
+  const uploaderIds = Array.from(new Set(contract.versions.map((v) => v.uploaded_by)))
+
+  const [cases, tasks, documents, extraction, uploaders, persons] = await Promise.all([
+    prisma.case.findMany({
+      where: {
+        organization_id: orgId,
+        deleted_at: null,
+        case_contracts: { some: { contract_id: contract.id } },
+      },
+      orderBy: { updated_at: 'desc' },
+      take: 5,
+      select: { id: true, title: true, case_number: true, status: true, created_at: true },
+    }),
+    prisma.task.findMany({
+      where: {
+        organization_id: orgId,
+        deleted_at: null,
+        OR: [{ contract_id: contract.id }, { company_id: contract.company_id }],
+        status: { not: 'LUKKET' },
+      },
+      orderBy: { due_date: 'asc' },
+      take: 5,
+      select: { id: true, title: true, due_date: true, status: true },
+    }),
+    prisma.document.findMany({
+      where: {
+        organization_id: orgId,
+        company_id: contract.company_id,
+        deleted_at: null,
+      },
+      orderBy: { uploaded_at: 'desc' },
+      take: 5,
+      select: { id: true, file_name: true, uploaded_at: true },
+    }),
+    prisma.documentExtraction.findFirst({
+      where: {
+        organization_id: orgId,
+        document: {
+          organization_id: orgId,
+          contract_id: contract.id,
+          deleted_at: null,
+        },
+      },
+      orderBy: { created_at: 'desc' },
+      select: {
+        extracted_fields: true,
+        pipeline_checkpoint: true,
+        updated_at: true,
+        document: { select: { file_name: true } },
+      },
+    }),
+    uploaderIds.length > 0
+      ? prisma.user.findMany({
+          where: { id: { in: uploaderIds } },
+          select: { id: true, name: true, email: true },
+        })
+      : Promise.resolve([]),
+    prisma.person.findMany({
+      where: { organization_id: orgId, deleted_at: null },
+      orderBy: { last_name: 'asc' },
+      take: 200,
+      select: { id: true, first_name: true, last_name: true, email: true },
+    }),
+  ])
+
+  const uploaderMap = new Map(uploaders.map((u) => [u.id, u.name ?? u.email ?? 'Ukendt']))
+
+  return { contract, cases, tasks, documents, extraction, uploaderMap, persons }
+}
+
+export async function getContractDisplayName(contractId: string): Promise<string> {
+  const session = await auth()
+  if (!session) return 'Kontrakt'
+  const contract = await prisma.contract.findFirst({
+    where: { id: contractId, organization_id: session.user.organizationId, deleted_at: null },
+    select: { display_name: true },
+  })
+  return contract?.display_name ?? 'Kontrakt'
+}

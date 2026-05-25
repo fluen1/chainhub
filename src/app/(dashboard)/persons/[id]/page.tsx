@@ -1,15 +1,14 @@
 import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
-import { prisma } from '@/lib/db'
 import {
   getCompanyPersonRoleLabel,
   getContractStatusLabel,
   getContractTypeLabel,
   formatDate,
 } from '@/lib/labels'
-import { canAccessModule, getAccessibleCompanies } from '@/lib/permissions'
 import { getPersonAIExtractions } from '@/actions/person-ai'
+import { getPersonDetailPageData, getPersonFullName } from '@/actions/persons'
 import {
   PersonDetailB,
   type PersonView,
@@ -26,14 +25,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>
 }): Promise<Metadata> {
   const { id } = await params
-  const session = await auth()
-  if (!session) return { title: 'Person' }
-  const person = await prisma.person.findFirst({
-    where: { id, organization_id: session.user.organizationId, deleted_at: null },
-    select: { first_name: true, last_name: true },
-  })
-  if (!person) return { title: 'Person' }
-  return { title: `${person.first_name} ${person.last_name}` }
+  return { title: await getPersonFullName(id) }
 }
 
 // Map fra extracted_fields-nøgle → dansk vilkår-label.
@@ -74,69 +66,10 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
   const session = await auth()
   if (!session) redirect('/login')
 
-  // Adgangscheck — fail-closed for ukendte roller
-  const hasPersonsAccess = await canAccessModule(
-    session.user.id,
-    'persons',
-    session.user.organizationId
-  )
-  if (!hasPersonsAccess) notFound()
+  const pageData = await getPersonDetailPageData(id)
+  if (!pageData) notFound()
 
-  // Admin-check til GdprPanel
-  const isAdmin = await canAccessModule(session.user.id, 'settings', session.user.organizationId)
-
-  const person = await prisma.person.findFirst({
-    where: {
-      id: id,
-      organization_id: session.user.organizationId,
-      deleted_at: null,
-    },
-    include: {
-      company_persons: {
-        include: {
-          company: { select: { id: true, name: true } },
-          contract: {
-            select: {
-              id: true,
-              display_name: true,
-              system_type: true,
-              status: true,
-              expiry_date: true,
-            },
-          },
-        },
-        orderBy: { start_date: 'desc' },
-      },
-      contract_parties: {
-        include: {
-          contract: {
-            select: {
-              id: true,
-              display_name: true,
-              system_type: true,
-              status: true,
-              expiry_date: true,
-              company: { select: { id: true, name: true } },
-            },
-          },
-        },
-      },
-      ownerships: {
-        include: {
-          company: { select: { id: true, name: true } },
-          contract: { select: { id: true, status: true } },
-        },
-        orderBy: { effective_date: 'desc' },
-      },
-      case_persons: {
-        include: {
-          case: { select: { id: true, title: true, case_number: true, status: true } },
-        },
-      },
-    },
-  })
-
-  if (!person) notFound()
+  const { person, accessibleCompanies, isAdmin } = pageData
 
   // Hent AI-extractions (handles permission internally)
   const aiResult = await getPersonAIExtractions(id)
@@ -229,21 +162,6 @@ export default async function PersonDetailPage({ params }: { params: Promise<{ i
     title: cp.case.title,
     status: cp.case.status,
   }))
-
-  // Hent tilgængelige selskaber til modal-dropdowns
-  const accessibleCompanyIds = await getAccessibleCompanies(
-    session.user.id,
-    session.user.organizationId
-  )
-  const accessibleCompanies = await prisma.company.findMany({
-    where: {
-      id: { in: accessibleCompanyIds },
-      organization_id: session.user.organizationId,
-      deleted_at: null,
-    },
-    select: { id: true, name: true },
-    orderBy: { name: 'asc' },
-  })
 
   // Vælg første AI-extraction til vilkår-panel + flat vilkår-liste
   // Sortér efter confidence (højeste først) — vigtigste vilkår øverst

@@ -2,7 +2,7 @@
 
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { canAccessCompany, canAccessModule } from '@/lib/permissions'
+import { canAccessCompany, canAccessModule, getAccessibleCompanies } from '@/lib/permissions'
 import {
   createCompanySchema,
   updateCompanySchema,
@@ -247,5 +247,146 @@ export async function updateCompanyStamdata(
       extra: { companyId },
     })
     return { error: 'Stamdata kunne ikke opdateres — prøv igen' }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Page-data queries (flyt Prisma-kald ud af page.tsx)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface CompaniesRawData {
+  companies: Array<{
+    id: string
+    name: string
+    cvr: string | null
+    company_type: string | null
+    postal_code: string | null
+    city: string | null
+    _count: { contracts: number }
+    ownerships: Array<{
+      ownership_pct: unknown
+      owner_person_id: string | null
+      owner_company_id: string | null
+    }>
+  }>
+  openCaseCounts: Array<{ company_id: string; count: bigint }>
+  expiredCounts: Array<{ company_id: string; count: bigint }>
+  expiringCounts: Array<{ company_id: string; count: bigint }>
+  financials: Array<{
+    company_id: string
+    metric_type: string
+    period_type: string
+    period_year: number
+    value: unknown
+  }>
+  personsCount: number
+  canCreate: boolean
+}
+
+export async function getCompaniesPageData(): Promise<CompaniesRawData | null> {
+  const session = await auth()
+  if (!session) return null
+
+  const orgId = session.user.organizationId
+
+  const [companyIds, userRolesInitial] = await Promise.all([
+    getAccessibleCompanies(session.user.id, orgId),
+    prisma.userRoleAssignment.findMany({
+      where: { user_id: session.user.id },
+      select: { role: true },
+    }),
+  ])
+
+  const canCreate = userRolesInitial.some((r) =>
+    ['GROUP_OWNER', 'GROUP_ADMIN', 'GROUP_LEGAL'].includes(r.role)
+  )
+
+  if (companyIds.length === 0) {
+    return {
+      companies: [],
+      openCaseCounts: [],
+      expiredCounts: [],
+      expiringCounts: [],
+      financials: [],
+      personsCount: 0,
+      canCreate,
+    }
+  }
+
+  const now = new Date()
+  const ninetyDaysFromNow = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000)
+
+  const [companies, openCaseCounts, expiredCounts, expiringCounts, financials, personsCount] =
+    await Promise.all([
+      prisma.company.findMany({
+        where: {
+          organization_id: orgId,
+          id: { in: companyIds },
+          deleted_at: null,
+        },
+        include: {
+          _count: { select: { contracts: { where: { deleted_at: null } } } },
+          ownerships: {
+            where: { end_date: null },
+            select: { ownership_pct: true, owner_person_id: true, owner_company_id: true },
+          },
+        },
+        orderBy: { name: 'asc' },
+      }),
+      prisma.$queryRaw<Array<{ company_id: string; count: bigint }>>`
+        SELECT cc.company_id, COUNT(DISTINCT c.id)::bigint as count
+        FROM "CaseCompany" cc
+        JOIN "Case" c ON c.id = cc.case_id
+        WHERE c.organization_id = ${orgId}
+          AND c.deleted_at IS NULL
+          AND c.status NOT IN ('LUKKET', 'ARKIVERET')
+        GROUP BY cc.company_id
+      `,
+      prisma.$queryRaw<Array<{ company_id: string; count: bigint }>>`
+        SELECT company_id, COUNT(id)::bigint as count
+        FROM "Contract"
+        WHERE organization_id = ${orgId}
+          AND deleted_at IS NULL
+          AND status = 'UDLOBET'
+        GROUP BY company_id
+      `,
+      prisma.$queryRaw<Array<{ company_id: string; count: bigint }>>`
+        SELECT company_id, COUNT(id)::bigint as count
+        FROM "Contract"
+        WHERE organization_id = ${orgId}
+          AND deleted_at IS NULL
+          AND status = 'AKTIV'
+          AND expiry_date IS NOT NULL
+          AND expiry_date <= ${ninetyDaysFromNow}
+          AND expiry_date > ${now}
+        GROUP BY company_id
+      `,
+      prisma.financialMetric.findMany({
+        where: {
+          organization_id: orgId,
+          company_id: { in: companyIds },
+          period_type: 'HELAAR',
+        },
+        orderBy: { period_year: 'desc' },
+      }),
+      prisma.person.count({
+        where: { organization_id: orgId, deleted_at: null },
+      }),
+    ])
+
+  return {
+    companies,
+    openCaseCounts,
+    expiredCounts,
+    expiringCounts,
+    financials: financials.map((f) => ({
+      company_id: f.company_id,
+      metric_type: f.metric_type,
+      period_type: f.period_type,
+      period_year: f.period_year,
+      value: f.value,
+    })),
+    personsCount,
+    canCreate,
   }
 }

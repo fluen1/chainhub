@@ -502,3 +502,107 @@ export async function addPersonOwnership(
     return { error: 'Ejerskab kunne ikke registreres — prøv igen' }
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Page-data queries (flyt Prisma-kald ud af page.tsx)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type RawPersonDetail = Awaited<ReturnType<typeof getRawPersonDetail>>
+
+async function getRawPersonDetail(personId: string, orgId: string) {
+  return prisma.person.findFirst({
+    where: {
+      id: personId,
+      organization_id: orgId,
+      deleted_at: null,
+    },
+    include: {
+      company_persons: {
+        include: {
+          company: { select: { id: true, name: true } },
+          contract: {
+            select: {
+              id: true,
+              display_name: true,
+              system_type: true,
+              status: true,
+              expiry_date: true,
+            },
+          },
+        },
+        orderBy: { start_date: 'desc' },
+      },
+      contract_parties: {
+        include: {
+          contract: {
+            select: {
+              id: true,
+              display_name: true,
+              system_type: true,
+              status: true,
+              expiry_date: true,
+              company: { select: { id: true, name: true } },
+            },
+          },
+        },
+      },
+      ownerships: {
+        include: {
+          company: { select: { id: true, name: true } },
+          contract: { select: { id: true, status: true } },
+        },
+        orderBy: { effective_date: 'desc' },
+      },
+      case_persons: {
+        include: {
+          case: { select: { id: true, title: true, case_number: true, status: true } },
+        },
+      },
+    },
+  })
+}
+
+export interface PersonDetailPageData {
+  person: NonNullable<RawPersonDetail>
+  accessibleCompanies: Array<{ id: string; name: string }>
+  isAdmin: boolean
+}
+
+export async function getPersonDetailPageData(personId: string): Promise<PersonDetailPageData | null> {
+  const session = await auth()
+  if (!session) return null
+
+  const orgId = session.user.organizationId
+
+  const hasPersonsAccess = await canAccessModule(session.user.id, 'persons', orgId)
+  if (!hasPersonsAccess) return null
+
+  const isAdmin = await canAccessModule(session.user.id, 'settings', orgId)
+
+  const person = await getRawPersonDetail(personId, orgId)
+  if (!person) return null
+
+  const accessibleCompanyIds = await getAccessibleCompanies(session.user.id, orgId)
+  const accessibleCompanies = await prisma.company.findMany({
+    where: {
+      id: { in: accessibleCompanyIds },
+      organization_id: orgId,
+      deleted_at: null,
+    },
+    select: { id: true, name: true },
+    orderBy: { name: 'asc' },
+  })
+
+  return { person, accessibleCompanies, isAdmin }
+}
+
+export async function getPersonFullName(personId: string): Promise<string> {
+  const session = await auth()
+  if (!session) return 'Person'
+  const person = await prisma.person.findFirst({
+    where: { id: personId, organization_id: session.user.organizationId, deleted_at: null },
+    select: { first_name: true, last_name: true },
+  })
+  if (!person) return 'Person'
+  return `${person.first_name} ${person.last_name}`
+}

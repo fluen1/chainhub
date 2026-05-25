@@ -2,12 +2,103 @@
 
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { canAccessCompany } from '@/lib/permissions'
+import { canAccessCompany, getAccessibleCompanies } from '@/lib/permissions'
 import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
 import { z } from 'zod'
 import { captureError } from '@/lib/logger'
 import { zodVisitType, zodVisitStatus } from '@/lib/zod-enums'
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Page-data queries (flyt Prisma-kald ud af page.tsx)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface VisitDetailPageData {
+  visit: {
+    id: string
+    organization_id: string
+    company_id: string
+    visited_by: string
+    visit_date: Date
+    visit_type: string
+    status: string
+    notes: string | null
+    summary: string | null
+    created_at: Date
+    company: { id: string; name: string }
+    visitor: { id: string; name: string | null }
+  }
+  canReopen: boolean
+}
+
+export async function getVisitDetailPageData(
+  visitId: string
+): Promise<VisitDetailPageData | null> {
+  const session = await auth()
+  if (!session) return null
+
+  const [visit, userRoles] = await Promise.all([
+    prisma.visit.findFirst({
+      where: {
+        id: visitId,
+        organization_id: session.user.organizationId,
+        deleted_at: null,
+      },
+      include: {
+        company: { select: { id: true, name: true } },
+        visitor: { select: { id: true, name: true } },
+      },
+    }),
+    prisma.userRoleAssignment.findMany({
+      where: { user_id: session.user.id, organization_id: session.user.organizationId },
+      select: { role: true },
+    }),
+  ])
+
+  if (!visit) return null
+
+  const hasAccess = await canAccessCompany(
+    session.user.id,
+    visit.company_id,
+    session.user.organizationId
+  )
+  if (!hasAccess) return null
+
+  const canReopen = userRoles.some((r) => ['GROUP_OWNER', 'GROUP_ADMIN'].includes(r.role))
+
+  return { visit, canReopen }
+}
+
+export async function getVisitTitle(visitId: string): Promise<string> {
+  const session = await auth()
+  if (!session) return 'Besøg'
+  const visit = await prisma.visit.findFirst({
+    where: { id: visitId, organization_id: session.user.organizationId, deleted_at: null },
+    select: { company: { select: { name: true } }, visit_date: true },
+  })
+  if (!visit) return 'Besøg'
+  const date = visit.visit_date.toISOString().slice(0, 10)
+  return `Besøg · ${visit.company.name} · ${date}`
+}
+
+export async function getVisitNewPageCompanies(): Promise<Array<{ id: string; name: string }>> {
+  const session = await auth()
+  if (!session) return []
+
+  const companyIds = await getAccessibleCompanies(session.user.id, session.user.organizationId)
+
+  if (companyIds.length === 0) return []
+
+  return prisma.company.findMany({
+    where: {
+      id: { in: companyIds },
+      organization_id: session.user.organizationId,
+      deleted_at: null,
+    },
+    select: { id: true, name: true },
+    orderBy: { name: 'asc' },
+  })
+}
 
 const createVisitSchema = z.object({
   companyId: z.string().min(1, 'Selskab mangler'),

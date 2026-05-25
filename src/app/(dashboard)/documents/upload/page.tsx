@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { prisma } from '@/lib/db'
 import { canAccessModule } from '@/lib/permissions'
 import { UploadFormB } from './upload-form-b'
+import { getDocumentUploadCompanies } from '@/actions/documents'
 
 export const metadata: Metadata = { title: 'Upload dokument' }
 
@@ -18,24 +18,10 @@ export default async function DocumentUploadPage() {
   const session = await auth()
   if (!session) redirect('/login')
 
-  const orgId = session.user.organizationId
-
-  const hasAccess = await canAccessModule(session.user.id, 'documents', orgId)
+  const hasAccess = await canAccessModule(session.user.id, 'documents', session.user.organizationId)
   if (!hasAccess) redirect('/documents')
 
-  // Hent alle tilgængelige selskaber i organisationen (til company-select-dropdown).
-  // Begrænset til 200 for at undgå rendering-bottleneck.
-  const companies = await prisma.company.findMany({
-    where: { organization_id: orgId, deleted_at: null },
-    select: { id: true, name: true },
-    orderBy: { name: 'asc' },
-    take: 200,
-  })
+  const companies = await getDocumentUploadCompanies()
 
-  const companyOptions: CompanyOption[] = companies.map((c) => ({
-    id: c.id,
-    name: c.name,
-  }))
-
-  return <UploadFormB companies={companyOptions} />
+  return <UploadFormB companies={companies} />
 }
