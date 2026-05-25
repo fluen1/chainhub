@@ -1,58 +1,67 @@
 'use client'
 
+import { useState, useRef, useEffect } from 'react'
 import { signIn } from 'next-auth/react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useRef, useState, Suspense } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { toast } from 'sonner'
+import { createAccount } from '@/actions/signup'
 
 // ────────────────────────────────────────────────────────────────────────────
-// /login — B-stil port. Behold eksisterende NextAuth credentials-flow.
-// Layout matcher docs/design/handoff/project/Login.html.
-//
-// SSO-knappen (Microsoft) er placeholder — NextAuth-Microsoft-provider er
-// ikke konfigureret endnu. Glemt-adgangskode-link er ligeledes statisk.
+// /signup — Step 1: Opret konto (navn, e-mail, adgangskode)
+// B-stil, matcher login-siden.
 // ────────────────────────────────────────────────────────────────────────────
 
-function LoginForm() {
+export default function SignupPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard'
 
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPw, setShowPw] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const emailRef = useRef<HTMLInputElement>(null)
+
+  const nameRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    emailRef.current?.focus()
+    nameRef.current?.focus()
   }, [])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    if (!email.trim() || !password.trim()) return
+    if (!name.trim() || !email.trim() || !password.trim()) return
     setError(null)
     setLoading(true)
 
-    const result = await signIn('credentials', {
-      email,
+    const result = await createAccount({ name: name.trim(), email: email.trim(), password })
+
+    if ('error' in result && result.error) {
+      setError(result.error)
+      setLoading(false)
+      return
+    }
+
+    // Auto-login efter oprettelse
+    const signInResult = await signIn('credentials', {
+      email: email.trim(),
       password,
       redirect: false,
     })
 
     setLoading(false)
 
-    if (result?.error) {
-      setError('Forkert e-mail eller adgangskode. Tjek dine oplysninger og prøv igen.')
+    if (signInResult?.error) {
+      toast.error('Konto oprettet, men login fejlede. Prøv at logge ind manuelt.')
+      router.push('/login')
       return
     }
 
-    router.push(callbackUrl)
-    router.refresh()
+    router.push('/signup/organization')
   }
 
-  const canSubmit = email.trim().length > 0 && password.trim().length > 0 && !loading
+  const canSubmit =
+    name.trim().length >= 2 && email.trim().length > 0 && password.length >= 8 && !loading
 
   return (
     <div className="flex min-h-screen flex-col bg-b-canvas text-b-1">
@@ -80,12 +89,16 @@ function LoginForm() {
               className="mt-0.5 text-[11px] uppercase text-b-2"
               style={{ letterSpacing: '0.5px' }}
             >
-              Kædestyring
+              Opret konto
             </div>
           </div>
 
           {/* Form */}
           <form className="flex flex-col gap-3.5 px-6 py-5" onSubmit={handleSubmit}>
+            <p className="text-center text-[12px] text-b-2">
+              14 dages gratis prøveperiode — intet kreditkort
+            </p>
+
             {error && (
               <div
                 role="alert"
@@ -95,6 +108,33 @@ function LoginForm() {
               </div>
             )}
 
+            {/* Fuldt navn */}
+            <div className="flex flex-col gap-1">
+              <label
+                htmlFor="name"
+                className="text-[11px] font-semibold uppercase text-b-2"
+                style={{ letterSpacing: '0.4px' }}
+              >
+                Fuldt navn
+              </label>
+              <input
+                id="name"
+                ref={nameRef}
+                type="text"
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value)
+                  setError(null)
+                }}
+                placeholder="Dit fulde navn"
+                autoComplete="name"
+                required
+                disabled={loading}
+                className="rounded-[4px] border border-b-border-strong bg-white px-2.5 py-2 text-[13px] text-b-1 placeholder:text-b-3 focus:border-b-blue-fg focus:outline-none focus:ring-[3px] focus:ring-[#0969da1a] disabled:opacity-60"
+              />
+            </div>
+
+            {/* E-mail */}
             <div className="flex flex-col gap-1">
               <label
                 htmlFor="email"
@@ -105,7 +145,6 @@ function LoginForm() {
               </label>
               <input
                 id="email"
-                ref={emailRef}
                 type="email"
                 value={email}
                 onChange={(e) => {
@@ -116,14 +155,11 @@ function LoginForm() {
                 autoComplete="email"
                 required
                 disabled={loading}
-                className={`rounded-[4px] border bg-white px-2.5 py-2 text-[13px] text-b-1 placeholder:text-b-3 focus:outline-none focus:ring-[3px] disabled:opacity-60 ${
-                  error
-                    ? 'border-b-red-fg focus:ring-[#cf222e1a]'
-                    : 'border-b-border-strong focus:border-b-blue-fg focus:ring-[#0969da1a]'
-                }`}
+                className="rounded-[4px] border border-b-border-strong bg-white px-2.5 py-2 text-[13px] text-b-1 placeholder:text-b-3 focus:border-b-blue-fg focus:outline-none focus:ring-[3px] focus:ring-[#0969da1a] disabled:opacity-60"
               />
             </div>
 
+            {/* Adgangskode */}
             <div className="flex flex-col gap-1">
               <label
                 htmlFor="password"
@@ -141,15 +177,11 @@ function LoginForm() {
                     setPassword(e.target.value)
                     setError(null)
                   }}
-                  placeholder="••••••••"
-                  autoComplete="current-password"
+                  placeholder="Mindst 8 tegn"
+                  autoComplete="new-password"
                   required
                   disabled={loading}
-                  className={`w-full rounded-[4px] border bg-white py-2 pl-2.5 pr-14 text-[13px] text-b-1 placeholder:text-b-3 focus:outline-none focus:ring-[3px] disabled:opacity-60 ${
-                    error
-                      ? 'border-b-red-fg focus:ring-[#cf222e1a]'
-                      : 'border-b-border-strong focus:border-b-blue-fg focus:ring-[#0969da1a]'
-                  }`}
+                  className="w-full rounded-[4px] border border-b-border-strong bg-white py-2 pl-2.5 pr-14 text-[13px] text-b-1 placeholder:text-b-3 focus:border-b-blue-fg focus:outline-none focus:ring-[3px] focus:ring-[#0969da1a] disabled:opacity-60"
                 />
                 <button
                   type="button"
@@ -160,15 +192,7 @@ function LoginForm() {
                   {showPw ? 'Skjul' : 'Vis'}
                 </button>
               </div>
-            </div>
-
-            <div className="flex justify-end">
-              <a
-                href="/login/forgot"
-                className="text-[11px] text-b-blue-fg no-underline hover:underline"
-              >
-                Glemt adgangskode?
-              </a>
+              <p className="text-[11px] text-b-3">Mindst 8 tegn</p>
             </div>
 
             <button
@@ -183,46 +207,24 @@ function LoginForm() {
                     className="inline-block h-3.5 w-3.5 rounded-full border-2 border-white/40 border-t-white"
                     style={{ animation: 'spin 0.7s linear infinite' }}
                   />
-                  Logger ind...
+                  Opretter konto...
                 </>
               ) : (
-                'Log ind'
+                'Opret konto'
               )}
             </button>
 
-            <div className="flex items-center gap-2.5">
-              <div className="h-px flex-1 bg-b-border" />
-              <span className="whitespace-nowrap text-[11px] text-b-3">eller</span>
-              <div className="h-px flex-1 bg-b-border" />
-            </div>
-
-            <button
-              type="button"
-              disabled
-              title="SSO er endnu ikke konfigureret"
-              className="flex w-full items-center justify-center gap-2 rounded-[4px] border border-b-border-strong bg-white py-2 text-[12px] font-medium text-b-1 hover:bg-[#f6f8fa] hover:border-[#c1c5cc] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <span className="flex h-4 w-4 items-center justify-center rounded-[2px] bg-[#e8eaee] text-[9px] font-bold text-b-gray-fg">
-                MS
-              </span>
-              Log ind med Microsoft
-            </button>
-
-            <p className="mt-4 text-center text-sm text-b-3">
-              Ingen konto endnu?{' '}
-              <Link href="/signup" className="text-b-accent hover:underline">
-                Opret gratis konto
+            <p className="mt-1 text-center text-[12px] text-b-3">
+              Har du allerede en konto?{' '}
+              <Link href="/login" className="text-b-blue-fg hover:underline">
+                Log ind
               </Link>
             </p>
           </form>
 
           {/* Footer */}
-          <div className="flex items-center justify-between border-t border-b-border bg-b-panel-h px-6 py-3 text-[11px] text-b-2">
-            <span className="flex items-center gap-1">
-              <span className="b-kbd">↵</span>
-              log ind
-            </span>
-            <span>ChainHub</span>
+          <div className="flex items-center justify-center border-t border-b-border bg-b-panel-h px-6 py-3 text-[11px] text-b-2">
+            <span>Ingen binding. Annuller når som helst.</span>
           </div>
         </div>
 
@@ -248,27 +250,5 @@ function LoginForm() {
         }
       `}</style>
     </div>
-  )
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-screen items-center justify-center bg-b-canvas">
-          <div className="w-full max-w-[360px] animate-pulse rounded-[6px] border border-b-border bg-b-panel p-6">
-            <div className="mb-4 h-6 w-1/2 mx-auto rounded bg-b-border" />
-            <div className="mb-4 h-3 w-1/3 mx-auto rounded bg-b-border" />
-            <div className="space-y-3">
-              <div className="h-10 rounded bg-b-border" />
-              <div className="h-10 rounded bg-b-border" />
-              <div className="h-10 rounded bg-b-border" />
-            </div>
-          </div>
-        </div>
-      }
-    >
-      <LoginForm />
-    </Suspense>
   )
 }
