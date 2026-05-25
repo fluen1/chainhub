@@ -51,3 +51,5 @@ cookies.txt
 /playwright-report/
 /test-results/
 /tests/e2e/.auth/
+
+.vercel

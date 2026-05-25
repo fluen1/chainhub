@@ -16,6 +16,8 @@ const envSchema = z.object({
   R2_BUCKET: z.string().optional(),
   UPSTASH_REDIS_REST_URL: z.string().url().optional(),
   UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
+  NEXT_PUBLIC_POSTHOG_KEY: z.string().optional(),
+  NEXT_PUBLIC_POSTHOG_HOST: z.string().url().optional(),
 })
 
 const parsed = envSchema.safeParse(process.env)

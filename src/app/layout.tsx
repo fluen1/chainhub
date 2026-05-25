@@ -5,6 +5,7 @@ import type { Metadata } from 'next'
 import '@fontsource-variable/inter/index.css'
 import './globals.css'
 import { Toaster } from 'sonner'
+import { PosthogProvider } from '@/components/providers/PosthogProvider'
 
 export const metadata: Metadata = {
   title: {
@@ -18,7 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="da">
       <body className="font-sans text-[13px] text-b-1 antialiased">
-        {children}
+        <PosthogProvider>{children}</PosthogProvider>
         <Toaster
           position="top-right"
           richColors

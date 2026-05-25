@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { getSidebarData, buildSidebarBadges } from '@/lib/sidebar-data'
 import { BShell } from '@/components/layout/b-shell'
 import { GlobalKeyboardShortcuts } from '@/components/layout/global-keyboard-shortcuts'
+import { PosthogIdentify } from '@/components/providers/PosthogIdentify'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
@@ -15,6 +16,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <Providers>
+      <PosthogIdentify />
       <SkipToMain />
       <GlobalKeyboardShortcuts />
       <BShell badges={badges}>{children}</BShell>
