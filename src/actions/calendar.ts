@@ -122,6 +122,8 @@ export async function getCalendarEvents(year: number, month: number): Promise<Ca
       subtitle: c.company.name,
       type: 'expiry',
       href: `/contracts/${c.id}`,
+      sourceType: 'contract',
+      sourceId: c.id,
     })
   }
 
@@ -135,6 +137,8 @@ export async function getCalendarEvents(year: number, month: number): Promise<Ca
       subtitle: 'Opgave',
       type: 'deadline',
       href: `/tasks/${t.id}`,
+      sourceType: 'task',
+      sourceId: t.id,
     })
   }
 
@@ -147,6 +151,8 @@ export async function getCalendarEvents(year: number, month: number): Promise<Ca
       subtitle: getVisitTypeLabel(v.visit_type),
       type: 'meeting',
       href: `/visits/${v.id}`,
+      sourceType: 'visit',
+      sourceId: v.id,
     })
   }
 
@@ -160,6 +166,8 @@ export async function getCalendarEvents(year: number, month: number): Promise<Ca
       subtitle: 'Sagsfrist',
       type: 'case',
       href: `/cases/${ca.id}`,
+      sourceType: 'case',
+      sourceId: ca.id,
     })
   }
 

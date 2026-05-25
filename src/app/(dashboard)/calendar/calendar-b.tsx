@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
@@ -13,6 +13,7 @@ import {
   BottomBar,
 } from '@/components/ui/b'
 import type { CalendarEvent, CalendarEventType } from '@/types/ui'
+import { EditVisitModal, type EditVisitData } from '@/components/calendar/edit-visit-modal'
 import {
   MONTH_NAMES_DA,
   MONTH_NAMES_DA_SHORT,
@@ -143,6 +144,8 @@ export function CalendarPageB({
 
   const monthIdx = month - 1 // 0-indexed til Date
 
+  const [editVisit, setEditVisit] = useState<EditVisitData | null>(null)
+
   // Mobil: skift automatisk til agenda-view ved første mount på <md,
   // medmindre brugeren eksplicit har valgt et view via ?view-param.
   useEffect(() => {
@@ -268,13 +271,24 @@ export function CalendarPageB({
       <div className="grid gap-3 lg:grid-cols-[1fr_260px] lg:items-start">
         <div className="min-w-0">
           {viewMode === 'maaned' ? (
-            <MonthView days={days} eventsByDate={eventsByDate} todayISO={todayISO} />
+            <MonthView
+              days={days}
+              eventsByDate={eventsByDate}
+              todayISO={todayISO}
+              onVisitClick={setEditVisit}
+            />
           ) : (
-            <AgendaView events={monthEvents} todayISO={todayISO} />
+            <AgendaView events={monthEvents} todayISO={todayISO} onVisitClick={setEditVisit} />
           )}
         </div>
         <RightPanel upcoming={upcoming} />
       </div>
+
+      <EditVisitModal
+        open={editVisit !== null}
+        onClose={() => setEditVisit(null)}
+        visit={editVisit}
+      />
 
       <BottomBar
         left={
@@ -293,10 +307,12 @@ function MonthView({
   days,
   eventsByDate,
   todayISO,
+  onVisitClick,
 }: {
   days: Array<{ y: number; m: number; d: number; curr: boolean }>
   eventsByDate: Map<string, CalendarEvent[]>
   todayISO: string
+  onVisitClick: (v: EditVisitData) => void
 }) {
   return (
     <div className="overflow-hidden rounded-[4px] border border-b-border bg-b-panel">
@@ -344,6 +360,21 @@ function MonthView({
               <div className="mt-1 flex flex-col gap-0.5">
                 {visible.map((ev) => {
                   const c = colorForType(ev.type)
+                  if (ev.sourceType === 'visit' && ev.sourceId) {
+                    return (
+                      <button
+                        key={ev.id}
+                        type="button"
+                        title={`${ev.title} · ${ev.subtitle}`}
+                        onClick={() =>
+                          onVisitClick({ id: ev.sourceId!, title: ev.title, date: ev.date })
+                        }
+                        className={`truncate rounded-[3px] px-1 py-px text-left text-[10px] hover:opacity-80 ${pillCls(c)}`}
+                      >
+                        {ev.title}
+                      </button>
+                    )
+                  }
                   return (
                     <Link
                       key={ev.id}
@@ -367,7 +398,15 @@ function MonthView({
 
 // ────────────────────────────────────────────────────────────────────────────
 
-function AgendaView({ events, todayISO }: { events: CalendarEvent[]; todayISO: string }) {
+function AgendaView({
+  events,
+  todayISO,
+  onVisitClick,
+}: {
+  events: CalendarEvent[]
+  todayISO: string
+  onVisitClick: (v: EditVisitData) => void
+}) {
   const upcoming = useMemo(() => {
     const arr = events.filter((e) => e.date >= todayISO)
     arr.sort((a, b) => a.date.localeCompare(b.date))
@@ -411,6 +450,24 @@ function AgendaView({ events, todayISO }: { events: CalendarEvent[]; todayISO: s
             </div>
             {evs.map((ev) => {
               const c = colorForType(ev.type)
+              if (ev.sourceType === 'visit' && ev.sourceId) {
+                return (
+                  <button
+                    key={ev.id}
+                    type="button"
+                    onClick={() =>
+                      onVisitClick({ id: ev.sourceId!, title: ev.title, date: ev.date })
+                    }
+                    className="flex w-full items-center gap-2.5 border-b border-b-divider px-3 py-1.5 last:border-b-0 hover:bg-b-row-hover text-left"
+                  >
+                    <span className={`h-2 w-2 shrink-0 rounded-full ${dotCls(c)}`} />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-[13px] font-medium text-b-1">{ev.title}</div>
+                      <div className="truncate text-[11px] text-b-2">{ev.subtitle}</div>
+                    </div>
+                  </button>
+                )
+              }
               return (
                 <Link
                   key={ev.id}
