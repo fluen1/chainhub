@@ -2,7 +2,7 @@
 
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { canAccessCompany } from '@/lib/permissions'
+import { canAccessCompany, getAccessibleCompanies } from '@/lib/permissions'
 import {
   createTaskSchema,
   updateTaskStatusSchema,
@@ -17,9 +17,170 @@ import {
 } from '@/lib/validations/case'
 import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
-import type { Task, TaskHistoryField } from '@prisma/client'
+import type { Task, TaskHistoryField, TaskStatus, Prioritet, Prisma } from '@prisma/client'
 import { captureError } from '@/lib/logger'
 import { recordAuditEvent } from '@/lib/audit'
+import { parsePaginationParams } from '@/lib/pagination'
+import { getTaskStatusLabel, getPriorityLabel, daysUntil } from '@/lib/labels'
+import { formatShortDate } from '@/lib/date-helpers'
+
+// ────────────────────────────────────────────────────────────────────────────
+// getTasksPaginated — server-side pagineret liste til /tasks
+// ────────────────────────────────────────────────────────────────────────────
+
+export interface TaskRow {
+  id: string
+  titel: string
+  selskab: string
+  type: string
+  prio: string
+  rawPrio: string
+  status: string
+  rawStatus: string
+  frist: string
+  fristDays: number
+  ansvarlig: string
+  isMine: boolean
+}
+
+export interface TaskPaginationParams {
+  page?: number
+  pageSize?: number
+  search?: string
+  status?: string
+  priority?: string
+  sort?: string
+  sortDir?: 'asc' | 'desc'
+  assignedToMe?: boolean
+}
+
+function inferTaskType(t: {
+  contract_id: string | null
+  case_id: string | null
+  company_id: string | null
+}): string {
+  if (t.contract_id) return 'Kontrakt'
+  if (t.case_id) return 'Sag'
+  if (t.company_id) return 'Selskab'
+  return 'Admin'
+}
+
+export async function getTasksPaginated(
+  params: TaskPaginationParams
+): Promise<{ rows: TaskRow[]; totalCount: number; page: number; pageSize: number }> {
+  const session = await auth()
+  if (!session) return { rows: [], totalCount: 0, page: 1, pageSize: 20 }
+
+  const orgId = session.user.organizationId
+  const userId = session.user.id
+  const { page, skip, take } = parsePaginationParams(String(params.page ?? 1), params.pageSize)
+
+  const companyIds = await getAccessibleCompanies(userId, orgId)
+
+  // Byg WHERE-klausulen
+  const where: Prisma.TaskWhereInput = {
+    organization_id: orgId,
+    deleted_at: null,
+    OR: [{ company_id: null }, { company_id: { in: companyIds } }],
+  }
+
+  if (params.search?.trim()) {
+    where.title = { contains: params.search.trim(), mode: 'insensitive' }
+  }
+
+  // Status-filter: accepterer både rå DB-værdier (NY, AKTIV_TASK) og dansk label (Ny, I gang)
+  const STATUS_LABEL_MAP: Record<string, TaskStatus> = {
+    Ny: 'NY',
+    'I gang': 'AKTIV_TASK',
+    Afventer: 'AFVENTER',
+    Lukket: 'LUKKET',
+  }
+  if (params.status && params.status !== 'Alle') {
+    const mapped = STATUS_LABEL_MAP[params.status] ?? (params.status as TaskStatus)
+    where.status = mapped
+  }
+
+  // Prioritet-filter: accepterer både rå DB-værdier og dansk label
+  const PRIO_LABEL_MAP: Record<string, Prioritet> = {
+    Lav: 'LAV',
+    Mellem: 'MELLEM',
+    Høj: 'HOEJ',
+    Kritisk: 'KRITISK',
+  }
+  if (params.priority && params.priority !== 'Alle') {
+    const mapped = PRIO_LABEL_MAP[params.priority] ?? (params.priority as Prioritet)
+    where.priority = mapped
+  }
+
+  if (params.assignedToMe) {
+    where.assigned_to = userId
+  }
+
+  // Byg OrderBy
+  const sortDir = params.sortDir ?? 'asc'
+  let orderBy: Prisma.TaskOrderByWithRelationInput = { due_date: sortDir }
+
+  const sortKey = params.sort ?? 'due_date'
+  if (sortKey === 'title') orderBy = { title: sortDir }
+  else if (sortKey === 'status') orderBy = { status: sortDir }
+  else if (sortKey === 'priority') orderBy = { priority: sortDir }
+  else if (sortKey === 'due_date') orderBy = { due_date: sortDir }
+
+  const [rawTasks, totalCount] = await Promise.all([
+    prisma.task.findMany({
+      where,
+      orderBy,
+      skip,
+      take,
+      include: {
+        assignee: { select: { id: true, name: true } },
+        case: { select: { id: true, title: true } },
+      },
+    }),
+    prisma.task.count({ where }),
+  ])
+
+  // Resolv company-navne (Task.company_id har ingen direkte relation)
+  const companyIdsInPage = Array.from(
+    new Set(rawTasks.map((t) => t.company_id).filter((id): id is string => !!id))
+  )
+  const companies = companyIdsInPage.length
+    ? await prisma.company.findMany({
+        where: { id: { in: companyIdsInPage }, organization_id: orgId, deleted_at: null },
+        select: { id: true, name: true },
+      })
+    : []
+  const companyMap = new Map(companies.map((c) => [c.id, c.name]))
+
+  const rows: TaskRow[] = rawTasks.map((t) => {
+    const dDue = t.due_date ? daysUntil(t.due_date) : null
+    const isClosed = t.status === 'LUKKET'
+    const fristDays = isClosed ? 9999 : (dDue ?? 9999)
+    let frist = '—'
+    if (t.due_date && dDue != null) {
+      if (isClosed) frist = formatShortDate(t.due_date)
+      else if (dDue < 0) frist = `${Math.abs(dDue)}d for sent`
+      else frist = formatShortDate(t.due_date)
+    }
+
+    return {
+      id: t.id,
+      titel: t.title,
+      selskab: t.company_id ? (companyMap.get(t.company_id) ?? '—') : '—',
+      type: inferTaskType(t),
+      prio: getPriorityLabel(t.priority),
+      rawPrio: t.priority,
+      status: getTaskStatusLabel(t.status),
+      rawStatus: t.status,
+      frist,
+      fristDays,
+      ansvarlig: t.assignee?.name ?? 'Ikke tildelt',
+      isMine: t.assigned_to === userId,
+    }
+  })
+
+  return { rows, totalCount, page, pageSize: take }
+}
 
 export async function createTask(input: CreateTaskInput): Promise<ActionResult<Task>> {
   const session = await auth()

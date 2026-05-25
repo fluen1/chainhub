@@ -108,10 +108,14 @@ function fristTone(days: number): BadgeTone {
 export function TasksListB({
   tasks,
   totalCount,
+  page: initialPage = 1,
+  pageSize: initialPageSize = 20,
   canExport,
 }: {
   tasks: TaskRow[]
   totalCount: number
+  page?: number
+  pageSize?: number
   /** Skjul eksport-knap hvis brugeren ikke har eksport-adgang */
   canExport?: boolean
 }) {
@@ -132,8 +136,9 @@ export function TasksListB({
   const [statusFil, setStatusFil] = useState(() => searchParams.get('status') ?? 'Alle')
   const [sortCol, setSortCol] = useState<SortKey>('fristDays')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
-  const [page, setPage] = useState(() => parseInt(searchParams.get('page') ?? '1', 10) || 1)
-  const [pageSize, setPageSize] = useState(15)
+  // page og pageSize er nu drevet af server — vi sporer kun lokalt til UI-sync
+  const [page, setPage] = useState(initialPage)
+  const [pageSize, setPageSize] = useState(initialPageSize)
 
   function pushUrl(overrides: Record<string, string>) {
     const sp = new URLSearchParams(searchParams.toString())
@@ -157,9 +162,9 @@ export function TasksListB({
     setTypeFil(searchParams.get('type') ?? 'Alle')
     setPrioFil(searchParams.get('prio') ?? 'Alle')
     setStatusFil(searchParams.get('status') ?? 'Alle')
-    setPage(parseInt(searchParams.get('page') ?? '1', 10) || 1)
+    setPage(initialPage)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams])
+  }, [searchParams, initialPage])
 
   const uniqueSelskaber = useMemo(
     () =>
@@ -219,11 +224,11 @@ export function TasksListB({
     statusFil !== 'Alle'
 
   function handleSort(col: SortKey) {
-    if (sortCol === col) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
-    else {
-      setSortCol(col)
-      setSortDir('asc')
-    }
+    const newDir = sortCol === col && sortDir === 'asc' ? 'desc' : 'asc'
+    setSortCol(col)
+    setSortDir(newDir)
+    // Push sort til URL så server-action sorterer korrekt
+    pushUrl({ sort: col, sortDir: newDir, page: '1' })
   }
 
   function resetFilters() {
@@ -249,9 +254,12 @@ export function TasksListB({
     router.push(`/tasks/${id}`)
   }
 
-  const maxPage = Math.max(1, Math.ceil(sorted.length / pageSize))
+  // Server-side pagination: tasks er allerede den rette side fra DB.
+  // maxPage beregnes ud fra totalCount (ikke sorted.length som er klient-filtreret).
+  const maxPage = Math.max(1, Math.ceil(totalCount / pageSize))
   const safePage = Math.min(page, maxPage)
-  const paged = sorted.slice((safePage - 1) * pageSize, safePage * pageSize)
+  // Flat view: tasks er allerede pagineret fra serveren — ingen yderligere slice.
+  const paged = tasks
 
   return (
     <>
@@ -357,8 +365,7 @@ export function TasksListB({
 
       {hasFilter && (
         <div className="text-[11px] text-b-2">
-          {sorted.length} {sorted.length === 1 ? 'resultat' : 'resultater'} — filtreret fra{' '}
-          {totalCount} opgaver
+          {totalCount} {totalCount === 1 ? 'resultat' : 'resultater'} — filtreret
         </div>
       )}
 
@@ -375,12 +382,12 @@ export function TasksListB({
       {/* Fix #6: KanbanView bruger sorted (ikke filtered) */}
       {viewMode === 'kanban' && <KanbanView tasks={sorted} onRowClick={goTo} />}
 
-      {viewMode !== 'kanban' && sorted.length > 0 && (
+      {viewMode !== 'kanban' && totalCount > 0 && (
         <Pager
           info={
             viewMode === 'flat'
-              ? `${Math.min((safePage - 1) * pageSize + 1, sorted.length)}–${Math.min(safePage * pageSize, sorted.length)} af ${sorted.length}`
-              : `${sorted.length} opgaver · ${new Set(sorted.map((t) => t.selskab)).size} selskaber`
+              ? `${Math.min((safePage - 1) * pageSize + 1, totalCount)}–${Math.min(safePage * pageSize, totalCount)} af ${totalCount}`
+              : `${totalCount} opgaver · ${new Set(tasks.map((t) => t.selskab)).size} selskaber`
           }
           page={viewMode === 'flat' ? safePage : undefined}
           maxPage={viewMode === 'flat' ? maxPage : undefined}
@@ -398,7 +405,7 @@ export function TasksListB({
               ? (n) => {
                   setPageSize(n)
                   setPage(1)
-                  pushUrl({ page: '1' })
+                  pushUrl({ pageSize: String(n), page: '1' })
                 }
               : undefined
           }
@@ -409,9 +416,8 @@ export function TasksListB({
       <BottomBar
         left={
           <>
-            {sorted.length} {sorted.length === 1 ? 'opgave' : 'opgaver'} vist ·{' '}
-            {tasks.filter((t) => t.rawStatus === 'LUKKET').length} fuldført
-            {hasFilter && ` · filtreret fra ${totalCount}`}
+            {totalCount} {totalCount === 1 ? 'opgave' : 'opgaver'} i alt
+            {hasFilter && ` · filtreret`}
           </>
         }
       />
