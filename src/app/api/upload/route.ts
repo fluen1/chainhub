@@ -128,11 +128,13 @@ export async function POST(request: NextRequest) {
     },
   })
 
-  // Auto-kø extraction-job hvis contractId er sat (shadow mode — ingen auto-accept)
+  // Enqueue AI extraction for alle uploads (entity-matching + field extraction)
   // Fail-silent: upload må ikke fejle hvis pg-boss er nede.
-  // Feature-flag + cost-cap tjekkes inde i extractDocument — vi queue'r uanset.
-  if (contractId) {
-    try {
+  try {
+    const { isAIEnabled } = await import('@/lib/ai/feature-flags')
+    const aiEnabled = await isAIEnabled(orgId, 'extraction')
+
+    if (aiEnabled) {
       const boss = await createQueue()
       // pg-boss v10+ kræver at queue eksisterer før send.
       // createQueue på manager er idempotent (CREATE IF NOT EXISTS-semantik via SQL plan).
@@ -159,17 +161,17 @@ export async function POST(request: NextRequest) {
         retryLimit: 2,
         retryDelay: 60, // seconds
       })
-      log.info({ document_id: documentId, contract_id: contractId }, 'Extraction job queued')
-    } catch (err) {
-      // Fail-silent: upload skal ikke fejle hvis queue er nede
-      log.warn(
-        {
-          document_id: documentId,
-          err: err instanceof Error ? err.message : String(err),
-        },
-        'Failed to queue extraction — document saved, no auto-extraction'
-      )
+      log.info({ document_id: documentId }, 'Extraction job queued')
     }
+  } catch (err) {
+    // Non-blocking — upload succeeds even if enqueue fails
+    log.warn(
+      {
+        document_id: documentId,
+        err: err instanceof Error ? err.message : String(err),
+      },
+      'Failed to enqueue extraction job'
+    )
   }
 
   // Audit: log upload-hændelse

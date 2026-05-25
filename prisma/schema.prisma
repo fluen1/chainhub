@@ -1106,6 +1106,7 @@ model DocumentExtraction {
   field_decisions Json?
 
   extraction_status String @default("completed")
+  entity_matches    Json?  // Array of EntityMatch results from pass6
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
