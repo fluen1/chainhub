@@ -10,7 +10,19 @@ vi.mock('@/lib/permissions', () => ({
   canAccessCompany: vi.fn(async () => true),
 }))
 
-const { prismaMock, mockExtraction } = vi.hoisted(() => {
+const { prismaMock, mockExtraction, mockDocument } = vi.hoisted(() => {
+  const mockDocument = {
+    id: 'doc-1',
+    organization_id: 'org-1',
+    company_id: 'c-1',
+    status: 'KLADDE',
+    deleted_at: null,
+  }
+  const prismaMockDocument = {
+    findFirst: vi.fn(async () => mockDocument),
+    update: vi.fn(async () => mockDocument),
+  }
+
   const mockExtraction = {
     id: 'ext-1',
     organization_id: 'org-1',
@@ -27,8 +39,9 @@ const { prismaMock, mockExtraction } = vi.hoisted(() => {
     aIFieldCorrection: {
       create: vi.fn(async () => ({ id: 'corr-1' })),
     },
+    document: prismaMockDocument,
   }
-  return { prismaMock, mockExtraction }
+  return { prismaMock, mockExtraction, mockDocument }
 })
 
 vi.mock('@/lib/db', () => ({ prisma: prismaMock }))
@@ -183,5 +196,160 @@ describe('rejectDocumentExtraction', () => {
     })
 
     expect(result).toEqual({ error: 'Ekstraktion ikke fundet' })
+  })
+})
+
+// ─── submitDocumentForReview ──────────────────────────────────────────────────
+
+import { auth } from '@/lib/auth'
+import { canAccessCompany } from '@/lib/permissions'
+import { submitDocumentForReview, reviewDocument } from '@/actions/documents'
+
+describe('submitDocumentForReview', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: 'user-1', organizationId: 'org-1' },
+    } as never)
+    prismaMock.document.findFirst.mockResolvedValue({ ...mockDocument, status: 'KLADDE' })
+    prismaMock.document.update.mockResolvedValue({ ...mockDocument, status: 'TIL_REVIEW' })
+    vi.mocked(canAccessCompany).mockResolvedValue(true)
+  })
+
+  it('returnerer error uden session', async () => {
+    vi.mocked(auth).mockResolvedValue(null)
+    const result = await submitDocumentForReview({ documentId: 'doc-1' })
+    expect(result).toMatchObject({ error: expect.any(String) })
+  })
+
+  it('returnerer error ved ugyldigt input (manglende documentId)', async () => {
+    const result = await submitDocumentForReview({})
+    expect(result).toMatchObject({ error: 'Ugyldigt input' })
+  })
+
+  it('returnerer error når dokument ikke findes', async () => {
+    prismaMock.document.findFirst.mockResolvedValueOnce(null as never)
+    const result = await submitDocumentForReview({ documentId: 'doc-1' })
+    expect(result).toMatchObject({ error: 'Dokument ikke fundet' })
+  })
+
+  it('returnerer error når status ikke er KLADDE', async () => {
+    prismaMock.document.findFirst.mockResolvedValueOnce({ ...mockDocument, status: 'TIL_REVIEW' })
+    const result = await submitDocumentForReview({ documentId: 'doc-1' })
+    expect(result).toMatchObject({ error: 'Kun kladde-dokumenter kan sendes til godkendelse' })
+  })
+
+  it('returnerer error uden selskabsadgang', async () => {
+    vi.mocked(canAccessCompany).mockResolvedValueOnce(false)
+    const result = await submitDocumentForReview({ documentId: 'doc-1' })
+    expect(result).toMatchObject({ error: 'Ingen adgang til dette dokument' })
+  })
+
+  it('happy path: sætter status til TIL_REVIEW', async () => {
+    const result = await submitDocumentForReview({ documentId: 'doc-1' })
+    expect(result).toEqual({ data: undefined })
+    expect(prismaMock.document.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'doc-1' },
+        data: expect.objectContaining({ status: 'TIL_REVIEW' }),
+      })
+    )
+  })
+
+  it('kalder ikke canAccessCompany for dokument uden company_id', async () => {
+    prismaMock.document.findFirst.mockResolvedValueOnce({
+      ...mockDocument,
+      company_id: null as never,
+      status: 'KLADDE',
+    })
+    const result = await submitDocumentForReview({ documentId: 'doc-1' })
+    expect(result).toEqual({ data: undefined })
+    expect(canAccessCompany).not.toHaveBeenCalled()
+  })
+})
+
+// ─── reviewDocument ───────────────────────────────────────────────────────────
+
+describe('reviewDocument', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(auth).mockResolvedValue({
+      user: { id: 'user-1', organizationId: 'org-1' },
+    } as never)
+    prismaMock.document.findFirst.mockResolvedValue({ ...mockDocument, status: 'TIL_REVIEW' })
+    prismaMock.document.update.mockResolvedValue({ ...mockDocument, status: 'GODKENDT' })
+    vi.mocked(canAccessCompany).mockResolvedValue(true)
+  })
+
+  it('returnerer error uden session', async () => {
+    vi.mocked(auth).mockResolvedValue(null)
+    const result = await reviewDocument({ documentId: 'doc-1', decision: 'GODKENDT' })
+    expect(result).toMatchObject({ error: expect.any(String) })
+  })
+
+  it('returnerer error ved ugyldigt input (ugyldig decision)', async () => {
+    const result = await reviewDocument({ documentId: 'doc-1', decision: 'UKENDT' })
+    expect(result).toMatchObject({ error: 'Ugyldigt input' })
+  })
+
+  it('returnerer error når dokument ikke findes', async () => {
+    prismaMock.document.findFirst.mockResolvedValueOnce(null as never)
+    const result = await reviewDocument({ documentId: 'doc-1', decision: 'GODKENDT' })
+    expect(result).toMatchObject({ error: 'Dokument ikke fundet' })
+  })
+
+  it('returnerer error når status ikke er TIL_REVIEW', async () => {
+    prismaMock.document.findFirst.mockResolvedValueOnce({ ...mockDocument, status: 'KLADDE' })
+    const result = await reviewDocument({ documentId: 'doc-1', decision: 'GODKENDT' })
+    expect(result).toMatchObject({ error: 'Kun dokumenter til godkendelse kan reviewes' })
+  })
+
+  it('returnerer error uden selskabsadgang', async () => {
+    vi.mocked(canAccessCompany).mockResolvedValueOnce(false)
+    const result = await reviewDocument({ documentId: 'doc-1', decision: 'GODKENDT' })
+    expect(result).toMatchObject({ error: 'Ingen adgang til dette dokument' })
+  })
+
+  it('happy path godkend: sætter status=GODKENDT + reviewed_at + reviewed_by', async () => {
+    const result = await reviewDocument({ documentId: 'doc-1', decision: 'GODKENDT' })
+    expect(result).toEqual({ data: undefined })
+    expect(prismaMock.document.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'doc-1' },
+        data: expect.objectContaining({
+          status: 'GODKENDT',
+          reviewed_at: expect.any(Date),
+          reviewed_by: 'user-1',
+        }),
+      })
+    )
+  })
+
+  it('happy path afvis: sætter status=AFVIST', async () => {
+    prismaMock.document.findFirst.mockResolvedValueOnce({ ...mockDocument, status: 'TIL_REVIEW' })
+    const result = await reviewDocument({
+      documentId: 'doc-1',
+      decision: 'AFVIST',
+      comment: 'Mangler bilag',
+    })
+    expect(result).toEqual({ data: undefined })
+    expect(prismaMock.document.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          status: 'AFVIST',
+          review_comment: 'Mangler bilag',
+        }),
+      })
+    )
+  })
+
+  it('sætter review_comment=null når comment er tom streng', async () => {
+    const result = await reviewDocument({ documentId: 'doc-1', decision: 'GODKENDT', comment: '' })
+    expect(result).toEqual({ data: undefined })
+    expect(prismaMock.document.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ review_comment: null }),
+      })
+    )
   })
 })
