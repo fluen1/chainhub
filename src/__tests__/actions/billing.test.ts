@@ -1,5 +1,13 @@
 import { describe, it, expect, vi } from 'vitest'
 
+vi.mock('@/lib/env', () => ({
+  env: {
+    NEXTAUTH_URL: 'http://localhost:3000',
+    STRIPE_STARTER_PRICE_ID: 'price_starter',
+    STRIPE_PROFESSIONAL_PRICE_ID: 'price_pro',
+    STRIPE_WEBHOOK_SECRET: 'whsec_test',
+  },
+}))
 vi.mock('@/lib/auth', () => ({ auth: vi.fn() }))
 vi.mock('@/lib/db', () => ({
   prisma: {

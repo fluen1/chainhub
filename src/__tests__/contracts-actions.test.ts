@@ -37,12 +37,7 @@ vi.mock('@/lib/logger', () => ({
 
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
 
-import {
-  createContract,
-  updateContractStatus,
-  deleteContract,
-  getContractList,
-} from '@/actions/contracts'
+import { createContract, updateContractStatus, deleteContract } from '@/actions/contracts'
 
 const UUID_1 = 'a1b2c3d4-e5f6-4789-9abc-def012345678'
 
@@ -207,33 +202,5 @@ describe('deleteContract', () => {
     vi.mocked(perms.canAccessModule).mockResolvedValueOnce(false)
     const result = await deleteContract(UUID_1)
     expect('error' in result).toBe(true)
-  })
-})
-
-describe('getContractList', () => {
-  beforeEach(() => vi.clearAllMocks())
-
-  it('returnerer kontrakter med sensitivity-filter', async () => {
-    const { prisma } = await import('@/lib/db')
-    vi.mocked(prisma.contract.findMany).mockImplementation((() =>
-      Promise.resolve([
-        { id: 'c-1', sensitivity: 'INTERN' },
-        { id: 'c-2', sensitivity: 'STRENGT_FORTROLIG' },
-      ])) as never)
-    vi.mocked(prisma.contract.count).mockImplementation((() => Promise.resolve(2)) as never)
-    const perms = await import('@/lib/permissions')
-    vi.mocked(perms.canAccessSensitivity).mockResolvedValueOnce(true).mockResolvedValueOnce(false)
-    const result = await getContractList({ organizationId: 'org-1', userId: 'user-1' })
-    if ('data' in result && result.data) {
-      expect(result.data.contracts.length).toBe(1)
-      expect(result.data.total).toBe(2)
-    }
-  })
-
-  it('page-size cappes ved 100', async () => {
-    const { prisma } = await import('@/lib/db')
-    await getContractList({ organizationId: 'org-1', userId: 'user-1', pageSize: 500 })
-    const findManyCall = vi.mocked(prisma.contract.findMany).mock.calls[0]
-    expect(findManyCall![0]?.take).toBe(100)
   })
 })

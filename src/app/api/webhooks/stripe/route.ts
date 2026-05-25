@@ -2,10 +2,34 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getStripe } from '@/lib/stripe'
 import { captureError } from '@/lib/logger'
+import { env } from '@/lib/env'
 import type Stripe from 'stripe'
 
-// Next.js skal læse raw body — slå body-parsing fra
-export const config = { api: { bodyParser: false } }
+// ────────────────────────────────────────────────────────────────────────────
+// Hjælper — udtræk kunde-ID uanset om Stripe returnerer string eller objekt
+// ────────────────────────────────────────────────────────────────────────────
+
+function resolveCustomerId(
+  customer: string | Stripe.Customer | Stripe.DeletedCustomer | null | undefined
+): string | null {
+  if (!customer) return null
+  return typeof customer === 'string' ? customer : customer.id
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Hjælper — udtræk periode-start/slut fra SubscriptionItem (Stripe API v22+)
+// ────────────────────────────────────────────────────────────────────────────
+
+function resolvePeriod(item: Stripe.SubscriptionItem | undefined): {
+  periodStart: number
+  periodEnd: number
+} {
+  const now = Math.floor(Date.now() / 1000)
+  return {
+    periodStart: item?.current_period_start ?? now,
+    periodEnd: item?.current_period_end ?? now,
+  }
+}
 
 export async function POST(req: NextRequest) {
   const stripe = getStripe()
@@ -13,7 +37,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Stripe ikke konfigureret' }, { status: 500 })
   }
 
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+  const webhookSecret = env.STRIPE_WEBHOOK_SECRET
   if (!webhookSecret) {
     return NextResponse.json({ error: 'Webhook-hemmelighed mangler' }, { status: 500 })
   }
@@ -39,17 +63,16 @@ export async function POST(req: NextRequest) {
         const session = event.data.object as Stripe.Checkout.Session
         if (session.mode !== 'subscription') break
 
-        const customerId =
-          typeof session.customer === 'string' ? session.customer : session.customer?.id
+        const customerId = resolveCustomerId(session.customer)
         const subscriptionId =
           typeof session.subscription === 'string' ? session.subscription : session.subscription?.id
 
         if (!customerId || !subscriptionId) break
 
-        // Hent Stripe-abonnement for at få periode-data
+        // Hent Stripe-abonnement for at få periode-data og metadata
         const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId)
 
-        // Find organisation via Stripe-kunde-ID
+        // Find organisation: foretruk via eksisterende DB-post, fallback til subscription_data.metadata
         const existingSub = await prisma.subscription.findFirst({
           where: { stripe_customer_id: customerId },
         })
@@ -61,11 +84,8 @@ export async function POST(req: NextRequest) {
         if (!orgId) break
 
         const plan = stripeSubscription.items.data[0]?.price.lookup_key ?? 'standard'
-
-        // I Stripe 22 ligger current_period_start/end på SubscriptionItem, ikke Subscription
         const firstItem = stripeSubscription.items.data[0]
-        const periodStart = firstItem?.current_period_start ?? Math.floor(Date.now() / 1000)
-        const periodEnd = firstItem?.current_period_end ?? Math.floor(Date.now() / 1000)
+        const { periodStart, periodEnd } = resolvePeriod(firstItem)
 
         await prisma.subscription.upsert({
           where: { organization_id: orgId },
@@ -104,12 +124,11 @@ export async function POST(req: NextRequest) {
 
       case 'customer.subscription.updated': {
         const sub = event.data.object as Stripe.Subscription
-        const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer.id
+        const customerId = resolveCustomerId(sub.customer)
+        if (!customerId) break
 
-        // I Stripe 22 ligger current_period_start/end på SubscriptionItem, ikke Subscription
         const firstItem = sub.items.data[0]
-        const periodStart = firstItem?.current_period_start ?? Math.floor(Date.now() / 1000)
-        const periodEnd = firstItem?.current_period_end ?? Math.floor(Date.now() / 1000)
+        const { periodStart, periodEnd } = resolvePeriod(firstItem)
 
         await prisma.subscription.updateMany({
           where: { stripe_customer_id: customerId },
@@ -122,7 +141,7 @@ export async function POST(req: NextRequest) {
         })
 
         // Opdater plan på organisation hvis lookup_key er tilgængeligt
-        const plan = sub.items.data[0]?.price.lookup_key
+        const plan = firstItem?.price.lookup_key
         if (plan) {
           const existing = await prisma.subscription.findFirst({
             where: { stripe_customer_id: customerId },
@@ -140,7 +159,8 @@ export async function POST(req: NextRequest) {
 
       case 'customer.subscription.deleted': {
         const sub = event.data.object as Stripe.Subscription
-        const customerId = typeof sub.customer === 'string' ? sub.customer : sub.customer.id
+        const customerId = resolveCustomerId(sub.customer)
+        if (!customerId) break
 
         const existing = await prisma.subscription.findFirst({
           where: { stripe_customer_id: customerId },
@@ -163,9 +183,7 @@ export async function POST(req: NextRequest) {
 
       case 'invoice.payment_failed': {
         const invoice = event.data.object as Stripe.Invoice
-        const customerId =
-          typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id
-
+        const customerId = resolveCustomerId(invoice.customer)
         if (!customerId) break
 
         await prisma.subscription.updateMany({

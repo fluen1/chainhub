@@ -2,6 +2,7 @@
 
 import { z } from 'zod'
 import bcrypt from 'bcryptjs'
+import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { captureError } from '@/lib/logger'
 import type { ActionResult } from '@/types/actions'
@@ -16,8 +17,8 @@ const createAccountSchema = z.object({
   password: z.string().min(8, 'Adgangskoden skal være mindst 8 tegn'),
 })
 
+// organizationId fjernet — hentes fra session (§7: aldrig orgId som parameter)
 const updateOrganizationOnboardingSchema = z.object({
-  organizationId: z.string().uuid('Ugyldigt organisations-ID'),
   name: z.string().min(1, 'Organisationsnavn er påkrævet'),
   industry: z.string().optional(),
   estimatedLocations: z.string().optional(),
@@ -101,18 +102,23 @@ export async function createAccount(
 
 // ────────────────────────────────────────────────────────────────────────────
 // updateOrganizationOnboarding — opdaterer org med onboarding-info
+// organizationId hentes fra session — aldrig som parameter (§7, §1 IDOR)
 // ────────────────────────────────────────────────────────────────────────────
 
 export async function updateOrganizationOnboarding(
   input: UpdateOrganizationOnboardingInput
 ): Promise<ActionResult<{ success: true }>> {
+  const session = await auth()
+  if (!session) return { error: 'Ikke autoriseret' }
+
   const parsed = updateOrganizationOnboardingSchema.safeParse(input)
   if (!parsed.success) {
     const firstError = parsed.error.issues[0]
     return { error: firstError?.message ?? 'Ugyldig input' }
   }
 
-  const { organizationId, name, industry, estimatedLocations } = parsed.data
+  const { name, industry, estimatedLocations } = parsed.data
+  const organizationId = session.user.organizationId
 
   try {
     await prisma.organization.update({

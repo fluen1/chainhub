@@ -136,7 +136,7 @@ describe('searchPersons', () => {
     const { prisma } = await import('@/lib/db')
     vi.mocked(prisma.person.findMany).mockImplementation((() =>
       Promise.resolve([{ id: 'p-1', first_name: 'Anders' }])) as never)
-    const result = await searchPersons('And', 'org-1')
+    const result = await searchPersons('And')
     expect('data' in result).toBe(true)
     if ('data' in result && result.data) {
       expect(result.data.length).toBe(1)
@@ -145,7 +145,7 @@ describe('searchPersons', () => {
 
   it('returnerer tom array for query under 2 tegn', async () => {
     const { prisma } = await import('@/lib/db')
-    const result = await searchPersons('a', 'org-1')
+    const result = await searchPersons('a')
     if ('data' in result) {
       expect(result.data).toEqual([])
     }
@@ -155,7 +155,7 @@ describe('searchPersons', () => {
   it('afviser uden session', async () => {
     const auth = await import('@/lib/auth')
     vi.mocked(auth.auth).mockResolvedValueOnce(null)
-    const result = await searchPersons('test', 'org-1')
+    const result = await searchPersons('test')
     expect(result).toEqual({ error: 'Din session er udløbet — log ind igen.' })
   })
 })

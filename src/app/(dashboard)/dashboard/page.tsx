@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
-import { redirect } from 'next/navigation'
 import { getDashboardData } from '@/actions/dashboard'
 import { getRecentActivity } from '@/actions/activity-feed'
 import { getSidebarData } from '@/lib/sidebar-data'
@@ -25,8 +24,8 @@ function formatTime(d: Date): string {
 }
 
 export default async function DashboardPage() {
-  const session = await auth()
-  if (!session) redirect('/login')
+  // Auth-guard håndteres af (dashboard)/layout.tsx — ingen dobbelt-check her.
+  const session = (await auth())!
 
   const now = new Date()
 

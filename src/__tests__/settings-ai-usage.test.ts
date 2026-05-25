@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
+vi.mock('@/lib/auth', () => ({
+  auth: vi.fn().mockResolvedValue({ user: { id: 'user-1', organizationId: 'org-1' } }),
+}))
+
 vi.mock('@/lib/db', () => ({
   prisma: {
     aIUsageLog: {
@@ -35,7 +39,7 @@ describe('getSettingsAIUsage', () => {
     const { prisma } = await import('@/lib/db')
     vi.mocked(prisma.aIUsageLog.count).mockResolvedValue(0)
 
-    const result = await getSettingsAIUsage('org-1')
+    const result = await getSettingsAIUsage()
 
     expect(result.used).toBe(0)
     expect(result.max).toBe(1000)
@@ -54,7 +58,7 @@ describe('getSettingsAIUsage', () => {
       threshold: '75-warn',
     })
 
-    const result = await getSettingsAIUsage('org-1')
+    const result = await getSettingsAIUsage()
 
     expect(result.used).toBe(750)
     expect(result.max).toBe(1000)
@@ -70,7 +74,7 @@ describe('getSettingsAIUsage', () => {
     } as never)
     vi.mocked(prisma.aIUsageLog.count).mockResolvedValue(250)
 
-    const result = await getSettingsAIUsage('org-1')
+    const result = await getSettingsAIUsage()
 
     expect(result.max).toBe(500)
     expect(result.percent).toBe(50)
@@ -81,7 +85,7 @@ describe('getSettingsAIUsage', () => {
     vi.mocked(prisma.organizationAISettings.findUnique).mockResolvedValue(null)
     vi.mocked(prisma.aIUsageLog.count).mockResolvedValue(100)
 
-    const result = await getSettingsAIUsage('org-1')
+    const result = await getSettingsAIUsage()
 
     expect(result.max).toBe(1000)
     expect(result.percent).toBe(10)
@@ -97,7 +101,7 @@ describe('getSettingsAIUsage', () => {
       threshold: 'exceeded',
     })
 
-    const result = await getSettingsAIUsage('org-1')
+    const result = await getSettingsAIUsage()
 
     expect(result.percent).toBe(100)
     expect(result.threshold).toBe('exceeded')
@@ -107,7 +111,7 @@ describe('getSettingsAIUsage', () => {
     const { prisma } = await import('@/lib/db')
     vi.mocked(prisma.aIUsageLog.count).mockRejectedValue(new Error('DB nede'))
 
-    const result = await getSettingsAIUsage('org-1')
+    const result = await getSettingsAIUsage()
 
     // Fail-safe returner 0-data frem for at crashe siden
     expect(result.used).toBe(0)
@@ -120,7 +124,7 @@ describe('getSettingsAIUsage konsolidering', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('kalder getCostCapStatus præcis én gang per kald', async () => {
-    await getSettingsAIUsage('org-1')
+    await getSettingsAIUsage()
 
     // Verificerer at vi ikke kalder getCostCapStatus mere end én gang
     expect(getCostCapStatus).toHaveBeenCalledTimes(1)
@@ -137,7 +141,7 @@ describe('getSettingsAIUsage konsolidering', () => {
       threshold: '50-info',
     })
 
-    const result = await getSettingsAIUsage('org-1')
+    const result = await getSettingsAIUsage()
 
     expect(result.capUsd).toBe(75)
     expect(result.currentUsd).toBe(30)
@@ -156,7 +160,7 @@ describe('AI-usage tærskel-logik', () => {
       threshold: 'none',
     })
 
-    const result = await getSettingsAIUsage('org-1')
+    const result = await getSettingsAIUsage()
     expect(result.threshold).toBe('none')
   })
 
@@ -168,7 +172,7 @@ describe('AI-usage tærskel-logik', () => {
       threshold: '50-info',
     })
 
-    const result = await getSettingsAIUsage('org-1')
+    const result = await getSettingsAIUsage()
     expect(result.threshold).toBe('50-info')
   })
 
@@ -180,7 +184,7 @@ describe('AI-usage tærskel-logik', () => {
       threshold: '90-alert',
     })
 
-    const result = await getSettingsAIUsage('org-1')
+    const result = await getSettingsAIUsage()
     expect(result.threshold).toBe('90-alert')
   })
 })

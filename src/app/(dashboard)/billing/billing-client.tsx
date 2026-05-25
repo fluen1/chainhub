@@ -14,6 +14,8 @@ interface BillingClientProps {
   trialDaysLeft: number | null
   hasSubscription: boolean
   planExpiresAt: string | null
+  starterPriceId: string
+  professionalPriceId: string
 }
 
 export function BillingClient({
@@ -21,12 +23,11 @@ export function BillingClient({
   trialDaysLeft,
   hasSubscription,
   planExpiresAt,
+  starterPriceId,
+  professionalPriceId,
 }: BillingClientProps) {
   const [loadingPrice, setLoadingPrice] = useState<string | null>(null)
   const [loadingPortal, setLoadingPortal] = useState(false)
-
-  const starterPriceId = process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID ?? ''
-  const professionalPriceId = process.env.NEXT_PUBLIC_STRIPE_PROFESSIONAL_PRICE_ID ?? ''
 
   async function handleChoosePlan(priceId: string) {
     setLoadingPrice(priceId)
@@ -76,18 +77,14 @@ export function BillingClient({
       <Panel>
         <PanelHeader title="Nuværende plan" />
         <div className="grid grid-cols-[140px_1fr] items-center gap-3 px-3 py-2 border-b border-b-divider">
-          <span className="text-[11px] uppercase text-b-2" style={{ letterSpacing: '0.3px' }}>
-            Plan
-          </span>
+          <span className="text-[11px] uppercase text-b-2 tracking-[0.3px]">Plan</span>
           <span className="text-[13px] text-b-1">
             <Badge tone={plan === 'trial' ? 'amber' : 'blue'}>{planLabel}</Badge>
           </span>
         </div>
         {trialDaysLeft !== null && (
           <div className="grid grid-cols-[140px_1fr] items-center gap-3 px-3 py-2 border-b border-b-divider">
-            <span className="text-[11px] uppercase text-b-2" style={{ letterSpacing: '0.3px' }}>
-              Prøveperiode
-            </span>
+            <span className="text-[11px] uppercase text-b-2 tracking-[0.3px]">Prøveperiode</span>
             <span className="text-[13px] text-b-1">
               {trialDaysLeft === 0 ? (
                 <span className="text-b-red-fg">Udløbet</span>
@@ -101,9 +98,7 @@ export function BillingClient({
         )}
         {planExpiresAt && (
           <div className="grid grid-cols-[140px_1fr] items-center gap-3 px-3 py-2">
-            <span className="text-[11px] uppercase text-b-2" style={{ letterSpacing: '0.3px' }}>
-              Fornyelse
-            </span>
+            <span className="text-[11px] uppercase text-b-2 tracking-[0.3px]">Fornyelse</span>
             <span className="text-[13px] text-b-2">{planExpiresAt} · automatisk</span>
           </div>
         )}

@@ -49,10 +49,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
     )
   }
 
-  const [rawData, aiUsage] = await Promise.all([
-    getSettingsPageData(),
-    getSettingsAIUsage(session.user.organizationId),
-  ])
+  const [rawData, aiUsage] = await Promise.all([getSettingsPageData(), getSettingsAIUsage()])
 
   const users = rawData?.users ?? []
   const companies = rawData?.companies ?? []

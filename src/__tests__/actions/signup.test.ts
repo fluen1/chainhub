@@ -30,6 +30,12 @@ vi.mock('@/lib/db', () => ({
   },
 }))
 
+vi.mock('@/lib/auth', () => ({
+  auth: vi.fn().mockResolvedValue({
+    user: { id: 'user-session', organizationId: 'a1b2c3d4-e5f6-4789-9abc-def012345678' },
+  }),
+}))
+
 vi.mock('@/lib/logger', () => ({
   captureError: vi.fn(),
   createLogger: vi.fn(() => ({
@@ -134,7 +140,6 @@ describe('updateOrganizationOnboarding', () => {
 
   it('happy path: opdaterer org og returnerer success', async () => {
     const result = await updateOrganizationOnboarding({
-      organizationId: 'a1b2c3d4-e5f6-4789-9abc-def012345678',
       name: 'Tandlægegruppen A/S',
       industry: 'tandlaege',
       estimatedLocations: '6-25',
@@ -146,21 +151,23 @@ describe('updateOrganizationOnboarding', () => {
     }
   })
 
-  it('afviser ugyldigt uuid som organizationId', async () => {
+  it('afviser tomt organisationsnavn', async () => {
     const result = await updateOrganizationOnboarding({
-      organizationId: 'ikke-et-uuid',
-      name: 'Org',
+      name: '',
     })
 
     expect('error' in result).toBe(true)
   })
 
-  it('afviser tomt organisationsnavn', async () => {
-    const result = await updateOrganizationOnboarding({
-      organizationId: 'a1b2c3d4-e5f6-4789-9abc-def012345678',
-      name: '',
-    })
+  it('afviser uautoriseret request', async () => {
+    const { auth } = await import('@/lib/auth')
+    vi.mocked(auth).mockResolvedValueOnce(null)
+
+    const result = await updateOrganizationOnboarding({ name: 'TestOrg' })
 
     expect('error' in result).toBe(true)
+    if ('error' in result) {
+      expect(result.error).toMatch(/autoriseret/i)
+    }
   })
 })

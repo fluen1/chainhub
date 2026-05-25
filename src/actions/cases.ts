@@ -2,7 +2,13 @@
 
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { canAccessCompany, canAccessModule, canAccessSensitivity, getAccessibleCompanies } from '@/lib/permissions'
+import type { Prisma } from '@prisma/client'
+import {
+  canAccessCompany,
+  canAccessModule,
+  canAccessSensitivity,
+  getAccessibleCompanies,
+} from '@/lib/permissions'
 import {
   createCaseSchema,
   updateCaseStatusSchema,
@@ -403,7 +409,7 @@ export async function updateCase(input: UpdateCaseInput): Promise<ActionResult<C
   }
 
   try {
-    const updateData: Record<string, unknown> = {}
+    const updateData: Prisma.CaseUncheckedUpdateInput = {}
     if (parsed.data.title !== undefined) updateData.title = parsed.data.title
     if (parsed.data.description !== undefined)
       updateData.description = parsed.data.description || null
@@ -417,7 +423,7 @@ export async function updateCase(input: UpdateCaseInput): Promise<ActionResult<C
 
     const updated = await prisma.case.update({
       where: { id: parsed.data.caseId },
-      data: updateData as never,
+      data: updateData,
     })
 
     await recordAuditEvent({

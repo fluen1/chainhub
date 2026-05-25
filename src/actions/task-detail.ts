@@ -95,7 +95,7 @@ export async function getTaskDetailData(taskId: string): Promise<TaskDetailData 
         })
       : Promise.resolve(null),
     prisma.comment.findMany({
-      where: { organization_id: orgId, task_id: taskId },
+      where: { organization_id: orgId, task_id: taskId, deleted_at: null },
       include: { author: { select: { name: true } } },
       orderBy: { created_at: 'desc' },
       take: 50,

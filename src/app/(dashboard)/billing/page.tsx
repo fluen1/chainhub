@@ -1,50 +1,33 @@
 import { redirect } from 'next/navigation'
-import { auth } from '@/lib/auth'
-import { prisma } from '@/lib/db'
+import { getBillingPageData } from '@/actions/billing'
+import { env } from '@/lib/env'
 import { BillingClient } from './billing-client'
+
+// Pris-ID'er læses server-side for at undgå eksponering via NEXT_PUBLIC_
+const STARTER_PRICE_ID = env.STRIPE_STARTER_PRICE_ID ?? ''
+const PROFESSIONAL_PRICE_ID = env.STRIPE_PROFESSIONAL_PRICE_ID ?? ''
 
 // ────────────────────────────────────────────────────────────────────────────
 // /billing — abonnementsstyring
 // ────────────────────────────────────────────────────────────────────────────
 
 export default async function BillingPage() {
-  const session = await auth()
-  if (!session) redirect('/login')
+  const result = await getBillingPageData()
 
-  const org = await prisma.organization.findUnique({
-    where: { id: session.user.organizationId },
-    include: { subscriptions: true },
-  })
+  if (result.error) redirect('/dashboard')
+  if (!result.data) redirect('/dashboard')
 
-  if (!org) redirect('/dashboard')
-
-  // Beregn dage tilbage af prøveperiode
-  let trialDaysLeft: number | null = null
-  if (org.plan === 'trial' && org.plan_expires_at) {
-    const now = new Date()
-    const diff = org.plan_expires_at.getTime() - now.getTime()
-    trialDaysLeft = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)))
-  }
-
-  const hasSubscription = org.subscriptions.length > 0
-
-  // Fornyelsesdato fra aktiv subscription
-  const activeSubscription = org.subscriptions[0]
-  const planExpiresAt = activeSubscription?.current_period_end
-    ? activeSubscription.current_period_end.toLocaleDateString('da-DK', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      })
-    : null
+  const { plan, trialDaysLeft, hasSubscription, planExpiresAt } = result.data
 
   return (
     <div className="mx-auto max-w-3xl px-3 py-4">
       <BillingClient
-        plan={org.plan}
+        plan={plan}
         trialDaysLeft={trialDaysLeft}
         hasSubscription={hasSubscription}
         planExpiresAt={planExpiresAt}
+        starterPriceId={STARTER_PRICE_ID}
+        professionalPriceId={PROFESSIONAL_PRICE_ID}
       />
     </div>
   )

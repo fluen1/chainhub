@@ -8,6 +8,10 @@ const mockTx = {
   },
 }
 
+vi.mock('@/lib/env', () => ({
+  env: { NEXTAUTH_URL: 'http://localhost:3000' },
+}))
+
 vi.mock('@/lib/auth', () => ({
   auth: vi.fn().mockResolvedValue({
     user: { id: 'user-1', organizationId: 'org-1' },

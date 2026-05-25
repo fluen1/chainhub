@@ -3,7 +3,7 @@
 import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { canAccessCompany, canAccessModule } from '@/lib/permissions'
+import { canAccessCompany, canAccessModule, getAccessibleCompanies } from '@/lib/permissions'
 import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
 import type { Prisma } from '@prisma/client'
@@ -20,8 +20,10 @@ export async function getDocumentUploadCompanies(): Promise<Array<{ id: string; 
   const hasAccess = await canAccessModule(session.user.id, 'documents', orgId)
   if (!hasAccess) return []
 
+  const companyIds = await getAccessibleCompanies(session.user.id, orgId)
+
   return prisma.company.findMany({
-    where: { organization_id: orgId, deleted_at: null },
+    where: { organization_id: orgId, deleted_at: null, id: { in: companyIds } },
     select: { id: true, name: true },
     orderBy: { name: 'asc' },
     take: 200,
@@ -76,7 +78,20 @@ function formatSize(bytes: number): string {
 }
 
 function formatDateLocal(d: Date): string {
-  const MONTHS = ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec']
+  const MONTHS = [
+    'jan',
+    'feb',
+    'mar',
+    'apr',
+    'maj',
+    'jun',
+    'jul',
+    'aug',
+    'sep',
+    'okt',
+    'nov',
+    'dec',
+  ]
   return `${d.getDate()}. ${MONTHS[d.getMonth()]} ${d.getFullYear()}`
 }
 
@@ -104,10 +119,15 @@ export async function getDocumentsPageData(): Promise<DocRow[]> {
   const hasAccess = await canAccessModule(session.user.id, 'documents', orgId)
   if (!hasAccess) return []
 
+  const companyIds = await getAccessibleCompanies(session.user.id, orgId)
+
   const documents = await prisma.document.findMany({
     where: {
       organization_id: orgId,
       deleted_at: null,
+      // Vis kun dokumenter tilknyttet selskaber brugeren har adgang til,
+      // eller dokumenter uden selskabstilknytning (org-niveau dokumenter).
+      OR: [{ company_id: null }, { company_id: { in: companyIds } }],
     },
     include: {
       company: { select: { id: true, name: true } },

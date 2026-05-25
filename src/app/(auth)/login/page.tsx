@@ -179,10 +179,7 @@ function LoginForm() {
             >
               {loading ? (
                 <>
-                  <span
-                    className="inline-block h-3.5 w-3.5 rounded-full border-2 border-white/40 border-t-white"
-                    style={{ animation: 'spin 0.7s linear infinite' }}
-                  />
+                  <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
                   Logger ind...
                 </>
               ) : (
@@ -240,13 +237,6 @@ function LoginForm() {
           </a>
         </div>
       </div>
-      <style jsx global>{`
-        @keyframes spin {
-          to {
-            transform: rotate(360deg);
-          }
-        }
-      `}</style>
     </div>
   )
 }

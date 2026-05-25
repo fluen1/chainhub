@@ -1,5 +1,6 @@
 'use server'
 
+import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { canAccessModule } from '@/lib/permissions'
@@ -19,6 +20,7 @@ import type { ActionResult } from '@/types/actions'
 import type { User, UserRoleAssignment, UserRole } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import { captureError } from '@/lib/logger'
+import { env } from '@/lib/env'
 
 export type UserWithRoles = User & {
   roles: UserRoleAssignment[]
@@ -146,13 +148,8 @@ export async function updateUserRole(input: UpdateUserRoleInput): Promise<Action
 
   const parsed = updateUserRoleSchema.safeParse(input)
   if (!parsed.success) {
-    console.error(
-      'updateUserRole validation error:',
-      JSON.stringify(parsed.error.issues),
-      'input:',
-      JSON.stringify(input)
-    )
-    return { error: 'Ugyldigt input' }
+    const firstError = parsed.error.issues[0]?.message ?? 'Ugyldigt input'
+    return { error: firstError }
   }
 
   const hasAccess = await canAccessModule(
@@ -399,7 +396,7 @@ export async function inviteUser(input: InviteUserInput): Promise<ActionResult<{
       },
     })
 
-    const baseUrl = process.env.NEXTAUTH_URL ?? 'http://localhost:3000'
+    const baseUrl = env.NEXTAUTH_URL ?? 'http://localhost:3000'
     const inviteUrl = `${baseUrl}/invite?token=${token}`
     const orgName = organization?.name ?? 'ChainHub'
     const inviterName = inviter?.name ?? session.user.name ?? 'En kollega'
@@ -416,6 +413,20 @@ export async function inviteUser(input: InviteUserInput): Promise<ActionResult<{
   }
 }
 
+// Gyldige roller — afspejler UserRole enum fra Prisma-schemaet
+const userRoleValues = [
+  'GROUP_OWNER',
+  'GROUP_ADMIN',
+  'GROUP_LEGAL',
+  'GROUP_FINANCE',
+  'GROUP_READONLY',
+  'COMPANY_MANAGER',
+  'COMPANY_LEGAL',
+  'COMPANY_READONLY',
+] as const
+
+const userRoleSchema = z.enum(userRoleValues)
+
 export async function acceptInvite(
   input: AcceptInviteInput
 ): Promise<ActionResult<{ email: string }>> {
@@ -425,18 +436,35 @@ export async function acceptInvite(
     return { error: firstError }
   }
 
-  const inviteToken = await prisma.inviteToken.findUnique({
+  // Hurtig pre-check: eksisterer og er ikke udløbet (token-id hentes til brug i transaktionen)
+  const preCheck = await prisma.inviteToken.findUnique({
     where: { token: parsed.data.token },
+    select: {
+      id: true,
+      used_at: true,
+      expires_at: true,
+      email: true,
+      role: true,
+      organization_id: true,
+      created_by: true,
+    },
   })
 
-  if (!inviteToken) return { error: 'Invite-linket er ugyldigt' }
-  if (inviteToken.used_at) return { error: 'Invite-linket er allerede brugt' }
-  if (inviteToken.expires_at < new Date()) return { error: 'Invite-linket er udløbet' }
+  if (!preCheck) return { error: 'Invite-linket er ugyldigt' }
+  if (preCheck.used_at) return { error: 'Invite-linket er allerede brugt' }
+  if (preCheck.expires_at < new Date()) return { error: 'Invite-linket er udløbet' }
+
+  // Bug 3: Validér role-værdien fra databasen (InviteToken.role er String, ikke enum)
+  const parsedRole = userRoleSchema.safeParse(preCheck.role)
+  if (!parsedRole.success) {
+    return { error: 'Invitationen indeholder en ugyldig rolle — kontakt din administrator' }
+  }
+  const role: UserRole = parsedRole.data
 
   // Tjek om email allerede er i brug
   const existingUser = await prisma.user.findFirst({
     where: {
-      email: { equals: inviteToken.email, mode: 'insensitive' },
+      email: { equals: preCheck.email, mode: 'insensitive' },
       deleted_at: null,
     },
   })
@@ -446,17 +474,29 @@ export async function acceptInvite(
     }
   }
 
+  const passwordHash = await bcrypt.hash(parsed.data.password, 12)
+  const isGroupRole = role.startsWith('GROUP_')
+  const scope = isGroupRole ? 'ALL' : 'ASSIGNED'
+
   try {
-    const passwordHash = await bcrypt.hash(parsed.data.password, 12)
+    // Bug 2 (TOCTOU): Brug atomic updateMany med WHERE used_at IS NULL.
+    // Hvis tokenet allerede er brugt parallel, returnerer count=0 og vi afbryder.
+    const result = await prisma.$transaction(async (tx) => {
+      // Atomisk markering — fejler stille hvis already used
+      const claimed = await tx.inviteToken.updateMany({
+        where: { id: preCheck.id, used_at: null },
+        data: { used_at: new Date() },
+      })
 
-    const isGroupRole = inviteToken.role.startsWith('GROUP_')
-    const scope = isGroupRole ? 'ALL' : 'ASSIGNED'
+      if (claimed.count === 0) {
+        // Tokenet blev brugt i en parallel request — afvis
+        return null
+      }
 
-    await prisma.$transaction(async (tx) => {
       const newUser = await tx.user.create({
         data: {
-          organization_id: inviteToken.organization_id,
-          email: inviteToken.email,
+          organization_id: preCheck.organization_id,
+          email: preCheck.email,
           name: parsed.data.name,
           password_hash: passwordHash,
         },
@@ -464,22 +504,23 @@ export async function acceptInvite(
 
       await tx.userRoleAssignment.create({
         data: {
-          organization_id: inviteToken.organization_id,
+          organization_id: preCheck.organization_id,
           user_id: newUser.id,
-          role: inviteToken.role as UserRole,
+          role,
           scope,
           company_ids: [],
-          created_by: inviteToken.created_by,
+          created_by: preCheck.created_by,
         },
       })
 
-      await tx.inviteToken.update({
-        where: { id: inviteToken.id },
-        data: { used_at: new Date() },
-      })
+      return preCheck.email
     })
 
-    return { data: { email: inviteToken.email } }
+    if (result === null) {
+      return { error: 'Invite-linket er allerede brugt' }
+    }
+
+    return { data: { email: result } }
   } catch (err) {
     captureError(err, {
       namespace: 'action:acceptInvite',

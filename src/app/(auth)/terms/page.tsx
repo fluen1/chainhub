@@ -1,321 +1,230 @@
 // /terms — Servicevilkår. Statisk side, ingen auth påkrævet.
 
+import {
+  LegalPageLayout,
+  LegalListItem,
+  LegalContactBox,
+  LegalMailLink,
+} from '@/components/ui/b/LegalPageLayout'
+
 export default function TermsPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-b-canvas text-b-1">
-      <div className="flex flex-1 flex-col items-center px-4 py-12">
-        {/* Header */}
-        <div className="mb-8 flex w-full max-w-3xl items-center justify-between">
-          <a
-            href="/login"
-            className="flex items-center gap-2 text-[13px] font-semibold text-b-1 no-underline"
-          >
-            <svg viewBox="0 0 14 14" width={16} height={16} aria-hidden className="shrink-0">
-              <rect
-                x="1"
-                y="1"
-                width="12"
-                height="12"
-                rx="1.5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.2"
-              />
-              <rect x="4.5" y="4.5" width="5" height="5" rx="0.5" fill="currentColor" />
-            </svg>
-            ChainHub
+    <LegalPageLayout
+      title="Servicevilkår"
+      subtitle="Vilkår og betingelser for brug af ChainHub-platformen."
+      lastUpdated="25. maj 2026"
+    >
+      {/* § 1 Serviceaftale */}
+      <section>
+        <h2 className="mb-3 text-[15px] font-semibold text-b-1">§ 1 — Serviceaftale</h2>
+        <p className="text-b-2">
+          ChainHub leverer en cloudbaseret platform til kædegrupper og porteføljeorganisationer, der
+          administrerer co-ejede selskaber. Platformen omfatter funktioner til kontraktstyring,
+          governance, sagshåndtering, opgavestyring, personrelationer og finansielt overblik.
+        </p>
+        <p className="mt-2 text-b-2">
+          Disse vilkår regulerer forholdet mellem ChainHub (herefter &ldquo;vi&rdquo; eller
+          &ldquo;ChainHub&rdquo;) og den organisation, der tegner abonnement (herefter
+          &ldquo;kunden&rdquo;). Ved at oprette en konto og bruge platformen accepterer kunden disse
+          vilkår på vegne af sin organisation.
+        </p>
+        <p className="mt-2 text-b-2">
+          Brug af platformen forudsætter et gyldigt abonnement. ChainHub er et B2B-produkt —
+          vilkårene gælder for erhvervsdrivende og ikke til forbrugerbrug.
+        </p>
+      </section>
+
+      {/* § 2 Brugerforpligtelser */}
+      <section>
+        <h2 className="mb-3 text-[15px] font-semibold text-b-1">§ 2 — Brugerforpligtelser</h2>
+        <p className="text-b-2">Som kunde forpligter du og din organisation jer til at:</p>
+        <ul className="mt-3 space-y-2 text-b-2">
+          <LegalListItem>
+            Benytte platformen lovligt og i overensstemmelse med gældende dansk og EU-ret, herunder
+            GDPR.
+          </LegalListItem>
+          <LegalListItem>
+            Sikre, at adgangsoplysninger (brugernavne og adgangskoder) opbevares fortroligt og ikke
+            deles med uautoriserede personer.
+          </LegalListItem>
+          <LegalListItem>
+            Straks orientere ChainHub ved mistanke om uautoriseret adgang til kontoen.
+          </LegalListItem>
+          <LegalListItem>
+            Registrere nøjagtige og ajourførte oplysninger i systemet og ikke bevidst indlæse
+            fejlagtige data.
+          </LegalListItem>
+          <LegalListItem>
+            Afstå fra forsøg på reverse engineering, scraping eller anden uautoriseret udtrækning af
+            data fra platformen.
+          </LegalListItem>
+          <LegalListItem>
+            Ikke anvende platformen til at lagre eller behandle ulovligt indhold eller oplysninger,
+            der krænker tredjeparters rettigheder.
+          </LegalListItem>
+        </ul>
+      </section>
+
+      {/* § 3 Dataejerskab */}
+      <section>
+        <h2 className="mb-3 text-[15px] font-semibold text-b-1">§ 3 — Dataejerskab</h2>
+        <p className="text-b-2">
+          <span className="font-medium text-b-1">Kundens data tilhører kunden.</span> Alle
+          oplysninger, du og din organisation registrerer i ChainHub — herunder kontrakter, sager,
+          selskabsdata, personoplysninger og dokumenter — er og forbliver kundens ejendom.
+        </p>
+        <p className="mt-2 text-b-2">
+          ChainHub behandler disse data udelukkende som databehandler på kundens vegne og i
+          overensstemmelse med den indgåede databehandleraftale. Vi anvender ikke kundens data til
+          kommercielle formål, analyse på tværs af kunder eller videregivelse til tredjeparter uden
+          kundens eksplicitte samtykke.
+        </p>
+        <p className="mt-2 text-b-2">
+          Ved opsigelse af abonnementet har kunden ret til at eksportere alle sine data i et
+          maskinlæsbart format inden for 90 dage. Herefter slettes data i overensstemmelse med
+          privatlivspolitikken.
+        </p>
+      </section>
+
+      {/* § 4 Tilgængelighed og oppetid */}
+      <section>
+        <h2 className="mb-3 text-[15px] font-semibold text-b-1">§ 4 — Tilgængelighed og oppetid</h2>
+        <p className="text-b-2">
+          ChainHub bestræber sig på en oppetid på 99,5 % pr. kalendermåned, ekskl. planlagt
+          vedligeholdelse. Planlagt vedligeholdelse varsles via e-mail mindst 24 timer i forvejen og
+          placeres så vidt muligt uden for dansk arbejdstid.
+        </p>
+        <p className="mt-2 text-b-2">
+          ChainHub kan ikke garantere uafbrudt adgang og er ikke ansvarlig for nedetid forårsaget af
+          force majeure, tredjepartsinfrastruktur (herunder Supabase, Vercel eller internetudbydere)
+          eller planlagte opdateringer.
+        </p>
+        <p className="mt-2 text-b-2">
+          Vi forbeholder os ret til at foretage opdateringer og ændringer af platformen for at
+          forbedre sikkerhed, funktionalitet og ydeevne. Væsentlige funktionsændringer varsles i
+          rimelig tid.
+        </p>
+      </section>
+
+      {/* § 5 Priser og betaling */}
+      <section>
+        <h2 className="mb-3 text-[15px] font-semibold text-b-1">§ 5 — Priser og betaling</h2>
+        <p className="text-b-2">
+          Priser fremgår af den til enhver tid gældende prisliste eller den individuelle aftale
+          indgået med kunden. Alle priser er ekskl. moms, medmindre andet fremgår eksplicit.
+        </p>
+        <p className="mt-2 text-b-2">
+          Fakturering sker forud for den aftalte abonnementsperiode (månedligt eller årligt). Ved
+          manglende betaling sendes påmindelser, og ChainHub forbeholder sig ret til at suspendere
+          adgang ved fortsat misligholdelse efter 14 dages varsel.
+        </p>
+        <p className="mt-2 text-b-2">
+          Prisændringer varsles med mindst 30 dages skriftligt varsel pr. e-mail. Ved uenighed om
+          varslet prisændring kan kunden opsige abonnementet uden gebyr inden ikrafttrædelse.
+        </p>
+      </section>
+
+      {/* § 6 Ansvarsfraskrivelse */}
+      <section>
+        <h2 className="mb-3 text-[15px] font-semibold text-b-1">§ 6 — Ansvarsfraskrivelse</h2>
+        <p className="text-b-2">
+          Platformen leveres &ldquo;som den er og forefindes&rdquo;. ChainHub er ikke ansvarlig for:
+        </p>
+        <ul className="mt-3 space-y-2 text-b-2">
+          <LegalListItem>
+            Direkte eller indirekte tab som følge af fejl i data registreret af kunden.
+          </LegalListItem>
+          <LegalListItem>
+            Tab opstået som følge af nedetid, forsinkelse eller fejl i tredjepartstjenester.
+          </LegalListItem>
+          <LegalListItem>
+            Indirekte tab, følgeskader, driftstab eller tabt fortjeneste.
+          </LegalListItem>
+          <LegalListItem>
+            Tab som følge af kundens misligholdelse af disse vilkår eller gældende lovgivning.
+          </LegalListItem>
+        </ul>
+        <p className="mt-3 text-b-2">
+          ChainHubs samlede ansvar over for kunden er under alle omstændigheder begrænset til det
+          beløb, kunden har betalt for abonnementet i de 3 måneder forud for skadens opståen.
+        </p>
+      </section>
+
+      {/* § 7 Intellektuel ejendomsret */}
+      <section>
+        <h2 className="mb-3 text-[15px] font-semibold text-b-1">§ 7 — Intellektuel ejendomsret</h2>
+        <p className="text-b-2">
+          ChainHub og dets licensgivere ejer alle rettigheder til platformen, herunder software,
+          design, varemærker og dokumentation. Kunden opnår en ikke-eksklusiv, ikke-overdragelig
+          brugsret til platformen i abonnementsperioden.
+        </p>
+        <p className="mt-2 text-b-2">
+          Kunden giver ChainHub en begrænset ret til at behandle og lagre kundens data i det omfang,
+          det er nødvendigt for at levere servicen.
+        </p>
+      </section>
+
+      {/* § 8 Opsigelse */}
+      <section>
+        <h2 className="mb-3 text-[15px] font-semibold text-b-1">§ 8 — Opsigelse</h2>
+        <p className="text-b-2">
+          <span className="font-medium text-b-1">Kundens opsigelse:</span> Abonnementet kan opsiges
+          med 30 dages varsel til udgangen af en faktureringsperiode. Opsigelse meddeles skriftligt
+          til <LegalMailLink address="kontakt@chainhub.dk" />.
+        </p>
+        <p className="mt-2 text-b-2">
+          <span className="font-medium text-b-1">ChainHubs opsigelse:</span> ChainHub kan opsige
+          aftalen med 30 dages varsel. Ved væsentlig misligholdelse (herunder manglende betaling,
+          brug i strid med vilkårene eller ulovlig aktivitet) kan aftalen ophæves med øjeblikkelig
+          virkning.
+        </p>
+        <p className="mt-2 text-b-2">
+          Ved ophør af abonnementet ophører brugsretten til platformen, og data stilles til rådighed
+          for eksport i 90 dage, hvorefter de slettes.
+        </p>
+      </section>
+
+      {/* § 9 Ændringer af vilkår */}
+      <section>
+        <h2 className="mb-3 text-[15px] font-semibold text-b-1">§ 9 — Ændringer af vilkår</h2>
+        <p className="text-b-2">
+          ChainHub forbeholder sig ret til at ændre disse vilkår. Væsentlige ændringer varsles via
+          e-mail til kundens primære kontakt mindst 30 dage før ikrafttrædelse. Fortsat brug af
+          platformen efter ikrafttrædelsesdatoen anses som accept af de nye vilkår.
+        </p>
+        <p className="mt-2 text-b-2">
+          Den til enhver tid gældende version af vilkårene er tilgængelig på{' '}
+          <a href="/terms" className="text-b-blue-fg no-underline hover:underline">
+            chainhub.dk/terms
           </a>
-          <span className="text-[11px] text-b-3">Senest opdateret: 25. maj 2026</span>
-        </div>
+          . Datoen øverst på siden angiver seneste revision.
+        </p>
+      </section>
 
-        {/* Content */}
-        <div className="w-full max-w-3xl rounded-[6px] border border-b-border bg-b-panel shadow-[0_4px_16px_rgba(15,23,42,0.07)]">
-          <div className="border-b border-b-border bg-b-panel-h px-8 py-6">
-            <h1 className="text-[22px] font-semibold text-b-1" style={{ letterSpacing: '-0.02em' }}>
-              Servicevilkår
-            </h1>
-            <p className="mt-1 text-[13px] text-b-2">
-              Vilkår og betingelser for brug af ChainHub-platformen.
-            </p>
-          </div>
+      {/* § 10 Lovvalg og værneting */}
+      <section>
+        <h2 className="mb-3 text-[15px] font-semibold text-b-1">§ 10 — Lovvalg og værneting</h2>
+        <p className="text-b-2">
+          Disse vilkår er underlagt dansk ret. Eventuelle tvister, der ikke kan løses i mindelighed,
+          afgøres ved Byretten i København som første instans.
+        </p>
+        <p className="mt-2 text-b-2">
+          ChainHub og kunden forpligter sig til i god tro at søge at løse eventuelle uenigheder
+          gennem dialog, inden sagen indbringes for domstolene.
+        </p>
+      </section>
 
-          <div className="space-y-8 px-8 py-8 text-[13px] leading-relaxed text-b-1">
-            {/* § 1 Serviceaftale */}
-            <section>
-              <h2 className="mb-3 text-[15px] font-semibold text-b-1">§ 1 — Serviceaftale</h2>
-              <p className="text-b-2">
-                ChainHub leverer en cloudbaseret platform til kædegrupper og
-                porteføljeorganisationer, der administrerer co-ejede selskaber. Platformen omfatter
-                funktioner til kontraktstyring, governance, sagshåndtering, opgavestyring,
-                personrelationer og finansielt overblik.
-              </p>
-              <p className="mt-2 text-b-2">
-                Disse vilkår regulerer forholdet mellem ChainHub (herefter &ldquo;vi&rdquo; eller
-                &ldquo;ChainHub&rdquo;) og den organisation, der tegner abonnement (herefter
-                &ldquo;kunden&rdquo;). Ved at oprette en konto og bruge platformen accepterer kunden
-                disse vilkår på vegne af sin organisation.
-              </p>
-              <p className="mt-2 text-b-2">
-                Brug af platformen forudsætter et gyldigt abonnement. ChainHub er et B2B-produkt —
-                vilkårene gælder for erhvervsdrivende og ikke til forbrugerbrug.
-              </p>
-            </section>
-
-            {/* § 2 Brugerforpligtelser */}
-            <section>
-              <h2 className="mb-3 text-[15px] font-semibold text-b-1">§ 2 — Brugerforpligtelser</h2>
-              <p className="text-b-2">Som kunde forpligter du og din organisation jer til at:</p>
-              <ul className="mt-3 space-y-2 text-b-2">
-                <li className="flex gap-2">
-                  <span className="mt-0.5 text-b-3">—</span>
-                  <span>
-                    Benytte platformen lovligt og i overensstemmelse med gældende dansk og EU-ret,
-                    herunder GDPR.
-                  </span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="mt-0.5 text-b-3">—</span>
-                  <span>
-                    Sikre, at adgangsoplysninger (brugernavne og adgangskoder) opbevares fortroligt
-                    og ikke deles med uautoriserede personer.
-                  </span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="mt-0.5 text-b-3">—</span>
-                  <span>
-                    Straks orientere ChainHub ved mistanke om uautoriseret adgang til kontoen.
-                  </span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="mt-0.5 text-b-3">—</span>
-                  <span>
-                    Registrere nøjagtige og ajourførte oplysninger i systemet og ikke bevidst
-                    indlæse fejlagtige data.
-                  </span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="mt-0.5 text-b-3">—</span>
-                  <span>
-                    Afstå fra forsøg på reverse engineering, scraping eller anden uautoriseret
-                    udtrækning af data fra platformen.
-                  </span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="mt-0.5 text-b-3">—</span>
-                  <span>
-                    Ikke anvende platformen til at lagre eller behandle ulovligt indhold eller
-                    oplysninger, der krænker tredjeparters rettigheder.
-                  </span>
-                </li>
-              </ul>
-            </section>
-
-            {/* § 3 Dataejerskab */}
-            <section>
-              <h2 className="mb-3 text-[15px] font-semibold text-b-1">§ 3 — Dataejerskab</h2>
-              <p className="text-b-2">
-                <span className="font-medium text-b-1">Kundens data tilhører kunden.</span> Alle
-                oplysninger, du og din organisation registrerer i ChainHub — herunder kontrakter,
-                sager, selskabsdata, personoplysninger og dokumenter — er og forbliver kundens
-                ejendom.
-              </p>
-              <p className="mt-2 text-b-2">
-                ChainHub behandler disse data udelukkende som databehandler på kundens vegne og i
-                overensstemmelse med den indgåede databehandleraftale. Vi anvender ikke kundens data
-                til kommercielle formål, analyse på tværs af kunder eller videregivelse til
-                tredjeparter uden kundens eksplicitte samtykke.
-              </p>
-              <p className="mt-2 text-b-2">
-                Ved opsigelse af abonnementet har kunden ret til at eksportere alle sine data i et
-                maskinlæsbart format inden for 90 dage. Herefter slettes data i overensstemmelse med
-                privatlivspolitikken.
-              </p>
-            </section>
-
-            {/* § 4 Tilgængelighed og oppetid */}
-            <section>
-              <h2 className="mb-3 text-[15px] font-semibold text-b-1">
-                § 4 — Tilgængelighed og oppetid
-              </h2>
-              <p className="text-b-2">
-                ChainHub bestræber sig på en oppetid på 99,5 % pr. kalendermåned, ekskl. planlagt
-                vedligeholdelse. Planlagt vedligeholdelse varsles via e-mail mindst 24 timer i
-                forvejen og placeres så vidt muligt uden for dansk arbejdstid.
-              </p>
-              <p className="mt-2 text-b-2">
-                ChainHub kan ikke garantere uafbrudt adgang og er ikke ansvarlig for nedetid
-                forårsaget af force majeure, tredjepartsinfrastruktur (herunder Supabase, Vercel
-                eller internetudbydere) eller planlagte opdateringer.
-              </p>
-              <p className="mt-2 text-b-2">
-                Vi forbeholder os ret til at foretage opdateringer og ændringer af platformen for at
-                forbedre sikkerhed, funktionalitet og ydeevne. Væsentlige funktionsændringer varsles
-                i rimelig tid.
-              </p>
-            </section>
-
-            {/* § 5 Priser og betaling */}
-            <section>
-              <h2 className="mb-3 text-[15px] font-semibold text-b-1">§ 5 — Priser og betaling</h2>
-              <p className="text-b-2">
-                Priser fremgår af den til enhver tid gældende prisliste eller den individuelle
-                aftale indgået med kunden. Alle priser er ekskl. moms, medmindre andet fremgår
-                eksplicit.
-              </p>
-              <p className="mt-2 text-b-2">
-                Fakturering sker forud for den aftalte abonnementsperiode (månedligt eller årligt).
-                Ved manglende betaling sendes påmindelser, og ChainHub forbeholder sig ret til at
-                suspendere adgang ved fortsat misligholdelse efter 14 dages varsel.
-              </p>
-              <p className="mt-2 text-b-2">
-                Prisændringer varsles med mindst 30 dages skriftligt varsel pr. e-mail. Ved uenighed
-                om varslet prisændring kan kunden opsige abonnementet uden gebyr inden
-                ikrafttrædelse.
-              </p>
-            </section>
-
-            {/* § 6 Ansvarsfraskrivelse */}
-            <section>
-              <h2 className="mb-3 text-[15px] font-semibold text-b-1">§ 6 — Ansvarsfraskrivelse</h2>
-              <p className="text-b-2">
-                Platformen leveres &ldquo;som den er og forefindes&rdquo;. ChainHub er ikke
-                ansvarlig for:
-              </p>
-              <ul className="mt-3 space-y-2 text-b-2">
-                <li className="flex gap-2">
-                  <span className="mt-0.5 text-b-3">—</span>
-                  <span>
-                    Direkte eller indirekte tab som følge af fejl i data registreret af kunden.
-                  </span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="mt-0.5 text-b-3">—</span>
-                  <span>
-                    Tab opstået som følge af nedetid, forsinkelse eller fejl i tredjepartstjenester.
-                  </span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="mt-0.5 text-b-3">—</span>
-                  <span>Indirekte tab, følgeskader, driftstab eller tabt fortjeneste.</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="mt-0.5 text-b-3">—</span>
-                  <span>
-                    Tab som følge af kundens misligholdelse af disse vilkår eller gældende
-                    lovgivning.
-                  </span>
-                </li>
-              </ul>
-              <p className="mt-3 text-b-2">
-                ChainHubs samlede ansvar over for kunden er under alle omstændigheder begrænset til
-                det beløb, kunden har betalt for abonnementet i de 3 måneder forud for skadens
-                opståen.
-              </p>
-            </section>
-
-            {/* § 7 Intellektuel ejendomsret */}
-            <section>
-              <h2 className="mb-3 text-[15px] font-semibold text-b-1">
-                § 7 — Intellektuel ejendomsret
-              </h2>
-              <p className="text-b-2">
-                ChainHub og dets licensgivere ejer alle rettigheder til platformen, herunder
-                software, design, varemærker og dokumentation. Kunden opnår en ikke-eksklusiv,
-                ikke-overdragelig brugsret til platformen i abonnementsperioden.
-              </p>
-              <p className="mt-2 text-b-2">
-                Kunden giver ChainHub en begrænset ret til at behandle og lagre kundens data i det
-                omfang, det er nødvendigt for at levere servicen.
-              </p>
-            </section>
-
-            {/* § 8 Opsigelse */}
-            <section>
-              <h2 className="mb-3 text-[15px] font-semibold text-b-1">§ 8 — Opsigelse</h2>
-              <p className="text-b-2">
-                <span className="font-medium text-b-1">Kundens opsigelse:</span> Abonnementet kan
-                opsiges med 30 dages varsel til udgangen af en faktureringsperiode. Opsigelse
-                meddeles skriftligt til{' '}
-                <a
-                  href="mailto:kontakt@chainhub.dk"
-                  className="text-b-blue-fg no-underline hover:underline"
-                >
-                  kontakt@chainhub.dk
-                </a>
-                .
-              </p>
-              <p className="mt-2 text-b-2">
-                <span className="font-medium text-b-1">ChainHubs opsigelse:</span> ChainHub kan
-                opsige aftalen med 30 dages varsel. Ved væsentlig misligholdelse (herunder manglende
-                betaling, brug i strid med vilkårene eller ulovlig aktivitet) kan aftalen ophæves
-                med øjeblikkelig virkning.
-              </p>
-              <p className="mt-2 text-b-2">
-                Ved ophør af abonnementet ophører brugsretten til platformen, og data stilles til
-                rådighed for eksport i 90 dage, hvorefter de slettes.
-              </p>
-            </section>
-
-            {/* § 9 Ændringer af vilkår */}
-            <section>
-              <h2 className="mb-3 text-[15px] font-semibold text-b-1">§ 9 — Ændringer af vilkår</h2>
-              <p className="text-b-2">
-                ChainHub forbeholder sig ret til at ændre disse vilkår. Væsentlige ændringer varsles
-                via e-mail til kundens primære kontakt mindst 30 dage før ikrafttrædelse. Fortsat
-                brug af platformen efter ikrafttrædelsesdatoen anses som accept af de nye vilkår.
-              </p>
-              <p className="mt-2 text-b-2">
-                Den til enhver tid gældende version af vilkårene er tilgængelig på{' '}
-                <a href="/terms" className="text-b-blue-fg no-underline hover:underline">
-                  chainhub.dk/terms
-                </a>
-                . Datoen øverst på siden angiver seneste revision.
-              </p>
-            </section>
-
-            {/* § 10 Lovvalg og værneting */}
-            <section>
-              <h2 className="mb-3 text-[15px] font-semibold text-b-1">
-                § 10 — Lovvalg og værneting
-              </h2>
-              <p className="text-b-2">
-                Disse vilkår er underlagt dansk ret. Eventuelle tvister, der ikke kan løses i
-                mindelighed, afgøres ved Byretten i København som første instans.
-              </p>
-              <p className="mt-2 text-b-2">
-                ChainHub og kunden forpligter sig til i god tro at søge at løse eventuelle
-                uenigheder gennem dialog, inden sagen indbringes for domstolene.
-              </p>
-            </section>
-
-            {/* § 11 Kontakt */}
-            <section>
-              <h2 className="mb-3 text-[15px] font-semibold text-b-1">§ 11 — Kontakt</h2>
-              <p className="text-b-2">Spørgsmål til disse vilkår kan rettes til:</p>
-              <div className="mt-3 rounded-[4px] border border-b-border bg-b-canvas px-4 py-3 text-[12px] text-b-2">
-                <p className="font-semibold text-b-1">ChainHub</p>
-                <p>
-                  E-mail:{' '}
-                  <a
-                    href="mailto:kontakt@chainhub.dk"
-                    className="text-b-blue-fg no-underline hover:underline"
-                  >
-                    kontakt@chainhub.dk
-                  </a>
-                </p>
-              </div>
-            </section>
-          </div>
-
-          {/* Footer */}
-          <div className="flex items-center justify-between border-t border-b-border bg-b-panel-h px-8 py-4 text-[11px] text-b-2">
-            <a href="/login" className="text-b-blue-fg no-underline hover:underline">
-              ← Tilbage til log ind
-            </a>
-            <span>© 2026 ChainHub</span>
-          </div>
-        </div>
-      </div>
-    </div>
+      {/* § 11 Kontakt */}
+      <section>
+        <h2 className="mb-3 text-[15px] font-semibold text-b-1">§ 11 — Kontakt</h2>
+        <p className="text-b-2">Spørgsmål til disse vilkår kan rettes til:</p>
+        <LegalContactBox>
+          <p className="font-semibold text-b-1">ChainHub</p>
+          <p>
+            E-mail: <LegalMailLink address="kontakt@chainhub.dk" />
+          </p>
+        </LegalContactBox>
+      </section>
+    </LegalPageLayout>
   )
 }

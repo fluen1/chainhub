@@ -14,7 +14,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const session = await auth()
   if (!session) redirect('/login')
 
-  // Subscription gate: udløbne trials og annullerede abonnementer sendes til /billing
+  // Subscription gate: udløbne trials og annullerede abonnementer sendes til /billing.
+  // Pathname hentes fra x-pathname headeren, som middleware sætter pålideligt.
   const org = await prisma.organization.findUnique({
     where: { id: session.user.organizationId },
     select: { plan: true, plan_expires_at: true },
@@ -27,13 +28,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
     if (isExpired || isCanceled) {
       const headersList = await headers()
-      const pathname =
-        headersList.get('x-invoke-path') ??
-        headersList.get('x-matched-path') ??
-        headersList.get('x-next-url') ??
-        ''
-
-      const isAllowed = pathname.includes('/billing') || pathname.includes('/settings')
+      const pathname = headersList.get('x-pathname') ?? ''
+      const isAllowed = pathname.startsWith('/billing') || pathname.startsWith('/settings')
 
       if (!isAllowed) {
         redirect('/billing')

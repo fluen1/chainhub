@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { updateOrganizationOnboarding } from '@/actions/signup'
@@ -28,22 +27,19 @@ const LOCATION_OPTIONS = [
 
 export default function SignupOrganizationPage() {
   const router = useRouter()
-  const { data: session } = useSession()
 
   const [orgName, setOrgName] = useState('')
   const [industry, setIndustry] = useState('')
   const [estimatedLocations, setEstimatedLocations] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const organizationId = (session?.user as { organizationId?: string })?.organizationId ?? ''
-
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     if (!orgName.trim()) return
     setLoading(true)
 
+    // organizationId hentes fra session på server-siden (§7)
     const result = await updateOrganizationOnboarding({
-      organizationId,
       name: orgName.trim(),
       ...(industry ? { industry } : {}),
       ...(estimatedLocations ? { estimatedLocations } : {}),
@@ -181,10 +177,7 @@ export default function SignupOrganizationPage() {
               >
                 {loading ? (
                   <>
-                    <span
-                      className="inline-block h-3.5 w-3.5 rounded-full border-2 border-white/40 border-t-white"
-                      style={{ animation: 'spin 0.7s linear infinite' }}
-                    />
+                    <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
                     Gemmer...
                   </>
                 ) : (
@@ -208,13 +201,6 @@ export default function SignupOrganizationPage() {
           Du kan altid opdatere oplysningerne under Indstillinger.
         </div>
       </div>
-      <style jsx global>{`
-        @keyframes spin {
-          to {
-            transform: rotate(360deg);
-          }
-        }
-      `}</style>
     </div>
   )
 }

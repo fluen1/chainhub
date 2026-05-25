@@ -129,7 +129,7 @@ export async function deleteComment(commentId: string): Promise<ActionResult<nul
     action: 'DELETE',
     resourceType: 'comment',
     resourceId: commentId,
-    resourceCompanyId: comment.case_id ?? undefined,
+    resourceCompanyId: undefined, // Comment har ingen company_id — case/task lookup undgås her
   })
 
   if (comment.task_id) revalidatePath(`/tasks/${comment.task_id}`)

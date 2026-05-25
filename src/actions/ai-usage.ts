@@ -34,7 +34,14 @@ export interface SettingsAIUsage {
  * TODO Plus-tier-mapping når tier-model er aktiveret — indtil da bruges
  * rate_limit_per_day som månedlig proxy (default 1000).
  */
-export async function getSettingsAIUsage(organizationId: string): Promise<SettingsAIUsage> {
+export async function getSettingsAIUsage(): Promise<SettingsAIUsage> {
+  const session = await auth()
+  const organizationId = session?.user?.organizationId
+
+  if (!organizationId) {
+    return { used: 0, max: 1000, percent: 0, threshold: 'none', capUsd: 50, currentUsd: 0 }
+  }
+
   try {
     const now = new Date()
     const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))

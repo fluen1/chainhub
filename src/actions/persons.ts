@@ -318,15 +318,13 @@ export async function deletePerson(personId: string): Promise<ActionResult<void>
   }
 }
 
-export async function searchPersons(
-  query: string,
-  organizationId: string,
-  limit = 10
-): Promise<ActionResult<Person[]>> {
+export async function searchPersons(query: string, limit = 10): Promise<ActionResult<Person[]>> {
   const session = await auth()
   if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
   if (query.length < 2) return { data: [] }
+
+  const organizationId = session.user.organizationId
 
   try {
     const persons = await prisma.person.findMany({
@@ -568,7 +566,9 @@ export interface PersonDetailPageData {
   isAdmin: boolean
 }
 
-export async function getPersonDetailPageData(personId: string): Promise<PersonDetailPageData | null> {
+export async function getPersonDetailPageData(
+  personId: string
+): Promise<PersonDetailPageData | null> {
   const session = await auth()
   if (!session) return null
 

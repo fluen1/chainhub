@@ -115,7 +115,7 @@ export function SettingsPageB({
           ) : section === 'org' && organization ? (
             <OrgSection org={organization} />
           ) : section === 'brugere' ? (
-            <BrugereSection users={users} companies={companies} currentUserId={currentUserId} />
+            <BrugereSection users={users} companies={companies} />
           ) : section === 'ai' ? (
             <AISection usage={aiUsage} />
           ) : section === 'notif' ? (
@@ -160,10 +160,7 @@ function SectionNav({ active }: { active: SettingsSection }) {
 
   return (
     <aside className="sticky top-3 self-start">
-      <div
-        className="mb-1.5 px-2 text-[10px] font-semibold uppercase text-b-2"
-        style={{ letterSpacing: '0.5px' }}
-      >
+      <div className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-[0.5px] text-b-2">
         Indstillinger
       </div>
       <nav className="flex flex-col gap-px">
@@ -251,7 +248,6 @@ function BrugereSection({
 }: {
   users: SettingsUser[]
   companies: Array<{ id: string; name: string }>
-  currentUserId: string
 }) {
   return (
     <>
@@ -597,9 +593,7 @@ function KvRow({
         isLast ? '' : 'border-b border-b-divider'
       }`}
     >
-      <span className="text-[11px] uppercase text-b-2" style={{ letterSpacing: '0.3px' }}>
-        {label}
-      </span>
+      <span className="text-[11px] uppercase tracking-[0.3px] text-b-2">{label}</span>
       <span className="text-[13px] text-b-1">{value}</span>
     </div>
   )

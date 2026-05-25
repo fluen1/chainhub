@@ -625,68 +625,6 @@ export async function addContractParty(
   }
 }
 
-export async function getContractList(options: {
-  companyId?: string
-  organizationId: string
-  userId: string
-  page?: number
-  pageSize?: number
-  expiresWithinDays?: number
-}): Promise<ActionResult<{ contracts: Contract[]; total: number }>> {
-  const session = await auth()
-  if (!session) return { error: 'Din session er udløbet — log ind igen.' }
-
-  const page = options.page ?? 1
-  const pageSize = Math.min(options.pageSize ?? 25, 100)
-  const skip = (page - 1) * pageSize
-
-  const baseWhere = {
-    organization_id: options.organizationId,
-    deleted_at: null,
-    ...(options.companyId ? { company_id: options.companyId } : {}),
-    ...(options.expiresWithinDays
-      ? {
-          expiry_date: {
-            not: null,
-            lte: new Date(Date.now() + options.expiresWithinDays * 24 * 60 * 60 * 1000),
-            gte: new Date(),
-          },
-        }
-      : {}),
-  }
-
-  try {
-    const [contracts, total] = await Promise.all([
-      prisma.contract.findMany({
-        where: baseWhere,
-        orderBy: { expiry_date: 'asc' },
-        skip,
-        take: pageSize,
-      }),
-      prisma.contract.count({ where: baseWhere }),
-    ])
-
-    // Filter contracts brugeren ikke har sensitivity-adgang til
-    const filteredContracts: Contract[] = []
-    for (const contract of contracts) {
-      const hasAccess = await canAccessSensitivity(
-        options.userId,
-        contract.sensitivity,
-        options.organizationId
-      )
-      if (hasAccess) filteredContracts.push(contract)
-    }
-
-    return { data: { contracts: filteredContracts, total } }
-  } catch (err) {
-    captureError(err, {
-      namespace: 'action:getContractList',
-      extra: { userId: options.userId, organizationId: options.organizationId },
-    })
-    return { error: 'Kontraktliste kunne ikke hentes' }
-  }
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Page-data queries (flyt Prisma-kald ud af page.tsx)
 // ─────────────────────────────────────────────────────────────────────────────

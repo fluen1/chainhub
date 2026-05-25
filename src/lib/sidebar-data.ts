@@ -54,7 +54,7 @@ export const getSidebarData = cache(
     }
 
     // "Udløber 30d" strip-KPI: 30 dage fremfor 14 (matcher dashboard-label)
-    const twoWeekEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+    const thirtyDayEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
 
     const [
       companiesCount,
@@ -117,7 +117,7 @@ export const getSidebarData = cache(
               company_id: { in: companyIds },
               deleted_at: null,
               status: 'AKTIV',
-              expiry_date: { not: null, gte: today, lte: twoWeekEnd },
+              expiry_date: { not: null, gte: today, lte: thirtyDayEnd },
             },
           })
         : Promise.resolve(0),
