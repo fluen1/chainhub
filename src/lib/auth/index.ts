@@ -44,7 +44,7 @@ export const authOptions: NextAuthOptions = {
 
         const normalizedEmail = credentials.email.trim().toLowerCase()
 
-        const rateCheck = isLoginRateLimited(normalizedEmail)
+        const rateCheck = await isLoginRateLimited(normalizedEmail)
         if (rateCheck.limited) {
           const minutter = Math.ceil((rateCheck.retryAfterMs ?? 0) / 60000)
           throw new Error(
@@ -84,7 +84,7 @@ export const authOptions: NextAuthOptions = {
         const isPasswordValid = await bcrypt.compare(credentials.password, user.password_hash)
 
         if (!isPasswordValid) {
-          recordFailedLoginAttempt(normalizedEmail)
+          await recordFailedLoginAttempt(normalizedEmail)
           return null
         }
 

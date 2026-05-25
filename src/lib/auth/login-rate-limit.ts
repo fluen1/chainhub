@@ -1,3 +1,5 @@
+import { isRedisRateLimited, recordRedisFailedAttempt } from './redis-rate-limit'
+
 const MAX_ATTEMPTS = 5
 const WINDOW_MS = 15 * 60 * 1000
 
@@ -12,8 +14,15 @@ function normalizeEmail(email: string): string {
   return email.trim().toLowerCase()
 }
 
-/** Returnerer true hvis brugeren er blokeret — tæller IKKE forsøget. */
-export function isLoginRateLimited(email: string): { limited: boolean; retryAfterMs?: number } {
+/** Returnerer true hvis brugeren er blokeret — tæller IKKE forsøget.
+ *  Forsøger Redis først; falder tilbage til in-memory hvis Redis ikke er konfigureret. */
+export async function isLoginRateLimited(
+  email: string
+): Promise<{ limited: boolean; retryAfterMs?: number }> {
+  const redisResult = await isRedisRateLimited(email).catch(() => null)
+  if (redisResult !== null) return redisResult
+
+  // In-memory fallback
   const key = normalizeEmail(email)
   const now = Date.now()
   const entry = attempts.get(key)
@@ -30,8 +39,13 @@ export function isLoginRateLimited(email: string): { limited: boolean; retryAfte
   return { limited: false }
 }
 
-/** Registrerer ét fejlet loginforsøg. Kaldes KUN når password-check fejler. */
-export function recordFailedLoginAttempt(email: string): void {
+/** Registrerer ét fejlet loginforsøg. Kaldes KUN når password-check fejler.
+ *  Forsøger Redis først; falder tilbage til in-memory hvis Redis ikke er konfigureret. */
+export async function recordFailedLoginAttempt(email: string): Promise<void> {
+  const used = await recordRedisFailedAttempt(email).catch(() => false)
+  if (used) return
+
+  // In-memory fallback
   const key = normalizeEmail(email)
   const now = Date.now()
   const entry = attempts.get(key)
@@ -43,7 +57,7 @@ export function recordFailedLoginAttempt(email: string): void {
   }
 }
 
-/** Kun til brug i tests — nulstiller intern state. */
+/** Kun til brug i tests — nulstiller intern in-memory state. */
 export function resetLoginRateLimiter(): void {
   attempts.clear()
 }
