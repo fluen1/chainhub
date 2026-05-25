@@ -1,10 +1,6 @@
-// cache() er Next.js-specifik og ikke tilgængelig i Vitest — fallback til identity
-import { cache as reactCache } from 'react'
-const cache: <T extends (...args: unknown[]) => unknown>(fn: T) => T =
-  typeof reactCache === 'function' ? (reactCache as typeof cache) : (fn) => fn
-import NextAuth, { type NextAuthOptions, type DefaultSession, getServerSession } from 'next-auth'
-import CredentialsProvider from 'next-auth/providers/credentials'
-import GoogleProvider from 'next-auth/providers/google'
+import NextAuth, { type DefaultSession } from 'next-auth'
+import Credentials from 'next-auth/providers/credentials'
+import Google from 'next-auth/providers/google'
 import { PrismaAdapter } from '@auth/prisma-adapter'
 import { prisma } from '@/lib/db'
 import bcrypt from 'bcryptjs'
@@ -24,25 +20,30 @@ declare module 'next-auth' {
   }
 }
 
-declare module 'next-auth/jwt' {
+declare module '@auth/core/jwt' {
   interface JWT {
     id: string
     organizationId: string
   }
 }
 
-export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma) as NextAuthOptions['adapter'],
+const {
+  handlers,
+  auth: _auth,
+  signIn,
+  signOut,
+} = NextAuth({
+  adapter: PrismaAdapter(prisma),
   providers: [
     ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
       ? [
-          GoogleProvider({
+          Google({
             clientId: process.env.GOOGLE_CLIENT_ID,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET,
           }),
         ]
       : []),
-    CredentialsProvider({
+    Credentials({
       name: 'credentials',
       credentials: {
         email: { label: 'Email', type: 'email' },
@@ -53,7 +54,9 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
-        const normalizedEmail = credentials.email.trim().toLowerCase()
+        const email = credentials.email as string
+        const password = credentials.password as string
+        const normalizedEmail = email.trim().toLowerCase()
 
         const rateCheck = await isLoginRateLimited(normalizedEmail)
         if (rateCheck.limited) {
@@ -92,7 +95,7 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
-        const isPasswordValid = await bcrypt.compare(credentials.password, user.password_hash)
+        const isPasswordValid = await bcrypt.compare(password, user.password_hash)
 
         if (!isPasswordValid) {
           await recordFailedLoginAttempt(normalizedEmail)
@@ -189,7 +192,7 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, account }) {
       if (user) {
         if (account?.provider === 'credentials') {
-          token.id = user.id
+          token.id = user.id!
           token.organizationId = user.organizationId
         } else {
           const dbUser = await prisma.user.findFirst({
@@ -221,7 +224,21 @@ export const authOptions: NextAuthOptions = {
     strategy: 'jwt',
     maxAge: 8 * 60 * 60, // 8 hours
   },
-}
+})
+
+// Eksportér handlers og signIn/signOut til brug i route-handler og klient-komponenter
+export { handlers, signIn, signOut }
+
+import type { Session } from 'next-auth'
+
+// auth() — server-side session getter med simpel type.
+// Typed kun som () => Promise<Session | null> (ikke middleware-overloaden)
+// så test-mocks kan bruge vi.mocked(auth).mockResolvedValue(null) uden type-fejl.
+export const auth: () => Promise<Session | null> = _auth as () => Promise<Session | null>
+
+// authMiddleware — den fuldt-typede NextAuth auth-funktion til brug i proxy.ts.
+// Har middleware-overloaden og må IKKE bruges i action-filer eller tests.
+export const authMiddleware = _auth
 
 // Development-mode NEXTAUTH_URL mismatch-detektion.
 // Logges som warning (ikke fejl) så dev-serveren stadig starter uden forhindringer.
@@ -242,7 +259,3 @@ export function warnNextauthUrlMismatch(requestOrigin: string): void {
     // Ugyldig URL i NEXTAUTH_URL — lad NextAuth selv håndtere fejlen
   }
 }
-
-export const auth = cache(() => getServerSession(authOptions))
-
-export default NextAuth(authOptions)
