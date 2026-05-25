@@ -451,23 +451,13 @@ function FakturaSection({ org }: { org: SettingsOrg | null }) {
           isLast
         />
         <PanelFooter>
-          <span>Abonnementsskift og faktura-historik kommer i en senere version</span>
+          <Link
+            href="/billing"
+            className="inline-flex items-center rounded-md bg-b-accent px-4 py-2 text-sm font-medium text-white hover:bg-b-accent/90"
+          >
+            Gå til abonnement
+          </Link>
         </PanelFooter>
-      </Panel>
-
-      <Panel>
-        <PanelHeader title="Under udvikling" />
-        <div className="px-3 py-3">
-          <p className="text-[12px] text-b-3">
-            Følgende funktioner er planlagt til en kommende version:
-          </p>
-          <ul className="mt-2 space-y-1 text-[12px] text-b-3">
-            <li>· Skift abonnementsplan (Free → Plus → Enterprise)</li>
-            <li>· Download faktura-PDF for de seneste 12 måneder</li>
-            <li>· Opdater betalingsmetode og faktureringsadresse</li>
-            <li>· Se forbrug pr. modul og bruger</li>
-          </ul>
-        </div>
       </Panel>
     </>
   )

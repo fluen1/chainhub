@@ -6,6 +6,7 @@ import { getSidebarData, buildSidebarBadges } from '@/lib/sidebar-data'
 import { BShell } from '@/components/layout/b-shell'
 import { GlobalKeyboardShortcuts } from '@/components/layout/global-keyboard-shortcuts'
 import { PosthogIdentify } from '@/components/providers/PosthogIdentify'
+import { TrialBanner } from '@/components/layout/TrialBanner'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
@@ -19,6 +20,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <PosthogIdentify />
       <SkipToMain />
       <GlobalKeyboardShortcuts />
+      <TrialBanner />
       <BShell badges={badges}>{children}</BShell>
     </Providers>
   )
