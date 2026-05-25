@@ -494,7 +494,7 @@ export async function deleteCase(caseId: string): Promise<ActionResult<void>> {
 
   const existingCase = await prisma.case.findFirst({
     where: { id: caseId, organization_id: session.user.organizationId, deleted_at: null },
-    select: { id: true },
+    select: { id: true, sensitivity: true },
   })
   if (!existingCase) return { error: 'Sag ikke fundet' }
 

@@ -177,11 +177,38 @@ export async function getDocumentsPageData(): Promise<DocRow[]> {
 
 const documentReviewInclude = {
   company: { select: { name: true } },
-  extraction: true,
+  extraction: {
+    select: {
+      id: true,
+      detected_type: true,
+      extracted_fields: true,
+      discrepancies: true,
+      field_decisions: true,
+      reviewed_at: true,
+      reviewed_by: true,
+      schema_version: true,
+      prompt_version: true,
+      extraction_status: true,
+    },
+  },
   contract: {
-    include: {
-      parties: { include: { person: true } },
-      ownerships: true,
+    select: {
+      id: true,
+      display_name: true,
+      effective_date: true,
+      expiry_date: true,
+      signed_date: true,
+      notice_period_days: true,
+      type_data: true,
+      parties: {
+        select: {
+          counterparty_name: true,
+          person: { select: { first_name: true, last_name: true } },
+        },
+      },
+      ownerships: {
+        select: { ownership_pct: true },
+      },
     },
   },
   case: { select: { id: true, case_number: true, title: true } },
