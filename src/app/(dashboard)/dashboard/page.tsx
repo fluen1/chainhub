@@ -12,6 +12,7 @@ import { UrgencyPanel } from '@/components/dashboard/b/UrgencyPanel'
 import { HeatmapPanel } from '@/components/dashboard/b/HeatmapPanel'
 import { ActivityPanel } from '@/components/dashboard/b/ActivityPanel'
 import { pickHighestPriorityRole } from '@/lib/dashboard-helpers'
+import { OnboardingPanel } from '@/components/dashboard/b/OnboardingPanel'
 
 export const metadata: Metadata = { title: 'Forside' }
 
@@ -122,6 +123,8 @@ export default async function DashboardPage() {
       />
 
       <Strip cells={stripCells} />
+
+      <OnboardingPanel />
 
       <div className="grid gap-3.5 lg:grid-cols-[2fr_1fr]">
         <UrgencyPanel sections={data.timelineSections} />
