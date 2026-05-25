@@ -16,5 +16,7 @@ export const config = {
     '/persons/:path*',
     '/documents/:path*',
     '/settings/:path*',
+    '/calendar/:path*',
+    '/search/:path*',
   ],
 }
