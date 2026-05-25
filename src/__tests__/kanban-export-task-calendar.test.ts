@@ -1,5 +1,5 @@
 /**
- * phase-n4-fixes.test.ts
+ * kanban-export-task-calendar.test.ts
  *
  * Tests for Phase N4:
  *  1. Kanban mobile tab-bar: KANBAN_MOBILE_TABS dækker alle 4 kolonner
