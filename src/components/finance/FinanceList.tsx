@@ -129,7 +129,7 @@ export function FinanceList({ metrics, years, addButton }: FinanceListProps) {
             <CollapsibleYear
               key={year}
               year={year}
-              metrics={metricsByYear[year]}
+              metrics={metricsByYear[year] ?? []}
               defaultOpen={i === 0}
             />
           ))}

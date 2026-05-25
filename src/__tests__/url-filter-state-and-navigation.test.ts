@@ -150,8 +150,8 @@ describe('Fix 6: Urgency-tasks linker til /tasks/[id]', () => {
     })
     const overdue = sections.find((s) => s.id === 'overdue')!
     expect(overdue.items).toHaveLength(1)
-    expect(overdue.items[0].href).toBe('/tasks/task-abc')
-    expect(overdue.items[0].href).not.toBe('/tasks')
+    expect(overdue.items[0]?.href).toBe('/tasks/task-abc')
+    expect(overdue.items[0]?.href).not.toBe('/tasks')
   })
 
   it('today task href er /tasks/[id], ikke /tasks', () => {

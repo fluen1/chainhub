@@ -105,11 +105,15 @@ export async function loadForExtraction(
         const values = (row.values as (string | number | null)[]).slice(1)
         rows.push(values.map((v) => String(v ?? '')))
       })
-      if (rows.length > 0) {
-        markdown += '| ' + rows[0].join(' | ') + ' |\n'
-        markdown += '| ' + rows[0].map(() => '---').join(' | ') + ' |\n'
+      const headerRow = rows[0]
+      if (rows.length > 0 && headerRow) {
+        markdown += '| ' + headerRow.join(' | ') + ' |\n'
+        markdown += '| ' + headerRow.map(() => '---').join(' | ') + ' |\n'
         for (let i = 1; i < rows.length; i++) {
-          markdown += '| ' + rows[i].join(' | ') + ' |\n'
+          const dataRow = rows[i]
+          if (dataRow) {
+            markdown += '| ' + dataRow.join(' | ') + ' |\n'
+          }
         }
       }
       markdown += '\n'

@@ -66,8 +66,8 @@ describe('compareRuns', () => {
     }
     const result = compareRuns(run1, run2)
     expect(result).toHaveLength(1)
-    expect(result[0].field_name).toBe('name')
-    expect(result[0].values_match).toBe(true)
+    expect(result[0]?.field_name).toBe('name')
+    expect(result[0]?.values_match).toBe(true)
   })
 
   it('detects disagreement', () => {
@@ -79,7 +79,7 @@ describe('compareRuns', () => {
     }
     const result = compareRuns(run1, run2)
     expect(result).toHaveLength(1)
-    expect(result[0].values_match).toBe(false)
+    expect(result[0]?.values_match).toBe(false)
   })
 
   it('skips additional_findings and extraction_warnings', () => {
@@ -100,7 +100,7 @@ describe('compareRuns', () => {
     }
     const result = compareRuns(run1, run1)
     expect(result).toHaveLength(1)
-    expect(result[0].field_name).toBe('name')
+    expect(result[0]?.field_name).toBe('name')
   })
 
   it('handles fields present in only one run', () => {
@@ -127,7 +127,7 @@ describe('compareRuns', () => {
       name: { value: null, claude_confidence: 0.5, source_page: null, source_text: null },
     }
     const result = compareRuns(run1, run2)
-    expect(result[0].values_match).toBe(true)
+    expect(result[0]?.values_match).toBe(true)
   })
 })
 
@@ -238,8 +238,8 @@ describe('computeAllFieldConfidences', () => {
     ]
     const result = computeAllFieldConfidences(fields, agreements, [], [])
     expect(result).toHaveLength(2)
-    expect(result[0].field_name).toBe('name')
-    expect(result[1].field_name).toBe('phone')
+    expect(result[0]?.field_name).toBe('name')
+    expect(result[1]?.field_name).toBe('phone')
   })
 
   it('skips meta-fields', () => {
@@ -254,7 +254,7 @@ describe('computeAllFieldConfidences', () => {
     }
     const result = computeAllFieldConfidences(fields, [], [], [])
     expect(result).toHaveLength(1)
-    expect(result[0].field_name).toBe('name')
+    expect(result[0]?.field_name).toBe('name')
   })
 
   it('handles empty fields', () => {
@@ -273,7 +273,7 @@ describe('computeAllFieldConfidences', () => {
     const sanityChecks = [{ field_name: 'name', passed: true, rule: 'name_length' }]
     const result = computeAllFieldConfidences(fields, agreements, sourceVerifications, sanityChecks)
     expect(result).toHaveLength(1)
-    expect(result[0].confidence).toBeGreaterThanOrEqual(0.95)
+    expect(result[0]?.confidence).toBeGreaterThanOrEqual(0.95)
   })
 
   it('handles partial signal coverage', () => {
@@ -287,6 +287,6 @@ describe('computeAllFieldConfidences', () => {
     ]
     const result = computeAllFieldConfidences(fields, agreements, [], [])
     expect(result).toHaveLength(2)
-    expect(result[0].confidence).toBeGreaterThan(result[1].confidence) // name should have higher confidence
+    expect(result[0]?.confidence).toBeGreaterThan(result[1]?.confidence ?? 0) // name should have higher confidence
   })
 })

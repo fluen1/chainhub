@@ -69,6 +69,7 @@ export default function LeafletMap({ companies }: LeafletMapProps) {
 
       {Array.from(cityGroups.entries()).map(([key, group]) => {
         const first = group[0]
+        if (!first) return null
         const totalIssues = group.reduce((sum, c) => sum + c.openCaseCount, 0)
         const worstStatus = group.reduce<'critical' | 'warning' | 'healthy'>((worst, c) => {
           const rank = { critical: 0, warning: 1, healthy: 2 }

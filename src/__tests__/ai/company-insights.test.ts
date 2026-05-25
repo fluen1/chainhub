@@ -78,7 +78,7 @@ describe('generateCompanyInsights', () => {
     expect(result.ok).toBe(true)
     if (result.ok) {
       expect(result.data.alerts).toHaveLength(1)
-      expect(result.data.alerts[0].severity).toBe('critical')
+      expect(result.data.alerts[0]?.severity).toBe('critical')
       expect(result.data.insight?.headline_md).toContain('ejeraftalen')
       expect(result.cost_usd).toBe(0.0123)
       expect(result.model_name).toBe('gpt-5-nano')

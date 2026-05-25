@@ -67,7 +67,7 @@ describe('Fix 3: KEY_PERSON_ROLES matcher faktiske DB rolle-strings', () => {
     ]
     const result = selectKeyPersons(candidates)
     expect(result).toHaveLength(1)
-    expect(result[0].role).toBe('direktoer')
+    expect(result[0]?.role).toBe('direktoer')
   })
 
   it('selectKeyPersons matcher leder-rollen (DB-streng)', async () => {
@@ -82,7 +82,7 @@ describe('Fix 3: KEY_PERSON_ROLES matcher faktiske DB rolle-strings', () => {
     ]
     const result = selectKeyPersons(candidates)
     expect(result).toHaveLength(1)
-    expect(result[0].role).toBe('leder')
+    expect(result[0]?.role).toBe('leder')
   })
 })
 

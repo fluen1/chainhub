@@ -101,9 +101,10 @@ export const KEY_PERSON_ROLES = [
 
 export function pickHighestPriorityRole(roleRows: Array<{ role: string }>): string {
   if (roleRows.length === 0) return 'GROUP_READONLY'
-  return [...roleRows].sort(
+  const sorted = [...roleRows].sort(
     (a, b) => (ROLE_PRIORITY[b.role] ?? 0) - (ROLE_PRIORITY[a.role] ?? 0)
-  )[0].role
+  )
+  return sorted[0]?.role ?? 'GROUP_READONLY'
 }
 
 export function sectionsForRole(role: string): Set<SectionKey> {

@@ -107,7 +107,7 @@ describe('CASE_TRANSITIONS — gyldige sagsstatus-skift (inline StatusPill)', ()
     // NY er udgangspunkt, AKTIV er eneste option — dropdown viser netop 1 valg
     const options = CASE_TRANSITIONS['NY']
     expect(options).toHaveLength(1)
-    expect(options[0]).toBe('AKTIV')
+    expect(options?.[0]).toBe('AKTIV')
   })
 })
 

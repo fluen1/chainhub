@@ -98,7 +98,7 @@ function getNextStatus(currentStatus: string, direction: 'left' | 'right'): Task
   if (idx === -1) return null
   const nextIdx = direction === 'right' ? idx + 1 : idx - 1
   if (nextIdx < 0 || nextIdx >= STATUS_ORDER.length) return null
-  return STATUS_ORDER[nextIdx]
+  return STATUS_ORDER[nextIdx] ?? null
 }
 
 // ── Tests ────────────────────────────────────────────────────────────────────
@@ -118,8 +118,9 @@ describe('Kanban — drag-drop event-flow', () => {
 
     // Optimistisk update sker FØR server-kald
     const updatedTasks = applyOptimisticMove(tasks, task.id, targetStatus)
-    expect(updatedTasks[0].rawStatus).toBe('AKTIV_TASK')
-    expect(updatedTasks[0].status).toBe('I gang')
+    const updatedTask0 = updatedTasks[0]
+    expect(updatedTask0?.rawStatus).toBe('AKTIV_TASK')
+    expect(updatedTask0?.status).toBe('I gang')
 
     // Kald server-action
     await mockUpdateTaskStatus({ taskId: task.id, status: targetStatus })
@@ -134,14 +135,14 @@ describe('Kanban — drag-drop event-flow', () => {
 
     // Optimistisk: opdater til AFVENTER
     const optimistic = applyOptimisticMove(originalTasks, task.id, 'AFVENTER')
-    expect(optimistic[0].rawStatus).toBe('AFVENTER')
+    expect(optimistic[0]?.rawStatus).toBe('AFVENTER')
 
     // Server returnerer fejl → rollback til original
     const result = await mockUpdateTaskStatus({ taskId: task.id, status: 'AFVENTER' })
     expect('error' in result).toBe(true)
 
     // Rollback verificeres ved at bruge originalTasks
-    expect(originalTasks[0].rawStatus).toBe('NY')
+    expect(originalTasks[0]?.rawStatus).toBe('NY')
   })
 
   it('ignorerer drop hvis task allerede har målet status (ingen unødige server-kald)', async () => {
@@ -260,10 +261,10 @@ describe('Kanban — optimistisk UI rollback', () => {
   it('optimistisk update ændrer rawStatus lokalt straks', () => {
     const tasks = [makeTask({ id: 'opt-1', rawStatus: 'NY' })]
     const updated = applyOptimisticMove(tasks, 'opt-1', 'AFVENTER')
-    expect(updated[0].rawStatus).toBe('AFVENTER')
-    expect(updated[0].status).toBe('Afventer')
+    expect(updated[0]?.rawStatus).toBe('AFVENTER')
+    expect(updated[0]?.status).toBe('Afventer')
     // Original er uændret (immutabel)
-    expect(tasks[0].rawStatus).toBe('NY')
+    expect(tasks[0]?.rawStatus).toBe('NY')
   })
 
   it('rollback gendanner original ved fejl fra server', async () => {
@@ -273,13 +274,13 @@ describe('Kanban — optimistisk UI rollback', () => {
     const optimistic = applyOptimisticMove(original, 'rb-1', 'LUKKET')
 
     // Vis optimistisk state
-    expect(optimistic[0].rawStatus).toBe('LUKKET')
+    expect(optimistic[0]?.rawStatus).toBe('LUKKET')
 
     // Server fejler
     const res = await mockUpdateTaskStatus({ taskId: 'rb-1', status: 'LUKKET' })
     if ('error' in res) {
       // UI skal rulle tilbage til original
-      expect(original[0].rawStatus).toBe('AKTIV_TASK')
+      expect(original[0]?.rawStatus).toBe('AKTIV_TASK')
     }
   })
 
@@ -291,7 +292,7 @@ describe('Kanban — optimistisk UI rollback', () => {
 
     const res = await mockUpdateTaskStatus({ taskId: 'ok-1', status: 'AFVENTER' })
     expect('error' in res).toBe(false)
-    expect(optimistic[0].rawStatus).toBe('AFVENTER')
+    expect(optimistic[0]?.rawStatus).toBe('AFVENTER')
   })
 })
 

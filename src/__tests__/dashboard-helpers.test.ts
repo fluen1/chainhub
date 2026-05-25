@@ -181,7 +181,7 @@ describe('buildInlineKpis', () => {
     const kpis = buildInlineKpis('GROUP_FINANCE', baseData)
     expect(kpis).toHaveLength(4)
     expect(kpis.map((k) => k.label)).toEqual(['Omsætning', 'EBITDA', 'Margin', 'Forfaldne'])
-    expect(kpis[2].value).toBe('20.0%')
+    expect(kpis[2]?.value).toBe('20.0%')
   })
 
   it('returnerer default-KPIs for GROUP_OWNER og ukendt rolle', () => {
@@ -245,8 +245,8 @@ describe('buildTimelineSections', () => {
     })
     const overdue = sections.find((s) => s.id === 'overdue')!
     expect(overdue.items).toHaveLength(1)
-    expect(overdue.items[0].title).toBe('Kontrakt deadline')
-    expect(overdue.items[0].color).toBe('red')
+    expect(overdue.items[0]?.title).toBe('Kontrakt deadline')
+    expect(overdue.items[0]?.color).toBe('red')
   })
 
   it('placerer besøg i dag i today-sektionen', () => {
@@ -263,7 +263,7 @@ describe('buildTimelineSections', () => {
     })
     const todaySection = sections.find((s) => s.id === 'today')!
     expect(todaySection.items).toHaveLength(1)
-    expect(todaySection.items[0].color).toBe('blue')
+    expect(todaySection.items[0]?.color).toBe('blue')
   })
 
   it('placerer udløbende kontrakter i thisweek-sektionen', () => {
@@ -280,7 +280,7 @@ describe('buildTimelineSections', () => {
     })
     const thisweek = sections.find((s) => s.id === 'thisweek')!
     expect(thisweek.items).toHaveLength(1)
-    expect(thisweek.items[0].title).toBe('Lejekontrakt')
+    expect(thisweek.items[0]?.title).toBe('Lejekontrakt')
   })
 })
 

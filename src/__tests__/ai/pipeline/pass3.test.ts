@@ -77,9 +77,9 @@ describe('Pass 3: Source verification', () => {
       }
       const results = verifySourceAttribution(documentText, fields)
       expect(results).toHaveLength(1)
-      expect(results[0].field_name).toBe('effective_date')
-      expect(results[0].verified).toBe(true)
-      expect(results[0].match_score).toBe(1.0)
+      expect(results[0]?.field_name).toBe('effective_date')
+      expect(results[0]?.verified).toBe(true)
+      expect(results[0]?.match_score).toBe(1.0)
     })
 
     it('does not verify field with poor source_text match', () => {
@@ -92,8 +92,8 @@ describe('Pass 3: Source verification', () => {
         },
       }
       const results = verifySourceAttribution(documentText, fields)
-      expect(results[0].verified).toBe(false)
-      expect(results[0].match_score).toBeLessThan(0.85)
+      expect(results[0]?.verified).toBe(false)
+      expect(results[0]?.match_score).toBeLessThan(0.85)
     })
 
     it('returns not verified when source_text is null', () => {
@@ -106,8 +106,8 @@ describe('Pass 3: Source verification', () => {
         },
       }
       const results = verifySourceAttribution(documentText, fields)
-      expect(results[0].verified).toBe(false)
-      expect(results[0].match_score).toBe(0)
+      expect(results[0]?.verified).toBe(false)
+      expect(results[0]?.match_score).toBe(0)
     })
 
     it('returns not verified when document text is empty', () => {
@@ -120,8 +120,8 @@ describe('Pass 3: Source verification', () => {
         },
       }
       const results = verifySourceAttribution('', fields)
-      expect(results[0].verified).toBe(false)
-      expect(results[0].match_score).toBe(0)
+      expect(results[0]?.verified).toBe(false)
+      expect(results[0]?.match_score).toBe(0)
     })
 
     it('filters out additional_findings and extraction_warnings fields', () => {

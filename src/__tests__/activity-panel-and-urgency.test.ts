@@ -60,7 +60,7 @@ describe('getRecentActivity — created_at WHERE-klausul (since-param)', () => {
 
     await getRecentActivity([COMPANY_UUID])
 
-    const callArg = vi.mocked(prisma.auditLog.findMany).mock.calls[0][0] as {
+    const callArg = vi.mocked(prisma.auditLog.findMany).mock.calls[0]?.[0] as {
       where: { created_at: { gte: Date } }
     }
     const usedSince = callArg.where.created_at.gte
@@ -93,8 +93,8 @@ describe('getRecentActivity — created_at WHERE-klausul (since-param)', () => {
 
     const result = await getRecentActivity([COMPANY_UUID], new Date(0))
 
-    expect(result[0].resource_type).toBe('contract')
-    expect(result[0].resource_id).toBe('contract-99')
+    expect(result[0]?.resource_type).toBe('contract')
+    expect(result[0]?.resource_id).toBe('contract-99')
   })
 })
 

@@ -130,6 +130,7 @@ export function KanbanView({
       const nextIdx = direction === 'right' ? currentIdx + 1 : currentIdx - 1
       if (nextIdx < 0 || nextIdx >= KANBAN_STATUS_ORDER.length) return
       const newStatus = KANBAN_STATUS_ORDER[nextIdx]
+      if (!newStatus) return
       void moveTask(taskId, newStatus)
     },
     [localTasks, moveTask]

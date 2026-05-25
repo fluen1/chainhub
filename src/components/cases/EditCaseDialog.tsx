@@ -32,11 +32,11 @@ interface Props {
 }
 
 const SENSITIVITY_OPTIONS: Array<{ value: SensitivityLevel; label: string }> = [
-  { value: 'PUBLIC', label: SENSITIVITY_LABELS['PUBLIC'] },
-  { value: 'STANDARD', label: SENSITIVITY_LABELS['STANDARD'] },
-  { value: 'INTERN', label: SENSITIVITY_LABELS['INTERN'] },
-  { value: 'FORTROLIG', label: SENSITIVITY_LABELS['FORTROLIG'] },
-  { value: 'STRENGT_FORTROLIG', label: SENSITIVITY_LABELS['STRENGT_FORTROLIG'] },
+  { value: 'PUBLIC', label: SENSITIVITY_LABELS['PUBLIC'] ?? 'PUBLIC' },
+  { value: 'STANDARD', label: SENSITIVITY_LABELS['STANDARD'] ?? 'STANDARD' },
+  { value: 'INTERN', label: SENSITIVITY_LABELS['INTERN'] ?? 'INTERN' },
+  { value: 'FORTROLIG', label: SENSITIVITY_LABELS['FORTROLIG'] ?? 'FORTROLIG' },
+  { value: 'STRENGT_FORTROLIG', label: SENSITIVITY_LABELS['STRENGT_FORTROLIG'] ?? 'STRENGT_FORTROLIG' },
 ]
 
 interface OrgUser {

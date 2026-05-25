@@ -110,11 +110,15 @@ function buildCalDays(year: number, month: number) {
 }
 
 function formatAgendaDate(dateString: string): string {
-  const [y, m, d] = dateString.split('-').map(Number)
+  const parts = dateString.split('-').map(Number)
+  const y = parts[0] ?? 0
+  const m = parts[1] ?? 1
+  const d = parts[2] ?? 1
   const dow = new Date(y, m - 1, d).getDay()
   const dowEU = dow === 0 ? 6 : dow - 1
-  const cap = WEEKDAYS_DA_FULL[dowEU][0].toUpperCase() + WEEKDAYS_DA_FULL[dowEU].slice(1)
-  return `${cap} ${d}. ${MONTH_NAMES_DA_LOWER[m - 1]}`
+  const weekday = WEEKDAYS_DA_FULL[dowEU] ?? ''
+  const cap = weekday.length > 0 ? weekday[0]!.toUpperCase() + weekday.slice(1) : ''
+  return `${cap} ${d}. ${MONTH_NAMES_DA_LOWER[m - 1] ?? ''}`
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -439,8 +443,10 @@ function RightPanel({ upcoming }: { upcoming: CalendarEvent[] }) {
           <div className="px-3 py-3 text-center text-[12px] text-b-3">Ingen kommende events</div>
         ) : (
           upcoming.map((ev, i) => {
-            const [, m, d] = ev.date.split('-').map(Number)
-            const shortDate = `${d}. ${MONTH_NAMES_DA_SHORT[m - 1]}`
+            const evParts = ev.date.split('-').map(Number)
+            const evM = evParts[1] ?? 1
+            const evD = evParts[2] ?? 1
+            const shortDate = `${evD}. ${MONTH_NAMES_DA_SHORT[evM - 1] ?? ''}`
             const c = colorForType(ev.type)
             return (
               <div

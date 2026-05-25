@@ -9,6 +9,22 @@ import type {
 } from './types'
 import { ClaudeClientError } from './types'
 
+interface OpenAIResponsesOutput {
+  id: string
+  model: string
+  output_text?: string
+  output: Array<{
+    type: string
+    content?: Array<{ type: string; text?: string; refusal?: string }>
+  }>
+  usage: {
+    input_tokens: number
+    output_tokens: number
+    input_tokens_details?: { cached_tokens?: number }
+  }
+  status?: string
+}
+
 const log = createLogger('openai-direct-client')
 
 export class OpenAIDirectClient implements ClaudeClient {
@@ -26,15 +42,12 @@ export class OpenAIDirectClient implements ClaudeClient {
 
     try {
       const responsesPayload = this.buildResponsesPayload(request)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const response: any = await this.client.responses.create(responsesPayload as any)
+      const response = (await this.client.responses.create(
+        responsesPayload as Parameters<typeof this.client.responses.create>[0]
+      )) as OpenAIResponsesOutput
 
       const latencyMs = Date.now() - start
-      const usage = response.usage as {
-        input_tokens: number
-        output_tokens: number
-        input_tokens_details?: { cached_tokens?: number }
-      }
+      const usage = response.usage
       const cachedTokens = usage.input_tokens_details?.cached_tokens ?? 0
 
       log.info(
@@ -78,13 +91,15 @@ export class OpenAIDirectClient implements ClaudeClient {
     // mapper det til OpenAI structured outputs.
     if (request.tools && request.tools.length > 0) {
       const tool = request.tools[0]
-      payload.text = {
-        format: {
-          type: 'json_schema',
-          name: tool.name,
-          schema: normalizeSchemaForStrict(tool.input_schema),
-          strict: true,
-        },
+      if (tool) {
+        payload.text = {
+          format: {
+            type: 'json_schema',
+            name: tool.name,
+            schema: normalizeSchemaForStrict(tool.input_schema),
+            strict: true,
+          },
+        }
       }
     }
 
@@ -99,15 +114,10 @@ export class OpenAIDirectClient implements ClaudeClient {
   }
 
   private buildClaudeResponse(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    response: any,
+    response: OpenAIResponsesOutput,
     request: ClaudeRequest
   ): ClaudeResponse {
-    const usage = response.usage as {
-      input_tokens: number
-      output_tokens: number
-      input_tokens_details?: { cached_tokens?: number }
-    }
+    const usage = response.usage
     const cachedTokens = usage.input_tokens_details?.cached_tokens ?? 0
 
     const tool = request.tools?.[0]
@@ -196,8 +206,7 @@ function mapContent(
   })
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function extractOutputText(response: any): string {
+function extractOutputText(response: OpenAIResponsesOutput): string {
   if (typeof response.output_text === 'string' && response.output_text.length > 0) {
     return response.output_text
   }
@@ -216,8 +225,7 @@ function extractOutputText(response: any): string {
   return ''
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function extractRefusal(response: any): string | null {
+function extractRefusal(response: OpenAIResponsesOutput): string | null {
   if (!Array.isArray(response.output)) return null
   for (const item of response.output) {
     if (item.type === 'message' && Array.isArray(item.content)) {

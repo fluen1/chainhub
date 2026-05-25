@@ -73,9 +73,9 @@ describe('Pass 2: Schema extraction', () => {
 
     const result = await extractWithSchema(testContent, mockSchema, client)
 
-    expect(result.fields.company_name.value).toBe('Test ApS')
-    expect(result.fields.company_name.claude_confidence).toBe(0.95)
-    expect(result.fields.company_name.source_page).toBe(1)
+    expect(result.fields.company_name?.value).toBe('Test ApS')
+    expect(result.fields.company_name?.claude_confidence).toBe(0.95)
+    expect(result.fields.company_name?.source_page).toBe(1)
     expect(result.input_tokens).toBe(1000)
     expect(result.output_tokens).toBe(200)
   })
@@ -122,8 +122,8 @@ describe('Pass 2: Schema extraction', () => {
     }
 
     const result = await extractWithSchema(testContent, mockSchema, client)
-    expect(result.fields.company_name.value).toBe('Direct Value')
-    expect(result.fields.company_name.claude_confidence).toBe(0.5)
+    expect(result.fields.company_name?.value).toBe('Direct Value')
+    expect(result.fields.company_name?.claude_confidence).toBe(0.5)
   })
 
   it('passes temperature option to Claude', async () => {
@@ -172,9 +172,9 @@ describe('Pass 2: Schema extraction', () => {
     }
 
     const result = await extractWithSchema(testContent, mockSchema, client)
-    expect(result.fields.company_name.value).toBeNull()
-    expect(result.fields.company_name.claude_confidence).toBe(0)
-    expect(result.fields.company_name.source_page).toBeNull()
+    expect(result.fields.company_name?.value).toBeNull()
+    expect(result.fields.company_name?.claude_confidence).toBe(0)
+    expect(result.fields.company_name?.source_page).toBeNull()
   })
 
   it('sender korrekt tool_choice til Claude', async () => {
@@ -234,8 +234,8 @@ describe('Pass 2: Schema extraction', () => {
 
     const result = await extractWithSchema(testContent, mockSchema, client)
     expect(result.additional_findings).toHaveLength(1)
-    expect(result.additional_findings[0].finding).toBe('Usædvanlig klausul fundet')
+    expect(result.additional_findings[0]?.finding).toBe('Usædvanlig klausul fundet')
     expect(result.extraction_warnings).toHaveLength(1)
-    expect(result.extraction_warnings[0].severity).toBe('low')
+    expect(result.extraction_warnings[0]?.severity).toBe('low')
   })
 })

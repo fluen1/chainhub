@@ -77,7 +77,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         const user = matchingUsers[0]
-        if (!user.password_hash) {
+        if (!user || !user.password_hash) {
           return null
         }
 

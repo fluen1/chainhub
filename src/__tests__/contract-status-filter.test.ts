@@ -100,7 +100,7 @@ describe('filterByStatus — matches Udløber 30d korrekt', () => {
   it('statusFil=Udløber 30d matcher kun kontrakt med udlobDays=15', () => {
     const result = filterByStatus(contracts, 'Udløber 30d')
     expect(result).toHaveLength(1)
-    expect(result[0].udlobDays).toBe(15)
+    expect(result[0]?.udlobDays).toBe(15)
   })
 
   it('statusFil=Aktiv matcher kontrakter med status=Aktiv (alle 3 AKTIV rows)', () => {

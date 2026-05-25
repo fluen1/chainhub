@@ -75,9 +75,9 @@ describe('getRecentActivity', () => {
     const result = await getRecentActivity(['aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'])
 
     expect(result).toHaveLength(1)
-    expect(result[0].who).toBe('Philip')
-    expect(result[0].action).toBe('oprettede')
-    expect(result[0].target).toBe('Kontrakt')
+    expect(result[0]?.who).toBe('Philip')
+    expect(result[0]?.action).toBe('oprettede')
+    expect(result[0]?.target).toBe('Kontrakt')
   })
 })
 

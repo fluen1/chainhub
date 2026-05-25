@@ -77,7 +77,7 @@ describe('Kanban mobile tab-bar — KANBAN_MOBILE_TABS', () => {
   it('default-valg er NY (første tab)', () => {
     // Initialt selectedKanbanStatus = 'NY' — første kolonne vises
     const defaultTab = KANBAN_MOBILE_TABS[0]
-    expect(defaultTab.value).toBe('NY')
+    expect(defaultTab?.value).toBe('NY')
   })
 })
 

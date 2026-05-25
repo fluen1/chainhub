@@ -92,9 +92,9 @@ describe('OnboardingPanel — step-progression', () => {
 
   it('1/3: hasCompany=true → første step done', () => {
     const steps = buildSteps({ ...BASE, hasCompany: true, completedCount: 1 })
-    expect(steps[0].done).toBe(true)
-    expect(steps[1].done).toBe(false)
-    expect(steps[2].done).toBe(false)
+    expect(steps[0]?.done).toBe(true)
+    expect(steps[1]?.done).toBe(false)
+    expect(steps[2]?.done).toBe(false)
   })
 
   it('2/3: hasCompany + hasContract done', () => {
@@ -104,9 +104,9 @@ describe('OnboardingPanel — step-progression', () => {
       hasContract: true,
       completedCount: 2,
     })
-    expect(steps[0].done).toBe(true)
-    expect(steps[1].done).toBe(true)
-    expect(steps[2].done).toBe(false)
+    expect(steps[0]?.done).toBe(true)
+    expect(steps[1]?.done).toBe(true)
+    expect(steps[2]?.done).toBe(false)
   })
 
   it('3/3: alle steps done', () => {
@@ -122,8 +122,8 @@ describe('OnboardingPanel — step-progression', () => {
 
   it('links peger på korrekte ruter', () => {
     const steps = buildSteps(BASE)
-    expect(steps[0].href).toBe('/companies/new')
-    expect(steps[1].href).toBe('/contracts/new')
-    expect(steps[2].href).toBe('/settings?section=brugere')
+    expect(steps[0]?.href).toBe('/companies/new')
+    expect(steps[1]?.href).toBe('/contracts/new')
+    expect(steps[2]?.href).toBe('/settings?section=brugere')
   })
 })

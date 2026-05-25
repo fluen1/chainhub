@@ -376,7 +376,7 @@ describe('selectKeyPersons', () => {
     ]
     const result = selectKeyPersons(candidates)
     expect(result).toHaveLength(1)
-    expect(result[0].role).toBe('direktoer')
+    expect(result[0]?.role).toBe('direktoer')
   })
 
   it('sorterer efter rolle-hierarki (direktoer foer bestyrelsesformand foer leder)', () => {
@@ -415,8 +415,8 @@ describe('selectKeyPersons', () => {
       },
     ]
     const result = selectKeyPersons(candidates)
-    expect(result[0].person.first_name).toBe('Gammel')
-    expect(result[1].person.first_name).toBe('Ny')
+    expect(result[0]?.person.first_name).toBe('Gammel')
+    expect(result[1]?.person.first_name).toBe('Ny')
   })
 
   it('begraenser til maks 3 selv ved flere kandidater', () => {

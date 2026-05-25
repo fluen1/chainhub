@@ -44,9 +44,12 @@ export async function geocodeAddress(
     const results: NominatimResult[] = await response.json()
     if (results.length === 0) return null
 
+    const firstResult = results[0]
+    if (!firstResult) return null
+
     return {
-      latitude: parseFloat(results[0].lat),
-      longitude: parseFloat(results[0].lon),
+      latitude: parseFloat(firstResult.lat),
+      longitude: parseFloat(firstResult.lon),
     }
   } catch {
     return null

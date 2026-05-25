@@ -41,47 +41,47 @@ describe('Pass 4: Sanity checks', () => {
     const fields = { ownership_percentage: makeField(51) }
     const results = runSanityChecks(fields, [ownershipRule])
     expect(results).toHaveLength(1)
-    expect(results[0].passed).toBe(true)
-    expect(results[0].message).toBeUndefined()
+    expect(results[0]?.passed).toBe(true)
+    expect(results[0]?.message).toBeUndefined()
   })
 
   it('fails ownership percentage over 100', () => {
     const fields = { ownership_percentage: makeField(150) }
     const results = runSanityChecks(fields, [ownershipRule])
-    expect(results[0].passed).toBe(false)
-    expect(results[0].message).toBe('Ejerandel skal være mellem 0 og 100')
-    expect(results[0].rule).toBe('Ejerandel skal være mellem 0 og 100')
+    expect(results[0]?.passed).toBe(false)
+    expect(results[0]?.message).toBe('Ejerandel skal være mellem 0 og 100')
+    expect(results[0]?.rule).toBe('Ejerandel skal være mellem 0 og 100')
   })
 
   it('fails ownership percentage of 0', () => {
     const fields = { ownership_percentage: makeField(0) }
     const results = runSanityChecks(fields, [ownershipRule])
-    expect(results[0].passed).toBe(false)
+    expect(results[0]?.passed).toBe(false)
   })
 
   it('passes when field value is null (optional field)', () => {
     const fields = { ownership_percentage: makeField(null) }
     const results = runSanityChecks(fields, [ownershipRule])
-    expect(results[0].passed).toBe(true)
+    expect(results[0]?.passed).toBe(true)
   })
 
   it('passes when field is missing from extraction result', () => {
     // Felt findes ikke i fields — sanity check skal passere (ikke blokere)
     const fields: Record<string, ExtractedField> = {}
     const results = runSanityChecks(fields, [ownershipRule])
-    expect(results[0].passed).toBe(true)
+    expect(results[0]?.passed).toBe(true)
   })
 
   it('passes valid ISO date string', () => {
     const fields = { effective_date: makeField('2024-01-15') }
     const results = runSanityChecks(fields, [dateNotInPastRule])
-    expect(results[0].passed).toBe(true)
+    expect(results[0]?.passed).toBe(true)
   })
 
   it('fails invalid date string', () => {
     const fields = { effective_date: makeField('ikke-en-dato') }
     const results = runSanityChecks(fields, [dateNotInPastRule])
-    expect(results[0].passed).toBe(false)
+    expect(results[0]?.passed).toBe(false)
   })
 
   it('runs cross-field validation correctly', () => {
@@ -90,7 +90,7 @@ describe('Pass 4: Sanity checks', () => {
       exit_date: makeField('2029-12-31'),
     }
     const results = runSanityChecks(fields, [crossFieldRule])
-    expect(results[0].passed).toBe(true)
+    expect(results[0]?.passed).toBe(true)
   })
 
   it('fails cross-field rule when exit date is before effective date', () => {
@@ -99,8 +99,8 @@ describe('Pass 4: Sanity checks', () => {
       exit_date: makeField('2020-01-01'),
     }
     const results = runSanityChecks(fields, [crossFieldRule])
-    expect(results[0].passed).toBe(false)
-    expect(results[0].message).toBe('Exitdato skal være efter ikrafttrædelsesdato')
+    expect(results[0]?.passed).toBe(false)
+    expect(results[0]?.message).toBe('Exitdato skal være efter ikrafttrædelsesdato')
   })
 
   it('returns results for all rules', () => {

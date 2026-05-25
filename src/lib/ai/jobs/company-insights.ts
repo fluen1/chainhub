@@ -217,7 +217,7 @@ export async function generateCompanyInsights(
 
 function extractJson(text: string): string | null {
   const fenceMatch = text.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/)
-  if (fenceMatch) return fenceMatch[1]
+  if (fenceMatch) return fenceMatch[1] ?? null
   const first = text.indexOf('{')
   const last = text.lastIndexOf('}')
   if (first !== -1 && last > first) return text.slice(first, last + 1)

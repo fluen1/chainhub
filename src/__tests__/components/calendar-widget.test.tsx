@@ -31,7 +31,8 @@ const events: CalendarEvent[] = [
   },
 ]
 
-const upcoming: CalendarEvent[] = [events[0], events[1]]
+const [ev0, ev1, ev2] = events
+const upcoming: CalendarEvent[] = [ev0!, ev1!]
 
 describe('CalendarWidget', () => {
   it('viser månedsnavn og år', () => {
@@ -51,7 +52,7 @@ describe('CalendarWidget', () => {
   })
 
   it('viser AI-badge for aiExtracted events', () => {
-    render(<CalendarWidget events={events} upcoming={[events[2]]} today="2026-04-11" />)
+    render(<CalendarWidget events={events} upcoming={[ev2!]} today="2026-04-11" />)
     expect(screen.getByText('AI')).toBeInTheDocument()
   })
 
