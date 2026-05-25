@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, useEffect, useTransition } from 'react'
+import { useMemo, useState, useTransition } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { ExportButton } from '@/components/ui/export-button'
 import {
@@ -119,6 +119,10 @@ function shortSens(sens: string): string {
 interface ContractsListBProps {
   contracts: ContractRow[]
   totalContracts: number
+  /** Aktuel side (server-side) */
+  page: number
+  /** Sidestørrelse (server-side) */
+  pageSize: number
 }
 
 export function ContractsListB(props: ContractsListBProps) {
@@ -161,28 +165,27 @@ function EmptyContractsView() {
   )
 }
 
-function ContractsListBContent({ contracts, totalContracts }: ContractsListBProps) {
+function ContractsListBContent({ contracts, totalContracts, page, pageSize }: ContractsListBProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [, startTransition] = useTransition()
 
-  // Læs initial state fra URL-params
-  const [viewMode, setViewMode] = useState<ViewMode>(
-    () => (searchParams.get('view') as ViewMode) || 'flat'
+  // Læs filter-state fra URL-params (server-side pagination: URL er kilden til sandhed)
+  const viewMode = (searchParams.get('view') as ViewMode) || 'flat'
+  const search = searchParams.get('search') ?? ''
+  const statusFil = normalizeStatusParam(
+    searchParams.get('status'),
+    searchParams.get('expiresWithin')
   )
-  const [search, setSearch] = useState(() => searchParams.get('search') ?? '')
-  const [statusFil, setStatusFil] = useState(() =>
-    normalizeStatusParam(searchParams.get('status'), searchParams.get('expiresWithin'))
-  )
-  const [selskabFil, setSelskabFil] = useState(() => searchParams.get('company') ?? 'Alle')
-  const [typeFil, setTypeFil] = useState(() => searchParams.get('type') ?? 'Alle')
+  const selskabFil = searchParams.get('company') ?? 'Alle'
+  const typeFil = searchParams.get('type') ?? 'Alle'
+
+  // Sorterings-state er stadig klient-side (inden for den aktuelle side)
   const [sortCol, setSortCol] = useState<SortKey>('udlobDays')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
-  const [page, setPage] = useState(() => parseInt(searchParams.get('page') ?? '1', 10) || 1)
-  const [pageSize, setPageSize] = useState(10)
 
-  // Synkronisér state → URL (optimistisk: state opdateres øjeblikkeligt)
+  // Synkronisér filter-state → URL (trigger server re-fetch via Next.js navigation)
   function pushUrl(overrides: Record<string, string>) {
     const sp = new URLSearchParams(searchParams.toString())
     for (const [k, v] of Object.entries(overrides)) {
@@ -196,60 +199,9 @@ function ContractsListBContent({ contracts, totalContracts }: ContractsListBProp
     })
   }
 
-  // Synk URL → state ved browser-navigation (popstate)
-  useEffect(() => {
-    const newView = (searchParams.get('view') as ViewMode) || 'flat'
-    const newSearch = searchParams.get('search') ?? ''
-    const newStatus = normalizeStatusParam(
-      searchParams.get('status'),
-      searchParams.get('expiresWithin')
-    )
-    const newCompany = searchParams.get('company') ?? 'Alle'
-    const newType = searchParams.get('type') ?? 'Alle'
-    const newPage = parseInt(searchParams.get('page') ?? '1', 10) || 1
-    setViewMode(newView)
-    setSearch(newSearch)
-    setStatusFil(newStatus)
-    setSelskabFil(newCompany)
-    setTypeFil(newType)
-    setPage(newPage)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams])
-
-  const uniqueSelskaber = useMemo(
-    () => Array.from(new Set(contracts.map((c) => c.selskab))).sort(),
-    [contracts]
-  )
-  const uniqueTypes = useMemo(
-    () => Array.from(new Set(contracts.map((c) => c.type))).sort(),
-    [contracts]
-  )
-
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase()
-    return contracts.filter((c) => {
-      if (
-        q &&
-        !c.selskab.toLowerCase().includes(q) &&
-        !c.type.toLowerCase().includes(q) &&
-        !c.parter.toLowerCase().includes(q) &&
-        !c.displayName.toLowerCase().includes(q)
-      ) {
-        return false
-      }
-      if (statusFil === 'Udløber 30d') {
-        if (!(c.rawStatus === 'AKTIV' && c.udlobDays >= 0 && c.udlobDays <= 30)) return false
-      } else if (statusFil !== 'Alle' && c.status !== statusFil) {
-        return false
-      }
-      if (selskabFil !== 'Alle' && c.selskab !== selskabFil) return false
-      if (typeFil !== 'Alle' && c.type !== typeFil) return false
-      return true
-    })
-  }, [contracts, search, statusFil, selskabFil, typeFil])
-
+  // Klient-side sortering inden for den aktuelle side
   const sorted = useMemo(() => {
-    const arr = [...filtered]
+    const arr = [...contracts]
     arr.sort((a, b) => {
       const av = a[sortCol] as string | number
       const bv = b[sortCol] as string | number
@@ -258,7 +210,7 @@ function ContractsListBContent({ contracts, totalContracts }: ContractsListBProp
       return 0
     })
     return arr
-  }, [filtered, sortCol, sortDir])
+  }, [contracts, sortCol, sortDir])
 
   const aiCount = useMemo(() => contracts.filter((c) => c.ai).length, [contracts])
   const expiring30d = useMemo(
@@ -280,11 +232,6 @@ function ContractsListBContent({ contracts, totalContracts }: ContractsListBProp
   }
 
   function resetFilters() {
-    setSearch('')
-    setStatusFil('Alle')
-    setSelskabFil('Alle')
-    setTypeFil('Alle')
-    setPage(1)
     pushUrl({ search: '', status: 'Alle', company: 'Alle', type: 'Alle', page: '1' })
   }
 
@@ -292,9 +239,9 @@ function ContractsListBContent({ contracts, totalContracts }: ContractsListBProp
     router.push(`/contracts/${id}`)
   }
 
-  const maxPage = Math.max(1, Math.ceil(sorted.length / pageSize))
-  const safePage = Math.min(page, maxPage)
-  const paged = sorted.slice((safePage - 1) * pageSize, safePage * pageSize)
+  const maxPage = Math.max(1, Math.ceil(totalContracts / pageSize))
+  const firstItem = Math.min((page - 1) * pageSize + 1, totalContracts)
+  const lastItem = Math.min(page * pageSize, totalContracts)
 
   return (
     <>
@@ -326,40 +273,15 @@ function ContractsListBContent({ contracts, totalContracts }: ContractsListBProp
         <FilterSearch
           value={search}
           onChange={(v) => {
-            setSearch(v)
-            setPage(1)
             pushUrl({ search: v, page: '1' })
           }}
           placeholder="Søg kontrakter..."
-        />
-        <FilterDropdown
-          label="Selskab"
-          options={['Alle', ...uniqueSelskaber]}
-          value={selskabFil}
-          onChange={(v) => {
-            setSelskabFil(v)
-            setPage(1)
-            pushUrl({ company: v, page: '1' })
-          }}
-        />
-        <FilterDropdown
-          label="Type"
-          divider="Typer i porteføljen"
-          options={['Alle', ...uniqueTypes]}
-          value={typeFil}
-          onChange={(v) => {
-            setTypeFil(v)
-            setPage(1)
-            pushUrl({ type: v, page: '1' })
-          }}
         />
         <FilterDropdown
           label="Status"
           options={STATUS_OPTS}
           value={statusFil}
           onChange={(v) => {
-            setStatusFil(v)
-            setPage(1)
             pushUrl({ status: v, page: '1' })
           }}
         />
@@ -368,7 +290,6 @@ function ContractsListBContent({ contracts, totalContracts }: ContractsListBProp
         <SegmentedToggle<ViewMode>
           value={viewMode}
           onChange={(v) => {
-            setViewMode(v)
             pushUrl({ view: v })
           }}
           options={[
@@ -383,14 +304,13 @@ function ContractsListBContent({ contracts, totalContracts }: ContractsListBProp
 
       {hasFilter && (
         <div className="text-[11px] text-b-2">
-          {sorted.length} {sorted.length === 1 ? 'resultat' : 'resultater'} — filtreret fra{' '}
-          {totalContracts} kontrakter
+          {totalContracts} {totalContracts === 1 ? 'resultat' : 'resultater'} — filtreret
         </div>
       )}
 
       {viewMode === 'flat' && (
         <FlatTable
-          contracts={paged}
+          contracts={sorted}
           sortCol={sortCol}
           sortDir={sortDir}
           onSort={handleSort}
@@ -398,21 +318,20 @@ function ContractsListBContent({ contracts, totalContracts }: ContractsListBProp
         />
       )}
       {viewMode === 'grouped' && <GroupedView contracts={sorted} onRowClick={goTo} />}
-      {viewMode === 'kanban' && <KanbanView contracts={filtered} onRowClick={goTo} />}
+      {viewMode === 'kanban' && <KanbanView contracts={contracts} onRowClick={goTo} />}
 
-      {viewMode !== 'kanban' && sorted.length > 0 && (
+      {viewMode !== 'kanban' && totalContracts > 0 && (
         <Pager
           info={
             viewMode === 'flat'
-              ? `${Math.min((safePage - 1) * pageSize + 1, sorted.length)}–${Math.min(safePage * pageSize, sorted.length)} af ${sorted.length}`
-              : `${sorted.length} kontrakter · ${new Set(sorted.map((c) => c.selskab)).size} selskaber`
+              ? `${firstItem}–${lastItem} af ${totalContracts}`
+              : `${contracts.length} kontrakter på denne side · ${new Set(contracts.map((c) => c.selskab)).size} selskaber`
           }
-          page={viewMode === 'flat' ? safePage : undefined}
+          page={viewMode === 'flat' ? page : undefined}
           maxPage={viewMode === 'flat' ? maxPage : undefined}
           onPage={
             viewMode === 'flat'
               ? (n) => {
-                  setPage(n)
                   pushUrl({ page: String(n) })
                 }
               : undefined
@@ -421,9 +340,7 @@ function ContractsListBContent({ contracts, totalContracts }: ContractsListBProp
           onPageSize={
             viewMode === 'flat'
               ? (n) => {
-                  setPageSize(n)
-                  setPage(1)
-                  pushUrl({ page: '1' })
+                  pushUrl({ pageSize: String(n), page: '1' })
                 }
               : undefined
           }
@@ -433,9 +350,9 @@ function ContractsListBContent({ contracts, totalContracts }: ContractsListBProp
       <BottomBar
         left={
           <>
-            {sorted.length} {sorted.length === 1 ? 'kontrakt' : 'kontrakter'} vist · {aiCount}{' '}
+            {contracts.length} {contracts.length === 1 ? 'kontrakt' : 'kontrakter'} vist · {aiCount}{' '}
             AI-extracted
-            {hasFilter && ` · filtreret fra ${totalContracts}`}
+            {hasFilter && ` · ${totalContracts} totalt`}
           </>
         }
       />

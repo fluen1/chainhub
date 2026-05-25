@@ -213,6 +213,28 @@ export async function canAccessModule(
   }
 }
 
+/**
+ * Returnerer alle SensitivityLevel-værdier brugeren har adgang til.
+ * Bruges til `sensitivity: { in: allowedLevels }` i WHERE-klausuler.
+ */
+export async function getAllowedSensitivityLevels(
+  userId: string,
+  organizationId: string
+): Promise<SensitivityLevel[]> {
+  const roles = await getUserRoles(userId, organizationId)
+  const userRoles = roles.map((r) => r.role)
+
+  if (userRoles.some((r) => STRENGT_FORTROLIG_ROLES.includes(r))) {
+    // Kan se alt
+    return ['PUBLIC', 'STANDARD', 'INTERN', 'FORTROLIG', 'STRENGT_FORTROLIG']
+  }
+  if (userRoles.some((r) => FORTROLIG_ROLES.includes(r))) {
+    return ['PUBLIC', 'STANDARD', 'INTERN', 'FORTROLIG']
+  }
+  // Alle øvrige autentikerede brugere kan kun se PUBLIC, STANDARD, INTERN
+  return ['PUBLIC', 'STANDARD', 'INTERN']
+}
+
 export function getSensitivityIndex(level: SensitivityLevel): number {
   return SENSITIVITY_ORDER.indexOf(level)
 }

@@ -2,7 +2,13 @@
 
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { canAccessCompany, canAccessSensitivity, canAccessModule } from '@/lib/permissions'
+import {
+  canAccessCompany,
+  canAccessSensitivity,
+  canAccessModule,
+  getAccessibleCompanies,
+  getAllowedSensitivityLevels,
+} from '@/lib/permissions'
 import {
   createContractSchema,
   updateContractStatusSchema,
@@ -15,12 +21,211 @@ import {
 } from '@/lib/validations/contract'
 import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
-import type { Contract, ContractParty } from '@prisma/client'
+import type { Contract, ContractParty, ContractStatus, Prisma } from '@prisma/client'
 import { captureError } from '@/lib/logger'
-import { formatDate } from '@/lib/labels'
+import {
+  formatDate,
+  getContractTypeLabel,
+  getContractStatusLabel,
+  getSensitivityLabel,
+} from '@/lib/labels'
 import { invalidateCompanyInsightsCache } from '@/lib/ai/invalidate-cache'
 import { z } from 'zod'
 import { zodSensitivityLevel, zodContractSystemType } from '@/lib/zod-enums'
+import { parsePaginationParams } from '@/lib/pagination'
+import { formatShortDate } from '@/lib/date-helpers'
+
+// ────────────────────────────────────────────────────────────────────────────
+// getContractsPaginated — server-side pagineret liste til /contracts
+// Sensitivity-filteret flyttes ind i WHERE-klausulen (ikke post-fetch loop)
+// ────────────────────────────────────────────────────────────────────────────
+
+// JSON-nøgler i Contract.type_data der kan indeholde en monetær værdi
+const VALUE_KEYS_KR_MD = ['monthly_rent', 'rent_amount', 'salary', 'monthly_salary']
+const VALUE_KEYS_KR = ['amount', 'total', 'fixed_amount']
+
+function extractContractValue(typeData: unknown): { value: string; unit: string } {
+  if (!typeData || typeof typeData !== 'object') return { value: '—', unit: '' }
+  const td = typeData as Record<string, unknown>
+  for (const k of VALUE_KEYS_KR_MD) {
+    const v = td[k]
+    if (typeof v === 'number') return { value: v.toLocaleString('da-DK'), unit: 'kr/md' }
+    if (typeof v === 'string' && v.length > 0) return { value: v, unit: 'kr/md' }
+  }
+  for (const k of VALUE_KEYS_KR) {
+    const v = td[k]
+    if (typeof v === 'number') return { value: v.toLocaleString('da-DK'), unit: 'kr' }
+    if (typeof v === 'string' && v.length > 0) return { value: v, unit: 'kr' }
+  }
+  return { value: '—', unit: '' }
+}
+
+export interface ContractListRow {
+  id: string
+  displayName: string
+  type: string
+  systemType: string
+  ai: boolean
+  companyId: string
+  selskab: string
+  parter: string
+  vaerdi: string
+  unit: string
+  effektiv: string
+  effektivSort: number
+  udlob: string
+  udlobDays: number
+  status: string
+  rawStatus: string
+  sensitivity: string
+}
+
+export interface ContractPaginationParams {
+  page?: number
+  pageSize?: number
+  search?: string
+  status?: string
+  type?: string
+  company?: string
+}
+
+// Status-label → DB-enum mapping (spejler STATUS_OPTS i contracts-list-b)
+const STATUS_LABEL_MAP: Record<string, ContractStatus | 'UDLOBER_30D'> = {
+  Aktiv: 'AKTIV',
+  Udløbet: 'UDLOEBET',
+  Opsagt: 'OPSAGT',
+  'Udløber 30d': 'UDLOBER_30D',
+}
+
+export async function getContractsPaginated(
+  params: ContractPaginationParams
+): Promise<{ rows: ContractListRow[]; totalCount: number; page: number; pageSize: number }> {
+  const session = await auth()
+  if (!session) return { rows: [], totalCount: 0, page: 1, pageSize: 20 }
+
+  const orgId = session.user.organizationId
+  const userId = session.user.id
+  const { page, skip, take } = parsePaginationParams(
+    String(params.page ?? 1),
+    params.pageSize ?? 20
+  )
+
+  const [companyIds, allowedSensitivityLevels] = await Promise.all([
+    getAccessibleCompanies(userId, orgId),
+    getAllowedSensitivityLevels(userId, orgId),
+  ])
+
+  const today = new Date()
+
+  // Byg WHERE-klausulen
+  const where: Prisma.ContractWhereInput = {
+    organization_id: orgId,
+    company_id: { in: companyIds },
+    deleted_at: null,
+    sensitivity: { in: allowedSensitivityLevels },
+  }
+
+  if (params.search?.trim()) {
+    const q = params.search.trim()
+    where.OR = [
+      { display_name: { contains: q, mode: 'insensitive' } },
+      { company: { name: { contains: q, mode: 'insensitive' } } },
+    ]
+  }
+
+  // company-filter (ID fra URL)
+  if (params.company && params.company !== 'Alle') {
+    where.company_id = params.company
+  }
+
+  // Status-filter
+  const statusParam = params.status && params.status !== 'Alle' ? params.status : null
+  if (statusParam) {
+    const mapped = STATUS_LABEL_MAP[statusParam]
+    if (mapped === 'UDLOBER_30D') {
+      // Udløber inden for 30 dage: status AKTIV + expiry_date between today og today+30d
+      const in30 = new Date(today)
+      in30.setDate(in30.getDate() + 30)
+      where.status = 'AKTIV'
+      where.expiry_date = { gte: today, lte: in30 }
+    } else if (mapped) {
+      where.status = mapped as ContractStatus
+    }
+  }
+
+  // Hent matchende kontrakter + tæl + find AI-extractede kontrakt-IDs
+  const [rawContracts, totalCount, aiContractIds] = await Promise.all([
+    prisma.contract.findMany({
+      where,
+      include: {
+        company: { select: { id: true, name: true } },
+        parties: {
+          take: 2,
+          include: {
+            person: { select: { first_name: true, last_name: true } },
+          },
+        },
+      },
+      orderBy: { expiry_date: 'asc' },
+      skip,
+      take,
+    }),
+    prisma.contract.count({ where }),
+    prisma.document
+      .findMany({
+        where: {
+          organization_id: orgId,
+          deleted_at: null,
+          contract_id: { not: null },
+          extraction: { isNot: null },
+        },
+        select: { contract_id: true },
+      })
+      .then((rows) => new Set(rows.map((r) => r.contract_id).filter((id): id is string => !!id))),
+  ])
+
+  const rows: ContractListRow[] = rawContracts.map((c) => {
+    const expMs = c.expiry_date?.getTime() ?? null
+    const udlobDays =
+      expMs != null ? Math.ceil((expMs - today.getTime()) / (1000 * 60 * 60 * 24)) : 9999
+    let udlob: string
+    if (expMs == null) udlob = '—'
+    else if (udlobDays < 0) udlob = 'Udl.'
+    else if (udlobDays > 365) udlob = `${Math.round(udlobDays / 30)}m`
+    else udlob = `${udlobDays}d`
+
+    const partyNames = c.parties
+      .slice(0, 2)
+      .map((p) =>
+        p.person ? `${p.person.first_name} ${p.person.last_name}` : (p.counterparty_name ?? 'Part')
+      )
+    const parter = partyNames.length > 0 ? partyNames.join(' + ') : '—'
+
+    const { value, unit } = extractContractValue(c.type_data)
+
+    return {
+      id: c.id,
+      displayName: c.display_name,
+      type: getContractTypeLabel(c.system_type),
+      systemType: c.system_type,
+      ai: aiContractIds.has(c.id),
+      companyId: c.company.id,
+      selskab: c.company.name,
+      parter,
+      vaerdi: value,
+      unit,
+      effektiv: formatShortDate(c.effective_date) || '—',
+      effektivSort: c.effective_date?.getTime() ?? 0,
+      udlob,
+      udlobDays,
+      status: getContractStatusLabel(c.status),
+      rawStatus: c.status,
+      sensitivity: getSensitivityLabel(c.sensitivity).toUpperCase(),
+    }
+  })
+
+  return { rows, totalCount, page, pageSize: take }
+}
 
 // Gyldige status-transitioner
 const VALID_TRANSITIONS: Record<string, string[]> = {
