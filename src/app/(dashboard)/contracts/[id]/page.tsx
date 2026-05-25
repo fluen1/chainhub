@@ -5,11 +5,16 @@ import Link from 'next/link'
 import { prisma } from '@/lib/db'
 import { canAccessCompany, canAccessSensitivity, canAccessModule } from '@/lib/permissions'
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}): Promise<Metadata> {
+  const { id } = await params
   const session = await auth()
   if (!session) return { title: 'Kontrakt' }
   const contract = await prisma.contract.findFirst({
-    where: { id: params.id, organization_id: session.user.organizationId, deleted_at: null },
+    where: { id, organization_id: session.user.organizationId, deleted_at: null },
     select: { display_name: true },
   })
   return { title: contract?.display_name ?? 'Kontrakt' }
@@ -61,7 +66,7 @@ import {
 // ────────────────────────────────────────────────────────────────────────────
 
 interface Props {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 interface FieldConfidence {
@@ -147,6 +152,7 @@ function changeTypeTone(ct: string): BadgeTone {
 }
 
 export default async function ContractDetailPage({ params }: Props) {
+  const { id } = await params
   const session = await auth()
   if (!session) redirect('/login')
 
@@ -161,7 +167,7 @@ export default async function ContractDetailPage({ params }: Props) {
 
   const contract = await prisma.contract.findFirst({
     where: {
-      id: params.id,
+      id: id,
       organization_id: orgId,
       deleted_at: null,
     },

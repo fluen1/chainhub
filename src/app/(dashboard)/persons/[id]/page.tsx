@@ -20,11 +20,16 @@ import {
   type PersonAIFieldData,
 } from './person-detail-b'
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}): Promise<Metadata> {
+  const { id } = await params
   const session = await auth()
   if (!session) return { title: 'Person' }
   const person = await prisma.person.findFirst({
-    where: { id: params.id, organization_id: session.user.organizationId, deleted_at: null },
+    where: { id, organization_id: session.user.organizationId, deleted_at: null },
     select: { first_name: true, last_name: true },
   })
   if (!person) return { title: 'Person' }
@@ -64,7 +69,8 @@ function yearsSince(d: Date | null): string {
   return `${months} md`
 }
 
-export default async function PersonDetailPage({ params }: { params: { id: string } }) {
+export default async function PersonDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const session = await auth()
   if (!session) redirect('/login')
 
@@ -81,7 +87,7 @@ export default async function PersonDetailPage({ params }: { params: { id: strin
 
   const person = await prisma.person.findFirst({
     where: {
-      id: params.id,
+      id: id,
       organization_id: session.user.organizationId,
       deleted_at: null,
     },
@@ -133,7 +139,7 @@ export default async function PersonDetailPage({ params }: { params: { id: strin
   if (!person) notFound()
 
   // Hent AI-extractions (handles permission internally)
-  const aiResult = await getPersonAIExtractions(params.id)
+  const aiResult = await getPersonAIExtractions(id)
   const aiData = 'data' in aiResult && aiResult.data ? aiResult.data : []
 
   const activeRoles = person.company_persons.filter((cp) => !cp.end_date)

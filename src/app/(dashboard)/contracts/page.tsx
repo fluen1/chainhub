@@ -22,22 +22,27 @@ interface SearchParams {
   pageSize?: string
 }
 
-export default async function ContractsPage({ searchParams }: { searchParams: SearchParams }) {
+export default async function ContractsPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>
+}) {
+  const sp = await searchParams
   const session = await auth()
   if (!session) redirect('/login')
 
   const hasAccess = await canAccessModule(session.user.id, 'contracts', session.user.organizationId)
   if (!hasAccess) redirect('/dashboard')
 
-  const pageSize = searchParams.pageSize ? parseInt(searchParams.pageSize, 10) : 20
+  const pageSize = sp.pageSize ? parseInt(sp.pageSize, 10) : 20
 
   const result = await getContractsPaginated({
-    page: searchParams.page ? parseInt(searchParams.page, 10) : 1,
+    page: sp.page ? parseInt(sp.page, 10) : 1,
     pageSize,
-    search: searchParams.search,
-    status: searchParams.status,
-    type: searchParams.type,
-    company: searchParams.company,
+    search: sp.search,
+    status: sp.status,
+    type: sp.type,
+    company: sp.company,
   })
 
   return (

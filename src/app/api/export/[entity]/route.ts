@@ -20,7 +20,7 @@ function isValidEntity(value: string): value is ExportableEntity {
 
 export async function GET(
   _req: Request,
-  { params }: { params: { entity: string } }
+  { params }: { params: Promise<{ entity: string }> }
 ): Promise<Response> {
   const session = await auth()
   if (!session) {
@@ -32,7 +32,7 @@ export async function GET(
     return Response.json({ error: 'Kun admin kan eksportere data' }, { status: 403 })
   }
 
-  const { entity } = params
+  const { entity } = await params
   if (!isValidEntity(entity)) {
     return Response.json({ error: 'Ugyldig entity' }, { status: 400 })
   }

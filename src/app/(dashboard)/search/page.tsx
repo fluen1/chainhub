@@ -18,14 +18,15 @@ import { SearchPageB, type SearchResultRow } from './search-b'
 export const metadata: Metadata = { title: 'Søg' }
 
 interface SearchPageProps {
-  searchParams: { q?: string }
+  searchParams: Promise<{ q?: string }>
 }
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
+  const sp = await searchParams
   const session = await auth()
   if (!session) redirect('/login')
 
-  const query = searchParams.q?.trim() ?? ''
+  const query = sp.q?.trim() ?? ''
 
   if (query.length < MIN_SEARCH_LENGTH) {
     return <SearchPageB query={query} results={null} totalCount={0} />

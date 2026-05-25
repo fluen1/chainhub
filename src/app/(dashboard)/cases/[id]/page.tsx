@@ -22,14 +22,15 @@ import {
 } from './case-detail-b'
 
 interface Props {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params
   const session = await auth()
   if (!session) return { title: 'Sag' }
   const c = await prisma.case.findFirst({
-    where: { id: params.id, organization_id: session.user.organizationId, deleted_at: null },
+    where: { id, organization_id: session.user.organizationId, deleted_at: null },
     select: { title: true, case_number: true },
   })
   if (!c) return { title: 'Sag' }
@@ -37,12 +38,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function CaseDetailPage({ params }: Props) {
+  const { id } = await params
   const session = await auth()
   if (!session) redirect('/login')
 
   const caseItem = await prisma.case.findFirst({
     where: {
-      id: params.id,
+      id,
       organization_id: session.user.organizationId,
       deleted_at: null,
     },
@@ -101,7 +103,7 @@ export default async function CaseDetailPage({ params }: Props) {
 
   // Hent kommentarer (nyeste øverst)
   const commentsRaw = await prisma.comment.findMany({
-    where: { case_id: params.id, organization_id: session.user.organizationId, deleted_at: null },
+    where: { case_id: id, organization_id: session.user.organizationId, deleted_at: null },
     orderBy: { created_at: 'desc' },
     include: { author: { select: { id: true, name: true, email: true } } },
   })

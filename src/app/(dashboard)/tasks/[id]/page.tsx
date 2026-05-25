@@ -7,11 +7,12 @@ import { TaskDetailB, type TaskDetailViewData } from './task-detail-b'
 
 export const metadata: Metadata = { title: 'Opgave' }
 
-export default async function TaskDetailPage({ params }: { params: { id: string } }) {
+export default async function TaskDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const session = await auth()
   if (!session) redirect('/login')
 
-  const data = await getTaskDetailData(params.id)
+  const data = await getTaskDetailData(id)
   if (!data) notFound()
 
   const dDue = data.task.due_date ? daysUntil(data.task.due_date) : null

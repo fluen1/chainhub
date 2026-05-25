@@ -12,7 +12,7 @@ import { recordAuditEvent } from '@/lib/audit'
  */
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { personId: string } }
+  { params }: { params: Promise<{ personId: string }> }
 ): Promise<Response> {
   const session = await auth()
   if (!session) {
@@ -22,7 +22,8 @@ export async function GET(
   // UUID-shape-validering (lempelig — accepterer seed-ids som "00000000-...")
   // Forhindrer injection uden at afvise gyldige IDs uden version-byte.
   const uuidShape = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-  const uuidResult = z.string().regex(uuidShape).safeParse(params.personId)
+  const { personId: rawPersonId } = await params
+  const uuidResult = z.string().regex(uuidShape).safeParse(rawPersonId)
   if (!uuidResult.success) {
     return NextResponse.json({ error: 'Ugyldigt person-ID format' }, { status: 400 })
   }

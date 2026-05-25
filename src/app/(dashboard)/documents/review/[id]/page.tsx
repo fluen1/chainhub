@@ -9,11 +9,16 @@ import type { ContractSchema } from '@/lib/ai/schemas/types'
 import ReviewClient from './review-client'
 import type { ReviewDocument, ReviewField, ReviewQueueItem } from './review-client'
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}): Promise<Metadata> {
+  const { id } = await params
   const session = await auth()
   if (!session) return { title: 'Review' }
   const doc = await prisma.document.findFirst({
-    where: { id: params.id, organization_id: session.user.organizationId, deleted_at: null },
+    where: { id, organization_id: session.user.organizationId, deleted_at: null },
     select: { file_name: true, title: true },
   })
   return { title: `Review · ${doc?.file_name ?? doc?.title ?? 'dokument'}` }
@@ -178,7 +183,8 @@ function buildSourceBlocks(fields: ReviewField[]): SourceBlock[] {
 // ---------------------------------------------------------------
 // Server Component
 // ---------------------------------------------------------------
-export default async function DocumentReviewPage({ params }: { params: { id: string } }) {
+export default async function DocumentReviewPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const session = await auth()
   if (!session) redirect('/login')
 
@@ -186,7 +192,7 @@ export default async function DocumentReviewPage({ params }: { params: { id: str
 
   const doc = await prisma.document.findFirst({
     where: {
-      id: params.id,
+      id,
       organization_id: orgId,
       deleted_at: null,
     },

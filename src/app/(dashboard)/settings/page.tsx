@@ -11,7 +11,7 @@ import { getSettingsAIUsage } from '@/actions/ai-usage'
 export const metadata: Metadata = { title: 'Indstillinger' }
 
 interface SettingsPageProps {
-  searchParams: { section?: string }
+  searchParams: Promise<{ section?: string }>
 }
 
 const VALID_SECTIONS = ['org', 'brugere', 'ai', 'notif', 'integr', 'sikkerhed', 'faktura'] as const
@@ -23,10 +23,11 @@ function parseSection(s: string | undefined): SectionKey {
 }
 
 export default async function SettingsPage({ searchParams }: SettingsPageProps) {
+  const sp = await searchParams
   const session = await auth()
   if (!session) redirect('/login')
 
-  const section = parseSection(searchParams.section)
+  const section = parseSection(sp.section)
 
   const hasAccess = await canAccessModule(
     session.user.id,

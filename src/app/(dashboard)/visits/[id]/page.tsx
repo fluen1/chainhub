@@ -10,11 +10,16 @@ import { VisitStatusForm } from '@/components/visits/VisitStatusForm'
 import { VisitNotesForm } from '@/components/visits/VisitNotesForm'
 import { Breadcrumb, PageTopbar, Panel, PanelHeader, Badge } from '@/components/ui/b'
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}): Promise<Metadata> {
+  const { id } = await params
   const session = await auth()
   if (!session) return { title: 'Besøg' }
   const visit = await prisma.visit.findFirst({
-    where: { id: params.id, organization_id: session.user.organizationId, deleted_at: null },
+    where: { id, organization_id: session.user.organizationId, deleted_at: null },
     select: { company: { select: { name: true } }, visit_date: true },
   })
   if (!visit) return { title: 'Besøg' }
@@ -27,7 +32,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface Props {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 const STATUS_TONE: Record<string, 'green' | 'amber' | 'gray'> = {
@@ -37,13 +42,14 @@ const STATUS_TONE: Record<string, 'green' | 'amber' | 'gray'> = {
 }
 
 export default async function VisitDetailPage({ params }: Props) {
+  const { id } = await params
   const session = await auth()
   if (!session) redirect('/login')
 
   const [visit, userRoles] = await Promise.all([
     prisma.visit.findFirst({
       where: {
-        id: params.id,
+        id,
         organization_id: session.user.organizationId,
         deleted_at: null,
       },

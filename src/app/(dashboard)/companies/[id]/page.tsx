@@ -13,22 +13,28 @@ import {
   type PersonOptionRow,
 } from './company-detail-b'
 
-export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}): Promise<Metadata> {
+  const { id } = await params
   const session = await auth()
   if (!session) return { title: 'Selskab' }
   const company = await prisma.company.findFirst({
-    where: { id: params.id, organization_id: session.user.organizationId, deleted_at: null },
+    where: { id, organization_id: session.user.organizationId, deleted_at: null },
     select: { name: true },
   })
   return { title: company?.name ?? 'Selskab' }
 }
 
-export default async function CompanyDetailPage({ params }: { params: { id: string } }) {
+export default async function CompanyDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const session = await auth()
   if (!session) redirect('/login')
 
   const orgId = session.user.organizationId
-  const data = await getCompanyDetailData(params.id)
+  const data = await getCompanyDetailData(id)
   if (!data) notFound()
 
   // Modal-wiring kræver raw IDs som ikke er i CompanyDetailData. Vi henter dem
@@ -49,7 +55,7 @@ export default async function CompanyDetailPage({ params }: { params: { id: stri
     await Promise.all([
       wantOwnership
         ? prisma.ownership.findMany({
-            where: { company_id: params.id, organization_id: orgId, end_date: null },
+            where: { company_id: id, organization_id: orgId, end_date: null },
             include: {
               owner_person: { select: { id: true, first_name: true, last_name: true } },
             },
@@ -58,14 +64,14 @@ export default async function CompanyDetailPage({ params }: { params: { id: stri
         : Promise.resolve([]),
       wantPersons
         ? prisma.companyPerson.findMany({
-            where: { company_id: params.id, organization_id: orgId, end_date: null },
+            where: { company_id: id, organization_id: orgId, end_date: null },
             include: { person: { select: { first_name: true, last_name: true } } },
             orderBy: { start_date: 'desc' },
           })
         : Promise.resolve([]),
       wantFinance
         ? prisma.financialMetric.findMany({
-            where: { company_id: params.id, organization_id: orgId },
+            where: { company_id: id, organization_id: orgId },
             orderBy: { period_year: 'desc' },
           })
         : Promise.resolve([]),
@@ -82,7 +88,7 @@ export default async function CompanyDetailPage({ params }: { params: { id: stri
       wantContracts
         ? prisma.contract.findFirst({
             where: {
-              company_id: params.id,
+              company_id: id,
               organization_id: orgId,
               deleted_at: null,
               status: 'AKTIV',

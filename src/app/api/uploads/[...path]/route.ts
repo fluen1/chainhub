@@ -10,20 +10,25 @@ const CONTENT_TYPES: Record<string, string> = {
   jpeg: 'image/jpeg',
 }
 
-export async function GET(request: NextRequest, { params }: { params: { path: string[] } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ path: string[] }> }
+) {
   const session = await auth()
   if (!session) {
     return NextResponse.json({ error: 'Ikke autoriseret' }, { status: 401 })
   }
 
+  const { path } = await params
+
   // Validate the path belongs to user's organization
-  const [orgId] = params.path
+  const [orgId] = path
   if (orgId !== session.user.organizationId) {
     return NextResponse.json({ error: 'Ingen adgang' }, { status: 403 })
   }
 
   // Decode each segment to handle encoded filenames
-  const decodedSegments = params.path.map((segment) => decodeURIComponent(segment))
+  const decodedSegments = path.map((segment) => decodeURIComponent(segment))
   const key = decodedSegments.join('/')
 
   const data = await getStorageProvider().download(key)
