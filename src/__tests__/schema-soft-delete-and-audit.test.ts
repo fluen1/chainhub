@@ -313,7 +313,7 @@ describe('Fix 7: error.tsx filer', () => {
       expect(content).toMatch(/'use client'/)
       expect(content).toMatch(/export default/)
       expect(content).toMatch(/reset/)
-      expect(content).toMatch(/ErrorBoundaryUI/)
+      expect(content).toMatch(/ErrorBoundaryPage|ErrorBoundaryUI/)
     })
   }
 })

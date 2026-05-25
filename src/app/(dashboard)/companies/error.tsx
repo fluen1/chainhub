@@ -1,8 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
-import * as Sentry from '@sentry/nextjs'
-import { ErrorBoundaryUI } from '@/components/ui/error-boundary'
+import { ErrorBoundaryPage } from '@/components/ui/b/ErrorBoundaryPage'
 
 export default function CompaniesError({
   error,
@@ -11,18 +9,13 @@ export default function CompaniesError({
   error: Error & { digest?: string }
   reset: () => void
 }) {
-  useEffect(() => {
-    // eslint-disable-next-line no-console
-    console.error('[companies] render error:', error)
-    Sentry.captureException(error, { tags: { page: 'companies' } })
-  }, [error])
-
   return (
-    <ErrorBoundaryUI
+    <ErrorBoundaryPage
+      error={error}
+      reset={reset}
+      page="companies"
       title="Porteføljen kunne ikke indlæses"
       message="Der opstod en fejl ved hentning af dine selskaber. Prøv igen, eller kontakt support."
-      digest={error.digest}
-      reset={reset}
     />
   )
 }
