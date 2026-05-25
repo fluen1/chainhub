@@ -1,5 +1,6 @@
 // ChainHub — Prisma Schema
-// Version: Sprint 1 — Komplet datamodel fra DATABASE-SCHEMA.md v0.4
+// Version: Sprint 8 færdig — 30+ tabeller, 43 enums, compound indexes, AI-modeller, GDPR-helpers
+// Opdateret: 2026-05-25 (E2E polish + hardening session)
 // KRITISK: Alle enum-navne er ASCII — danske tegn via @map()
 
 generator client {

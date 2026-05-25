@@ -30,7 +30,7 @@ ChainHub er et B2B SaaS-system til kædegrupper (tandlæge-, optiker-, fysio-, f
 - **Database:** PostgreSQL (Supabase), Prisma 5 ORM
 - **UI:** shadcn/ui-inspirerede komponenter, Lucide icons, Sonner (toasts)
 - **Validering:** Zod på al brugerinput
-- **Test:** Vitest (48 unit tests), Playwright (E2E — setup klar)
+- **Test:** Vitest (1190 unit tests), Playwright (E2E — setup klar)
 
 ---
 
@@ -74,6 +74,38 @@ Aldrig hard delete på: contracts, cases, companies, persons, documents. Brug `d
 ### 6. No `any`
 
 Brug `unknown` + narrowing. Brug Prisma's genererede typer.
+
+### 7. Server Actions kalder `auth()` internt
+
+```typescript
+// KORREKT — action henter session selv
+export async function myAction(data: FormData) {
+  const session = await auth()
+  if (!session) return { error: "Ikke autoriseret" }
+  // Brug session.user.organizationId internt
+}
+
+// FORKERT — organization_id som parameter åbner for tenant-hopping
+export async function myAction(orgId: string, data: FormData) { ... }
+```
+
+### 8. Environment validation
+
+Miljøvariable valideres ved startup via `src/lib/env.ts`. Tilføj nye påkrævede variabler der — aldrig `process.env.X` direkte uden fallback.
+
+### 9. Server-side pagination via `parsePaginationParams`
+
+```typescript
+import { parsePaginationParams } from '@/lib/pagination'
+
+// I page.tsx — parse fra searchParams
+const { page, pageSize } = parsePaginationParams(searchParams)
+// Brug i action: skip: (page - 1) * pageSize, take: pageSize
+```
+
+### 10. Ingen direkte Prisma-imports i page.tsx
+
+`page.tsx`-filer må ikke importere `@/lib/db` eller kalde Prisma direkte. Al data-hentning sker via action-funktioner i `src/actions/`.
 
 ---
 
@@ -127,7 +159,7 @@ docker compose up -d              # Start lokal PostgreSQL
 docker compose down               # Stop lokal PostgreSQL
 npm run dev                     # Start dev server (port 3000)
 npm run build                   # Production build
-npm test                        # Vitest (48 tests)
+npm test                        # Vitest (1190 tests)
 npx prisma generate             # Regenerér Prisma client
 npx prisma db push              # Push schema til DB (kræver aktiv Supabase)
 npx prisma migrate dev          # Kør migrationer (bruger DIRECT_URL)

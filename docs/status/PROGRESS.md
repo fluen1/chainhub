@@ -449,6 +449,33 @@ docker-compose.yml klar til lokal PG som alternativ (kræver Docker Desktop).
 - [x] docker-compose.yml oprettet til lokal PostgreSQL
 - [x] CLAUDE.md opdateret med docker-kommandoer
 
+## E2E polish session — 2026-05-24/25 ✅
+
+33 runder browser-audit, 18 commits, 22 bugs fixet.
+
+- [x] **Page titles** — `<title>`-tags tilføjet/rettet på alle routes
+- [x] **Dansk 404-side** — custom not-found.tsx med dansk tekst
+- [x] **Cmd+K / Ctrl+K** — global søgnings-genvej registreret i layout
+- [x] **Logout-knap + brugernavn** i sidebar footer
+- [x] **Activity-feed** — case-insensitive route-matching + uppercase enum-labels
+- [x] **GDPR UUID** — person-detail viser maskeret UUID, ikke rå data
+- [x] **Dashboard deep-links** — urgency-panel linker direkte til korrekte detalje-sider
+- [x] **Dansk verbum-mappings** i activity-feed (oprettet, opdateret, arkiveret, m.fl.)
+- [x] **#besoeg hash-anchor** på company-detail for direkte navigation til besøg-sektion
+- [x] **Tests:** 735 → 1190 passed (store E2E-forbedringer + pagination-actions + ny action-coverage)
+- [x] **Gate:** tsc ✅, build ✅
+
+## Hardening session — 2026-05-25 ✅
+
+Sikkerhed, performance og framework-opgraderinger.
+
+- [x] **`src/lib/env.ts`** — startup-validering af miljøvariable via Zod; manglende påkrævede variabler kaster ved boot
+- [x] **`auth()` internt i alle server actions** — organization_id sendes aldrig som parameter; actions henter session selv (forhindrer tenant-hopping)
+- [x] **`parsePaginationParams`** — server-side pagination standardiseret via `src/lib/pagination.ts`; page.tsx henter ikke data direkte fra Prisma
+- [x] **Ingen direkte Prisma-import i page.tsx** — al data-hentning via action-funktioner
+- [x] **Tests:** 1190 passed, 4 skipped, 0 failed
+- [x] **Gate:** tsc ✅, build ✅
+
 ## Resterende kendte UI-problemer
 
 - Ejerskab-advarsel kan forbedres (Sprint 9)
