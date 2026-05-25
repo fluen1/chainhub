@@ -16,6 +16,7 @@ import type { ActionResult } from '@/types/actions'
 import type { Ownership } from '@prisma/client'
 import { recordAuditEvent } from '@/lib/audit'
 import { captureError } from '@/lib/logger'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 
 export async function addOwner(input: AddOwnerInput): Promise<ActionResult<Ownership>> {
   const session = await auth()
@@ -38,6 +39,9 @@ export async function addOwner(input: AddOwnerInput): Promise<ActionResult<Owner
     session.user.organizationId
   )
   if (!hasSensitivityAccess) return { error: 'Du har ikke adgang til at se ejerskabsoplysninger' }
+
+  const rl = await checkActionRateLimit(session.user.organizationId)
+  if (rl.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   // Forsøg op til 3 gange ved serialization-konflikt
   const MAX_RETRIES = 3
@@ -157,6 +161,9 @@ export async function updateOwnership(
   if (!hasSensitivityAccess)
     return { error: 'Du har ikke adgang til denne funktion. Kontakt din administrator.' }
 
+  const rlUpd = await checkActionRateLimit(session.user.organizationId)
+  if (rlUpd.limited) return { error: 'For mange handlinger. Vent venligst.' }
+
   // Verificér tenant isolation + læs før-værdier til audit
   const existing = await prisma.ownership.findFirst({
     where: { id: parsed.data.ownershipId },
@@ -227,6 +234,9 @@ export async function endOwnership(input: EndOwnershipInput): Promise<ActionResu
   )
   if (!hasSensitivityAccess)
     return { error: 'Du har ikke adgang til denne funktion. Kontakt din administrator.' }
+
+  const rlEnd = await checkActionRateLimit(session.user.organizationId)
+  if (rlEnd.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   const existing = await prisma.ownership.findFirst({
     where: { id: parsed.data.ownershipId },

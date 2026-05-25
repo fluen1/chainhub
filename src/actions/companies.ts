@@ -17,6 +17,7 @@ import { captureError } from '@/lib/logger'
 import { geocodeAddress } from '@/lib/geocode'
 import { invalidateCompanyInsightsCache } from '@/lib/ai/invalidate-cache'
 import { recordAuditEvent } from '@/lib/audit'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 
 const stamdataSchema = z.object({
   name: z.string().min(1, 'Navn er paakraevet').max(200, 'Navn maa maks vaere 200 tegn'),
@@ -44,6 +45,9 @@ export async function createCompany(input: CreateCompanyInput): Promise<ActionRe
 
   const hasAccess = await canAccessModule(session.user.id, 'settings', session.user.organizationId)
   if (!hasAccess) return { error: 'Du har ikke adgang til at oprette selskaber' }
+
+  const rl = await checkActionRateLimit(session.user.organizationId)
+  if (rl.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   // Check for duplicate CVR in tenant
   if (parsed.data.cvr) {
@@ -114,6 +118,9 @@ export async function updateCompany(input: UpdateCompanyInput): Promise<ActionRe
   )
   if (!hasAccess) return { error: 'Ingen adgang til dette selskab' }
 
+  const rl = await checkActionRateLimit(session.user.organizationId)
+  if (rl.limited) return { error: 'For mange handlinger. Vent venligst.' }
+
   try {
     const company = await prisma.company.update({
       where: {
@@ -155,6 +162,9 @@ export async function deleteCompany(companyId: string): Promise<ActionResult<voi
 
   const hasAccess = await canAccessModule(session.user.id, 'settings', session.user.organizationId)
   if (!hasAccess) return { error: 'Du har ikke adgang til at slette selskaber' }
+
+  const rl = await checkActionRateLimit(session.user.organizationId)
+  if (rl.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   // Tenant isolation check
   const existing = await prisma.company.findFirst({
@@ -210,6 +220,9 @@ export async function updateCompanyStamdata(
 
   const hasAccess = await canAccessCompany(session.user.id, companyId, session.user.organizationId)
   if (!hasAccess) return { error: 'Ingen adgang til dette selskab' }
+
+  const rl = await checkActionRateLimit(session.user.organizationId)
+  if (rl.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   try {
     // Re-geocode hvis adresse/by ændres

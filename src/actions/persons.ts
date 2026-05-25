@@ -19,6 +19,7 @@ import type { ActionResult } from '@/types/actions'
 import type { CompanyPerson, Ownership, Person, Prisma } from '@prisma/client'
 import { captureError } from '@/lib/logger'
 import { recordAuditEvent } from '@/lib/audit'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 import { z } from 'zod'
 import { parsePaginationParams } from '@/lib/pagination'
 import { getCompanyPersonRoleLabel, getInitials } from '@/lib/labels'
@@ -168,6 +169,9 @@ export async function createPerson(input: CreatePersonInput): Promise<ActionResu
   const parsed = createPersonSchema.safeParse(input)
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Ugyldigt input' }
 
+  const rl = await checkActionRateLimit(session.user.organizationId)
+  if (rl.limited) return { error: 'For mange handlinger. Vent venligst.' }
+
   // Tjek for duplikat email i samme organisation
   if (parsed.data.email) {
     const existing = await prisma.person.findFirst({
@@ -214,6 +218,9 @@ export async function updatePerson(input: UpdatePersonInput): Promise<ActionResu
 
   const parsed = updatePersonSchema.safeParse(input)
   if (!parsed.success) return { error: 'Udfyld alle påkrævede felter og prøv igen.' }
+
+  const rlUpd = await checkActionRateLimit(session.user.organizationId)
+  if (rlUpd.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   // Tenant isolation
   const existing = await prisma.person.findFirst({
@@ -264,6 +271,9 @@ export async function deletePerson(personId: string): Promise<ActionResult<void>
   const hasAccess = await canAccessModule(session.user.id, 'settings', session.user.organizationId)
   if (!hasAccess)
     return { error: 'Du har ikke adgang til denne funktion. Kontakt din administrator.' }
+
+  const rlDel = await checkActionRateLimit(session.user.organizationId)
+  if (rlDel.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   // Tjek aktive tilknytninger
   const [activeRoles, activeOwnerships] = await Promise.all([
@@ -372,6 +382,9 @@ export async function addPersonRole(
   )
   if (!hasCompanyAccess) return { error: 'Ingen adgang til dette selskab' }
 
+  const rlRole = await checkActionRateLimit(session.user.organizationId)
+  if (rlRole.limited) return { error: 'For mange handlinger. Vent venligst.' }
+
   // Verificér at personen tilhører organisationen
   const person = await prisma.person.findFirst({
     where: {
@@ -450,6 +463,9 @@ export async function addPersonOwnership(
     session.user.organizationId
   )
   if (!hasSensitivityAccess) return { error: 'Du har ikke adgang til at registrere ejerskab' }
+
+  const rlOwn = await checkActionRateLimit(session.user.organizationId)
+  if (rlOwn.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   // Verificér at personen tilhører organisationen
   const person = await prisma.person.findFirst({

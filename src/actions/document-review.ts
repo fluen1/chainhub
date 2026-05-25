@@ -8,6 +8,7 @@ import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
 import type { Prisma } from '@prisma/client'
 import { z } from 'zod'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 
 const approveSchema = z.string().min(1, 'Ekstraktions-ID mangler')
 
@@ -52,6 +53,9 @@ export async function approveDocumentReview(extractionId: string): Promise<Actio
     )
     if (!hasAccess) return { error: 'Ingen adgang til dette dokument' }
   }
+
+  const rl = await checkActionRateLimit(session.user.organizationId)
+  if (rl.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   await prisma.documentExtraction.update({
     where: { id: extractionId },
@@ -104,6 +108,9 @@ export async function saveFieldDecision(params: {
     )
     if (!hasAccess) return { error: 'Ingen adgang til dette dokument' }
   }
+
+  const rlSave = await checkActionRateLimit(session.user.organizationId)
+  if (rlSave.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   // Determine user_value based on decision
   const userValue =
@@ -191,6 +198,9 @@ export async function rejectDocumentExtraction(params: {
     )
     if (!hasAccess) return { error: 'Ingen adgang til dette dokument' }
   }
+
+  const rlRej = await checkActionRateLimit(session.user.organizationId)
+  if (rlRej.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   const currentDecisions = (extraction.field_decisions as Record<string, unknown>) ?? {}
   const normalizedReason = params.reason?.trim() ? params.reason.trim() : null

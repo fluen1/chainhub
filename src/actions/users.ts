@@ -21,6 +21,7 @@ import type { User, UserRoleAssignment, UserRole } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import { captureError } from '@/lib/logger'
 import { env } from '@/lib/env'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 
 export type UserWithRoles = User & {
   roles: UserRoleAssignment[]
@@ -72,6 +73,9 @@ export async function createUser(input: CreateUserInput): Promise<ActionResult<U
     session.user.organizationId
   )
   if (!hasAccess) return { error: 'Du har ikke adgang til at oprette brugere' }
+
+  const rl = await checkActionRateLimit(session.user.organizationId)
+  if (rl.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   const normalizedEmail = parsed.data.email.trim().toLowerCase()
 
@@ -158,6 +162,9 @@ export async function updateUserRole(input: UpdateUserRoleInput): Promise<Action
     session.user.organizationId
   )
   if (!hasAccess) return { error: 'Du har ikke adgang til at ændre brugerroller' }
+
+  const rlRole = await checkActionRateLimit(session.user.organizationId)
+  if (rlRole.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   // Verify user belongs to organization
   const targetUser = await prisma.user.findFirst({
@@ -281,6 +288,9 @@ export async function toggleUserActive(userId: string): Promise<ActionResult<voi
   )
   if (!hasAccess) return { error: 'Du har ikke adgang til at ændre brugerstatus' }
 
+  const rlToggle = await checkActionRateLimit(session.user.organizationId)
+  if (rlToggle.limited) return { error: 'For mange handlinger. Vent venligst.' }
+
   // Cannot deactivate yourself
   if (userId === session.user.id) {
     return { error: 'Du kan ikke deaktivere dig selv' }
@@ -354,6 +364,9 @@ export async function inviteUser(input: InviteUserInput): Promise<ActionResult<{
     session.user.organizationId
   )
   if (!hasAccess) return { error: 'Du har ikke adgang til at invitere brugere' }
+
+  const rlInvite = await checkActionRateLimit(session.user.organizationId)
+  if (rlInvite.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   const normalizedEmail = parsed.data.email.trim().toLowerCase()
 
@@ -453,6 +466,9 @@ export async function acceptInvite(
   if (!preCheck) return { error: 'Invite-linket er ugyldigt' }
   if (preCheck.used_at) return { error: 'Invite-linket er allerede brugt' }
   if (preCheck.expires_at < new Date()) return { error: 'Invite-linket er udløbet' }
+
+  const rlAccept = await checkActionRateLimit(parsed.data.token)
+  if (rlAccept.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   // Bug 3: Validér role-værdien fra databasen (InviteToken.role er String, ikke enum)
   const parsedRole = userRoleSchema.safeParse(preCheck.role)

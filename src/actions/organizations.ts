@@ -12,6 +12,7 @@ import type { ActionResult } from '@/types/actions'
 import type { Organization } from '@prisma/client'
 import { withActionLogging } from '@/lib/action-helpers'
 import { captureError } from '@/lib/logger'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 
 export async function updateOrganization(
   input: UpdateOrganizationInput
@@ -26,6 +27,9 @@ export async function updateOrganization(
       session.user.organizationId
     )
     if (!hasAccess) return { error: 'Ingen adgang til indstillinger' }
+
+    const rl = await checkActionRateLimit(session.user.organizationId)
+    if (rl.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
     const parsed = updateOrganizationSchema.safeParse(input)
     if (!parsed.success) {

@@ -20,6 +20,7 @@ import type { ActionResult } from '@/types/actions'
 import type { Task, TaskHistoryField, TaskStatus, Prioritet, Prisma } from '@prisma/client'
 import { captureError } from '@/lib/logger'
 import { recordAuditEvent } from '@/lib/audit'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 import { parsePaginationParams } from '@/lib/pagination'
 import { getTaskStatusLabel, getPriorityLabel, daysUntil } from '@/lib/labels'
 import { formatShortDate } from '@/lib/date-helpers'
@@ -198,6 +199,9 @@ export async function createTask(input: CreateTaskInput): Promise<ActionResult<T
     if (!hasAccess) return { error: 'Ingen adgang til dette selskab' }
   }
 
+  const rl = await checkActionRateLimit(session.user.organizationId)
+  if (rl.limited) return { error: 'For mange handlinger. Vent venligst.' }
+
   try {
     const task = await prisma.$transaction(async (tx) => {
       const created = await tx.task.create({
@@ -301,6 +305,9 @@ export async function updateTaskStatus(input: UpdateTaskStatusInput): Promise<Ac
     return { data: task }
   }
 
+  const rlSts = await checkActionRateLimit(session.user.organizationId)
+  if (rlSts.limited) return { error: 'For mange handlinger. Vent venligst.' }
+
   try {
     const updated = await prisma.$transaction(async (tx) => {
       const next = await tx.task.update({
@@ -352,6 +359,9 @@ export async function updateTaskPriority(
   if (!task) return { error: 'Opgave ikke fundet' }
   if (task.priority === parsed.data.priority) return { data: task }
 
+  const rlPrio = await checkActionRateLimit(session.user.organizationId)
+  if (rlPrio.limited) return { error: 'For mange handlinger. Vent venligst.' }
+
   try {
     const updated = await prisma.$transaction(async (tx) => {
       const next = await tx.task.update({
@@ -401,6 +411,9 @@ export async function updateTaskAssignee(
   })
   if (!task) return { error: 'Opgave ikke fundet' }
   if (task.assigned_to === parsed.data.assignedTo) return { data: task }
+
+  const rlAssign = await checkActionRateLimit(session.user.organizationId)
+  if (rlAssign.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   // Resolve nyt assignee-navn til historik (user-id er ikke læsbart bagefter)
   let newAssigneeName: string | null = null
@@ -465,6 +478,9 @@ export async function updateTaskDueDate(
   })
   if (!task) return { error: 'Opgave ikke fundet' }
 
+  const rlDue = await checkActionRateLimit(session.user.organizationId)
+  if (rlDue.limited) return { error: 'For mange handlinger. Vent venligst.' }
+
   const newDueDate = parsed.data.dueDate ? new Date(parsed.data.dueDate) : null
   const oldIso = task.due_date ? task.due_date.toISOString().slice(0, 10) : null
   const newIso = newDueDate ? newDueDate.toISOString().slice(0, 10) : null
@@ -517,6 +533,9 @@ export async function deleteTask(taskId: string): Promise<ActionResult<void>> {
     )
     if (!hasAdmin) return { error: 'Ingen adgang til at slette denne opgave' }
   }
+
+  const rlDel = await checkActionRateLimit(session.user.organizationId)
+  if (rlDel.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   await prisma.task.update({
     where: { id: taskId },

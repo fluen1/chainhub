@@ -23,6 +23,7 @@ import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
 import type { Contract, ContractParty, ContractStatus, Prisma } from '@prisma/client'
 import { captureError } from '@/lib/logger'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 import {
   formatDate,
   getContractTypeLabel,
@@ -260,6 +261,9 @@ export async function createContract(input: CreateContractInput): Promise<Action
   )
   if (!hasSensitivityAccess) return { error: 'Du har ikke adgang til dette sensitivitetsniveau' }
 
+  const rl = await checkActionRateLimit(session.user.organizationId)
+  if (rl.limited) return { error: 'For mange handlinger. Vent venligst.' }
+
   // Tjek minimum-sensitivitet for system_type
   const minimumSensitivity = SENSITIVITY_MINIMUM[parsed.data.systemType as ContractSystemTypeKey]
   if (minimumSensitivity) {
@@ -352,6 +356,9 @@ export async function updateContractStatus(
   )
   if (!hasSensitivityAccess) return { error: 'Ingen adgang til denne kontrakt' }
 
+  const rl = await checkActionRateLimit(session.user.organizationId)
+  if (rl.limited) return { error: 'For mange handlinger. Vent venligst.' }
+
   // Valider transition
   const validNext = VALID_TRANSITIONS[contract.status] ?? []
   if (!validNext.includes(parsed.data.status)) {
@@ -407,6 +414,9 @@ export async function deleteContract(contractId: string): Promise<ActionResult<v
   const hasAccess = await canAccessModule(session.user.id, 'settings', session.user.organizationId)
   if (!hasAccess)
     return { error: 'Du har ikke adgang til denne funktion. Kontakt din administrator.' }
+
+  const rl = await checkActionRateLimit(session.user.organizationId)
+  if (rl.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   const contract = await prisma.contract.findFirst({
     where: {
@@ -487,6 +497,9 @@ export async function updateContract(input: UpdateContractInput): Promise<Action
     session.user.organizationId
   )
   if (!hasSensitivityAccess) return { error: 'Du har ikke adgang til dette sensitivitetsniveau' }
+
+  const rlUpd = await checkActionRateLimit(session.user.organizationId)
+  if (rlUpd.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   try {
     const updated = await prisma.contract.update({
@@ -589,6 +602,9 @@ export async function addContractParty(
     session.user.organizationId
   )
   if (!hasSensitivityAccess) return { error: 'Ingen adgang til denne kontrakt' }
+
+  const rlParty = await checkActionRateLimit(session.user.organizationId)
+  if (rlParty.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   try {
     const party = await prisma.contractParty.create({

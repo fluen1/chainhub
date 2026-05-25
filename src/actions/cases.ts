@@ -23,6 +23,7 @@ import type { Case } from '@prisma/client'
 import { recordAuditEvent } from '@/lib/audit'
 import { captureError } from '@/lib/logger'
 import { invalidateCompanyInsightsCache } from '@/lib/ai/invalidate-cache'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 
 // Gyldige sagsstatus-transitioner
 const CASE_TRANSITIONS: Record<string, string[]> = {
@@ -82,6 +83,9 @@ export async function createCase(input: CreateCaseInput): Promise<ActionResult<C
     if (!hasSensitivity)
       return { error: 'Du har ikke adgang til at oprette sager på dette fortrolighedsniveau' }
   }
+
+  const rl = await checkActionRateLimit(session.user.organizationId)
+  if (rl.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   try {
     const caseNumber = await generateCaseNumber(session.user.organizationId)
@@ -156,6 +160,9 @@ export async function updateCaseStatus(input: UpdateCaseStatusInput): Promise<Ac
   if (!validNext.includes(parsed.data.status)) {
     return { error: 'Sagen kan ikke ændres til denne status i det nuværende forløb.' }
   }
+
+  const rl = await checkActionRateLimit(session.user.organizationId)
+  if (rl.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   try {
     const updated = await prisma.case.update({
@@ -243,6 +250,9 @@ export async function closeCase(caseId: string, notes?: string): Promise<ActionR
   }
   if (!hasAccess) return { error: 'Ingen adgang til denne sag' }
 
+  const rlClose = await checkActionRateLimit(session.user.organizationId)
+  if (rlClose.limited) return { error: 'For mange handlinger. Vent venligst.' }
+
   try {
     const updated = await prisma.case.update({
       where: { id: parsed.data.caseId },
@@ -307,6 +317,9 @@ export async function escalateCase(caseId: string): Promise<ActionResult<void>> 
     }
   }
   if (!hasAccess) return { error: 'Ingen adgang til denne sag' }
+
+  const rlEsc = await checkActionRateLimit(session.user.organizationId)
+  if (rlEsc.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   try {
     // Hent bruger-navn til eskalerings-kommentar
@@ -397,6 +410,9 @@ export async function updateCase(input: UpdateCaseInput): Promise<ActionResult<C
   }
   if (!hasAccess) return { error: 'Ingen adgang til denne sag' }
 
+  const rlUpd = await checkActionRateLimit(session.user.organizationId)
+  if (rlUpd.limited) return { error: 'For mange handlinger. Vent venligst.' }
+
   // Tjek at bruger har adgang til det nye sensitivitetsniveau
   if (parsed.data.sensitivity !== undefined) {
     const hasSensitivity = await canAccessSensitivity(
@@ -457,6 +473,9 @@ export async function deleteCase(caseId: string): Promise<ActionResult<void>> {
   const hasModule = await canAccessModule(session.user.id, 'settings', session.user.organizationId)
   if (!hasModule)
     return { error: 'Du har ikke adgang til denne funktion. Kontakt din administrator.' }
+
+  const rlDel = await checkActionRateLimit(session.user.organizationId)
+  if (rlDel.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   const existingCase = await prisma.case.findFirst({
     where: { id: caseId, organization_id: session.user.organizationId, deleted_at: null },

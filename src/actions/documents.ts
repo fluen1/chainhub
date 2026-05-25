@@ -7,6 +7,7 @@ import { canAccessCompany, canAccessModule, getAccessibleCompanies } from '@/lib
 import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
 import type { Prisma } from '@prisma/client'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Page-data queries (flyt Prisma-kald ud af page.tsx)
@@ -282,6 +283,9 @@ export async function deleteDocument(documentId: string): Promise<ActionResult<v
     )
     if (!hasAccess) return { error: 'Ingen adgang til dette dokument' }
   }
+
+  const rl = await checkActionRateLimit(session.user.organizationId)
+  if (rl.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   await prisma.document.update({
     where: { id: documentId },

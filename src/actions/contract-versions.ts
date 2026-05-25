@@ -9,6 +9,7 @@ import type { ActionResult } from '@/types/actions'
 import type { ContractVersion } from '@prisma/client'
 import { captureError } from '@/lib/logger'
 import { zodChangeType } from '@/lib/zod-enums'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 
 const createContractVersionSchema = z.object({
   contractId: z.string().min(1),
@@ -53,6 +54,9 @@ export async function createContractVersion(
     session.user.organizationId
   )
   if (!hasSensitivity) return { error: 'Ingen adgang til denne kontrakt' }
+
+  const rl = await checkActionRateLimit(session.user.organizationId)
+  if (rl.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   // Get next version number
   const latestVersion = await prisma.contractVersion.findFirst({

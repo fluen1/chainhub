@@ -6,6 +6,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { captureError } from '@/lib/logger'
 import type { ActionResult } from '@/types/actions'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 
 // ────────────────────────────────────────────────────────────────────────────
 // Zod schemas
@@ -39,6 +40,9 @@ export async function createAccount(
     const firstError = parsed.error.issues[0]
     return { error: firstError?.message ?? 'Ugyldig input' }
   }
+
+  const rl = await checkActionRateLimit(parsed.data.email)
+  if (rl.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   const { name, email, password } = parsed.data
 

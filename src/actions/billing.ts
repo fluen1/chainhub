@@ -8,6 +8,7 @@ import { captureError } from '@/lib/logger'
 import { baseUrl } from '@/lib/env'
 import { canAccessModule } from '@/lib/permissions'
 import type { ActionResult } from '@/types/actions'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 
 const BASE_URL = baseUrl
 
@@ -82,6 +83,9 @@ export async function createCheckoutSession(
   const hasAccess = await canAccessModule(session.user.id, 'billing', session.user.organizationId)
   if (!hasAccess) return { error: 'Du har ikke adgang til fakturering' }
 
+  const rl = await checkActionRateLimit(session.user.organizationId)
+  if (rl.limited) return { error: 'For mange handlinger. Vent venligst.' }
+
   const parsed = checkoutSchema.safeParse({ priceId })
   if (!parsed.success) return { error: 'Ugyldig pris-ID' }
 
@@ -147,6 +151,9 @@ export async function createPortalSession(): Promise<ActionResult<{ url: string 
 
   const hasAccess = await canAccessModule(session.user.id, 'billing', session.user.organizationId)
   if (!hasAccess) return { error: 'Du har ikke adgang til fakturering' }
+
+  const rlPortal = await checkActionRateLimit(session.user.organizationId)
+  if (rlPortal.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   const stripe = getStripe()
   if (!stripe) return { error: 'Betaling er ikke konfigureret' }

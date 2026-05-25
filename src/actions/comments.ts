@@ -7,6 +7,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import type { ActionResult } from '@/types/actions'
 import { recordAuditEvent } from '@/lib/audit'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 
 const commentSchema = z.object({
   content: z.string().min(1, 'Kommentar kan ikke være tom').max(2000, 'Maks 2000 tegn'),
@@ -36,6 +37,9 @@ export async function createComment(input: {
     },
   })
   if (!task) return { error: 'Opgave ikke fundet' }
+
+  const rl = await checkActionRateLimit(session.user.organizationId)
+  if (rl.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   const comment = await prisma.comment.create({
     data: {
@@ -84,6 +88,9 @@ export async function createCaseComment(input: {
   }
   if (!hasAccess) return { error: 'Ingen adgang til denne sag' }
 
+  const rlCase = await checkActionRateLimit(session.user.organizationId)
+  if (rlCase.limited) return { error: 'For mange handlinger. Vent venligst.' }
+
   const comment = await prisma.comment.create({
     data: {
       organization_id: session.user.organizationId,
@@ -116,6 +123,9 @@ export async function deleteComment(commentId: string): Promise<ActionResult<nul
   })
   if (!comment) return { error: 'Kommentar ikke fundet' }
   if (comment.created_by !== session.user.id) return { error: 'Du kan kun slette egne kommentarer' }
+
+  const rlDel = await checkActionRateLimit(session.user.organizationId)
+  if (rlDel.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   // Soft-delete — bevarer kommentar i audit-trail
   await prisma.comment.update({

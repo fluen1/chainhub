@@ -9,6 +9,7 @@ import type { ActionResult } from '@/types/actions'
 import { captureError } from '@/lib/logger'
 import { zodMetricType, zodPeriodType, zodMetricSource } from '@/lib/zod-enums'
 import { invalidateCompanyInsightsCache } from '@/lib/ai/invalidate-cache'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 
 const upsertMetricSchema = z.object({
   companyId: z.string().min(1, 'Selskab mangler'),
@@ -39,6 +40,9 @@ export async function upsertFinancialMetric(
     session.user.organizationId
   )
   if (!hasCompany) return { error: 'Ingen adgang til dette selskab' }
+
+  const rl = await checkActionRateLimit(session.user.organizationId)
+  if (rl.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   try {
     const metric = await prisma.financialMetric.upsert({
@@ -113,6 +117,9 @@ export async function createDividendRecord(
     session.user.organizationId
   )
   if (!hasCompany) return { error: 'Ingen adgang til dette selskab' }
+
+  const rlDiv = await checkActionRateLimit(session.user.organizationId)
+  if (rlDiv.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   try {
     // Gemmes som FinancialMetric med type EBITDA indtil DividendRecord-tabel er tilgængelig

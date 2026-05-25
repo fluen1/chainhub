@@ -8,6 +8,7 @@ import type { ActionResult } from '@/types/actions'
 import { z } from 'zod'
 import { captureError } from '@/lib/logger'
 import { zodVisitType, zodVisitStatus } from '@/lib/zod-enums'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Page-data queries (flyt Prisma-kald ud af page.tsx)
@@ -31,9 +32,7 @@ export interface VisitDetailPageData {
   canReopen: boolean
 }
 
-export async function getVisitDetailPageData(
-  visitId: string
-): Promise<VisitDetailPageData | null> {
+export async function getVisitDetailPageData(visitId: string): Promise<VisitDetailPageData | null> {
   const session = await auth()
   if (!session) return null
 
@@ -131,6 +130,9 @@ export async function createVisit(input: CreateVisitInput): Promise<ActionResult
   )
   if (!hasAccess) return { error: 'Ingen adgang til dette selskab' }
 
+  const rl = await checkActionRateLimit(session.user.organizationId)
+  if (rl.limited) return { error: 'For mange handlinger. Vent venligst.' }
+
   try {
     const visit = await prisma.visit.create({
       data: {
@@ -181,6 +183,9 @@ export async function updateVisit(input: UpdateVisitInput): Promise<ActionResult
   )
   if (!hasAccess) return { error: 'Ingen adgang til dette selskab' }
 
+  const rlUpd = await checkActionRateLimit(session.user.organizationId)
+  if (rlUpd.limited) return { error: 'For mange handlinger. Vent venligst.' }
+
   try {
     const updated = await prisma.visit.update({
       where: { id: parsed.data.visitId },
@@ -225,6 +230,9 @@ export async function deleteVisit(visitId: string): Promise<ActionResult<void>> 
   )
   if (!hasAccess)
     return { error: 'Du har ikke adgang til denne funktion. Kontakt din administrator.' }
+
+  const rlDel = await checkActionRateLimit(session.user.organizationId)
+  if (rlDel.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   await prisma.visit.update({
     where: { id: visitId },

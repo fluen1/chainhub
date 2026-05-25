@@ -14,6 +14,7 @@ import type { ActionResult } from '@/types/actions'
 import type { CompanyPerson, SensitivityLevel } from '@prisma/client'
 import { recordAuditEvent } from '@/lib/audit'
 import { captureError } from '@/lib/logger'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 
 // Direktør og bestyrelse er governance-roller — INTERN sensitivity på audit
 const GOVERNANCE_ROLES = new Set(['direktoer', 'bestyrelsesformand', 'bestyrelsesmedlem'])
@@ -37,6 +38,9 @@ export async function addCompanyPerson(
     session.user.organizationId
   )
   if (!hasAccess) return { error: 'Ingen adgang til dette selskab' }
+
+  const rl = await checkActionRateLimit(session.user.organizationId)
+  if (rl.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   try {
     let personId = parsed.data.personId
@@ -138,6 +142,9 @@ export async function endCompanyPerson(
     session.user.organizationId
   )
   if (!hasAccess) return { error: 'Ingen adgang til dette selskab' }
+
+  const rlEnd = await checkActionRateLimit(session.user.organizationId)
+  if (rlEnd.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   try {
     const companyPerson = await prisma.companyPerson.update({

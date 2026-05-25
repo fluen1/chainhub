@@ -6,6 +6,7 @@ import { captureError } from '@/lib/logger'
 import type { ActionResult } from '@/types/actions'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 
 const requestResetSchema = z.object({
   email: z.string().email('Ugyldig e-mail-adresse'),
@@ -29,6 +30,9 @@ export async function requestPasswordReset(email: string): Promise<ActionResult<
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? 'Ugyldig e-mail-adresse' }
   }
+
+  const rl = await checkActionRateLimit(parsed.data.email)
+  if (rl.limited) return { data: true } // returnér success for ikke at lække om throttling
 
   try {
     // Find alle brugere med denne email på tværs af organisationer
@@ -78,6 +82,9 @@ export async function resetPassword(
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? 'Ugyldig input' }
   }
+
+  const rl = await checkActionRateLimit(parsed.data.token)
+  if (rl.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   try {
     const resetToken = await prisma.passwordResetToken.findUnique({
