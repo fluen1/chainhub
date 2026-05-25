@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
-import type { HeatmapCompany } from '@/actions/dashboard'
+import type { HeatmapCompany } from '@/lib/dashboard-helpers'
 
 export interface HeatmapGridProps {
   companies: HeatmapCompany[]

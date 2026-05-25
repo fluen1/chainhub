@@ -212,7 +212,7 @@ describe('export/[entity]/route.ts — audit og RFC 5987 Content-Disposition', (
     const audit = await import('@/lib/audit')
     const { GET } = await import('@/app/api/export/[entity]/route')
     const request = new Request('http://localhost/api/export/companies')
-    await GET(request, { params: { entity: 'companies' } })
+    await GET(request, { params: Promise.resolve({ entity: 'companies' }) })
 
     expect(audit.recordAuditEvent).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -227,7 +227,7 @@ describe('export/[entity]/route.ts — audit og RFC 5987 Content-Disposition', (
   it('returnerer RFC 5987 Content-Disposition header', async () => {
     const { GET } = await import('@/app/api/export/[entity]/route')
     const request = new Request('http://localhost/api/export/companies')
-    const response = await GET(request, { params: { entity: 'companies' } })
+    const response = await GET(request, { params: Promise.resolve({ entity: 'companies' }) })
 
     const disposition = response.headers.get('Content-Disposition') ?? ''
     // Skal indeholde både legacy filename og RFC 5987 filename*
@@ -238,7 +238,7 @@ describe('export/[entity]/route.ts — audit og RFC 5987 Content-Disposition', (
   it('returnerer 400 for ugyldig entity', async () => {
     const { GET } = await import('@/app/api/export/[entity]/route')
     const request = new Request('http://localhost/api/export/invalid')
-    const response = await GET(request, { params: { entity: 'invalid' } })
+    const response = await GET(request, { params: Promise.resolve({ entity: 'invalid' }) })
     expect(response.status).toBe(400)
   })
 })
@@ -253,7 +253,9 @@ describe('export/gdpr/[personId]/route.ts — UUID-validering og audit', () => {
   it('returnerer 400 for ikke-UUID personId', async () => {
     const { GET } = await import('@/app/api/export/gdpr/[personId]/route')
     const request = new Request('http://localhost/api/export/gdpr/not-a-uuid')
-    const response = await GET(request as never, { params: { personId: 'not-a-uuid' } })
+    const response = await GET(request as never, {
+      params: Promise.resolve({ personId: 'not-a-uuid' }),
+    })
     expect(response.status).toBe(400)
   })
 
@@ -261,7 +263,7 @@ describe('export/gdpr/[personId]/route.ts — UUID-validering og audit', () => {
     const { GET } = await import('@/app/api/export/gdpr/[personId]/route')
     const request = new Request("http://localhost/api/export/gdpr/'; DROP TABLE persons; --")
     const response = await GET(request as never, {
-      params: { personId: "'; DROP TABLE persons; --" },
+      params: Promise.resolve({ personId: "'; DROP TABLE persons; --" }),
     })
     expect(response.status).toBe(400)
   })
@@ -271,7 +273,7 @@ describe('export/gdpr/[personId]/route.ts — UUID-validering og audit', () => {
     const validUuid = 'a1b2c3d4-e5f6-4789-9abc-def012345678'
     const { GET } = await import('@/app/api/export/gdpr/[personId]/route')
     const request = new Request(`http://localhost/api/export/gdpr/${validUuid}`)
-    await GET(request as never, { params: { personId: validUuid } })
+    await GET(request as never, { params: Promise.resolve({ personId: validUuid }) })
 
     expect(audit.recordAuditEvent).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -287,7 +289,9 @@ describe('export/gdpr/[personId]/route.ts — UUID-validering og audit', () => {
     const validUuid = 'a1b2c3d4-e5f6-4789-9abc-def012345678'
     const { GET } = await import('@/app/api/export/gdpr/[personId]/route')
     const request = new Request(`http://localhost/api/export/gdpr/${validUuid}`)
-    const response = await GET(request as never, { params: { personId: validUuid } })
+    const response = await GET(request as never, {
+      params: Promise.resolve({ personId: validUuid }),
+    })
 
     const disposition = response.headers.get('Content-Disposition') ?? ''
     expect(disposition).toContain('filename=')
@@ -298,7 +302,9 @@ describe('export/gdpr/[personId]/route.ts — UUID-validering og audit', () => {
     const validUuid = 'a1b2c3d4-e5f6-4789-9abc-def012345678'
     const { GET } = await import('@/app/api/export/gdpr/[personId]/route')
     const request = new Request(`http://localhost/api/export/gdpr/${validUuid}`)
-    const response = await GET(request as never, { params: { personId: validUuid } })
+    const response = await GET(request as never, {
+      params: Promise.resolve({ personId: validUuid }),
+    })
     expect(response.status).toBe(200)
   })
 })

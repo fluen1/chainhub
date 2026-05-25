@@ -24,23 +24,11 @@ import {
   type CoverageItem,
   type DashboardData,
   type HeatmapCompany,
-  type PortfolioTotals,
-  type TimelineColor,
-  type TimelineItem,
-  type TimelineSectionData,
 } from '@/lib/dashboard-helpers'
 import { getContractTypeLabel } from '@/lib/labels'
 
-// Re-eksportér typer så eksisterende importers (`@/actions/dashboard`) fortsat virker.
-export type {
-  CoverageItem,
-  DashboardData,
-  HeatmapCompany,
-  PortfolioTotals,
-  TimelineColor,
-  TimelineItem,
-  TimelineSectionData,
-}
+// Typer re-eksporteres ikke herfra (Next.js 16: 'use server' filer kan ikke re-eksportere typer).
+// Importér direkte fra '@/lib/dashboard-helpers' i stedet.
 
 // ---------------------------------------------------------------
 // Hoved-aggregator — én query-parallel batch

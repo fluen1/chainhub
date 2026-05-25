@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { HeatmapGrid } from '@/components/dashboard/heatmap-grid'
-import type { HeatmapCompany } from '@/actions/dashboard'
+import type { HeatmapCompany } from '@/lib/dashboard-helpers'
 
 const companies: HeatmapCompany[] = [
   { id: 'c1', name: 'Tandlæge Aalborg ApS', healthStatus: 'critical', openCaseCount: 2 },
