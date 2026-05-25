@@ -42,6 +42,15 @@ export async function getSettingsAIUsage(): Promise<SettingsAIUsage> {
     return { used: 0, max: 1000, percent: 0, threshold: 'none', capUsd: 50, currentUsd: 0 }
   }
 
+  const hasAccess = await canAccessModule(
+    session!.user.id,
+    'settings',
+    session!.user.organizationId
+  )
+  if (!hasAccess) {
+    return { used: 0, max: 1000, percent: 0, threshold: 'none', capUsd: 50, currentUsd: 0 }
+  }
+
   try {
     const now = new Date()
     const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))

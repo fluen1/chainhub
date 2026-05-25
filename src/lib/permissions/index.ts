@@ -186,6 +186,9 @@ export async function canAccessModule(
           r === 'COMPANY_LEGAL' ||
           r === 'COMPANY_READONLY'
       )
+    // Onboarding: vises til alle authentikerede brugere med en hvilken som helst rolle
+    case 'onboarding':
+      return userRoles.length > 0
     // Export: compliance/rapport-brug — GROUP_OWNER, GROUP_ADMIN, GROUP_LEGAL, GROUP_FINANCE
     // GDPR-export (prepareGdprExport) er admin-only og bruger 'settings'-modulet separat.
     case 'export':

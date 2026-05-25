@@ -2,6 +2,7 @@
 
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { canAccessModule } from '@/lib/permissions'
 import { captureError } from '@/lib/logger'
 
 export interface OnboardingStatus {
@@ -35,6 +36,13 @@ export async function getOnboardingStatus(): Promise<OnboardingStatus> {
   if (!session) {
     return EMPTY_STATUS
   }
+
+  const hasAccess = await canAccessModule(
+    session.user.id,
+    'onboarding',
+    session.user.organizationId
+  )
+  if (!hasAccess) return EMPTY_STATUS
 
   try {
     const orgId = session.user.organizationId

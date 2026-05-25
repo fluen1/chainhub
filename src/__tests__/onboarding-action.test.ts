@@ -18,6 +18,10 @@ vi.mock('@/lib/logger', () => ({
   createLogger: vi.fn(() => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() })),
 }))
 
+vi.mock('@/lib/permissions', () => ({
+  canAccessModule: vi.fn().mockResolvedValue(true),
+}))
+
 import { getOnboardingStatus } from '@/actions/onboarding'
 
 const ORG_ID = 'org-1'

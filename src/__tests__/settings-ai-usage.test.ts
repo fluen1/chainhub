@@ -20,6 +20,10 @@ vi.mock('@/lib/logger', () => ({
   createLogger: vi.fn(() => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() })),
 }))
 
+vi.mock('@/lib/permissions', () => ({
+  canAccessModule: vi.fn().mockResolvedValue(true),
+}))
+
 vi.mock('@/lib/ai/cost-cap', () => ({
   getCostCapStatus: vi.fn().mockResolvedValue({
     capUsd: 50,
