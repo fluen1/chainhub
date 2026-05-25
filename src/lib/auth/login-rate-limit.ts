@@ -8,25 +8,42 @@ interface LoginAttempt {
 
 const attempts = new Map<string, LoginAttempt>()
 
-export function checkLoginRateLimit(email: string): { allowed: boolean; retryAfterMs?: number } {
-  const key = email.trim().toLowerCase()
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase()
+}
+
+/** Returnerer true hvis brugeren er blokeret — tæller IKKE forsøget. */
+export function isLoginRateLimited(email: string): { limited: boolean; retryAfterMs?: number } {
+  const key = normalizeEmail(email)
+  const now = Date.now()
+  const entry = attempts.get(key)
+
+  if (!entry || now - entry.firstAttemptAt > WINDOW_MS) {
+    return { limited: false }
+  }
+
+  if (entry.count >= MAX_ATTEMPTS) {
+    const retryAfterMs = WINDOW_MS - (now - entry.firstAttemptAt)
+    return { limited: true, retryAfterMs }
+  }
+
+  return { limited: false }
+}
+
+/** Registrerer ét fejlet loginforsøg. Kaldes KUN når password-check fejler. */
+export function recordFailedLoginAttempt(email: string): void {
+  const key = normalizeEmail(email)
   const now = Date.now()
   const entry = attempts.get(key)
 
   if (!entry || now - entry.firstAttemptAt > WINDOW_MS) {
     attempts.set(key, { count: 1, firstAttemptAt: now })
-    return { allowed: true }
-  }
-
-  if (entry.count < MAX_ATTEMPTS) {
+  } else {
     entry.count++
-    return { allowed: true }
   }
-
-  const retryAfterMs = WINDOW_MS - (now - entry.firstAttemptAt)
-  return { allowed: false, retryAfterMs }
 }
 
+/** Kun til brug i tests — nulstiller intern state. */
 export function resetLoginRateLimiter(): void {
   attempts.clear()
 }

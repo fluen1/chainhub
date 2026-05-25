@@ -2,7 +2,7 @@ import NextAuth, { type NextAuthOptions, type DefaultSession, getServerSession }
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { prisma } from '@/lib/db'
 import bcrypt from 'bcryptjs'
-import { checkLoginRateLimit } from '@/lib/auth/login-rate-limit'
+import { isLoginRateLimited, recordFailedLoginAttempt } from '@/lib/auth/login-rate-limit'
 
 declare module 'next-auth' {
   interface Session extends DefaultSession {
@@ -38,15 +38,15 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
-        const rateCheck = checkLoginRateLimit(credentials.email as string)
-        if (!rateCheck.allowed) {
+        const normalizedEmail = credentials.email.trim().toLowerCase()
+
+        const rateCheck = isLoginRateLimited(normalizedEmail)
+        if (rateCheck.limited) {
           const minutter = Math.ceil((rateCheck.retryAfterMs ?? 0) / 60000)
           throw new Error(
             `For mange loginforsøg — prøv igen om ${minutter} minut${minutter === 1 ? '' : 'ter'}`
           )
         }
-
-        const normalizedEmail = credentials.email.trim().toLowerCase()
 
         // Defensive auth-guard:
         // Email er kun unik pr. organisation i schemaet, så vi må ikke logge ind på
@@ -80,6 +80,7 @@ export const authOptions: NextAuthOptions = {
         const isPasswordValid = await bcrypt.compare(credentials.password, user.password_hash)
 
         if (!isPasswordValid) {
+          recordFailedLoginAttempt(normalizedEmail)
           return null
         }
 
