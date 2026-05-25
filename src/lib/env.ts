@@ -18,6 +18,11 @@ const envSchema = z.object({
   UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
   NEXT_PUBLIC_POSTHOG_KEY: z.string().optional(),
   NEXT_PUBLIC_POSTHOG_HOST: z.string().url().optional(),
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().optional(),
+  STRIPE_STARTER_PRICE_ID: z.string().optional(),
+  STRIPE_PROFESSIONAL_PRICE_ID: z.string().optional(),
 })
 
 const parsed = envSchema.safeParse(process.env)

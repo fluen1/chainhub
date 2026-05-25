@@ -286,8 +286,10 @@ model Organization {
   cvr             String?
   plan            String    @default("trial")
   plan_expires_at DateTime?
-  chain_structure Boolean   @default(false)
-  created_at      DateTime  @default(now())
+  chain_structure      Boolean   @default(false)
+  industry             String?
+  estimated_locations  String?
+  created_at           DateTime  @default(now())
   updated_at      DateTime  @updatedAt
   created_by      String?
 
