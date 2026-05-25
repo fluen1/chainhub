@@ -60,11 +60,11 @@ describe('prepareGdprExport', () => {
 
   it('returnerer download-URL og logger FORTROLIG audit-event ved happy path', async () => {
     const { recordAuditEvent } = await import('@/lib/audit')
-    const result = await prepareGdprExport('person-123')
+    const result = await prepareGdprExport('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
 
     expect('data' in result).toBe(true)
     if ('data' in result && result.data) {
-      expect(result.data.downloadUrl).toBe('/api/export/gdpr/person-123')
+      expect(result.data.downloadUrl).toBe('/api/export/gdpr/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
     }
     expect(recordAuditEvent).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -72,7 +72,7 @@ describe('prepareGdprExport', () => {
         userId: 'user-1',
         action: 'GDPR_EXPORT',
         resourceType: 'person',
-        resourceId: 'person-123',
+        resourceId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
         sensitivity: 'FORTROLIG',
       })
     )
@@ -82,7 +82,7 @@ describe('prepareGdprExport', () => {
     const auth = await import('@/lib/auth')
     vi.mocked(auth.auth).mockResolvedValueOnce(null)
 
-    const result = await prepareGdprExport('person-123')
+    const result = await prepareGdprExport('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
     expect(result).toEqual({ error: 'Ikke autoriseret' })
   })
 
@@ -90,7 +90,7 @@ describe('prepareGdprExport', () => {
     const perms = await import('@/lib/permissions')
     vi.mocked(perms.canAccessModule).mockResolvedValueOnce(false)
 
-    const result = await prepareGdprExport('person-123')
+    const result = await prepareGdprExport('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
     expect(result).toEqual({ error: 'Kun admin kan håndtere GDPR-eksport' })
   })
 })
@@ -102,7 +102,7 @@ describe('executeGdprDelete', () => {
 
   it('sletter persondata og logger STRENGT_FORTROLIG audit-event ved happy path', async () => {
     const { recordAuditEvent } = await import('@/lib/audit')
-    const result = await executeGdprDelete('person-123')
+    const result = await executeGdprDelete('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
 
     expect('data' in result).toBe(true)
     if ('data' in result && result.data) {
@@ -116,7 +116,7 @@ describe('executeGdprDelete', () => {
         userId: 'user-1',
         action: 'GDPR_DELETE',
         resourceType: 'person',
-        resourceId: 'person-123',
+        resourceId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
         sensitivity: 'STRENGT_FORTROLIG',
       })
     )
@@ -135,7 +135,7 @@ describe('executeGdprDelete', () => {
       },
     })
 
-    const result = await executeGdprDelete('missing-person')
+    const result = await executeGdprDelete('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb')
     expect(result).toEqual({ error: 'Person ikke fundet' })
   })
 
@@ -143,7 +143,7 @@ describe('executeGdprDelete', () => {
     const auth = await import('@/lib/auth')
     vi.mocked(auth.auth).mockResolvedValueOnce(null)
 
-    const result = await executeGdprDelete('person-123')
+    const result = await executeGdprDelete('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
     expect(result).toEqual({ error: 'Ikke autoriseret' })
   })
 
@@ -151,7 +151,7 @@ describe('executeGdprDelete', () => {
     const perms = await import('@/lib/permissions')
     vi.mocked(perms.canAccessModule).mockResolvedValueOnce(false)
 
-    const result = await executeGdprDelete('person-123')
+    const result = await executeGdprDelete('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
     expect(result).toEqual({ error: 'Kun admin kan slette persondata' })
   })
 })

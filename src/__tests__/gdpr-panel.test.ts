@@ -99,17 +99,17 @@ describe('GdprPanel export-flow (via action)', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('prepareGdprExport returnerer korrekt download-URL', async () => {
-    const result = await prepareGdprExport('person-123')
+    const result = await prepareGdprExport('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
     expect('data' in result).toBe(true)
     if ('data' in result && result.data) {
-      expect(result.data.downloadUrl).toBe('/api/export/gdpr/person-123')
+      expect(result.data.downloadUrl).toBe('/api/export/gdpr/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
     }
   })
 
   it('prepareGdprExport afviser ikke-admin', async () => {
     const perms = await import('@/lib/permissions')
     vi.mocked(perms.canAccessModule).mockResolvedValueOnce(false)
-    const result = await prepareGdprExport('person-123')
+    const result = await prepareGdprExport('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
     expect('error' in result).toBe(true)
     if ('error' in result) {
       expect(result.error).toMatch(/admin/i)
@@ -122,7 +122,7 @@ describe('GdprPanel delete-flow (via action)', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('executeGdprDelete lykkes og returnerer summary', async () => {
-    const result = await executeGdprDelete('person-123')
+    const result = await executeGdprDelete('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
     expect('data' in result).toBe(true)
     if ('data' in result && result.data) {
       expect(result.data.personUpdated).toBe(1)
@@ -134,7 +134,7 @@ describe('GdprPanel delete-flow (via action)', () => {
   it('executeGdprDelete afviser ikke-admin', async () => {
     const perms = await import('@/lib/permissions')
     vi.mocked(perms.canAccessModule).mockResolvedValueOnce(false)
-    const result = await executeGdprDelete('person-123')
+    const result = await executeGdprDelete('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
     expect('error' in result).toBe(true)
     if ('error' in result) {
       expect(result.error).toMatch(/admin/i)

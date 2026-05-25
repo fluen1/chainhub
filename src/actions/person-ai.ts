@@ -1,10 +1,16 @@
 'use server'
 
+import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { canAccessCompany } from '@/lib/permissions'
 import { createLogger } from '@/lib/logger'
 import type { ActionResult } from '@/types/actions'
+
+// Løs UUID-validering: accepterer alle 8-4-4-4-12 hex-formater inkl. nil-UUIDs (seed-data)
+const uuidSchema = z
+  .string()
+  .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
 
 const log = createLogger('action:person-ai')
 
@@ -41,6 +47,8 @@ export async function getPersonAIExtractions(
 ): Promise<ActionResult<PersonContractExtraction[]>> {
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
+
+  if (!uuidSchema.safeParse(personId).success) return { error: 'Ugyldigt input' }
 
   try {
     const parties = await prisma.contractParty.findMany({

@@ -1,10 +1,15 @@
 'use server'
 
+import { z } from 'zod'
 import { prisma } from '@/lib/db'
 import { getAccessibleCompanies, canAccessSensitivity } from '@/lib/permissions'
 import { MIN_SEARCH_LENGTH, RESULTS_PER_TYPE } from '@/lib/search/constants'
 import type { SensitivityLevel } from '@prisma/client'
 import { auth } from '@/lib/auth'
+
+const searchSchema = z.object({
+  query: z.string().min(1).max(200),
+})
 
 // -----------------------------------------------------------------
 // Output-typer
@@ -76,10 +81,14 @@ export interface SearchResults {
 export async function runSearch(query: string): Promise<SearchResults | null> {
   const session = await auth()
   if (!session) return null
+
+  const parsed = searchSchema.safeParse({ query })
+  if (!parsed.success) return null
+
   const userId = session.user.id
   const orgId = session.user.organizationId
 
-  const trimmed = query.trim()
+  const trimmed = parsed.data.query.trim()
   if (trimmed.length < MIN_SEARCH_LENGTH) return null
 
   const companyIds = await getAccessibleCompanies(userId, orgId)

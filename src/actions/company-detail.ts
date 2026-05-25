@@ -1,8 +1,14 @@
 'use server'
 
+import { z } from 'zod'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { getAccessibleCompanies } from '@/lib/permissions'
+
+// Løs UUID-validering: accepterer alle 8-4-4-4-12 hex-formater inkl. nil-UUIDs (seed-data)
+const uuidSchema = z
+  .string()
+  .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
 import { formatDate } from '@/lib/labels'
 import {
   sectionsForRole,
@@ -126,6 +132,9 @@ const CACHE_TTL_MS = 24 * 60 * 60 * 1000
 export async function getCompanyDetailData(companyId: string): Promise<CompanyDetailData | null> {
   const session = await auth()
   if (!session) return null
+
+  if (!uuidSchema.safeParse(companyId).success) return null
+
   const userId = session.user.id
   const organizationId = session.user.organizationId
 

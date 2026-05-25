@@ -1,5 +1,6 @@
 'use server'
 
+import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { canAccessModule } from '@/lib/permissions'
 import { gdprDeletePerson } from '@/lib/export/gdpr'
@@ -7,6 +8,11 @@ import { recordAuditEvent } from '@/lib/audit'
 import { captureError } from '@/lib/logger'
 import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
+
+// Løs UUID-validering: accepterer alle 8-4-4-4-12 hex-formater inkl. nil-UUIDs (seed-data)
+const uuidSchema = z
+  .string()
+  .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
 
 /**
  * GDPR Article 15 — Right of access.
@@ -18,6 +24,8 @@ export async function prepareGdprExport(
 ): Promise<ActionResult<{ downloadUrl: string }>> {
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
+
+  if (!uuidSchema.safeParse(personId).success) return { error: 'Ugyldigt input' }
 
   const hasAccess = await canAccessModule(session.user.id, 'settings', session.user.organizationId)
   if (!hasAccess) return { error: 'Kun admin kan håndtere GDPR-eksport' }
@@ -49,6 +57,8 @@ export async function executeGdprDelete(
 ): Promise<ActionResult<{ personUpdated: number; total: number }>> {
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
+
+  if (!uuidSchema.safeParse(personId).success) return { error: 'Ugyldigt input' }
 
   const hasAccess = await canAccessModule(session.user.id, 'settings', session.user.organizationId)
   if (!hasAccess) return { error: 'Kun admin kan slette persondata' }

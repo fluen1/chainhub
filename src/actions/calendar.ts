@@ -1,11 +1,17 @@
 'use server'
 
+import { z } from 'zod'
 import { prisma } from '@/lib/db'
 import { getAccessibleCompanies } from '@/lib/permissions'
 import { createLogger } from '@/lib/logger'
 import { getVisitTypeLabel } from '@/lib/labels'
 import type { CalendarEvent } from '@/types/ui'
 import { auth } from '@/lib/auth'
+
+const calendarSchema = z.object({
+  year: z.number().int().min(2020).max(2100),
+  month: z.number().int().min(1).max(12),
+})
 
 // Cap på antal events pr. type for at undgå OOM / timeouts ved store kæder.
 // 500 events/type/måned er rigeligt for 50 lokationer × 10 events/måned.
@@ -17,14 +23,18 @@ const log = createLogger('action:calendar')
 export async function getCalendarEvents(year: number, month: number): Promise<CalendarEvent[]> {
   const session = await auth()
   if (!session) return []
+
+  const parsed = calendarSchema.safeParse({ year, month })
+  if (!parsed.success) return []
+
   const userId = session.user.id
   const organizationId = session.user.organizationId
 
   const companyIds = await getAccessibleCompanies(userId, organizationId)
   if (companyIds.length === 0) return []
 
-  const startDate = new Date(year, month - 1, 1)
-  const endDate = new Date(year, month, 0, 23, 59, 59, 999)
+  const startDate = new Date(parsed.data.year, parsed.data.month - 1, 1)
+  const endDate = new Date(parsed.data.year, parsed.data.month, 0, 23, 59, 59, 999)
 
   const [contracts, tasks, visits, cases] = await Promise.all([
     // Kontrakt-udløb (AKTIV status, expiry_date i måneden)

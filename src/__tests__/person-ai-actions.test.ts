@@ -35,7 +35,7 @@ describe('getPersonAIExtractions', () => {
     const { prisma } = await import('@/lib/db')
     vi.mocked(prisma.contractParty.findMany).mockImplementation((() =>
       Promise.resolve([])) as never)
-    const result = await getPersonAIExtractions('p-1')
+    const result = await getPersonAIExtractions('cccccccc-cccc-4ccc-8ccc-cccccccccccc')
     expect('data' in result && result.data).toEqual([])
   })
 
@@ -55,7 +55,7 @@ describe('getPersonAIExtractions', () => {
           },
         },
       ])) as never)
-    const result = await getPersonAIExtractions('p-1')
+    const result = await getPersonAIExtractions('cccccccc-cccc-4ccc-8ccc-cccccccccccc')
     expect('data' in result && result.data).toEqual([])
   })
 
@@ -99,7 +99,7 @@ describe('getPersonAIExtractions', () => {
           },
         },
       ])) as never)
-    const result = await getPersonAIExtractions('p-1')
+    const result = await getPersonAIExtractions('cccccccc-cccc-4ccc-8ccc-cccccccccccc')
     if ('data' in result && result.data) {
       expect(result.data).toHaveLength(1)
       expect(result.data[0]!.fields.salary_monthly_dkk?.value).toBe(45000)
@@ -134,14 +134,14 @@ describe('getPersonAIExtractions', () => {
           },
         },
       ])) as never)
-    const result = await getPersonAIExtractions('p-1')
+    const result = await getPersonAIExtractions('cccccccc-cccc-4ccc-8ccc-cccccccccccc')
     expect('data' in result && result.data).toEqual([])
   })
 
   it('returnerer fejl uden session', async () => {
     const auth = await import('@/lib/auth')
     vi.mocked(auth.auth).mockResolvedValueOnce(null)
-    const result = await getPersonAIExtractions('p-1')
+    const result = await getPersonAIExtractions('cccccccc-cccc-4ccc-8ccc-cccccccccccc')
     expect(result).toEqual({ error: 'Ikke autoriseret' })
   })
 })

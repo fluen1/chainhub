@@ -1,14 +1,22 @@
 'use server'
 
+import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { canAccessCompany } from '@/lib/permissions'
 import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
 
+// Løs UUID-validering: accepterer alle 8-4-4-4-12 hex-formater inkl. nil-UUIDs (seed-data)
+const uuidSchema = z
+  .string()
+  .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
+
 export async function deleteDocument(documentId: string): Promise<ActionResult<void>> {
   const session = await auth()
   if (!session) return { error: 'Din session er udløbet — log ind igen.' }
+
+  if (!uuidSchema.safeParse(documentId).success) return { error: 'Ugyldigt input' }
 
   const doc = await prisma.document.findFirst({
     where: {

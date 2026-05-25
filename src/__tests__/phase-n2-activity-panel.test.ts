@@ -24,11 +24,15 @@ vi.mock('@/lib/db', () => ({
   },
 }))
 
+// Brug RFC-konforme UUIDs (version 4, variant 2) — Zod v4 validerer strengt
 vi.mock('@/lib/permissions', () => ({
-  getAccessibleCompanies: vi.fn().mockResolvedValue(['company-1']),
+  getAccessibleCompanies: vi.fn().mockResolvedValue(['aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa']),
 }))
 
 import { getRecentActivity } from '@/actions/activity-feed'
+
+// RFC-konforme test-UUIDs
+const COMPANY_UUID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
 
 // ─── Tests for getRecentActivity since-param ──────────────────────────────────
 
@@ -39,7 +43,7 @@ describe('getRecentActivity — created_at WHERE-klausul (since-param)', () => {
     const { prisma } = await import('@/lib/db')
     const since = new Date('2026-05-15T00:00:00Z')
 
-    await getRecentActivity(['company-1'], since)
+    await getRecentActivity([COMPANY_UUID], since)
 
     expect(vi.mocked(prisma.auditLog.findMany)).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -54,7 +58,7 @@ describe('getRecentActivity — created_at WHERE-klausul (since-param)', () => {
     const { prisma } = await import('@/lib/db')
     const beforeCall = new Date(Date.now() - 25 * 60 * 60 * 1000)
 
-    await getRecentActivity(['company-1'])
+    await getRecentActivity([COMPANY_UUID])
 
     const callArg = vi.mocked(prisma.auditLog.findMany).mock.calls[0][0] as {
       where: { created_at: { gte: Date } }
@@ -67,7 +71,7 @@ describe('getRecentActivity — created_at WHERE-klausul (since-param)', () => {
   })
 
   it('returnerer tom liste ved ingen logs selvom since er sat', async () => {
-    const result = await getRecentActivity(['c-1'], new Date())
+    const result = await getRecentActivity([COMPANY_UUID], new Date())
     expect(result).toEqual([])
   })
 
@@ -87,7 +91,7 @@ describe('getRecentActivity — created_at WHERE-klausul (since-param)', () => {
       { id: 'user-1', name: 'Philip', email: 'philip@example.com' },
     ] as never)
 
-    const result = await getRecentActivity(['c-1'], new Date(0))
+    const result = await getRecentActivity([COMPANY_UUID], new Date(0))
 
     expect(result[0].resource_type).toBe('contract')
     expect(result[0].resource_id).toBe('contract-99')

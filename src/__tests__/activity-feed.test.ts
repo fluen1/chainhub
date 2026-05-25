@@ -15,8 +15,14 @@ vi.mock('@/lib/db', () => ({
   },
 }))
 
+// Brug RFC-konforme UUIDs (version 4, variant 2) — Zod v4 validerer strengt
 vi.mock('@/lib/permissions', () => ({
-  getAccessibleCompanies: vi.fn().mockResolvedValue(['company-1', 'company-2']),
+  getAccessibleCompanies: vi
+    .fn()
+    .mockResolvedValue([
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+    ]),
 }))
 
 import { getRecentActivity } from '@/actions/activity-feed'
@@ -31,7 +37,10 @@ describe('getRecentActivity', () => {
   })
 
   it('bruger preloadedCompanyIds og kalder IKKE getAccessibleCompanies igen', async () => {
-    const preloaded = ['company-a', 'company-b']
+    const preloaded = [
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+    ]
 
     await getRecentActivity(preloaded)
 
@@ -63,7 +72,7 @@ describe('getRecentActivity', () => {
       { id: 'user-1', name: 'Philip', email: 'philip@example.com' },
     ] as never)
 
-    const result = await getRecentActivity(['company-1'])
+    const result = await getRecentActivity(['aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'])
 
     expect(result).toHaveLength(1)
     expect(result[0].who).toBe('Philip')
@@ -76,7 +85,11 @@ describe('getRecentActivity preload-eliminering', () => {
   beforeEach(() => vi.clearAllMocks())
 
   it('sparede DB-kald: to kald med preloaded = 0 ekstra getAccessibleCompanies', async () => {
-    const preloaded = ['comp-1', 'comp-2', 'comp-3']
+    const preloaded = [
+      'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+      'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+    ]
 
     await Promise.all([getRecentActivity(preloaded), getRecentActivity(preloaded)])
 

@@ -1,8 +1,14 @@
 'use server'
 
+import { z } from 'zod'
 import { prisma } from '@/lib/db'
 import { canAccessCompany } from '@/lib/permissions'
 import { auth } from '@/lib/auth'
+
+// Løs UUID-validering: accepterer alle 8-4-4-4-12 hex-formater inkl. nil-UUIDs (seed-data)
+const uuidSchema = z
+  .string()
+  .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
 import {
   deriveTaskUrgency,
   formatHistoryEntry,
@@ -48,6 +54,9 @@ export interface TaskDetailData {
 export async function getTaskDetailData(taskId: string): Promise<TaskDetailData | null> {
   const session = await auth()
   if (!session) return null
+
+  if (!uuidSchema.safeParse(taskId).success) return null
+
   const userId = session.user.id
   const orgId = session.user.organizationId
 

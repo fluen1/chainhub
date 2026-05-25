@@ -1,11 +1,24 @@
 'use server'
 
+import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { canAccessModule } from '@/lib/permissions'
 import { recordAuditEvent } from '@/lib/audit'
 import { captureError } from '@/lib/logger'
 import type { ActionResult } from '@/types/actions'
 import type { ExportableEntity } from '@/lib/export/entities'
+
+const exportableEntityValues = [
+  'companies',
+  'contracts',
+  'cases',
+  'tasks',
+  'persons',
+  'visits',
+] as const
+const prepareExportSchema = z.object({
+  entity: z.enum(exportableEntityValues),
+})
 
 export interface PrepareExportInput {
   entity: ExportableEntity
@@ -22,6 +35,9 @@ export async function prepareExport(
 ): Promise<ActionResult<{ downloadUrl: string }>> {
   const session = await auth()
   if (!session) return { error: 'Ikke autoriseret' }
+
+  const parsed = prepareExportSchema.safeParse(input)
+  if (!parsed.success) return { error: 'Ugyldigt input' }
 
   const canExport = await canAccessModule(session.user.id, 'export', session.user.organizationId)
   if (!canExport) return { error: 'Du har ikke adgang til at eksportere data' }

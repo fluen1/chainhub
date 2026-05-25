@@ -34,7 +34,7 @@ describe.runIf(!!process.env.DATABASE_URL)('getCompanyDetailData', () => {
   })
 
   it('returnerer null for selskab udenfor adgang', async () => {
-    const result = await getCompanyDetailData('nonexistent-id')
+    const result = await getCompanyDetailData('dddddddd-dddd-4ddd-8ddd-dddddddddddd')
     expect(result).toBeNull()
   })
 

@@ -1,8 +1,17 @@
 'use server'
 
+import { z } from 'zod'
 import { prisma } from '@/lib/db'
 import { getAccessibleCompanies } from '@/lib/permissions'
 import { auth } from '@/lib/auth'
+
+// Løs UUID-validering: accepterer alle 8-4-4-4-12 hex-formater inkl. nil-UUIDs (seed-data)
+const looseUuid = z
+  .string()
+  .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
+const dashboardSchema = z.object({
+  preloadedCompanyIds: z.array(looseUuid).optional(),
+})
 import type { InlineKpi, SidebarBadge } from '@/types/ui'
 import {
   buildInlineKpis,
@@ -39,12 +48,16 @@ export type {
 export async function getDashboardData(preloadedCompanyIds?: string[]): Promise<DashboardData> {
   const session = await auth()
   if (!session) return emptyDashboardData('GROUP_READONLY')
+
+  const parsed = dashboardSchema.safeParse({ preloadedCompanyIds })
+  if (!parsed.success) return emptyDashboardData('GROUP_READONLY')
+
   const userId = session.user.id
   const organizationId = session.user.organizationId
 
   const [companyIds, roleRows] = await Promise.all([
-    preloadedCompanyIds !== undefined
-      ? Promise.resolve(preloadedCompanyIds)
+    parsed.data.preloadedCompanyIds !== undefined
+      ? Promise.resolve(parsed.data.preloadedCompanyIds)
       : getAccessibleCompanies(userId, organizationId),
     prisma.userRoleAssignment.findMany({
       where: { user_id: userId, organization_id: organizationId },

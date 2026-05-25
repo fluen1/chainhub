@@ -1,8 +1,18 @@
 'use server'
 
+import { z } from 'zod'
 import { prisma } from '@/lib/db'
 import { getAccessibleCompanies } from '@/lib/permissions'
 import { auth } from '@/lib/auth'
+
+// Løs UUID-validering: accepterer alle 8-4-4-4-12 hex-formater inkl. nil-UUIDs (seed-data)
+const uuidSchema = z
+  .string()
+  .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
+const activitySchema = z.object({
+  preloadedCompanyIds: z.array(uuidSchema).optional(),
+  since: z.date().optional(),
+})
 
 // ────────────────────────────────────────────────────────────────────────────
 // Activity feed til dashboard "Sidste aktivitet"-panel.
@@ -76,16 +86,20 @@ export async function getRecentActivity(
 ): Promise<ActivityEvent[]> {
   const session = await auth()
   if (!session) return []
+
+  const parsed = activitySchema.safeParse({ preloadedCompanyIds, since })
+  if (!parsed.success) return []
+
   const userId = session.user.id
   const organizationId = session.user.organizationId
 
   // Default: 24 timer tilbage fra nu
-  const sinceDate = since ?? new Date(Date.now() - 24 * 60 * 60 * 1000)
+  const sinceDate = parsed.data.since ?? new Date(Date.now() - 24 * 60 * 60 * 1000)
 
   // Hent accessible companies for RBAC-scope — brug preloaded liste hvis tilgængelig
   const companyIds =
-    preloadedCompanyIds !== undefined
-      ? preloadedCompanyIds
+    parsed.data.preloadedCompanyIds !== undefined
+      ? parsed.data.preloadedCompanyIds
       : await getAccessibleCompanies(userId, organizationId)
 
   const logs = await prisma.auditLog.findMany({
