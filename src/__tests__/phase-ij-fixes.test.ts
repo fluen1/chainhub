@@ -204,7 +204,8 @@ describe('Fix 7: ContractStatusButton a11y', () => {
 // Fix 8: tasks-list-b aria-grabbed → aria-pressed (ARIA 1.2 kompatibelt på <button>)
 // ────────────────────────────────────────────────────────────────────────────
 describe('Fix 8: tasks-list-b ARIA 1.2 pattern', () => {
-  const src = read('src/app/(dashboard)/tasks/tasks-list-b.tsx')
+  // Kanban-koden er udtrukket til TasksKanban.tsx (refactor: god-fil split)
+  const src = read('src/components/tasks/TasksKanban.tsx')
 
   it('bruger aria-pressed i stedet for aria-grabbed (gyldig på <button>)', () => {
     expect(src).toContain('aria-pressed={isGrabbed}')

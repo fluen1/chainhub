@@ -30,13 +30,13 @@ import {
 import { UploadVersionTrigger } from '@/components/modals/b/UploadVersionTrigger'
 import { ContractStatusButton } from '@/components/contracts/ContractStatusButton'
 import { ContractEditTrigger } from '@/components/contracts/ContractEditTrigger'
-import { AddContractPartyTrigger } from '@/components/contracts/AddContractPartyTrigger'
+import { ContractVersionsPanel } from '@/components/contracts/ContractVersionsPanel'
+import { ContractBottomPanels } from '@/components/contracts/ContractBottomPanels'
 import {
   Breadcrumb,
   PageHeader,
   MetaSep,
   BButton,
-  BAddButton,
   Strip,
   type StripCellData,
   AlertBar,
@@ -134,21 +134,6 @@ function confidenceBadge(conf: number | null): React.ReactNode {
   if (pct >= 85) return <Badge tone="green">{`✓ AI ${pct}%`}</Badge>
   if (pct >= 70) return <Badge tone="amber">{`⚠ AI ${pct}%`}</Badge>
   return <Badge tone="red">{`⚠ AI ${pct}%`}</Badge>
-}
-
-function changeTypeTone(ct: string): BadgeTone {
-  switch (ct) {
-    case 'NY_VERSION':
-      return 'blue'
-    case 'REDAKTIONEL':
-      return 'gray'
-    case 'MATERIEL':
-      return 'amber'
-    case 'ALLONGE':
-      return 'gray'
-    default:
-      return 'gray'
-  }
 }
 
 export default async function ContractDetailPage({ params }: Props) {
@@ -618,192 +603,29 @@ export default async function ContractDetailPage({ params }: Props) {
       </div>
 
       {/* Versionshistorik */}
-      <Panel>
-        <PanelHeader
-          title={
-            <span className="flex items-center gap-2">
-              Versionshistorik
-              <span className="rounded-[8px] bg-b-border px-1.5 py-px text-[10px] font-medium text-b-gray-fg">
-                {sortedVersions.length}
-              </span>
-            </span>
-          }
-          meta={
-            currentVersion ? `v${currentVersion.version_number} er aktuel · sortér: nyeste` : ''
-          }
-        />
-        {sortedVersions.length === 0 ? (
-          <PanelEmpty>Ingen versioner uploadet endnu</PanelEmpty>
-        ) : (
-          <>
-            <div
-              className="grid items-center gap-2.5 border-b border-b-border bg-b-panel-h px-3 py-1.5 text-[10px] font-semibold uppercase text-b-3"
-              style={{
-                gridTemplateColumns: '36px 110px 72px 1fr 60px',
-                letterSpacing: '0.5px',
-              }}
-            >
-              <span>Ver.</span>
-              <span>Dato</span>
-              <span>Af</span>
-              <span>Type</span>
-              <span>Dokument</span>
-            </div>
-            {sortedVersions.map((v, idx) => (
-              <div
-                key={v.id}
-                className="grid cursor-pointer items-center gap-2.5 border-b border-b-divider px-3 py-1.5 text-[13px] last:border-b-0 hover:bg-b-row-hover"
-                style={{ gridTemplateColumns: '36px 110px 72px 1fr 60px' }}
-              >
-                <span
-                  className={`b-tnum font-semibold ${idx === sortedVersions.length - 1 ? 'text-b-3' : 'text-b-1'}`}
-                >
-                  v{v.version_number}
-                </span>
-                <span className="b-tnum text-b-2">{formatDate(v.uploaded_at)}</span>
-                <span className="text-b-2">{uploaderMap.get(v.uploaded_by) ?? 'Ukendt'}</span>
-                <span>
-                  <Badge tone={changeTypeTone(v.change_type)}>
-                    {getChangeTypeLabel(v.change_type).toUpperCase()}
-                  </Badge>
-                </span>
-                <span>
-                  <a
-                    href={v.file_url}
-                    className="text-[11px] text-b-blue-fg no-underline hover:underline"
-                  >
-                    ↓ Hent
-                  </a>
-                </span>
-              </div>
-            ))}
-          </>
-        )}
-        <PanelFooter>
-          <div className="flex items-center justify-between">
-            <span>
-              {sortedVersions.length} version{sortedVersions.length === 1 ? '' : 'er'}
-              {sortedVersions.length > 0 ? ' · v1 er original' : ''}
-            </span>
-            <UploadVersionTrigger
-              contractId={contract.id}
-              contractName={contract.display_name}
-              companyId={contract.company_id}
-              companyName={contract.company.name}
-              currentVersion={currentVersion?.version_number ?? null}
-              variant="add"
-            />
-          </div>
-        </PanelFooter>
-      </Panel>
+      <ContractVersionsPanel
+        contractId={contract.id}
+        contractName={contract.display_name}
+        companyId={contract.company_id}
+        companyName={contract.company.name}
+        versions={sortedVersions}
+        uploaderMap={uploaderMap}
+      />
 
       {/* 3-col: Parter + Tilknytninger + Aktivitet */}
-      <div className="grid gap-3 lg:grid-cols-3 lg:items-start">
-        {/* Parter */}
-        <Panel>
-          <PanelHeader title="Parter" meta={`${partyRows.length} parter`} />
-          {partyRows.length === 0 ? (
-            <PanelEmpty
-              title="Ingen parter registreret endnu"
-              hint="Tilføj parter for at signere og spore ansvar"
-            />
-          ) : (
-            partyRows.map((p, i) => (
-              <div
-                key={p.id}
-                className={`grid grid-cols-[1fr_auto_14px] items-center gap-2 px-3 py-1.5 ${
-                  i < partyRows.length - 1 ? 'border-b border-b-divider' : ''
-                }`}
-              >
-                <div className="min-w-0">
-                  <div className="truncate text-[13px] font-medium text-b-1">{p.name}</div>
-                  <div className="mt-px text-[11px] text-b-2">{p.sub}</div>
-                </div>
-                <Badge tone="gray">{p.role}</Badge>
-                <span className="text-b-3">›</span>
-              </div>
-            ))
-          )}
-          <PanelFooter>
-            <div className="flex items-center justify-between">
-              <span />
-              <AddContractPartyTrigger
-                contractId={contract.id}
-                contractName={contract.display_name}
-                persons={persons.map((p) => ({
-                  id: p.id,
-                  firstName: p.first_name,
-                  lastName: p.last_name,
-                  email: p.email,
-                }))}
-              />
-            </div>
-          </PanelFooter>
-        </Panel>
-
-        {/* Tilknytninger */}
-        <Panel>
-          <PanelHeader title="Tilknytninger" meta={`${links.length} elementer`} />
-          {links.map((link, i) => (
-            <Link
-              key={link.id}
-              href={link.href}
-              className={`grid cursor-pointer grid-cols-[1fr_auto_14px] items-center gap-2 px-3 py-1.5 text-[13px] no-underline hover:bg-b-row-hover ${
-                i < links.length - 1 ? 'border-b border-b-divider' : ''
-              }`}
-            >
-              <div className="min-w-0">
-                <div className="truncate text-b-1">{link.title}</div>
-                <div className="mt-px text-[11px] text-b-2">{link.sub}</div>
-              </div>
-              <span
-                className={`b-tnum rounded-[10px] px-1.5 py-px text-[11px] font-semibold ${
-                  link.critical && link.count > 0
-                    ? 'bg-b-red-bg text-b-red-fg'
-                    : 'bg-b-border text-b-gray-fg'
-                }`}
-              >
-                {link.count}
-              </span>
-              <span className="text-b-3">›</span>
-            </Link>
-          ))}
-          <PanelFooter>
-            <div className="flex items-center justify-between">
-              <span />
-              <BAddButton href={`/tasks/new?contract=${contract.id}`}>+ Tilknyt element</BAddButton>
-            </div>
-          </PanelFooter>
-        </Panel>
-
-        {/* Aktivitet */}
-        <Panel>
-          <PanelHeader title="Aktivitet" meta={`Seneste ${activityRows.length}`} />
-          {activityRows.length === 0 ? (
-            <PanelEmpty>Ingen aktivitet</PanelEmpty>
-          ) : (
-            activityRows.map((a, i) => (
-              <div
-                key={a.key}
-                className={`flex items-start justify-between gap-3 px-3 py-1.5 ${
-                  i < activityRows.length - 1 ? 'border-b border-b-divider' : ''
-                }`}
-              >
-                <div className="min-w-0 text-[12px] leading-snug text-b-1">
-                  <span className="font-medium">{a.who}</span> {a.what}
-                </div>
-                <span className="b-tnum shrink-0 text-[11px] text-b-3">{formatDate(a.when)}</span>
-              </div>
-            ))
-          )}
-          <PanelFooter>
-            <span className="text-b-3">
-              Viser seneste {activityRows.length} begivenheder · versionshistorik vist separat
-              ovenfor
-            </span>
-          </PanelFooter>
-        </Panel>
-      </div>
+      <ContractBottomPanels
+        contractId={contract.id}
+        contractName={contract.display_name}
+        partyRows={partyRows}
+        links={links}
+        activityRows={activityRows}
+        persons={persons.map((p) => ({
+          id: p.id,
+          firstName: p.first_name,
+          lastName: p.last_name,
+          email: p.email,
+        }))}
+      />
 
       <BottomBar
         left={

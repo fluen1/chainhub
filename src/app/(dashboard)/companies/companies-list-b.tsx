@@ -17,18 +17,14 @@ import {
   SegmentedToggle,
   Strip,
   type StripCellData,
-  TableWrap,
-  Th,
-  Tr,
-  Td,
-  TableEmpty,
-  Badge,
-  type BadgeTone,
   Pager,
   BottomBar,
   Panel,
-  PanelHeader,
 } from '@/components/ui/b'
+import { CompaniesFlatTable } from '@/components/companies/CompaniesTableViews'
+import { CompaniesRegionsView } from '@/components/companies/CompaniesTableViews'
+import { CompaniesCardView } from '@/components/companies/CompaniesCardView'
+import { CompaniesRightRail } from '@/components/companies/CompaniesRightRail'
 
 // ────────────────────────────────────────────────────────────────────────────
 // /companies — klient-komponent. Mest komplekse list-side.
@@ -36,8 +32,6 @@ import {
 //   1. Breadcrumb + PageHeader + 6-cell Strip
 //   2. FilterRow (m. "⚠ Kritiske"-toggle + view-mode switcher)
 //   3. Indhold = 2-col grid (tabel+rail) ved tabel/regioner-view, full-width ved kort
-//      - venstre: Tabel / Regioner (grouped) / Kort (card-grid)
-//      - højre rail (kun tabel/regioner): Health heatmap · Kritiske · Fordeling
 // ────────────────────────────────────────────────────────────────────────────
 
 type Region = 'Kbh' | 'Sjælland' | 'Syd' | 'Midt' | 'Nord' | 'Ukendt'
@@ -83,24 +77,6 @@ const REGION_LABEL: Record<Region, string> = {
   Ukendt: 'Ukendt region',
 }
 
-function healthLabel(h: CompanyRow['health']): { label: string; tone: BadgeTone } {
-  if (h === 'critical') return { label: 'Kritisk', tone: 'red' }
-  if (h === 'warning') return { label: 'Opmærks.', tone: 'amber' }
-  return { label: 'OK', tone: 'green' }
-}
-
-function healthDot(h: CompanyRow['health']): string {
-  if (h === 'critical') return 'bg-b-red-fg'
-  if (h === 'warning') return 'bg-b-amber-fg'
-  return 'bg-b-green-fg'
-}
-
-function healthCellBg(h: CompanyRow['health']): string {
-  if (h === 'critical') return 'bg-[#b91c1c]'
-  if (h === 'warning') return 'bg-[#fdb8b1]'
-  return 'bg-[#239a3b]'
-}
-
 interface CompaniesListBProps {
   companies: CompanyRow[]
   canCreate: boolean
@@ -108,8 +84,6 @@ interface CompaniesListBProps {
 }
 
 export function CompaniesListB(props: CompaniesListBProps) {
-  // 0-totalt empty-state: ny kunde uden selskaber. Vi splitter ud i en
-  // separat content-component så hooks ikke kaldes betinget (Rules of Hooks).
   if (props.companies.length === 0) {
     return <EmptyCompaniesView canCreate={props.canCreate} />
   }
@@ -219,7 +193,6 @@ function CompaniesListBContent({ companies, canCreate, totalsExtra }: CompaniesL
     return arr
   }, [filtered, sortCol, sortDir])
 
-  // Strip-tal (over hele porteføljen — IKKE filteret)
   const totalCount = companies.length
   const coOwned = companies.filter((c) => c.kaedePct < 100).length
   const fullOwned = companies.filter((c) => c.kaedePct === 100).length
@@ -359,12 +332,12 @@ function CompaniesListBContent({ companies, canCreate, totalsExtra }: CompaniesL
       )}
 
       {viewMode === 'kort' ? (
-        <CardView companies={sorted} onRowClick={goTo} />
+        <CompaniesCardView companies={sorted} onRowClick={goTo} />
       ) : (
         <div className="grid gap-3 lg:grid-cols-[1fr_240px] lg:items-start">
           <div className="min-w-0">
             {viewMode === 'tabel' ? (
-              <FlatTable
+              <CompaniesFlatTable
                 companies={paged}
                 sortCol={sortCol}
                 sortDir={sortDir}
@@ -372,7 +345,7 @@ function CompaniesListBContent({ companies, canCreate, totalsExtra }: CompaniesL
                 onRowClick={goTo}
               />
             ) : (
-              <RegionsView companies={sorted} onRowClick={goTo} />
+              <CompaniesRegionsView companies={sorted} onRowClick={goTo} />
             )}
             {sorted.length > 0 && (
               <div className="mt-2">
@@ -399,7 +372,7 @@ function CompaniesListBContent({ companies, canCreate, totalsExtra }: CompaniesL
               </div>
             )}
           </div>
-          <RightRail companies={companies} onRowClick={goTo} />
+          <CompaniesRightRail companies={companies} onRowClick={goTo} />
         </div>
       )}
 
@@ -413,382 +386,5 @@ function CompaniesListBContent({ companies, canCreate, totalsExtra }: CompaniesL
         }
       />
     </>
-  )
-}
-
-// ────────────────────────────────────────────────────────────────────────────
-
-function FlatTable({
-  companies,
-  sortCol,
-  sortDir,
-  onSort,
-  onRowClick,
-}: {
-  companies: CompanyRow[]
-  sortCol: SortKey
-  sortDir: 'asc' | 'desc'
-  onSort: (col: SortKey) => void
-  onRowClick: (id: string) => void
-}) {
-  if (companies.length === 0) {
-    return (
-      <TableWrap>
-        <TableEmpty>Ingen selskaber matcher de aktive filtre.</TableEmpty>
-      </TableWrap>
-    )
-  }
-  return (
-    <TableWrap>
-      <table className="w-full table-fixed border-collapse">
-        <thead>
-          <tr>
-            <Th col="navn" sortCol={sortCol} sortDir={sortDir} onSort={onSort}>
-              Selskab
-            </Th>
-            <Th col="cvr" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={104}>
-              CVR
-            </Th>
-            <Th col="type" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={92}>
-              Type
-            </Th>
-            <Th
-              col="kaedePct"
-              sortCol={sortCol}
-              sortDir={sortDir}
-              onSort={onSort}
-              width={74}
-              alignRight
-            >
-              Kæde %
-            </Th>
-            <Th col="kontrakter" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={94}>
-              Kontr.
-            </Th>
-            <Th col="sager" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={62}>
-              Sager
-            </Th>
-            <Th
-              col="ebitda"
-              sortCol={sortCol}
-              sortDir={sortDir}
-              onSort={onSort}
-              width={70}
-              alignRight
-            >
-              EBITDA
-            </Th>
-            <Th col="sortScore" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={78}>
-              Health
-            </Th>
-            <Th width={20}>{''}</Th>
-          </tr>
-        </thead>
-        <tbody>
-          {companies.map((c) => (
-            <CompanyTr key={c.id} c={c} onClick={() => onRowClick(c.id)} />
-          ))}
-        </tbody>
-      </table>
-    </TableWrap>
-  )
-}
-
-function CompanyTr({ c, onClick }: { c: CompanyRow; onClick: () => void }) {
-  const hb = healthLabel(c.health)
-  return (
-    <Tr onClick={onClick}>
-      <Td>
-        <div className="flex items-center gap-2">
-          <span className={`h-2 w-2 shrink-0 rounded-full ${healthDot(c.health)}`} />
-          <span className="truncate font-medium text-b-1">{c.navn}</span>
-        </div>
-      </Td>
-      <Td width={104} secondary>
-        {c.cvr}
-      </Td>
-      <Td width={92} secondary>
-        {c.type}
-      </Td>
-      <Td width={74} alignRight>
-        <span className="font-medium">{c.kaedePct}%</span>
-      </Td>
-      <Td width={94}>
-        {c.kontrakterUdlob > 0 || c.kontrakterExpired > 0 ? (
-          <Badge tone={c.kontrakterExpired > 0 ? 'red' : 'amber'}>
-            {c.kontrakter} ({c.kontrakterUdlob + c.kontrakterExpired}⚠)
-          </Badge>
-        ) : (
-          <span className="text-b-2">{c.kontrakter}</span>
-        )}
-      </Td>
-      <Td width={62}>
-        {c.sager > 0 ? (
-          <Badge tone={c.sager > 1 ? 'red' : 'amber'}>{c.sager}</Badge>
-        ) : (
-          <span className="text-b-border-strong">—</span>
-        )}
-      </Td>
-      <Td width={70} alignRight>
-        {c.ebitdaShort === '—' ? (
-          <span className="text-b-border-strong">—</span>
-        ) : (
-          <span className="font-medium text-b-green-fg">{c.ebitdaShort}</span>
-        )}
-      </Td>
-      <Td width={78}>
-        <Badge tone={hb.tone}>{hb.label}</Badge>
-      </Td>
-      <Td width={20}>
-        <span className="text-b-3">›</span>
-      </Td>
-    </Tr>
-  )
-}
-
-// ────────────────────────────────────────────────────────────────────────────
-
-function RegionsView({
-  companies,
-  onRowClick,
-}: {
-  companies: CompanyRow[]
-  onRowClick: (id: string) => void
-}) {
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
-
-  const groups = useMemo(() => {
-    const map = new Map<Region, CompanyRow[]>()
-    for (const c of companies) {
-      const arr = map.get(c.region) ?? []
-      arr.push(c)
-      map.set(c.region, arr)
-    }
-    const order: Region[] = ['Kbh', 'Sjælland', 'Midt', 'Syd', 'Nord', 'Ukendt']
-    return order.filter((r) => map.has(r)).map((r) => [r, map.get(r)!] as const)
-  }, [companies])
-
-  if (companies.length === 0) {
-    return (
-      <TableWrap>
-        <TableEmpty>Ingen selskaber matcher de aktive filtre.</TableEmpty>
-      </TableWrap>
-    )
-  }
-
-  function toggle(name: string) {
-    setCollapsed((prev) => {
-      const n = new Set(prev)
-      if (n.has(name)) n.delete(name)
-      else n.add(name)
-      return n
-    })
-  }
-
-  return (
-    <TableWrap>
-      {groups.map(([region, rows]) => {
-        const isOpen = !collapsed.has(region)
-        const hasCritical = rows.some((r) => r.health === 'critical')
-        return (
-          <div key={region}>
-            <button
-              type="button"
-              onClick={() => toggle(region)}
-              className="flex w-full items-center gap-2 border-b border-b-border bg-b-row-hover px-3 py-1.5 text-left hover:bg-[#ecedf0]"
-            >
-              <span className="w-3 shrink-0 text-[10px] text-b-2">{isOpen ? '▾' : '▸'}</span>
-              <span className="flex-1 text-[12px] font-semibold text-b-1">
-                {REGION_LABEL[region]}
-              </span>
-              <span
-                className={`b-tnum rounded-[10px] px-1.5 py-px text-[10px] font-semibold ${
-                  hasCritical ? 'bg-b-red-bg text-b-red-fg' : 'bg-b-border text-b-gray-fg'
-                }`}
-              >
-                {rows.length}
-              </span>
-              {hasCritical && (
-                <Badge tone="red" className="text-[10px]">
-                  ⚠
-                </Badge>
-              )}
-            </button>
-            {isOpen && (
-              <table className="w-full table-fixed border-collapse">
-                <tbody>
-                  {rows.map((c) => (
-                    <CompanyTr key={c.id} c={c} onClick={() => onRowClick(c.id)} />
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        )
-      })}
-    </TableWrap>
-  )
-}
-
-// ────────────────────────────────────────────────────────────────────────────
-
-function CardView({
-  companies,
-  onRowClick,
-}: {
-  companies: CompanyRow[]
-  onRowClick: (id: string) => void
-}) {
-  if (companies.length === 0) {
-    return (
-      <Panel>
-        <div className="px-3 py-8 text-center text-[13px] text-b-3">
-          Ingen selskaber matcher de aktive filtre.
-        </div>
-      </Panel>
-    )
-  }
-  return (
-    <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {companies.map((c) => {
-        const hb = healthLabel(c.health)
-        return (
-          <button
-            key={c.id}
-            type="button"
-            onClick={() => onRowClick(c.id)}
-            className="flex flex-col gap-2 rounded-[4px] border border-b-border bg-b-panel p-2.5 text-left hover:border-b-border-strong hover:bg-b-row-hover"
-          >
-            <div className="flex items-start justify-between gap-2">
-              <span className="min-w-0 truncate text-[13px] font-medium text-b-1">{c.navn}</span>
-              <Badge tone={hb.tone} className="text-[10px]">
-                {hb.label}
-              </Badge>
-            </div>
-            <div className="truncate text-[11px] text-b-2">
-              {c.type} · CVR {c.cvr}
-              {c.city ? ` · ${c.city}` : ''}
-            </div>
-            <div className="flex flex-wrap gap-1">
-              <Badge tone="gray" className="text-[10px]">
-                {c.kaedePct}%
-              </Badge>
-              <Badge
-                tone={c.kontrakterUdlob > 0 || c.kontrakterExpired > 0 ? 'amber' : 'gray'}
-                className="text-[10px]"
-              >
-                {c.kontrakter} kontr.
-              </Badge>
-              {c.sager > 0 && (
-                <Badge tone={c.sager > 1 ? 'red' : 'amber'} className="text-[10px]">
-                  {c.sager} sager
-                </Badge>
-              )}
-              {c.ebitda != null && (
-                <Badge tone="green" className="text-[10px]">
-                  {c.ebitdaShort}
-                </Badge>
-              )}
-            </div>
-          </button>
-        )
-      })}
-    </div>
-  )
-}
-
-// ────────────────────────────────────────────────────────────────────────────
-// RightRail — vises ved tabel/regioner. Mini-heatmap + kritiske + fordeling.
-// ────────────────────────────────────────────────────────────────────────────
-
-function RightRail({
-  companies,
-  onRowClick,
-}: {
-  companies: CompanyRow[]
-  onRowClick: (id: string) => void
-}) {
-  // "Kræver opmærksomhed" inkluderer både critical (røde) og warning (amber)
-  // — fælles begreb i UI'et. Heatmap-tæller skelner og viser kun "kritiske"
-  // (røde) i counter-linjen så terminologi er konsistent med farve.
-  const needsAttention = companies.filter((c) => c.health === 'critical' || c.health === 'warning')
-
-  const byRegion = useMemo(() => {
-    const m = new Map<Region, number>()
-    for (const c of companies) m.set(c.region, (m.get(c.region) ?? 0) + 1)
-    return m
-  }, [companies])
-
-  return (
-    <aside className="flex flex-col gap-3">
-      <Panel>
-        <PanelHeader title="Health" meta={`${companies.length} sel.`} />
-        <div className="grid grid-cols-6 gap-0.5 p-2">
-          {companies.length === 0 ? (
-            <div className="col-span-6 py-2 text-center text-[12px] text-b-3">Ingen selskaber</div>
-          ) : (
-            companies.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                title={`${c.navn} — ${healthLabel(c.health).label}`}
-                onClick={() => onRowClick(c.id)}
-                className={`aspect-square rounded-[2px] transition-transform hover:z-10 hover:scale-150 hover:shadow-md ${healthCellBg(c.health)}`}
-              />
-            ))
-          )}
-        </div>
-        <div className="flex justify-between px-2 pb-2 text-[10px] text-b-2">
-          <span>{companies.filter((c) => c.health === 'critical').length} kritiske</span>
-          <span>{companies.filter((c) => c.health === 'healthy').length} OK</span>
-        </div>
-      </Panel>
-
-      {needsAttention.length > 0 && (
-        <Panel>
-          <PanelHeader title="Kræver opmærksomhed" meta={`${needsAttention.length}`} />
-          {needsAttention.slice(0, 8).map((c, i) => {
-            const hb = healthLabel(c.health)
-            const list = needsAttention.slice(0, 8)
-            return (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => onRowClick(c.id)}
-                className={`flex w-full items-center justify-between gap-2 px-3 py-1 text-left hover:bg-b-row-hover ${
-                  i < list.length - 1 ? 'border-b border-b-divider' : ''
-                }`}
-              >
-                <span className="min-w-0 truncate text-[12px] text-b-1">{c.navn}</span>
-                <Badge tone={hb.tone} className="shrink-0 text-[10px]">
-                  {hb.label}
-                </Badge>
-              </button>
-            )
-          })}
-        </Panel>
-      )}
-
-      <Panel>
-        <PanelHeader title="Fordeling" />
-        <div className="py-1">
-          <RailRow label="100% ejet" value={companies.filter((c) => c.kaedePct === 100).length} />
-          <RailRow label="Co-ejet" value={companies.filter((c) => c.kaedePct < 100).length} />
-          <div className="my-1 border-t border-b-divider" />
-          {(['Kbh', 'Sjælland', 'Midt', 'Syd', 'Nord'] as Region[]).map((r) => (
-            <RailRow key={r} label={REGION_LABEL[r]} value={byRegion.get(r) ?? 0} />
-          ))}
-        </div>
-      </Panel>
-    </aside>
-  )
-}
-
-function RailRow({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="flex items-center justify-between px-3 py-1 text-[11px]">
-      <span className="text-b-2">{label}</span>
-      <span className="b-tnum font-medium text-b-1">{value}</span>
-    </div>
   )
 }
