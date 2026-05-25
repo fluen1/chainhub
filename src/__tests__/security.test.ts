@@ -1,152 +1,227 @@
 /**
- * BA-11: Security pentest verificering
- * Verificerer sikkerhedsmekanismer i kode
+ * BA-11: Security — authentication guard verificering
+ *
+ * Tester REAL adfærd: importerer actions, mocker auth() til null,
+ * og verificerer at hver action returnerer en fejl uden session.
+ * Erstatter den gamle string-pattern tilgang som gav falsk tryghed.
  */
 
-import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'fs'
-import { join } from 'path'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-// Helper: læs fil relativt til root
-function readSrc(path: string): string {
-  return readFileSync(join(process.cwd(), 'src', path), 'utf-8')
+// ── Mocks SKAL erklæres før imports af de mockede moduler ──────────────────
+
+vi.mock('@/lib/auth', () => ({
+  auth: vi.fn(),
+}))
+
+vi.mock('@/lib/db', () => ({
+  prisma: {
+    contract: {
+      findFirst: vi.fn(),
+      findMany: vi.fn(),
+      count: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+    case: {
+      findFirst: vi.fn(),
+      findMany: vi.fn(),
+      count: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+    },
+    caseCompany: { findMany: vi.fn(), create: vi.fn(), deleteMany: vi.fn() },
+    task: {
+      findFirst: vi.fn(),
+      findMany: vi.fn(),
+      count: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+    },
+    company: {
+      findFirst: vi.fn(),
+      findMany: vi.fn(),
+      count: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+    },
+    person: {
+      findFirst: vi.fn(),
+      findMany: vi.fn(),
+      count: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+    },
+    ownership: { findFirst: vi.fn(), findMany: vi.fn(), create: vi.fn(), update: vi.fn() },
+    companyPerson: { findFirst: vi.fn(), findMany: vi.fn(), create: vi.fn(), update: vi.fn() },
+    auditLog: { create: vi.fn() },
+    userRole: { findMany: vi.fn() },
+  },
+}))
+
+vi.mock('@/lib/permissions', () => ({
+  canAccessCompany: vi.fn().mockResolvedValue(true),
+  canAccessModule: vi.fn().mockResolvedValue(true),
+  canAccessSensitivity: vi.fn().mockResolvedValue(true),
+  getAccessibleCompanies: vi.fn().mockResolvedValue([]),
+  getAllowedSensitivityLevels: vi.fn().mockResolvedValue([]),
+}))
+
+vi.mock('@/lib/rate-limit', () => ({
+  checkActionRateLimit: vi.fn().mockResolvedValue({ limited: false }),
+}))
+
+vi.mock('@/lib/logger', () => ({
+  captureError: vi.fn(),
+}))
+
+vi.mock('@/lib/audit', () => ({
+  recordAuditEvent: vi.fn(),
+}))
+
+vi.mock('@/lib/geocode', () => ({
+  geocodeAddress: vi.fn().mockResolvedValue(null),
+}))
+
+vi.mock('@/lib/ai/invalidate-cache', () => ({
+  invalidateCompanyInsightsCache: vi.fn(),
+}))
+
+vi.mock('next/cache', () => ({
+  revalidatePath: vi.fn(),
+}))
+
+// ── Importer actions EFTER mocks ───────────────────────────────────────────
+
+import { auth } from '@/lib/auth'
+import { createContract, updateContractStatus, deleteContract } from '@/actions/contracts'
+import { createCase, closeCase, deleteCase } from '@/actions/cases'
+import { createTask, updateTaskStatus, deleteTask } from '@/actions/tasks'
+import { createCompany, deleteCompany } from '@/actions/companies'
+import { createPerson, deletePerson } from '@/actions/persons'
+import { addOwner } from '@/actions/ownership'
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+function isErrorResult(result: unknown): boolean {
+  return (
+    result !== null &&
+    typeof result === 'object' &&
+    'error' in (result as object) &&
+    typeof (result as { error: unknown }).error === 'string' &&
+    (result as { error: string }).error.length > 0
+  )
 }
 
-// ──── IDOR — tenant isolation i server actions ────────────────────────────
+// ── Tests ──────────────────────────────────────────────────────────────────
 
-describe('IDOR protection — organization_id on all queries', () => {
-  it('contracts.ts: findFirst includes organization_id', () => {
-    const src = readSrc('actions/contracts.ts')
-    const findFirstBlocks = src.split('findFirst(').slice(1)
-    findFirstBlocks.forEach((block, i) => {
-      const whereBlock = block.split('}')[0]
-      expect(whereBlock, `contracts.ts findFirst block ${i + 1}`).toContain('organization_id')
-    })
+describe('Auth guard — alle muterende actions kræver session', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(auth).mockResolvedValue(null)
   })
 
-  it('cases.ts: findFirst includes organization_id', () => {
-    const src = readSrc('actions/cases.ts')
-    const findFirstBlocks = src.split('findFirst(').slice(1)
-    findFirstBlocks.forEach((block, i) => {
-      const whereBlock = block.split('}')[0]
-      expect(whereBlock, `cases.ts findFirst block ${i + 1}`).toContain('organization_id')
-    })
+  // ── Contracts ────────────────────────────────────────────────────────────
+
+  it('createContract returnerer fejl uden session', async () => {
+    const result = await createContract({
+      companyId: 'c1',
+      systemType: 'LEJEKONTRAKT',
+      sensitivity: 'STANDARD',
+      status: 'UDKAST',
+    } as unknown as Parameters<typeof createContract>[0])
+    expect(isErrorResult(result)).toBe(true)
   })
 
-  it('tasks.ts: findFirst includes organization_id', () => {
-    const src = readSrc('actions/tasks.ts')
-    const findFirstBlocks = src.split('findFirst(').slice(1)
-    findFirstBlocks.forEach((block, i) => {
-      const whereBlock = block.split('}')[0]
-      expect(whereBlock, `tasks.ts findFirst block ${i + 1}`).toContain('organization_id')
-    })
-  })
-})
-
-// ──── Auth guard — alle actions tjekker session ────────────────────────────
-
-describe('Auth guard — session required in all actions', () => {
-  const actionFiles = [
-    'actions/contracts.ts',
-    'actions/cases.ts',
-    'actions/tasks.ts',
-    'actions/ownership.ts',
-    'actions/companies.ts',
-    'actions/persons.ts',
-  ]
-
-  actionFiles.forEach((file) => {
-    it(`${file}: exports server actions with auth() guard`, () => {
-      try {
-        const src = readSrc(file)
-        // Alle filer skal have 'use server' og auth() kald
-        expect(src).toContain("'use server'")
-        expect(src).toContain('await auth()')
-        expect(src).toContain("'Ikke autoriseret'")
-      } catch {
-        // Fil eksisterer måske ikke endnu — skip
-      }
-    })
-  })
-})
-
-// ──── Input validation — Zod på alle actions ──────────────────────────────
-
-describe('Input validation — Zod schemas', () => {
-  it('contracts.ts uses safeParse for validation', () => {
-    const src = readSrc('actions/contracts.ts')
-    expect(src).toContain('safeParse(input)')
-    expect(src).toContain("'Ugyldigt input'")
+  it('updateContractStatus returnerer fejl uden session', async () => {
+    const result = await updateContractStatus({ contractId: 'c1', status: 'AKTIV' })
+    expect(isErrorResult(result)).toBe(true)
   })
 
-  it('cases.ts uses safeParse for validation', () => {
-    const src = readSrc('actions/cases.ts')
-    expect(src).toContain('safeParse(input)')
+  it('deleteContract returnerer fejl uden session', async () => {
+    const result = await deleteContract('c1')
+    expect(isErrorResult(result)).toBe(true)
   })
 
-  it('tasks.ts uses safeParse for validation', () => {
-    const src = readSrc('actions/tasks.ts')
-    expect(src).toContain('safeParse(input)')
-  })
-})
+  // ── Cases ────────────────────────────────────────────────────────────────
 
-// ──── Sensitivity minimum enforcement ────────────────────────────────────
-
-describe('Sensitivity minimum enforcement in createContract', () => {
-  it('contracts.ts checks SENSITIVITY_MINIMUM', () => {
-    const src = readSrc('actions/contracts.ts')
-    expect(src).toContain('SENSITIVITY_MINIMUM')
-    expect(src).toContain('meetsMinimumSensitivity')
+  it('createCase returnerer fejl uden session', async () => {
+    const result = await createCase({
+      companyIds: ['c1'],
+      title: 'Test sag',
+      type: 'TVIST',
+      sensitivity: 'STANDARD',
+    } as unknown as Parameters<typeof createCase>[0])
+    expect(isErrorResult(result)).toBe(true)
   })
 
-  it('contracts.ts has canAccessSensitivity check', () => {
-    const src = readSrc('actions/contracts.ts')
-    expect(src).toContain('canAccessSensitivity')
-  })
-})
-
-// ──── Soft delete — ingen hard delete i kritiske tabeller ─────────────────
-
-describe('Soft delete — no hard delete on critical tables', () => {
-  it('contracts.ts uses soft delete (deleted_at) not prisma.delete', () => {
-    const src = readSrc('actions/contracts.ts')
-    // Tjek at vi bruger update({ data: { deleted_at: } }) ikke .delete()
-    expect(src).toContain('deleted_at: new Date()')
-    // Ingen direkte .delete() kald på kontrakter
-    expect(src).not.toContain('prisma.contract.delete(')
+  it('closeCase returnerer fejl uden session', async () => {
+    const result = await closeCase('case-1', 'Lukket')
+    expect(isErrorResult(result)).toBe(true)
   })
 
-  it('cases.ts uses soft delete', () => {
-    const src = readSrc('actions/cases.ts')
-    expect(src).toContain('deleted_at: new Date()')
-    expect(src).not.toContain('prisma.case.delete(')
+  it('deleteCase returnerer fejl uden session', async () => {
+    const result = await deleteCase('case-1')
+    expect(isErrorResult(result)).toBe(true)
   })
-})
 
-// ──── Audit log — sensitive data accesses are logged ──────────────────────
+  // ── Tasks ────────────────────────────────────────────────────────────────
 
-describe('Audit log — FORTROLIG and STRENGT_FORTROLIG accesses logged', () => {
-  it('contracts/[id]/page.tsx creates audit log for FORTROLIG+ contracts', () => {
-    try {
-      const src = readSrc('app/(dashboard)/contracts/[id]/page.tsx')
-      expect(src).toContain('auditLog.create')
-      expect(src).toContain('STRENGT_FORTROLIG')
-      expect(src).toContain('FORTROLIG')
-    } catch {
-      // Page file may be at different path
-    }
+  it('createTask returnerer fejl uden session', async () => {
+    const result = await createTask({
+      title: 'Test opgave',
+      companyId: 'c1',
+    } as Parameters<typeof createTask>[0])
+    expect(isErrorResult(result)).toBe(true)
   })
-})
 
-// ──── Privilege escalation — DELETE kræver højere rettighed ───────────────
+  it('updateTaskStatus returnerer fejl uden session', async () => {
+    const result = await updateTaskStatus({ taskId: 't1', status: 'AKTIV_TASK' })
+    expect(isErrorResult(result)).toBe(true)
+  })
 
-describe('Privilege escalation prevention', () => {
-  it('deleteContract requires canAccessModule (admin only)', () => {
-    const src = readSrc('actions/contracts.ts')
-    // Tjek at canAccessModule kaldes i deleteContract (kan nu være multi-line)
-    expect(src).toContain('canAccessModule(')
-    expect(src).toContain('session.user.id')
-    // Kun UDKAST kan slettes
-    expect(src).toContain("contract.status !== 'UDKAST'")
+  it('deleteTask returnerer fejl uden session', async () => {
+    const result = await deleteTask('t1')
+    expect(isErrorResult(result)).toBe(true)
+  })
+
+  // ── Companies ────────────────────────────────────────────────────────────
+
+  it('createCompany returnerer fejl uden session', async () => {
+    const result = await createCompany({ name: 'Test ApS' } as Parameters<typeof createCompany>[0])
+    expect(isErrorResult(result)).toBe(true)
+  })
+
+  it('deleteCompany returnerer fejl uden session', async () => {
+    const result = await deleteCompany('company-1')
+    expect(isErrorResult(result)).toBe(true)
+  })
+
+  // ── Persons ──────────────────────────────────────────────────────────────
+
+  it('createPerson returnerer fejl uden session', async () => {
+    const result = await createPerson({
+      firstName: 'Test',
+      lastName: 'Person',
+    } as Parameters<typeof createPerson>[0])
+    expect(isErrorResult(result)).toBe(true)
+  })
+
+  it('deletePerson returnerer fejl uden session', async () => {
+    const result = await deletePerson('person-1')
+    expect(isErrorResult(result)).toBe(true)
+  })
+
+  // ── Ownership ────────────────────────────────────────────────────────────
+
+  it('addOwner returnerer fejl uden session', async () => {
+    const result = await addOwner({
+      companyId: 'c1',
+      personId: 'p1',
+      ownershipPct: 50,
+      ownerType: 'DIREKTE',
+    } as unknown as Parameters<typeof addOwner>[0])
+    expect(isErrorResult(result)).toBe(true)
   })
 })

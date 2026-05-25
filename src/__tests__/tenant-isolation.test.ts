@@ -1,146 +1,263 @@
 /**
- * BA-10: Tenant isolation tests
- * Verificerer at organization_id altid filtrerer korrekt
- * Disse tests bruger mock Prisma-client
+ * BA-10: Tenant isolation — verificerer at actions sender organization_id til Prisma
+ *
+ * Tester REAL adfærd: importerer actions, mocker auth() med en session,
+ * mocker Prisma, og verificerer at queries inkluderer organization_id.
+ * Erstatter den gamle JavaScript array.filter()-tilgang som ikke testede Prisma-kald.
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-// ──── Organisation ID isolation logic tests ─────────────────────────────────
+// ── Mocks SKAL erklæres før imports af de mockede moduler ──────────────────
 
-describe('Tenant isolation — organization_id filter', () => {
-  it('Two tenants have different organization IDs', () => {
-    const tenantA = { organizationId: 'org-a-uuid-1234' }
-    const tenantB = { organizationId: 'org-b-uuid-5678' }
-    expect(tenantA.organizationId).not.toBe(tenantB.organizationId)
+vi.mock('@/lib/auth', () => ({
+  auth: vi.fn(),
+}))
+
+// vi.hoisted sikrer at mockPrisma initialiseres FØR vi.mock-hoisting
+const { mockPrisma } = vi.hoisted(() => {
+  const mockPrisma = {
+    contract: {
+      findMany: vi.fn().mockResolvedValue([]),
+      count: vi.fn().mockResolvedValue(0),
+      findFirst: vi.fn().mockResolvedValue(null),
+    },
+    task: {
+      findMany: vi.fn().mockResolvedValue([]),
+      count: vi.fn().mockResolvedValue(0),
+      findFirst: vi.fn().mockResolvedValue(null),
+    },
+    case: {
+      findMany: vi.fn().mockResolvedValue([]),
+      count: vi.fn().mockResolvedValue(0),
+      findFirst: vi.fn().mockResolvedValue(null),
+    },
+    caseCompany: {
+      findMany: vi.fn().mockResolvedValue([]),
+    },
+    person: {
+      findMany: vi.fn().mockResolvedValue([]),
+      count: vi.fn().mockResolvedValue(0),
+    },
+    company: {
+      findMany: vi.fn().mockResolvedValue([]),
+      count: vi.fn().mockResolvedValue(0),
+      findFirst: vi.fn().mockResolvedValue(null),
+    },
+    document: {
+      findMany: vi.fn().mockResolvedValue([]),
+      count: vi.fn().mockResolvedValue(0),
+    },
+    userRoleAssignment: {
+      findMany: vi.fn().mockResolvedValue([]),
+    },
+    user: {
+      findMany: vi.fn().mockResolvedValue([]),
+    },
+    ownership: {
+      findFirst: vi.fn().mockResolvedValue(null),
+      findMany: vi.fn().mockResolvedValue([]),
+    },
+    financialMetric: {
+      findMany: vi.fn().mockResolvedValue([]),
+    },
+    dividendRecord: {
+      findMany: vi.fn().mockResolvedValue([]),
+    },
+    auditLog: { create: vi.fn() },
+    // Raw SQL-kald i getCompaniesPageData
+    $queryRaw: vi.fn().mockResolvedValue([]),
+  }
+  return { mockPrisma }
+})
+
+vi.mock('@/lib/db', () => ({
+  prisma: mockPrisma,
+}))
+
+vi.mock('@/lib/permissions', () => ({
+  canAccessCompany: vi.fn().mockResolvedValue(true),
+  canAccessModule: vi.fn().mockResolvedValue(true),
+  canAccessSensitivity: vi.fn().mockResolvedValue(true),
+  getAccessibleCompanies: vi.fn().mockResolvedValue(['company-1', 'company-2']),
+  getAllowedSensitivityLevels: vi
+    .fn()
+    .mockResolvedValue(['PUBLIC', 'STANDARD', 'INTERN', 'FORTROLIG', 'STRENGT_FORTROLIG']),
+}))
+
+vi.mock('@/lib/rate-limit', () => ({
+  checkActionRateLimit: vi.fn().mockResolvedValue({ limited: false }),
+}))
+
+vi.mock('@/lib/logger', () => ({
+  captureError: vi.fn(),
+}))
+
+vi.mock('@/lib/audit', () => ({
+  recordAuditEvent: vi.fn(),
+}))
+
+vi.mock('@/lib/ai/invalidate-cache', () => ({
+  invalidateCompanyInsightsCache: vi.fn(),
+}))
+
+vi.mock('next/cache', () => ({
+  revalidatePath: vi.fn(),
+}))
+
+// ── Importer actions EFTER mocks ───────────────────────────────────────────
+
+import { auth } from '@/lib/auth'
+import { getContractsPaginated } from '@/actions/contracts'
+import { getTasksPaginated } from '@/actions/tasks'
+import { getCasesPageData } from '@/actions/cases'
+import { getPersonsPaginated } from '@/actions/persons'
+import { getCompaniesPageData } from '@/actions/companies'
+
+// ── Fælles session-fixture ─────────────────────────────────────────────────
+
+const ORG_ID = 'org-test-uuid-1234'
+
+const mockSession = {
+  user: {
+    id: 'user-test-uuid',
+    organizationId: ORG_ID,
+    email: 'test@chainhub.dk',
+    name: 'Test Bruger',
+  },
+  expires: '2099-01-01T00:00:00.000Z',
+}
+
+// ── Tests ──────────────────────────────────────────────────────────────────
+
+describe('Tenant isolation — Prisma queries inkluderer organization_id', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(auth).mockResolvedValue(
+      mockSession as ReturnType<typeof auth> extends Promise<infer T> ? T : never
+    )
   })
 
-  it('Query for tenant A data returns only tenant A records', () => {
-    // Simulerer en filteret query
-    const allRecords = [
-      { id: '1', organization_id: 'org-a', name: 'Contract A1' },
-      { id: '2', organization_id: 'org-b', name: 'Contract B1' },
-      { id: '3', organization_id: 'org-a', name: 'Contract A2' },
-    ]
+  it('getContractsPaginated sender organization_id til prisma.contract.findMany', async () => {
+    await getContractsPaginated({ page: 1, pageSize: 20 })
 
-    const tenantARecords = allRecords.filter((r) => r.organization_id === 'org-a')
-
-    expect(tenantARecords).toHaveLength(2)
-    expect(tenantARecords.every((r) => r.organization_id === 'org-a')).toBe(true)
-    expect(tenantARecords.find((r) => r.organization_id === 'org-b')).toBeUndefined()
+    expect(mockPrisma.contract.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          organization_id: ORG_ID,
+        }),
+      })
+    )
   })
 
-  it('Tenant B cannot access Tenant A companies by direct ID', () => {
-    // Simulerer IDOR-attempt: tenant B kender ID på tenant A's selskab
-    const tenantACompany = { id: 'company-uuid-123', organization_id: 'org-a' }
-    const tenantBOrgId = 'org-b'
+  it('getTasksPaginated sender organization_id til prisma.task.findMany', async () => {
+    await getTasksPaginated({ page: 1, pageSize: 20 })
 
-    // Korrekt query ville filtrere på BEGGE id og organization_id
-    const queryResult = tenantACompany.organization_id === tenantBOrgId ? tenantACompany : null
-
-    expect(queryResult).toBeNull()
+    expect(mockPrisma.task.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          organization_id: ORG_ID,
+        }),
+      })
+    )
   })
 
-  it('deleted_at: null filter excludes soft-deleted records', () => {
-    const records = [
-      { id: '1', organization_id: 'org-a', deleted_at: null },
-      { id: '2', organization_id: 'org-a', deleted_at: new Date('2024-01-01') },
-      { id: '3', organization_id: 'org-a', deleted_at: null },
-    ]
+  it('getCasesPageData sender organization_id til prisma.caseCompany.findMany', async () => {
+    await getCasesPageData()
 
-    const activeRecords = records.filter(
-      (r) => r.organization_id === 'org-a' && r.deleted_at === null
+    expect(mockPrisma.caseCompany.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          organization_id: ORG_ID,
+        }),
+      })
+    )
+  })
+
+  it('getPersonsPaginated sender organization_id til prisma.person.findMany', async () => {
+    await getPersonsPaginated({ page: 1, pageSize: 15 })
+
+    expect(mockPrisma.person.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          organization_id: ORG_ID,
+        }),
+      })
+    )
+  })
+
+  it('getCompaniesPageData sender organization_id til prisma.company.findMany', async () => {
+    await getCompaniesPageData()
+
+    expect(mockPrisma.company.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          organization_id: ORG_ID,
+        }),
+      })
+    )
+  })
+})
+
+describe('Tenant isolation — én tenants data læses ikke af anden tenant', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('org-A og org-B har distinkte organization IDs', () => {
+    const orgA = { organizationId: 'org-a-uuid-1234' }
+    const orgB = { organizationId: 'org-b-uuid-5678' }
+    expect(orgA.organizationId).not.toBe(orgB.organizationId)
+  })
+
+  it('session med org-A kalder Prisma med org-A — ikke org-B', async () => {
+    const orgAId = 'org-a-xxxx'
+    const orgBId = 'org-b-yyyy'
+
+    vi.mocked(auth).mockResolvedValue({
+      ...mockSession,
+      user: { ...mockSession.user, organizationId: orgAId },
+    } as ReturnType<typeof auth> extends Promise<infer T> ? T : never)
+
+    await getContractsPaginated({ page: 1, pageSize: 20 })
+
+    const calls = mockPrisma.contract.findMany.mock.calls
+    expect(calls.length).toBeGreaterThan(0)
+
+    const firstCallWhere = calls[0]![0]?.where
+    expect(firstCallWhere?.organization_id).toBe(orgAId)
+    expect(firstCallWhere?.organization_id).not.toBe(orgBId)
+  })
+
+  it('deleted_at: null filtrerer altid soft-slettede poster ud af tasks-query', async () => {
+    vi.mocked(auth).mockResolvedValue(
+      mockSession as ReturnType<typeof auth> extends Promise<infer T> ? T : never
     )
 
-    expect(activeRecords).toHaveLength(2)
-    expect(activeRecords.find((r) => r.id === '2')).toBeUndefined()
-  })
-})
+    await getTasksPaginated({ page: 1, pageSize: 20 })
 
-// ──── Sensitivity access control tests ────────────────────────────────────
-
-describe('Role-based sensitivity access', () => {
-  const ROLE_SENSITIVITY_MAP: Record<string, string[]> = {
-    GROUP_OWNER: ['PUBLIC', 'STANDARD', 'INTERN', 'FORTROLIG', 'STRENGT_FORTROLIG'],
-    GROUP_ADMIN: ['PUBLIC', 'STANDARD', 'INTERN', 'FORTROLIG', 'STRENGT_FORTROLIG'],
-    GROUP_LEGAL: ['PUBLIC', 'STANDARD', 'INTERN', 'FORTROLIG', 'STRENGT_FORTROLIG'],
-    GROUP_FINANCE: ['PUBLIC', 'STANDARD', 'INTERN', 'FORTROLIG'],
-    GROUP_READONLY: ['PUBLIC', 'STANDARD', 'INTERN', 'FORTROLIG'],
-    COMPANY_MANAGER: ['PUBLIC', 'STANDARD', 'INTERN', 'FORTROLIG'],
-    COMPANY_LEGAL: ['PUBLIC', 'STANDARD', 'INTERN'],
-    COMPANY_READONLY: ['PUBLIC', 'STANDARD', 'INTERN'],
-  }
-
-  it('GROUP_OWNER can see all sensitivity levels', () => {
-    const allowed = ROLE_SENSITIVITY_MAP['GROUP_OWNER']
-    expect(allowed).toContain('STRENGT_FORTROLIG')
-    expect(allowed).toContain('FORTROLIG')
-    expect(allowed).toContain('INTERN')
-    expect(allowed).toContain('STANDARD')
-    expect(allowed).toContain('PUBLIC')
+    expect(mockPrisma.task.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          deleted_at: null,
+        }),
+      })
+    )
   })
 
-  it('COMPANY_MANAGER cannot see STRENGT_FORTROLIG', () => {
-    const allowed = ROLE_SENSITIVITY_MAP['COMPANY_MANAGER']
-    expect(allowed).not.toContain('STRENGT_FORTROLIG')
-    expect(allowed).toContain('FORTROLIG')
-  })
+  it('deleted_at: null filtrerer altid soft-slettede poster ud af contracts-query', async () => {
+    vi.mocked(auth).mockResolvedValue(
+      mockSession as ReturnType<typeof auth> extends Promise<infer T> ? T : never
+    )
 
-  it('COMPANY_LEGAL cannot see FORTROLIG or STRENGT_FORTROLIG', () => {
-    const allowed = ROLE_SENSITIVITY_MAP['COMPANY_LEGAL']
-    expect(allowed).not.toContain('STRENGT_FORTROLIG')
-    expect(allowed).not.toContain('FORTROLIG')
-    expect(allowed).toContain('INTERN')
-  })
+    await getContractsPaginated({ page: 1, pageSize: 20 })
 
-  it('COMPANY_READONLY cannot see FORTROLIG or STRENGT_FORTROLIG', () => {
-    const allowed = ROLE_SENSITIVITY_MAP['COMPANY_READONLY']
-    expect(allowed).not.toContain('STRENGT_FORTROLIG')
-    expect(allowed).not.toContain('FORTROLIG')
-  })
-
-  it('GROUP_LEGAL can see STRENGT_FORTROLIG', () => {
-    const allowed = ROLE_SENSITIVITY_MAP['GROUP_LEGAL']
-    expect(allowed).toContain('STRENGT_FORTROLIG')
-  })
-
-  it('GROUP_FINANCE cannot see STRENGT_FORTROLIG', () => {
-    const allowed = ROLE_SENSITIVITY_MAP['GROUP_FINANCE']
-    expect(allowed).not.toContain('STRENGT_FORTROLIG')
-  })
-})
-
-// ──── Contract status transition tests ────────────────────────────────────
-
-describe('Contract status transitions', () => {
-  const VALID_TRANSITIONS: Record<string, string[]> = {
-    UDKAST: ['TIL_REVIEW', 'AKTIV'],
-    TIL_REVIEW: ['UDKAST', 'TIL_UNDERSKRIFT', 'AKTIV'],
-    TIL_UNDERSKRIFT: ['TIL_REVIEW', 'AKTIV'],
-    AKTIV: ['UDLOEBET', 'OPSAGT', 'FORNYET'],
-    UDLOEBET: ['FORNYET'],
-    OPSAGT: [],
-    FORNYET: [],
-    ARKIVERET: [],
-  }
-
-  it('UDKAST can transition to TIL_REVIEW', () => {
-    expect(VALID_TRANSITIONS['UDKAST']).toContain('TIL_REVIEW')
-  })
-
-  it('OPSAGT cannot transition to anything', () => {
-    expect(VALID_TRANSITIONS['OPSAGT']).toHaveLength(0)
-  })
-
-  it('AKTIV can be OPSAGT', () => {
-    expect(VALID_TRANSITIONS['AKTIV']).toContain('OPSAGT')
-  })
-
-  it('UDKAST cannot jump directly to OPSAGT', () => {
-    expect(VALID_TRANSITIONS['UDKAST']).not.toContain('OPSAGT')
-  })
-
-  it('ARKIVERET is terminal state', () => {
-    expect(VALID_TRANSITIONS['ARKIVERET']).toHaveLength(0)
+    expect(mockPrisma.contract.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          deleted_at: null,
+        }),
+      })
+    )
   })
 })
