@@ -29,5 +29,6 @@ export const config = {
     '/billing/:path*',
     '/calendar/:path*',
     '/search/:path*',
+    '/visits/:path*',
   ],
 }
