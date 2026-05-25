@@ -127,3 +127,24 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+
+  deploy:
+    name: Deploy to Vercel (production)
+    needs: [lint-test, build, e2e]
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    # Kræver tre GitHub Secrets:
+    #   VERCEL_TOKEN      — fra vercel.com/account/tokens
+    #   VERCEL_ORG_ID     — fra `vercel link` (.vercel/project.json → orgId)
+    #   VERCEL_PROJECT_ID — fra `vercel link` (.vercel/project.json → projectId)
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+
+      - name: Deploy to Vercel
+        run: vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
