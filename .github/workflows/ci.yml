@@ -100,11 +100,10 @@ jobs:
       - name: Generate Prisma client
         run: npx prisma generate
 
-      - name: Push schema + seed
-        run: |
-          npx prisma db push --skip-generate
-          npx prisma db seed
+      - name: Reset E2E database
+        run: npm run db:e2e:reset
         env:
+          E2E_DATABASE_URL: postgresql://chainhub:chainhub@localhost:5432/chainhub_e2e
           DATABASE_URL: postgresql://chainhub:chainhub@localhost:5432/chainhub_e2e
           DIRECT_URL: postgresql://chainhub:chainhub@localhost:5432/chainhub_e2e
 
