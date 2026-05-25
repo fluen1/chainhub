@@ -5,11 +5,11 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { getStripe } from '@/lib/stripe'
 import { captureError } from '@/lib/logger'
-import { env } from '@/lib/env'
+import { baseUrl } from '@/lib/env'
 import { canAccessModule } from '@/lib/permissions'
 import type { ActionResult } from '@/types/actions'
 
-const BASE_URL = env.NEXTAUTH_URL ?? 'http://localhost:3000'
+const BASE_URL = baseUrl
 
 const checkoutSchema = z.object({
   priceId: z.string().min(1, 'Ugyldig pris-ID'),

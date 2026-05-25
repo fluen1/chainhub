@@ -33,6 +33,11 @@ vi.mock('@/lib/logger', () => ({
   captureError: vi.fn(),
 }))
 
+vi.mock('@/lib/env', () => ({
+  env: { NEXTAUTH_URL: 'http://localhost:3000' },
+  baseUrl: 'http://localhost:3000',
+}))
+
 vi.mock('bcryptjs', () => ({
   default: {
     hash: vi.fn().mockResolvedValue('hashed-pw-xyz'),

@@ -16,7 +16,9 @@ const resetPasswordSchema = z.object({
   newPassword: z.string().min(8, 'Adgangskoden skal være mindst 8 tegn'),
 })
 
-const NEXTAUTH_URL = process.env.NEXTAUTH_URL ?? 'http://localhost:3000'
+import { baseUrl } from '@/lib/env'
+
+const NEXTAUTH_URL = baseUrl
 
 /**
  * requestPasswordReset — sender reset-link til alle brugere med denne email (på tværs af org).

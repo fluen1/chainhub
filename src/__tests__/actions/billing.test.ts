@@ -7,6 +7,7 @@ vi.mock('@/lib/env', () => ({
     STRIPE_PROFESSIONAL_PRICE_ID: 'price_pro',
     STRIPE_WEBHOOK_SECRET: 'whsec_test',
   },
+  baseUrl: 'http://localhost:3000',
 }))
 vi.mock('@/lib/auth', () => ({ auth: vi.fn() }))
 vi.mock('@/lib/db', () => ({

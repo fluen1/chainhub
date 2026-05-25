@@ -23,6 +23,9 @@ const envSchema = z.object({
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().optional(),
   STRIPE_STARTER_PRICE_ID: z.string().optional(),
   STRIPE_PROFESSIONAL_PRICE_ID: z.string().optional(),
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  VERCEL_URL: z.string().optional(),
 })
 
 const parsed = envSchema.safeParse(process.env)
@@ -33,3 +36,6 @@ if (!parsed.success) {
 }
 
 export const env = parsed.data
+
+export const baseUrl =
+  env.NEXTAUTH_URL ?? (env.VERCEL_URL ? `https://${env.VERCEL_URL}` : 'http://localhost:3000')

@@ -36,8 +36,8 @@ jobs:
       - name: Type check
         run: npm run typecheck
 
-      - name: Unit tests (Vitest)
-        run: npm test
+      - name: Unit tests (Vitest + coverage)
+        run: npm run test:coverage
         env:
           # Tests med runIf(!!DATABASE_URL) springes over uden DB.
           # Mock-baserede tests (finance, governance, persons, audit) kører.

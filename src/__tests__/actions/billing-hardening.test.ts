@@ -13,7 +13,10 @@ vi.mock('@/lib/db', () => ({
 }))
 vi.mock('@/lib/stripe', () => ({ getStripe: vi.fn() }))
 vi.mock('@/lib/logger', () => ({ captureError: vi.fn() }))
-vi.mock('@/lib/env', () => ({ env: { NEXTAUTH_URL: 'http://localhost:3000' } }))
+vi.mock('@/lib/env', () => ({
+  env: { NEXTAUTH_URL: 'http://localhost:3000' },
+  baseUrl: 'http://localhost:3000',
+}))
 vi.mock('@/lib/permissions', () => ({
   canAccessModule: vi.fn(),
 }))

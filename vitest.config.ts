@@ -11,6 +11,13 @@ export default defineConfig({
     testTimeout: 30_000,
     // Playwright E2E tests bruger @playwright/test runner — ekskludér fra Vitest
     exclude: ['node_modules/**', 'tests/e2e/**', '.next/**', 'dist/**'],
+    coverage: {
+      provider: 'v8',
+      thresholds: {
+        lines: 60,
+        functions: 60,
+      },
+    },
   },
   resolve: {
     alias: {
