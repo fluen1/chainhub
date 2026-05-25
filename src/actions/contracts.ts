@@ -346,6 +346,7 @@ export async function updateContractStatus(
       organization_id: session.user.organizationId,
       deleted_at: null,
     },
+    select: { id: true, sensitivity: true, status: true, notes: true, company_id: true },
   })
   if (!contract) return { error: 'Kontrakt ikke fundet' }
 
@@ -424,6 +425,7 @@ export async function deleteContract(contractId: string): Promise<ActionResult<v
       organization_id: session.user.organizationId,
       deleted_at: null,
     },
+    select: { id: true, status: true, company_id: true },
   })
   if (!contract) return { error: 'Kontrakt ikke fundet' }
 
@@ -480,6 +482,7 @@ export async function updateContract(input: UpdateContractInput): Promise<Action
       organization_id: session.user.organizationId,
       deleted_at: null,
     },
+    select: { id: true, company_id: true, sensitivity: true },
   })
   if (!contract) return { error: 'Kontrakt ikke fundet' }
 
@@ -586,6 +589,7 @@ export async function addContractParty(
       organization_id: session.user.organizationId,
       deleted_at: null,
     },
+    select: { id: true, company_id: true, sensitivity: true },
   })
   if (!contract) return { error: 'Kontrakt ikke fundet' }
 
@@ -657,11 +661,25 @@ async function getRawContractDetail(contractId: string, orgId: string) {
     include: {
       company: { select: { id: true, name: true } },
       parties: {
-        include: {
+        select: {
+          id: true,
+          counterparty_name: true,
+          role_in_contract: true,
           person: { select: { id: true, first_name: true, last_name: true } },
         },
       },
-      versions: { orderBy: { version_number: 'desc' }, take: 10 },
+      versions: {
+        orderBy: { version_number: 'desc' },
+        take: 10,
+        select: {
+          id: true,
+          version_number: true,
+          uploaded_at: true,
+          uploaded_by: true,
+          change_type: true,
+          file_url: true,
+        },
+      },
     },
   })
 }
