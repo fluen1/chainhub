@@ -153,6 +153,7 @@ export async function updateCaseStatus(input: UpdateCaseStatusInput): Promise<Ac
       organization_id: session.user.organizationId,
       deleted_at: null,
     },
+    select: { id: true, status: true, sensitivity: true },
   })
   if (!existingCase) return { error: 'Sag ikke fundet' }
 
@@ -234,7 +235,12 @@ export async function closeCase(caseId: string, notes?: string): Promise<ActionR
       organization_id: session.user.organizationId,
       deleted_at: null,
     },
-    include: { case_companies: { select: { company_id: true } } },
+    select: {
+      id: true,
+      status: true,
+      sensitivity: true,
+      case_companies: { select: { company_id: true } },
+    },
   })
   if (!existingCase) return { error: 'Sag ikke fundet' }
   if (existingCase.status === 'LUKKET') return { error: 'Sagen er allerede lukket' }
@@ -303,7 +309,12 @@ export async function escalateCase(caseId: string): Promise<ActionResult<void>> 
       organization_id: session.user.organizationId,
       deleted_at: null,
     },
-    include: { case_companies: { select: { company_id: true } } },
+    select: {
+      id: true,
+      status: true,
+      sensitivity: true,
+      case_companies: { select: { company_id: true } },
+    },
   })
   if (!existingCase) return { error: 'Sag ikke fundet' }
   if (existingCase.status === 'LUKKET') return { error: 'Lukkede sager kan ikke eskaleres' }
@@ -396,7 +407,11 @@ export async function updateCase(input: UpdateCaseInput): Promise<ActionResult<C
       organization_id: session.user.organizationId,
       deleted_at: null,
     },
-    include: { case_companies: { select: { company_id: true } } },
+    select: {
+      id: true,
+      sensitivity: true,
+      case_companies: { select: { company_id: true } },
+    },
   })
   if (!existingCase) return { error: 'Sag ikke fundet' }
 
@@ -479,6 +494,7 @@ export async function deleteCase(caseId: string): Promise<ActionResult<void>> {
 
   const existingCase = await prisma.case.findFirst({
     where: { id: caseId, organization_id: session.user.organizationId, deleted_at: null },
+    select: { id: true },
   })
   if (!existingCase) return { error: 'Sag ikke fundet' }
 
@@ -658,12 +674,25 @@ async function getRawCaseDetail(id: string, orgId: string) {
       tasks: {
         where: { deleted_at: null },
         orderBy: { due_date: 'asc' },
+        select: {
+          id: true,
+          title: true,
+          assigned_to: true,
+          due_date: true,
+          status: true,
+          created_at: true,
+        },
       },
       documents: {
         where: { deleted_at: null },
         orderBy: { uploaded_at: 'desc' },
         take: 10,
-        include: { extraction: { select: { extraction_status: true } } },
+        select: {
+          id: true,
+          file_name: true,
+          uploaded_at: true,
+          extraction: { select: { extraction_status: true } },
+        },
       },
     },
   })
