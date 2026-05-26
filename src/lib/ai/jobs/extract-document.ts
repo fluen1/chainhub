@@ -11,6 +11,7 @@ import {
 import { recordAIUsage } from '@/lib/ai/usage'
 import { loadForExtraction } from '@/lib/ai/content-loader'
 import { runExtractionPipeline } from '@/lib/ai/pipeline/orchestrator'
+import { runEntityMatching } from '@/lib/ai/pipeline/pass6-entity-matching'
 import type { PipelineCheckpoint } from '@/lib/ai/pipeline/types'
 import { sha256 } from '@/lib/ai/content-hash'
 import { createLogger } from '@/lib/ai/logger'
@@ -364,6 +365,50 @@ export async function extractDocument(
   // så reservationen er ikke længere nødvendig. Eventuel diff mellem estimat
   // og faktisk cost er ikke et problem — usage-log er kilden til sandhed.
   await commitAIUsage(payload.organization_id, estimatedCost, result.total_cost_usd)
+
+  // Kør entity matching (Pass 6) — non-blocking, fejl her bryder ikke jobbet.
+  const entityMatchingEnabled = await isAIEnabled(payload.organization_id, 'entity_matching')
+  if (entityMatchingEnabled) {
+    try {
+      // Udled dokumenttekst fra content-typen: tekst-typer har indhold direkte,
+      // PDF-binær har ingen plain-text tilgængelig her (tekst hentes af LLM-pipelinen).
+      const documentText =
+        content.type === 'text_markdown'
+          ? content.markdown
+          : content.type === 'text_html'
+            ? content.html
+            : ''
+
+      const entityResult = await runEntityMatching({
+        extractedFields: result.extraction_run1.fields,
+        organizationId: payload.organization_id,
+        documentText,
+      })
+
+      if (entityResult.matches.length > 0) {
+        await prisma.documentExtraction.update({
+          where: { document_id: payload.document_id },
+          data: { entity_matches: entityResult.matches as unknown as Prisma.InputJsonValue },
+        })
+      }
+
+      await recordAIUsage({
+        organizationId: payload.organization_id,
+        feature: 'entity_matching',
+        model: 'gpt-5-nano',
+        provider: 'openai',
+        inputTokens: entityResult.input_tokens,
+        outputTokens: entityResult.output_tokens,
+        cacheReadTokens: entityResult.cache_read_tokens,
+        cacheWriteTokens: entityResult.cache_write_tokens,
+        costUsd: entityResult.cost_usd,
+        resourceType: 'document',
+        resourceId: payload.document_id,
+      })
+    } catch (err) {
+      log.warn({ err, document_id: payload.document_id }, 'Entity matching fejlede — non-blocking')
+    }
+  }
 
   return {
     extraction_id: extraction.id,

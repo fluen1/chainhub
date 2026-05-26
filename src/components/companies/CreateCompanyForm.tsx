@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createCompany } from '@/actions/companies'
+import { getAutofillSuggestions, type AutofillSuggestion } from '@/actions/autofill'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { toast } from 'sonner'
@@ -16,6 +17,7 @@ import {
   BFieldWrap,
   Breadcrumb,
 } from '@/components/ui/b'
+import { AutofillField, type AutofillSuggestionProp } from '@/components/ui/AutofillField'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CreateCompanyForm — B-stil port. Felter: name, cvr, companyType, address,
@@ -37,6 +39,27 @@ export function CreateCompanyForm() {
 
   const [nameError, setNameError] = useState<string | null>(null)
   const [cvrError, setCvrError] = useState<string | null>(null)
+
+  // Autofill-forslag — nøgle: feltnavn, værdi: forslagsdata
+  const [suggestions, setSuggestions] = useState<Map<string, AutofillSuggestionProp>>(new Map())
+
+  async function handleCvrBlur() {
+    if (!/^\d{8}$/.test(cvr)) return
+    const result = await getAutofillSuggestions({ entityType: 'company', cvr })
+    if (result.error || !result.data) return
+
+    const map = new Map<string, AutofillSuggestionProp>()
+    for (const s of result.data.suggestions as AutofillSuggestion[]) {
+      if (s.value !== null) {
+        map.set(s.field, {
+          value: s.value,
+          source: s.source,
+          confidence: s.confidence,
+        })
+      }
+    }
+    setSuggestions(map)
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -104,7 +127,7 @@ export function CreateCompanyForm() {
               Selskabsinformation
             </p>
 
-            <BTextField
+            <AutofillField
               label="Selskabsnavn"
               value={name}
               onChange={(v) => {
@@ -114,27 +137,29 @@ export function CreateCompanyForm() {
               required
               placeholder="Tandlæge Østerbro ApS"
               error={nameError}
-              autoFocus
               disabled={loading}
+              suggestion={suggestions.get('name') ?? null}
             />
 
             <BFieldRow>
-              <BTextField
-                label="CVR-nummer"
-                value={cvr}
-                onChange={(v) => {
-                  setCvr(v)
-                  if (v && !/^\d{8}$/.test(v)) {
-                    setCvrError('CVR skal være 8 cifre')
-                  } else {
-                    setCvrError(null)
-                  }
-                }}
-                placeholder="12345678"
-                hint="8 cifre"
-                error={cvrError}
-                disabled={loading}
-              />
+              <div onBlur={handleCvrBlur}>
+                <BTextField
+                  label="CVR-nummer"
+                  value={cvr}
+                  onChange={(v) => {
+                    setCvr(v)
+                    if (v && !/^\d{8}$/.test(v)) {
+                      setCvrError('CVR skal være 8 cifre')
+                    } else {
+                      setCvrError(null)
+                    }
+                  }}
+                  placeholder="12345678"
+                  hint="8 cifre"
+                  error={cvrError}
+                  disabled={loading}
+                />
+              </div>
               <BFieldWrap label="Selskabsform">
                 <select
                   value={companyType}
@@ -172,28 +197,31 @@ export function CreateCompanyForm() {
               Adresse
             </p>
 
-            <BTextField
+            <AutofillField
               label="Vejnavn og nummer"
               value={address}
               onChange={setAddress}
               placeholder="Østerbrogade 123"
               disabled={loading}
+              suggestion={suggestions.get('address') ?? null}
             />
 
             <BFieldRow>
-              <BTextField
+              <AutofillField
                 label="Postnummer"
                 value={postalCode}
                 onChange={setPostalCode}
                 placeholder="2100"
                 disabled={loading}
+                suggestion={suggestions.get('postalCode') ?? null}
               />
-              <BTextField
+              <AutofillField
                 label="By"
                 value={city}
                 onChange={setCity}
                 placeholder="København Ø"
                 disabled={loading}
+                suggestion={suggestions.get('city') ?? null}
               />
             </BFieldRow>
           </div>

@@ -7,6 +7,8 @@ import type { ContractSchema } from '@/lib/ai/schemas/types'
 import ReviewClient from './review-client'
 import type { ReviewDocument, ReviewField, ReviewQueueItem } from './review-client'
 import { getDocumentReviewPageData, getDocumentTitle } from '@/actions/documents'
+import { getDocumentEnrichment } from '@/actions/document-enrichment'
+import { EnrichmentPanel } from '@/components/documents/EnrichmentPanel'
 
 export async function generateMetadata({
   params,
@@ -184,6 +186,9 @@ export default async function DocumentReviewPage({ params }: { params: Promise<{
   const pageData = await getDocumentReviewPageData(id)
   if (!pageData) notFound()
 
+  const enrichmentResult = await getDocumentEnrichment(id)
+  const enrichmentData = enrichmentResult.data ?? null
+
   const { doc, reviewQueue: reviewQueueRaw } = pageData
   const reviewQueue: ReviewQueueItem[] = reviewQueueRaw
 
@@ -230,5 +235,16 @@ export default async function DocumentReviewPage({ params }: { params: Promise<{
       : null,
   }
 
-  return <ReviewClient document={reviewDoc} reviewQueue={reviewQueue} sourceBlocks={sourceBlocks} />
+  return (
+    <>
+      <ReviewClient document={reviewDoc} reviewQueue={reviewQueue} sourceBlocks={sourceBlocks} />
+      {enrichmentData && (
+        <div className="max-w-[1280px] mx-auto px-8 pb-8">
+          <div className="max-w-sm">
+            <EnrichmentPanel data={enrichmentData} />
+          </div>
+        </div>
+      )}
+    </>
+  )
 }

@@ -1,6 +1,14 @@
 import { prisma } from '@/lib/db'
 
-export type AIFeature = 'extraction' | 'insights' | 'search_ai' | 'calendar_events'
+export type AIFeature =
+  | 'extraction'
+  | 'insights'
+  | 'search_ai'
+  | 'calendar_events'
+  | 'entity_matching'
+  | 'autofill'
+  | 'alerts'
+  | 'assistant'
 
 export async function isAIEnabled(organizationId: string, feature: AIFeature): Promise<boolean> {
   if (process.env.AI_EXTRACTION_ENABLED !== 'true') {

@@ -3,6 +3,7 @@ import { Providers } from '@/components/providers'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { getSidebarData, buildSidebarBadges } from '@/lib/sidebar-data'
+import { getAlertStats } from '@/actions/alerts'
 import { BShell } from '@/components/layout/b-shell'
 import { GlobalKeyboardShortcuts } from '@/components/layout/global-keyboard-shortcuts'
 import { PosthogIdentify } from '@/components/providers/PosthogIdentify'
@@ -37,8 +38,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
     }
   }
 
-  const sidebarData = await getSidebarData(session.user.id, session.user.organizationId)
+  const [sidebarData, alertStatsResult] = await Promise.all([
+    getSidebarData(session.user.id, session.user.organizationId),
+    getAlertStats(),
+  ])
   const badges = buildSidebarBadges(sidebarData)
+  const alertCount = alertStatsResult.data?.total ?? 0
 
   return (
     <Providers>
@@ -46,7 +51,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <SkipToMain />
       <GlobalKeyboardShortcuts />
       <TrialBanner />
-      <BShell badges={badges}>{children}</BShell>
+      <BShell badges={badges} alertCount={alertCount}>
+        {children}
+      </BShell>
     </Providers>
   )
 }

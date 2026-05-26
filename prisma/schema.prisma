@@ -276,6 +276,21 @@ enum AIMode {
   LIVE
 }
 
+enum AlertSeverity {
+  CRITICAL
+  WARNING
+  INFO
+  @@map("alert_severity")
+}
+
+enum AlertCategory {
+  DEADLINE
+  MISSING
+  RISK
+  COMPLIANCE
+  @@map("alert_category")
+}
+
 // ============================================================
 // MODELS
 // ============================================================
@@ -315,6 +330,8 @@ model Organization {
   task_history          TaskHistory[]
   invite_tokens         InviteToken[]
   company_notes         CompanyNote[]
+  alerts                Alert[]
+  conversations         Conversation[]
 
   @@index([id])
 }
@@ -1106,6 +1123,7 @@ model DocumentExtraction {
   field_decisions Json?
 
   extraction_status String @default("completed")
+  entity_matches    Json?  // Array of EntityMatch results from pass6
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -1173,4 +1191,95 @@ model InviteToken {
 
   @@index([token])
   @@index([organization_id])
+}
+
+// ============================================================
+// ALERTS
+// ============================================================
+
+model Alert {
+  id              String        @id @default(uuid())
+  organization_id String
+  severity        AlertSeverity
+  category        AlertCategory
+  entity_type     String
+  entity_id       String
+  entity_name     String
+  message         String
+  details         Json?
+  dismissed_at    DateTime?
+  dismissed_by    String?
+  created_at      DateTime      @default(now())
+
+  organization Organization @relation(fields: [organization_id], references: [id])
+
+  @@index([organization_id, dismissed_at])
+  @@index([organization_id, severity])
+  @@index([entity_type, entity_id])
+}
+
+// ============================================================
+// AI ASSISTANT — CONVERSATIONS
+// ============================================================
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+  @@map("message_role")
+}
+
+enum PendingActionStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+  EXPIRED
+  @@map("pending_action_status")
+}
+
+model Conversation {
+  id              String    @id @default(uuid())
+  organization_id String
+  user_id         String
+  title           String?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+
+  organization    Organization    @relation(fields: [organization_id], references: [id])
+  messages        Message[]
+  pending_actions PendingAction[]
+
+  @@index([organization_id, user_id])
+  @@index([user_id, updated_at])
+}
+
+model Message {
+  id              String      @id @default(uuid())
+  conversation_id String
+  role            MessageRole
+  content         String
+  tool_calls      Json?
+  tool_results    Json?
+  tokens_used     Int?
+  cost_usd        Decimal?    @db.Decimal(10, 6)
+  created_at      DateTime    @default(now())
+
+  conversation Conversation @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
+
+  @@index([conversation_id, created_at])
+}
+
+model PendingAction {
+  id              String              @id @default(uuid())
+  conversation_id String
+  action_type     String
+  action_label    String
+  payload         Json
+  status          PendingActionStatus @default(PENDING)
+  created_at      DateTime            @default(now())
+  resolved_at     DateTime?
+
+  conversation Conversation @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
+
+  @@index([conversation_id, status])
 }
