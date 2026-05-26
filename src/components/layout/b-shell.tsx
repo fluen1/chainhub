@@ -7,6 +7,8 @@ import { BSidebar } from './b-sidebar'
 import { BrandMark } from '@/components/ui/b'
 import type { SidebarBadge } from '@/types/ui'
 import { NotificationBell } from './NotificationBell'
+import { ChatToggle } from './ChatToggle'
+import { ChatPanel } from '@/components/assistant/ChatPanel'
 
 // ────────────────────────────────────────────────────────────────────────────
 // BShell — den nye B-stil app-shell.
@@ -32,6 +34,7 @@ interface Props {
 
 export function BShell({ badges, alertCount = 0, children }: Props) {
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [chatOpen, setChatOpen] = useState(false)
   const pathname = usePathname()
   const drawerRef = useRef<HTMLDivElement>(null)
   const previouslyFocused = useRef<HTMLElement | null>(null)
@@ -87,13 +90,13 @@ export function BShell({ badges, alertCount = 0, children }: Props) {
     <div className="flex min-h-screen bg-b-canvas text-b-1">
       {/* Desktop sidebar (lg+) */}
       <div className="hidden lg:block print-hide">
-        <BSidebar badges={badges} alertCount={alertCount} />
+        <BSidebar badges={badges} alertCount={alertCount} onChatOpen={() => setChatOpen(true)} />
       </div>
 
       {/* Mobile drawer */}
       {drawerOpen && (
         <>
-          { }
+          {}
           <div
             role="button"
             tabIndex={-1}
@@ -125,7 +128,8 @@ export function BShell({ badges, alertCount = 0, children }: Props) {
             <Menu className="h-4 w-4" aria-hidden />
           </button>
           <BrandMark withText />
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-1">
+            <ChatToggle onClick={() => setChatOpen(true)} />
             <NotificationBell count={alertCount} />
           </div>
         </div>
@@ -137,6 +141,8 @@ export function BShell({ badges, alertCount = 0, children }: Props) {
           {children}
         </main>
       </div>
+
+      <ChatPanel open={chatOpen} onClose={() => setChatOpen(false)} />
     </div>
   )
 }
