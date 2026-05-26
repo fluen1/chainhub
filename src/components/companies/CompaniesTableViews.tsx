@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { memo, useMemo, useState } from 'react'
 import { TableWrap, Th, Tr, Td, TableEmpty, Badge, type BadgeTone } from '@/components/ui/b'
 import type { CompanyRow } from '@/app/(dashboard)/companies/companies-list-b'
 
@@ -119,7 +119,7 @@ export function CompaniesFlatTable({
   )
 }
 
-export function CompanyTr({ c, onClick }: { c: CompanyRow; onClick: () => void }) {
+export const CompanyTr = memo(function CompanyTr({ c, onClick }: { c: CompanyRow; onClick: () => void }) {
   const hb = healthLabel(c.health)
   return (
     <Tr onClick={onClick}>
@@ -169,7 +169,7 @@ export function CompanyTr({ c, onClick }: { c: CompanyRow; onClick: () => void }
       </Td>
     </Tr>
   )
-}
+})
 
 export function CompaniesRegionsView({
   companies,

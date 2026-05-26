@@ -2,8 +2,9 @@
 
 import { z } from 'zod'
 import { prisma } from '@/lib/db'
-import { getAccessibleCompanies } from '@/lib/permissions'
+import { getAccessibleCompanies, canAccessModule } from '@/lib/permissions'
 import { auth } from '@/lib/auth'
+import { unstable_cache } from 'next/cache'
 
 // Løs UUID-validering: accepterer alle 8-4-4-4-12 hex-formater inkl. nil-UUIDs (seed-data)
 const uuidSchema = z
@@ -80,6 +81,43 @@ function formatRelative(date: Date, now: Date): string {
   return `${d} dage siden`
 }
 
+// Cache-nøgle bruger orgId + companyIds. TTL 30s: feed er read-heavy men
+// bør reflektere egne handlinger inden for rimelig tid.
+const fetchActivityLogs = unstable_cache(
+  async (orgId: string, companyIds: string[], sinceDate: Date) => {
+    const logs = await prisma.auditLog.findMany({
+      where: {
+        organization_id: orgId,
+        created_at: { gte: sinceDate },
+        // Scope: events der vedrører selskaber brugeren har adgang til, eller org-brede events (company_id=null)
+        OR: [{ resource_company_id: { in: companyIds } }, { resource_company_id: null }],
+      },
+      orderBy: { created_at: 'desc' },
+      take: 20,
+      select: {
+        id: true,
+        user_id: true,
+        action: true,
+        resource_type: true,
+        resource_id: true,
+        created_at: true,
+      },
+    })
+
+    if (logs.length === 0) return { logs: [], users: [] }
+
+    const userIds = Array.from(new Set(logs.map((l) => l.user_id)))
+    const users = await prisma.user.findMany({
+      where: { id: { in: userIds }, organization_id: orgId, deleted_at: null },
+      select: { id: true, name: true, email: true },
+    })
+
+    return { logs, users }
+  },
+  ['activity-feed'],
+  { revalidate: 30, tags: ['activity'] }
+)
+
 export async function getRecentActivity(
   preloadedCompanyIds?: string[],
   since?: Date
@@ -93,6 +131,9 @@ export async function getRecentActivity(
   const userId = session.user.id
   const organizationId = session.user.organizationId
 
+  const hasModuleAccess = await canAccessModule(userId, 'companies', organizationId)
+  if (!hasModuleAccess) return []
+
   // Default: 24 timer tilbage fra nu
   const sinceDate = parsed.data.since ?? new Date(Date.now() - 24 * 60 * 60 * 1000)
 
@@ -102,32 +143,10 @@ export async function getRecentActivity(
       ? parsed.data.preloadedCompanyIds
       : await getAccessibleCompanies(userId, organizationId)
 
-  const logs = await prisma.auditLog.findMany({
-    where: {
-      organization_id: organizationId,
-      created_at: { gte: sinceDate },
-      // Scope: events der vedrører selskaber brugeren har adgang til, eller org-brede events (company_id=null)
-      OR: [{ resource_company_id: { in: companyIds } }, { resource_company_id: null }],
-    },
-    orderBy: { created_at: 'desc' },
-    take: 20,
-    select: {
-      id: true,
-      user_id: true,
-      action: true,
-      resource_type: true,
-      resource_id: true,
-      created_at: true,
-    },
-  })
+  const { logs, users } = await fetchActivityLogs(organizationId, companyIds, sinceDate)
 
   if (logs.length === 0) return []
 
-  const userIds = Array.from(new Set(logs.map((l) => l.user_id)))
-  const users = await prisma.user.findMany({
-    where: { id: { in: userIds }, organization_id: organizationId, deleted_at: null },
-    select: { id: true, name: true, email: true },
-  })
   const userMap = new Map(users.map((u) => [u.id, u.name ?? u.email ?? 'Ukendt']))
 
   const now = new Date()

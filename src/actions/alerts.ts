@@ -2,8 +2,10 @@
 
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
+import { captureError } from '@/lib/logger'
+import { canAccessModule } from '@/lib/permissions'
 
 // ────────────────────────────────────────────────────────────────────────────
 // Typer
@@ -68,27 +70,35 @@ export async function getActiveAlerts(limit?: number): Promise<ActionResult<Aler
   const session = await auth()
   if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
-  const rows = await prisma.alert.findMany({
-    where: {
-      organization_id: session.user.organizationId,
-      dismissed_at: null,
-    },
-    orderBy: [{ severity: 'asc' }, { created_at: 'desc' }],
-    ...(limit != null ? { take: limit } : {}),
-    select: {
-      id: true,
-      severity: true,
-      category: true,
-      entity_type: true,
-      entity_id: true,
-      entity_name: true,
-      message: true,
-      details: true,
-      created_at: true,
-    },
-  })
+  const hasModuleAccess = await canAccessModule(session.user.id, 'companies', session.user.organizationId)
+  if (!hasModuleAccess) return { error: 'Ingen adgang til dette modul' }
 
-  return { data: rows.map(mapAlert) }
+  try {
+    const rows = await prisma.alert.findMany({
+      where: {
+        organization_id: session.user.organizationId,
+        dismissed_at: null,
+      },
+      orderBy: [{ severity: 'asc' }, { created_at: 'desc' }],
+      ...(limit != null ? { take: limit } : {}),
+      select: {
+        id: true,
+        severity: true,
+        category: true,
+        entity_type: true,
+        entity_id: true,
+        entity_name: true,
+        message: true,
+        details: true,
+        created_at: true,
+      },
+    })
+
+    return { data: rows.map(mapAlert) }
+  } catch (err) {
+    captureError(err, { namespace: 'action:alerts', extra: { limit } })
+    return { error: 'Noget gik galt — prøv igen.' }
+  }
 }
 
 /**
@@ -97,6 +107,9 @@ export async function getActiveAlerts(limit?: number): Promise<ActionResult<Aler
 export async function dismissAlert(alertId: string): Promise<ActionResult<{ id: string }>> {
   const session = await auth()
   if (!session) return { error: 'Din session er udløbet — log ind igen.' }
+
+  const hasModuleAccess = await canAccessModule(session.user.id, 'companies', session.user.organizationId)
+  if (!hasModuleAccess) return { error: 'Ingen adgang til dette modul' }
 
   if (!alertId || typeof alertId !== 'string') {
     return { error: 'Ugyldigt alert-id' }
@@ -114,17 +127,39 @@ export async function dismissAlert(alertId: string): Promise<ActionResult<{ id: 
   if (!existing) return { error: 'Advarslen blev ikke fundet' }
   if (existing.dismissed_at != null) return { error: 'Advarslen er allerede afvist' }
 
-  await prisma.alert.update({
-    where: { id: alertId },
-    data: {
-      dismissed_at: new Date(),
-      dismissed_by: session.user.id,
-    },
-  })
+  try {
+    await prisma.alert.update({
+      where: { id: alertId },
+      data: {
+        dismissed_at: new Date(),
+        dismissed_by: session.user.id,
+      },
+    })
 
-  revalidatePath('/dashboard')
-  return { data: { id: alertId } }
+    revalidatePath('/dashboard')
+    revalidateTag('alerts')
+    return { data: { id: alertId } }
+  } catch (err) {
+    captureError(err, { namespace: 'action:alerts', extra: { alertId } })
+    return { error: 'Noget gik galt — prøv igen.' }
+  }
 }
+
+// Cache-nøgle inkluderer orgId. TTL 60s: stats ændres kun ved dismiss/ny scan.
+const fetchAlertStats = unstable_cache(
+  async (orgId: string) => {
+    return prisma.alert.groupBy({
+      by: ['severity'],
+      where: {
+        organization_id: orgId,
+        dismissed_at: null,
+      },
+      _count: { id: true },
+    })
+  },
+  ['alert-stats'],
+  { revalidate: 60, tags: ['alerts'] }
+)
 
 /**
  * Returnerer en optælling af aktive advarsler per alvorlighed.
@@ -133,23 +168,24 @@ export async function getAlertStats(): Promise<ActionResult<AlertStats>> {
   const session = await auth()
   if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
-  const groups = await prisma.alert.groupBy({
-    by: ['severity'],
-    where: {
-      organization_id: session.user.organizationId,
-      dismissed_at: null,
-    },
-    _count: { id: true },
-  })
+  const hasModuleAccess = await canAccessModule(session.user.id, 'companies', session.user.organizationId)
+  if (!hasModuleAccess) return { error: 'Ingen adgang til dette modul' }
 
-  const stats: AlertStats = { critical: 0, warning: 0, info: 0, total: 0 }
-  for (const g of groups) {
-    const count = g._count.id
-    if (g.severity === 'CRITICAL') stats.critical = count
-    else if (g.severity === 'WARNING') stats.warning = count
-    else if (g.severity === 'INFO') stats.info = count
-    stats.total += count
+  try {
+    const groups = await fetchAlertStats(session.user.organizationId)
+
+    const stats: AlertStats = { critical: 0, warning: 0, info: 0, total: 0 }
+    for (const g of groups) {
+      const count = g._count.id
+      if (g.severity === 'CRITICAL') stats.critical = count
+      else if (g.severity === 'WARNING') stats.warning = count
+      else if (g.severity === 'INFO') stats.info = count
+      stats.total += count
+    }
+
+    return { data: stats }
+  } catch (err) {
+    captureError(err, { namespace: 'action:alerts', extra: {} })
+    return { error: 'Noget gik galt — prøv igen.' }
   }
-
-  return { data: stats }
 }

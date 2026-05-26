@@ -3,7 +3,7 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { canAccessCompany, getAccessibleCompanies } from '@/lib/permissions'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
 import { z } from 'zod'
 import { captureError } from '@/lib/logger'
@@ -150,6 +150,7 @@ export async function createVisit(input: CreateVisitInput): Promise<ActionResult
     revalidatePath('/visits')
     revalidatePath(`/companies/${parsed.data.companyId}`)
     revalidatePath('/dashboard')
+    revalidateTag('calendar')
     return { data: { id: visit.id } }
   } catch (err) {
     captureError(err, {
@@ -200,6 +201,7 @@ export async function updateVisit(input: UpdateVisitInput): Promise<ActionResult
     revalidatePath(`/visits/${parsed.data.visitId}`)
     revalidatePath(`/companies/${visit.company_id}`)
     revalidatePath('/dashboard')
+    revalidateTag('calendar')
     return { data: { id: updated.id } }
   } catch (err) {
     captureError(err, {
@@ -242,5 +244,6 @@ export async function deleteVisit(visitId: string): Promise<ActionResult<void>> 
   revalidatePath('/visits')
   revalidatePath(`/companies/${visit.company_id}`)
   revalidatePath('/dashboard')
+  revalidateTag('calendar')
   return { data: undefined }
 }

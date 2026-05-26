@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import {
   TableWrap,
   Th,
@@ -115,7 +116,7 @@ export function TasksFlatTable({
   )
 }
 
-export function TaskTr({
+export const TaskTr = memo(function TaskTr({
   t,
   onClick,
   hideSelskab,
@@ -159,4 +160,4 @@ export function TaskTr({
       </Td>
     </Tr>
   )
-}
+})

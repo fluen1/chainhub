@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db'
 import type { Prisma } from '@prisma/client'
 import {
   canAccessCompany,
+  canAccessCompanies,
   canAccessModule,
   canAccessSensitivity,
   getAccessibleCompanies,
@@ -17,7 +18,7 @@ import {
 } from '@/lib/validations/case'
 import { z } from 'zod'
 import { zodCaseType, zodCaseSubtype, zodSensitivityLevel } from '@/lib/zod-enums'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
 import type { Case } from '@prisma/client'
 import { recordAuditEvent } from '@/lib/audit'
@@ -63,14 +64,15 @@ export async function createCase(input: CreateCaseInput): Promise<ActionResult<C
   const hasModule = await canAccessModule(session.user.id, 'cases', session.user.organizationId)
   if (!hasModule) return { error: 'Ingen adgang til sagsstyring' }
 
-  // Tjek adgang til alle tilknyttede selskaber
-  for (const companyId of parsed.data.companyIds) {
-    const hasAccess = await canAccessCompany(
+  // Tjek adgang til alle tilknyttede selskaber (ét DB-kald i stedet for N)
+  if (parsed.data.companyIds.length > 0) {
+    const accessible = await canAccessCompanies(
       session.user.id,
-      companyId,
+      parsed.data.companyIds,
       session.user.organizationId
     )
-    if (!hasAccess) return { error: `Ingen adgang til selskab ${companyId}` }
+    const inaccessible = parsed.data.companyIds.find((id) => !accessible.has(id))
+    if (inaccessible) return { error: `Ingen adgang til selskab ${inaccessible}` }
   }
 
   // Tjek at bruger har adgang til det valgte sensitivitetsniveau
@@ -127,6 +129,10 @@ export async function createCase(input: CreateCaseInput): Promise<ActionResult<C
 
     revalidatePath('/cases')
     parsed.data.companyIds.forEach((cId) => revalidatePath(`/companies/${cId}/cases`))
+    revalidateTag('sidebar', {})
+    revalidateTag('dashboard', {})
+    revalidateTag('calendar')
+    revalidateTag('activity')
     return { data: newCase }
   } catch (err) {
     captureError(err, {
@@ -521,6 +527,10 @@ export async function deleteCase(caseId: string): Promise<ActionResult<void>> {
   })
 
   revalidatePath('/cases')
+  revalidateTag('sidebar', {})
+  revalidateTag('dashboard', {})
+  revalidateTag('calendar')
+  revalidateTag('activity')
   return { data: undefined }
 }
 
@@ -548,19 +558,21 @@ export interface CaseListRow {
 export interface CasesPageData {
   cases: CaseListRow[]
   totalCount: number
+  page: number
+  pageSize: number
 }
 
-export async function getCasesPageData(): Promise<CasesPageData> {
+export async function getCasesPageData(page = 1, pageSize = 25): Promise<CasesPageData> {
   const session = await auth()
-  if (!session) return { cases: [], totalCount: 0 }
+  if (!session) return { cases: [], totalCount: 0, page, pageSize }
 
   const orgId = session.user.organizationId
 
   const hasAccess = await canAccessModule(session.user.id, 'cases', orgId)
-  if (!hasAccess) return { cases: [], totalCount: 0 }
+  if (!hasAccess) return { cases: [], totalCount: 0, page, pageSize }
 
   const companyIds = await getAccessibleCompanies(session.user.id, orgId)
-  if (companyIds.length === 0) return { cases: [], totalCount: 0 }
+  if (companyIds.length === 0) return { cases: [], totalCount: 0, page, pageSize }
 
   const caseCompanyLinks = await prisma.caseCompany.findMany({
     where: {
@@ -571,15 +583,17 @@ export async function getCasesPageData(): Promise<CasesPageData> {
     distinct: ['case_id'],
   })
   const caseIds = caseCompanyLinks.map((cc) => cc.case_id)
-  if (caseIds.length === 0) return { cases: [], totalCount: 0 }
+  if (caseIds.length === 0) return { cases: [], totalCount: 0, page, pageSize }
+
+  const caseWhere = {
+    organization_id: orgId,
+    deleted_at: null,
+    id: { in: caseIds },
+  }
 
   const [rawCases, totalCount] = await Promise.all([
     prisma.case.findMany({
-      where: {
-        organization_id: orgId,
-        deleted_at: null,
-        id: { in: caseIds },
-      },
+      where: caseWhere,
       include: {
         case_companies: {
           take: 1,
@@ -587,10 +601,10 @@ export async function getCasesPageData(): Promise<CasesPageData> {
         },
       },
       orderBy: { due_date: 'asc' },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
     }),
-    prisma.case.count({
-      where: { organization_id: orgId, deleted_at: null, id: { in: caseIds } },
-    }),
+    prisma.case.count({ where: caseWhere }),
   ])
 
   const responsibleIds = Array.from(
@@ -632,7 +646,7 @@ export async function getCasesPageData(): Promise<CasesPageData> {
     }
   })
 
-  return { cases, totalCount }
+  return { cases, totalCount, page, pageSize }
 }
 
 export async function getCaseTitle(caseId: string): Promise<string> {

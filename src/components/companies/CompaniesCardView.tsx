@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import { Badge, type BadgeTone, Panel } from '@/components/ui/b'
 import type { CompanyRow } from '@/app/(dashboard)/companies/companies-list-b'
 
@@ -12,6 +13,57 @@ function healthLabel(h: CompanyRow['health']): { label: string; tone: BadgeTone 
   if (h === 'warning') return { label: 'Opmærks.', tone: 'amber' }
   return { label: 'OK', tone: 'green' }
 }
+
+// Individuelt selskabskort — memo forhindrer genrender ved sort/filter
+// der ikke ændrer dette specifikke selskabs data.
+const CompanyCard = memo(function CompanyCard({
+  c,
+  onClick,
+}: {
+  c: CompanyRow
+  onClick: () => void
+}) {
+  const hb = healthLabel(c.health)
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex flex-col gap-2 rounded-[4px] border border-b-border bg-b-panel p-2.5 text-left hover:border-b-border-strong hover:bg-b-row-hover"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <span className="min-w-0 truncate text-[13px] font-medium text-b-1">{c.navn}</span>
+        <Badge tone={hb.tone} className="text-[10px]">
+          {hb.label}
+        </Badge>
+      </div>
+      <div className="truncate text-[11px] text-b-2">
+        {c.type} · CVR {c.cvr}
+        {c.city ? ` · ${c.city}` : ''}
+      </div>
+      <div className="flex flex-wrap gap-1">
+        <Badge tone="gray" className="text-[10px]">
+          {c.kaedePct}%
+        </Badge>
+        <Badge
+          tone={c.kontrakterUdlob > 0 || c.kontrakterExpired > 0 ? 'amber' : 'gray'}
+          className="text-[10px]"
+        >
+          {c.kontrakter} kontr.
+        </Badge>
+        {c.sager > 0 && (
+          <Badge tone={c.sager > 1 ? 'red' : 'amber'} className="text-[10px]">
+            {c.sager} sager
+          </Badge>
+        )}
+        {c.ebitda != null && (
+          <Badge tone="green" className="text-[10px]">
+            {c.ebitdaShort}
+          </Badge>
+        )}
+      </div>
+    </button>
+  )
+})
 
 export function CompaniesCardView({
   companies,
@@ -31,49 +83,9 @@ export function CompaniesCardView({
   }
   return (
     <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-      {companies.map((c) => {
-        const hb = healthLabel(c.health)
-        return (
-          <button
-            key={c.id}
-            type="button"
-            onClick={() => onRowClick(c.id)}
-            className="flex flex-col gap-2 rounded-[4px] border border-b-border bg-b-panel p-2.5 text-left hover:border-b-border-strong hover:bg-b-row-hover"
-          >
-            <div className="flex items-start justify-between gap-2">
-              <span className="min-w-0 truncate text-[13px] font-medium text-b-1">{c.navn}</span>
-              <Badge tone={hb.tone} className="text-[10px]">
-                {hb.label}
-              </Badge>
-            </div>
-            <div className="truncate text-[11px] text-b-2">
-              {c.type} · CVR {c.cvr}
-              {c.city ? ` · ${c.city}` : ''}
-            </div>
-            <div className="flex flex-wrap gap-1">
-              <Badge tone="gray" className="text-[10px]">
-                {c.kaedePct}%
-              </Badge>
-              <Badge
-                tone={c.kontrakterUdlob > 0 || c.kontrakterExpired > 0 ? 'amber' : 'gray'}
-                className="text-[10px]"
-              >
-                {c.kontrakter} kontr.
-              </Badge>
-              {c.sager > 0 && (
-                <Badge tone={c.sager > 1 ? 'red' : 'amber'} className="text-[10px]">
-                  {c.sager} sager
-                </Badge>
-              )}
-              {c.ebitda != null && (
-                <Badge tone="green" className="text-[10px]">
-                  {c.ebitdaShort}
-                </Badge>
-              )}
-            </div>
-          </button>
-        )
-      })}
+      {companies.map((c) => (
+        <CompanyCard key={c.id} c={c} onClick={() => onRowClick(c.id)} />
+      ))}
     </div>
   )
 }

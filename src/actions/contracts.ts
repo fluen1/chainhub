@@ -19,7 +19,7 @@ import {
   type ContractSystemTypeKey,
   type SensitivityLevelValue,
 } from '@/lib/validations/contract'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
 import type { Contract, ContractParty, ContractStatus, Prisma } from '@prisma/client'
 import { captureError } from '@/lib/logger'
@@ -318,6 +318,10 @@ export async function createContract(input: CreateContractInput): Promise<Action
 
     revalidatePath('/contracts')
     revalidatePath(`/companies/${parsed.data.companyId}/contracts`)
+    revalidateTag('sidebar', {})
+    revalidateTag('dashboard', {})
+    revalidateTag('calendar')
+    revalidateTag('activity')
     return { data: contract }
   } catch (err) {
     captureError(err, {
@@ -444,6 +448,10 @@ export async function deleteContract(contractId: string): Promise<ActionResult<v
 
     revalidatePath('/contracts')
     revalidatePath(`/companies/${contract.company_id}/contracts`)
+    revalidateTag('sidebar', {})
+    revalidateTag('dashboard', {})
+    revalidateTag('calendar')
+    revalidateTag('activity')
     return { data: undefined }
   } catch (err) {
     captureError(err, {

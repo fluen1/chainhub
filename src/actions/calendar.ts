@@ -2,11 +2,12 @@
 
 import { z } from 'zod'
 import { prisma } from '@/lib/db'
-import { getAccessibleCompanies } from '@/lib/permissions'
+import { getAccessibleCompanies, canAccessModule } from '@/lib/permissions'
 import { createLogger } from '@/lib/logger'
 import { getVisitTypeLabel } from '@/lib/labels'
 import type { CalendarEvent } from '@/types/ui'
 import { auth } from '@/lib/auth'
+import { unstable_cache } from 'next/cache'
 
 const calendarSchema = z.object({
   year: z.number().int().min(2020).max(2100),
@@ -20,6 +21,66 @@ const CALENDAR_MAX_EVENTS_PER_TYPE = 500
 
 const log = createLogger('action:calendar')
 
+// Cache-nøgle inkluderer orgId + companyIds-hash + år/måned.
+// TTL 120s: kalenderdata ændres sjældent intra-session.
+const fetchCalendarData = unstable_cache(
+  async (orgId: string, companyIds: string[], startDate: Date, endDate: Date) => {
+    return Promise.all([
+      // Kontrakt-udløb (AKTIV status, expiry_date i måneden)
+      prisma.contract.findMany({
+        where: {
+          organization_id: orgId,
+          company_id: { in: companyIds },
+          deleted_at: null,
+          status: 'AKTIV',
+          expiry_date: { gte: startDate, lte: endDate },
+        },
+        include: { company: { select: { name: true } } },
+        take: CALENDAR_MAX_EVENTS_PER_TYPE,
+      }),
+
+      // Opgave-frister (ikke lukkede, due_date i måneden)
+      prisma.task.findMany({
+        where: {
+          organization_id: orgId,
+          company_id: { in: companyIds },
+          deleted_at: null,
+          status: { not: 'LUKKET' },
+          due_date: { gte: startDate, lte: endDate },
+        },
+        select: { id: true, title: true, due_date: true, company_id: true },
+        take: CALENDAR_MAX_EVENTS_PER_TYPE,
+      }),
+
+      // Besøg (PLANLAGT, visit_date i måneden)
+      prisma.visit.findMany({
+        where: {
+          organization_id: orgId,
+          deleted_at: null,
+          status: 'PLANLAGT',
+          visit_date: { gte: startDate, lte: endDate },
+        },
+        include: { company: { select: { name: true } } },
+        take: CALENDAR_MAX_EVENTS_PER_TYPE,
+      }),
+
+      // Sags-frister (åbne sager med due_date i måneden)
+      prisma.case.findMany({
+        where: {
+          organization_id: orgId,
+          deleted_at: null,
+          status: { in: ['NY', 'AKTIV', 'AFVENTER_EKSTERN', 'AFVENTER_KLIENT'] },
+          due_date: { gte: startDate, lte: endDate },
+        },
+        select: { id: true, title: true, due_date: true },
+        take: CALENDAR_MAX_EVENTS_PER_TYPE,
+      }),
+    ])
+  },
+  ['calendar-events'],
+  { revalidate: 120, tags: ['calendar'] }
+)
+
 export async function getCalendarEvents(year: number, month: number): Promise<CalendarEvent[]> {
   const session = await auth()
   if (!session) return []
@@ -30,63 +91,21 @@ export async function getCalendarEvents(year: number, month: number): Promise<Ca
   const userId = session.user.id
   const organizationId = session.user.organizationId
 
+  const hasModuleAccess = await canAccessModule(userId, 'companies', organizationId)
+  if (!hasModuleAccess) return []
+
   const companyIds = await getAccessibleCompanies(userId, organizationId)
   if (companyIds.length === 0) return []
 
   const startDate = new Date(parsed.data.year, parsed.data.month - 1, 1)
   const endDate = new Date(parsed.data.year, parsed.data.month, 0, 23, 59, 59, 999)
 
-  const [contracts, tasks, visits, cases] = await Promise.all([
-    // Kontrakt-udløb (AKTIV status, expiry_date i måneden)
-    prisma.contract.findMany({
-      where: {
-        organization_id: organizationId,
-        company_id: { in: companyIds },
-        deleted_at: null,
-        status: 'AKTIV',
-        expiry_date: { gte: startDate, lte: endDate },
-      },
-      include: { company: { select: { name: true } } },
-      take: CALENDAR_MAX_EVENTS_PER_TYPE,
-    }),
-
-    // Opgave-frister (ikke lukkede, due_date i måneden)
-    prisma.task.findMany({
-      where: {
-        organization_id: organizationId,
-        company_id: { in: companyIds },
-        deleted_at: null,
-        status: { not: 'LUKKET' },
-        due_date: { gte: startDate, lte: endDate },
-      },
-      select: { id: true, title: true, due_date: true, company_id: true },
-      take: CALENDAR_MAX_EVENTS_PER_TYPE,
-    }),
-
-    // Besøg (PLANLAGT, visit_date i måneden)
-    prisma.visit.findMany({
-      where: {
-        organization_id: organizationId,
-        deleted_at: null,
-        status: 'PLANLAGT',
-        visit_date: { gte: startDate, lte: endDate },
-      },
-      include: { company: { select: { name: true } } },
-      take: CALENDAR_MAX_EVENTS_PER_TYPE,
-    }),
-
-    // Sags-frister (åbne sager med due_date i måneden)
-    prisma.case.findMany({
-      where: {
-        organization_id: organizationId,
-        deleted_at: null,
-        status: { in: ['NY', 'AKTIV', 'AFVENTER_EKSTERN', 'AFVENTER_KLIENT'] },
-        due_date: { gte: startDate, lte: endDate },
-      },
-      select: { id: true, title: true, due_date: true },
-      take: CALENDAR_MAX_EVENTS_PER_TYPE,
-    }),
-  ])
+  const [contracts, tasks, visits, cases] = await fetchCalendarData(
+    organizationId,
+    companyIds,
+    startDate,
+    endDate
+  )
 
   // Warn hvis nogen type ramte cap — skjulte events betyder at kæden er vokset
   // ud over designede rammer

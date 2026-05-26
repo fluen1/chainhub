@@ -15,7 +15,7 @@ import {
   type UpdateTaskAssigneeInput,
   type UpdateTaskDueDateInput,
 } from '@/lib/validations/case'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
 import type { Task, TaskHistoryField, TaskStatus, Prioritet, Prisma } from '@prisma/client'
 import { captureError } from '@/lib/logger'
@@ -284,6 +284,10 @@ export async function createTask(input: CreateTaskInput): Promise<ActionResult<T
 
     revalidatePath('/tasks')
     if (parsed.data.caseId) revalidatePath(`/cases/${parsed.data.caseId}`)
+    revalidateTag('sidebar', {})
+    revalidateTag('dashboard', {})
+    revalidateTag('calendar')
+    revalidateTag('activity')
     return { data: task }
   } catch (err) {
     captureError(err, {
@@ -569,5 +573,8 @@ export async function deleteTask(taskId: string): Promise<ActionResult<void>> {
   })
 
   revalidatePath('/tasks')
+  revalidateTag('sidebar', {})
+  revalidateTag('dashboard', {})
+  revalidateTag('calendar')
   return { data: undefined }
 }

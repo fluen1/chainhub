@@ -9,7 +9,7 @@ import {
   type CreateCompanyInput,
   type UpdateCompanyInput,
 } from '@/lib/validations/company'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { z } from 'zod'
 import type { ActionResult } from '@/types/actions'
 import type { Company } from '@prisma/client'
@@ -92,6 +92,8 @@ export async function createCompany(input: CreateCompanyInput): Promise<ActionRe
 
     revalidatePath('/dashboard')
     revalidatePath('/companies')
+    revalidateTag('sidebar', {})
+    revalidateTag('dashboard', {})
     return { data: company }
   } catch (err) {
     captureError(err, {
@@ -196,6 +198,8 @@ export async function deleteCompany(companyId: string): Promise<ActionResult<voi
 
     revalidatePath('/dashboard')
     revalidatePath('/companies')
+    revalidateTag('sidebar', {})
+    revalidateTag('dashboard', {})
     return { data: undefined }
   } catch (err) {
     captureError(err, {
@@ -295,9 +299,15 @@ export interface CompaniesRawData {
   }>
   personsCount: number
   canCreate: boolean
+  totalCount: number
+  page: number
+  pageSize: number
 }
 
-export async function getCompaniesPageData(): Promise<CompaniesRawData | null> {
+export async function getCompaniesPageData(
+  page = 1,
+  pageSize = 25
+): Promise<CompaniesRawData | null> {
   const session = await auth()
   if (!session) return null
 
@@ -324,20 +334,25 @@ export async function getCompaniesPageData(): Promise<CompaniesRawData | null> {
       financials: [],
       personsCount: 0,
       canCreate,
+      totalCount: 0,
+      page,
+      pageSize,
     }
   }
 
   const now = new Date()
   const ninetyDaysFromNow = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000)
 
-  const [companies, openCaseCounts, expiredCounts, expiringCounts, financials, personsCount] =
+  const companyWhere = {
+    organization_id: orgId,
+    id: { in: companyIds },
+    deleted_at: null,
+  }
+
+  const [companies, totalCount, openCaseCounts, expiredCounts, expiringCounts, financials, personsCount] =
     await Promise.all([
       prisma.company.findMany({
-        where: {
-          organization_id: orgId,
-          id: { in: companyIds },
-          deleted_at: null,
-        },
+        where: companyWhere,
         include: {
           _count: { select: { contracts: { where: { deleted_at: null } } } },
           ownerships: {
@@ -346,7 +361,10 @@ export async function getCompaniesPageData(): Promise<CompaniesRawData | null> {
           },
         },
         orderBy: { name: 'asc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
       }),
+      prisma.company.count({ where: companyWhere }),
       prisma.$queryRaw<Array<{ company_id: string; count: bigint }>>`
         SELECT cc.company_id, COUNT(DISTINCT c.id)::bigint as count
         FROM "CaseCompany" cc
@@ -381,6 +399,13 @@ export async function getCompaniesPageData(): Promise<CompaniesRawData | null> {
           company_id: { in: companyIds },
           period_type: 'HELAAR',
         },
+        select: {
+          company_id: true,
+          metric_type: true,
+          period_type: true,
+          period_year: true,
+          value: true,
+        },
         orderBy: { period_year: 'desc' },
       }),
       prisma.person.count({
@@ -402,5 +427,8 @@ export async function getCompaniesPageData(): Promise<CompaniesRawData | null> {
     })),
     personsCount,
     canCreate,
+    totalCount,
+    page,
+    pageSize,
   }
 }
