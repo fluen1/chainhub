@@ -276,6 +276,21 @@ enum AIMode {
   LIVE
 }
 
+enum AlertSeverity {
+  CRITICAL
+  WARNING
+  INFO
+  @@map("alert_severity")
+}
+
+enum AlertCategory {
+  DEADLINE
+  MISSING
+  RISK
+  COMPLIANCE
+  @@map("alert_category")
+}
+
 // ============================================================
 // MODELS
 // ============================================================
@@ -315,6 +330,7 @@ model Organization {
   task_history          TaskHistory[]
   invite_tokens         InviteToken[]
   company_notes         CompanyNote[]
+  alerts                Alert[]
 
   @@index([id])
 }
@@ -1174,4 +1190,29 @@ model InviteToken {
 
   @@index([token])
   @@index([organization_id])
+}
+
+// ============================================================
+// ALERTS
+// ============================================================
+
+model Alert {
+  id              String        @id @default(uuid())
+  organization_id String
+  severity        AlertSeverity
+  category        AlertCategory
+  entity_type     String
+  entity_id       String
+  entity_name     String
+  message         String
+  details         Json?
+  dismissed_at    DateTime?
+  dismissed_by    String?
+  created_at      DateTime      @default(now())
+
+  organization Organization @relation(fields: [organization_id], references: [id])
+
+  @@index([organization_id, dismissed_at])
+  @@index([organization_id, severity])
+  @@index([entity_type, entity_id])
 }

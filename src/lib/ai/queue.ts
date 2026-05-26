@@ -7,6 +7,7 @@ let bossInstance: PgBoss | null = null
 
 export const JOB_NAMES = {
   EXTRACT_DOCUMENT: 'extraction.full',
+  PORTFOLIO_SCAN: 'alerts.portfolio-scan',
 } as const
 
 export type JobName = (typeof JOB_NAMES)[keyof typeof JOB_NAMES]
@@ -31,6 +32,10 @@ export async function createQueue(): Promise<PgBoss> {
   })
 
   await bossInstance.start()
+
+  // Planlæg daglig porteføljescanning kl. 06:00 UTC
+  await bossInstance.schedule(JOB_NAMES.PORTFOLIO_SCAN, '0 6 * * *', {}, { tz: 'UTC' })
+
   log.info('pg-boss started')
   return bossInstance
 }

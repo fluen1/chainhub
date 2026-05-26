@@ -7,6 +7,7 @@ import { LogOut } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { SidebarBadge } from '@/types/ui'
 import { BrandMark } from '@/components/ui/b'
+import { NotificationBell } from './NotificationBell'
 
 // ────────────────────────────────────────────────────────────────────────────
 // B-stil sidebar (Linear/Superhuman dense, 220px lys)
@@ -56,17 +57,19 @@ const SECTIONS: BNavSection[] = [
 
 export interface BSidebarProps {
   badges: Record<string, SidebarBadge | null>
+  alertCount?: number
 }
 
-export function BSidebar({ badges }: BSidebarProps) {
+export function BSidebar({ badges, alertCount = 0 }: BSidebarProps) {
   const pathname = usePathname() ?? ''
   const { data: session } = useSession()
   const userName = session?.user?.name ?? session?.user?.email ?? null
 
   return (
     <aside className="sticky top-0 flex h-screen w-[220px] shrink-0 flex-col overflow-y-auto border-r border-b-border bg-b-sidebar px-2 py-3.5 text-[13px]">
-      <div className="px-2.5 pb-3.5 pt-1">
+      <div className="flex items-center justify-between px-2.5 pb-3.5 pt-1">
         <BrandMark withText />
+        <NotificationBell count={alertCount} />
       </div>
 
       <div className="flex-1">

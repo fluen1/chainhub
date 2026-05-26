@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
 import { getDashboardData } from '@/actions/dashboard'
 import { getRecentActivity } from '@/actions/activity-feed'
+import { getActiveAlerts } from '@/actions/alerts'
 import { getSidebarData } from '@/lib/sidebar-data'
 import { getAccessibleCompanies } from '@/lib/permissions'
 import { formatMio } from '@/lib/labels'
@@ -10,6 +11,7 @@ import { PageTopbar, Strip, BottomBar, SyncDot, type StripCellData } from '@/com
 import { UrgencyPanel } from '@/components/dashboard/b/UrgencyPanel'
 import { HeatmapPanel } from '@/components/dashboard/b/HeatmapPanel'
 import { ActivityPanel } from '@/components/dashboard/b/ActivityPanel'
+import { AlertsWidget } from '@/components/dashboard/AlertsWidget'
 import { pickHighestPriorityRole } from '@/lib/dashboard-helpers'
 import { OnboardingPanel } from '@/components/dashboard/b/OnboardingPanel'
 
@@ -34,11 +36,14 @@ export default async function DashboardPage() {
 
   const since24h = new Date(now.getTime() - 24 * 60 * 60 * 1000)
 
-  const [data, sidebar, activity] = await Promise.all([
+  const [data, sidebar, activity, alertsResult] = await Promise.all([
     getDashboardData(companyIds),
     getSidebarData(session.user.id, session.user.organizationId, companyIds),
     getRecentActivity(companyIds, since24h),
+    getActiveAlerts(5),
   ])
+
+  const alerts = alertsResult.data ?? []
 
   const omsaetning = data.portfolioTotals.totalOmsaetning
 
@@ -129,6 +134,8 @@ export default async function DashboardPage() {
         <UrgencyPanel sections={data.timelineSections} />
         <HeatmapPanel heatmap={data.heatmap} />
       </div>
+
+      <AlertsWidget alerts={alerts} />
 
       <ActivityPanel events={activity} />
 

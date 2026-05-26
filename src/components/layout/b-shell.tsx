@@ -6,6 +6,7 @@ import { Menu } from 'lucide-react'
 import { BSidebar } from './b-sidebar'
 import { BrandMark } from '@/components/ui/b'
 import type { SidebarBadge } from '@/types/ui'
+import { NotificationBell } from './NotificationBell'
 
 // ────────────────────────────────────────────────────────────────────────────
 // BShell — den nye B-stil app-shell.
@@ -25,16 +26,18 @@ const FOCUSABLE_SELECTOR =
 
 interface Props {
   badges: Record<string, SidebarBadge | null>
+  alertCount?: number
   children: React.ReactNode
 }
 
-export function BShell({ badges, children }: Props) {
+export function BShell({ badges, alertCount = 0, children }: Props) {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const pathname = usePathname()
   const drawerRef = useRef<HTMLDivElement>(null)
   const previouslyFocused = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- bevidst: lukning af drawer ved route-skift
     setDrawerOpen(false)
   }, [pathname])
 
@@ -84,13 +87,13 @@ export function BShell({ badges, children }: Props) {
     <div className="flex min-h-screen bg-b-canvas text-b-1">
       {/* Desktop sidebar (lg+) */}
       <div className="hidden lg:block print-hide">
-        <BSidebar badges={badges} />
+        <BSidebar badges={badges} alertCount={alertCount} />
       </div>
 
       {/* Mobile drawer */}
       {drawerOpen && (
         <>
-          {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events -- Escape håndteres via document keydown; backdrop-klik via role=button */}
+          { }
           <div
             role="button"
             tabIndex={-1}
@@ -105,7 +108,7 @@ export function BShell({ badges, children }: Props) {
             aria-label="Hovedmenu"
             className="lg:hidden fixed inset-y-0 left-0 z-50 shadow-xl"
           >
-            <BSidebar badges={badges} />
+            <BSidebar badges={badges} alertCount={alertCount} />
           </div>
         </>
       )}
@@ -122,6 +125,9 @@ export function BShell({ badges, children }: Props) {
             <Menu className="h-4 w-4" aria-hidden />
           </button>
           <BrandMark withText />
+          <div className="ml-auto">
+            <NotificationBell count={alertCount} />
+          </div>
         </div>
 
         <main
