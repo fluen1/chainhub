@@ -331,6 +331,7 @@ model Organization {
   invite_tokens         InviteToken[]
   company_notes         CompanyNote[]
   alerts                Alert[]
+  conversations         Conversation[]
 
   @@index([id])
 }
@@ -1215,4 +1216,70 @@ model Alert {
   @@index([organization_id, dismissed_at])
   @@index([organization_id, severity])
   @@index([entity_type, entity_id])
+}
+
+// ============================================================
+// AI ASSISTANT — CONVERSATIONS
+// ============================================================
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+  @@map("message_role")
+}
+
+enum PendingActionStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+  EXPIRED
+  @@map("pending_action_status")
+}
+
+model Conversation {
+  id              String    @id @default(uuid())
+  organization_id String
+  user_id         String
+  title           String?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+
+  organization    Organization    @relation(fields: [organization_id], references: [id])
+  messages        Message[]
+  pending_actions PendingAction[]
+
+  @@index([organization_id, user_id])
+  @@index([user_id, updated_at])
+}
+
+model Message {
+  id              String      @id @default(uuid())
+  conversation_id String
+  role            MessageRole
+  content         String
+  tool_calls      Json?
+  tool_results    Json?
+  tokens_used     Int?
+  cost_usd        Decimal?    @db.Decimal(10, 6)
+  created_at      DateTime    @default(now())
+
+  conversation Conversation @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
+
+  @@index([conversation_id, created_at])
+}
+
+model PendingAction {
+  id              String              @id @default(uuid())
+  conversation_id String
+  action_type     String
+  action_label    String
+  payload         Json
+  status          PendingActionStatus @default(PENDING)
+  created_at      DateTime            @default(now())
+  resolved_at     DateTime?
+
+  conversation Conversation @relation(fields: [conversation_id], references: [id], onDelete: Cascade)
+
+  @@index([conversation_id, status])
 }
