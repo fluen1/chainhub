@@ -28,7 +28,7 @@ export function ExportPreviewModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="fixed inset-0 bg-black/40" onClick={onClose} />
+      <button type="button" aria-label="Luk dialog" className="fixed inset-0 bg-black/40 cursor-default" onClick={onClose} />
       <div
         role="dialog"
         aria-modal="true"

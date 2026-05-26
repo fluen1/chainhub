@@ -63,7 +63,7 @@ export function ContractBottomPanels({
   persons,
 }: ContractBottomPanelsProps) {
   return (
-    <div className="grid gap-3 lg:grid-cols-3 lg:items-start">
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 lg:items-start">
       {/* Parter */}
       <Panel>
         <PanelHeader title="Parter" meta={`${partyRows.length} parter`} />

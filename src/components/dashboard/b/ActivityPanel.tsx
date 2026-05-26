@@ -52,7 +52,7 @@ export function ActivityPanel({ events }: { events: ActivityEvent[] }) {
       </button>
 
       {open && (
-        <div>
+        <div aria-live="polite" aria-atomic="false">
           {events.length === 0 ? (
             <div className="px-3 py-3 text-center text-[12px] text-b-3">
               Ingen aktivitet seneste 24 timer

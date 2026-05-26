@@ -132,7 +132,11 @@ export function CompanyDetailB({
   const topGroupCount = [showOwnership, showPersons, showInsight].filter(Boolean).length
   const midGroupCount = [showCases, showFinance, showVisits].filter(Boolean).length
   const colsClass = (n: number) =>
-    n >= 3 ? 'lg:grid-cols-3' : n === 2 ? 'lg:grid-cols-2' : 'lg:grid-cols-1'
+    n >= 3
+      ? 'sm:grid-cols-2 lg:grid-cols-3'
+      : n === 2
+        ? 'sm:grid-cols-2'
+        : 'lg:grid-cols-1'
 
   const [addOwnerOpen, setAddOwnerOpen] = useState(false)
   const [addPersonOpen, setAddPersonOpen] = useState(false)

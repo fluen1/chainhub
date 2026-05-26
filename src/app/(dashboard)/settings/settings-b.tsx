@@ -106,7 +106,7 @@ export function SettingsPageB({
     <>
       <Breadcrumb trail={[{ label: 'Indstillinger', href: '/settings' }]} current={sectionLabel} />
 
-      <div className="grid gap-3 lg:grid-cols-[180px_1fr] lg:items-start">
+      <div className="grid gap-3 md:grid-cols-[180px_1fr] lg:items-start">
         <SectionNav active={section} />
 
         <div className="flex min-w-0 flex-col gap-3">

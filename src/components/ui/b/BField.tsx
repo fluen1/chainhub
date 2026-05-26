@@ -178,6 +178,8 @@ export function BSegmentedField<T extends string>({
   return (
     <BFieldWrap label={label} required={required} hint={hint}>
       <div
+        role="radiogroup"
+        aria-label={label}
         className={cn(
           'inline-flex overflow-hidden rounded-[4px] border border-b-border-strong',
           wrap && 'flex-wrap'
@@ -187,6 +189,9 @@ export function BSegmentedField<T extends string>({
           <button
             key={opt.value}
             type="button"
+            role="radio"
+            aria-checked={value === opt.value}
+            aria-label={opt.label}
             onClick={() => onChange(opt.value)}
             className={cn(
               'whitespace-nowrap px-3 py-1.5 text-[12px] transition-colors',
@@ -207,5 +212,5 @@ export function BSegmentedField<T extends string>({
 // ─── 2-col grid for korte felter (dato + dropdown side om side) ────────────
 
 export function BFieldRow({ children }: { children: React.ReactNode }) {
-  return <div className="grid grid-cols-2 gap-3">{children}</div>
+  return <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">{children}</div>
 }

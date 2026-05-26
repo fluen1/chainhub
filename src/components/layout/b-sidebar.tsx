@@ -77,10 +77,12 @@ export function BSidebar({ badges, alertCount = 0, onChatOpen }: BSidebarProps) 
         </div>
       </div>
 
-      <div className="flex-1">
+      <nav aria-label="Hovednavigation" className="flex-1">
         {SECTIONS.map((section) => (
           <div key={section.label} className="mb-4">
             <div
+              role="presentation"
+              aria-label={`Navigation: ${section.label}`}
               className="px-2.5 pb-1 text-[10px] font-semibold uppercase text-b-2"
               style={{ letterSpacing: '0.5px' }}
             >
@@ -95,6 +97,7 @@ export function BSidebar({ badges, alertCount = 0, onChatOpen }: BSidebarProps) 
                   <li key={item.name}>
                     <Link
                       href={item.href}
+                      aria-current={isActive ? 'page' : undefined}
                       className={cn(
                         'flex items-center justify-between rounded-[4px] px-2.5 py-1 text-b-1 no-underline transition-colors',
                         isActive ? 'bg-[#e8eaee] font-medium' : 'hover:bg-[#ecedf0]'
@@ -103,6 +106,9 @@ export function BSidebar({ badges, alertCount = 0, onChatOpen }: BSidebarProps) 
                       <span>{item.name}</span>
                       {badge && badge.count > 0 && (
                         <span
+                          aria-live="polite"
+                          aria-atomic="true"
+                          aria-label={`${badge.count} ${item.name.toLowerCase()}`}
                           className={cn(
                             'b-tnum text-[11px]',
                             badge.urgency === 'critical'
@@ -120,7 +126,7 @@ export function BSidebar({ badges, alertCount = 0, onChatOpen }: BSidebarProps) 
             </ul>
           </div>
         ))}
-      </div>
+      </nav>
 
       {userName && (
         <div className="mt-2 border-t border-b-border pt-3">

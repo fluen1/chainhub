@@ -268,7 +268,7 @@ export function CalendarPageB({
         }
       />
 
-      <div className="grid gap-3 lg:grid-cols-[1fr_260px] lg:items-start">
+      <div className="grid gap-3 md:grid-cols-[1fr_260px] lg:items-start">
         <div className="min-w-0">
           {viewMode === 'maaned' ? (
             <MonthView

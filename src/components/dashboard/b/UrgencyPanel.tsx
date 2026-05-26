@@ -79,10 +79,11 @@ export function UrgencyPanel({ sections }: { sections: TimelineSectionData[] }) 
           onChange={(e) => setFilter(e.target.value)}
           placeholder="Filtrér urgency-items..."
           aria-label="Filtrér urgency-elementer"
-          className="w-full rounded-[4px] border border-b-border-strong bg-white px-2.5 py-1 text-[12px] text-b-1 placeholder:text-b-3 focus:border-b-blue-fg focus:outline-none focus:ring-2 focus:ring-b-blue-bg"
+          className="w-full rounded-[4px] border border-b-border-strong bg-white px-2.5 py-1 text-[12px] text-b-1 placeholder:text-b-3 focus:outline-none focus-visible:border-b-blue-fg focus-visible:ring-2 focus-visible:ring-b-blue-bg"
         />
       </div>
 
+      <div aria-live="polite" aria-atomic="false">
       {filtered.length === 0 ? (
         <div className="px-3 py-3 text-center text-[12px] text-b-3">
           {filter
@@ -93,6 +94,7 @@ export function UrgencyPanel({ sections }: { sections: TimelineSectionData[] }) 
         filtered.map((section) => (
           <div key={section.id}>
             <PanelGroupLabel>{section.label}</PanelGroupLabel>
+            <div className="overflow-x-auto">
             {section.items.map((item) => {
               const badge = badgeForItem(section.id, item.time, item.color)
               return (
@@ -113,9 +115,11 @@ export function UrgencyPanel({ sections }: { sections: TimelineSectionData[] }) 
                 </Link>
               )
             })}
+            </div>
           </div>
         ))
       )}
+      </div>
     </Panel>
   )
 }

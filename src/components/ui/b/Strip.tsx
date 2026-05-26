@@ -27,6 +27,10 @@ export function Strip({ cells, className }: { cells: StripCellData[]; className?
   const cols = cells.length
   return (
     <div
+      role="region"
+      aria-label="KPI-oversigt"
+      aria-live="polite"
+      aria-atomic="false"
       className={cn(
         'grid gap-px overflow-hidden rounded-[4px] border border-b-border bg-b-border',
         className

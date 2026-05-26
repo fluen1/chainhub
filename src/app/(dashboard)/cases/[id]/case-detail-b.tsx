@@ -370,7 +370,7 @@ export function CaseDetailB({
       <Strip cells={stripCells} />
 
       {/* 3-col: Detaljer + Tilknytninger + AI Analyse */}
-      <div className="grid gap-3 lg:grid-cols-3 lg:items-start">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 lg:items-start">
         {/* Detaljer */}
         <Panel>
           <PanelHeader title="Detaljer" />
@@ -543,7 +543,7 @@ export function CaseDetailB({
       </Panel>
 
       {/* 2-col: Aktivitet + Dokumenter */}
-      <div className="grid gap-3 lg:grid-cols-2 lg:items-start">
+      <div className="grid gap-3 md:grid-cols-2 lg:items-start">
         {/* Aktivitet + Kommentarer */}
         <Panel>
           <PanelHeader

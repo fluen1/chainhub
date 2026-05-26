@@ -55,7 +55,11 @@ export function AlertsWidget({ alerts }: AlertsWidgetProps) {
         {alerts.length === 0 ? (
           <PanelEmpty>Ingen aktive advarsler</PanelEmpty>
         ) : (
-          <ul>
+          <ul
+            aria-live="polite"
+            aria-atomic="false"
+            aria-label={`${alerts.length} aktive advarsler`}
+          >
             {alerts.map((alert) => (
               <li key={alert.id}>
                 <Link

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import { auth } from '@/lib/auth'
 import { getDashboardData } from '@/actions/dashboard'
 import { getRecentActivity } from '@/actions/activity-feed'
@@ -14,6 +15,31 @@ import { ActivityPanel } from '@/components/dashboard/b/ActivityPanel'
 import { AlertsWidget } from '@/components/dashboard/AlertsWidget'
 import { pickHighestPriorityRole } from '@/lib/dashboard-helpers'
 import { OnboardingPanel } from '@/components/dashboard/b/OnboardingPanel'
+
+// ─── Async server-wrappers til Suspense-streaming ────────────────────────────
+
+async function AlertsSection() {
+  const alertsResult = await getActiveAlerts(5)
+  const alerts = alertsResult.data ?? []
+  return <AlertsWidget alerts={alerts} />
+}
+
+async function ActivitySection({ companyIds }: { companyIds: string[] }) {
+  const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000)
+  const activity = await getRecentActivity(companyIds, since24h)
+  return <ActivityPanel events={activity} />
+}
+
+function WidgetSkeleton() {
+  return (
+    <div className="animate-pulse rounded-lg border border-gray-200 bg-white p-4">
+      <div className="mb-3 h-4 w-32 rounded bg-gray-200" />
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="mb-2 h-10 rounded bg-gray-100" />
+      ))}
+    </div>
+  )
+}
 
 export const metadata: Metadata = { title: 'Forside' }
 
@@ -34,16 +60,10 @@ export default async function DashboardPage() {
   // Hent companyIds én gang — eliminerer 2 ud af 3 redundante DB-roundtrips
   const companyIds = await getAccessibleCompanies(session.user.id, session.user.organizationId)
 
-  const since24h = new Date(now.getTime() - 24 * 60 * 60 * 1000)
-
-  const [data, sidebar, activity, alertsResult] = await Promise.all([
+  const [data, sidebar] = await Promise.all([
     getDashboardData(companyIds),
     getSidebarData(session.user.id, session.user.organizationId, companyIds),
-    getRecentActivity(companyIds, since24h),
-    getActiveAlerts(5),
   ])
-
-  const alerts = alertsResult.data ?? []
 
   const omsaetning = data.portfolioTotals.totalOmsaetning
 
@@ -130,14 +150,18 @@ export default async function DashboardPage() {
 
       <OnboardingPanel />
 
-      <div className="grid gap-3.5 lg:grid-cols-[2fr_1fr]">
+      <div className="grid gap-3.5 md:grid-cols-[2fr_1fr]">
         <UrgencyPanel sections={data.timelineSections} />
         <HeatmapPanel heatmap={data.heatmap} />
       </div>
 
-      <AlertsWidget alerts={alerts} />
+      <Suspense fallback={<WidgetSkeleton />}>
+        <AlertsSection />
+      </Suspense>
 
-      <ActivityPanel events={activity} />
+      <Suspense fallback={<WidgetSkeleton />}>
+        <ActivitySection companyIds={companyIds} />
+      </Suspense>
 
       <BottomBar
         left={

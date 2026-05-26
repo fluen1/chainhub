@@ -287,7 +287,7 @@ export function TaskDetailB({ data }: { data: TaskDetailViewData }) {
       <Strip cells={stripCells} />
 
       {/* 2-col: Venstre (beskrivelse + aktivitet) · Højre (detaljer + tilknytninger) */}
-      <div className="grid gap-3 lg:grid-cols-[1.6fr_1fr] lg:items-start">
+      <div className="grid gap-3 md:grid-cols-[1.6fr_1fr] lg:items-start">
         <div className="flex flex-col gap-3">
           {/* Beskrivelse */}
           <Panel>

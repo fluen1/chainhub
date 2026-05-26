@@ -8,7 +8,12 @@ import { BrandMark } from '@/components/ui/b'
 import type { SidebarBadge } from '@/types/ui'
 import { NotificationBell } from './NotificationBell'
 import { ChatToggle } from './ChatToggle'
-import { ChatPanel } from '@/components/assistant/ChatPanel'
+import dynamic from 'next/dynamic'
+
+const ChatPanel = dynamic(
+  () => import('@/components/assistant/ChatPanel').then((m) => ({ default: m.ChatPanel })),
+  { loading: () => null }
+)
 
 // ────────────────────────────────────────────────────────────────────────────
 // BShell — den nye B-stil app-shell.
@@ -97,11 +102,10 @@ export function BShell({ badges, alertCount = 0, children }: Props) {
       {drawerOpen && (
         <>
           {}
-          <div
-            role="button"
-            tabIndex={-1}
+          <button
+            type="button"
             aria-label="Luk menu"
-            className="lg:hidden fixed inset-0 z-40 bg-black/40"
+            className="lg:hidden fixed inset-0 z-40 bg-black/40 cursor-default"
             onClick={() => setDrawerOpen(false)}
           />
           <div
@@ -136,7 +140,7 @@ export function BShell({ badges, alertCount = 0, children }: Props) {
 
         <main
           id="main-content"
-          className="flex flex-1 flex-col gap-3.5 overflow-y-auto px-6 py-3.5"
+          className="flex flex-1 flex-col gap-3.5 overflow-y-auto px-3 py-3 md:px-6 md:py-3.5"
         >
           {children}
         </main>

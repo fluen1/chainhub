@@ -357,7 +357,7 @@ export default async function ContractDetailPage({ params }: Props) {
       )}
 
       {/* 2-col: Vilkår + AI Insight */}
-      <div className="grid gap-3 lg:grid-cols-[1.4fr_1fr] lg:items-start">
+      <div className="grid gap-3 md:grid-cols-[1.4fr_1fr] lg:items-start">
         <Panel>
           <PanelHeader
             title={

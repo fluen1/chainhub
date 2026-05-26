@@ -29,6 +29,8 @@ export function NotificationBell({ count }: NotificationBellProps) {
       {hasAlerts && (
         <span
           className="absolute -right-1 -top-1 flex h-[14px] min-w-[14px] items-center justify-center rounded-full bg-[#b91c1c] px-0.5 text-[9px] font-semibold text-white"
+          aria-live="assertive"
+          aria-atomic="true"
           aria-hidden
         >
           {displayCount}
