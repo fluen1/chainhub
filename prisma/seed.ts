@@ -382,7 +382,7 @@ async function main() {
       employment_type: 'Funktionær',
       start_date: new Date('2020-01-01'),
       anciennity_start: new Date('2020-01-01'),
-      contract_id: uid(5010),
+      // contract_id sættes efter kontrakter er oprettet (FK-afhængighed)
     },
     {
       id: uid(3002),
@@ -392,7 +392,7 @@ async function main() {
       employment_type: 'Funktionær',
       start_date: new Date('2021-06-01'),
       anciennity_start: new Date('2021-06-01'),
-      contract_id: uid(5011),
+      // contract_id sættes efter kontrakter er oprettet (FK-afhængighed)
     },
     {
       id: uid(3003),
@@ -453,7 +453,6 @@ async function main() {
         update: {
           employment_type: cp.employment_type ?? null,
           anciennity_start: cp.anciennity_start ?? null,
-          contract_id: cp.contract_id ?? null,
         },
         create: { ...cp, organization_id: org.id, created_by: philip.id },
       })
@@ -662,6 +661,12 @@ async function main() {
       })
     )
   )
+
+  // Link companyPerson → contract (deferred pga. FK-afhængighed)
+  await Promise.all([
+    prisma.companyPerson.update({ where: { id: uid(3001) }, data: { contract_id: uid(5010) } }),
+    prisma.companyPerson.update({ where: { id: uid(3002) }, data: { contract_id: uid(5011) } }),
+  ])
 
   // ══════════════════════════════════════════════════════════════
   // 8. SAGER

@@ -15,6 +15,7 @@ import {
   canAccessModule,
   canAccessSensitivity,
   getAccessibleCompanies,
+  getAllowedSensitivityLevels,
 } from '@/lib/permissions'
 import { checkActionRateLimit } from '@/lib/rate-limit'
 import {
@@ -582,6 +583,7 @@ export async function getCasesPageData(page = 1, pageSize = 25): Promise<CasesPa
     select: { case_id: true },
     distinct: ['case_id'],
   })
+  const allowedLevels = await getAllowedSensitivityLevels(session.user.id, orgId)
   const caseIds = caseCompanyLinks.map((cc) => cc.case_id)
   if (caseIds.length === 0) return { cases: [], totalCount: 0, page, pageSize }
 
@@ -589,6 +591,7 @@ export async function getCasesPageData(page = 1, pageSize = 25): Promise<CasesPa
     organization_id: orgId,
     deleted_at: null,
     id: { in: caseIds },
+    sensitivity: { in: allowedLevels },
   }
 
   const [rawCases, totalCount] = await Promise.all([
