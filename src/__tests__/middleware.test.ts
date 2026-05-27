@@ -1,19 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
-// ── Mock crypto (timingSafeEqual) ────────────────────────────────────────────
-// jsdom-miljøet behandler 'crypto' som en browser-ekstern modul.
-// Vi leverer et komplet mock med kun de funktioner middleware bruger.
-vi.mock('crypto', () => ({
-  default: {
-    timingSafeEqual: (a: Buffer, b: Buffer) => {
-      if (a.length !== b.length) return false
-      return a.toString() === b.toString()
-    },
-  },
-  timingSafeEqual: (a: Buffer, b: Buffer) => {
-    if (a.length !== b.length) return false
-    return a.toString() === b.toString()
-  },
+// ── Mock OAuth rate limiter ─────────────────────────────────────────────────
+vi.mock('@/lib/auth/redis-rate-limit', () => ({
+  isOAuthSignupRateLimited: vi.fn().mockResolvedValue({ limited: false }),
 }))
 
 // ── Mock next/server and auth before any imports ──────────────────────────────
@@ -61,8 +50,8 @@ vi.mock('@/lib/auth', () => ({
   auth: vi.fn(),
 }))
 
-// Import middleware AFTER mocks
-await import('@/middleware')
+// Import proxy AFTER mocks (Next.js 16 uses proxy.ts instead of middleware.ts)
+await import('@/proxy')
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
