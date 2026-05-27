@@ -15,10 +15,17 @@ const { prismaMock } = vi.hoisted(() => {
 
 vi.mock('@/lib/auth', () => ({ auth: vi.fn() }))
 vi.mock('@/lib/db', () => ({ prisma: prismaMock }))
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
+vi.mock('@/lib/permissions', () => ({
+  canAccessModule: vi.fn().mockResolvedValue(true),
+}))
+vi.mock('next/cache', () => ({
+  revalidatePath: vi.fn(),
+  revalidateTag: vi.fn(),
+  unstable_cache: vi.fn((fn: (...args: unknown[]) => unknown) => fn),
+}))
 
-import { auth } from '@/lib/auth'
 import { getActiveAlerts, dismissAlert, getAlertStats } from '@/actions/alerts'
+import { auth } from '@/lib/auth'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

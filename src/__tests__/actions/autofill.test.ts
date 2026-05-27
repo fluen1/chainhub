@@ -7,14 +7,19 @@ vi.mock('@/lib/db', () => ({
     documentExtraction: { findMany: vi.fn() },
   },
 }))
+vi.mock('@/lib/permissions', () => ({
+  canAccessModule: vi.fn().mockResolvedValue(true),
+}))
 vi.mock('@/lib/integrations/cvr/client', () => ({
   lookupByCvr: vi.fn(),
 }))
+vi.mock('@/lib/logger', () => ({ captureError: vi.fn() }))
 
+import { getAutofillSuggestions } from '@/actions/autofill'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { lookupByCvr } from '@/lib/integrations/cvr/client'
-import { getAutofillSuggestions } from '@/actions/autofill'
+import { canAccessModule } from '@/lib/permissions'
 
 const mockSession = {
   user: { id: 'user1', organizationId: 'org1' },
@@ -23,6 +28,7 @@ const mockSession = {
 describe('getAutofillSuggestions', () => {
   beforeEach(() => {
     vi.resetAllMocks()
+    vi.mocked(canAccessModule).mockResolvedValue(true)
     vi.mocked(prisma.company.findFirst).mockResolvedValue(null)
     vi.mocked(prisma.documentExtraction.findMany).mockResolvedValue([])
     vi.mocked(lookupByCvr).mockResolvedValue({ found: false, data: null, source: 'cvr_api' })

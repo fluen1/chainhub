@@ -1,10 +1,10 @@
 'use server'
 
+import { unstable_cache } from 'next/cache'
 import { z } from 'zod'
+import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { getAccessibleCompanies, canAccessModule } from '@/lib/permissions'
-import { auth } from '@/lib/auth'
-import { unstable_cache } from 'next/cache'
 
 // Løs UUID-validering: accepterer alle 8-4-4-4-12 hex-formater inkl. nil-UUIDs (seed-data)
 const uuidSchema = z
@@ -84,10 +84,10 @@ function formatRelative(date: Date, now: Date): string {
 // Cache-nøgle bruger orgId + companyIds. TTL 30s: feed er read-heavy men
 // bør reflektere egne handlinger inden for rimelig tid.
 const fetchActivityLogs = unstable_cache(
-  async (orgId: string, companyIds: string[], sinceDate: Date) => {
+  async (organizationId: string, companyIds: string[], sinceDate: Date) => {
     const logs = await prisma.auditLog.findMany({
       where: {
-        organization_id: orgId,
+        organization_id: organizationId,
         created_at: { gte: sinceDate },
         // Scope: events der vedrører selskaber brugeren har adgang til, eller org-brede events (company_id=null)
         OR: [{ resource_company_id: { in: companyIds } }, { resource_company_id: null }],
@@ -108,7 +108,7 @@ const fetchActivityLogs = unstable_cache(
 
     const userIds = Array.from(new Set(logs.map((l) => l.user_id)))
     const users = await prisma.user.findMany({
-      where: { id: { in: userIds }, organization_id: orgId, deleted_at: null },
+      where: { id: { in: userIds }, organization_id: organizationId, deleted_at: null },
       select: { id: true, name: true, email: true },
     })
 

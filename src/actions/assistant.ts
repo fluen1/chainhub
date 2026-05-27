@@ -1,10 +1,11 @@
 'use server'
 
-import { auth } from '@/lib/auth'
-import { prisma } from '@/lib/db'
-import { isAIEnabled } from '@/lib/ai/feature-flags'
 import { processMessage } from '@/lib/ai/assistant/orchestrator'
 import { toolRegistry } from '@/lib/ai/assistant/tools/registry'
+import { isAIEnabled } from '@/lib/ai/feature-flags'
+import { auth } from '@/lib/auth'
+import { prisma } from '@/lib/db'
+import { captureError } from '@/lib/logger'
 import type { ActionResult } from '@/types/actions'
 
 export interface SendMessageResult {
@@ -40,22 +41,30 @@ export async function sendMessage(input: {
   })
   if (!conversation) return { error: 'Samtalen blev ikke fundet.' }
 
-  const result = await processMessage({
-    conversationId: input.conversationId,
-    userMessage: input.message,
-    organizationId: session.user.organizationId,
-    userId: session.user.id,
-  })
+  try {
+    const result = await processMessage({
+      conversationId: input.conversationId,
+      userMessage: input.message,
+      organizationId: session.user.organizationId,
+      userId: session.user.id,
+    })
 
-  return {
-    data: {
-      response: result.response,
-      toolResults: result.toolResults.map((tr) => ({
-        toolName: tr.toolName,
-        displayText: tr.result.displayText ?? '',
-      })),
-      pendingActions: result.pendingActions,
-    },
+    return {
+      data: {
+        response: result.response,
+        toolResults: result.toolResults.map((tr) => ({
+          toolName: tr.toolName,
+          displayText: tr.result.displayText ?? '',
+        })),
+        pendingActions: result.pendingActions,
+      },
+    }
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:assistant',
+      extra: { conversationId: input.conversationId },
+    })
+    return { error: 'Noget gik galt — prøv igen.' }
   }
 }
 
@@ -69,14 +78,19 @@ export async function createConversation(): Promise<ActionResult<{ id: string }>
   const enabled = await isAIEnabled(session.user.organizationId, 'assistant')
   if (!enabled) return { error: 'AI-assistenten er ikke aktiveret for din organisation.' }
 
-  const conversation = await prisma.conversation.create({
-    data: {
-      user_id: session.user.id,
-      organization_id: session.user.organizationId,
-    },
-  })
+  try {
+    const conversation = await prisma.conversation.create({
+      data: {
+        user_id: session.user.id,
+        organization_id: session.user.organizationId,
+      },
+    })
 
-  return { data: { id: conversation.id } }
+    return { data: { id: conversation.id } }
+  } catch (err) {
+    captureError(err, { namespace: 'action:assistant', extra: {} })
+    return { error: 'Noget gik galt — prøv igen.' }
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -107,17 +121,22 @@ export async function confirmAction(actionId: string): Promise<ActionResult<{ su
   const tool = toolRegistry.get(pendingAction.action_type)
   if (!tool) return { error: 'Ukendt handlingstype — kontakt support.' }
 
-  await tool.execute(pendingAction.payload as Record<string, unknown>, {
-    organizationId: session.user.organizationId,
-    userId: session.user.id,
-  })
+  try {
+    await tool.execute(pendingAction.payload as Record<string, unknown>, {
+      organizationId: session.user.organizationId,
+      userId: session.user.id,
+    })
 
-  await prisma.pendingAction.update({
-    where: { id: actionId },
-    data: { status: 'CONFIRMED' },
-  })
+    await prisma.pendingAction.update({
+      where: { id: actionId },
+      data: { status: 'CONFIRMED' },
+    })
 
-  return { data: { success: true } }
+    return { data: { success: true } }
+  } catch (err) {
+    captureError(err, { namespace: 'action:assistant', extra: { actionId } })
+    return { error: 'Noget gik galt — prøv igen.' }
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -142,12 +161,17 @@ export async function rejectAction(actionId: string): Promise<ActionResult<{ suc
 
   if (!pendingAction) return { error: 'Handlingen blev ikke fundet eller er allerede behandlet.' }
 
-  await prisma.pendingAction.update({
-    where: { id: actionId },
-    data: { status: 'REJECTED' },
-  })
+  try {
+    await prisma.pendingAction.update({
+      where: { id: actionId },
+      data: { status: 'REJECTED' },
+    })
 
-  return { data: { success: true } }
+    return { data: { success: true } }
+  } catch (err) {
+    captureError(err, { namespace: 'action:assistant', extra: { actionId } })
+    return { error: 'Noget gik galt — prøv igen.' }
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -170,16 +194,21 @@ export async function getConversationHistory(
   })
   if (!conversation) return { error: 'Samtalen blev ikke fundet.' }
 
-  const messages = await prisma.message.findMany({
-    where: { conversation_id: conversationId },
-    orderBy: { created_at: 'asc' },
-  })
+  try {
+    const messages = await prisma.message.findMany({
+      where: { conversation_id: conversationId },
+      orderBy: { created_at: 'asc' },
+    })
 
-  return {
-    data: messages.map((m) => ({
-      role: m.role,
-      content: m.content,
-      createdAt: m.created_at,
-    })),
+    return {
+      data: messages.map((m) => ({
+        role: m.role,
+        content: m.content,
+        createdAt: m.created_at,
+      })),
+    }
+  } catch (err) {
+    captureError(err, { namespace: 'action:assistant', extra: { conversationId } })
+    return { error: 'Noget gik galt — prøv igen.' }
   }
 }

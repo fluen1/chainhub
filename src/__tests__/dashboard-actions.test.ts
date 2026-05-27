@@ -4,8 +4,14 @@ vi.mock('@/lib/auth', () => ({
   auth: vi.fn(),
 }))
 
-import { auth } from '@/lib/auth'
+vi.mock('next/cache', () => ({
+  revalidatePath: vi.fn(),
+  revalidateTag: vi.fn(),
+  unstable_cache: (fn: Function) => fn,
+}))
+
 import { getDashboardData } from '@/actions/dashboard'
+import { auth } from '@/lib/auth'
 
 // Smoke test: uses seed-brugeren philip@chainhub.dk via org-id
 // Kræver at local database er seeded med `npx prisma db seed`.

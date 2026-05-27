@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { createTask } from '@/actions/tasks'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
+import { createTask } from '@/actions/tasks'
 import {
   Panel,
   BButton,
@@ -15,6 +15,7 @@ import {
   BFieldWrap,
   BFieldRow,
 } from '@/components/ui/b'
+import { safeAction } from '@/lib/safe-action'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CreateTaskForm — B-stil port. Felter: title, description, dueDate, priority,
@@ -80,22 +81,22 @@ export function CreateTaskForm() {
     setTitleError(null)
     setLoading(true)
 
-    const result = await createTask({
-      title: title.trim(),
-      description: description || undefined,
-      dueDate: dueDate || undefined,
-      priority,
-      caseId: caseId || undefined,
-      companyId: companyId || undefined,
-      assignedTo: assignedTo || undefined,
-    })
+    const data = await safeAction(
+      createTask({
+        title: title.trim(),
+        description: description || undefined,
+        dueDate: dueDate || undefined,
+        priority,
+        caseId: caseId || undefined,
+        companyId: companyId || undefined,
+        assignedTo: assignedTo || undefined,
+      }),
+      'Opgaven kunne ikke oprettes — prøv igen.'
+    )
 
     setLoading(false)
 
-    if (result.error) {
-      toast.error(result.error)
-      return
-    }
+    if (!data) return
 
     toast.success('Opgave oprettet')
     router.push('/tasks')

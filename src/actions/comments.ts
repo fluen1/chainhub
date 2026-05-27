@@ -1,13 +1,14 @@
 'use server'
 
-import { auth } from '@/lib/auth'
-import { prisma } from '@/lib/db'
-import { canAccessCompany } from '@/lib/permissions'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
-import type { ActionResult } from '@/types/actions'
 import { recordAuditEvent } from '@/lib/audit'
+import { auth } from '@/lib/auth'
+import { prisma } from '@/lib/db'
+import { captureError } from '@/lib/logger'
+import { canAccessCompany } from '@/lib/permissions'
 import { checkActionRateLimit } from '@/lib/rate-limit'
+import type { ActionResult } from '@/types/actions'
 
 const commentSchema = z.object({
   content: z.string().min(1, 'Kommentar kan ikke være tom').max(2000, 'Maks 2000 tegn'),
@@ -41,17 +42,22 @@ export async function createComment(input: {
   const rl = await checkActionRateLimit(session.user.organizationId)
   if (rl.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
-  const comment = await prisma.comment.create({
-    data: {
-      organization_id: session.user.organizationId,
-      task_id: parsed.data.taskId,
-      content: parsed.data.content,
-      created_by: session.user.id,
-    },
-  })
+  try {
+    const comment = await prisma.comment.create({
+      data: {
+        organization_id: session.user.organizationId,
+        task_id: parsed.data.taskId,
+        content: parsed.data.content,
+        created_by: session.user.id,
+      },
+    })
 
-  revalidatePath(`/tasks/${parsed.data.taskId}`)
-  return { data: { id: comment.id } }
+    revalidatePath(`/tasks/${parsed.data.taskId}`)
+    return { data: { id: comment.id } }
+  } catch (err) {
+    captureError(err, { namespace: 'action:comments', extra: { taskId: parsed.data.taskId } })
+    return { error: 'Noget gik galt — prøv igen.' }
+  }
 }
 
 export async function createCaseComment(input: {
@@ -91,27 +97,32 @@ export async function createCaseComment(input: {
   const rlCase = await checkActionRateLimit(session.user.organizationId)
   if (rlCase.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
-  const comment = await prisma.comment.create({
-    data: {
-      organization_id: session.user.organizationId,
-      case_id: parsed.data.caseId,
-      content: parsed.data.content,
-      created_by: session.user.id,
-    },
-  })
+  try {
+    const comment = await prisma.comment.create({
+      data: {
+        organization_id: session.user.organizationId,
+        case_id: parsed.data.caseId,
+        content: parsed.data.content,
+        created_by: session.user.id,
+      },
+    })
 
-  await recordAuditEvent({
-    organizationId: session.user.organizationId,
-    userId: session.user.id,
-    action: 'COMMENT_CREATE',
-    resourceType: 'case',
-    resourceId: parsed.data.caseId,
-    resourceCompanyId: caseItem.case_companies[0]?.company_id,
-    sensitivity: caseItem.sensitivity,
-  })
+    await recordAuditEvent({
+      organizationId: session.user.organizationId,
+      userId: session.user.id,
+      action: 'COMMENT_CREATE',
+      resourceType: 'case',
+      resourceId: parsed.data.caseId,
+      resourceCompanyId: caseItem.case_companies[0]?.company_id,
+      sensitivity: caseItem.sensitivity,
+    })
 
-  revalidatePath(`/cases/${parsed.data.caseId}`)
-  return { data: { id: comment.id } }
+    revalidatePath(`/cases/${parsed.data.caseId}`)
+    return { data: { id: comment.id } }
+  } catch (err) {
+    captureError(err, { namespace: 'action:comments', extra: { caseId: parsed.data.caseId } })
+    return { error: 'Noget gik galt — prøv igen.' }
+  }
 }
 
 export async function deleteComment(commentId: string): Promise<ActionResult<null>> {
@@ -127,22 +138,27 @@ export async function deleteComment(commentId: string): Promise<ActionResult<nul
   const rlDel = await checkActionRateLimit(session.user.organizationId)
   if (rlDel.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
-  // Soft-delete — bevarer kommentar i audit-trail
-  await prisma.comment.update({
-    where: { id: commentId },
-    data: { deleted_at: new Date() },
-  })
+  try {
+    // Soft-delete — bevarer kommentar i audit-trail
+    await prisma.comment.update({
+      where: { id: commentId },
+      data: { deleted_at: new Date() },
+    })
 
-  await recordAuditEvent({
-    organizationId: session.user.organizationId,
-    userId: session.user.id,
-    action: 'DELETE',
-    resourceType: 'comment',
-    resourceId: commentId,
-    resourceCompanyId: undefined, // Comment har ingen company_id — case/task lookup undgås her
-  })
+    await recordAuditEvent({
+      organizationId: session.user.organizationId,
+      userId: session.user.id,
+      action: 'DELETE',
+      resourceType: 'comment',
+      resourceId: commentId,
+      resourceCompanyId: undefined, // Comment har ingen company_id — case/task lookup undgås her
+    })
 
-  if (comment.task_id) revalidatePath(`/tasks/${comment.task_id}`)
-  if (comment.case_id) revalidatePath(`/cases/${comment.case_id}`)
-  return { data: null }
+    if (comment.task_id) revalidatePath(`/tasks/${comment.task_id}`)
+    if (comment.case_id) revalidatePath(`/cases/${comment.case_id}`)
+    return { data: null }
+  } catch (err) {
+    captureError(err, { namespace: 'action:comments', extra: { commentId } })
+    return { error: 'Noget gik galt — prøv igen.' }
+  }
 }

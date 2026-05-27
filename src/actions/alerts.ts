@@ -1,11 +1,11 @@
 'use server'
 
+import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { revalidatePath, revalidateTag, unstable_cache } from 'next/cache'
-import type { ActionResult } from '@/types/actions'
 import { captureError } from '@/lib/logger'
 import { canAccessModule } from '@/lib/permissions'
+import type { ActionResult } from '@/types/actions'
 
 // ────────────────────────────────────────────────────────────────────────────
 // Typer
@@ -70,7 +70,11 @@ export async function getActiveAlerts(limit?: number): Promise<ActionResult<Aler
   const session = await auth()
   if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
-  const hasModuleAccess = await canAccessModule(session.user.id, 'companies', session.user.organizationId)
+  const hasModuleAccess = await canAccessModule(
+    session.user.id,
+    'companies',
+    session.user.organizationId
+  )
   if (!hasModuleAccess) return { error: 'Ingen adgang til dette modul' }
 
   try {
@@ -108,7 +112,11 @@ export async function dismissAlert(alertId: string): Promise<ActionResult<{ id: 
   const session = await auth()
   if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
-  const hasModuleAccess = await canAccessModule(session.user.id, 'companies', session.user.organizationId)
+  const hasModuleAccess = await canAccessModule(
+    session.user.id,
+    'companies',
+    session.user.organizationId
+  )
   if (!hasModuleAccess) return { error: 'Ingen adgang til dette modul' }
 
   if (!alertId || typeof alertId !== 'string') {
@@ -137,7 +145,7 @@ export async function dismissAlert(alertId: string): Promise<ActionResult<{ id: 
     })
 
     revalidatePath('/dashboard')
-    revalidateTag('alerts')
+    revalidateTag('alerts', {})
     return { data: { id: alertId } }
   } catch (err) {
     captureError(err, { namespace: 'action:alerts', extra: { alertId } })
@@ -168,7 +176,11 @@ export async function getAlertStats(): Promise<ActionResult<AlertStats>> {
   const session = await auth()
   if (!session) return { error: 'Din session er udløbet — log ind igen.' }
 
-  const hasModuleAccess = await canAccessModule(session.user.id, 'companies', session.user.organizationId)
+  const hasModuleAccess = await canAccessModule(
+    session.user.id,
+    'companies',
+    session.user.organizationId
+  )
   if (!hasModuleAccess) return { error: 'Ingen adgang til dette modul' }
 
   try {

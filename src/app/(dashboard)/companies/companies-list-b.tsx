@@ -1,8 +1,11 @@
 'use client'
 
-import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ExportButton } from '@/components/ui/export-button'
+import { useMemo, useState } from 'react'
+import { CompaniesCardView } from '@/components/companies/CompaniesCardView'
+import { CompaniesRightRail } from '@/components/companies/CompaniesRightRail'
+import { CompaniesFlatTable } from '@/components/companies/CompaniesTableViews'
+import { CompaniesRegionsView } from '@/components/companies/CompaniesTableViews'
 import {
   Breadcrumb,
   PageHeader,
@@ -21,10 +24,7 @@ import {
   BottomBar,
   Panel,
 } from '@/components/ui/b'
-import { CompaniesFlatTable } from '@/components/companies/CompaniesTableViews'
-import { CompaniesRegionsView } from '@/components/companies/CompaniesTableViews'
-import { CompaniesCardView } from '@/components/companies/CompaniesCardView'
-import { CompaniesRightRail } from '@/components/companies/CompaniesRightRail'
+import { ExportButton } from '@/components/ui/export-button'
 
 // ────────────────────────────────────────────────────────────────────────────
 // /companies — klient-komponent. Mest komplekse list-side.
@@ -81,10 +81,13 @@ interface CompaniesListBProps {
   companies: CompanyRow[]
   canCreate: boolean
   totalsExtra: { persons: number }
+  totalCount: number
+  page: number
+  pageSize: number
 }
 
 export function CompaniesListB(props: CompaniesListBProps) {
-  if (props.companies.length === 0) {
+  if (props.companies.length === 0 && props.totalCount === 0) {
     return <EmptyCompaniesView canCreate={props.canCreate} />
   }
   return <CompaniesListBContent {...props} />
@@ -127,7 +130,14 @@ function EmptyCompaniesView({ canCreate }: { canCreate: boolean }) {
   )
 }
 
-function CompaniesListBContent({ companies, canCreate, totalsExtra }: CompaniesListBProps) {
+function CompaniesListBContent({
+  companies,
+  canCreate,
+  totalsExtra,
+  totalCount: serverTotalCount,
+  page: serverPage,
+  pageSize: serverPageSize,
+}: CompaniesListBProps) {
   const router = useRouter()
 
   const [viewMode, setViewMode] = useState<ViewMode>('tabel')
@@ -139,7 +149,7 @@ function CompaniesListBContent({ companies, canCreate, totalsExtra }: CompaniesL
   const [sortCol, setSortCol] = useState<SortKey>('sortScore')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(15)
+  const [pageSize, setPageSize] = useState(serverPageSize)
 
   const uniqueTypes = useMemo(
     () => Array.from(new Set(companies.map((c) => c.type))).sort(),
@@ -193,7 +203,6 @@ function CompaniesListBContent({ companies, canCreate, totalsExtra }: CompaniesL
     return arr
   }, [filtered, sortCol, sortDir])
 
-  const totalCount = companies.length
   const coOwned = companies.filter((c) => c.kaedePct < 100).length
   const fullOwned = companies.filter((c) => c.kaedePct === 100).length
   const critical = companies.filter((c) => c.health === 'critical').length
@@ -202,16 +211,13 @@ function CompaniesListBContent({ companies, canCreate, totalsExtra }: CompaniesL
     totalRevenue > 0 ? `${(totalRevenue / 1_000_000).toFixed(1).replace('.', ',')}m` : '—'
 
   const stripCells: StripCellData[] = [
-    { num: totalCount, label: 'I porteføljen' },
+    { num: serverTotalCount, label: 'I porteføljen' },
     { num: coOwned, label: 'Co-ejet' },
     { num: fullOwned, label: '100% ejet' },
     { num: critical, label: 'Kræver opmærks.', color: critical > 0 ? 'red' : 'default' },
     { num: totalsExtra.persons, label: 'Personer i alt' },
     { num: ytdShort, label: 'Omsætning YTD', color: 'green' },
   ]
-
-  const hasFilter =
-    search.length > 0 || typeFil !== 'Alle' || regionFil !== 'Alle' || ejerFil !== 'Alle' || urgOnly
 
   function handleSort(col: SortKey) {
     if (sortCol === col) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
@@ -234,9 +240,24 @@ function CompaniesListBContent({ companies, canCreate, totalsExtra }: CompaniesL
     router.push(`/companies/${id}`)
   }
 
-  const maxPage = Math.max(1, Math.ceil(sorted.length / pageSize))
-  const safePage = Math.min(page, maxPage)
-  const paged = sorted.slice((safePage - 1) * pageSize, safePage * pageSize)
+  // Server-side pagination: navigate to ?page=N when no client filter is active
+  const hasClientFilter =
+    search.length > 0 || typeFil !== 'Alle' || regionFil !== 'Alle' || ejerFil !== 'Alle' || urgOnly
+
+  const serverMaxPage = Math.max(1, Math.ceil(serverTotalCount / serverPageSize))
+
+  function goToServerPage(n: number) {
+    const sp = new URLSearchParams()
+    if (n > 1) sp.set('page', String(n))
+    router.push(`/companies${sp.toString() ? `?${sp.toString()}` : ''}`, { scroll: false })
+  }
+
+  // When no client filter is active, use server-side paging directly
+  const maxPage = hasClientFilter ? Math.max(1, Math.ceil(sorted.length / pageSize)) : serverMaxPage
+  const safePage = hasClientFilter ? Math.min(page, maxPage) : serverPage
+  const paged = hasClientFilter
+    ? sorted.slice((safePage - 1) * pageSize, safePage * pageSize)
+    : sorted
 
   return (
     <>
@@ -246,7 +267,7 @@ function CompaniesListBContent({ companies, canCreate, totalsExtra }: CompaniesL
         title="Selskaber"
         meta={
           <>
-            {totalCount} i porteføljen
+            {serverTotalCount} i porteføljen
             {' · '}
             <span className="font-medium text-b-red-fg">{critical} kræver opmærksomhed</span>
             {' · '}
@@ -309,7 +330,7 @@ function CompaniesListBContent({ companies, canCreate, totalsExtra }: CompaniesL
         >
           {urgOnly ? '⚠ Kritiske ×' : '⚠ Kritiske'}
         </FilterButton>
-        {hasFilter && <FilterReset onClick={resetFilters} />}
+        {hasClientFilter && <FilterReset onClick={resetFilters} />}
         <FilterSep />
         <SegmentedToggle<ViewMode>
           value={viewMode}
@@ -324,10 +345,10 @@ function CompaniesListBContent({ companies, canCreate, totalsExtra }: CompaniesL
         <ExportButton entity="companies" label="Eksportér ▾" />
       </FilterRow>
 
-      {hasFilter && (
+      {hasClientFilter && (
         <div className="text-[11px] text-b-2">
           {sorted.length} {sorted.length === 1 ? 'resultat' : 'resultater'} — filtreret fra{' '}
-          {totalCount} selskaber
+          {companies.length} selskaber på denne side
         </div>
       )}
 
@@ -347,20 +368,26 @@ function CompaniesListBContent({ companies, canCreate, totalsExtra }: CompaniesL
             ) : (
               <CompaniesRegionsView companies={sorted} onRowClick={goTo} />
             )}
-            {sorted.length > 0 && (
+            {(sorted.length > 0 || !hasClientFilter) && (
               <div className="mt-2">
                 <Pager
                   info={
                     viewMode === 'tabel'
-                      ? `${Math.min((safePage - 1) * pageSize + 1, sorted.length)}–${Math.min(safePage * pageSize, sorted.length)} af ${sorted.length}`
-                      : `${sorted.length} ${sorted.length === 1 ? 'selskab' : 'selskaber'}`
+                      ? hasClientFilter
+                        ? `${Math.min((safePage - 1) * pageSize + 1, sorted.length)}–${Math.min(safePage * pageSize, sorted.length)} af ${sorted.length}`
+                        : `${Math.min((serverPage - 1) * serverPageSize + 1, serverTotalCount)}–${Math.min(serverPage * serverPageSize, serverTotalCount)} af ${serverTotalCount}`
+                      : `${serverTotalCount} ${serverTotalCount === 1 ? 'selskab' : 'selskaber'}`
                   }
                   page={viewMode === 'tabel' ? safePage : undefined}
                   maxPage={viewMode === 'tabel' ? maxPage : undefined}
-                  onPage={viewMode === 'tabel' ? setPage : undefined}
-                  pageSize={viewMode === 'tabel' ? pageSize : undefined}
+                  onPage={
+                    viewMode === 'tabel' ? (hasClientFilter ? setPage : goToServerPage) : undefined
+                  }
+                  pageSize={
+                    viewMode === 'tabel' ? (hasClientFilter ? pageSize : serverPageSize) : undefined
+                  }
                   onPageSize={
-                    viewMode === 'tabel'
+                    viewMode === 'tabel' && hasClientFilter
                       ? (n) => {
                           setPageSize(n)
                           setPage(1)
@@ -379,9 +406,10 @@ function CompaniesListBContent({ companies, canCreate, totalsExtra }: CompaniesL
       <BottomBar
         left={
           <>
-            {sorted.length} {sorted.length === 1 ? 'selskab' : 'selskaber'} vist ·{' '}
-            {companies.filter((c) => c.health === 'healthy').length} grønne
-            {hasFilter && ` · filtreret fra ${totalCount}`}
+            {hasClientFilter ? sorted.length : serverTotalCount}{' '}
+            {(hasClientFilter ? sorted.length : serverTotalCount) === 1 ? 'selskab' : 'selskaber'} i
+            alt · {companies.filter((c) => c.health === 'healthy').length} grønne på denne side
+            {hasClientFilter && ` · filtreret fra ${companies.length} på siden`}
           </>
         }
       />

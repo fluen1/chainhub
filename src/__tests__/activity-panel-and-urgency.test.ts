@@ -24,9 +24,16 @@ vi.mock('@/lib/db', () => ({
   },
 }))
 
+vi.mock('next/cache', () => ({
+  revalidatePath: vi.fn(),
+  revalidateTag: vi.fn(),
+  unstable_cache: vi.fn((fn: (...args: unknown[]) => unknown) => fn),
+}))
+
 // Brug RFC-konforme UUIDs (version 4, variant 2) — Zod v4 validerer strengt
 vi.mock('@/lib/permissions', () => ({
   getAccessibleCompanies: vi.fn().mockResolvedValue(['aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa']),
+  canAccessModule: vi.fn().mockResolvedValue(true),
 }))
 
 import { getRecentActivity } from '@/actions/activity-feed'

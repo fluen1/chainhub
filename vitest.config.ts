@@ -1,6 +1,6 @@
-import { defineConfig } from 'vitest/config'
-import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
+import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   plugins: [react()],
@@ -10,12 +10,14 @@ export default defineConfig({
     globals: true,
     testTimeout: 30_000,
     // Playwright E2E tests bruger @playwright/test runner — ekskludér fra Vitest
-    exclude: ['node_modules/**', 'tests/e2e/**', '.next/**', 'dist/**'],
+    exclude: ['node_modules/**', 'tests/e2e/**', '.next/**', 'dist/**', '.claude/worktrees/**'],
     coverage: {
       provider: 'v8',
       thresholds: {
         lines: 80,
         functions: 80,
+        branches: 80,
+        statements: 80,
       },
     },
     server: {

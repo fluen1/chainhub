@@ -4,10 +4,11 @@
  * BA-04 | Sprint 7
  */
 
+import { unstable_cache } from 'next/cache'
 import { cache } from 'react'
 import { prisma } from '@/lib/db'
-import { getAccessibleCompanies } from '@/lib/permissions'
 import { getUserRoleLabel, getUserRoleStyle } from '@/lib/labels'
+import { getAccessibleCompanies } from '@/lib/permissions'
 import type { SidebarBadge } from '@/types/ui'
 
 export interface SidebarData {
@@ -27,34 +28,17 @@ export interface SidebarData {
   recentCompanies: Array<{ id: string; name: string }>
 }
 
-export const getSidebarData = cache(
-  async (
-    userId: string,
-    organizationId: string,
-    preloadedCompanyIds?: string[]
-  ): Promise<SidebarData> => {
-    const [companyIds, roleAssignments] = await Promise.all([
-      preloadedCompanyIds !== undefined
-        ? Promise.resolve(preloadedCompanyIds)
-        : getAccessibleCompanies(userId, organizationId),
-      prisma.userRoleAssignment.findMany({
-        where: { user_id: userId },
-        select: { role: true },
-        take: 1,
-      }),
-    ])
-
+// --- Intern cache-nøgle: counts pr. org + companyIds (60s TTL, bust via 'sidebar'-tag) ---
+const getCachedSidebarCounts = unstable_cache(
+  async (orgId: string, companyIds: string[]) => {
     const today = new Date()
-    const primaryRole = roleAssignments[0]?.role ?? 'GROUP_READONLY'
+    const thirtyDayEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
 
     const whereCompanies = {
-      organization_id: organizationId,
+      organization_id: orgId,
       id: { in: companyIds },
       deleted_at: null as null,
     }
-
-    // "Udløber 30d" strip-KPI: 30 dage fremfor 14 (matcher dashboard-label)
-    const thirtyDayEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
 
     const [
       companiesCount,
@@ -73,7 +57,7 @@ export const getSidebarData = cache(
       companyIds.length > 0
         ? prisma.contract.count({
             where: {
-              organization_id: organizationId,
+              organization_id: orgId,
               company_id: { in: companyIds },
               deleted_at: null,
             },
@@ -82,38 +66,34 @@ export const getSidebarData = cache(
       companyIds.length > 0
         ? prisma.case.count({
             where: {
-              organization_id: organizationId,
+              organization_id: orgId,
               deleted_at: null,
               status: { in: ['NY', 'AKTIV', 'AFVENTER_EKSTERN', 'AFVENTER_KLIENT'] },
-              // Scope: kun sager tilknyttet selskaber brugeren har adgang til
               case_companies: { some: { company_id: { in: companyIds } } },
             },
           })
         : Promise.resolve(0),
-      // Opgave-count: scope via accessible companies + org-brede tasks (company_id=null)
       prisma.task.count({
         where: {
-          organization_id: organizationId,
+          organization_id: orgId,
           deleted_at: null,
           status: { not: 'LUKKET' },
           OR: [{ company_id: { in: companyIds } }, { company_id: null }],
         },
       }),
-      // Forfaldne opgaver: samme scope
       prisma.task.count({
         where: {
-          organization_id: organizationId,
+          organization_id: orgId,
           deleted_at: null,
           status: { not: 'LUKKET' },
           due_date: { lt: today },
           OR: [{ company_id: { in: companyIds } }, { company_id: null }],
         },
       }),
-      // Udløbende kontrakter (næste 14 dage)
       companyIds.length > 0
         ? prisma.contract.count({
             where: {
-              organization_id: organizationId,
+              organization_id: orgId,
               company_id: { in: companyIds },
               deleted_at: null,
               status: 'AKTIV',
@@ -121,11 +101,10 @@ export const getSidebarData = cache(
             },
           })
         : Promise.resolve(0),
-      // Omsætning total (seneste tilgængelige år)
       companyIds.length > 0
         ? prisma.financialMetric.findMany({
             where: {
-              organization_id: organizationId,
+              organization_id: orgId,
               company_id: { in: companyIds },
               period_type: 'HELAAR',
               metric_type: 'OMSAETNING',
@@ -135,11 +114,9 @@ export const getSidebarData = cache(
             select: { value: true, company_id: true, period_year: true },
           })
         : Promise.resolve([]),
-      // Persons scope: personer tilknyttet selskaber brugeren har adgang til,
-      // ELLER orphan-personer (ingen company_persons-relation)
       prisma.person.count({
         where: {
-          organization_id: organizationId,
+          organization_id: orgId,
           deleted_at: null,
           OR: [
             { company_persons: { some: { company_id: { in: companyIds } } } },
@@ -147,23 +124,20 @@ export const getSidebarData = cache(
           ],
         },
       }),
-      // Documents scope: dokumenter tilknyttet selskaber brugeren har adgang til,
-      // ELLER org-brede dokumenter (company_id = null)
       prisma.document.count({
         where: {
-          organization_id: organizationId,
+          organization_id: orgId,
           deleted_at: null,
           OR: [{ company_id: { in: companyIds } }, { company_id: null }],
         },
       }),
       prisma.visit.count({
         where: {
-          organization_id: organizationId,
+          organization_id: orgId,
           deleted_at: null,
           status: 'PLANLAGT',
         },
       }),
-      // Senest opdaterede selskaber (proxy for "senest besøgte" — ingen tracking endnu)
       companyIds.length > 0
         ? prisma.company.findMany({
             where: whereCompanies,
@@ -194,10 +168,38 @@ export const getSidebarData = cache(
       personsCount,
       documentsCount,
       visitsCount,
+      recentCompanies,
+    }
+  },
+  ['sidebar-counts'],
+  { revalidate: 60, tags: ['sidebar'] }
+)
+
+export const getSidebarData = cache(
+  async (
+    userId: string,
+    organizationId: string,
+    preloadedCompanyIds?: string[]
+  ): Promise<SidebarData> => {
+    const [companyIds, roleAssignments] = await Promise.all([
+      preloadedCompanyIds !== undefined
+        ? Promise.resolve(preloadedCompanyIds)
+        : getAccessibleCompanies(userId, organizationId),
+      prisma.userRoleAssignment.findMany({
+        where: { user_id: userId },
+        select: { role: true },
+        take: 1,
+      }),
+    ])
+
+    const primaryRole = roleAssignments[0]?.role ?? 'GROUP_READONLY'
+    const counts = await getCachedSidebarCounts(organizationId, companyIds)
+
+    return {
+      ...counts,
       userRole: primaryRole,
       userRoleLabel: getUserRoleLabel(primaryRole),
       userRoleStyle: getUserRoleStyle(primaryRole),
-      recentCompanies,
     }
   }
 )

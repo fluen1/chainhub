@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
-import { updateUserRole, toggleUserActive } from '@/actions/users'
-import { toast } from 'sonner'
-import { USER_ROLE_LABELS } from '@/lib/labels'
-import { cn } from '@/lib/utils'
 import type { UserRole } from '@prisma/client'
+import { useState } from 'react'
+import { toast } from 'sonner'
+import { updateUserRole, toggleUserActive } from '@/actions/users'
+import { USER_ROLE_LABELS } from '@/lib/labels'
+import { safeAction } from '@/lib/safe-action'
+import { cn } from '@/lib/utils'
 
 const ROLES = [
   'GROUP_OWNER',
@@ -56,17 +57,17 @@ export function UserActions({
 
   async function handleSaveRole() {
     setLoading(true)
-    const result = await updateUserRole({
-      userId,
-      role: role as (typeof ROLES)[number],
-      companyIds: isCompanyRole ? selectedCompanyIds : [],
-    })
+    const data = await safeAction(
+      updateUserRole({
+        userId,
+        role: role as (typeof ROLES)[number],
+        companyIds: isCompanyRole ? selectedCompanyIds : [],
+      }),
+      'Rolle kunne ikke opdateres — prøv igen.'
+    )
     setLoading(false)
 
-    if (result.error) {
-      toast.error(result.error)
-      return
-    }
+    if (!data) return
 
     toast.success('Rolle opdateret')
     setEditingRole(false)
@@ -74,13 +75,10 @@ export function UserActions({
 
   async function handleToggleActive() {
     setToggling(true)
-    const result = await toggleUserActive(userId)
+    const data = await safeAction(toggleUserActive(userId), 'Status kunne ikke ændres — prøv igen.')
     setToggling(false)
 
-    if (result.error) {
-      toast.error(result.error)
-      return
-    }
+    if (!data) return
 
     toast.success(active ? 'Bruger deaktiveret' : 'Bruger aktiveret')
   }

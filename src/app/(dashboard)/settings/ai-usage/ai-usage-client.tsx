@@ -100,7 +100,7 @@ export function AIUsageClient({ data }: Props) {
         {data.recent.length === 0 ? (
           <div className="text-sm text-gray-500">Ingen kald registreret endnu.</div>
         ) : (
-          <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+          <div className="rounded-lg border border-gray-200 bg-white overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-100 text-sm">
               <thead className="bg-gray-50 text-xs uppercase text-gray-500">
                 <tr>

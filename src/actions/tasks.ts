@@ -1,8 +1,16 @@
 'use server'
 
+import type { Task, TaskHistoryField, TaskStatus, Prioritet, Prisma } from '@prisma/client'
+import { revalidatePath, revalidateTag } from 'next/cache'
+import { recordAuditEvent } from '@/lib/audit'
 import { auth } from '@/lib/auth'
+import { formatShortDate } from '@/lib/date-helpers'
 import { prisma } from '@/lib/db'
+import { getTaskStatusLabel, getPriorityLabel, daysUntil } from '@/lib/labels'
+import { captureError } from '@/lib/logger'
+import { parsePaginationParams } from '@/lib/pagination'
 import { canAccessCompany, getAccessibleCompanies } from '@/lib/permissions'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 import {
   createTaskSchema,
   updateTaskStatusSchema,
@@ -15,15 +23,7 @@ import {
   type UpdateTaskAssigneeInput,
   type UpdateTaskDueDateInput,
 } from '@/lib/validations/case'
-import { revalidatePath, revalidateTag } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
-import type { Task, TaskHistoryField, TaskStatus, Prioritet, Prisma } from '@prisma/client'
-import { captureError } from '@/lib/logger'
-import { recordAuditEvent } from '@/lib/audit'
-import { checkActionRateLimit } from '@/lib/rate-limit'
-import { parsePaginationParams } from '@/lib/pagination'
-import { getTaskStatusLabel, getPriorityLabel, daysUntil } from '@/lib/labels'
-import { formatShortDate } from '@/lib/date-helpers'
 
 // ────────────────────────────────────────────────────────────────────────────
 // getTasksPaginated — server-side pagineret liste til /tasks
@@ -286,8 +286,8 @@ export async function createTask(input: CreateTaskInput): Promise<ActionResult<T
     if (parsed.data.caseId) revalidatePath(`/cases/${parsed.data.caseId}`)
     revalidateTag('sidebar', {})
     revalidateTag('dashboard', {})
-    revalidateTag('calendar')
-    revalidateTag('activity')
+    revalidateTag('calendar', {})
+    revalidateTag('activity', {})
     return { data: task }
   } catch (err) {
     captureError(err, {
@@ -575,6 +575,6 @@ export async function deleteTask(taskId: string): Promise<ActionResult<void>> {
   revalidatePath('/tasks')
   revalidateTag('sidebar', {})
   revalidateTag('dashboard', {})
-  revalidateTag('calendar')
+  revalidateTag('calendar', {})
   return { data: undefined }
 }

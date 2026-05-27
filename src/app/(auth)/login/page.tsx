@@ -1,9 +1,9 @@
 'use client'
 
-import { signIn } from 'next-auth/react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useRef, useState, Suspense } from 'react'
 import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { signIn } from 'next-auth/react'
+import { useEffect, useRef, useState, Suspense } from 'react'
 
 // ────────────────────────────────────────────────────────────────────────────
 // /login — B-stil port. Behold eksisterende NextAuth credentials-flow.
@@ -116,10 +116,10 @@ function LoginForm() {
                 autoComplete="email"
                 required
                 disabled={loading}
-                className={`rounded-[4px] border bg-white px-2.5 py-2 text-[13px] text-b-1 placeholder:text-b-3 focus:outline-none focus:ring-[3px] disabled:opacity-60 ${
+                className={`rounded-[4px] border bg-white px-2.5 py-2 text-[13px] text-b-1 placeholder:text-b-3 focus:outline-none focus-visible:ring-[3px] disabled:opacity-60 ${
                   error
-                    ? 'border-b-red-fg focus:ring-[#cf222e1a]'
-                    : 'border-b-border-strong focus:border-b-blue-fg focus:ring-[#0969da1a]'
+                    ? 'border-b-red-fg focus-visible:ring-[#cf222e1a]'
+                    : 'border-b-border-strong focus-visible:border-b-blue-fg focus-visible:ring-[#0969da1a]'
                 }`}
               />
             </div>
@@ -145,10 +145,10 @@ function LoginForm() {
                   autoComplete="current-password"
                   required
                   disabled={loading}
-                  className={`w-full rounded-[4px] border bg-white py-2 pl-2.5 pr-14 text-[13px] text-b-1 placeholder:text-b-3 focus:outline-none focus:ring-[3px] disabled:opacity-60 ${
+                  className={`w-full rounded-[4px] border bg-white py-2 pl-2.5 pr-14 text-[13px] text-b-1 placeholder:text-b-3 focus:outline-none focus-visible:ring-[3px] disabled:opacity-60 ${
                     error
-                      ? 'border-b-red-fg focus:ring-[#cf222e1a]'
-                      : 'border-b-border-strong focus:border-b-blue-fg focus:ring-[#0969da1a]'
+                      ? 'border-b-red-fg focus-visible:ring-[#cf222e1a]'
+                      : 'border-b-border-strong focus-visible:border-b-blue-fg focus-visible:ring-[#0969da1a]'
                   }`}
                 />
                 <button

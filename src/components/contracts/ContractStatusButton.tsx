@@ -1,10 +1,11 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { useState, useTransition, useRef, useEffect, useCallback } from 'react'
 import { toast } from 'sonner'
-import { useRouter } from 'next/navigation'
 import { updateContractStatus } from '@/actions/contracts'
 import { getContractStatusLabel, CONTRACT_STATUS_LABELS } from '@/lib/labels'
+import { safeAction } from '@/lib/safe-action'
 import { cn } from '@/lib/utils'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -87,16 +88,16 @@ export function ContractStatusButton({ contractId, currentStatus }: ContractStat
 
   function handleStatusChange(newStatus: string) {
     startTransition(async () => {
-      const result = await updateContractStatus({
-        contractId,
-        status: newStatus as never,
-        note: note.trim() || undefined,
-      })
+      const data = await safeAction(
+        updateContractStatus({
+          contractId,
+          status: newStatus as never,
+          note: note.trim() || undefined,
+        }),
+        'Status kunne ikke opdateres — prøv igen.'
+      )
 
-      if ('error' in result) {
-        toast.error(result.error)
-        return
-      }
+      if (!data) return
 
       toast.success(`Status ændret til ${getContractStatusLabel(newStatus)}`)
       setOpen(false)

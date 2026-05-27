@@ -30,11 +30,12 @@ vi.mock('@/lib/logger', () => ({
     .fn()
     .mockReturnValue({ warn: vi.fn(), info: vi.fn(), debug: vi.fn(), error: vi.fn() }),
 }))
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
+vi.mock('next/cache', () => ({
+  revalidatePath: vi.fn(),
+  revalidateTag: vi.fn(),
+  unstable_cache: vi.fn((fn: (...args: unknown[]) => unknown) => fn),
+}))
 
-import { auth } from '@/lib/auth'
-import { canAccessCompany, getAccessibleCompanies } from '@/lib/permissions'
-import { checkActionRateLimit } from '@/lib/rate-limit'
 import {
   getVisitDetailPageData,
   getVisitTitle,
@@ -43,6 +44,9 @@ import {
   updateVisit,
   deleteVisit,
 } from '@/actions/visits'
+import { auth } from '@/lib/auth'
+import { canAccessCompany, getAccessibleCompanies } from '@/lib/permissions'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 
 function makeSession() {
   return {

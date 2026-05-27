@@ -27,6 +27,7 @@ vi.mock('@/lib/db', () => ({
 
 vi.mock('@/lib/permissions', () => ({
   canAccessCompany: vi.fn().mockResolvedValue(true),
+  canAccessCompanies: vi.fn().mockResolvedValue(new Set(['a1b2c3d4-e5f6-4789-9abc-def012345678'])),
   canAccessModule: vi.fn().mockResolvedValue(true),
   canAccessSensitivity: vi.fn().mockResolvedValue(true),
 }))
@@ -45,7 +46,7 @@ vi.mock('@/lib/logger', () => ({
   })),
 }))
 
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn() }))
 
 import { createCase, updateCaseStatus, deleteCase } from '@/actions/cases'
 
@@ -78,7 +79,7 @@ describe('createCase', () => {
 
   it('afviser uden company-adgang', async () => {
     const perms = await import('@/lib/permissions')
-    vi.mocked(perms.canAccessCompany).mockResolvedValueOnce(false)
+    vi.mocked(perms.canAccessCompanies).mockResolvedValueOnce(new Set()) // tom Set = ingen adgang
     const result = await createCase({
       title: 'Test',
       caseType: 'TVIST',

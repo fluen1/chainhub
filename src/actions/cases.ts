@@ -1,8 +1,14 @@
 'use server'
 
+import type { Prisma } from '@prisma/client'
+import type { Case } from '@prisma/client'
+import { revalidatePath, revalidateTag } from 'next/cache'
+import { z } from 'zod'
+import { invalidateCompanyInsightsCache } from '@/lib/ai/invalidate-cache'
+import { recordAuditEvent } from '@/lib/audit'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import type { Prisma } from '@prisma/client'
+import { captureError } from '@/lib/logger'
 import {
   canAccessCompany,
   canAccessCompanies,
@@ -10,21 +16,15 @@ import {
   canAccessSensitivity,
   getAccessibleCompanies,
 } from '@/lib/permissions'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 import {
   createCaseSchema,
   updateCaseStatusSchema,
   type CreateCaseInput,
   type UpdateCaseStatusInput,
 } from '@/lib/validations/case'
-import { z } from 'zod'
 import { zodCaseType, zodCaseSubtype, zodSensitivityLevel } from '@/lib/zod-enums'
-import { revalidatePath, revalidateTag } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
-import type { Case } from '@prisma/client'
-import { recordAuditEvent } from '@/lib/audit'
-import { captureError } from '@/lib/logger'
-import { invalidateCompanyInsightsCache } from '@/lib/ai/invalidate-cache'
-import { checkActionRateLimit } from '@/lib/rate-limit'
 
 // Gyldige sagsstatus-transitioner
 const CASE_TRANSITIONS: Record<string, string[]> = {
@@ -131,8 +131,8 @@ export async function createCase(input: CreateCaseInput): Promise<ActionResult<C
     parsed.data.companyIds.forEach((cId) => revalidatePath(`/companies/${cId}/cases`))
     revalidateTag('sidebar', {})
     revalidateTag('dashboard', {})
-    revalidateTag('calendar')
-    revalidateTag('activity')
+    revalidateTag('calendar', {})
+    revalidateTag('activity', {})
     return { data: newCase }
   } catch (err) {
     captureError(err, {
@@ -529,8 +529,8 @@ export async function deleteCase(caseId: string): Promise<ActionResult<void>> {
   revalidatePath('/cases')
   revalidateTag('sidebar', {})
   revalidateTag('dashboard', {})
-  revalidateTag('calendar')
-  revalidateTag('activity')
+  revalidateTag('calendar', {})
+  revalidateTag('activity', {})
   return { data: undefined }
 }
 

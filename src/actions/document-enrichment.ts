@@ -2,6 +2,7 @@
 
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { captureError } from '@/lib/logger'
 import { canAccessCompany } from '@/lib/permissions'
 import type { ActionResult } from '@/types/actions'
 
@@ -62,35 +63,40 @@ export async function getDocumentEnrichment(
     if (!hasAccess) return { error: 'Ingen adgang til dette dokument' }
   }
 
-  const extraction = await prisma.documentExtraction.findFirst({
-    where: { document_id: documentId },
-    select: {
-      id: true,
-      detected_type: true,
-      type_confidence: true,
-      extracted_fields: true,
-      entity_matches: true,
-      extraction_status: true,
-    },
-  })
+  try {
+    const extraction = await prisma.documentExtraction.findFirst({
+      where: { document_id: documentId },
+      select: {
+        id: true,
+        detected_type: true,
+        type_confidence: true,
+        extracted_fields: true,
+        entity_matches: true,
+        extraction_status: true,
+      },
+    })
 
-  if (!extraction) return { data: null }
+    if (!extraction) return { data: null }
 
-  const extractedFields =
-    extraction.extracted_fields &&
-    typeof extraction.extracted_fields === 'object' &&
-    !Array.isArray(extraction.extracted_fields)
-      ? (extraction.extracted_fields as Record<string, unknown>)
-      : {}
+    const extractedFields =
+      extraction.extracted_fields &&
+      typeof extraction.extracted_fields === 'object' &&
+      !Array.isArray(extraction.extracted_fields)
+        ? (extraction.extracted_fields as Record<string, unknown>)
+        : {}
 
-  return {
-    data: {
-      extractionId: extraction.id,
-      detectedType: extraction.detected_type,
-      typeConfidence: extraction.type_confidence,
-      extractedFields,
-      entityMatches: parseEntityMatches(extraction.entity_matches),
-      status: extraction.extraction_status,
-    },
+    return {
+      data: {
+        extractionId: extraction.id,
+        detectedType: extraction.detected_type,
+        typeConfidence: extraction.type_confidence,
+        extractedFields,
+        entityMatches: parseEntityMatches(extraction.entity_matches),
+        status: extraction.extraction_status,
+      },
+    }
+  } catch (err) {
+    captureError(err, { namespace: 'action:document-enrichment', extra: { documentId } })
+    return { error: 'Noget gik galt — prøv igen.' }
   }
 }

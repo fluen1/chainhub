@@ -37,7 +37,7 @@ vi.mock('@/lib/rate-limit', () => ({
 vi.mock('@/lib/audit', () => ({
   recordAuditEvent: vi.fn().mockResolvedValue(undefined),
 }))
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn() }))
 vi.mock('@/lib/logger', () => ({ captureError: vi.fn() }))
 vi.mock('@/lib/geocode', () => ({
   geocodeAddress: vi.fn().mockResolvedValue(null),
@@ -46,9 +46,6 @@ vi.mock('@/lib/ai/invalidate-cache', () => ({
   invalidateCompanyInsightsCache: vi.fn().mockResolvedValue(undefined),
 }))
 
-import { auth } from '@/lib/auth'
-import { canAccessCompany, canAccessModule, getAccessibleCompanies } from '@/lib/permissions'
-import { checkActionRateLimit } from '@/lib/rate-limit'
 import {
   createCompany,
   updateCompany,
@@ -56,6 +53,9 @@ import {
   updateCompanyStamdata,
   getCompaniesPageData,
 } from '@/actions/companies'
+import { auth } from '@/lib/auth'
+import { canAccessCompany, canAccessModule, getAccessibleCompanies } from '@/lib/permissions'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 
 // Hjælpefunktioner
 function makeSession(overrides?: Partial<{ id: string; organizationId: string }>) {

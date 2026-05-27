@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
 import { Sparkles, X, Send } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { sendMessage, createConversation } from '@/actions/assistant'
 import { ActionConfirmCard } from './ActionConfirmCard'
@@ -45,7 +45,9 @@ export function ChatPanel({ open, onClose }: Props) {
         toast.error(result.error)
         return
       }
-      setConversationId(result.data.id)
+      const data = result.data
+      if (!data) return
+      setConversationId(data.id)
     }
     void init()
   }, [open, conversationId])
@@ -85,12 +87,15 @@ export function ChatPanel({ open, onClose }: Props) {
       return
     }
 
+    const data = result.data
+    if (!data) return
+
     setMessages((prev) => [
       ...prev,
       {
         role: 'assistant',
-        content: result.data.response,
-        pendingActions: result.data.pendingActions,
+        content: data.response,
+        pendingActions: data.pendingActions,
       },
     ])
   }

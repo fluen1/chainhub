@@ -10,9 +10,9 @@ B2B SaaS til kædegruppers porteføljestyring — kontraktstyring, governance, s
 
 ## Tech stack
 
-- **Frontend**: Next.js 14 (App Router) · React 18 · TypeScript 5 (strict) · Tailwind CSS
-- **Backend**: Next.js Server Actions · NextAuth 4 (JWT, 8h sessions)
-- **Database**: PostgreSQL (Supabase) · Prisma 5 ORM
+- **Frontend**: Next.js 16 (App Router) · React 19 · TypeScript 5 (strict) · Tailwind CSS
+- **Backend**: Next.js Server Actions · NextAuth 5 (beta, JWT, 8h sessions)
+- **Database**: PostgreSQL (Supabase) · Prisma 6 ORM
 - **AI**: Anthropic Claude via `@anthropic-ai/sdk` (dokument-extraction)
 - **Validering**: Zod
 - **Test**: Vitest (unit + integration) · Playwright (E2E setup klar)

@@ -1,8 +1,7 @@
 'use client'
 
-import { useMemo, useState, useTransition } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
-import { ExportButton } from '@/components/ui/export-button'
+import { useMemo, useState, useTransition } from 'react'
 import {
   Breadcrumb,
   PageHeader,
@@ -26,6 +25,7 @@ import {
   BottomBar,
   Panel,
 } from '@/components/ui/b'
+import { ExportButton } from '@/components/ui/export-button'
 
 // ────────────────────────────────────────────────────────────────────────────
 // /contracts — klient-komponent.
@@ -597,7 +597,7 @@ function KanbanView({
   const opsagt = contracts.filter((c) => c.rawStatus === 'OPSAGT')
 
   return (
-    <div className="grid gap-2.5 lg:grid-cols-4 lg:items-start">
+    <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4 lg:items-start">
       <KanbanCol title="Aktiv" tone="default" items={aktiv} onRowClick={onRowClick} />
       <KanbanCol title="Udløber 30d" tone="amber" items={udlober} onRowClick={onRowClick} />
       <KanbanCol title="Udløbet" tone="red" items={udloebet} onRowClick={onRowClick} />

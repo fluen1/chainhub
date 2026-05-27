@@ -4,8 +4,14 @@ vi.mock('@/lib/auth', () => ({
   auth: vi.fn(),
 }))
 
-import { auth } from '@/lib/auth'
+vi.mock('next/cache', () => ({
+  revalidatePath: vi.fn(),
+  revalidateTag: vi.fn(),
+  unstable_cache: vi.fn((fn: (...args: unknown[]) => unknown) => fn),
+}))
+
 import { getCalendarEvents } from '@/actions/calendar'
+import { auth } from '@/lib/auth'
 
 // Smoke-tests mod seed-DB. Bruger korrekte seed-IDer.
 describe.runIf(!!process.env.DATABASE_URL)('getCalendarEvents', () => {

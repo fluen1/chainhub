@@ -66,9 +66,12 @@ vi.mock('@/lib/dashboard-helpers', () => ({
   pickHighestPriorityRole: vi.fn().mockReturnValue('GROUP_READONLY'),
   sumMetric: vi.fn().mockReturnValue(0),
 }))
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
+vi.mock('next/cache', () => ({
+  revalidatePath: vi.fn(),
+  revalidateTag: vi.fn(),
+  unstable_cache: (fn: Function) => fn,
+}))
 
-import { auth } from '@/lib/auth'
 import { getRecentActivity } from '@/actions/activity-feed'
 import { getCalendarEvents } from '@/actions/calendar'
 import { getCompanyDetailData } from '@/actions/company-detail'
@@ -79,6 +82,7 @@ import { prepareGdprExport, executeGdprDelete } from '@/actions/gdpr'
 import { getPersonAIExtractions } from '@/actions/person-ai'
 import { runSearch } from '@/actions/search'
 import { getTaskDetailData } from '@/actions/task-detail'
+import { auth } from '@/lib/auth'
 
 const MOCK_SESSION = {
   user: {

@@ -52,8 +52,6 @@ vi.mock('@/lib/permissions', () => ({
   getAccessibleCompanies: vi.fn().mockResolvedValue(['c1']),
 }))
 
-import { auth } from '@/lib/auth'
-import { canAccessCompany, canAccessModule } from '@/lib/permissions'
 import {
   getDocumentsPageData,
   getDocumentUploadCompanies,
@@ -61,6 +59,8 @@ import {
   getDocumentTitle,
   deleteDocument,
 } from '@/actions/documents'
+import { auth } from '@/lib/auth'
+import { canAccessCompany, canAccessModule } from '@/lib/permissions'
 
 const SESSION = {
   user: { id: 'u1', organizationId: 'org-1', email: 'test@test.dk', name: 'Test' },
@@ -108,23 +108,27 @@ describe('getDocumentUploadCompanies', () => {
 // ─── getDocumentsPageData ─────────────────────────────────────────────────────
 
 describe('getDocumentsPageData', () => {
-  it('returnerer tom array uden session', async () => {
+  it('returnerer tom result uden session', async () => {
     vi.mocked(auth).mockResolvedValue(null)
     const result = await getDocumentsPageData()
-    expect(result).toEqual([])
+    expect(result.rows).toEqual([])
+    expect(result.totalCount).toBe(0)
   })
 
-  it('returnerer tom array uden modul-adgang', async () => {
+  it('returnerer tom result uden modul-adgang', async () => {
     vi.mocked(canAccessModule).mockResolvedValueOnce(false)
     const result = await getDocumentsPageData()
-    expect(result).toEqual([])
+    expect(result.rows).toEqual([])
+    expect(result.totalCount).toBe(0)
   })
 
   it('returnerer DocRow-array med korrekt struktur', async () => {
     prismaMock.document.findMany.mockResolvedValueOnce([mockDocument])
+    prismaMock.document.count.mockResolvedValueOnce(1)
     const result = await getDocumentsPageData()
-    expect(result).toHaveLength(1)
-    expect(result[0]).toMatchObject({
+    expect(result.rows).toHaveLength(1)
+    expect(result.totalCount).toBe(1)
+    expect(result.rows[0]).toMatchObject({
       id: mockDocument.id,
       navn: 'kontrakt.pdf',
       selskab: 'Klinik A',
@@ -133,6 +137,7 @@ describe('getDocumentsPageData', () => {
   })
 
   it('inkluderer organization_id i where-klausulen', async () => {
+    prismaMock.document.count.mockResolvedValueOnce(0)
     await getDocumentsPageData()
     const whereArg = prismaMock.document.findMany.mock.calls[0]?.[0]?.where
     expect(whereArg?.organization_id).toBe('org-1')
@@ -141,14 +146,16 @@ describe('getDocumentsPageData', () => {
   it('formaterer filstørrelse korrekt (KB)', async () => {
     const docKb = { ...mockDocument, file_size_bytes: 2048 }
     prismaMock.document.findMany.mockResolvedValueOnce([docKb])
+    prismaMock.document.count.mockResolvedValueOnce(1)
     const result = await getDocumentsPageData()
-    expect(result[0]?.size).toBe('2 KB')
+    expect(result.rows[0]?.size).toBe('2 KB')
   })
 
   it('returnerer "Ikke AI" aiStatus når extraction mangler', async () => {
     prismaMock.document.findMany.mockResolvedValueOnce([{ ...mockDocument, extraction: null }])
+    prismaMock.document.count.mockResolvedValueOnce(1)
     const result = await getDocumentsPageData()
-    expect(result[0]?.aiStatus).toBe('Ikke AI')
+    expect(result.rows[0]?.aiStatus).toBe('Ikke AI')
   })
 
   it('returnerer "AI ✓" aiStatus når extraction er completed og reviewed', async () => {
@@ -162,9 +169,10 @@ describe('getDocumentsPageData', () => {
       },
     }
     prismaMock.document.findMany.mockResolvedValueOnce([docWithExtraction])
+    prismaMock.document.count.mockResolvedValueOnce(1)
     const result = await getDocumentsPageData()
-    expect(result[0]?.aiStatus).toBe('AI ✓')
-    expect(result[0]?.konf).toBe(92)
+    expect(result.rows[0]?.aiStatus).toBe('AI ✓')
+    expect(result.rows[0]?.konf).toBe(92)
   })
 
   it('returnerer "Afventer" aiStatus når extraction er pending', async () => {
@@ -178,8 +186,9 @@ describe('getDocumentsPageData', () => {
       },
     }
     prismaMock.document.findMany.mockResolvedValueOnce([docPending])
+    prismaMock.document.count.mockResolvedValueOnce(1)
     const result = await getDocumentsPageData()
-    expect(result[0]?.aiStatus).toBe('Afventer')
+    expect(result.rows[0]?.aiStatus).toBe('Afventer')
   })
 })
 

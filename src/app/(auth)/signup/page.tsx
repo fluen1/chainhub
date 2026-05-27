@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { signIn } from 'next-auth/react'
+import { useState, useRef, useEffect } from 'react'
 import { toast } from 'sonner'
 import { createAccount } from '@/actions/signup'
 
@@ -130,7 +130,7 @@ export default function SignupPage() {
                 autoComplete="name"
                 required
                 disabled={loading}
-                className="rounded-[4px] border border-b-border-strong bg-white px-2.5 py-2 text-[13px] text-b-1 placeholder:text-b-3 focus:border-b-blue-fg focus:outline-none focus:ring-[3px] focus:ring-[#0969da1a] disabled:opacity-60"
+                className="rounded-[4px] border border-b-border-strong bg-white px-2.5 py-2 text-[13px] text-b-1 placeholder:text-b-3 focus:outline-none focus-visible:border-b-blue-fg focus-visible:ring-[3px] focus-visible:ring-[#0969da1a] disabled:opacity-60"
               />
             </div>
 
@@ -155,7 +155,7 @@ export default function SignupPage() {
                 autoComplete="email"
                 required
                 disabled={loading}
-                className="rounded-[4px] border border-b-border-strong bg-white px-2.5 py-2 text-[13px] text-b-1 placeholder:text-b-3 focus:border-b-blue-fg focus:outline-none focus:ring-[3px] focus:ring-[#0969da1a] disabled:opacity-60"
+                className="rounded-[4px] border border-b-border-strong bg-white px-2.5 py-2 text-[13px] text-b-1 placeholder:text-b-3 focus:outline-none focus-visible:border-b-blue-fg focus-visible:ring-[3px] focus-visible:ring-[#0969da1a] disabled:opacity-60"
               />
             </div>
 
@@ -181,7 +181,7 @@ export default function SignupPage() {
                   autoComplete="new-password"
                   required
                   disabled={loading}
-                  className="w-full rounded-[4px] border border-b-border-strong bg-white py-2 pl-2.5 pr-14 text-[13px] text-b-1 placeholder:text-b-3 focus:border-b-blue-fg focus:outline-none focus:ring-[3px] focus:ring-[#0969da1a] disabled:opacity-60"
+                  className="w-full rounded-[4px] border border-b-border-strong bg-white py-2 pl-2.5 pr-14 text-[13px] text-b-1 placeholder:text-b-3 focus:outline-none focus-visible:border-b-blue-fg focus-visible:ring-[3px] focus-visible:ring-[#0969da1a] disabled:opacity-60"
                 />
                 <button
                   type="button"

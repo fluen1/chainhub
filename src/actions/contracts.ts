@@ -1,7 +1,20 @@
 'use server'
 
+import type { Contract, ContractParty, ContractStatus, Prisma } from '@prisma/client'
+import { revalidatePath, revalidateTag } from 'next/cache'
+import { z } from 'zod'
+import { invalidateCompanyInsightsCache } from '@/lib/ai/invalidate-cache'
 import { auth } from '@/lib/auth'
+import { formatShortDate } from '@/lib/date-helpers'
 import { prisma } from '@/lib/db'
+import {
+  formatDate,
+  getContractTypeLabel,
+  getContractStatusLabel,
+  getSensitivityLabel,
+} from '@/lib/labels'
+import { captureError } from '@/lib/logger'
+import { parsePaginationParams } from '@/lib/pagination'
 import {
   canAccessCompany,
   canAccessSensitivity,
@@ -9,6 +22,7 @@ import {
   getAccessibleCompanies,
   getAllowedSensitivityLevels,
 } from '@/lib/permissions'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 import {
   createContractSchema,
   updateContractStatusSchema,
@@ -19,22 +33,8 @@ import {
   type ContractSystemTypeKey,
   type SensitivityLevelValue,
 } from '@/lib/validations/contract'
-import { revalidatePath, revalidateTag } from 'next/cache'
-import type { ActionResult } from '@/types/actions'
-import type { Contract, ContractParty, ContractStatus, Prisma } from '@prisma/client'
-import { captureError } from '@/lib/logger'
-import { checkActionRateLimit } from '@/lib/rate-limit'
-import {
-  formatDate,
-  getContractTypeLabel,
-  getContractStatusLabel,
-  getSensitivityLabel,
-} from '@/lib/labels'
-import { invalidateCompanyInsightsCache } from '@/lib/ai/invalidate-cache'
-import { z } from 'zod'
 import { zodSensitivityLevel, zodContractSystemType } from '@/lib/zod-enums'
-import { parsePaginationParams } from '@/lib/pagination'
-import { formatShortDate } from '@/lib/date-helpers'
+import type { ActionResult } from '@/types/actions'
 
 // ────────────────────────────────────────────────────────────────────────────
 // getContractsPaginated — server-side pagineret liste til /contracts
@@ -320,8 +320,8 @@ export async function createContract(input: CreateContractInput): Promise<Action
     revalidatePath(`/companies/${parsed.data.companyId}/contracts`)
     revalidateTag('sidebar', {})
     revalidateTag('dashboard', {})
-    revalidateTag('calendar')
-    revalidateTag('activity')
+    revalidateTag('calendar', {})
+    revalidateTag('activity', {})
     return { data: contract }
   } catch (err) {
     captureError(err, {
@@ -450,8 +450,8 @@ export async function deleteContract(contractId: string): Promise<ActionResult<v
     revalidatePath(`/companies/${contract.company_id}/contracts`)
     revalidateTag('sidebar', {})
     revalidateTag('dashboard', {})
-    revalidateTag('calendar')
-    revalidateTag('activity')
+    revalidateTag('calendar', {})
+    revalidateTag('activity', {})
     return { data: undefined }
   } catch (err) {
     captureError(err, {

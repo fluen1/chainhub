@@ -31,6 +31,7 @@ vi.mock('@/lib/auth', () => ({ auth: vi.fn() }))
 vi.mock('@/lib/db', () => ({ prisma: prismaMock }))
 vi.mock('@/lib/permissions', () => ({
   canAccessCompany: vi.fn(),
+  canAccessCompanies: vi.fn().mockResolvedValue(new Set(['company-1', 'company-2'])),
   canAccessModule: vi.fn(),
   canAccessSensitivity: vi.fn(),
   getAccessibleCompanies: vi.fn(),
@@ -41,21 +42,12 @@ vi.mock('@/lib/rate-limit', () => ({
 vi.mock('@/lib/audit', () => ({
   recordAuditEvent: vi.fn().mockResolvedValue(undefined),
 }))
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn() }))
 vi.mock('@/lib/logger', () => ({ captureError: vi.fn() }))
 vi.mock('@/lib/ai/invalidate-cache', () => ({
   invalidateCompanyInsightsCache: vi.fn().mockResolvedValue(undefined),
 }))
 
-import { auth } from '@/lib/auth'
-import {
-  canAccessCompany,
-  canAccessModule,
-  canAccessSensitivity,
-  getAccessibleCompanies,
-} from '@/lib/permissions'
-import { checkActionRateLimit } from '@/lib/rate-limit'
-import { recordAuditEvent } from '@/lib/audit'
 import {
   createCase,
   updateCaseStatus,
@@ -64,6 +56,16 @@ import {
   updateCase,
   deleteCase,
 } from '@/actions/cases'
+import { recordAuditEvent } from '@/lib/audit'
+import { auth } from '@/lib/auth'
+import {
+  canAccessCompany,
+  canAccessCompanies,
+  canAccessModule,
+  canAccessSensitivity,
+  getAccessibleCompanies,
+} from '@/lib/permissions'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 
 // HjÃ¦lpefunktioner
 function makeSession(overrides?: Partial<{ id: string; organizationId: string }>) {
@@ -162,7 +164,7 @@ describe('createCase', () => {
   it('returnerer fejl uden adgang til tilknyttet selskab', async () => {
     vi.mocked(auth).mockResolvedValue(makeSession())
     vi.mocked(canAccessModule).mockResolvedValue(true)
-    vi.mocked(canAccessCompany).mockResolvedValue(false)
+    vi.mocked(canAccessCompanies).mockResolvedValueOnce(new Set()) // tom Set = ingen adgang
     const result = await createCase({
       title: 'Test Sag',
       caseType: 'TVIST',
@@ -176,7 +178,7 @@ describe('createCase', () => {
   it('returnerer fejl uden sensitivity-adgang', async () => {
     vi.mocked(auth).mockResolvedValue(makeSession())
     vi.mocked(canAccessModule).mockResolvedValue(true)
-    vi.mocked(canAccessCompany).mockResolvedValue(true)
+    vi.mocked(canAccessCompanies).mockResolvedValue(new Set(['company-1']))
     vi.mocked(canAccessSensitivity).mockResolvedValue(false)
     const result = await createCase({
       title: 'Test Sag',
@@ -190,7 +192,7 @@ describe('createCase', () => {
   it('returnerer fejl ved rate limiting', async () => {
     vi.mocked(auth).mockResolvedValue(makeSession())
     vi.mocked(canAccessModule).mockResolvedValue(true)
-    vi.mocked(canAccessCompany).mockResolvedValue(true)
+    vi.mocked(canAccessCompanies).mockResolvedValue(new Set(['company-1']))
     vi.mocked(canAccessSensitivity).mockResolvedValue(true)
     vi.mocked(checkActionRateLimit).mockResolvedValue({ limited: true, remaining: 0 } as any)
     const result = await createCase({
@@ -205,7 +207,7 @@ describe('createCase', () => {
   it('opretter sag med korrekt organization_id', async () => {
     vi.mocked(auth).mockResolvedValue(makeSession())
     vi.mocked(canAccessModule).mockResolvedValue(true)
-    vi.mocked(canAccessCompany).mockResolvedValue(true)
+    vi.mocked(canAccessCompanies).mockResolvedValue(new Set(['company-1']))
     vi.mocked(canAccessSensitivity).mockResolvedValue(true)
     prismaMock.case.create.mockResolvedValue(baseCase)
     prismaMock.caseCompany.create.mockResolvedValue({})
@@ -227,7 +229,7 @@ describe('createCase', () => {
   it('opretter CaseCompany-records for hvert tilknyttet selskab', async () => {
     vi.mocked(auth).mockResolvedValue(makeSession())
     vi.mocked(canAccessModule).mockResolvedValue(true)
-    vi.mocked(canAccessCompany).mockResolvedValue(true)
+    vi.mocked(canAccessCompanies).mockResolvedValue(new Set(['company-1', 'company-2']))
     vi.mocked(canAccessSensitivity).mockResolvedValue(true)
     prismaMock.case.create.mockResolvedValue(baseCase)
     prismaMock.caseCompany.create.mockResolvedValue({})

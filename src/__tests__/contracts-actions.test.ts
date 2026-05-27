@@ -35,7 +35,7 @@ vi.mock('@/lib/logger', () => ({
   })),
 }))
 
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn() }))
 
 import { createContract, updateContractStatus, deleteContract } from '@/actions/contracts'
 

@@ -1,14 +1,14 @@
 'use server'
 
+import type { Prisma } from '@prisma/client'
+import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { canAccessCompany, canAccessModule, getAccessibleCompanies } from '@/lib/permissions'
-import { revalidatePath } from 'next/cache'
-import type { ActionResult } from '@/types/actions'
-import type { Prisma } from '@prisma/client'
 import { checkActionRateLimit } from '@/lib/rate-limit'
 import { submitForReviewSchema, reviewDocumentSchema } from '@/lib/validations/document-review'
+import type { ActionResult } from '@/types/actions'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Page-data queries (flyt Prisma-kald ud af page.tsx)
@@ -113,41 +113,59 @@ export interface DocRow {
   caseName: string | null
 }
 
-export async function getDocumentsPageData(): Promise<DocRow[]> {
+export interface DocumentsPageResult {
+  rows: DocRow[]
+  totalCount: number
+  page: number
+  pageSize: number
+}
+
+export async function getDocumentsPageData(page = 1, pageSize = 25): Promise<DocumentsPageResult> {
   const session = await auth()
-  if (!session) return []
+  if (!session) return { rows: [], totalCount: 0, page: 1, pageSize }
 
   const orgId = session.user.organizationId
   const hasAccess = await canAccessModule(session.user.id, 'documents', orgId)
-  if (!hasAccess) return []
+  if (!hasAccess) return { rows: [], totalCount: 0, page: 1, pageSize }
 
   const companyIds = await getAccessibleCompanies(session.user.id, orgId)
 
-  const documents = await prisma.document.findMany({
-    where: {
-      organization_id: orgId,
-      deleted_at: null,
-      // Vis kun dokumenter tilknyttet selskaber brugeren har adgang til,
-      // eller dokumenter uden selskabstilknytning (org-niveau dokumenter).
-      OR: [{ company_id: null }, { company_id: { in: companyIds } }],
-    },
-    include: {
-      company: { select: { id: true, name: true } },
-      contract: { select: { id: true, display_name: true } },
-      case: { select: { id: true, title: true, case_number: true } },
-      extraction: {
-        select: {
-          extraction_status: true,
-          reviewed_at: true,
-          agreement_score: true,
-          extracted_fields: true,
+  const safePage = Math.max(1, page)
+  const safePageSize = Math.min(Math.max(1, pageSize), 100)
+  const skip = (safePage - 1) * safePageSize
+
+  const where = {
+    organization_id: orgId,
+    deleted_at: null,
+    // Vis kun dokumenter tilknyttet selskaber brugeren har adgang til,
+    // eller dokumenter uden selskabstilknytning (org-niveau dokumenter).
+    OR: [{ company_id: null }, { company_id: { in: companyIds } }],
+  }
+
+  const [documents, totalCount] = await Promise.all([
+    prisma.document.findMany({
+      where,
+      include: {
+        company: { select: { id: true, name: true } },
+        contract: { select: { id: true, display_name: true } },
+        case: { select: { id: true, title: true, case_number: true } },
+        extraction: {
+          select: {
+            extraction_status: true,
+            reviewed_at: true,
+            agreement_score: true,
+            extracted_fields: true,
+          },
         },
       },
-    },
-    orderBy: { uploaded_at: 'desc' },
-  })
+      orderBy: { uploaded_at: 'desc' },
+      skip,
+      take: safePageSize,
+    }),
+    prisma.document.count({ where }),
+  ])
 
-  return documents.map((d) => {
+  const rows = documents.map((d) => {
     const aiStatus = deriveAiStatus(d.extraction)
     const konf = deriveConfidence(d.extraction)
     const att = countAttention(d.extraction)
@@ -174,6 +192,8 @@ export async function getDocumentsPageData(): Promise<DocRow[]> {
       caseName: d.case ? `#${d.case.case_number ?? d.case.id.slice(0, 6)} ${d.case.title}` : null,
     }
   })
+
+  return { rows, totalCount, page: safePage, pageSize: safePageSize }
 }
 
 const documentReviewInclude = {

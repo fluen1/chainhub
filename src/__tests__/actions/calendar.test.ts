@@ -15,6 +15,7 @@ vi.mock('@/lib/auth', () => ({ auth: vi.fn() }))
 vi.mock('@/lib/db', () => ({ prisma: prismaMock }))
 vi.mock('@/lib/permissions', () => ({
   getAccessibleCompanies: vi.fn(),
+  canAccessModule: vi.fn().mockResolvedValue(true),
 }))
 vi.mock('@/lib/logger', () => ({
   createLogger: vi
@@ -25,10 +26,15 @@ vi.mock('@/lib/logger', () => ({
 vi.mock('@/lib/labels', () => ({
   getVisitTypeLabel: vi.fn().mockReturnValue('Opfølgningsbesøg'),
 }))
+vi.mock('next/cache', () => ({
+  revalidatePath: vi.fn(),
+  revalidateTag: vi.fn(),
+  unstable_cache: vi.fn((fn: (...args: unknown[]) => unknown) => fn),
+}))
 
+import { getCalendarEvents } from '@/actions/calendar'
 import { auth } from '@/lib/auth'
 import { getAccessibleCompanies } from '@/lib/permissions'
-import { getCalendarEvents } from '@/actions/calendar'
 
 function makeSession() {
   return {

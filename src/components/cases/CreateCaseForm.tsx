@@ -1,17 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { createCase } from '@/actions/cases'
-import {
-  CASE_TYPE_LABELS,
-  CASE_SUBTYPE_BY_TYPE,
-  type CreateCaseInput,
-} from '@/lib/validations/case'
-import { zodCaseType, zodCaseSubtype } from '@/lib/zod-enums'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
+import { createCase } from '@/actions/cases'
 import {
   Panel,
   BButton,
@@ -21,6 +15,13 @@ import {
   BFieldWrap,
   Breadcrumb,
 } from '@/components/ui/b'
+import { safeAction } from '@/lib/safe-action'
+import {
+  CASE_TYPE_LABELS,
+  CASE_SUBTYPE_BY_TYPE,
+  type CreateCaseInput,
+} from '@/lib/validations/case'
+import { zodCaseType, zodCaseSubtype } from '@/lib/zod-enums'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CreateCaseForm — B-stil port. Felter: title, caseType, caseSubtype,
@@ -101,18 +102,13 @@ export function CreateCaseForm() {
       notes: notes || undefined,
     }
 
-    const result = await createCase(input)
+    const data = await safeAction(createCase(input), 'Sagen kunne ikke oprettes — prøv igen.')
     setLoading(false)
 
-    if (result.error) {
-      toast.error(result.error)
-      return
-    }
+    if (!data) return
 
-    if (result.data) {
-      toast.success('Sag oprettet')
-      router.push(`/cases/${result.data.id}`)
-    }
+    toast.success('Sag oprettet')
+    router.push(`/cases/${data.id}`)
   }
 
   const subtypes = selectedType ? (CASE_SUBTYPE_BY_TYPE[selectedType] ?? []) : []

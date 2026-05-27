@@ -50,7 +50,7 @@ vi.mock('@/lib/permissions', () => ({
 vi.mock('@/lib/rate-limit', () => ({
   checkActionRateLimit: vi.fn().mockResolvedValue({ limited: false }),
 }))
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn() }))
 vi.mock('@/lib/logger', () => ({ captureError: vi.fn() }))
 vi.mock('@/lib/ai/invalidate-cache', () => ({
   invalidateCompanyInsightsCache: vi.fn().mockResolvedValue(undefined),
@@ -65,9 +65,6 @@ vi.mock('@/lib/date-helpers', () => ({
   formatShortDate: vi.fn((d: Date | null) => (d ? d.toISOString().split('T')[0] : '—')),
 }))
 
-import { auth } from '@/lib/auth'
-import { canAccessCompany, canAccessSensitivity, canAccessModule } from '@/lib/permissions'
-import { checkActionRateLimit } from '@/lib/rate-limit'
 import {
   createContract,
   updateContractStatus,
@@ -75,6 +72,9 @@ import {
   updateContract,
   addContractParty,
 } from '@/actions/contracts'
+import { auth } from '@/lib/auth'
+import { canAccessCompany, canAccessSensitivity, canAccessModule } from '@/lib/permissions'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 
 // Hjælpefunktioner
 function makeSession(overrides?: Partial<{ id: string; organizationId: string }>) {

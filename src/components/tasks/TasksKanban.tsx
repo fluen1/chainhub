@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { toast } from 'sonner'
-import { Badge, type BadgeTone, Panel, SegmentedToggle } from '@/components/ui/b'
 import { updateTaskStatus } from '@/actions/tasks'
 import type { TaskRow } from '@/app/(dashboard)/tasks/tasks-list-b'
+import { Badge, type BadgeTone, Panel, SegmentedToggle } from '@/components/ui/b'
+import { safeAction } from '@/lib/safe-action'
 
 // ────────────────────────────────────────────────────────────────────────────
 // Kanban-visning for opgaver — drag-drop, keyboard-nav og aria-live
@@ -78,10 +79,13 @@ export function KanbanView({
 }) {
   const [localTasks, setLocalTasks] = useState<TaskRow[]>(tasks)
   const prevTasksRef = useRef(tasks)
-  if (prevTasksRef.current !== tasks) {
-    prevTasksRef.current = tasks
-    setLocalTasks(tasks)
-  }
+
+  useEffect(() => {
+    if (prevTasksRef.current !== tasks) {
+      prevTasksRef.current = tasks
+      setLocalTasks(tasks)
+    }
+  }, [tasks])
 
   const [liveMsg, setLiveMsg] = useState('')
   const [grabbedId, setGrabbedId] = useState<string | null>(null)
@@ -99,11 +103,13 @@ export function KanbanView({
       setLocalTasks(updated)
       setLiveMsg(`Opgave "${task.titel}" flyttet til ${statusLabel(newStatus)}`)
 
-      const result = await updateTaskStatus({ taskId, status: newStatus })
-      if ('error' in result) {
+      const data = await safeAction(
+        updateTaskStatus({ taskId, status: newStatus }),
+        'Status kunne ikke opdateres — prøv igen.'
+      )
+      if (!data) {
         setLocalTasks(prev)
         setLiveMsg(`Opgave "${task.titel}" kunne ikke flyttes — prøv igen`)
-        toast.error(result.error ?? 'Status kunne ikke opdateres')
       }
     },
     [localTasks]

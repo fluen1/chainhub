@@ -83,7 +83,11 @@ vi.mock('@/lib/audit', () => ({
   recordAuditEvent: vi.fn().mockResolvedValue(undefined),
 }))
 
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
+vi.mock('next/cache', () => ({
+  revalidatePath: vi.fn(),
+  revalidateTag: vi.fn(),
+  unstable_cache: (fn: Function) => fn,
+}))
 
 // react.cache er RSC-only — brug noop i test-miljø
 vi.mock('react', async (importOriginal) => {

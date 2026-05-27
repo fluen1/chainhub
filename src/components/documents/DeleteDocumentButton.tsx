@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useTransition } from 'react'
 import { Trash2 } from 'lucide-react'
-import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import { AccessibleDialog } from '@/components/ui/accessible-dialog'
+import { useState, useTransition } from 'react'
+import { toast } from 'sonner'
 import { deleteDocument } from '@/actions/documents'
+import { AccessibleDialog } from '@/components/ui/accessible-dialog'
 
 interface Props {
   documentId: string
@@ -41,7 +41,7 @@ export function DeleteDocumentButton({
   function handleConfirm() {
     startTransition(async () => {
       const result = await deleteDocument(documentId)
-      if ('error' in result) {
+      if (result.error) {
         toast.error(result.error)
         return
       }

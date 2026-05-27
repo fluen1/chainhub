@@ -11,6 +11,35 @@ const config = [
   {
     rules: {
       'jsx-a11y/no-autofocus': 'warn',
+      '@typescript-eslint/no-explicit-any': 'error',
+
+      // Exhaustive deps skal være error — manglende deps er reelle bugs
+      'react-hooks/exhaustive-deps': 'error',
+
+      // Import-sortering: eksterne pakker → interne aliaser (@/) → relative
+      // eslint-plugin-import er inkluderet i node_modules via eslint-config-next
+      'import/order': [
+        'warn',
+        {
+          groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
+          pathGroups: [
+            {
+              pattern: '@/**',
+              group: 'internal',
+              position: 'before',
+            },
+          ],
+          pathGroupsExcludedImportTypes: ['builtin'],
+          alphabetize: { order: 'asc', caseInsensitive: true },
+        },
+      ],
+    },
+  },
+  // Test-filer: `any` er acceptabelt i mock-kald og test-fixtures
+  {
+    files: ['src/__tests__/**/*.ts', 'src/__tests__/**/*.tsx'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
 ]

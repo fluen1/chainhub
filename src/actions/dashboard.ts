@@ -1,18 +1,8 @@
 'use server'
 
+import { unstable_cache } from 'next/cache'
 import { z } from 'zod'
-import { prisma } from '@/lib/db'
-import { getAccessibleCompanies } from '@/lib/permissions'
 import { auth } from '@/lib/auth'
-
-// Løs UUID-validering: accepterer alle 8-4-4-4-12 hex-formater inkl. nil-UUIDs (seed-data)
-const looseUuid = z
-  .string()
-  .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
-const dashboardSchema = z.object({
-  preloadedCompanyIds: z.array(looseUuid).optional(),
-})
-import type { InlineKpi, SidebarBadge } from '@/types/ui'
 import {
   buildInlineKpis,
   buildTimelineSections,
@@ -25,10 +15,220 @@ import {
   type DashboardData,
   type HeatmapCompany,
 } from '@/lib/dashboard-helpers'
+import { prisma } from '@/lib/db'
 import { getContractTypeLabel } from '@/lib/labels'
+import { getAccessibleCompanies, canAccessModule } from '@/lib/permissions'
+
+// Løs UUID-validering: accepterer alle 8-4-4-4-12 hex-formater inkl. nil-UUIDs (seed-data)
+const looseUuid = z
+  .string()
+  .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
+const dashboardSchema = z.object({
+  preloadedCompanyIds: z.array(looseUuid).optional(),
+})
+import type { InlineKpi, SidebarBadge } from '@/types/ui'
 
 // Typer re-eksporteres ikke herfra (Next.js 16: 'use server' filer kan ikke re-eksportere typer).
 // Importér direkte fra '@/lib/dashboard-helpers' i stedet.
+
+// ---------------------------------------------------------------
+// Cached DB-batch — 60s TTL, bust via 'dashboard'-tag
+// ---------------------------------------------------------------
+const getCachedDashboardRawData = unstable_cache(
+  async (orgId: string, companyIds: string[]) => {
+    const today = new Date()
+    const weekEnd = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    const twoWeekEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+
+    const [
+      overdueTasks,
+      todayAndFutureTasks,
+      expiringContracts,
+      expiredContracts,
+      openCases,
+      upcomingVisits,
+      recentDocuments,
+      companies,
+      tasksByCompany,
+      contractCoverageRaw,
+      financialMetrics,
+      overdueTasksCount,
+      documentsCount,
+      personsCount,
+    ] = await Promise.all([
+      prisma.task.findMany({
+        where: {
+          organization_id: orgId,
+          deleted_at: null,
+          status: { not: 'LUKKET' },
+          due_date: { lt: today },
+          OR: [{ company_id: { in: companyIds } }, { company_id: null }],
+        },
+        orderBy: { due_date: 'asc' },
+        take: 15,
+        select: { id: true, title: true, due_date: true, company_id: true },
+      }),
+      prisma.task.findMany({
+        where: {
+          organization_id: orgId,
+          deleted_at: null,
+          status: { not: 'LUKKET' },
+          due_date: { gte: today, lte: twoWeekEnd },
+          OR: [{ company_id: { in: companyIds } }, { company_id: null }],
+        },
+        orderBy: { due_date: 'asc' },
+        take: 20,
+        select: { id: true, title: true, due_date: true, company_id: true },
+      }),
+      prisma.contract.findMany({
+        where: {
+          organization_id: orgId,
+          company_id: { in: companyIds },
+          deleted_at: null,
+          status: 'AKTIV',
+          expiry_date: { not: null, gte: today, lte: twoWeekEnd },
+        },
+        orderBy: { expiry_date: 'asc' },
+        take: 20,
+        include: { company: { select: { id: true, name: true } } },
+      }),
+      prisma.contract.findMany({
+        where: {
+          organization_id: orgId,
+          company_id: { in: companyIds },
+          deleted_at: null,
+          status: 'AKTIV',
+          expiry_date: { not: null, lt: today },
+        },
+        orderBy: { expiry_date: 'desc' },
+        take: 5,
+        include: { company: { select: { id: true, name: true } } },
+      }),
+      prisma.case.findMany({
+        where: {
+          organization_id: orgId,
+          deleted_at: null,
+          status: { in: ['NY', 'AKTIV', 'AFVENTER_EKSTERN', 'AFVENTER_KLIENT'] },
+          case_companies: { some: { company_id: { in: companyIds } } },
+        },
+        orderBy: { updated_at: 'desc' },
+        take: 20,
+        include: {
+          case_companies: {
+            include: { company: { select: { id: true, name: true } } },
+            take: 1,
+          },
+        },
+      }),
+      prisma.visit.findMany({
+        where: {
+          organization_id: orgId,
+          deleted_at: null,
+          status: 'PLANLAGT',
+          visit_date: { gte: today, lte: twoWeekEnd },
+        },
+        orderBy: { visit_date: 'asc' },
+        take: 10,
+        include: { company: { select: { id: true, name: true } } },
+      }),
+      prisma.document.findMany({
+        where: {
+          organization_id: orgId,
+          deleted_at: null,
+          uploaded_at: { gte: new Date(Date.now() - 48 * 60 * 60 * 1000) },
+        },
+        orderBy: { uploaded_at: 'desc' },
+        take: 10,
+        include: {
+          company: { select: { id: true, name: true } },
+          extraction: { select: { extraction_status: true } },
+        },
+      }),
+      prisma.company.findMany({
+        where: { organization_id: orgId, id: { in: companyIds }, deleted_at: null },
+        select: { id: true, name: true },
+        orderBy: { name: 'asc' },
+      }),
+      prisma.task.groupBy({
+        by: ['company_id'],
+        where: {
+          organization_id: orgId,
+          deleted_at: null,
+          status: { not: 'LUKKET' },
+          due_date: { lt: today },
+          company_id: { in: companyIds },
+        },
+        _count: true,
+      }),
+      prisma.contract.findMany({
+        where: {
+          organization_id: orgId,
+          company_id: { in: companyIds },
+          deleted_at: null,
+          status: 'AKTIV',
+        },
+        select: { company_id: true, system_type: true },
+      }),
+      prisma.financialMetric.findMany({
+        where: {
+          organization_id: orgId,
+          company_id: { in: companyIds },
+          period_type: 'HELAAR',
+          metric_type: { in: ['OMSAETNING', 'EBITDA'] },
+        },
+        orderBy: { period_year: 'desc' },
+        select: { company_id: true, metric_type: true, value: true, period_year: true },
+      }),
+      prisma.task.count({
+        where: {
+          organization_id: orgId,
+          deleted_at: null,
+          status: { not: 'LUKKET' },
+          due_date: { lt: today },
+          OR: [{ company_id: { in: companyIds } }, { company_id: null }],
+        },
+      }),
+      prisma.document.count({
+        where: {
+          organization_id: orgId,
+          deleted_at: null,
+          OR: [{ company_id: { in: companyIds } }, { company_id: null }],
+        },
+      }),
+      prisma.person.count({
+        where: {
+          organization_id: orgId,
+          deleted_at: null,
+          OR: [
+            { company_persons: { some: { company_id: { in: companyIds } } } },
+            { company_persons: { none: {} } },
+          ],
+        },
+      }),
+    ])
+
+    return {
+      overdueTasks,
+      todayAndFutureTasks,
+      expiringContracts,
+      expiredContracts,
+      openCases,
+      upcomingVisits,
+      recentDocuments,
+      companies,
+      tasksByCompany,
+      contractCoverageRaw,
+      financialMetrics,
+      overdueTasksCount,
+      documentsCount,
+      personsCount,
+      today,
+      weekEnd,
+    }
+  },
+  ['dashboard-raw'],
+  { revalidate: 60, tags: ['dashboard'] }
+)
 
 // ---------------------------------------------------------------
 // Hoved-aggregator — én query-parallel batch
@@ -43,6 +243,9 @@ export async function getDashboardData(preloadedCompanyIds?: string[]): Promise<
   const userId = session.user.id
   const organizationId = session.user.organizationId
 
+  const hasModuleAccess = await canAccessModule(userId, 'companies', organizationId)
+  if (!hasModuleAccess) return emptyDashboardData('GROUP_READONLY')
+
   const [companyIds, roleRows] = await Promise.all([
     parsed.data.preloadedCompanyIds !== undefined
       ? Promise.resolve(parsed.data.preloadedCompanyIds)
@@ -54,16 +257,12 @@ export async function getDashboardData(preloadedCompanyIds?: string[]): Promise<
   ])
 
   const role = pickHighestPriorityRole(roleRows)
-  const today = new Date()
-  const weekEnd = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-  // "Udløber 30d" strip-KPI: 30 dage fremfor 14 (matcher sidebar-data + dashboard-label)
-  const twoWeekEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
 
   if (companyIds.length === 0) {
     return emptyDashboardData(role)
   }
 
-  const [
+  const {
     overdueTasks,
     todayAndFutureTasks,
     expiringContracts,
@@ -78,188 +277,11 @@ export async function getDashboardData(preloadedCompanyIds?: string[]): Promise<
     overdueTasksCount,
     documentsCount,
     personsCount,
-  ] = await Promise.all([
-    // Forfaldne opgaver (overdue section) — scope: selskaber brugeren har adgang til + org-brede tasks (company_id=null)
-    prisma.task.findMany({
-      where: {
-        organization_id: organizationId,
-        deleted_at: null,
-        status: { not: 'LUKKET' },
-        due_date: { lt: today },
-        OR: [{ company_id: { in: companyIds } }, { company_id: null }],
-      },
-      orderBy: { due_date: 'asc' },
-      take: 15,
-      select: { id: true, title: true, due_date: true, company_id: true },
-    }),
+    today,
+    weekEnd,
+  } = await getCachedDashboardRawData(organizationId, companyIds)
 
-    // Opgaver i dag + denne/næste uge — scope: selskaber brugeren har adgang til + org-brede tasks (company_id=null)
-    prisma.task.findMany({
-      where: {
-        organization_id: organizationId,
-        deleted_at: null,
-        status: { not: 'LUKKET' },
-        due_date: { gte: today, lte: twoWeekEnd },
-        OR: [{ company_id: { in: companyIds } }, { company_id: null }],
-      },
-      orderBy: { due_date: 'asc' },
-      take: 20,
-      select: { id: true, title: true, due_date: true, company_id: true },
-    }),
-
-    // Udløbende kontrakter (næste 14 dage, ikke allerede udløbet)
-    prisma.contract.findMany({
-      where: {
-        organization_id: organizationId,
-        company_id: { in: companyIds },
-        deleted_at: null,
-        status: 'AKTIV',
-        expiry_date: { not: null, gte: today, lte: twoWeekEnd },
-      },
-      orderBy: { expiry_date: 'asc' },
-      take: 20,
-      include: { company: { select: { id: true, name: true } } },
-    }),
-
-    // Allerede udløbne kontrakter (til overdue timeline-sektionen)
-    prisma.contract.findMany({
-      where: {
-        organization_id: organizationId,
-        company_id: { in: companyIds },
-        deleted_at: null,
-        status: 'AKTIV',
-        expiry_date: { not: null, lt: today },
-      },
-      orderBy: { expiry_date: 'desc' },
-      take: 5,
-      include: { company: { select: { id: true, name: true } } },
-    }),
-
-    // Åbne sager — bruger `case_companies` (ikke `companies`)
-    // Scope: kun sager tilknyttet selskaber brugeren har adgang til
-    prisma.case.findMany({
-      where: {
-        organization_id: organizationId,
-        deleted_at: null,
-        status: { in: ['NY', 'AKTIV', 'AFVENTER_EKSTERN', 'AFVENTER_KLIENT'] },
-        case_companies: { some: { company_id: { in: companyIds } } },
-      },
-      orderBy: { updated_at: 'desc' },
-      take: 20,
-      include: {
-        case_companies: {
-          include: { company: { select: { id: true, name: true } } },
-          take: 1,
-        },
-      },
-    }),
-
-    // Kommende besøg
-    prisma.visit.findMany({
-      where: {
-        organization_id: organizationId,
-        deleted_at: null,
-        status: 'PLANLAGT',
-        visit_date: { gte: today, lte: twoWeekEnd },
-      },
-      orderBy: { visit_date: 'asc' },
-      take: 10,
-      include: { company: { select: { id: true, name: true } } },
-    }),
-
-    // Nye dokumenter (sidste 48h) — `uploaded_at` + `file_name`
-    prisma.document.findMany({
-      where: {
-        organization_id: organizationId,
-        deleted_at: null,
-        uploaded_at: { gte: new Date(Date.now() - 48 * 60 * 60 * 1000) },
-      },
-      orderBy: { uploaded_at: 'desc' },
-      take: 10,
-      include: {
-        company: { select: { id: true, name: true } },
-        extraction: { select: { extraction_status: true } },
-      },
-    }),
-
-    // Alle accessible companies (til heatmap + contract coverage)
-    // Uden _count.cases — counts bygges fra openCases i JS bagefter
-    prisma.company.findMany({
-      where: {
-        organization_id: organizationId,
-        id: { in: companyIds },
-        deleted_at: null,
-      },
-      select: { id: true, name: true },
-      orderBy: { name: 'asc' },
-    }),
-
-    // Forfaldne opgaver grupperet per selskab (til heatmap urgency)
-    prisma.task.groupBy({
-      by: ['company_id'],
-      where: {
-        organization_id: organizationId,
-        deleted_at: null,
-        status: { not: 'LUKKET' },
-        due_date: { lt: today },
-        company_id: { in: companyIds },
-      },
-      _count: true,
-    }),
-
-    // Kontrakter med system_type for coverage-matrix
-    prisma.contract.findMany({
-      where: {
-        organization_id: organizationId,
-        company_id: { in: companyIds },
-        deleted_at: null,
-        status: 'AKTIV',
-      },
-      select: { company_id: true, system_type: true },
-    }),
-
-    // Financial totals (seneste helår) — hent alt og filtrer i JS til seneste pr. selskab
-    prisma.financialMetric.findMany({
-      where: {
-        organization_id: organizationId,
-        company_id: { in: companyIds },
-        period_type: 'HELAAR',
-        metric_type: { in: ['OMSAETNING', 'EBITDA'] },
-      },
-      orderBy: { period_year: 'desc' },
-      select: { company_id: true, metric_type: true, value: true, period_year: true },
-    }),
-
-    // Badge-counts — scope: selskaber brugeren har adgang til + org-brede tasks (company_id=null)
-    prisma.task.count({
-      where: {
-        organization_id: organizationId,
-        deleted_at: null,
-        status: { not: 'LUKKET' },
-        due_date: { lt: today },
-        OR: [{ company_id: { in: companyIds } }, { company_id: null }],
-      },
-    }),
-    // Documents scope: selskaber brugeren har adgang til + org-brede dokumenter (company_id=null)
-    prisma.document.count({
-      where: {
-        organization_id: organizationId,
-        deleted_at: null,
-        OR: [{ company_id: { in: companyIds } }, { company_id: null }],
-      },
-    }),
-    // Persons scope: tilknyttet selskaber brugeren har adgang til + orphan-personer
-    prisma.person.count({
-      where: {
-        organization_id: organizationId,
-        deleted_at: null,
-        OR: [
-          { company_persons: { some: { company_id: { in: companyIds } } } },
-          { company_persons: { none: {} } },
-        ],
-      },
-    }),
-  ])
+  // DB-data er nu hentet via getCachedDashboardRawData ovenfor.
 
   // Byg company map (erstatter den manglende Task.company relation)
   const companyMap = new Map(companies.map((c) => [c.id, c]))

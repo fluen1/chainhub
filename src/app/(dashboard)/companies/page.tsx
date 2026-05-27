@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
-import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { CompaniesListB, type CompanyRow } from './companies-list-b'
 import { getCompaniesPageData } from '@/actions/companies'
+import { auth } from '@/lib/auth'
+import { parsePaginationParams } from '@/lib/pagination'
+import { CompaniesListB, type CompanyRow } from './companies-list-b'
 
 export const metadata: Metadata = { title: 'Selskaber' }
 
@@ -29,11 +30,16 @@ function formatMioShort(val: number | null): string {
   return `${mio.toFixed(1).replace('.', ',')}m`
 }
 
-export default async function CompaniesPage() {
+export default async function CompaniesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>
+}) {
   const session = await auth()
   if (!session) redirect('/login')
 
-  const rawData = await getCompaniesPageData()
+  const { page } = parsePaginationParams((await searchParams).page, 25)
+  const rawData = await getCompaniesPageData(page, 25)
 
   if (!rawData || rawData.companies.length === 0) {
     return (
@@ -41,11 +47,23 @@ export default async function CompaniesPage() {
         companies={[]}
         canCreate={rawData?.canCreate ?? false}
         totalsExtra={{ persons: 0 }}
+        totalCount={rawData?.totalCount ?? 0}
+        page={page}
+        pageSize={25}
       />
     )
   }
 
-  const { companies, openCaseCounts, expiredCounts, expiringCounts, financials, personsCount, canCreate } = rawData
+  const {
+    companies,
+    openCaseCounts,
+    expiredCounts,
+    expiringCounts,
+    financials,
+    personsCount,
+    canCreate,
+    totalCount,
+  } = rawData
 
   const openCaseMap = new Map(openCaseCounts.map((r) => [r.company_id, Number(r.count)]))
   const expiredMap = new Map(expiredCounts.map((r) => [r.company_id, Number(r.count)]))
@@ -118,6 +136,9 @@ export default async function CompaniesPage() {
       companies={rows}
       canCreate={canCreate}
       totalsExtra={{ persons: personsCount }}
+      totalCount={totalCount}
+      page={page}
+      pageSize={25}
     />
   )
 }

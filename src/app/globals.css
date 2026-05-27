@@ -46,7 +46,7 @@
     /* Tekst */
     --b-text-1:       #1f2328;
     --b-text-2:       #586069; /* Kontrast-fix: #586069 = 4.7:1 på #fafafa (WCAG 2.2 AA) */
-    --b-text-3:       #8c959f;
+    --b-text-3:       #6e7781; /* Kontrast-fix: #6e7781 = ~4.5:1 på hvid (WCAG 2.2 AA) */
 
     /* Status — bg + fg */
     --b-red-bg:       #ffebe9;  --b-red-fg:   #cf222e;

@@ -28,6 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             // Error-toasts skal stå længere — fejl er handlingsanvisende og må
             // ikke forsvinde før brugeren har nået at læse dem.
             classNames: { error: 'min-w-[320px]' },
+            // ARIA: Sonner har built-in aria-live="polite" og role="status" på sin toast-container.
           }}
         />
       </body>

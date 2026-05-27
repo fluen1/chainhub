@@ -1,8 +1,7 @@
 'use client'
 
-import { useMemo, useState, useEffect, useTransition } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
-import { ExportButton } from '@/components/ui/export-button'
+import { useMemo, useState, useEffect, useTransition } from 'react'
 import {
   Breadcrumb,
   PageHeader,
@@ -25,6 +24,7 @@ import {
   BottomBar,
   Panel,
 } from '@/components/ui/b'
+import { ExportButton } from '@/components/ui/export-button'
 
 // ────────────────────────────────────────────────────────────────────────────
 // /cases — klient-komponent. Følger samme arketype som /contracts.
@@ -101,7 +101,17 @@ function statusTone(status: string): BadgeTone {
   }
 }
 
-export function CasesListB({ cases, totalCount }: { cases: CaseRow[]; totalCount: number }) {
+export function CasesListB({
+  cases,
+  totalCount,
+  serverPage = 1,
+  serverPageSize = 25,
+}: {
+  cases: CaseRow[]
+  totalCount: number
+  serverPage?: number
+  serverPageSize?: number
+}) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -131,6 +141,8 @@ export function CasesListB({ cases, totalCount }: { cases: CaseRow[]; totalCount
     })
   }
 
+  /* eslint-disable react-hooks/set-state-in-effect */
+  // Sync lokal UI-state fra URL-params ved navigation (browser back/forward).
   useEffect(() => {
     setViewMode((searchParams.get('view') as ViewMode) || 'flat')
     setSearch(searchParams.get('search') ?? '')
@@ -138,8 +150,9 @@ export function CasesListB({ cases, totalCount }: { cases: CaseRow[]; totalCount
     setTypeFil(searchParams.get('type') ?? 'Alle')
     setStatusFil(normalizeStatusParam(searchParams.get('status')))
     setPage(parseInt(searchParams.get('page') ?? '1', 10) || 1)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [searchParams])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const uniqueSelskaber = useMemo(
     () =>
@@ -220,9 +233,11 @@ export function CasesListB({ cases, totalCount }: { cases: CaseRow[]; totalCount
     router.push(`/cases/${id}`)
   }
 
-  const maxPage = Math.max(1, Math.ceil(sorted.length / pageSize))
-  const safePage = Math.min(page, maxPage)
-  const paged = sorted.slice((safePage - 1) * pageSize, safePage * pageSize)
+  // When no client filter is active, use server-side pagination (URL-driven)
+  const serverMaxPage = Math.max(1, Math.ceil(totalCount / serverPageSize))
+  const maxPage = hasFilter ? Math.max(1, Math.ceil(sorted.length / pageSize)) : serverMaxPage
+  const safePage = hasFilter ? Math.min(page, maxPage) : serverPage
+  const paged = hasFilter ? sorted.slice((safePage - 1) * pageSize, safePage * pageSize) : sorted
 
   return (
     <>
@@ -324,12 +339,14 @@ export function CasesListB({ cases, totalCount }: { cases: CaseRow[]; totalCount
       {viewMode === 'grouped' && <GroupedView cases={sorted} onRowClick={goTo} />}
       {viewMode === 'kanban' && <KanbanView cases={filtered} onRowClick={goTo} />}
 
-      {viewMode !== 'kanban' && sorted.length > 0 && (
+      {viewMode !== 'kanban' && (sorted.length > 0 || !hasFilter) && (
         <Pager
           info={
             viewMode === 'flat'
-              ? `${Math.min((safePage - 1) * pageSize + 1, sorted.length)}–${Math.min(safePage * pageSize, sorted.length)} af ${sorted.length}`
-              : `${sorted.length} sager · ${new Set(sorted.map((c) => c.selskab)).size} selskaber`
+              ? hasFilter
+                ? `${Math.min((safePage - 1) * pageSize + 1, sorted.length)}–${Math.min(safePage * pageSize, sorted.length)} af ${sorted.length}`
+                : `${Math.min((serverPage - 1) * serverPageSize + 1, totalCount)}–${Math.min(serverPage * serverPageSize, totalCount)} af ${totalCount}`
+              : `${totalCount} sager · ${new Set(sorted.map((c) => c.selskab)).size} selskaber`
           }
           page={viewMode === 'flat' ? safePage : undefined}
           maxPage={viewMode === 'flat' ? maxPage : undefined}
@@ -341,9 +358,9 @@ export function CasesListB({ cases, totalCount }: { cases: CaseRow[]; totalCount
                 }
               : undefined
           }
-          pageSize={viewMode === 'flat' ? pageSize : undefined}
+          pageSize={viewMode === 'flat' ? (hasFilter ? pageSize : serverPageSize) : undefined}
           onPageSize={
-            viewMode === 'flat'
+            viewMode === 'flat' && hasFilter
               ? (n) => {
                   setPageSize(n)
                   setPage(1)
@@ -567,7 +584,7 @@ function KanbanView({ cases, onRowClick }: { cases: CaseRow[]; onRowClick: (id: 
   const arkiv = cases.filter((c) => c.rawStatus === 'ARKIVERET')
 
   return (
-    <div className="grid gap-2.5 lg:grid-cols-4 lg:items-start">
+    <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4 lg:items-start">
       <KanbanCol title="Åben / Aktiv" tone="default" items={aaben} onRowClick={onRowClick} />
       <KanbanCol title="Afventer" tone="amber" items={afventer} onRowClick={onRowClick} />
       <KanbanCol title="Lukket" tone="default" items={lukket} onRowClick={onRowClick} />

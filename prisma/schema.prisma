@@ -778,6 +778,7 @@ model Task {
   @@index([organization_id, assigned_to, deleted_at])
   @@index([organization_id, due_date])
   @@index([organization_id, deleted_at, status])
+  @@index([organization_id, company_id])
 }
 
 model TaskHistory {
@@ -908,6 +909,7 @@ model FinancialMetric {
 
   @@unique([organization_id, company_id, metric_type, period_type, period_year])
   @@index([organization_id, company_id])
+  @@index([organization_id, company_id, metric_type, period_year])
 }
 
 model TimeEntry {

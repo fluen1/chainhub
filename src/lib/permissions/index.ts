@@ -1,5 +1,5 @@
-import { prisma } from '@/lib/db'
 import { type SensitivityLevel, type UserRole } from '@prisma/client'
+import { prisma } from '@/lib/db'
 
 // Sensitivity hierarchy — higher index = more sensitive
 const SENSITIVITY_ORDER: SensitivityLevel[] = [
@@ -71,6 +71,40 @@ export async function canAccessCompany(
   }
 
   return false
+}
+
+/**
+ * Bulk-variant af canAccessCompany — ét enkelt DB-kald for N selskaber.
+ * Returnerer et Set med de company-IDs brugeren har adgang til.
+ * Brug i stedet for at kalde canAccessCompany i en løkke.
+ */
+export async function canAccessCompanies(
+  userId: string,
+  companyIds: string[],
+  organizationId: string
+): Promise<Set<string>> {
+  if (companyIds.length === 0) return new Set()
+
+  const roles = await getUserRoles(userId, organizationId)
+
+  // Har brugeren ALL-scope? → alle company-IDs er tilgængelige
+  const hasAllScope = roles.some(
+    (assignment) => GROUP_ROLES.includes(assignment.role) && assignment.scope === 'ALL'
+  )
+  if (hasAllScope) return new Set(companyIds)
+
+  // Ellers: byg et Set af eksplicit tildelte company-IDs
+  const assignedIds = new Set<string>()
+  for (const assignment of roles) {
+    if (assignment.scope === 'ASSIGNED' || assignment.scope === 'OWN') {
+      for (const cid of assignment.company_ids) {
+        assignedIds.add(cid)
+      }
+    }
+  }
+
+  // Returnér skæringssættet: kun de ønskede IDs brugeren rent faktisk har adgang til
+  return new Set(companyIds.filter((id) => assignedIds.has(id)))
 }
 
 export async function canAccessSensitivity(

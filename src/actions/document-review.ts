@@ -1,14 +1,15 @@
 'use server'
 
+import type { Prisma } from '@prisma/client'
+import { revalidatePath } from 'next/cache'
+import { z } from 'zod'
+import { logFieldCorrection } from '@/lib/ai/feedback'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { logFieldCorrection } from '@/lib/ai/feedback'
+import { captureError } from '@/lib/logger'
 import { canAccessCompany } from '@/lib/permissions'
-import { revalidatePath } from 'next/cache'
-import type { ActionResult } from '@/types/actions'
-import type { Prisma } from '@prisma/client'
-import { z } from 'zod'
 import { checkActionRateLimit } from '@/lib/rate-limit'
+import type { ActionResult } from '@/types/actions'
 
 const approveSchema = z.string().min(1, 'Ekstraktions-ID mangler')
 
@@ -57,16 +58,21 @@ export async function approveDocumentReview(extractionId: string): Promise<Actio
   const rl = await checkActionRateLimit(session.user.organizationId)
   if (rl.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
-  await prisma.documentExtraction.update({
-    where: { id: extractionId },
-    data: {
-      reviewed_by: session.user.id,
-      reviewed_at: new Date(),
-    },
-  })
+  try {
+    await prisma.documentExtraction.update({
+      where: { id: extractionId },
+      data: {
+        reviewed_by: session.user.id,
+        reviewed_at: new Date(),
+      },
+    })
 
-  revalidatePath('/documents')
-  return { data: undefined }
+    revalidatePath('/documents')
+    return { data: undefined }
+  } catch (err) {
+    captureError(err, { namespace: 'action:document-review', extra: { extractionId } })
+    return { error: 'Noget gik galt — prøv igen.' }
+  }
 }
 
 export async function saveFieldDecision(params: {
@@ -124,39 +130,47 @@ export async function saveFieldDecision(params: {
             ? (params.manualValue ?? null)
             : params.existingValue // accept_missing
 
-  // Log correction via feedback system
-  const correctionId = await logFieldCorrection({
-    extraction_id: params.extractionId,
-    organization_id: session.user.organizationId,
-    field_name: params.fieldName,
-    ai_value: params.aiValue,
-    user_value: userValue,
-    confidence: params.confidence,
-    schema_version: extraction.schema_version,
-    prompt_version: extraction.prompt_version,
-    corrected_by: session.user.id,
-  })
+  try {
+    // Log correction via feedback system
+    const correctionId = await logFieldCorrection({
+      extraction_id: params.extractionId,
+      organization_id: session.user.organizationId,
+      field_name: params.fieldName,
+      ai_value: params.aiValue,
+      user_value: userValue,
+      confidence: params.confidence,
+      schema_version: extraction.schema_version,
+      prompt_version: extraction.prompt_version,
+      corrected_by: session.user.id,
+    })
 
-  // Update field_decisions JSON on the extraction
-  const currentDecisions = (extraction.field_decisions as Record<string, unknown>) ?? {}
-  const updatedDecisions = {
-    ...currentDecisions,
-    [params.fieldName]: {
-      decision: params.decision,
-      decided_at: new Date().toISOString(),
-      decided_by: session.user.id,
-      correction_id: correctionId,
-      manual_value: params.manualValue ?? null,
-    },
+    // Update field_decisions JSON on the extraction
+    const currentDecisions = (extraction.field_decisions as Record<string, unknown>) ?? {}
+    const updatedDecisions = {
+      ...currentDecisions,
+      [params.fieldName]: {
+        decision: params.decision,
+        decided_at: new Date().toISOString(),
+        decided_by: session.user.id,
+        correction_id: correctionId,
+        manual_value: params.manualValue ?? null,
+      },
+    }
+
+    await prisma.documentExtraction.update({
+      where: { id: params.extractionId },
+      data: { field_decisions: updatedDecisions as Prisma.InputJsonValue },
+    })
+
+    revalidatePath('/documents')
+    return { data: { correctionId } }
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:document-review',
+      extra: { extractionId: params.extractionId, fieldName: params.fieldName },
+    })
+    return { error: 'Noget gik galt — prøv igen.' }
   }
-
-  await prisma.documentExtraction.update({
-    where: { id: params.extractionId },
-    data: { field_decisions: updatedDecisions as Prisma.InputJsonValue },
-  })
-
-  revalidatePath('/documents')
-  return { data: { correctionId } }
 }
 
 const rejectSchema = z.object({
@@ -205,23 +219,31 @@ export async function rejectDocumentExtraction(params: {
   const currentDecisions = (extraction.field_decisions as Record<string, unknown>) ?? {}
   const normalizedReason = params.reason?.trim() ? params.reason.trim() : null
 
-  await prisma.documentExtraction.update({
-    where: { id: params.extractionId },
-    data: {
-      extraction_status: 'rejected',
-      reviewed_by: session.user.id,
-      reviewed_at: new Date(),
-      field_decisions: {
-        ...currentDecisions,
-        __rejection__: {
-          rejected_at: new Date().toISOString(),
-          rejected_by: session.user.id,
-          reason: normalizedReason,
-        },
-      } as Prisma.InputJsonValue,
-    },
-  })
+  try {
+    await prisma.documentExtraction.update({
+      where: { id: params.extractionId },
+      data: {
+        extraction_status: 'rejected',
+        reviewed_by: session.user.id,
+        reviewed_at: new Date(),
+        field_decisions: {
+          ...currentDecisions,
+          __rejection__: {
+            rejected_at: new Date().toISOString(),
+            rejected_by: session.user.id,
+            reason: normalizedReason,
+          },
+        } as Prisma.InputJsonValue,
+      },
+    })
 
-  revalidatePath('/documents')
-  return { data: undefined }
+    revalidatePath('/documents')
+    return { data: undefined }
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:document-review',
+      extra: { extractionId: params.extractionId },
+    })
+    return { error: 'Noget gik galt — prøv igen.' }
+  }
 }

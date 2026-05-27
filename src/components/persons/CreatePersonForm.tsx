@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createPerson } from '@/actions/persons'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { toast } from 'sonner'
+import { createPerson } from '@/actions/persons'
 import {
   Panel,
   BButton,
@@ -14,6 +14,7 @@ import {
   BFieldRow,
   Breadcrumb,
 } from '@/components/ui/b'
+import { safeAction } from '@/lib/safe-action'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CreatePersonForm — B-stil port. Felter: firstName, lastName, email, phone, notes.
@@ -48,25 +49,23 @@ export function CreatePersonForm() {
 
     setLoading(true)
 
-    const result = await createPerson({
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      email: email || undefined,
-      phone: phone || undefined,
-      notes: notes || undefined,
-    })
+    const data = await safeAction(
+      createPerson({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: email || undefined,
+        phone: phone || undefined,
+        notes: notes || undefined,
+      }),
+      'Personen kunne ikke oprettes — prøv igen.'
+    )
 
     setLoading(false)
 
-    if (result.error) {
-      toast.error(result.error)
-      return
-    }
+    if (!data) return
 
-    if (result.data) {
-      toast.success('Person oprettet')
-      router.push(`/persons/${result.data.id}`)
-    }
+    toast.success('Person oprettet')
+    router.push(`/persons/${data.id}`)
   }
 
   return (

@@ -28,6 +28,7 @@ vi.mock('@/lib/db', () => ({
 
 vi.mock('@/lib/permissions', () => ({
   canAccessCompany: vi.fn().mockResolvedValue(true),
+  canAccessModule: vi.fn().mockResolvedValue(true),
 }))
 
 vi.mock('@/lib/logger', () => ({
@@ -35,7 +36,7 @@ vi.mock('@/lib/logger', () => ({
   createLogger: vi.fn(() => ({ debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() })),
 }))
 
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn() }))
 
 import {
   createTask,

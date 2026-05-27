@@ -1,7 +1,8 @@
 'use client'
 
+import { useRouter, usePathname } from 'next/navigation'
 import { useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { DeleteDocumentButton } from '@/components/documents/DeleteDocumentButton'
 import {
   Breadcrumb,
   PageHeader,
@@ -27,7 +28,6 @@ import {
   BottomBar,
   PlusBadge,
 } from '@/components/ui/b'
-import { DeleteDocumentButton } from '@/components/documents/DeleteDocumentButton'
 
 // ────────────────────────────────────────────────────────────────────────────
 // /documents — klient-komponent.
@@ -83,8 +83,16 @@ function attTone(att: number): BadgeTone {
   return 'red'
 }
 
-export function DocumentsListB({ documents }: { documents: DocRow[] }) {
+interface DocumentsListBProps {
+  documents: DocRow[]
+  totalCount: number
+  page: number
+  pageSize: number
+}
+
+export function DocumentsListB({ documents, totalCount, page, pageSize }: DocumentsListBProps) {
   const router = useRouter()
+  const pathname = usePathname()
 
   const [viewMode, setViewMode] = useState<ViewMode>('flat')
   const [search, setSearch] = useState('')
@@ -95,8 +103,20 @@ export function DocumentsListB({ documents }: { documents: DocRow[] }) {
   const [attOpen, setAttOpen] = useState(true)
   const [sortCol, setSortCol] = useState<SortKey>('datoSort')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(15)
+
+  function navigatePage(newPage: number) {
+    const params = new URLSearchParams()
+    params.set('page', String(newPage))
+    params.set('pageSize', String(pageSize))
+    router.push(`${pathname}?${params.toString()}`)
+  }
+
+  function navigatePageSize(newPageSize: number) {
+    const params = new URLSearchParams()
+    params.set('page', '1')
+    params.set('pageSize', String(newPageSize))
+    router.push(`${pathname}?${params.toString()}`)
+  }
 
   const uniqueSelskaber = useMemo(
     () =>
@@ -151,7 +171,6 @@ export function DocumentsListB({ documents }: { documents: DocRow[] }) {
     return arr
   }, [filtered, sortCol, sortDir])
 
-  const totalCount = documents.length
   const aiCount = useMemo(() => documents.filter((d) => d.aiStatus === 'AI ✓').length, [documents])
   const revCount = useMemo(
     () => documents.filter((d) => d.aiStatus === 'Review').length,
@@ -188,16 +207,17 @@ export function DocumentsListB({ documents }: { documents: DocRow[] }) {
     setExtFil('Alle')
     setAiFil('Alle')
     setAttOnly(false)
-    setPage(1)
   }
 
   function goTo(id: string) {
     router.push(`/documents/review/${id}`)
   }
 
-  const maxPage = Math.max(1, Math.ceil(sorted.length / pageSize))
+  // Server-side paginering: alle dokumenter på denne side vises; client-filtre gælder lokalt.
+  const maxPage = Math.max(1, Math.ceil(totalCount / pageSize))
   const safePage = Math.min(page, maxPage)
-  const paged = sorted.slice((safePage - 1) * pageSize, safePage * pageSize)
+  // Klient-side sortering og filtrering på de server-hentede dokumenter
+  const paged = sorted
 
   return (
     <>
@@ -226,48 +246,26 @@ export function DocumentsListB({ documents }: { documents: DocRow[] }) {
       <Strip cells={stripCells} />
 
       <FilterRow>
-        <FilterSearch
-          value={search}
-          onChange={(v) => {
-            setSearch(v)
-            setPage(1)
-          }}
-          placeholder="Søg dokumenter..."
-        />
+        <FilterSearch value={search} onChange={setSearch} placeholder="Søg dokumenter..." />
         <FilterDropdown
           label="Selskab"
           options={['Alle', ...uniqueSelskaber]}
           value={selFil}
-          onChange={(v) => {
-            setSelFil(v)
-            setPage(1)
-          }}
+          onChange={setSelFil}
         />
         <FilterDropdown
           label="Filtype"
           options={['Alle', ...uniqueExts]}
           value={extFil}
-          onChange={(v) => {
-            setExtFil(v)
-            setPage(1)
-          }}
+          onChange={setExtFil}
         />
         <FilterDropdown
           label="AI-status"
           options={AI_STATUS_OPTS}
           value={aiFil}
-          onChange={(v) => {
-            setAiFil(v)
-            setPage(1)
-          }}
+          onChange={setAiFil}
         />
-        <FilterButton
-          active={attOnly}
-          onClick={() => {
-            setAttOnly((v) => !v)
-            setPage(1)
-          }}
-        >
+        <FilterButton active={attOnly} onClick={() => setAttOnly((v) => !v)}>
           {attOnly ? '⚡ Kræver review ×' : '⚡ Kræver review'}
         </FilterButton>
         {hasFilter && <FilterReset onClick={resetFilters} />}
@@ -312,17 +310,14 @@ export function DocumentsListB({ documents }: { documents: DocRow[] }) {
       )}
       {viewMode === 'grouped' && <GroupedView docs={sorted} onRowClick={goTo} />}
 
-      {viewMode === 'flat' && sorted.length > 0 && (
+      {viewMode === 'flat' && totalCount > 0 && (
         <Pager
-          info={`${Math.min((safePage - 1) * pageSize + 1, sorted.length)}–${Math.min(safePage * pageSize, sorted.length)} af ${sorted.length}`}
+          info={`Side ${safePage} af ${maxPage} · ${totalCount} dokumenter i alt`}
           page={safePage}
           maxPage={maxPage}
-          onPage={setPage}
+          onPage={navigatePage}
           pageSize={pageSize}
-          onPageSize={(n) => {
-            setPageSize(n)
-            setPage(1)
-          }}
+          onPageSize={navigatePageSize}
           sizes={[15, 25, 50]}
         />
       )}
@@ -330,9 +325,8 @@ export function DocumentsListB({ documents }: { documents: DocRow[] }) {
       <BottomBar
         left={
           <>
-            {sorted.length} {sorted.length === 1 ? 'dokument' : 'dokumenter'} vist · {aiCount}{' '}
-            AI-extracted
-            {hasFilter && ` · filtreret fra ${totalCount}`}
+            {sorted.length} {sorted.length === 1 ? 'dokument' : 'dokumenter'} på denne side ·{' '}
+            {aiCount} AI-extracted · {totalCount} i alt
           </>
         }
       />

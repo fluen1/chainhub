@@ -57,7 +57,7 @@ const { prismaMock, txMock, mockTask } = vi.hoisted(() => {
 
 vi.mock('@/lib/auth', () => ({ auth: vi.fn() }))
 vi.mock('@/lib/db', () => ({ prisma: prismaMock }))
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn(), revalidateTag: vi.fn() }))
 vi.mock('@/lib/audit', () => ({ recordAuditEvent: vi.fn() }))
 vi.mock('@/lib/logger', () => ({ captureError: vi.fn() }))
 vi.mock('@/lib/rate-limit', () => ({
@@ -68,8 +68,6 @@ vi.mock('@/lib/permissions', () => ({
   getAccessibleCompanies: vi.fn().mockResolvedValue(['c1']),
 }))
 
-import { auth } from '@/lib/auth'
-import { canAccessCompany } from '@/lib/permissions'
 import {
   createTask,
   updateTaskStatus,
@@ -79,6 +77,8 @@ import {
   deleteTask,
   getTasksPaginated,
 } from '@/actions/tasks'
+import { auth } from '@/lib/auth'
+import { canAccessCompany } from '@/lib/permissions'
 
 const SESSION = {
   user: { id: 'u1', organizationId: 'org-1', email: 'test@test.dk', name: 'Test' },

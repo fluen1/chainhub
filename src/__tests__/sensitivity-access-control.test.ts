@@ -17,6 +17,7 @@ vi.mock('@/lib/auth', () => ({
 vi.mock('@/lib/permissions', () => ({
   canAccessModule: vi.fn().mockResolvedValue(true),
   canAccessCompany: vi.fn().mockResolvedValue(true),
+  canAccessCompanies: vi.fn().mockResolvedValue(new Set(['company-1'])),
   canAccessSensitivity: vi.fn().mockResolvedValue(true),
   getAccessibleCompanies: vi.fn().mockResolvedValue(['company-1']),
 }))
@@ -31,6 +32,7 @@ vi.mock('@/lib/logger', () => ({
 
 vi.mock('next/cache', () => ({
   revalidatePath: vi.fn(),
+  revalidateTag: vi.fn(),
 }))
 
 vi.mock('@/lib/ai/invalidate-cache', () => ({

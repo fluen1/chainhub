@@ -1,16 +1,17 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { captureError } from '@/lib/logger'
 import { canAccessCompany } from '@/lib/permissions'
-import { revalidatePath } from 'next/cache'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 import {
   createCompanyNoteSchema,
   updateCompanyNoteSchema,
   togglePinNoteSchema,
 } from '@/lib/validations/company-note'
 import type { ActionResult } from '@/types/actions'
-import { checkActionRateLimit } from '@/lib/rate-limit'
 
 export interface CompanyNoteWithAuthor {
   id: string
@@ -64,17 +65,25 @@ export async function createCompanyNote(input: {
   const rl = await checkActionRateLimit(session.user.organizationId)
   if (rl.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
-  const note = await prisma.companyNote.create({
-    data: {
-      organization_id: session.user.organizationId,
-      company_id: parsed.data.companyId,
-      content: parsed.data.content,
-      created_by: session.user.id,
-    },
-  })
+  try {
+    const note = await prisma.companyNote.create({
+      data: {
+        organization_id: session.user.organizationId,
+        company_id: parsed.data.companyId,
+        content: parsed.data.content,
+        created_by: session.user.id,
+      },
+    })
 
-  revalidatePath(`/companies/${parsed.data.companyId}`)
-  return { data: { id: note.id } }
+    revalidatePath(`/companies/${parsed.data.companyId}`)
+    return { data: { id: note.id } }
+  } catch (err) {
+    captureError(err, {
+      namespace: 'action:company-notes',
+      extra: { companyId: parsed.data.companyId },
+    })
+    return { error: 'Noget gik galt — prøv igen.' }
+  }
 }
 
 export async function updateCompanyNote(input: {
@@ -96,13 +105,18 @@ export async function updateCompanyNote(input: {
   })
   if (!existing) return { error: 'Notat ikke fundet' }
 
-  await prisma.companyNote.update({
-    where: { id: parsed.data.noteId },
-    data: { content: parsed.data.content },
-  })
+  try {
+    await prisma.companyNote.update({
+      where: { id: parsed.data.noteId },
+      data: { content: parsed.data.content },
+    })
 
-  revalidatePath(`/companies/${existing.company_id}`)
-  return { data: undefined }
+    revalidatePath(`/companies/${existing.company_id}`)
+    return { data: undefined }
+  } catch (err) {
+    captureError(err, { namespace: 'action:company-notes', extra: { noteId: parsed.data.noteId } })
+    return { error: 'Noget gik galt — prøv igen.' }
+  }
 }
 
 export async function toggleNotePin(noteId: string): Promise<ActionResult<void>> {
@@ -121,13 +135,18 @@ export async function toggleNotePin(noteId: string): Promise<ActionResult<void>>
   })
   if (!existing) return { error: 'Notat ikke fundet' }
 
-  await prisma.companyNote.update({
-    where: { id: parsed.data.noteId },
-    data: { pinned: !existing.pinned },
-  })
+  try {
+    await prisma.companyNote.update({
+      where: { id: parsed.data.noteId },
+      data: { pinned: !existing.pinned },
+    })
 
-  revalidatePath(`/companies/${existing.company_id}`)
-  return { data: undefined }
+    revalidatePath(`/companies/${existing.company_id}`)
+    return { data: undefined }
+  } catch (err) {
+    captureError(err, { namespace: 'action:company-notes', extra: { noteId: parsed.data.noteId } })
+    return { error: 'Noget gik galt — prøv igen.' }
+  }
 }
 
 export async function deleteCompanyNote(noteId: string): Promise<ActionResult<void>> {
@@ -148,11 +167,16 @@ export async function deleteCompanyNote(noteId: string): Promise<ActionResult<vo
   const rl = await checkActionRateLimit(session.user.organizationId)
   if (rl.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
-  await prisma.companyNote.update({
-    where: { id: noteId },
-    data: { deleted_at: new Date() },
-  })
+  try {
+    await prisma.companyNote.update({
+      where: { id: noteId },
+      data: { deleted_at: new Date() },
+    })
 
-  revalidatePath(`/companies/${existing.company_id}`)
-  return { data: undefined }
+    revalidatePath(`/companies/${existing.company_id}`)
+    return { data: undefined }
+  } catch (err) {
+    captureError(err, { namespace: 'action:company-notes', extra: { noteId } })
+    return { error: 'Noget gik galt — prøv igen.' }
+  }
 }
