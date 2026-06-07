@@ -6,7 +6,7 @@ test.describe('Settings — organisation', () => {
     await page.goto('/settings')
     await expect(page.getByRole('heading', { name: 'Organisation' })).toBeVisible()
 
-    const newName = `TandlægeGruppen E2E ${Date.now()}`
+    const newName = `OptikGruppen E2E ${Date.now()}`
     const nameInput = page.locator('input[type="text"]').first()
     await nameInput.fill(newName)
     await page.getByRole('button', { name: /Gem ændringer/ }).click()
@@ -21,7 +21,7 @@ test.describe('Settings — organisation', () => {
     expect(org?.name).toBe(newName)
 
     // Reset til seed-værdi for ikke at forurene andre tests
-    await prisma.organization.updateMany({ data: { name: 'TandlægeGruppen A/S' } })
+    await prisma.organization.updateMany({ data: { name: 'OptikGruppen A/S' } })
     await prisma.$disconnect()
   })
 

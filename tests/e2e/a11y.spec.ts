@@ -25,7 +25,7 @@ interface SeedIds {
 
 // uid(n) i prisma/seed.ts genererer '00000000-0000-0000-0000-<padStart(12,'0')>'.
 // Hardcoded første-ID for hver entitet (seed-data er stable).
-// Company 1000 er holding — vi bruger 1001 (klinik Tandlæge Østerbro).
+// Company 1000 er holding — vi bruger 1001 (butik Optik Østerbro).
 const SEED_IDS: SeedIds = {
   companyId: '00000000-0000-0000-0000-000000001001',
   contractId: '00000000-0000-0000-0000-000000005001',

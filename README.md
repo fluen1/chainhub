@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/fluen1/chainhub/actions/workflows/ci.yml/badge.svg)](https://github.com/fluen1/chainhub/actions/workflows/ci.yml)
 
-B2B SaaS til kædegruppers porteføljestyring — kontraktstyring, governance, sagshåndtering, økonomi og personrelationer i ét dashboard. Bygget til kæder (tandlæge-, optiker-, fysio-, franchise-) der co-ejer lokationsselskaber med lokale partnere.
+B2B SaaS til kædegruppers porteføljestyring — kontraktstyring, governance, sagshåndtering, økonomi og personrelationer i ét dashboard. Bygget til kæder (optiker-, fysio-, læge-, franchise-) der co-ejer lokationsselskaber med lokale partnere.
 
 **Perspektivet er ALTID hovedkontorets.** Se [CLAUDE.md](CLAUDE.md) for full kernemodel.
 
@@ -68,7 +68,7 @@ npm run dev
 Login med seed-bruger:
 
 - `philip@chainhub.dk` / `password123` (GROUP_OWNER — fuld adgang)
-- `maria@tandlaegegruppen.dk` / `password123` (GROUP_LEGAL)
+- `maria@optikgruppen.dk` / `password123` (GROUP_LEGAL)
 
 ---
 

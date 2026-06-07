@@ -21,9 +21,9 @@ test.describe('Companies CRUD', () => {
   })
 
   test('selskabs-detalje viser alle hovedsektioner', async ({ loggedInPage: page }) => {
-    // Brug seed-selskab Tandlæge Østerbro ApS
+    // Brug seed-selskab Optik Østerbro ApS
     await page.goto('/companies')
-    await page.getByText('Tandlæge Østerbro ApS').click()
+    await page.getByText('Optik Østerbro ApS').click()
     // Sektioner fra /companies/[id] single-page
     await expect(page.getByRole('heading', { name: 'Ejerskab' })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Kontrakter' })).toBeVisible()

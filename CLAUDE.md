@@ -2,7 +2,7 @@
 
 ## Hvad er ChainHub?
 
-ChainHub er et B2B SaaS-system til kædegrupper (tandlæge-, optiker-, fysio-, franchisekæder) der co-ejer lokationsselskaber med lokale partnere. Systemet samler kontraktstyring, governance, sagshåndtering, økonomi og personrelationer i ét dashboard.
+ChainHub er et B2B SaaS-system til kædegrupper (optiker-, fysio-, læge- og franchisekæder) der co-ejer lokationsselskaber med lokale partnere. Systemet samler kontraktstyring, governance, sagshåndtering, økonomi og personrelationer i ét dashboard.
 
 **Perspektivet er ALTID hovedkontorets.** Brugerne sidder i kædegruppen og styrer nedad. Lokale partnere og klinikpersonale er data i systemet — ikke primære brugere.
 
@@ -10,7 +10,7 @@ ChainHub er et B2B SaaS-system til kædegrupper (tandlæge-, optiker-, fysio-, f
 
 - **Kædegruppen/hovedkontoret** (brugerne) = McDonald's Corp.
 - **Lokationsselskabet** (ApS med CVR) = den enkelte restaurant
-- **Lokal partner** (fx tandlægen) = franchisetageren
+- **Lokal partner** (fx optikeren) = franchisetageren
 - **Holdingselskabet** (medejer via ejeraftale) = McDonald's som part
 
 **Formål:** Giv hovedkontoret ét samlet overblik og fuld kontrol over alle lokationer — kontrakter, governance, økonomi og personrelationer. Erstatter Excel/email-workflows ved 5–56+ lokationer, hvor flat lists er ubrugelige og hierarkisk navigation er påkrævet.
@@ -180,7 +180,7 @@ curl -X POST http://localhost:3000/api/cron/daily-digest -H "Authorization: Bear
 - **Sensitivity:** PUBLIC < STANDARD < INTERN < FORTROLIG < STRENGT_FORTROLIG
 - **Roller:** GROUP_OWNER, GROUP_ADMIN, GROUP_LEGAL, GROUP_FINANCE, GROUP_READONLY, COMPANY_MANAGER, COMPANY_LEGAL, COMPANY_READONLY
 - **Lokal dev:** `docker-compose.yml` klar til lokal PG (kræver Docker Desktop)
-- **Seed-brugere:** philip@chainhub.dk / password123 (GROUP_OWNER), maria@tandlaegegruppen.dk / password123 (GROUP_LEGAL)
+- **Seed-brugere:** philip@chainhub.dk / password123 (GROUP_OWNER), maria@optikgruppen.dk / password123 (GROUP_LEGAL)
 
 ---
 
