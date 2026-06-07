@@ -321,9 +321,7 @@ function MonthView({
         {WEEKDAYS_DA_SHORT.map((d, i) => (
           <div
             key={d}
-            className={`px-2 py-1.5 text-[10px] font-semibold uppercase ${
-              i >= 5 ? 'text-b-3' : 'text-b-2'
-            }`}
+            className="px-2 py-1.5 text-[10px] font-semibold uppercase text-b-2"
             style={{ letterSpacing: '0.5px' }}
           >
             {d}
@@ -343,8 +341,8 @@ function MonthView({
             <div
               key={`${ds}-${i}`}
               className={`relative border-b border-r border-b-divider p-1 ${
-                isWE ? 'bg-[#fbfbfd]' : ''
-              } ${!day.curr ? 'opacity-50' : ''} ${i % 7 === 6 ? 'border-r-0' : ''}`}
+                !day.curr ? 'bg-[#f0f2f5]' : isWE ? 'bg-[#fbfbfd]' : ''
+              } ${i % 7 === 6 ? 'border-r-0' : ''}`}
             >
               <div
                 className={`b-tnum inline-flex h-5 w-5 items-center justify-center text-[11px] font-medium ${

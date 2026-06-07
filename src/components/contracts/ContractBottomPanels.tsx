@@ -157,7 +157,7 @@ export function ContractBottomPanels({
           ))
         )}
         <PanelFooter>
-          <span className="text-b-3">
+          <span>
             Viser seneste {activityRows.length} begivenheder · versionshistorik vist separat ovenfor
           </span>
         </PanelFooter>

@@ -65,7 +65,7 @@ export function OrganizationForm({
 
         <label className="block">
           <span className="mb-1 block text-xs font-medium text-slate-600">
-            CVR <span className="text-slate-400">(8 cifre, valgfri)</span>
+            CVR <span className="text-slate-500">(8 cifre, valgfri)</span>
           </span>
           <input
             type="text"
