@@ -1,6 +1,9 @@
 import { z } from 'zod'
 
-const isProd = process.env.NODE_ENV === 'production'
+// `next build` sætter NODE_ENV=production men kører på dev/CI-maskiner uden
+// produktions-secrets — runtime-krav håndhæves derfor kun udenfor build-fasen.
+const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build'
+const isProd = process.env.NODE_ENV === 'production' && !isBuildPhase
 
 const requiredInProd = (msg: string) =>
   isProd ? z.string().min(1, `${msg} — påkrævet i production`) : z.string().optional()
