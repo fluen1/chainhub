@@ -297,19 +297,21 @@ async function main() {
     },
   ]
 
-  await Promise.all(
-    companyData.map((c) =>
-      prisma.company.upsert({
-        where: { id: c.id },
-        update: {
-          latitude: c.latitude,
-          longitude: c.longitude,
-          parent_company_id: 'parent_company_id' in c ? c.parent_company_id : null,
-        },
-        create: { ...c, organization_id: org.id, created_by: philip.id },
-      })
-    )
-  )
+  // Holding (uid 1000) skal eksistere før klinikkerne pga. parent_company_id-FK
+  const upsertCompany = (c: (typeof companyData)[number]) =>
+    prisma.company.upsert({
+      where: { id: c.id },
+      update: {
+        latitude: c.latitude,
+        longitude: c.longitude,
+        parent_company_id: 'parent_company_id' in c ? c.parent_company_id : null,
+      },
+      create: { ...c, organization_id: org.id, created_by: philip.id },
+    })
+  const [holdingData, ...clinicData] = companyData
+  if (!holdingData) throw new Error('companyData er tom — holding mangler')
+  await upsertCompany(holdingData)
+  await Promise.all(clinicData.map(upsertCompany))
 
   // ══════════════════════════════════════════════════════════════
   // 5. EJERSKABER
