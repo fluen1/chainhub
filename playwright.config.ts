@@ -1,4 +1,21 @@
 import { defineConfig, devices } from '@playwright/test'
+import fs from 'node:fs'
+import path from 'node:path'
+
+// Lokale runs: DATABASE_URL m.fl. bor i .env/.env.local (loades af Next, ikke af
+// denne config). Uden denne loader blev webServer.env.DATABASE_URL '' lokalt,
+// og alle loggedInPage-tests fejlede. CI sætter variablerne eksplicit og rammes ikke
+// (eksisterende process.env-værdier overskrives aldrig).
+for (const file of ['.env.local', '.env']) {
+  const p = path.join(__dirname, file)
+  if (!fs.existsSync(p)) continue
+  for (const line of fs.readFileSync(p, 'utf8').split(/\r?\n/)) {
+    const m = line.match(/^([A-Za-z_][A-Za-z0-9_]*)=(.*)$/)
+    if (m && m[1] && process.env[m[1]] === undefined) {
+      process.env[m[1]] = (m[2] ?? '').replace(/^["']|["']$/g, '')
+    }
+  }
+}
 
 const PORT = process.env.E2E_PORT ?? '3010'
 const BASE_URL = `http://localhost:${PORT}`

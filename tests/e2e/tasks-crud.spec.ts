@@ -35,8 +35,8 @@ test.describe('Tasks CRUD', () => {
 
     await page.getByLabel('Titel', { exact: true }).fill(title)
 
-    // BSegmentedField til prioritet — renderes som <button type="button">
-    await page.getByRole('button', { name: 'Kritisk' }).click()
+    // BSegmentedField til prioritet — renderes som role="radio" (overskriver implicit button-role)
+    await page.getByRole('radio', { name: 'Kritisk' }).click()
 
     await page.getByRole('button', { name: /Opret opgave/i }).click()
     await expect(page.getByText('Opgave oprettet')).toBeVisible({ timeout: 10_000 })

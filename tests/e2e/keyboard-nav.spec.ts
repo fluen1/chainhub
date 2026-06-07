@@ -5,9 +5,10 @@ test.describe('keyboard navigation', () => {
     await page.goto('/dashboard')
     await page.waitForLoadState('networkidle')
 
-    // Tab ind i sidebar (spring skip-link over)
+    // Tab ind i sidebar: skip-link → ChatToggle-knap → NotificationBell-link (første <a>)
     await page.keyboard.press('Tab') // skip-to-content link
-    await page.keyboard.press('Tab') // første sidebar-link
+    await page.keyboard.press('Tab') // ChatToggle-knap (tilføjet i redesign)
+    await page.keyboard.press('Tab') // første <a> i sidebar (NotificationBell)
 
     const activeElement = await page.evaluate(() => document.activeElement?.tagName)
     expect(activeElement).toBe('A')
@@ -55,7 +56,7 @@ test.describe('keyboard navigation', () => {
     await page.waitForLoadState('networkidle')
 
     // Find burger-knap og aktiver med keyboard
-    const burgerButton = page.locator('button[aria-label]').first()
+    const burgerButton = page.locator('button[aria-label="Åbn hovedmenu"]')
     await burgerButton.focus()
     await page.keyboard.press('Enter')
 
