@@ -23,7 +23,7 @@ async function main() {
     update: {},
     create: {
       id: uid(1),
-      name: 'TandlægeGruppen A/S',
+      name: 'OptikGruppen A/S',
       cvr: '12345678',
       plan: 'business',
       chain_structure: true,
@@ -49,13 +49,13 @@ async function main() {
 
   const maria = await prisma.user.upsert({
     where: {
-      organization_id_email: { organization_id: org.id, email: 'maria@tandlaegegruppen.dk' },
+      organization_id_email: { organization_id: org.id, email: 'maria@optikgruppen.dk' },
     },
     update: {},
     create: {
       id: uid(11),
       organization_id: org.id,
-      email: 'maria@tandlaegegruppen.dk',
+      email: 'maria@optikgruppen.dk',
       name: 'Maria Sørensen',
       password_hash: passwordHash,
     },
@@ -63,13 +63,13 @@ async function main() {
 
   const thomas = await prisma.user.upsert({
     where: {
-      organization_id_email: { organization_id: org.id, email: 'thomas@tandlaegegruppen.dk' },
+      organization_id_email: { organization_id: org.id, email: 'thomas@optikgruppen.dk' },
     },
     update: {},
     create: {
       id: uid(12),
       organization_id: org.id,
-      email: 'thomas@tandlaegegruppen.dk',
+      email: 'thomas@optikgruppen.dk',
       name: 'Thomas Mikkelsen',
       password_hash: passwordHash,
     },
@@ -206,7 +206,7 @@ async function main() {
   const companyData = [
     {
       id: uid(1000),
-      name: 'TandlægeGruppen Holding ApS',
+      name: 'OptikGruppen Holding ApS',
       cvr: '10000001',
       company_type: 'ApS',
       address: 'Bredgade 25',
@@ -219,7 +219,7 @@ async function main() {
     },
     {
       id: uid(1001),
-      name: 'Tandlæge Østerbro ApS',
+      name: 'Optik Østerbro ApS',
       cvr: '87654321',
       company_type: 'ApS',
       address: 'Østerbrogade 123',
@@ -232,7 +232,7 @@ async function main() {
     },
     {
       id: uid(1002),
-      name: 'Tandlæge Aarhus ApS',
+      name: 'Optik Aarhus ApS',
       cvr: '11223344',
       company_type: 'ApS',
       address: 'Frederiksgade 45',
@@ -245,7 +245,7 @@ async function main() {
     },
     {
       id: uid(1003),
-      name: 'Tandlæge Vesterbro ApS',
+      name: 'Optik Vesterbro ApS',
       cvr: '22334455',
       company_type: 'ApS',
       address: 'Vesterbrogade 78',
@@ -258,7 +258,7 @@ async function main() {
     },
     {
       id: uid(1004),
-      name: 'Tandlæge Nordhavn ApS',
+      name: 'Optik Nordhavn ApS',
       cvr: '33445566',
       company_type: 'ApS',
       address: 'Århusgade 88',
@@ -271,7 +271,7 @@ async function main() {
     },
     {
       id: uid(1005),
-      name: 'Tandlæge Odense ApS',
+      name: 'Optik Odense ApS',
       cvr: '44556677',
       company_type: 'ApS',
       address: 'Kongensgade 55',
@@ -284,7 +284,7 @@ async function main() {
     },
     {
       id: uid(1006),
-      name: 'Tandlæge Aalborg ApS',
+      name: 'Optik Aalborg ApS',
       cvr: '55667788',
       company_type: 'ApS',
       address: 'Boulevarden 33',
@@ -468,7 +468,7 @@ async function main() {
       id: uid(5001),
       company_id: uid(1001),
       system_type: 'EJERAFTALE' as const,
-      display_name: 'Ejeraftale — Tandlæge Østerbro',
+      display_name: 'Ejeraftale — Optik Østerbro',
       status: 'AKTIV' as const,
       sensitivity: 'STRENGT_FORTROLIG' as const,
       effective_date: new Date('2020-01-01'),
@@ -478,7 +478,7 @@ async function main() {
       id: uid(5002),
       company_id: uid(1002),
       system_type: 'EJERAFTALE' as const,
-      display_name: 'Ejeraftale — Tandlæge Aarhus',
+      display_name: 'Ejeraftale — Optik Aarhus',
       status: 'AKTIV' as const,
       sensitivity: 'STRENGT_FORTROLIG' as const,
       effective_date: new Date('2021-06-01'),
@@ -487,7 +487,7 @@ async function main() {
       id: uid(5003),
       company_id: uid(1003),
       system_type: 'EJERAFTALE' as const,
-      display_name: 'Ejeraftale — Tandlæge Vesterbro',
+      display_name: 'Ejeraftale — Optik Vesterbro',
       status: 'AKTIV' as const,
       sensitivity: 'STRENGT_FORTROLIG' as const,
       effective_date: new Date('2022-03-15'),
@@ -624,7 +624,7 @@ async function main() {
       id: uid(5080),
       company_id: uid(1004),
       system_type: 'EJERAFTALE' as const,
-      display_name: 'Ejeraftale — Tandlæge Nordhavn (UDKAST)',
+      display_name: 'Ejeraftale — Optik Nordhavn (UDKAST)',
       status: 'UDKAST' as const,
       sensitivity: 'STRENGT_FORTROLIG' as const,
       notes: 'Under forhandling med Line Christensen',
@@ -645,7 +645,7 @@ async function main() {
       id: uid(5100),
       company_id: uid(1000),
       system_type: 'VEDTAEGTER' as const,
-      display_name: 'Vedtægter — TandlægeGruppen Holding',
+      display_name: 'Vedtægter — OptikGruppen Holding',
       status: 'AKTIV' as const,
       sensitivity: 'INTERN' as const,
       effective_date: new Date('2019-06-01'),
@@ -681,7 +681,7 @@ async function main() {
       status: 'AKTIV' as const,
       sensitivity: 'STRENGT_FORTROLIG' as const,
       description:
-        'Due diligence og forhandling om opkøb af eksisterende tandlægepraksis i Nordhavn.',
+        'Due diligence og forhandling om opkøb af eksisterende optikerforretning i Nordhavn.',
       responsible_id: philip.id,
       due_date: daysFromNow(30),
     },
@@ -1050,7 +1050,7 @@ async function main() {
     {
       id: uid(8004),
       company_id: uid(1000),
-      title: 'Vedtægter — TandlægeGruppen Holding',
+      title: 'Vedtægter — OptikGruppen Holding',
       file_url: '/docs/vedtaegter-holding.pdf',
       file_name: 'vedtaegter-holding.pdf',
       file_size_bytes: 120000,
@@ -1172,8 +1172,8 @@ async function main() {
   console.log('')
   console.log('🔑 Login:')
   console.log('   philip@chainhub.dk / password123  (GROUP_OWNER)')
-  console.log('   maria@tandlaegegruppen.dk / password123  (GROUP_LEGAL)')
-  console.log('   thomas@tandlaegegruppen.dk / password123  (GROUP_FINANCE)')
+  console.log('   maria@optikgruppen.dk / password123  (GROUP_LEGAL)')
+  console.log('   thomas@optikgruppen.dk / password123  (GROUP_FINANCE)')
 }
 
 main()

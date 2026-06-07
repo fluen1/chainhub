@@ -32,7 +32,7 @@ async function main() {
     parties: field(
       [
         {
-          name: 'TandlægeGruppen Holding ApS',
+          name: 'OptikGruppen Holding ApS',
           party_type: 'KAEDE_GRUPPE',
           capital_pct: 55,
           voting_pct: 55,
@@ -48,7 +48,7 @@ async function main() {
       ],
       0.95,
       1,
-      'Mellem TandlægeGruppen Holding ApS (55%) og Dr. Anne Mortensen (45%)...'
+      'Mellem OptikGruppen Holding ApS (55%) og Dr. Anne Mortensen (45%)...'
     ),
     effective_date: field('2024-01-15', 0.98, 1, 'Aftalen træder i kraft den 15. januar 2024'),
     expiry_date: field(null, 0.7, 2, 'Aftalen er tidsubegrænset'),
@@ -57,7 +57,7 @@ async function main() {
     drag_along_threshold_pct: field(75, 0.88, 4, 'Drag-along ved 75% accept'),
     tag_along_enabled: field(true, 0.85, 4, 'Tag-along ret gælder for minoritetsejere'),
     arbitration_venue: field('København', 0.6, 8, 'Tvister afgøres ved voldgift i København'),
-    company_name: field('Tandlæge Østerbro ApS', 0.99, 1, 'Tandlæge Østerbro ApS, CVR 87654321'),
+    company_name: field('Optik Østerbro ApS', 0.99, 1, 'Optik Østerbro ApS, CVR 87654321'),
   }
 
   const extraction = await prisma.documentExtraction.create({
