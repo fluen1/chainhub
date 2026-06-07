@@ -8,6 +8,7 @@ import { getVisitTypeLabel } from '@/lib/labels'
 import type { CalendarEvent } from '@/types/ui'
 import { auth } from '@/lib/auth'
 import { unstable_cache } from 'next/cache'
+import { reviveDates } from '@/lib/cache-dates'
 
 const calendarSchema = z.object({
   year: z.number().int().min(2020).max(2100),
@@ -100,11 +101,8 @@ export async function getCalendarEvents(year: number, month: number): Promise<Ca
   const startDate = new Date(parsed.data.year, parsed.data.month - 1, 1)
   const endDate = new Date(parsed.data.year, parsed.data.month, 0, 23, 59, 59, 999)
 
-  const [contracts, tasks, visits, cases] = await fetchCalendarData(
-    organizationId,
-    companyIds,
-    startDate,
-    endDate
+  const [contracts, tasks, visits, cases] = reviveDates(
+    await fetchCalendarData(organizationId, companyIds, startDate, endDate)
   )
 
   // Warn hvis nogen type ramte cap — skjulte events betyder at kæden er vokset

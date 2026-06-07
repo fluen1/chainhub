@@ -3,6 +3,7 @@
 import { unstable_cache } from 'next/cache'
 import { z } from 'zod'
 import { auth } from '@/lib/auth'
+import { reviveDates } from '@/lib/cache-dates'
 import { prisma } from '@/lib/db'
 import { getAccessibleCompanies, canAccessModule } from '@/lib/permissions'
 
@@ -143,7 +144,9 @@ export async function getRecentActivity(
       ? parsed.data.preloadedCompanyIds
       : await getAccessibleCompanies(userId, organizationId)
 
-  const { logs, users } = await fetchActivityLogs(organizationId, companyIds, sinceDate)
+  const { logs, users } = reviveDates(
+    await fetchActivityLogs(organizationId, companyIds, sinceDate)
+  )
 
   if (logs.length === 0) return []
 
