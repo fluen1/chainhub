@@ -1,6 +1,27 @@
 # PROGRESS.md — ChainHub
 
-Opdateret: Launch-readiness plan 1/4 leveret — 2026-06-08
+Opdateret: Launch-readiness plan 2/4 leveret — 2026-06-08
+
+## Launch-readiness plan 2/4 — Public-lag (forside/pricing/kontakt) ✅ (2026-06-08)
+
+Anden af 4 launch-planer. Branch `feat/launch-readiness`. Bygger oven på plan 1 (Gate 1 + dental-sanering). Etablerer det kundevendte public-lag som uautoriserede besøgende rammer, uden at røre det eksisterende dashboard.
+
+- [x] **`(public)` Next.js route-group** — ny group etableret; rod-`src/app/page.tsx` erstattet af forside (redirect til `/dashboard` ophævet)
+- [x] **Forside** (`/`) — ICP-specificeret: optiker-, fysio-, læge- og franchisekæder (ingen dental); "Gå til dashboard"-CTA synlig for indloggede brugere uden redirect (soft prompt)
+- [x] **Pricing-side** (`/pricing`) — de låste tiers dokumenteret og eksponeret:
+  - Basis 3.500 kr./md
+  - Plus 9.500 kr./md inkl. 50 AI-ekstraktioner; ekstra 75 kr./ekstraktion
+  - Enterprise: forhandles, floor 32.000 kr./md, fair-use 500 ekstraktioner
+  - Onboarding-fee: 1 kr./dok (max 2.500 kr.)
+  - Tier-data centraliseret i `src/lib/pricing.ts` med unit-tests der håndhæver priser + dental-eksklusion
+- [x] **Kontaktformular** (`/kontakt`) — server action med Zod-validering, Resend-integration, honeypot-spamguard, HTML-escaping af utrustet input (sikkerhedsfix), kvitteringsbesked + notifikation til Philip via `replyTo`; mailto-fallback ved Resend-fejl
+- [x] **`proxy.ts` auth-bypass** — `/`, `/pricing`, `/kontakt` fritaget fra krav om session
+- [x] **Kvalitetsgate ved lukning:** 2171 unit-tests passed/0 failed, tsc 0 fejl, build grøn, 52 e2e passed/0 failed, axe-sweep grøn for alle 3 public routes
+- [x] **Kendte præeksisterende udestående (IKKE plan 2):** 4 ESLint-fejl + ~38 prettier-format-issues i ældre filer — ikke introduceret i denne plan, adresseres i plan 3 eller separat cleanup
+
+**Status:** Kode på branch `feat/launch-readiness`. PR til master afventer plan 3 (legal + onboarding-docs) + plan 4 (deploy-forberedelse) + afstemning med Rico (CopenAI-regel).
+
+**Næste:** plan 3 (legal: privatlivspolitik, vilkår, databehandleraftale), plan 4 (deploy: R2, env, bootstrap, DNS).
 
 ## Launch-readiness plan 1/4 — Gate 1 + dental-sanering ✅ (2026-06-08)
 
