@@ -1,6 +1,28 @@
 # PROGRESS.md — ChainHub
 
-Opdateret: Launch-readiness plan 3b leveret — 2026-06-08
+Opdateret: Launch-readiness plan 4 leveret — tracket kode-komplet — 2026-06-08
+
+## Launch-readiness plan 4/4 — Deploy-forberedelse ✅ (2026-06-08)
+
+Fjerde og sidste af 4 launch-planer. Branch `feat/launch-readiness`. Bygger oven på plan 3b (onboarding-docs). Etablerer env-hærdning, prod-bootstrap og go-live-runbook.
+
+- [x] **Env-hærdning** — `STORAGE_PROVIDER` + `DIGEST_FROM_EMAIL` tilføjet til Zod-schema i `src/lib/env.ts`. Begge valideres ved boot. `.env.production.example`-skabelon oprettet med alle prod-nødvendige variabler (inkl. R2, Sentry, BetterStack, Resend)
+- [x] **Prod-bootstrap-script** — `src/lib/bootstrap.ts` eksponerer `bootstrapProd({ email, password, orgName })`:
+  - Afbryder med fejl hvis DB ikke er tom (beskytter mod utilsigtet re-kørsel)
+  - Opretter første org + GROUP_OWNER-bruger uden demo-data
+  - bcrypt-hash af password (cost factor 12)
+  - 5/5 unit-tests (tom DB, ikke-tom DB, svagt password, manglende felter, hash-bekræftelse)
+- [x] **CLI-wrapper** `scripts/bootstrap-prod.ts` — kørbar via `npx tsx scripts/bootstrap-prod.ts` fra terminal; læser `BOOTSTRAP_*`-env-variable; exit 1 ved fejl
+- [x] **Nye npm-scripts** — `db:migrate` (`prisma migrate deploy`, korrekt til prod) + `db:bootstrap` (kører CLI-wrapperen)
+- [x] **Go-live-runbook** `docs/ops/LAUNCH-DEPLOY.md` — trin-for-trin rækkefølge: DNS → Sentry-DSN → BetterStack webhook → R2-bucket + env → Vercel-deploy → `db:migrate` → `db:bootstrap` → røgtests. Inkl. ekstern tjekliste (domæne, CVR i privatliv, Philip-jurist-review af legal-sider)
+
+**Gate-tal ved lukning:** prettier rent, lint baseline (4 præeksisterende), tsc 0, **2179 unit-tests / 0 fail**, build grøn.
+
+**Kendt e2e-issue (IKKE plan 4, præeksisterende):** 2 tests i `tasks-crud.spec.ts` fejler pga. test-data-akkumulering på delt dev-DB — opgaver uden `due_date` sorteres `NULLS LAST` og paginerer til side 2+. Plan 4 rører ikke tasks-kode. Fix-muligheder (backlog): sæt `E2E_DATABASE_URL` (separat test-DB) eller gør testen robust (naviger til opgave via ID). Afventer Philips beslutning.
+
+**Hele launch-readiness-tracket (plan 1–4) er nu KODE-KOMPLET.** Resterende = gated infra/eksterne handlinger (runbook) + PR til Rico.
+
+**Status:** Kode på branch `feat/launch-readiness`. PR afventer afstemning med Rico (CopenAI-regel).
 
 ## Launch-readiness plan 3b — Onboarding-docs ✅ (2026-06-08)
 
