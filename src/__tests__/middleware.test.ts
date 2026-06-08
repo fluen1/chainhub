@@ -234,3 +234,32 @@ describe('middleware — authenticated users pass through protected routes', () 
     expect(mockNext).toHaveBeenCalled()
   })
 })
+
+describe('middleware — public marketing-sider passerer uden auth', () => {
+  beforeEach(() => {
+    mockNext.mockClear()
+    mockRedirect.mockClear()
+  })
+
+  it('allows / (forside) without auth', async () => {
+    await runMiddleware('/', false)
+    expect(mockNext).toHaveBeenCalled()
+    expect(mockRedirect).not.toHaveBeenCalled()
+  })
+
+  it('allows /pricing without auth', async () => {
+    await runMiddleware('/pricing', false)
+    expect(mockNext).toHaveBeenCalled()
+  })
+
+  it('allows /kontakt without auth', async () => {
+    await runMiddleware('/kontakt', false)
+    expect(mockNext).toHaveBeenCalled()
+  })
+
+  it('redirecter STADIG /dashboard til login (/ må ikke gøre alt public)', async () => {
+    await runMiddleware('/dashboard', false)
+    expect(mockRedirect).toHaveBeenCalled()
+    expect(mockNext).not.toHaveBeenCalled()
+  })
+})
