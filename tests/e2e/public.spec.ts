@@ -85,7 +85,7 @@ test.describe('public-lag — tilgængeligt uden login', () => {
 
   test('Docs-link i header fører til /docs', async ({ page }) => {
     await page.goto('/')
-    await page.getByRole('link', { name: 'Docs' }).first().click()
+    await page.getByRole('banner').getByRole('link', { name: 'Docs' }).click()
     await expect(page).toHaveURL(/\/docs$/)
   })
 })
