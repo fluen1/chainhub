@@ -75,6 +75,32 @@ test.describe('a11y — axe-core scans', () => {
   }
 })
 
+const PUBLIC_PAGES = [
+  { path: '/', label: 'Forside' },
+  { path: '/pricing', label: 'Pricing' },
+  { path: '/kontakt', label: 'Kontakt' },
+]
+
+test.describe('a11y — public-lag (uden auth)', () => {
+  for (const { path, label } of PUBLIC_PAGES) {
+    test(`${label} har ingen critical/serious violations`, async ({ page }) => {
+      await page.goto(path)
+      await page.waitForLoadState('networkidle', { timeout: 10_000 })
+
+      const results = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+        .analyze()
+
+      const critical = results.violations.filter((v) => v.impact === 'critical')
+      const serious = results.violations.filter((v) => v.impact === 'serious')
+      expect(
+        [...critical, ...serious].map((v) => `${v.id}: ${v.help}`),
+        `a11y-violations på ${label}`
+      ).toEqual([])
+    })
+  }
+})
+
 test.describe('a11y — detail pages', () => {
   for (const { path, label } of DETAIL_PAGES) {
     test(`${label} har ingen critical/serious violations`, async ({ loggedInPage: page }) => {
