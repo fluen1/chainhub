@@ -79,6 +79,10 @@ const PUBLIC_PAGES = [
   { path: '/', label: 'Forside' },
   { path: '/pricing', label: 'Pricing' },
   { path: '/kontakt', label: 'Kontakt' },
+  { path: '/legal/vilkaar', label: 'Servicevilkår' },
+  { path: '/legal/privatliv', label: 'Privatlivspolitik' },
+  { path: '/legal/cookies', label: 'Cookiepolitik' },
+  { path: '/legal/databehandleraftale', label: 'Databehandleraftale' },
 ]
 
 test.describe('a11y — public-lag (uden auth)', () => {

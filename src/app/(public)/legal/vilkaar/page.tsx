@@ -200,7 +200,7 @@ export default function TermsPage() {
         </p>
         <p className="mt-2 text-b-2">
           Den til enhver tid gældende version af vilkårene er tilgængelig på{' '}
-          <a href="/legal/vilkaar" className="text-b-blue-fg no-underline hover:underline">
+          <a href="/legal/vilkaar" className="text-b-blue-fg underline hover:no-underline">
             chainhub.dk/legal/vilkaar
           </a>
           . Datoen øverst på siden angiver seneste revision.

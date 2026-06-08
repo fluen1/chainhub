@@ -37,7 +37,7 @@ export function CookieConsent() {
         <p className="text-[12px] text-b-2">
           Vi bruger nødvendige cookies for at platformen virker, og — kun med dit samtykke —
           analytics til at forbedre ChainHub. Læs vores{' '}
-          <Link href="/legal/cookies" className="text-b-blue-fg no-underline hover:underline">
+          <Link href="/legal/cookies" className="text-b-blue-fg underline hover:no-underline">
             cookiepolitik
           </Link>
           .

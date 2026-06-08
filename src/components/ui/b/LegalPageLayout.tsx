@@ -52,7 +52,7 @@ export function LegalContactBox({ children }: { children: React.ReactNode }) {
 /** E-mail-link */
 export function LegalMailLink({ address }: { address: string }) {
   return (
-    <a href={`mailto:${address}`} className="text-b-blue-fg no-underline hover:underline">
+    <a href={`mailto:${address}`} className="text-b-blue-fg underline hover:no-underline">
       {address}
     </a>
   )
@@ -65,7 +65,7 @@ export function LegalExternalLink({ href, children }: { href: string; children: 
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-b-blue-fg no-underline hover:underline"
+      className="text-b-blue-fg underline hover:no-underline"
     >
       {children}
     </a>

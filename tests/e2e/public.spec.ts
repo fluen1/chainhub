@@ -1,6 +1,16 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('public-lag — tilgængeligt uden login', () => {
+  test.beforeEach(async ({ context }) => {
+    await context.addInitScript(() => {
+      try {
+        localStorage.setItem('chainhub-cookie-consent', 'denied')
+      } catch {
+        /* ignore */
+      }
+    })
+  })
+
   test('forside loader på / uden redirect til login', async ({ page }) => {
     await page.goto('/')
     await expect(page).toHaveURL(/\/$/)
@@ -32,5 +42,43 @@ test.describe('public-lag — tilgængeligt uden login', () => {
     await page.goto('/pricing')
     await page.getByRole('link', { name: 'Book demo' }).first().click()
     await expect(page).toHaveURL(/\/kontakt$/)
+  })
+
+  test('legal-sider loader uden auth', async ({ page }) => {
+    for (const path of [
+      '/legal/vilkaar',
+      '/legal/privatliv',
+      '/legal/cookies',
+      '/legal/databehandleraftale',
+    ]) {
+      await page.goto(path)
+      await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+    }
+  })
+
+  test('/terms og /privacy redirecter til /legal/*', async ({ page }) => {
+    await page.goto('/terms')
+    await expect(page).toHaveURL(/\/legal\/vilkaar$/)
+    await page.goto('/privacy')
+    await expect(page).toHaveURL(/\/legal\/privatliv$/)
+  })
+
+  test('databehandlerliste nævner OpenAI, ikke Anthropic', async ({ page }) => {
+    await page.goto('/legal/privatliv')
+    await expect(page.getByText('OpenAI')).toBeVisible()
+    await expect(page.getByText('Anthropic')).toHaveCount(0)
+  })
+})
+
+test.describe('cookie-consent banner', () => {
+  test('vises på forsiden og forsvinder efter valg', async ({ page }) => {
+    await page.goto('/')
+    const banner = page.getByRole('dialog', { name: 'Cookie-samtykke' })
+    await expect(banner).toBeVisible()
+    await page.getByRole('button', { name: 'Kun nødvendige' }).click()
+    await expect(banner).toHaveCount(0)
+    // Reload: valget huskes, banner vises ikke igen
+    await page.reload()
+    await expect(page.getByRole('dialog', { name: 'Cookie-samtykke' })).toHaveCount(0)
   })
 })

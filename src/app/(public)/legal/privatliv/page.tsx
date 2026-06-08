@@ -181,7 +181,7 @@ export default function PrivacyPage() {
         </ul>
         <p className="mt-3 text-b-2">
           Læs mere i vores{' '}
-          <a href="/legal/cookies" className="text-b-blue-fg no-underline hover:underline">
+          <a href="/legal/cookies" className="text-b-blue-fg underline hover:no-underline">
             cookiepolitik
           </a>
           .

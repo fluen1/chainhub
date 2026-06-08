@@ -84,7 +84,7 @@ export default function DPAPage() {
           databeskyttelsesforpligtelser svarende til denne Aftale, og varsler den Dataansvarlige om
           planlagte udskiftninger, så der kan gøres indsigelse. Aktuelle underdatabehandlere fremgår
           af{' '}
-          <a href="/legal/privatliv" className="text-b-blue-fg no-underline hover:underline">
+          <a href="/legal/privatliv" className="text-b-blue-fg underline hover:no-underline">
             privatlivspolitikkens § 8
           </a>{' '}
           (Supabase, Vercel, Resend, OpenAI, Sentry, Cloudflare, Stripe, Upstash, PostHog og
