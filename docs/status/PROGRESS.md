@@ -1,6 +1,29 @@
 # PROGRESS.md — ChainHub
 
-Opdateret: Launch-readiness plan 3/4 leveret — 2026-06-08
+Opdateret: Launch-readiness plan 3b leveret — 2026-06-08
+
+## Launch-readiness plan 3b — Onboarding-docs ✅ (2026-06-08)
+
+Tillæg til plan 3/4. Branch `feat/launch-readiness`. Bygger oven på plan 3 (legal-lag). Etablerer et `/docs`-lag med 7 onboarding-sider rettet mod nye kunder.
+
+- [x] **7 onboarding-sider** under `(public)/docs/` — dansk du-form, app-grounded (skærm-labels matcher appens faktiske UI):
+  - `kom-godt-i-gang` — introduktion + første trin
+  - `selskaber-og-ejerskab` — selskabsoversigt, ejerskabstræ, roller
+  - `kontrakter-og-ai-udlaesning` — kontraktyper, upload, AI-ekstraktion i shadow-mode
+  - `sager-og-opgaver` — sagsflow, opgavestatus, kanban
+  - `brugere-og-roller` — roller dokumenteret med faktiske UI-labels (Ejer, Admin, Jurist, Læseadgang; selskabsniveau: Klinikchef, Klinikjurist, Klinik-læseadgang)
+  - `eksport-og-gdpr` — CSV-eksport, GDPR artikel 15/17, organisations-backup
+  - `faq` — hyppige spørgsmål om tilladelser, AI og data
+- [x] **Docs-layout** — fælles sidebar med alle 7 sider + aktiv-markering via `usePathname` (Client Component)
+- [x] **Public-header** — Docs-link aktiveret og synligt for uautoriserede besøgende
+- [x] **`/docs` tilføjet til `PUBLIC_PATHS`** i `src/lib/proxy.ts` — ingen session krævet
+- [x] **Tekst-først** — ingen skærmbilleder i v1 (bevidst valg; screenshots tilføjes i v2)
+- [x] **Kvalitetsgate ved lukning:** 2174 unit-tests/0 fail, tsc 0 fejl, build grøn (alle 7 docs-ruter), 69/69 e2e passed, axe grøn for alle docs-sider
+- [x] **FLAG (app-niveau, uden for scope):** selskabsniveau-rollerne hedder "Klinikchef/Klinikjurist/Klinik-læseadgang" i UI'et — dental/medicinsk-lænende naming der spænder med ikke-dental ICP. Overvej neutral omdøbning (fx "Lokationschef/Lokationsjurist/Lokation-læseadgang") som dedikeret task
+
+**Status:** Kode på branch `feat/launch-readiness`. PR afventer plan 4 (deploy-forberedelse) + afstemning med Rico (CopenAI-regel).
+
+**Næste:** plan 4 (deploy: R2, env, bootstrap, DNS).
 
 ## Launch-readiness plan 3/4 — Legal-konsolidering + Cookie-consent ✅ (2026-06-08)
 
