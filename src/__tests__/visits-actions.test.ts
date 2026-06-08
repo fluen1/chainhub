@@ -49,6 +49,12 @@ describe('createVisit', () => {
     expect('data' in result).toBe(true)
   })
 
+  it('revaliderer kalender-cachen ved oprettelse (G1-011)', async () => {
+    const { revalidateTag } = await import('next/cache')
+    await createVisit(baseInput as never)
+    expect(vi.mocked(revalidateTag)).toHaveBeenCalledWith('calendar', {})
+  })
+
   it('afviser uden company-adgang', async () => {
     const perms = await import('@/lib/permissions')
     vi.mocked(perms.canAccessCompany).mockResolvedValueOnce(false)
@@ -71,6 +77,15 @@ describe('updateVisit', () => {
       Promise.resolve({ id: UUID, company_id: UUID })) as never)
     const result = await updateVisit({ visitId: UUID, status: 'GENNEMFOERT' } as never)
     expect('data' in result).toBe(true)
+  })
+
+  it('revaliderer kalender-cachen ved opdatering (G1-011)', async () => {
+    const { prisma } = await import('@/lib/db')
+    vi.mocked(prisma.visit.findFirst).mockImplementation((() =>
+      Promise.resolve({ id: UUID, company_id: UUID })) as never)
+    const { revalidateTag } = await import('next/cache')
+    await updateVisit({ visitId: UUID, notes: 'Ny note' } as never)
+    expect(vi.mocked(revalidateTag)).toHaveBeenCalledWith('calendar', {})
   })
 
   it('opdaterer notes', async () => {
@@ -114,6 +129,15 @@ describe('deleteVisit', () => {
     expect(prisma.visit.update).toHaveBeenCalledWith(
       expect.objectContaining({ data: { deleted_at: expect.any(Date) } })
     )
+  })
+
+  it('revaliderer kalender-cachen ved sletning (G1-011)', async () => {
+    const { prisma } = await import('@/lib/db')
+    vi.mocked(prisma.visit.findFirst).mockImplementation((() =>
+      Promise.resolve({ id: UUID, company_id: UUID })) as never)
+    const { revalidateTag } = await import('next/cache')
+    await deleteVisit(UUID)
+    expect(vi.mocked(revalidateTag)).toHaveBeenCalledWith('calendar', {})
   })
 
   it('afviser uden company-adgang', async () => {

@@ -3,7 +3,7 @@ import { auth } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { getVisitTypeLabel, getVisitStatusLabel } from '@/lib/labels'
-import { formatDanishDate } from '@/lib/date-helpers'
+import { formatDanishDate, formatDanishDateLower } from '@/lib/date-helpers'
 import { VisitStatusForm } from '@/components/visits/VisitStatusForm'
 import { VisitNotesForm } from '@/components/visits/VisitNotesForm'
 import { Breadcrumb, PageTopbar, Panel, PanelHeader, Badge } from '@/components/ui/b'
@@ -54,7 +54,7 @@ export default async function VisitDetailPage({ params }: Props) {
 
       <PageTopbar
         title={`Besøg hos ${visit.company.name}`}
-        meta={formatDanishDate(visit.visit_date)}
+        meta={formatDanishDateLower(visit.visit_date)}
       />
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
@@ -90,7 +90,7 @@ export default async function VisitDetailPage({ params }: Props) {
                 >
                   Besøgsdato
                 </dt>
-                <dd className="mt-0.5 text-b-1">{formatDanishDate(visit.visit_date)}</dd>
+                <dd className="mt-0.5 text-b-1">{formatDanishDateLower(visit.visit_date)}</dd>
               </div>
               <div>
                 <dt

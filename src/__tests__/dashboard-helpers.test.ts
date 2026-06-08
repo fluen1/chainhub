@@ -266,6 +266,26 @@ describe('buildTimelineSections', () => {
     expect(todaySection.items[0]?.color).toBe('blue')
   })
 
+  it('visit-subtitle bruger dansk label, ikke rå enum', () => {
+    const sections = buildTimelineSections({
+      ...empty,
+      upcomingVisits: [
+        {
+          id: 'v2',
+          visit_date: new Date('2026-04-15T10:00:00'),
+          visit_type: 'KVARTALSBESOEG',
+          company: companyA,
+        },
+      ],
+    })
+    const todaySection = sections.find((s) => s.id === 'today')!
+    const item = todaySection.items[0]!
+    // Subtitle MÅ ikke indeholde rå enum-streng
+    expect(item.subtitle).not.toBe('kvartalsbesoeg')
+    expect(item.subtitle).not.toBe('KVARTALSBESOEG')
+    expect(item.subtitle).toBe('Kvartalsbesøg')
+  })
+
   it('placerer udløbende kontrakter i thisweek-sektionen', () => {
     const sections = buildTimelineSections({
       ...empty,

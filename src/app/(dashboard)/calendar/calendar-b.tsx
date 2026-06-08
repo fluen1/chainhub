@@ -236,7 +236,7 @@ export function CalendarPageB({
         }
         meta={
           <>
-            {monthEvents.length} begivenheder
+            {monthEvents.length} {monthEvents.length === 1 ? 'begivenhed' : 'begivenheder'}
             {criticalThisMonth > 0 && (
               <>
                 {' · '}
@@ -293,7 +293,8 @@ export function CalendarPageB({
       <BottomBar
         left={
           <>
-            Kalender · {MONTH_NAMES_DA[monthIdx]} {year} · {monthEvents.length} begivenheder
+            Kalender · {MONTH_NAMES_DA[monthIdx]} {year} · {monthEvents.length}{' '}
+            {monthEvents.length === 1 ? 'begivenhed' : 'begivenheder'}
           </>
         }
       />
@@ -365,7 +366,13 @@ function MonthView({
                         type="button"
                         title={`${ev.title} · ${ev.subtitle}`}
                         onClick={() =>
-                          onVisitClick({ id: ev.sourceId!, title: ev.title, date: ev.date })
+                          onVisitClick({
+                            id: ev.sourceId!,
+                            title: ev.title,
+                            date: ev.date,
+                            notes: ev.notes,
+                            summary: ev.summary,
+                          })
                         }
                         className={`truncate rounded-[3px] px-1 py-px text-left text-[10px] hover:opacity-80 ${pillCls(c)}`}
                       >
@@ -454,7 +461,13 @@ function AgendaView({
                     key={ev.id}
                     type="button"
                     onClick={() =>
-                      onVisitClick({ id: ev.sourceId!, title: ev.title, date: ev.date })
+                      onVisitClick({
+                        id: ev.sourceId!,
+                        title: ev.title,
+                        date: ev.date,
+                        notes: ev.notes,
+                        summary: ev.summary,
+                      })
                     }
                     className="flex w-full items-center gap-2.5 border-b border-b-divider px-3 py-1.5 last:border-b-0 hover:bg-b-row-hover text-left"
                   >

@@ -1,7 +1,10 @@
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { getBillingPageData } from '@/actions/billing'
 import { env } from '@/lib/env'
 import { BillingClient } from './billing-client'
+
+export const metadata: Metadata = { title: 'Abonnement — ChainHub' }
 
 // Pris-ID'er læses server-side for at undgå eksponering via NEXT_PUBLIC_
 const STARTER_PRICE_ID = env.STRIPE_STARTER_PRICE_ID ?? ''

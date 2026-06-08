@@ -54,6 +54,7 @@ const fetchCalendarData = unstable_cache(
       }),
 
       // Besøg (PLANLAGT, visit_date i måneden)
+      // notes + summary inkluderes så EditVisitModal kan preloade eksisterende data (G1-012)
       prisma.visit.findMany({
         where: {
           organization_id: orgId,
@@ -61,7 +62,14 @@ const fetchCalendarData = unstable_cache(
           status: 'PLANLAGT',
           visit_date: { gte: startDate, lte: endDate },
         },
-        include: { company: { select: { name: true } } },
+        select: {
+          id: true,
+          visit_date: true,
+          visit_type: true,
+          notes: true,
+          summary: true,
+          company: { select: { name: true } },
+        },
         take: CALENDAR_MAX_EVENTS_PER_TYPE,
       }),
 
@@ -170,6 +178,8 @@ export async function getCalendarEvents(year: number, month: number): Promise<Ca
       href: `/visits/${v.id}`,
       sourceType: 'visit',
       sourceId: v.id,
+      notes: v.notes,
+      summary: v.summary,
     })
   }
 

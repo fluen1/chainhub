@@ -9,7 +9,7 @@ import { getAccessibleCompanies, canAccessSensitivity } from '@/lib/permissions'
 const uuidSchema = z
   .string()
   .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
-import { formatDate } from '@/lib/labels'
+import { formatDate, getVisitTypeLabel } from '@/lib/labels'
 import {
   sectionsForRole,
   pickHighestPriorityRole,
@@ -503,15 +503,7 @@ function sumFinance(metrics: Array<{ metric_type: string; value: Prisma.Decimal 
 // -----------------------------------------------------------------
 
 function humanizeVisitType(type: string): string {
-  const map: Record<string, string> = {
-    KVARTALSBESOEG: 'Kvartalsbesoeg',
-    OPFOELGNING: 'Opfoelgning',
-    AD_HOC: 'Ad hoc',
-    AUDIT: 'Audit',
-    ONBOARDING: 'Onboarding',
-    OVERDRAGELSE: 'Overdragelse',
-  }
-  return map[type] ?? type
+  return getVisitTypeLabel(type)
 }
 
 function buildOwnership(
