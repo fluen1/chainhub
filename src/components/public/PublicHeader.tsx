@@ -16,7 +16,9 @@ export function PublicHeader({ loggedIn }: { loggedIn: boolean }) {
           <Link href="/kontakt" className="text-b-2 no-underline hover:text-b-1">
             Kontakt
           </Link>
-          {/* Docs-link tilføjes i plan 3 når /docs findes */}
+          <Link href="/docs" className="text-b-2 no-underline hover:text-b-1">
+            Docs
+          </Link>
           {loggedIn ? (
             <BButton primary href="/dashboard">
               Gå til dashboard

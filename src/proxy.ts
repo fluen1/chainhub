@@ -37,6 +37,7 @@ const PUBLIC_PATHS = [
   '/pricing',
   '/kontakt',
   '/legal',
+  '/docs',
   '/terms',
   '/privacy',
   '/login',
