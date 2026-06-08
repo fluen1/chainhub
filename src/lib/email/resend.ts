@@ -55,3 +55,48 @@ export async function sendPasswordResetEmail(
     `,
   })
 }
+
+export const CONTACT_TO = process.env.CONTACT_TO_EMAIL ?? 'kontakt@chainhub.dk'
+
+export async function sendContactEmail(input: {
+  name: string
+  email: string
+  company?: string
+  message: string
+}): Promise<void> {
+  if (!resend) {
+    // Ingen Resend-konfiguration → kast, så server-action degraderer til mailto-fallback.
+    throw new Error('RESEND_API_KEY ikke konfigureret')
+  }
+
+  const { name, email, company, message } = input
+  const safeCompany = company?.trim() ? company : '—'
+
+  // 1) Notifikation til ChainHub (svar går direkte til afsenderen via replyTo)
+  await resend.emails.send({
+    from: DIGEST_FROM,
+    to: CONTACT_TO,
+    replyTo: email,
+    subject: `Ny demo-forespørgsel fra ${name}`,
+    html: `
+      <h2>Ny henvendelse via chainhub.dk</h2>
+      <p><strong>Navn:</strong> ${name}</p>
+      <p><strong>E-mail:</strong> ${email}</p>
+      <p><strong>Virksomhed:</strong> ${safeCompany}</p>
+      <p><strong>Besked:</strong></p>
+      <p>${message.replace(/\n/g, '<br/>')}</p>
+    `,
+  })
+
+  // 2) Kvittering til afsenderen
+  await resend.emails.send({
+    from: DIGEST_FROM,
+    to: email,
+    subject: 'Tak for din henvendelse — ChainHub',
+    html: `
+      <h2>Hej ${name},</h2>
+      <p>Tak for din interesse i ChainHub. Vi har modtaget din besked og vender tilbage hurtigst muligt.</p>
+      <p>Venlig hilsen,<br/>ChainHub</p>
+    `,
+  })
+}

@@ -19,6 +19,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   OPENAI_API_KEY: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
+  CONTACT_TO_EMAIL: z.string().optional(),
   SENTRY_DSN: z.string().optional(),
   DIGEST_CRON_SECRET: requiredInProd('DIGEST_CRON_SECRET'),
   R2_ACCOUNT_ID: z.string().optional(),
