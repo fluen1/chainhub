@@ -83,6 +83,13 @@ const PUBLIC_PAGES = [
   { path: '/legal/privatliv', label: 'Privatlivspolitik' },
   { path: '/legal/cookies', label: 'Cookiepolitik' },
   { path: '/legal/databehandleraftale', label: 'Databehandleraftale' },
+  { path: '/docs', label: 'Docs forside' },
+  { path: '/docs/selskaber', label: 'Docs selskaber' },
+  { path: '/docs/kontrakter', label: 'Docs kontrakter' },
+  { path: '/docs/sager-opgaver', label: 'Docs sager-opgaver' },
+  { path: '/docs/brugere-roller', label: 'Docs brugere-roller' },
+  { path: '/docs/eksport-gdpr', label: 'Docs eksport-gdpr' },
+  { path: '/docs/faq', label: 'Docs faq' },
 ]
 
 test.describe('a11y — public-lag (uden auth)', () => {

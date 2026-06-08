@@ -68,6 +68,26 @@ test.describe('public-lag — tilgængeligt uden login', () => {
     await expect(page.getByText('OpenAI')).toBeVisible()
     await expect(page.getByText('Anthropic')).toHaveCount(0)
   })
+
+  test('docs-forside loader og sidebar-navigation virker', async ({ page }) => {
+    await page.goto('/docs')
+    await expect(page.getByRole('heading', { name: 'Kom godt i gang', level: 1 })).toBeVisible()
+    // Naviger via docs-sidebar til en sektion
+    await page
+      .getByRole('navigation', { name: 'Dokumentation' })
+      .getByRole('link', { name: 'Selskaber & ejerskab' })
+      .click()
+    await expect(page).toHaveURL(/\/docs\/selskaber$/)
+    await expect(
+      page.getByRole('heading', { name: 'Selskaber & ejerskab', level: 1 })
+    ).toBeVisible()
+  })
+
+  test('Docs-link i header fører til /docs', async ({ page }) => {
+    await page.goto('/')
+    await page.getByRole('link', { name: 'Docs' }).first().click()
+    await expect(page).toHaveURL(/\/docs$/)
+  })
 })
 
 test.describe('cookie-consent banner', () => {
