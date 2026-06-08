@@ -140,7 +140,8 @@ export function BShell({ badges, alertCount = 0, children }: Props) {
 
         <main
           id="main-content"
-          className="flex flex-1 flex-col gap-3.5 overflow-y-auto px-3 py-3 md:px-6 md:py-3.5"
+          tabIndex={-1}
+          className="flex flex-1 flex-col gap-3.5 overflow-y-auto px-3 py-3 md:px-6 md:py-3.5 outline-none"
         >
           {children}
         </main>

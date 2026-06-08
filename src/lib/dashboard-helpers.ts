@@ -6,7 +6,7 @@
  * `src/actions/dashboard.ts` re-eksporterer typerne for bagud-kompatibilitet.
  */
 
-import { formatMio } from '@/lib/labels'
+import { formatMio, getVisitTypeLabel } from '@/lib/labels'
 import type { InlineKpi } from '@/types/ui'
 
 // ---------------------------------------------------------------
@@ -346,7 +346,7 @@ export function buildTimelineSections(data: TimelineRawData): TimelineSectionDat
       letter: firstLetter(v.company.name),
       color: 'blue',
       title: `Besøg — ${v.company.name}`,
-      subtitle: v.visit_type.toLowerCase(),
+      subtitle: getVisitTypeLabel(v.visit_type),
       time,
       href: `/companies/${v.company.id}`,
     })
@@ -388,7 +388,7 @@ export function buildTimelineSections(data: TimelineRawData): TimelineSectionDat
       letter: firstLetter(v.company.name),
       color: 'blue',
       title: `Besøg — ${v.company.name}`,
-      subtitle: v.visit_type.toLowerCase(),
+      subtitle: getVisitTypeLabel(v.visit_type),
       time: v.visit_date.toLocaleDateString('da-DK', { day: 'numeric', month: 'short' }),
       href: `/companies/${v.company.id}`,
     })

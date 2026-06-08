@@ -12,8 +12,8 @@ export const SEED_USER = {
  */
 export async function loginAs(page: Page, user = SEED_USER): Promise<void> {
   await page.goto('/login')
-  await page.getByRole('textbox', { name: 'Email' }).fill(user.email)
+  await page.getByRole('textbox', { name: 'E-mail' }).fill(user.email)
   await page.getByRole('textbox', { name: 'Adgangskode' }).fill(user.password)
-  await page.getByRole('button', { name: 'Log ind' }).click()
+  await page.getByRole('button', { name: 'Log ind', exact: true }).click()
   await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 })
 }

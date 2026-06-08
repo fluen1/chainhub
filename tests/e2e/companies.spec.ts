@@ -6,27 +6,32 @@ test.describe('Companies CRUD', () => {
     const name = `E2E Test ApS ${Date.now()}`
 
     await page.goto('/companies')
-    await page.getByRole('link', { name: /Nyt selskab/i }).click()
+    // Knap-tekst er "+ Opret selskab" (ikke "Nyt selskab") — rendres som <a>-link via BButton href
+    await page.getByRole('link', { name: /Opret selskab/i }).click()
     await expect(page).toHaveURL(/\/companies\/new/)
 
-    await page.getByLabel('Navn', { exact: true }).fill(name)
-    await page.getByLabel('CVR', { exact: true }).fill(cvr)
+    // CreateCompanyForm: label "Selskabsnavn*" (required) og "CVR-nummer" (BTextField)
+    await page.getByLabel(/Selskabsnavn/i).fill(name)
+    await page.getByLabel(/CVR-nummer/i).fill(cvr)
     await page.getByLabel(/By/i).fill('København K')
-    await page.getByRole('button', { name: /Opret/i }).click()
+    await page.getByRole('button', { name: /Opret selskab/i }).click()
 
-    // Efter oprettelse vises selskabet på /companies eller /companies/[id]
-    await expect(page).toHaveURL(/\/companies/, { timeout: 10_000 })
-    await page.goto('/companies')
-    await expect(page.getByText(name)).toBeVisible()
+    // Efter oprettelse redirectes til /companies/[id] — vent på success-toast
+    await expect(page.getByText('Selskab oprettet')).toBeVisible({ timeout: 10_000 })
+    await expect(page).toHaveURL(/\/companies\//, { timeout: 10_000 })
+    // Vent til detaljesiden er loadet (Breadcrumb viser "Selskaber › Nyt selskab" → "[navn]")
+    await page.waitForLoadState('networkidle')
+    await expect(page.getByRole('heading', { name })).toBeVisible({ timeout: 10_000 })
   })
 
   test('selskabs-detalje viser alle hovedsektioner', async ({ loggedInPage: page }) => {
-    // Brug seed-selskab Tandlæge Østerbro ApS
+    // Brug seed-selskab Optik Østerbro ApS
     await page.goto('/companies')
-    await page.getByText('Tandlæge Østerbro ApS').click()
-    // Sektioner fra /companies/[id] single-page
-    await expect(page.getByRole('heading', { name: 'Ejerskab' })).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Kontrakter' })).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Sager' })).toBeVisible()
+    // Strict-mode fix: 2 elementer med "Optik Østerbro ApS" — klik tabel-rækken (første)
+    await page.getByText('Optik Østerbro ApS').first().click()
+    // PanelHeader bruger <span> ikke <heading> — matcher via tekst
+    await expect(page.getByText('Ejerskab', { exact: true })).toBeVisible()
+    await expect(page.getByText('Kontrakter', { exact: true }).first()).toBeVisible()
+    await expect(page.getByText('Sager', { exact: true }).first()).toBeVisible()
   })
 })

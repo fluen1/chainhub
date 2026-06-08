@@ -34,39 +34,44 @@
        ------------------------------------------------------------ */
 
     /* Surfaces */
-    --b-canvas:       #fafafa;
-    --b-sidebar:      #f6f7f9;
-    --b-panel:        #ffffff;
-    --b-panel-h:      #fbfbfc;
-    --b-row-hover:    #f6f7f9;
-    --b-row-divider:  #f0f1f3;
-    --b-border:       #e1e4e8;
-    --b-border-strong:#d0d7de;
+    --b-canvas: #fafafa;
+    --b-sidebar: #f6f7f9;
+    --b-panel: #ffffff;
+    --b-panel-h: #fbfbfc;
+    --b-row-hover: #f6f7f9;
+    --b-row-divider: #f0f1f3;
+    --b-border: #e1e4e8;
+    --b-border-strong: #d0d7de;
 
     /* Tekst */
-    --b-text-1:       #1f2328;
-    --b-text-2:       #586069; /* Kontrast-fix: #586069 = 4.7:1 på #fafafa (WCAG 2.2 AA) */
-    --b-text-3:       #6e7781; /* Kontrast-fix: #6e7781 = ~4.5:1 på hvid (WCAG 2.2 AA) */
+    --b-text-1: #1f2328;
+    --b-text-2: #586069; /* Kontrast-fix: #586069 = 4.7:1 på #fafafa (WCAG 2.2 AA) */
+    --b-text-3: #636c76; /* Kontrast-fix: #636c76 = 4.8:1 på hvid, 4.6:1 på #fafafa (WCAG 2.1 AA) */
 
     /* Status — bg + fg */
-    --b-red-bg:       #ffebe9;  --b-red-fg:   #cf222e;
-    --b-amber-bg:     #fff8c5;  --b-amber-fg: #9a6700;
-    --b-green-bg:     #dafbe1;  --b-green-fg: #1a7f37;
-    --b-blue-bg:      #ddf4ff;  --b-blue-fg:  #0969da;
-    --b-gray-bg:      #f6f8fa;  --b-gray-fg:  #57606a;
+    --b-red-bg: #ffebe9;
+    --b-red-fg: #cf222e;
+    --b-amber-bg: #fff8c5;
+    --b-amber-fg: #9a6700;
+    --b-green-bg: #dafbe1;
+    --b-green-fg: #1a7f37;
+    --b-blue-bg: #ddf4ff;
+    --b-blue-fg: #0969da;
+    --b-gray-bg: #f6f8fa;
+    --b-gray-fg: #57606a;
 
     /* AI insight (lilla — kun til AI-output) */
-    --b-ai-border:    #c4b5fd;
-    --b-ai-fg:        #4c1d95;
-    --b-ai-accent:    #7c3aed;
+    --b-ai-border: #c4b5fd;
+    --b-ai-fg: #4c1d95;
+    --b-ai-accent: #7c3aed;
 
     /* Heatmap — GitHub-contribution palette */
-    --b-heat-l1:      #9be9a8;  /* healthy + 0 sager */
-    --b-heat-l2:      #40c463;  /* healthy + 1-2 sager */
-    --b-heat-l3:      #239a3b;  /* healthy + 3+ sager */
-    --b-heat-r1:      #fdb8b1;  /* warning + 0-2 sager */
-    --b-heat-r2:      #ef6f5e;  /* warning + 3+ sager */
-    --b-heat-r3:      #b91c1c;  /* critical */
+    --b-heat-l1: #9be9a8; /* healthy + 0 sager */
+    --b-heat-l2: #40c463; /* healthy + 1-2 sager */
+    --b-heat-l3: #239a3b; /* healthy + 3+ sager */
+    --b-heat-r1: #fdb8b1; /* warning + 0-2 sager */
+    --b-heat-r2: #ef6f5e; /* warning + 3+ sager */
+    --b-heat-r3: #b91c1c; /* critical */
   }
 }
 
@@ -136,7 +141,9 @@
    anmodet om reduceret bevægelse (WCAG 2.2 AA 2.3.3).
    ========================================================= */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;

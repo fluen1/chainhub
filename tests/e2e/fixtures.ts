@@ -7,6 +7,10 @@ type Fixtures = {
 
 export const test = base.extend<Fixtures>({
   loggedInPage: async ({ page }, use) => {
+    // Seed cookie-consent i localStorage FØR login, så banneret ikke overlejrer klik-mål.
+    await page.addInitScript(() => {
+      localStorage.setItem('chainhub-cookie-consent', 'denied')
+    })
     await loginAs(page)
     await use(page)
   },

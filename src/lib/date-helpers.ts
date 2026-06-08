@@ -1,4 +1,8 @@
-import { MONTH_NAMES_DA, MONTH_NAMES_DA_SHORT } from '@/lib/calendar-constants'
+import {
+  MONTH_NAMES_DA,
+  MONTH_NAMES_DA_SHORT,
+  MONTH_NAMES_DA_LOWER,
+} from '@/lib/calendar-constants'
 
 /**
  * Central dansk dato-formattering. Brug disse i stedet for
@@ -14,6 +18,14 @@ export function formatDanishDate(date: Date | string | null | undefined): string
   const d = typeof date === 'string' ? new Date(date) : date
   if (isNaN(d.getTime())) return ''
   return `${d.getDate()}. ${MONTH_NAMES_DA[d.getMonth()]} ${d.getFullYear()}`
+}
+
+/** "15. juni 2026" — fuld dansk dato med lowercase månednavn (løbende tekst). */
+export function formatDanishDateLower(date: Date | string | null | undefined): string {
+  if (!date) return ''
+  const d = typeof date === 'string' ? new Date(date) : date
+  if (isNaN(d.getTime())) return ''
+  return `${d.getDate()}. ${MONTH_NAMES_DA_LOWER[d.getMonth()]} ${d.getFullYear()}`
 }
 
 /** "15. Januar 2026 kl. 14:30" — fuld dato + klokkeslæt. */

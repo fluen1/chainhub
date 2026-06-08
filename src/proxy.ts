@@ -30,7 +30,21 @@ function applyCspHeaders(response: NextResponse): NextResponse {
   return response
 }
 
-const PUBLIC_PATHS = ['/login', '/signup', '/invite', '/reset-password']
+// '/' matcher KUN eksakt (isPublicRoute bruger `pathname === p`), så øvrige routes
+// forbliver beskyttede. /pricing og /kontakt matcher eksakt + evt. undersider.
+const PUBLIC_PATHS = [
+  '/',
+  '/pricing',
+  '/kontakt',
+  '/legal',
+  '/docs',
+  '/terms',
+  '/privacy',
+  '/login',
+  '/signup',
+  '/invite',
+  '/reset-password',
+]
 const PUBLIC_API_PREFIXES = ['/api/health', '/api/auth', '/api/cron', '/api/webhooks']
 
 function isPublicRoute(pathname: string): boolean {

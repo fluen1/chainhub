@@ -14,6 +14,9 @@ export interface CalendarEvent {
   href: string // Link til entiteten (task, kontrakt, sag, besøg)
   sourceType?: 'contract' | 'task' | 'visit' | 'case'
   sourceId?: string
+  // Besøg-specifikke felter — kun sat når sourceType === 'visit'
+  notes?: string | null
+  summary?: string | null
 }
 
 export type InsightType = 'critical' | 'warning' | 'info' | 'coverage'

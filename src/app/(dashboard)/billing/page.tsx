@@ -1,11 +1,14 @@
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { getBillingPageData } from '@/actions/billing'
 import { env } from '@/lib/env'
 import { BillingClient } from './billing-client'
 
+export const metadata: Metadata = { title: 'Abonnement' }
+
 // Pris-ID'er læses server-side for at undgå eksponering via NEXT_PUBLIC_
-const STARTER_PRICE_ID = env.STRIPE_STARTER_PRICE_ID ?? ''
-const PROFESSIONAL_PRICE_ID = env.STRIPE_PROFESSIONAL_PRICE_ID ?? ''
+const BASIS_PRICE_ID = env.STRIPE_BASIS_PRICE_ID ?? ''
+const PLUS_PRICE_ID = env.STRIPE_PLUS_PRICE_ID ?? ''
 
 // ────────────────────────────────────────────────────────────────────────────
 // /billing — abonnementsstyring
@@ -31,8 +34,8 @@ export default async function BillingPage({ searchParams }: BillingPageProps) {
         trialDaysLeft={trialDaysLeft}
         hasSubscription={hasSubscription}
         planExpiresAt={planExpiresAt}
-        starterPriceId={STARTER_PRICE_ID}
-        professionalPriceId={PROFESSIONAL_PRICE_ID}
+        basisPriceId={BASIS_PRICE_ID}
+        plusPriceId={PLUS_PRICE_ID}
         checkoutSuccess={params.success === '1'}
         checkoutCanceled={params.canceled === '1'}
       />

@@ -43,14 +43,20 @@ export function BFieldWrap({
 
   return (
     <div className="flex flex-col gap-1">
-      <label
-        htmlFor={inputId}
-        className="text-[11px] font-semibold uppercase text-b-2"
-        style={{ letterSpacing: '0.4px' }}
-      >
-        {label}
-        {required && <span className="ml-0.5 text-b-red-fg">*</span>}
-      </label>
+      <div className="flex items-baseline gap-0.5">
+        <label
+          htmlFor={inputId}
+          className="text-[11px] font-semibold uppercase text-b-2"
+          style={{ letterSpacing: '0.4px' }}
+        >
+          {label}
+        </label>
+        {required && (
+          <span aria-hidden="true" className="text-[11px] text-b-red-fg">
+            *
+          </span>
+        )}
+      </div>
       {clonedChild}
       {error ? (
         <p id={errorId} role="alert" className="m-0 text-[11px] text-b-red-fg">

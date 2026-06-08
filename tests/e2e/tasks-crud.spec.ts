@@ -24,7 +24,10 @@ test.describe('Tasks CRUD', () => {
     // Efter oprettelse redirectes til /tasks
     await expect(page).toHaveURL(/\/tasks/, { timeout: 10_000 })
 
-    // Opgaven vises i listen
+    // Naviger til /tasks?search=<title> så kun den nyoprettede opgave vises —
+    // robust mod data-akkumulering (uden due_date havner opgaven ellers på side 2+
+    // pga. default-sortering due_date ASC NULLS LAST).
+    await page.goto(`/tasks?search=${encodeURIComponent(title)}`)
     await expect(page.getByText(title)).toBeVisible()
   })
 
@@ -35,12 +38,17 @@ test.describe('Tasks CRUD', () => {
 
     await page.getByLabel('Titel', { exact: true }).fill(title)
 
-    // BSegmentedField til prioritet — renderes som <button type="button">
-    await page.getByRole('button', { name: 'Kritisk' }).click()
+    // BSegmentedField til prioritet — renderes som role="radio" (overskriver implicit button-role)
+    await page.getByRole('radio', { name: 'Kritisk' }).click()
 
     await page.getByRole('button', { name: /Opret opgave/i }).click()
     await expect(page.getByText('Opgave oprettet')).toBeVisible({ timeout: 10_000 })
     await expect(page).toHaveURL(/\/tasks/, { timeout: 10_000 })
+
+    // Naviger til /tasks?search=<title> så kun den nyoprettede opgave vises —
+    // robust mod data-akkumulering (uden due_date havner opgaven ellers på side 2+
+    // pga. default-sortering due_date ASC NULLS LAST).
+    await page.goto(`/tasks?search=${encodeURIComponent(title)}`)
     await expect(page.getByText(title)).toBeVisible()
   })
 })

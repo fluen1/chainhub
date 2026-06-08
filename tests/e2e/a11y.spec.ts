@@ -25,7 +25,7 @@ interface SeedIds {
 
 // uid(n) i prisma/seed.ts genererer '00000000-0000-0000-0000-<padStart(12,'0')>'.
 // Hardcoded første-ID for hver entitet (seed-data er stable).
-// Company 1000 er holding — vi bruger 1001 (klinik Tandlæge Østerbro).
+// Company 1000 er holding — vi bruger 1001 (butik Optik Østerbro).
 const SEED_IDS: SeedIds = {
   companyId: '00000000-0000-0000-0000-000000001001',
   contractId: '00000000-0000-0000-0000-000000005001',
@@ -71,6 +71,43 @@ test.describe('a11y — axe-core scans', () => {
 
       expect(critical).toHaveLength(0)
       expect(serious).toHaveLength(0)
+    })
+  }
+})
+
+const PUBLIC_PAGES = [
+  { path: '/', label: 'Forside' },
+  { path: '/pricing', label: 'Pricing' },
+  { path: '/kontakt', label: 'Kontakt' },
+  { path: '/legal/vilkaar', label: 'Servicevilkår' },
+  { path: '/legal/privatliv', label: 'Privatlivspolitik' },
+  { path: '/legal/cookies', label: 'Cookiepolitik' },
+  { path: '/legal/databehandleraftale', label: 'Databehandleraftale' },
+  { path: '/docs', label: 'Docs forside' },
+  { path: '/docs/selskaber', label: 'Docs selskaber' },
+  { path: '/docs/kontrakter', label: 'Docs kontrakter' },
+  { path: '/docs/sager-opgaver', label: 'Docs sager-opgaver' },
+  { path: '/docs/brugere-roller', label: 'Docs brugere-roller' },
+  { path: '/docs/eksport-gdpr', label: 'Docs eksport-gdpr' },
+  { path: '/docs/faq', label: 'Docs faq' },
+]
+
+test.describe('a11y — public-lag (uden auth)', () => {
+  for (const { path, label } of PUBLIC_PAGES) {
+    test(`${label} har ingen critical/serious violations`, async ({ page }) => {
+      await page.goto(path)
+      await page.waitForLoadState('networkidle', { timeout: 10_000 })
+
+      const results = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+        .analyze()
+
+      const critical = results.violations.filter((v) => v.impact === 'critical')
+      const serious = results.violations.filter((v) => v.impact === 'serious')
+      expect(
+        [...critical, ...serious].map((v) => `${v.id}: ${v.help}`),
+        `a11y-violations på ${label}`
+      ).toEqual([])
     })
   }
 })

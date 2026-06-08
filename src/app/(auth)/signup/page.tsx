@@ -261,11 +261,11 @@ export default function SignupPage() {
         </div>
 
         <div className="text-center text-[11px] text-b-3">
-          <a href="/privacy" className="text-b-2 no-underline hover:text-b-1">
+          <a href="/legal/privatliv" className="text-b-2 no-underline hover:text-b-1">
             Privatlivspolitik
           </a>
           <span className="mx-2 text-[#d0d7de]">·</span>
-          <a href="/terms" className="text-b-2 no-underline hover:text-b-1">
+          <a href="/legal/vilkaar" className="text-b-2 no-underline hover:text-b-1">
             Vilkår
           </a>
           <span className="mx-2 text-[#d0d7de]">·</span>

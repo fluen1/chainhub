@@ -1,7 +1,5 @@
-// LegalPageLayout — delt layout til statiske juridiske sider (vilkår + privatlivspolitik).
-// Ingen auth påkrævet. Server component.
-
-import { BrandMark } from './BrandMark'
+// LegalPageLayout — titlet indholdspanel til statiske juridiske sider.
+// Lever under (public)/ og arver PublicHeader/PublicFooter — har derfor ingen egen chrome.
 
 interface LegalPageLayoutProps {
   title: string
@@ -12,38 +10,16 @@ interface LegalPageLayoutProps {
 
 export function LegalPageLayout({ title, subtitle, lastUpdated, children }: LegalPageLayoutProps) {
   return (
-    <div className="flex min-h-screen flex-col bg-b-canvas text-b-1">
-      <div className="flex flex-1 flex-col items-center px-4 py-12">
-        {/* Logo-header */}
-        <div className="mb-8 flex w-full max-w-3xl items-center justify-between">
-          <a
-            href="/login"
-            className="flex items-center gap-2 text-[13px] font-semibold text-b-1 no-underline"
-          >
-            <BrandMark withText />
-          </a>
-          <span className="text-[11px] text-b-3">Senest opdateret: {lastUpdated}</span>
+    <div className="mx-auto flex max-w-3xl flex-col px-4 py-12">
+      <div className="mb-3 flex justify-end">
+        <span className="text-[11px] text-b-3">Senest opdateret: {lastUpdated}</span>
+      </div>
+      <div className="w-full rounded-[6px] border border-b-border bg-b-panel shadow-[0_4px_16px_rgba(15,23,42,0.07)]">
+        <div className="border-b border-b-border bg-b-panel-h px-8 py-6">
+          <h1 className="-tracking-[0.02em] text-[22px] font-semibold text-b-1">{title}</h1>
+          <p className="mt-1 text-[13px] text-b-2">{subtitle}</p>
         </div>
-
-        {/* Indholdspanel */}
-        <div className="w-full max-w-3xl rounded-[6px] border border-b-border bg-b-panel shadow-[0_4px_16px_rgba(15,23,42,0.07)]">
-          {/* Panelhoved */}
-          <div className="border-b border-b-border bg-b-panel-h px-8 py-6">
-            <h1 className="-tracking-[0.02em] text-[22px] font-semibold text-b-1">{title}</h1>
-            <p className="mt-1 text-[13px] text-b-2">{subtitle}</p>
-          </div>
-
-          {/* Sektioner */}
-          <div className="space-y-8 px-8 py-8 text-[13px] leading-relaxed text-b-1">{children}</div>
-
-          {/* Sidefod */}
-          <div className="flex items-center justify-between border-t border-b-border bg-b-panel-h px-8 py-4 text-[11px] text-b-2">
-            <a href="/login" className="text-b-blue-fg no-underline hover:underline">
-              ← Tilbage til log ind
-            </a>
-            <span>© {new Date().getFullYear()} ChainHub</span>
-          </div>
-        </div>
+        <div className="space-y-8 px-8 py-8 text-[13px] leading-relaxed text-b-1">{children}</div>
       </div>
     </div>
   )
@@ -76,7 +52,7 @@ export function LegalContactBox({ children }: { children: React.ReactNode }) {
 /** E-mail-link */
 export function LegalMailLink({ address }: { address: string }) {
   return (
-    <a href={`mailto:${address}`} className="text-b-blue-fg no-underline hover:underline">
+    <a href={`mailto:${address}`} className="text-b-blue-fg underline hover:no-underline">
       {address}
     </a>
   )
@@ -89,7 +65,7 @@ export function LegalExternalLink({ href, children }: { href: string; children: 
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="text-b-blue-fg no-underline hover:underline"
+      className="text-b-blue-fg underline hover:no-underline"
     >
       {children}
     </a>

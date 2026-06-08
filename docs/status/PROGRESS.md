@@ -1,6 +1,105 @@
 # PROGRESS.md — ChainHub
 
-Opdateret: Produktions-modenhed session 1+2 leveret — 2026-04-18
+Opdateret: Launch-readiness plan 4 leveret — tracket kode-komplet — 2026-06-08
+
+## Launch-readiness plan 4/4 — Deploy-forberedelse ✅ (2026-06-08)
+
+Fjerde og sidste af 4 launch-planer. Branch `feat/launch-readiness`. Bygger oven på plan 3b (onboarding-docs). Etablerer env-hærdning, prod-bootstrap og go-live-runbook.
+
+- [x] **Env-hærdning** — `STORAGE_PROVIDER` + `DIGEST_FROM_EMAIL` tilføjet til Zod-schema i `src/lib/env.ts`. Begge valideres ved boot. `.env.production.example`-skabelon oprettet med alle prod-nødvendige variabler (inkl. R2, Sentry, BetterStack, Resend)
+- [x] **Prod-bootstrap-script** — `src/lib/bootstrap.ts` eksponerer `bootstrapProd({ email, password, orgName })`:
+  - Afbryder med fejl hvis DB ikke er tom (beskytter mod utilsigtet re-kørsel)
+  - Opretter første org + GROUP_OWNER-bruger uden demo-data
+  - bcrypt-hash af password (cost factor 12)
+  - 5/5 unit-tests (tom DB, ikke-tom DB, svagt password, manglende felter, hash-bekræftelse)
+- [x] **CLI-wrapper** `scripts/bootstrap-prod.ts` — kørbar via `npx tsx scripts/bootstrap-prod.ts` fra terminal; læser `BOOTSTRAP_*`-env-variable; exit 1 ved fejl
+- [x] **Nye npm-scripts** — `db:migrate` (`prisma migrate deploy`, korrekt til prod) + `db:bootstrap` (kører CLI-wrapperen)
+- [x] **Go-live-runbook** `docs/ops/LAUNCH-DEPLOY.md` — trin-for-trin rækkefølge: DNS → Sentry-DSN → BetterStack webhook → R2-bucket + env → Vercel-deploy → `db:migrate` → `db:bootstrap` → røgtests. Inkl. ekstern tjekliste (domæne, CVR i privatliv, Philip-jurist-review af legal-sider)
+
+**Gate-tal ved lukning:** prettier rent, lint baseline (4 præeksisterende), tsc 0, **2179 unit-tests / 0 fail**, build grøn.
+
+**Kendt e2e-issue (IKKE plan 4, præeksisterende):** 2 tests i `tasks-crud.spec.ts` fejler pga. test-data-akkumulering på delt dev-DB — opgaver uden `due_date` sorteres `NULLS LAST` og paginerer til side 2+. Plan 4 rører ikke tasks-kode. Fix-muligheder (backlog): sæt `E2E_DATABASE_URL` (separat test-DB) eller gør testen robust (naviger til opgave via ID). Afventer Philips beslutning.
+
+**Hele launch-readiness-tracket (plan 1–4) er nu KODE-KOMPLET.** Resterende = gated infra/eksterne handlinger (runbook) + PR til Rico.
+
+**Status:** Kode på branch `feat/launch-readiness`. PR afventer afstemning med Rico (CopenAI-regel).
+
+## Launch-readiness plan 3b — Onboarding-docs ✅ (2026-06-08)
+
+Tillæg til plan 3/4. Branch `feat/launch-readiness`. Bygger oven på plan 3 (legal-lag). Etablerer et `/docs`-lag med 7 onboarding-sider rettet mod nye kunder.
+
+- [x] **7 onboarding-sider** under `(public)/docs/` — dansk du-form, app-grounded (skærm-labels matcher appens faktiske UI):
+  - `kom-godt-i-gang` — introduktion + første trin
+  - `selskaber-og-ejerskab` — selskabsoversigt, ejerskabstræ, roller
+  - `kontrakter-og-ai-udlaesning` — kontraktyper, upload, AI-ekstraktion i shadow-mode
+  - `sager-og-opgaver` — sagsflow, opgavestatus, kanban
+  - `brugere-og-roller` — roller dokumenteret med faktiske UI-labels (Ejer, Admin, Jurist, Læseadgang; selskabsniveau: Klinikchef, Klinikjurist, Klinik-læseadgang)
+  - `eksport-og-gdpr` — CSV-eksport, GDPR artikel 15/17, organisations-backup
+  - `faq` — hyppige spørgsmål om tilladelser, AI og data
+- [x] **Docs-layout** — fælles sidebar med alle 7 sider + aktiv-markering via `usePathname` (Client Component)
+- [x] **Public-header** — Docs-link aktiveret og synligt for uautoriserede besøgende
+- [x] **`/docs` tilføjet til `PUBLIC_PATHS`** i `src/lib/proxy.ts` — ingen session krævet
+- [x] **Tekst-først** — ingen skærmbilleder i v1 (bevidst valg; screenshots tilføjes i v2)
+- [x] **Kvalitetsgate ved lukning:** 2174 unit-tests/0 fail, tsc 0 fejl, build grøn (alle 7 docs-ruter), 69/69 e2e passed, axe grøn for alle docs-sider
+- [x] **FLAG (app-niveau, uden for scope):** selskabsniveau-rollerne hedder "Klinikchef/Klinikjurist/Klinik-læseadgang" i UI'et — dental/medicinsk-lænende naming der spænder med ikke-dental ICP. Overvej neutral omdøbning (fx "Lokationschef/Lokationsjurist/Lokation-læseadgang") som dedikeret task
+
+**Status:** Kode på branch `feat/launch-readiness`. PR afventer plan 4 (deploy-forberedelse) + afstemning med Rico (CopenAI-regel).
+
+**Næste:** plan 4 (deploy: R2, env, bootstrap, DNS).
+
+## Launch-readiness plan 3/4 — Legal-konsolidering + Cookie-consent ✅ (2026-06-08)
+
+Tredje af 4 launch-planer. Branch `feat/launch-readiness`. Bygger oven på plan 2 (public-lag). Etablerer komplet legal-lag under `/legal/*` og GDPR-compliant opt-in cookie-consent.
+
+- [x] **Legal-ruter konsolideret under `/legal/*`** — fire sider samlet i `(public)/legal/`: `vilkaar`, `privatliv`, `cookiepolitik`, `databehandleraftale`. Alle arver public header/footer. Redirects fra gamle `/terms` og `/privacy` til nye stier
+- [x] **`LegalPageLayout`** — afklædt standalone-chrome; virker nu som et rent indholdspanel der wrappes af det fælles public-layout
+- [x] **Databehandlerliste rettet** — OpenAI (ikke Anthropic) som AI-leverandør; tilføjet Stripe, Upstash, PostHog og Google. I alt 10 underdatabehandlere dokumenteret. E2e-test håndhæver "OpenAI, ikke Anthropic"
+- [x] **Databehandleraftale** — ny side (GDPR art. 28-krav); inkl. print/download-funktionalitet
+- [x] **Opt-in cookie-consent** — PostHog initialiseres opt-out-by-default og aktiveres kun ved eksplicit samtykke via consent-banner (gemmes i localStorage). Cookiepolitik + privatlivs-§7 dokumenterer dette. (Bevidst afvigelse fra spec'ens "ingen tracking i v1" — Philips beslutning 8/6)
+- [x] **Legal-links i public footer** — alle fire legal-sider linket direkte
+- [x] **Inbound-links opdateret** — login, signup og invite-sider peger nu på `/legal/vilkaar` og `/legal/privatliv` (ikke de gamle `/terms`/`/privacy`)
+- [x] **a11y-fix** — inline tekst-links understreget (WCAG 1.4.1, link-in-text-block)
+- [x] **Kvalitetsgate ved lukning:** 2174 unit-tests/0 fail, tsc 0 fejl, build grøn, 60/60 e2e passed. Consent-banner krævede consent-seed i `loggedInPage`-fixture (ellers overlejrede banneret dashboard-klik)
+- [x] **Kendte præeksisterende udestående (IKKE plan 3):** CVR-felt i privatlivs-§1 afventer selskabsregistrering; 4 præeksisterende ESLint-fejl + ~38 prettier-issues i ældre filer — ikke introduceret i denne plan
+
+**Philip skal som jurist review'e:** vilkår, privatliv, cookiepolitik og databehandleraftale inden PR merges.
+
+**Status:** Kode på branch `feat/launch-readiness`. PR afventer plan 3b + plan 4 (deploy-forberedelse) + afstemning med Rico (CopenAI-regel).
+
+**Næste:** plan 4 (deploy: R2, env, bootstrap, DNS).
+
+## Launch-readiness plan 2/4 — Public-lag (forside/pricing/kontakt) ✅ (2026-06-08)
+
+Anden af 4 launch-planer. Branch `feat/launch-readiness`. Bygger oven på plan 1 (Gate 1 + dental-sanering). Etablerer det kundevendte public-lag som uautoriserede besøgende rammer, uden at røre det eksisterende dashboard.
+
+- [x] **`(public)` Next.js route-group** — ny group etableret; rod-`src/app/page.tsx` erstattet af forside (redirect til `/dashboard` ophævet)
+- [x] **Forside** (`/`) — ICP-specificeret: optiker-, fysio-, læge- og franchisekæder (ingen dental); "Gå til dashboard"-CTA synlig for indloggede brugere uden redirect (soft prompt)
+- [x] **Pricing-side** (`/pricing`) — de låste tiers dokumenteret og eksponeret:
+  - Basis 3.500 kr./md
+  - Plus 9.500 kr./md inkl. 50 AI-ekstraktioner; ekstra 75 kr./ekstraktion
+  - Enterprise: forhandles, floor 32.000 kr./md, fair-use 500 ekstraktioner
+  - Onboarding-fee: 1 kr./dok (max 2.500 kr.)
+  - Tier-data centraliseret i `src/lib/pricing.ts` med unit-tests der håndhæver priser + dental-eksklusion
+- [x] **Kontaktformular** (`/kontakt`) — server action med Zod-validering, Resend-integration, honeypot-spamguard, HTML-escaping af utrustet input (sikkerhedsfix), kvitteringsbesked + notifikation til Philip via `replyTo`; mailto-fallback ved Resend-fejl
+- [x] **`proxy.ts` auth-bypass** — `/`, `/pricing`, `/kontakt` fritaget fra krav om session
+- [x] **Kvalitetsgate ved lukning:** 2171 unit-tests passed/0 failed, tsc 0 fejl, build grøn, 52 e2e passed/0 failed, axe-sweep grøn for alle 3 public routes
+- [x] **Kendte præeksisterende udestående (IKKE plan 2):** 4 ESLint-fejl + ~38 prettier-format-issues i ældre filer — ikke introduceret i denne plan, adresseres i plan 3 eller separat cleanup
+
+**Status:** Kode på branch `feat/launch-readiness`. PR til master afventer plan 3 (legal + onboarding-docs) + plan 4 (deploy-forberedelse) + afstemning med Rico (CopenAI-regel).
+
+**Næste:** plan 3 (legal: privatlivspolitik, vilkår, databehandleraftale), plan 4 (deploy: R2, env, bootstrap, DNS).
+
+## Launch-readiness plan 1/4 — Gate 1 + dental-sanering ✅ (2026-06-08)
+
+Første af 4 launch-planer (spec: `docs/superpowers/specs/2026-06-08-launch-readiness-design.md`). Branch `feat/launch-readiness`. Beslutninger låst: navn Chainhub/chainhub.dk, pricing Basis 3.500/Plus 9.500/Enterprise fra 32.000 + onboarding-fee 1 kr/dok (max 2.500), dental-eksklusion (Philip = Legal Counsel hos Tandlægen.dk).
+
+- [x] **Worktree-oprydning** — 5 stale agent-worktrees + branches fjernet
+- [x] **Dental-sanering** — seed/scripts/docs/e2e: TandlægeGruppen → OptikGruppen, alle dental-strings væk fra kundevendt + internt materiale (historiske mockups undtaget). DB reseedet.
+- [x] **Gate 1 browser-sweep** — alle 37 sider gennemgået i browser med screenshots (`screenshots/gate1/`) + rapport `docs/status/GATE1-2026-06.md`. 18 fund, alle ❌/⚠️ lukket.
+- [x] **Bugs fundet+fixet undervejs:** env build-fase-secrets (G1-001), playwright DATABASE_URL (G1-002), unstable_cache Date+Decimal-serialisering → dashboard-crash/NaN (G1-003/010), seed FK-race (G1-007), 26→0 e2e-drift, 5 WCAG-kontrastfejl, skip-link-fokus, rå visit-enums, /billing placeholder-priser (G1-009), m.fl.
+- [x] **Kvalitet ved lukning:** 2157 unit-tests grønne (+27), 44/44 e2e grønne, tsc ren, build grøn (47 routes)
+
+**Næste:** plan 2 (public-lag: forside/pricing/kontakt), plan 3 (legal + onboarding-docs), plan 4 (deploy-forberedelse: R2, env, bootstrap, DNS).
 
 ## Sprint 1-6 ✅ FÆRDIGE
 

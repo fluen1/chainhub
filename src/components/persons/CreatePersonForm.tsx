@@ -145,11 +145,7 @@ export function CreatePersonForm() {
           <Link href="/persons">
             <BButton disabled={loading}>Annuller</BButton>
           </Link>
-          <BButton
-            type="submit"
-            primary
-            disabled={loading || !firstName.trim() || !lastName.trim()}
-          >
+          <BButton type="submit" primary disabled={loading}>
             {loading ? 'Opretter...' : 'Opret person'}
           </BButton>
         </div>

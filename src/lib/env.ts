@@ -1,6 +1,9 @@
 import { z } from 'zod'
 
-const isProd = process.env.NODE_ENV === 'production'
+// `next build` sætter NODE_ENV=production men kører på dev/CI-maskiner uden
+// produktions-secrets — runtime-krav håndhæves derfor kun udenfor build-fasen.
+const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build'
+const isProd = process.env.NODE_ENV === 'production' && !isBuildPhase
 
 const requiredInProd = (msg: string) =>
   isProd ? z.string().min(1, `${msg} — påkrævet i production`) : z.string().optional()
@@ -16,6 +19,9 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   OPENAI_API_KEY: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
+  CONTACT_TO_EMAIL: z.string().optional(),
+  STORAGE_PROVIDER: z.enum(['local', 'r2']).optional().default('local'),
+  DIGEST_FROM_EMAIL: z.string().optional(),
   SENTRY_DSN: z.string().optional(),
   DIGEST_CRON_SECRET: requiredInProd('DIGEST_CRON_SECRET'),
   R2_ACCOUNT_ID: z.string().optional(),
@@ -29,8 +35,8 @@ const envSchema = z.object({
   STRIPE_SECRET_KEY: requiredInProd('STRIPE_SECRET_KEY'),
   STRIPE_WEBHOOK_SECRET: requiredInProd('STRIPE_WEBHOOK_SECRET'),
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().optional(),
-  STRIPE_STARTER_PRICE_ID: z.string().optional(),
-  STRIPE_PROFESSIONAL_PRICE_ID: z.string().optional(),
+  STRIPE_BASIS_PRICE_ID: z.string().optional(),
+  STRIPE_PLUS_PRICE_ID: z.string().optional(),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   VERCEL_URL: z.string().optional(),

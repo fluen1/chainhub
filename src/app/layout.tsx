@@ -6,6 +6,7 @@ import '@fontsource-variable/inter/index.css'
 import './globals.css'
 import { Toaster } from 'sonner'
 import { PosthogProvider } from '@/components/providers/PosthogProvider'
+import { CookieConsent } from '@/components/CookieConsent'
 
 export const metadata: Metadata = {
   title: {
@@ -31,6 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             // ARIA: Sonner har built-in aria-live="polite" og role="status" på sin toast-container.
           }}
         />
+        <CookieConsent />
       </body>
     </html>
   )

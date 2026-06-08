@@ -370,7 +370,7 @@ export function PersonDetailB({
         ) : (
           <>
             <div
-              className="grid items-center gap-2 border-b border-b-border bg-b-panel-h px-3 py-1.5 text-[10px] font-semibold uppercase text-b-3"
+              className="grid items-center gap-2 border-b border-b-border bg-b-panel-h px-3 py-1.5 text-[10px] font-semibold uppercase text-b-2"
               style={{
                 gridTemplateColumns: '36px 1fr 160px 80px 70px 14px',
                 letterSpacing: '0.5px',

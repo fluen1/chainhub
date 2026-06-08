@@ -43,12 +43,9 @@ describe('LegalPageLayout', () => {
     expect(screen.getByText('Sektionsindhold')).toBeInTheDocument()
   })
 
-  it('has a link back to login', () => {
-    render(<LegalPageLayout {...defaultProps} />)
-    const loginLinks = screen
-      .getAllByRole('link')
-      .filter((l) => l.getAttribute('href') === '/login')
-    expect(loginLinks.length).toBeGreaterThan(0)
+  it('renderer INGEN nav-chrome (login-link kommer fra PublicLayout, ikke her)', () => {
+    const { container } = render(<LegalPageLayout {...defaultProps} />)
+    expect(container.querySelector('a[href="/login"]')).toBeNull()
   })
 })
 

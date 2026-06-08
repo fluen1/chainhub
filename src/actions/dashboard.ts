@@ -3,6 +3,7 @@
 import { unstable_cache } from 'next/cache'
 import { z } from 'zod'
 import { auth } from '@/lib/auth'
+import { reviveDates } from '@/lib/cache-dates'
 import {
   buildInlineKpis,
   buildTimelineSections,
@@ -279,7 +280,7 @@ export async function getDashboardData(preloadedCompanyIds?: string[]): Promise<
     personsCount,
     today,
     weekEnd,
-  } = await getCachedDashboardRawData(organizationId, companyIds)
+  } = reviveDates(await getCachedDashboardRawData(organizationId, companyIds))
 
   // DB-data er nu hentet via getCachedDashboardRawData ovenfor.
 

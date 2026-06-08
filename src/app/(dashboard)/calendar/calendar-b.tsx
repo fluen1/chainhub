@@ -236,7 +236,7 @@ export function CalendarPageB({
         }
         meta={
           <>
-            {monthEvents.length} begivenheder
+            {monthEvents.length} {monthEvents.length === 1 ? 'begivenhed' : 'begivenheder'}
             {criticalThisMonth > 0 && (
               <>
                 {' · '}
@@ -293,7 +293,8 @@ export function CalendarPageB({
       <BottomBar
         left={
           <>
-            Kalender · {MONTH_NAMES_DA[monthIdx]} {year} · {monthEvents.length} begivenheder
+            Kalender · {MONTH_NAMES_DA[monthIdx]} {year} · {monthEvents.length}{' '}
+            {monthEvents.length === 1 ? 'begivenhed' : 'begivenheder'}
           </>
         }
       />
@@ -321,9 +322,7 @@ function MonthView({
         {WEEKDAYS_DA_SHORT.map((d, i) => (
           <div
             key={d}
-            className={`px-2 py-1.5 text-[10px] font-semibold uppercase ${
-              i >= 5 ? 'text-b-3' : 'text-b-2'
-            }`}
+            className="px-2 py-1.5 text-[10px] font-semibold uppercase text-b-2"
             style={{ letterSpacing: '0.5px' }}
           >
             {d}
@@ -343,8 +342,8 @@ function MonthView({
             <div
               key={`${ds}-${i}`}
               className={`relative border-b border-r border-b-divider p-1 ${
-                isWE ? 'bg-[#fbfbfd]' : ''
-              } ${!day.curr ? 'opacity-50' : ''} ${i % 7 === 6 ? 'border-r-0' : ''}`}
+                !day.curr ? 'bg-[#f0f2f5]' : isWE ? 'bg-[#fbfbfd]' : ''
+              } ${i % 7 === 6 ? 'border-r-0' : ''}`}
             >
               <div
                 className={`b-tnum inline-flex h-5 w-5 items-center justify-center text-[11px] font-medium ${
@@ -367,7 +366,13 @@ function MonthView({
                         type="button"
                         title={`${ev.title} · ${ev.subtitle}`}
                         onClick={() =>
-                          onVisitClick({ id: ev.sourceId!, title: ev.title, date: ev.date })
+                          onVisitClick({
+                            id: ev.sourceId!,
+                            title: ev.title,
+                            date: ev.date,
+                            notes: ev.notes,
+                            summary: ev.summary,
+                          })
                         }
                         className={`truncate rounded-[3px] px-1 py-px text-left text-[10px] hover:opacity-80 ${pillCls(c)}`}
                       >
@@ -456,7 +461,13 @@ function AgendaView({
                     key={ev.id}
                     type="button"
                     onClick={() =>
-                      onVisitClick({ id: ev.sourceId!, title: ev.title, date: ev.date })
+                      onVisitClick({
+                        id: ev.sourceId!,
+                        title: ev.title,
+                        date: ev.date,
+                        notes: ev.notes,
+                        summary: ev.summary,
+                      })
                     }
                     className="flex w-full items-center gap-2.5 border-b border-b-divider px-3 py-1.5 last:border-b-0 hover:bg-b-row-hover text-left"
                   >
