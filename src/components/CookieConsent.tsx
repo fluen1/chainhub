@@ -1,15 +1,19 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import posthog from 'posthog-js'
 import Link from 'next/link'
 import { BButton } from '@/components/ui/b'
 import { COOKIE_CONSENT_KEY, type CookieConsentChoice } from '@/lib/cookie-consent'
 
 export function CookieConsent() {
-  const [visible, setVisible] = useState(
-    () => typeof window !== 'undefined' && !localStorage.getItem(COOKIE_CONSENT_KEY)
-  )
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    // Initialisering fra localStorage sker kun på klienten (SSR-safe).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (!localStorage.getItem(COOKIE_CONSENT_KEY)) setVisible(true)
+  }, [])
 
   function choose(choice: CookieConsentChoice) {
     localStorage.setItem(COOKIE_CONSENT_KEY, choice)
