@@ -14,8 +14,8 @@ interface BillingClientProps {
   trialDaysLeft: number | null
   hasSubscription: boolean
   planExpiresAt: string | null
-  starterPriceId: string
-  professionalPriceId: string
+  basisPriceId: string
+  plusPriceId: string
   checkoutSuccess?: boolean
   checkoutCanceled?: boolean
 }
@@ -25,8 +25,8 @@ export function BillingClient({
   trialDaysLeft,
   hasSubscription,
   planExpiresAt,
-  starterPriceId,
-  professionalPriceId,
+  basisPriceId,
+  plusPriceId,
   checkoutSuccess,
   checkoutCanceled,
 }: BillingClientProps) {
@@ -64,11 +64,13 @@ export function BillingClient({
   const planLabel =
     plan === 'trial'
       ? 'Prøveperiode'
-      : plan === 'starter'
-        ? 'Starter'
-        : plan === 'professional'
-          ? 'Professional'
-          : plan
+      : plan === 'basis'
+        ? 'Basis'
+        : plan === 'plus'
+          ? 'Plus'
+          : plan === 'enterprise'
+            ? 'Enterprise'
+            : plan
 
   return (
     <div className="flex flex-col gap-3">
@@ -133,55 +135,55 @@ export function BillingClient({
 
       {/* Plan-kort */}
       <div className="grid gap-3 sm:grid-cols-2">
-        {/* Starter */}
+        {/* Basis */}
         <Panel>
-          <PanelHeader title="Starter" meta="799 kr/md" />
+          <PanelHeader title="Basis" meta="3.500 kr/md" />
           <div className="px-3 py-3">
             <ul className="space-y-1.5 text-[12px] text-b-2">
-              <li>· Op til 10 lokationer</li>
-              <li>· Kontrakter og sagsstyring</li>
-              <li>· Dokumenthåndtering</li>
+              <li>· 5–15 lokationer</li>
+              <li>· Kontrakt-, sags- og opgavestyring</li>
+              <li>· Governance og personrelationer</li>
+              <li>· Dokumenthåndtering og eksport</li>
               <li>· E-mail-notifikationer</li>
-              <li>· 3 brugere inkluderet</li>
             </ul>
           </div>
           <PanelFooter>
-            {plan === 'starter' ? (
+            {plan === 'basis' ? (
               <span className="text-[12px] text-b-green-fg font-medium">Nuværende plan</span>
             ) : (
               <button
-                onClick={() => handleChoosePlan(starterPriceId)}
-                disabled={!!loadingPrice || !starterPriceId}
+                onClick={() => handleChoosePlan(basisPriceId)}
+                disabled={!!loadingPrice || !basisPriceId}
                 className="inline-flex items-center rounded-[4px] bg-b-accent px-3 py-1.5 text-[12px] font-medium text-white hover:bg-b-accent/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {loadingPrice === starterPriceId ? 'Åbner betaling…' : 'Vælg Starter'}
+                {loadingPrice === basisPriceId ? 'Åbner betaling…' : 'Vælg Basis'}
               </button>
             )}
           </PanelFooter>
         </Panel>
 
-        {/* Professional */}
+        {/* Plus */}
         <Panel>
-          <PanelHeader title="Professional" meta="1.999 kr/md" />
+          <PanelHeader title="Plus" meta="9.500 kr/md" />
           <div className="px-3 py-3">
             <ul className="space-y-1.5 text-[12px] text-b-2">
-              <li>· Ubegrænsede lokationer</li>
-              <li>· Alt i Starter</li>
-              <li>· AI-analyse og indsigter</li>
-              <li>· Avancerede rapporter</li>
-              <li>· Prioriteret support</li>
+              <li>· 15–50 lokationer</li>
+              <li>· Alt i Basis</li>
+              <li>· AI-kontraktudlæsning (50 inkl./md)</li>
+              <li>· AI-indsigter og portefølje-analyse</li>
+              <li>· 75 kr./ekstra udlæsning derover</li>
             </ul>
           </div>
           <PanelFooter>
-            {plan === 'professional' ? (
+            {plan === 'plus' ? (
               <span className="text-[12px] text-b-green-fg font-medium">Nuværende plan</span>
             ) : (
               <button
-                onClick={() => handleChoosePlan(professionalPriceId)}
-                disabled={!!loadingPrice || !professionalPriceId}
+                onClick={() => handleChoosePlan(plusPriceId)}
+                disabled={!!loadingPrice || !plusPriceId}
                 className="inline-flex items-center rounded-[4px] bg-b-accent px-3 py-1.5 text-[12px] font-medium text-white hover:bg-b-accent/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {loadingPrice === professionalPriceId ? 'Åbner betaling…' : 'Vælg Professional'}
+                {loadingPrice === plusPriceId ? 'Åbner betaling…' : 'Vælg Plus'}
               </button>
             )}
           </PanelFooter>
@@ -190,17 +192,17 @@ export function BillingClient({
 
       {/* Enterprise */}
       <Panel>
-        <PanelHeader title="Enterprise" meta="Tilpasset pris" />
+        <PanelHeader title="Enterprise" meta="Fra 32.000 kr/md" />
         <div className="px-3 py-3">
           <p className="text-[13px] text-b-2">
             Til kæder med 50+ lokationer, særlige compliance-krav eller behov for on-premise drift.
             Vi tilpasser ChainHub til jeres infrastruktur og organisation.
           </p>
           <ul className="mt-2 space-y-1 text-[12px] text-b-3">
-            <li>· SSO / SAML 2.0 integration</li>
-            <li>· Dedikeret Customer Success Manager</li>
+            <li>· Portefølje-AI og Søg &amp; Spørg (RAG)</li>
+            <li>· Fair-use 500 udlæsninger/md</li>
             <li>· SLA-garanti og prioriteret support</li>
-            <li>· On-premise eller privat cloud</li>
+            <li>· SSO / SAML 2.0 og on-premise-mulighed</li>
           </ul>
         </div>
         <PanelFooter>
@@ -212,6 +214,12 @@ export function BillingClient({
           </a>
         </PanelFooter>
       </Panel>
+
+      {/* Onboarding-fee — gælder alle betalte tiers */}
+      <p className="px-1 text-[11px] text-b-3">
+        Ved opstart faktureres et engangs-onboarding-gebyr for data-migrationssetup: 1 kr. pr.
+        importeret dokument, maks. 2.500 kr. Alle priser er ekskl. moms.
+      </p>
     </div>
   )
 }

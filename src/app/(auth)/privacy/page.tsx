@@ -217,6 +217,18 @@ export default function PrivacyPage() {
                 <td className="px-4 py-2.5 text-b-2">Transaktionelle e-mails og notifikationer</td>
                 <td className="px-4 py-2.5 text-b-2">USA (SCCs)</td>
               </tr>
+              <tr>
+                <td className="px-4 py-2.5 font-medium text-b-1">Anthropic</td>
+                <td className="px-4 py-2.5 text-b-2">
+                  AI-udlæsning af kontrakter (kun når AI-funktioner er aktiveret)
+                </td>
+                <td className="px-4 py-2.5 text-b-2">USA (SCCs, zero-retention)</td>
+              </tr>
+              <tr>
+                <td className="px-4 py-2.5 font-medium text-b-1">Cloudflare</td>
+                <td className="px-4 py-2.5 text-b-2">Fillagring af uploadede dokumenter (R2)</td>
+                <td className="px-4 py-2.5 text-b-2">EU</td>
+              </tr>
             </tbody>
           </table>
         </div>

@@ -3,8 +3,8 @@ import { describe, it, expect, vi } from 'vitest'
 vi.mock('@/lib/env', () => ({
   env: {
     NEXTAUTH_URL: 'http://localhost:3000',
-    STRIPE_STARTER_PRICE_ID: 'price_starter',
-    STRIPE_PROFESSIONAL_PRICE_ID: 'price_pro',
+    STRIPE_BASIS_PRICE_ID: 'price_basis',
+    STRIPE_PLUS_PRICE_ID: 'price_plus',
     STRIPE_WEBHOOK_SECRET: 'whsec_test',
   },
   baseUrl: 'http://localhost:3000',
