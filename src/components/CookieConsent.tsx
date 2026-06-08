@@ -1,17 +1,15 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import posthog from 'posthog-js'
 import Link from 'next/link'
 import { BButton } from '@/components/ui/b'
 import { COOKIE_CONSENT_KEY, type CookieConsentChoice } from '@/lib/cookie-consent'
 
 export function CookieConsent() {
-  const [visible, setVisible] = useState(false)
-
-  useEffect(() => {
-    if (!localStorage.getItem(COOKIE_CONSENT_KEY)) setVisible(true)
-  }, [])
+  const [visible, setVisible] = useState(
+    () => typeof window !== 'undefined' && !localStorage.getItem(COOKIE_CONSENT_KEY)
+  )
 
   function choose(choice: CookieConsentChoice) {
     localStorage.setItem(COOKIE_CONSENT_KEY, choice)

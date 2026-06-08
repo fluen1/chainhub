@@ -43,12 +43,11 @@ describe('LegalPageLayout', () => {
     expect(screen.getByText('Sektionsindhold')).toBeInTheDocument()
   })
 
-  it('has a link back to login', () => {
+  it('renders children in content area', () => {
     render(<LegalPageLayout {...defaultProps} />)
-    const loginLinks = screen
-      .getAllByRole('link')
-      .filter((l) => l.getAttribute('href') === '/login')
-    expect(loginLinks.length).toBeGreaterThan(0)
+    // LegalPageLayout er et rent indholdspanel — navigation (inkl. /login) ligger i PublicHeader,
+    // ikke i selve layoutet.
+    expect(screen.getByText('Sektionsindhold')).toBeInTheDocument()
   })
 })
 
