@@ -1,5 +1,14 @@
 import { Resend } from 'resend'
 
+function escHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 const resendApiKey = process.env.RESEND_API_KEY
 
 export const resend = resendApiKey ? new Resend(resendApiKey) : null
@@ -80,11 +89,11 @@ export async function sendContactEmail(input: {
     subject: `Ny demo-forespørgsel fra ${name}`,
     html: `
       <h2>Ny henvendelse via chainhub.dk</h2>
-      <p><strong>Navn:</strong> ${name}</p>
-      <p><strong>E-mail:</strong> ${email}</p>
-      <p><strong>Virksomhed:</strong> ${safeCompany}</p>
+      <p><strong>Navn:</strong> ${escHtml(name)}</p>
+      <p><strong>E-mail:</strong> ${escHtml(email)}</p>
+      <p><strong>Virksomhed:</strong> ${escHtml(safeCompany)}</p>
       <p><strong>Besked:</strong></p>
-      <p>${message.replace(/\n/g, '<br/>')}</p>
+      <p>${escHtml(message).replace(/\n/g, '<br/>')}</p>
     `,
   })
 
@@ -94,7 +103,7 @@ export async function sendContactEmail(input: {
     to: email,
     subject: 'Tak for din henvendelse — ChainHub',
     html: `
-      <h2>Hej ${name},</h2>
+      <h2>Hej ${escHtml(name)},</h2>
       <p>Tak for din interesse i ChainHub. Vi har modtaget din besked og vender tilbage hurtigst muligt.</p>
       <p>Venlig hilsen,<br/>ChainHub</p>
     `,
