@@ -3,19 +3,26 @@
 import posthog from 'posthog-js'
 import { PostHogProvider as PHProvider } from 'posthog-js/react'
 import { useEffect } from 'react'
+import { COOKIE_CONSENT_KEY } from '@/lib/cookie-consent'
 
 export function PosthogProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const key = process.env.NEXT_PUBLIC_POSTHOG_KEY
     const host = process.env.NEXT_PUBLIC_POSTHOG_HOST || 'https://eu.i.posthog.com'
 
-    if (key) {
-      posthog.init(key, {
-        api_host: host,
-        person_profiles: 'identified_only',
-        capture_pageview: true,
-        capture_pageleave: true,
-      })
+    if (!key) return
+
+    posthog.init(key, {
+      api_host: host,
+      person_profiles: 'identified_only',
+      capture_pageview: true,
+      capture_pageleave: true,
+      // Tracking starter først efter eksplicit samtykke (GDPR opt-in).
+      opt_out_capturing_by_default: true,
+    })
+
+    if (localStorage.getItem(COOKIE_CONSENT_KEY) === 'granted') {
+      posthog.opt_in_capturing()
     }
   }, [])
 
