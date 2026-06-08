@@ -1,6 +1,27 @@
 # PROGRESS.md — ChainHub
 
-Opdateret: Launch-readiness plan 2/4 leveret — 2026-06-08
+Opdateret: Launch-readiness plan 3/4 leveret — 2026-06-08
+
+## Launch-readiness plan 3/4 — Legal-konsolidering + Cookie-consent ✅ (2026-06-08)
+
+Tredje af 4 launch-planer. Branch `feat/launch-readiness`. Bygger oven på plan 2 (public-lag). Etablerer komplet legal-lag under `/legal/*` og GDPR-compliant opt-in cookie-consent.
+
+- [x] **Legal-ruter konsolideret under `/legal/*`** — fire sider samlet i `(public)/legal/`: `vilkaar`, `privatliv`, `cookiepolitik`, `databehandleraftale`. Alle arver public header/footer. Redirects fra gamle `/terms` og `/privacy` til nye stier
+- [x] **`LegalPageLayout`** — afklædt standalone-chrome; virker nu som et rent indholdspanel der wrappes af det fælles public-layout
+- [x] **Databehandlerliste rettet** — OpenAI (ikke Anthropic) som AI-leverandør; tilføjet Stripe, Upstash, PostHog og Google. I alt 10 underdatabehandlere dokumenteret. E2e-test håndhæver "OpenAI, ikke Anthropic"
+- [x] **Databehandleraftale** — ny side (GDPR art. 28-krav); inkl. print/download-funktionalitet
+- [x] **Opt-in cookie-consent** — PostHog initialiseres opt-out-by-default og aktiveres kun ved eksplicit samtykke via consent-banner (gemmes i localStorage). Cookiepolitik + privatlivs-§7 dokumenterer dette. (Bevidst afvigelse fra spec'ens "ingen tracking i v1" — Philips beslutning 8/6)
+- [x] **Legal-links i public footer** — alle fire legal-sider linket direkte
+- [x] **Inbound-links opdateret** — login, signup og invite-sider peger nu på `/legal/vilkaar` og `/legal/privatliv` (ikke de gamle `/terms`/`/privacy`)
+- [x] **a11y-fix** — inline tekst-links understreget (WCAG 1.4.1, link-in-text-block)
+- [x] **Kvalitetsgate ved lukning:** 2174 unit-tests/0 fail, tsc 0 fejl, build grøn, 60/60 e2e passed. Consent-banner krævede consent-seed i `loggedInPage`-fixture (ellers overlejrede banneret dashboard-klik)
+- [x] **Kendte præeksisterende udestående (IKKE plan 3):** CVR-felt i privatlivs-§1 afventer selskabsregistrering; 4 præeksisterende ESLint-fejl + ~38 prettier-issues i ældre filer — ikke introduceret i denne plan
+
+**Philip skal som jurist review'e:** vilkår, privatliv, cookiepolitik og databehandleraftale inden PR merges.
+
+**Status:** Kode på branch `feat/launch-readiness`. PR afventer plan 3b + plan 4 (deploy-forberedelse) + afstemning med Rico (CopenAI-regel).
+
+**Næste:** plan 4 (deploy: R2, env, bootstrap, DNS).
 
 ## Launch-readiness plan 2/4 — Public-lag (forside/pricing/kontakt) ✅ (2026-06-08)
 
