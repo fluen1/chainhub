@@ -43,11 +43,9 @@ describe('LegalPageLayout', () => {
     expect(screen.getByText('Sektionsindhold')).toBeInTheDocument()
   })
 
-  it('renders children in content area', () => {
-    render(<LegalPageLayout {...defaultProps} />)
-    // LegalPageLayout er et rent indholdspanel — navigation (inkl. /login) ligger i PublicHeader,
-    // ikke i selve layoutet.
-    expect(screen.getByText('Sektionsindhold')).toBeInTheDocument()
+  it('renderer INGEN nav-chrome (login-link kommer fra PublicLayout, ikke her)', () => {
+    const { container } = render(<LegalPageLayout {...defaultProps} />)
+    expect(container.querySelector('a[href="/login"]')).toBeNull()
   })
 })
 
