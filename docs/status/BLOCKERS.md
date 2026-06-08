@@ -31,11 +31,9 @@
 **Løsning:** Top op Anthropic-kontoen via https://console.anthropic.com/settings/billing og verificér at kontoen der ejer `ANTHROPIC_API_KEY` i `.env.local` har saldo. Test ved at genindlæse `/companies/[id]` — den første request efter credit tilskud triggrer en synkron AI-call der cacher resultatet i `CompanyInsightsCache` i 24 timer.
 **Workaround:** Ingen — graceful degradation er allerede implementeret i Plan 4C, sagen fungerer fint uden AI.
 
-## BLK-003: Mobilnavigation fjernet i Plan 4B
+## BLK-003: Mobilnavigation fjernet i Plan 4B — LØST (2026-04-18)
 
-**Status:** AKTIV — ikke-blokerende (desktop fungerer)
+**Status:** LØST
 **Opdaget:** Plan 4B (2026-04-11)
-**Beskrivelse:** `(dashboard)/layout.tsx` bruger `hidden lg:flex` på AppSidebar og har ingen MobileNav-erstatning. Under 1024px breakpoint mister brugeren al top-level navigation (Dashboard, Selskaber, Kontrakter, Sager, Opgaver, Dokumenter, Personer, Indstillinger) samt rollepanel og senest-besøgt liste. AppHeader renderer stadig, men der er ingen rute-navigation fra tablet/mobil.
-**Plan-sanktioneret:** Plan 4B linje 1655 accepterer dette eksplicit ("proto design doesn't have a mobile nav variant... A mobile drawer can be added in a later polish task if needed").
-**Beslutning nødvendig:** Er ChainHub desktop-only (≥1024px) eller skal der genskabes en mobile drawer?
-**Workaround:** Brug ≥1024px viewport indtil beslutningen er truffet.
+**Beskrivelse:** `(dashboard)/layout.tsx` brugte `hidden lg:flex` på AppSidebar uden MobileNav-erstatning; under 1024px mistede brugeren al top-level navigation.
+**Løsning:** `MobileSidebarWrapper` med hamburger-knap i header (focus-trap, Escape-close, backdrop-click, auto-close ved route-skift) leveret i Mobile + Empty-states-track 2026-04-18. Genbekræftet under Gate 1-sweep 2026-06-08: burger-menu + drawer fungerer på 375px (screenshot gate1-37).

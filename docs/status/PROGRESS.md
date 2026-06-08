@@ -1,6 +1,18 @@
 # PROGRESS.md — ChainHub
 
-Opdateret: Produktions-modenhed session 1+2 leveret — 2026-04-18
+Opdateret: Launch-readiness plan 1/4 leveret — 2026-06-08
+
+## Launch-readiness plan 1/4 — Gate 1 + dental-sanering ✅ (2026-06-08)
+
+Første af 4 launch-planer (spec: `docs/superpowers/specs/2026-06-08-launch-readiness-design.md`). Branch `feat/launch-readiness`. Beslutninger låst: navn Chainhub/chainhub.dk, pricing Basis 3.500/Plus 9.500/Enterprise fra 32.000 + onboarding-fee 1 kr/dok (max 2.500), dental-eksklusion (Philip = Legal Counsel hos Tandlægen.dk).
+
+- [x] **Worktree-oprydning** — 5 stale agent-worktrees + branches fjernet
+- [x] **Dental-sanering** — seed/scripts/docs/e2e: TandlægeGruppen → OptikGruppen, alle dental-strings væk fra kundevendt + internt materiale (historiske mockups undtaget). DB reseedet.
+- [x] **Gate 1 browser-sweep** — alle 37 sider gennemgået i browser med screenshots (`screenshots/gate1/`) + rapport `docs/status/GATE1-2026-06.md`. 18 fund, alle ❌/⚠️ lukket.
+- [x] **Bugs fundet+fixet undervejs:** env build-fase-secrets (G1-001), playwright DATABASE_URL (G1-002), unstable_cache Date+Decimal-serialisering → dashboard-crash/NaN (G1-003/010), seed FK-race (G1-007), 26→0 e2e-drift, 5 WCAG-kontrastfejl, skip-link-fokus, rå visit-enums, /billing placeholder-priser (G1-009), m.fl.
+- [x] **Kvalitet ved lukning:** 2157 unit-tests grønne (+27), 44/44 e2e grønne, tsc ren, build grøn (47 routes)
+
+**Næste:** plan 2 (public-lag: forside/pricing/kontakt), plan 3 (legal + onboarding-docs), plan 4 (deploy-forberedelse: R2, env, bootstrap, DNS).
 
 ## Sprint 1-6 ✅ FÆRDIGE
 
