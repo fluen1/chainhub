@@ -250,11 +250,13 @@ describe('middleware — public marketing-sider passerer uden auth', () => {
   it('allows /pricing without auth', async () => {
     await runMiddleware('/pricing', false)
     expect(mockNext).toHaveBeenCalled()
+    expect(mockRedirect).not.toHaveBeenCalled()
   })
 
   it('allows /kontakt without auth', async () => {
     await runMiddleware('/kontakt', false)
     expect(mockNext).toHaveBeenCalled()
+    expect(mockRedirect).not.toHaveBeenCalled()
   })
 
   it('redirecter STADIG /dashboard til login (/ må ikke gøre alt public)', async () => {
