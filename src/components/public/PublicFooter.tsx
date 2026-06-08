@@ -15,7 +15,18 @@ export function PublicFooter() {
           <Link href="/login" className="text-b-2 no-underline hover:text-b-1">
             Log ind
           </Link>
-          {/* Legal-links (vilkår, privatliv, cookies, DBA) tilføjes i plan 3 */}
+          <Link href="/legal/vilkaar" className="text-b-2 no-underline hover:text-b-1">
+            Vilkår
+          </Link>
+          <Link href="/legal/privatliv" className="text-b-2 no-underline hover:text-b-1">
+            Privatliv
+          </Link>
+          <Link href="/legal/cookies" className="text-b-2 no-underline hover:text-b-1">
+            Cookies
+          </Link>
+          <Link href="/legal/databehandleraftale" className="text-b-2 no-underline hover:text-b-1">
+            Databehandleraftale
+          </Link>
         </nav>
       </div>
     </footer>
