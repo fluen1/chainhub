@@ -15,6 +15,9 @@ const { constructEvent, subscriptionsRetrieve, prismaMock } = vi.hoisted(() => {
     organization: {
       update: vi.fn(),
     },
+    processedStripeEvent: {
+      create: vi.fn(),
+    },
   }
   return { constructEvent, subscriptionsRetrieve, prismaMock }
 })
@@ -69,6 +72,7 @@ beforeEach(() => {
   prismaMock.subscription.upsert.mockResolvedValue({})
   prismaMock.subscription.updateMany.mockResolvedValue({ count: 1 })
   prismaMock.organization.update.mockResolvedValue({})
+  prismaMock.processedStripeEvent.create.mockResolvedValue({})
 })
 
 // ── Tests ────────────────────────────────────────────────────────────────────
@@ -240,5 +244,35 @@ describe('POST /api/webhooks/stripe', () => {
     expect(res.status).toBe(200)
     expect(prismaMock.subscription.upsert).not.toHaveBeenCalled()
     expect(prismaMock.subscription.updateMany).not.toHaveBeenCalled()
+  })
+
+  it('idempotens: allerede-processeret event returnerer 200 uden at re-processere', async () => {
+    constructEvent.mockReturnValue({
+      id: 'evt_dup',
+      type: 'invoice.payment_failed',
+      data: { object: { customer: 'cus_1' } },
+    })
+    // Simulér unique-constraint-violation (event allerede indsat)
+    const p2002 = Object.assign(new Error('Unique constraint failed'), { code: 'P2002' })
+    prismaMock.processedStripeEvent.create.mockRejectedValueOnce(p2002)
+
+    const res = await POST(makeReq())
+    expect(res.status).toBe(200)
+    expect(prismaMock.subscription.updateMany).not.toHaveBeenCalled()
+  })
+
+  it('idempotens: nyt event registreres før behandling', async () => {
+    constructEvent.mockReturnValue({
+      id: 'evt_new',
+      type: 'invoice.payment_failed',
+      data: { object: { customer: 'cus_1' } },
+    })
+
+    const res = await POST(makeReq())
+    expect(res.status).toBe(200)
+    expect(prismaMock.processedStripeEvent.create).toHaveBeenCalledWith({
+      data: { event_id: 'evt_new', event_type: 'invoice.payment_failed' },
+    })
+    expect(prismaMock.subscription.updateMany).toHaveBeenCalled()
   })
 })

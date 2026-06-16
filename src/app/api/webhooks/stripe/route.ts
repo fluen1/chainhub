@@ -58,6 +58,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Ugyldig webhook-signatur' }, { status: 400 })
   }
 
+  // Idempotens: registrér event-ID før behandling. Allerede-set → 200 tidligt.
+  try {
+    await prisma.processedStripeEvent.create({
+      data: { event_id: event.id, event_type: event.type },
+    })
+  } catch (err) {
+    const code = (err as { code?: string } | null)?.code
+    if (code === 'P2002') {
+      return NextResponse.json({ received: true, duplicate: true })
+    }
+    captureError(err, {
+      namespace: 'api:webhooks:stripe',
+      extra: { step: 'idempotency-insert', eventId: event.id },
+    })
+    return NextResponse.json({ error: 'Intern fejl ved idempotens-tjek' }, { status: 500 })
+  }
+
   try {
     switch (event.type) {
       case 'checkout.session.completed': {
