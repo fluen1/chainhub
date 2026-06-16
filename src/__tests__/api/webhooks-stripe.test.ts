@@ -17,6 +17,7 @@ const { constructEvent, subscriptionsRetrieve, prismaMock } = vi.hoisted(() => {
     },
     processedStripeEvent: {
       create: vi.fn(),
+      findUnique: vi.fn(),
     },
   }
   return { constructEvent, subscriptionsRetrieve, prismaMock }
@@ -73,6 +74,7 @@ beforeEach(() => {
   prismaMock.subscription.updateMany.mockResolvedValue({ count: 1 })
   prismaMock.organization.update.mockResolvedValue({})
   prismaMock.processedStripeEvent.create.mockResolvedValue({})
+  prismaMock.processedStripeEvent.findUnique.mockResolvedValue(null)
 })
 
 // ── Tests ────────────────────────────────────────────────────────────────────
@@ -252,16 +254,20 @@ describe('POST /api/webhooks/stripe', () => {
       type: 'invoice.payment_failed',
       data: { object: { customer: 'cus_1' } },
     })
-    // Simulér unique-constraint-violation (event allerede indsat)
-    const p2002 = Object.assign(new Error('Unique constraint failed'), { code: 'P2002' })
-    prismaMock.processedStripeEvent.create.mockRejectedValueOnce(p2002)
+    // Event allerede behandlet → findUnique returnerer eksisterende række
+    prismaMock.processedStripeEvent.findUnique.mockResolvedValueOnce({
+      event_id: 'evt_dup',
+      event_type: 'invoice.payment_failed',
+      processed_at: new Date(0),
+    })
 
     const res = await POST(makeReq())
     expect(res.status).toBe(200)
     expect(prismaMock.subscription.updateMany).not.toHaveBeenCalled()
+    expect(prismaMock.processedStripeEvent.create).not.toHaveBeenCalled()
   })
 
-  it('idempotens: nyt event registreres før behandling', async () => {
+  it('idempotens: nyt event markeres som behandlet EFTER succesfuld behandling', async () => {
     constructEvent.mockReturnValue({
       id: 'evt_new',
       type: 'invoice.payment_failed',
@@ -270,9 +276,25 @@ describe('POST /api/webhooks/stripe', () => {
 
     const res = await POST(makeReq())
     expect(res.status).toBe(200)
+    expect(prismaMock.subscription.updateMany).toHaveBeenCalled()
     expect(prismaMock.processedStripeEvent.create).toHaveBeenCalledWith({
       data: { event_id: 'evt_new', event_type: 'invoice.payment_failed' },
     })
-    expect(prismaMock.subscription.updateMany).toHaveBeenCalled()
+  })
+
+  it('idempotens: ved behandlings-fejl markeres eventet IKKE som behandlet (Stripe-retry kører rent)', async () => {
+    constructEvent.mockReturnValue({
+      id: 'evt_fail',
+      type: 'invoice.payment_failed',
+      data: { object: { customer: 'cus_1' } },
+    })
+    // Behandlingen fejler midtvejs
+    prismaMock.subscription.updateMany.mockRejectedValueOnce(new Error('DB nede'))
+
+    const res = await POST(makeReq())
+    expect(res.status).toBe(500)
+    // KRITISK invariant: et fejlet event må ALDRIG markeres behandlet — ellers
+    // swallower idempotens-guarden Stripes retry og state drifter permanent.
+    expect(prismaMock.processedStripeEvent.create).not.toHaveBeenCalled()
   })
 })

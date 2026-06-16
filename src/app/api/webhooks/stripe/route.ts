@@ -58,21 +58,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Ugyldig webhook-signatur' }, { status: 400 })
   }
 
-  // Idempotens: registrér event-ID før behandling. Allerede-set → 200 tidligt.
-  try {
-    await prisma.processedStripeEvent.create({
-      data: { event_id: event.id, event_type: event.type },
-    })
-  } catch (err) {
-    const code = (err as { code?: string } | null)?.code
-    if (code === 'P2002') {
-      return NextResponse.json({ received: true, duplicate: true })
-    }
-    captureError(err, {
-      namespace: 'api:webhooks:stripe',
-      extra: { step: 'idempotency-insert', eventId: event.id },
-    })
-    return NextResponse.json({ error: 'Intern fejl ved idempotens-tjek' }, { status: 500 })
+  // Idempotens (læse-tjek): er eventet allerede behandlet? → 200 tidligt.
+  // Bemærk: vi markerer FØRST som behandlet EFTER succesfuld behandling (nederst),
+  // så en fejl undervejs ikke permanent springer eventet over ved Stripes retry.
+  const alreadyProcessed = await prisma.processedStripeEvent.findUnique({
+    where: { event_id: event.id },
+  })
+  if (alreadyProcessed) {
+    return NextResponse.json({ received: true, duplicate: true })
   }
 
   try {
@@ -251,7 +244,25 @@ export async function POST(req: NextRequest) {
       namespace: 'api:webhooks:stripe',
       extra: { eventType: event.type, eventId: event.id },
     })
+    // Eventet markeres BEVIDST IKKE som behandlet her → Stripes retry kører rent igen.
     return NextResponse.json({ error: 'Intern fejl ved event-behandling' }, { status: 500 })
+  }
+
+  // Markér som behandlet FØRST efter succesfuld behandling (undgår fail-open state drift).
+  // Handlerne er idempotente (upsert/updateMany), så en sjælden dobbelt-levering er harmløs.
+  // P2002 = en samtidig levering nåede at indsætte rækken → ignorér.
+  try {
+    await prisma.processedStripeEvent.create({
+      data: { event_id: event.id, event_type: event.type },
+    })
+  } catch (err) {
+    const code = (err as { code?: string } | null)?.code
+    if (code !== 'P2002') {
+      captureError(err, {
+        namespace: 'api:webhooks:stripe',
+        extra: { step: 'idempotency-mark', eventId: event.id },
+      })
+    }
   }
 
   return NextResponse.json({ received: true })
