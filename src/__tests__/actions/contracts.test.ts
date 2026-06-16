@@ -369,6 +369,63 @@ describe('updateContract', () => {
   })
 })
 
+// ─── mutation-WHERE invariant-tests ──────────────────────────────────────────
+
+describe('mutation-WHERE: organization_id i alle update/soft-delete kald', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(checkActionRateLimit).mockResolvedValue({ limited: false, remaining: 59 } as any)
+  })
+
+  it('updateContractStatus: update-WHERE indeholder organization_id', async () => {
+    vi.mocked(auth).mockResolvedValue(makeSession())
+    prismaMock.contract.findFirst.mockResolvedValue({ ...baseContract, status: 'UDKAST' })
+    vi.mocked(canAccessSensitivity).mockResolvedValue(true)
+    prismaMock.contract.update.mockResolvedValue({ ...baseContract, status: 'AKTIV' })
+    prismaMock.auditLog.create.mockResolvedValue({})
+
+    await updateContractStatus({ contractId: 'contract-1', status: 'AKTIV' })
+
+    expect(prismaMock.contract.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: 'contract-1', organization_id: 'org-1' }),
+      })
+    )
+  })
+
+  it('deleteContract: update-WHERE indeholder organization_id', async () => {
+    vi.mocked(auth).mockResolvedValue(makeSession())
+    vi.mocked(canAccessModule).mockResolvedValue(true)
+    prismaMock.contract.findFirst.mockResolvedValue({ ...baseContract, status: 'UDKAST' })
+    prismaMock.contract.update.mockResolvedValue({ ...baseContract, deleted_at: new Date() })
+
+    await deleteContract('contract-1')
+
+    expect(prismaMock.contract.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: 'contract-1', organization_id: 'org-1' }),
+      })
+    )
+  })
+
+  it('updateContract: update-WHERE indeholder organization_id', async () => {
+    vi.mocked(auth).mockResolvedValue(makeSession())
+    prismaMock.contract.findFirst.mockResolvedValue(baseContract)
+    vi.mocked(canAccessCompany).mockResolvedValue(true)
+    vi.mocked(canAccessSensitivity).mockResolvedValue(true)
+    prismaMock.contract.update.mockResolvedValue({ ...baseContract, display_name: 'Ny Navn' })
+    prismaMock.auditLog.create.mockResolvedValue({})
+
+    await updateContract({ contractId: 'contract-1', displayName: 'Ny Navn' })
+
+    expect(prismaMock.contract.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: 'contract-1', organization_id: 'org-1' }),
+      })
+    )
+  })
+})
+
 // ─── addContractParty ─────────────────────────────────────────────────────────
 
 describe('addContractParty', () => {

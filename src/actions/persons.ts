@@ -235,7 +235,7 @@ export async function updatePerson(input: UpdatePersonInput): Promise<ActionResu
 
   try {
     const person = await prisma.person.update({
-      where: { id: parsed.data.personId },
+      where: { id: parsed.data.personId, organization_id: session.user.organizationId },
       data: {
         ...(parsed.data.firstName && { first_name: parsed.data.firstName }),
         ...(parsed.data.lastName && { last_name: parsed.data.lastName }),
@@ -300,14 +300,14 @@ export async function deletePerson(personId: string): Promise<ActionResult<void>
 
   // Tenant isolation
   const person = await prisma.person.findFirst({
-    where: { id: personId, organization_id: session.user.organizationId },
+    where: { id: personId, organization_id: session.user.organizationId, deleted_at: null },
     select: { id: true },
   })
   if (!person) return { error: 'Person ikke fundet' }
 
   try {
     await prisma.person.update({
-      where: { id: personId },
+      where: { id: personId, organization_id: session.user.organizationId },
       data: { deleted_at: new Date() },
     })
 

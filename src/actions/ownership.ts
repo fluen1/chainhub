@@ -181,7 +181,7 @@ export async function updateOwnership(
 
   try {
     const ownership = await prisma.ownership.update({
-      where: { id: parsed.data.ownershipId },
+      where: { id: parsed.data.ownershipId, organization_id: session.user.organizationId },
       data: {
         ...(parsed.data.ownershipPct !== undefined && { ownership_pct: parsed.data.ownershipPct }),
         ...(parsed.data.acquiredAt && { effective_date: new Date(parsed.data.acquiredAt) }),
@@ -248,7 +248,7 @@ export async function endOwnership(input: EndOwnershipInput): Promise<ActionResu
 
   try {
     const ownership = await prisma.ownership.update({
-      where: { id: parsed.data.ownershipId },
+      where: { id: parsed.data.ownershipId, organization_id: session.user.organizationId },
       data: { end_date: new Date(parsed.data.endDate) },
     })
 

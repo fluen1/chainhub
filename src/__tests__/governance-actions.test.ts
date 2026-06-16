@@ -167,6 +167,27 @@ describe('endCompanyPerson', () => {
     expect('error' in result).toBe(true)
   })
 
+  it('mutation-WHERE: endCompanyPerson update-WHERE indeholder organization_id', async () => {
+    const { prisma } = await import('@/lib/db')
+    vi.mocked(prisma.companyPerson.findFirst).mockImplementation((() =>
+      Promise.resolve({
+        organization_id: 'org-1',
+        company_id: 'c-1',
+        person_id: 'p-1',
+        role: 'direktoer',
+      })) as never)
+    await endCompanyPerson({
+      companyPersonId: VALID_UUID_3,
+      endDate: '2026-04-18',
+    } as never)
+
+    expect(prisma.companyPerson.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: VALID_UUID_3, organization_id: 'org-1' }),
+      })
+    )
+  })
+
   it('afviser uden selskab-adgang', async () => {
     const { prisma } = await import('@/lib/db')
     vi.mocked(prisma.companyPerson.findFirst).mockImplementation((() =>

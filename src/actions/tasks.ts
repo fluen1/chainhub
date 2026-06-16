@@ -325,7 +325,7 @@ export async function updateTaskStatus(input: UpdateTaskStatusInput): Promise<Ac
   try {
     const updated = await prisma.$transaction(async (tx) => {
       const next = await tx.task.update({
-        where: { id: parsed.data.taskId },
+        where: { id: parsed.data.taskId, organization_id: session.user.organizationId },
         data: { status: parsed.data.status },
       })
       await tx.taskHistory.create({
@@ -380,7 +380,7 @@ export async function updateTaskPriority(
   try {
     const updated = await prisma.$transaction(async (tx) => {
       const next = await tx.task.update({
-        where: { id: task.id },
+        where: { id: task.id, organization_id: session.user.organizationId },
         data: { priority: parsed.data.priority },
       })
       await tx.taskHistory.create({
@@ -452,7 +452,7 @@ export async function updateTaskAssignee(
   try {
     const updated = await prisma.$transaction(async (tx) => {
       const next = await tx.task.update({
-        where: { id: task.id },
+        where: { id: task.id, organization_id: session.user.organizationId },
         data: { assigned_to: parsed.data.assignedTo },
       })
       await tx.taskHistory.create({
@@ -509,7 +509,7 @@ export async function updateTaskDueDate(
   try {
     const updated = await prisma.$transaction(async (tx) => {
       const next = await tx.task.update({
-        where: { id: task.id },
+        where: { id: task.id, organization_id: session.user.organizationId },
         data: { due_date: newDueDate },
       })
       await tx.taskHistory.create({
@@ -559,7 +559,7 @@ export async function deleteTask(taskId: string): Promise<ActionResult<void>> {
   if (rlDel.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
   await prisma.task.update({
-    where: { id: taskId },
+    where: { id: taskId, organization_id: session.user.organizationId },
     data: { deleted_at: new Date() },
   })
 

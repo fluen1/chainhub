@@ -148,7 +148,7 @@ export async function endCompanyPerson(
 
   try {
     const companyPerson = await prisma.companyPerson.update({
-      where: { id: parsed.data.companyPersonId },
+      where: { id: parsed.data.companyPersonId, organization_id: session.user.organizationId },
       data: { end_date: new Date(parsed.data.endDate) },
     })
 

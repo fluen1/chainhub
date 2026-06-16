@@ -174,7 +174,7 @@ export async function updateCaseStatus(input: UpdateCaseStatusInput): Promise<Ac
 
   try {
     const updated = await prisma.case.update({
-      where: { id: parsed.data.caseId },
+      where: { id: parsed.data.caseId, organization_id: session.user.organizationId },
       data: {
         status: parsed.data.status,
         ...(parsed.data.status === 'LUKKET' ? { closed_at: new Date() } : {}),
@@ -268,7 +268,7 @@ export async function closeCase(caseId: string, notes?: string): Promise<ActionR
 
   try {
     const updated = await prisma.case.update({
-      where: { id: parsed.data.caseId },
+      where: { id: parsed.data.caseId, organization_id: session.user.organizationId },
       data: {
         status: 'LUKKET',
         closed_at: new Date(),
@@ -460,7 +460,7 @@ export async function updateCase(input: UpdateCaseInput): Promise<ActionResult<C
     }
 
     const updated = await prisma.case.update({
-      where: { id: parsed.data.caseId },
+      where: { id: parsed.data.caseId, organization_id: session.user.organizationId },
       data: updateData,
     })
 
@@ -506,7 +506,7 @@ export async function deleteCase(caseId: string): Promise<ActionResult<void>> {
   if (!existingCase) return { error: 'Sag ikke fundet' }
 
   await prisma.case.update({
-    where: { id: caseId },
+    where: { id: caseId, organization_id: session.user.organizationId },
     data: { deleted_at: new Date() },
   })
 

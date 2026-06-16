@@ -129,6 +129,59 @@ describe('deletePerson', () => {
   })
 })
 
+// ─── mutation-WHERE invariant-tests + Task 6 ──────────────────────────────────
+
+describe('mutation-WHERE: organization_id i alle update/soft-delete kald', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('updatePerson: update-WHERE indeholder organization_id', async () => {
+    const { prisma } = await import('@/lib/db')
+    vi.mocked(prisma.person.findFirst).mockImplementation((() =>
+      Promise.resolve({ id: 'p-1', organization_id: 'org-1' })) as never)
+    await updatePerson({ personId: 'p-1', firstName: 'Opdateret' } as never)
+
+    expect(prisma.person.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: 'p-1', organization_id: 'org-1' }),
+      })
+    )
+  })
+
+  it('deletePerson: update-WHERE indeholder organization_id', async () => {
+    const { prisma } = await import('@/lib/db')
+    const perms = await import('@/lib/permissions')
+    vi.mocked(perms.canAccessModule).mockResolvedValue(true)
+    vi.mocked(prisma.companyPerson.count).mockImplementation((() => Promise.resolve(0)) as never)
+    vi.mocked(prisma.ownership.count).mockImplementation((() => Promise.resolve(0)) as never)
+    vi.mocked(prisma.person.findFirst).mockImplementation((() =>
+      Promise.resolve({ id: 'p-1', organization_id: 'org-1' })) as never)
+    await deletePerson('p-1')
+
+    expect(prisma.person.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: 'p-1', organization_id: 'org-1' }),
+      })
+    )
+  })
+
+  it('deletePerson pre-check inkluderer deleted_at: null (Task 6)', async () => {
+    const { prisma } = await import('@/lib/db')
+    const perms = await import('@/lib/permissions')
+    vi.mocked(perms.canAccessModule).mockResolvedValue(true)
+    vi.mocked(prisma.companyPerson.count).mockImplementation((() => Promise.resolve(0)) as never)
+    vi.mocked(prisma.ownership.count).mockImplementation((() => Promise.resolve(0)) as never)
+    vi.mocked(prisma.person.findFirst).mockImplementation((() => Promise.resolve(null)) as never)
+
+    await deletePerson('00000000-0000-0000-0000-000000000001')
+
+    expect(prisma.person.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ deleted_at: null }),
+      })
+    )
+  })
+})
+
 describe('searchPersons', () => {
   beforeEach(() => vi.clearAllMocks())
 
