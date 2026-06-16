@@ -58,6 +58,24 @@ export async function extractDocument(
     }
   }
 
+  // Plan-gate: extraction kræver plus-abonnement
+  const org = await prisma.organization.findUnique({
+    where: { id: payload.organization_id },
+    select: { plan: true },
+  })
+  if (!org || org.plan !== 'plus') {
+    log.info({ document_id: payload.document_id }, 'AI extraction kræver Plus — skipping')
+    return {
+      extraction_id: '',
+      detected_type: '',
+      field_count: 0,
+      total_cost_usd: 0,
+      skipped: true,
+      status: 'skipped',
+      reason: 'AI extraction kræver Plus-abonnement',
+    }
+  }
+
   // Check månedlig cost-cap inden vi starter pipeline (dyrt kald)
   const capCheck = await checkCostCap(payload.organization_id)
   if (!capCheck.allowed) {

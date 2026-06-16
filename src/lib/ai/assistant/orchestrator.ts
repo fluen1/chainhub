@@ -89,6 +89,15 @@ function buildToolInstructions(): string {
 export async function processMessage(input: ProcessMessageInput): Promise<ProcessMessageResult> {
   const { conversationId, userMessage, organizationId, userId } = input
 
+  // Plan-gate: AI-assistenten kræver plus-abonnement
+  const org = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: { plan: true },
+  })
+  if (!org || org.plan !== 'plus') {
+    throw new Error('AI-assistenten kræver Plus-abonnement')
+  }
+
   // 1. Gem bruger-besked i DB
   await prisma.message.create({
     data: {

@@ -13,6 +13,9 @@ const { prismaMock } = vi.hoisted(() => {
     pendingAction: {
       create: vi.fn(),
     },
+    organization: {
+      findUnique: vi.fn().mockResolvedValue({ plan: 'plus' }),
+    },
     company: {
       count: vi.fn(),
     },

@@ -39,6 +39,9 @@ vi.mock('@/lib/db', () => ({
       findFirst: vi.fn().mockResolvedValue(null),
       findUnique: vi.fn().mockResolvedValue(null),
     },
+    organization: {
+      findUnique: vi.fn().mockResolvedValue({ plan: 'plus' }),
+    },
   },
 }))
 
