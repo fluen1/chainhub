@@ -1,5 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
+// Mock env for at undgå at env.ts kaster ved manglende DATABASE_URL i tests
+vi.mock('@/lib/env', () => ({
+  env: {
+    AI_EXTRACTION_ENABLED: 'true',
+    OPENAI_API_KEY: 'sk-test',
+    OPENAI_BASE_URL: undefined,
+    DATABASE_URL: 'postgresql://test',
+    NEXTAUTH_SECRET: 'test',
+  },
+  baseUrl: 'http://localhost:3000',
+}))
+
 // Mock alle eksterne afhængigheder før import af SUT
 vi.mock('@/lib/ai/feature-flags', () => ({
   isAIEnabled: vi.fn(),
