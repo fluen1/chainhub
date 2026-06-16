@@ -1,3 +1,5 @@
+> **FORÆLDET (2026-04-18).** Aktuel go-live-status: se docs/superpowers/plans/2026-06-16-go-live-readiness-roadmap.md.
+
 # Resumption Prompt — til næste Claude Code-session
 
 **Generated:** 2026-04-18 (efter samtale-clear)

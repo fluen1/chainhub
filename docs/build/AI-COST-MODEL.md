@@ -4,13 +4,15 @@
 **Status:** Levende dokument. Erstatter v1+v2 estimater.
 **Kilder:** claude.com/pricing + platform.claude.com/docs (verified 2026-04-19)
 
-> **v3 rettelser ift. v2:**
+> **VIGTIGT — provider-drift (opdaget 2026-06-16):** Dette dokument beskriver priser og model-IDs for **Anthropic/Claude** (historisk kontekst fra april 2026). Produktionskoden er siden migreret til **OpenAI** (`openai`-SDK, `OpenAIDirectClient`). Den aktive model er `gpt-4o-mini` (verificér i `src/lib/ai/`). Pris-tabellerne herunder gælder Anthropic og er bevaret som historisk reference — selve pris-opdateringen til OpenAI-takster er Stream D i go-live-roadmappen.
+
+> **v3 rettelser ift. v2 (historisk — gælder Anthropic-perioden):**
 >
 > - PDF-tokenpriser var undervurderet: docs bekræfter 1.500-3.000 tekst-tokens/side **PLUS** image-tokens (hver side renderes som billede). Reel rate: ~3.800 tokens/side i gennemsnit.
-> - Codebase bruger **deprecated model-IDs**: `claude-sonnet-4-20250514` (retired juni 2026) og `claude-3-5-haiku-20241022` (deprecated). Skal migreres til `claude-sonnet-4-6` og `claude-haiku-4-5`.
-> - `MODEL_COSTS` har **forkert pris for Haiku 3.5**: $1/$5 — korrekt er $0.80/$4. Overpricing ca. 25%.
+> - Codebase brugte **deprecated model-IDs**: `claude-sonnet-4-20250514` (retired juni 2026) og `claude-3-5-haiku-20241022` (deprecated). Kodebasen er siden migreret til OpenAI.
+> - `MODEL_COSTS` havde **forkert pris for Haiku 3.5**: $1/$5 — korrekt er $0.80/$4. Overpricing ca. 25%.
 > - Prompt-caching er IKKE implementeret men ville give 30-50% reduktion på store PDF'er.
-> - `ClaudeResponse` ignorerer `cache_read_input_tokens` + `cache_creation_input_tokens` fra API — kan ikke måle cache-effekt selv hvis vi aktiverer det.
+> - `ClaudeResponse` ignorerede `cache_read_input_tokens` + `cache_creation_input_tokens` fra API — kan ikke måle cache-effekt selv hvis vi aktiverer det.
 
 ---
 
