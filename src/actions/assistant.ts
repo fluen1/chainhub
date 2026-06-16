@@ -2,6 +2,7 @@
 
 import { processMessage } from '@/lib/ai/assistant/orchestrator'
 import { toolRegistry } from '@/lib/ai/assistant/tools/registry'
+import { checkCostCap } from '@/lib/ai/cost-cap'
 import { isAIEnabled } from '@/lib/ai/feature-flags'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
@@ -40,6 +41,12 @@ export async function sendMessage(input: {
     },
   })
   if (!conversation) return { error: 'Samtalen blev ikke fundet.' }
+
+  // Cost-cap-håndhævelse (Option B): afvis FØR LLM-kald hvis månedlig AI-cap er nået.
+  const capCheck = await checkCostCap(session.user.organizationId)
+  if (!capCheck.allowed) {
+    return { error: capCheck.reason ?? 'Månedlig AI-cap er nået — kontakt admin' }
+  }
 
   try {
     const result = await processMessage({

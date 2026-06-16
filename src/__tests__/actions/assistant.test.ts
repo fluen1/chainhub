@@ -26,6 +26,9 @@ vi.mock('@/lib/db', () => ({ prisma: prismaMock }))
 vi.mock('@/lib/ai/feature-flags', () => ({
   isAIEnabled: vi.fn(),
 }))
+vi.mock('@/lib/ai/cost-cap', () => ({
+  checkCostCap: vi.fn().mockResolvedValue({ allowed: true }),
+}))
 vi.mock('@/lib/ai/assistant/orchestrator', () => ({
   processMessage: vi.fn(),
 }))
@@ -41,6 +44,7 @@ import {
   getConversationHistory,
 } from '@/actions/assistant'
 import { processMessage } from '@/lib/ai/assistant/orchestrator'
+import { checkCostCap } from '@/lib/ai/cost-cap'
 import { isAIEnabled } from '@/lib/ai/feature-flags'
 import { auth } from '@/lib/auth'
 
@@ -143,6 +147,20 @@ describe('sendMessage', () => {
     expect(result.data?.response).toBe('Hej tilbage!')
     expect(result.data?.toolResults).toEqual([])
     expect(result.data?.pendingActions).toEqual([])
+  })
+
+  it('returnerer fejl når månedlig AI-cost-cap er nået — afviser FØR LLM-kald', async () => {
+    mockSession()
+    mockAIEnabled()
+    prismaMock.conversation.findFirst.mockResolvedValue({ id: 'c1', organization_id: 'org-1' })
+    vi.mocked(checkCostCap).mockResolvedValueOnce({
+      allowed: false,
+      reason: 'Månedlig AI-cap er nået — kontakt admin',
+    })
+
+    const result = await sendMessage({ conversationId: 'c1', message: 'hej' })
+    expect(result.error).toContain('cap')
+    expect(processMessage).not.toHaveBeenCalled()
   })
 
   it('mappper toolResults korrekt', async () => {
