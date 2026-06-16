@@ -6,7 +6,7 @@ import { recordAuditEvent } from '@/lib/audit'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { captureError } from '@/lib/logger'
-import { canAccessCompany } from '@/lib/permissions'
+import { canAccessCompany, canAccessSensitivity } from '@/lib/permissions'
 import { checkActionRateLimit } from '@/lib/rate-limit'
 import type { ActionResult } from '@/types/actions'
 
@@ -38,6 +38,16 @@ export async function createComment(input: {
     },
   })
   if (!task) return { error: 'Opgave ikke fundet' }
+
+  // Tjek adgang til opgavens selskab (hvis tilknyttet)
+  if (task.company_id) {
+    const canCompany = await canAccessCompany(
+      session.user.id,
+      task.company_id,
+      session.user.organizationId
+    )
+    if (!canCompany) return { error: 'Ingen adgang til denne opgave' }
+  }
 
   const rl = await checkActionRateLimit(session.user.organizationId)
   if (rl.limited) return { error: 'For mange handlinger. Vent venligst.' }
@@ -93,6 +103,14 @@ export async function createCaseComment(input: {
     }
   }
   if (!hasAccess) return { error: 'Ingen adgang til denne sag' }
+
+  // Tjek adgang til sagets sensitivitetsniveau
+  const canSens = await canAccessSensitivity(
+    session.user.id,
+    caseItem.sensitivity,
+    session.user.organizationId
+  )
+  if (!canSens) return { error: 'Ingen adgang til denne sag' }
 
   const rlCase = await checkActionRateLimit(session.user.organizationId)
   if (rlCase.limited) return { error: 'For mange handlinger. Vent venligst.' }

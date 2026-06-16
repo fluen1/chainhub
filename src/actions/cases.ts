@@ -160,7 +160,12 @@ export async function updateCaseStatus(input: UpdateCaseStatusInput): Promise<Ac
       organization_id: session.user.organizationId,
       deleted_at: null,
     },
-    select: { id: true, status: true, sensitivity: true },
+    select: {
+      id: true,
+      status: true,
+      sensitivity: true,
+      case_companies: { select: { company_id: true } },
+    },
   })
   if (!existingCase) return { error: 'Sag ikke fundet' }
 
@@ -168,6 +173,25 @@ export async function updateCaseStatus(input: UpdateCaseStatusInput): Promise<Ac
   if (!validNext.includes(parsed.data.status)) {
     return { error: 'Sagen kan ikke ændres til denne status i det nuværende forløb.' }
   }
+
+  // Tjek adgang til mindst ét tilknyttet selskab
+  let hasAccess = false
+  for (const cc of existingCase.case_companies) {
+    const ok = await canAccessCompany(session.user.id, cc.company_id, session.user.organizationId)
+    if (ok) {
+      hasAccess = true
+      break
+    }
+  }
+  if (!hasAccess) return { error: 'Ingen adgang til denne sag' }
+
+  // Tjek at bruger har adgang til sagets sensitivitetsniveau
+  const canSens = await canAccessSensitivity(
+    session.user.id,
+    existingCase.sensitivity,
+    session.user.organizationId
+  )
+  if (!canSens) return { error: 'Ingen adgang til denne sag' }
 
   const rl = await checkActionRateLimit(session.user.organizationId)
   if (rl.limited) return { error: 'For mange handlinger. Vent venligst.' }

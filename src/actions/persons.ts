@@ -169,6 +169,10 @@ export async function createPerson(input: CreatePersonInput): Promise<ActionResu
   const parsed = createPersonSchema.safeParse(input)
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Ugyldigt input' }
 
+  if (!(await canAccessModule(session.user.id, 'persons', session.user.organizationId))) {
+    return { error: 'Du har ikke adgang til persondatabasen' }
+  }
+
   const rl = await checkActionRateLimit(session.user.organizationId)
   if (rl.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
@@ -218,6 +222,10 @@ export async function updatePerson(input: UpdatePersonInput): Promise<ActionResu
 
   const parsed = updatePersonSchema.safeParse(input)
   if (!parsed.success) return { error: 'Udfyld alle påkrævede felter og prøv igen.' }
+
+  if (!(await canAccessModule(session.user.id, 'persons', session.user.organizationId))) {
+    return { error: 'Du har ikke adgang til persondatabasen' }
+  }
 
   const rlUpd = await checkActionRateLimit(session.user.organizationId)
   if (rlUpd.limited) return { error: 'For mange handlinger. Vent venligst.' }

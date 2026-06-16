@@ -250,6 +250,8 @@ describe('updateCaseStatus', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(checkActionRateLimit).mockResolvedValue({ limited: false, remaining: 59 } as any)
+    vi.mocked(canAccessCompany).mockResolvedValue(true)
+    vi.mocked(canAccessSensitivity).mockResolvedValue(true)
   })
 
   it('returnerer fejl uden session', async () => {
@@ -276,7 +278,7 @@ describe('updateCaseStatus', () => {
 
   it('opdaterer status fra NY til AKTIV', async () => {
     vi.mocked(auth).mockResolvedValue(makeSession())
-    prismaMock.case.findFirst.mockResolvedValue({ ...baseCase, status: 'NY' })
+    prismaMock.case.findFirst.mockResolvedValue({ ...baseCaseWithCompanies, status: 'NY' })
     prismaMock.case.update.mockResolvedValue({ ...baseCase, status: 'AKTIV' })
     prismaMock.caseCompany.findFirst.mockResolvedValue({ company_id: 'company-1' })
     prismaMock.caseCompany.findMany.mockResolvedValue([{ company_id: 'company-1' }])
@@ -288,7 +290,7 @@ describe('updateCaseStatus', () => {
 
   it('sÃ¦tter closed_at ved status LUKKET', async () => {
     vi.mocked(auth).mockResolvedValue(makeSession())
-    prismaMock.case.findFirst.mockResolvedValue({ ...baseCase, status: 'AKTIV' })
+    prismaMock.case.findFirst.mockResolvedValue({ ...baseCaseWithCompanies, status: 'AKTIV' })
     prismaMock.case.update.mockResolvedValue({
       ...baseCase,
       status: 'LUKKET',
@@ -319,7 +321,7 @@ describe('updateCaseStatus', () => {
 
   it('recordAuditEvent kaldes efter status-Ã¦ndring', async () => {
     vi.mocked(auth).mockResolvedValue(makeSession())
-    prismaMock.case.findFirst.mockResolvedValue({ ...baseCase, status: 'NY' })
+    prismaMock.case.findFirst.mockResolvedValue({ ...baseCaseWithCompanies, status: 'NY' })
     prismaMock.case.update.mockResolvedValue({ ...baseCase, status: 'AKTIV' })
     prismaMock.caseCompany.findFirst.mockResolvedValue({ company_id: 'company-1' })
     prismaMock.caseCompany.findMany.mockResolvedValue([{ company_id: 'company-1' }])
@@ -596,11 +598,13 @@ describe('mutation-WHERE: organization_id i alle update/soft-delete kald', () =>
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(checkActionRateLimit).mockResolvedValue({ limited: false, remaining: 59 } as any)
+    vi.mocked(canAccessCompany).mockResolvedValue(true)
+    vi.mocked(canAccessSensitivity).mockResolvedValue(true)
   })
 
   it('updateCaseStatus: update-WHERE indeholder organization_id', async () => {
     vi.mocked(auth).mockResolvedValue(makeSession())
-    prismaMock.case.findFirst.mockResolvedValue({ ...baseCase, status: 'NY' })
+    prismaMock.case.findFirst.mockResolvedValue({ ...baseCaseWithCompanies, status: 'NY' })
     prismaMock.case.update.mockResolvedValue({ ...baseCase, status: 'AKTIV' })
     prismaMock.caseCompany.findFirst.mockResolvedValue({ company_id: 'company-1' })
     prismaMock.caseCompany.findMany.mockResolvedValue([{ company_id: 'company-1' }])
