@@ -1,588 +1,1437 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="da">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lars Hansen — ChainHub</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #fafafa; color: #1f2328; font-size: 13px; -webkit-font-smoothing: antialiased; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lars Hansen — ChainHub</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family:
+          'Inter',
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        background: #fafafa;
+        color: #1f2328;
+        font-size: 13px;
+        -webkit-font-smoothing: antialiased;
+      }
 
-    .layout { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+      .layout {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        min-height: 100vh;
+      }
 
-    /* ── SIDEBAR ── */
-    .sb      { background: #f6f7f9; border-right: 1px solid #e1e4e8; padding: 14px 8px; font-size: 13px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
-    .sb-logo { font-weight: 600; padding: 4px 10px 16px; color: #1f2328; }
-    .sb-sec  { margin-bottom: 16px; }
-    .sb-lab  { font-size: 10px; color: #6e7681; padding: 0 10px 4px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
-    .sb-item { display: flex; justify-content: space-between; align-items: center; padding: 4px 10px; border-radius: 4px; color: #1f2328; cursor: pointer; }
-    .sb-item.active { background: #e8eaee; font-weight: 500; }
-    .sb-item:hover:not(.active) { background: #ecedf0; }
-    .sb-cnt  { font-size: 11px; color: #6e7681; font-variant-numeric: tabular-nums; }
-    .sb-cnt.a { color: #b91c1c; font-weight: 600; } .sb-cnt.w { color: #b54708; }
+      /* ── SIDEBAR ── */
+      .sb {
+        background: #f6f7f9;
+        border-right: 1px solid #e1e4e8;
+        padding: 14px 8px;
+        font-size: 13px;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+      }
+      .sb-logo {
+        font-weight: 600;
+        padding: 4px 10px 16px;
+        color: #1f2328;
+      }
+      .sb-sec {
+        margin-bottom: 16px;
+      }
+      .sb-lab {
+        font-size: 10px;
+        color: #6e7681;
+        padding: 0 10px 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+      }
+      .sb-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 4px;
+        color: #1f2328;
+        cursor: pointer;
+      }
+      .sb-item.active {
+        background: #e8eaee;
+        font-weight: 500;
+      }
+      .sb-item:hover:not(.active) {
+        background: #ecedf0;
+      }
+      .sb-cnt {
+        font-size: 11px;
+        color: #6e7681;
+        font-variant-numeric: tabular-nums;
+      }
+      .sb-cnt.a {
+        color: #b91c1c;
+        font-weight: 600;
+      }
+      .sb-cnt.w {
+        color: #b54708;
+      }
 
-    /* ── MAIN ── */
-    .main { padding: 12px 24px 32px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+      /* ── MAIN ── */
+      .main {
+        padding: 12px 24px 32px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-width: 0;
+      }
 
-    /* ── DEMO BAR ── */
-    .demo-bar { display: flex; align-items: center; gap: 8px; padding: 5px 10px; background: #f6f7f9; border: 1px solid #e1e4e8; border-radius: 4px; font-size: 11px; color: #6e7681; }
-    .demo-bar span { font-weight: 600; color: #8c959f; }
-    .demo-btn { font-size: 11px; padding: 2px 8px; border: 1px solid #d0d7de; border-radius: 3px; background: white; color: #6e7681; cursor: pointer; font-family: inherit; }
-    .demo-btn.on { background: #e8eaee; color: #1f2328; border-color: #c1c5cc; font-weight: 500; }
-    .demo-btn:hover:not(.on) { background: #f6f8fa; }
+      /* ── DEMO BAR ── */
+      .demo-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 10px;
+        background: #f6f7f9;
+        border: 1px solid #e1e4e8;
+        border-radius: 4px;
+        font-size: 11px;
+        color: #6e7681;
+      }
+      .demo-bar span {
+        font-weight: 600;
+        color: #8c959f;
+      }
+      .demo-btn {
+        font-size: 11px;
+        padding: 2px 8px;
+        border: 1px solid #d0d7de;
+        border-radius: 3px;
+        background: white;
+        color: #6e7681;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .demo-btn.on {
+        background: #e8eaee;
+        color: #1f2328;
+        border-color: #c1c5cc;
+        font-weight: 500;
+      }
+      .demo-btn:hover:not(.on) {
+        background: #f6f8fa;
+      }
 
-    /* ── BREADCRUMB ── */
-    .crumb   { font-size: 12px; color: #6e7681; padding: 4px 0 2px; }
-    .crumb a { color: #6e7681; text-decoration: none; }
-    .crumb a:hover { color: #1f2328; }
-    .crumb .sep { margin: 0 6px; color: #8c959f; }
+      /* ── BREADCRUMB ── */
+      .crumb {
+        font-size: 12px;
+        color: #6e7681;
+        padding: 4px 0 2px;
+      }
+      .crumb a {
+        color: #6e7681;
+        text-decoration: none;
+      }
+      .crumb a:hover {
+        color: #1f2328;
+      }
+      .crumb .sep {
+        margin: 0 6px;
+        color: #8c959f;
+      }
 
-    /* ── HEADER ── */
-    .head    { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 10px; border-bottom: 1px solid #e1e4e8; }
-    .head-l  { display: flex; align-items: flex-start; gap: 12px; }
-    .initials { width: 36px; height: 36px; border-radius: 4px; background: #d0d7de; color: #57606a; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; letter-spacing: 0; }
-    .head h1 { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .head-meta { font-size: 12px; color: #6e7681; font-variant-numeric: tabular-nums; }
-    .sep-dot { margin: 0 8px; color: #d0d7de; }
-    .head-r  { display: flex; gap: 6px; flex-shrink: 0; }
-    .btn     { font-size: 12px; padding: 5px 10px; border: 1px solid #d0d7de; background: white; color: #1f2328; border-radius: 4px; cursor: pointer; font-weight: 500; font-family: inherit; white-space: nowrap; }
-    .btn:hover { background: #f6f8fa; }
-    .btn.primary { background: #0969da; color: white; border-color: #0969da; }
-    .btn.primary:hover { background: #0860c7; }
-    .btn.danger  { background: white; color: #cf222e; border-color: #ffc1ba; }
-    .btn.danger:hover { background: #ffebe9; }
+      /* ── HEADER ── */
+      .head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e1e4e8;
+      }
+      .head-l {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+      }
+      .initials {
+        width: 36px;
+        height: 36px;
+        border-radius: 4px;
+        background: #d0d7de;
+        color: #57606a;
+        font-size: 13px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        margin-top: 2px;
+        letter-spacing: 0;
+      }
+      .head h1 {
+        font-size: 18px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .head-meta {
+        font-size: 12px;
+        color: #6e7681;
+        font-variant-numeric: tabular-nums;
+      }
+      .sep-dot {
+        margin: 0 8px;
+        color: #d0d7de;
+      }
+      .head-r {
+        display: flex;
+        gap: 6px;
+        flex-shrink: 0;
+      }
+      .btn {
+        font-size: 12px;
+        padding: 5px 10px;
+        border: 1px solid #d0d7de;
+        background: white;
+        color: #1f2328;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+        font-family: inherit;
+        white-space: nowrap;
+      }
+      .btn:hover {
+        background: #f6f8fa;
+      }
+      .btn.primary {
+        background: #0969da;
+        color: white;
+        border-color: #0969da;
+      }
+      .btn.primary:hover {
+        background: #0860c7;
+      }
+      .btn.danger {
+        background: white;
+        color: #cf222e;
+        border-color: #ffc1ba;
+      }
+      .btn.danger:hover {
+        background: #ffebe9;
+      }
 
-    /* ── ALERT BAR ── */
-    .alert-bar { display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; background: #ffebe9; border: 1px solid #ffc1ba; border-left: 3px solid #cf222e; border-radius: 4px; font-size: 13px; color: #6e1010; }
-    .alert-bar-btns { display: flex; gap: 6px; }
+      /* ── ALERT BAR ── */
+      .alert-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 14px;
+        background: #ffebe9;
+        border: 1px solid #ffc1ba;
+        border-left: 3px solid #cf222e;
+        border-radius: 4px;
+        font-size: 13px;
+        color: #6e1010;
+      }
+      .alert-bar-btns {
+        display: flex;
+        gap: 6px;
+      }
 
-    /* ── STRIP ── */
-    .strip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: #e1e4e8; border: 1px solid #e1e4e8; border-radius: 4px; overflow: hidden; }
-    .sc   { background: white; padding: 8px 12px; }
-    .sn   { font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1; }
-    .sn.g { color: #1a7f37; } .sn.w { color: #b54708; } .sn.a { color: #b91c1c; }
-    .sl   { font-size: 10px; color: #6e7681; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.4px; }
+      /* ── STRIP ── */
+      .strip {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 1px;
+        background: #e1e4e8;
+        border: 1px solid #e1e4e8;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .sc {
+        background: white;
+        padding: 8px 12px;
+      }
+      .sn {
+        font-size: 16px;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        line-height: 1.1;
+      }
+      .sn.g {
+        color: #1a7f37;
+      }
+      .sn.w {
+        color: #b54708;
+      }
+      .sn.a {
+        color: #b91c1c;
+      }
+      .sl {
+        font-size: 10px;
+        color: #6e7681;
+        margin-top: 3px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+      }
 
-    /* ── PANELS ── */
-    .grid3   { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 12px; align-items: start; }
-    .grid2   { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
-    .pnl     { background: white; border: 1px solid #e1e4e8; border-radius: 4px; overflow: hidden; }
-    .pnl-h   { padding: 6px 12px; border-bottom: 1px solid #e1e4e8; background: #fbfbfc; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-    .pnl-t   { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #1f2328; display: flex; align-items: center; gap: 5px; }
-    .pnl-m   { font-size: 11px; color: #6e7681; }
-    .pnl-body { padding: 0; }
-    .pnl-foot { padding: 6px 12px; border-top: 1px solid #f0f1f3; background: #fbfbfc; display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #6e7681; }
-    .btn-add  { font-size: 11px; padding: 3px 8px; border: 1px dashed #d0d7de; background: transparent; color: #6e7681; border-radius: 3px; cursor: pointer; font-family: inherit; font-weight: 500; }
-    .btn-add:hover { border-style: solid; border-color: #0969da; color: #0969da; }
-    .link-action { font-size: 12px; color: #0969da; text-decoration: none; cursor: pointer; }
-    .link-action:hover { text-decoration: underline; }
+      /* ── PANELS ── */
+      .grid3 {
+        display: grid;
+        grid-template-columns: 1.4fr 1fr 1fr;
+        gap: 12px;
+        align-items: start;
+      }
+      .grid2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        align-items: start;
+      }
+      .pnl {
+        background: white;
+        border: 1px solid #e1e4e8;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .pnl-h {
+        padding: 6px 12px;
+        border-bottom: 1px solid #e1e4e8;
+        background: #fbfbfc;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+      }
+      .pnl-t {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #1f2328;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .pnl-m {
+        font-size: 11px;
+        color: #6e7681;
+      }
+      .pnl-body {
+        padding: 0;
+      }
+      .pnl-foot {
+        padding: 6px 12px;
+        border-top: 1px solid #f0f1f3;
+        background: #fbfbfc;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 11px;
+        color: #6e7681;
+      }
+      .btn-add {
+        font-size: 11px;
+        padding: 3px 8px;
+        border: 1px dashed #d0d7de;
+        background: transparent;
+        color: #6e7681;
+        border-radius: 3px;
+        cursor: pointer;
+        font-family: inherit;
+        font-weight: 500;
+      }
+      .btn-add:hover {
+        border-style: solid;
+        border-color: #0969da;
+        color: #0969da;
+      }
+      .link-action {
+        font-size: 12px;
+        color: #0969da;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      .link-action:hover {
+        text-decoration: underline;
+      }
 
-    /* ── PLUS BADGE ── */
-    .plus { font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 3px; background: #f3e8ff; color: #7c3aed; letter-spacing: 0.4px; text-transform: uppercase; white-space: nowrap; }
+      /* ── PLUS BADGE ── */
+      .plus {
+        font-size: 9px;
+        font-weight: 700;
+        padding: 2px 5px;
+        border-radius: 3px;
+        background: #f3e8ff;
+        color: #7c3aed;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
 
-    /* ── BADGES ── */
-    .badge { font-size: 11px; font-weight: 500; padding: 1px 6px; border-radius: 3px; font-variant-numeric: tabular-nums; white-space: nowrap; display: inline-block; }
-    .badge.red    { background: #ffebe9; color: #cf222e; }
-    .badge.amber  { background: #fff8c5; color: #9a6700; }
-    .badge.green  { background: #dafbe1; color: #1a7f37; }
-    .badge.blue   { background: #ddf4ff; color: #0969da; }
-    .badge.gray   { background: #f6f8fa; color: #57606a; }
-    .badge.purple { background: #f3e8ff; color: #7c3aed; }
+      /* ── BADGES ── */
+      .badge {
+        font-size: 11px;
+        font-weight: 500;
+        padding: 1px 6px;
+        border-radius: 3px;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        display: inline-block;
+      }
+      .badge.red {
+        background: #ffebe9;
+        color: #cf222e;
+      }
+      .badge.amber {
+        background: #fff8c5;
+        color: #9a6700;
+      }
+      .badge.green {
+        background: #dafbe1;
+        color: #1a7f37;
+      }
+      .badge.blue {
+        background: #ddf4ff;
+        color: #0969da;
+      }
+      .badge.gray {
+        background: #f6f8fa;
+        color: #57606a;
+      }
+      .badge.purple {
+        background: #f3e8ff;
+        color: #7c3aed;
+      }
 
-    /* ── ROLE ROWS ── */
-    .role-row { padding: 8px 12px; border-bottom: 1px solid #f0f1f3; cursor: pointer; display: flex; justify-content: space-between; align-items: flex-start; }
-    .role-row:hover { background: #f6f7f9; }
-    .role-row:last-child { border-bottom: none; }
-    .rr-l { flex: 1; min-width: 0; }
-    .rr-co { font-size: 13px; font-weight: 500; color: #1f2328; }
-    .rr-meta { font-size: 11px; color: #6e7681; margin-top: 2px; font-variant-numeric: tabular-nums; }
-    .rr-r { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-    .chev { color: #8c959f; font-size: 12px; }
+      /* ── ROLE ROWS ── */
+      .role-row {
+        padding: 8px 12px;
+        border-bottom: 1px solid #f0f1f3;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+      }
+      .role-row:hover {
+        background: #f6f7f9;
+      }
+      .role-row:last-child {
+        border-bottom: none;
+      }
+      .rr-l {
+        flex: 1;
+        min-width: 0;
+      }
+      .rr-co {
+        font-size: 13px;
+        font-weight: 500;
+        color: #1f2328;
+      }
+      .rr-meta {
+        font-size: 11px;
+        color: #6e7681;
+        margin-top: 2px;
+        font-variant-numeric: tabular-nums;
+      }
+      .rr-r {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+      }
+      .chev {
+        color: #8c959f;
+        font-size: 12px;
+      }
 
-    /* ── OWNERSHIP ROWS ── */
-    .own-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; border-bottom: 1px solid #f0f1f3; font-size: 13px; }
-    .own-row:last-child { border-bottom: none; }
-    .own-val { font-weight: 600; font-variant-numeric: tabular-nums; }
+      /* ── OWNERSHIP ROWS ── */
+      .own-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 12px;
+        border-bottom: 1px solid #f0f1f3;
+        font-size: 13px;
+      }
+      .own-row:last-child {
+        border-bottom: none;
+      }
+      .own-val {
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+      }
 
-    /* ── AI VILKÅR ── */
-    .kterm-row { display: grid; grid-template-columns: 138px 1fr auto; gap: 10px; padding: 6px 12px; border-bottom: 1px solid #f0f1f3; align-items: center; }
-    .kterm-row:last-child { border-bottom: none; }
-    .kt-label { font-size: 11px; color: #6e7681; text-transform: uppercase; letter-spacing: 0.3px; }
-    .kt-value { font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; }
-    .ai-conf { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 3px; font-variant-numeric: tabular-nums; white-space: nowrap; }
-    .ai-conf.high { background: #dafbe1; color: #1a7f37; }
-    .ai-conf.mid  { background: #fff8c5; color: #9a6700; }
+      /* ── AI VILKÅR ── */
+      .kterm-row {
+        display: grid;
+        grid-template-columns: 138px 1fr auto;
+        gap: 10px;
+        padding: 6px 12px;
+        border-bottom: 1px solid #f0f1f3;
+        align-items: center;
+      }
+      .kterm-row:last-child {
+        border-bottom: none;
+      }
+      .kt-label {
+        font-size: 11px;
+        color: #6e7681;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+      .kt-value {
+        font-size: 13px;
+        font-weight: 500;
+        font-variant-numeric: tabular-nums;
+      }
+      .ai-conf {
+        font-size: 10px;
+        font-weight: 600;
+        padding: 2px 7px;
+        border-radius: 3px;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      .ai-conf.high {
+        background: #dafbe1;
+        color: #1a7f37;
+      }
+      .ai-conf.mid {
+        background: #fff8c5;
+        color: #9a6700;
+      }
 
-    /* ── CONTRACT TABLE ── */
-    .trow { display: grid; grid-template-columns: 36px 1fr 160px 80px 70px 14px; gap: 10px; padding: 6px 12px; border-bottom: 1px solid #f0f1f3; align-items: center; font-size: 13px; cursor: pointer; }
-    .trow:hover { background: #f6f7f9; }
-    .trow:last-child { border-bottom: none; }
-    .trow.th { background: #fbfbfc; border-bottom: 1px solid #e1e4e8; cursor: default; }
-    .trow.th:hover { background: #fbfbfc; }
-    .th-lab { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #8c959f; }
-    .td-sec { color: #6e7681; font-size: 12px; }
-    .ai-badge { font-size: 9px; font-weight: 700; padding: 1px 4px; border-radius: 2px; background: #f3e8ff; color: #7c3aed; margin-left: 4px; }
+      /* ── CONTRACT TABLE ── */
+      .trow {
+        display: grid;
+        grid-template-columns: 36px 1fr 160px 80px 70px 14px;
+        gap: 10px;
+        padding: 6px 12px;
+        border-bottom: 1px solid #f0f1f3;
+        align-items: center;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .trow:hover {
+        background: #f6f7f9;
+      }
+      .trow:last-child {
+        border-bottom: none;
+      }
+      .trow.th {
+        background: #fbfbfc;
+        border-bottom: 1px solid #e1e4e8;
+        cursor: default;
+      }
+      .trow.th:hover {
+        background: #fbfbfc;
+      }
+      .th-lab {
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #8c959f;
+      }
+      .td-sec {
+        color: #6e7681;
+        font-size: 12px;
+      }
+      .ai-badge {
+        font-size: 9px;
+        font-weight: 700;
+        padding: 1px 4px;
+        border-radius: 2px;
+        background: #f3e8ff;
+        color: #7c3aed;
+        margin-left: 4px;
+      }
 
-    /* ── DOCUMENT ROWS ── */
-    .doc-row { display: grid; grid-template-columns: 42px 1fr 70px 60px 14px; gap: 10px; padding: 6px 12px; border-bottom: 1px solid #f0f1f3; align-items: center; font-size: 13px; cursor: pointer; }
-    .doc-row:hover { background: #f6f7f9; }
-    .doc-row:last-child { border-bottom: none; }
+      /* ── DOCUMENT ROWS ── */
+      .doc-row {
+        display: grid;
+        grid-template-columns: 42px 1fr 70px 60px 14px;
+        gap: 10px;
+        padding: 6px 12px;
+        border-bottom: 1px solid #f0f1f3;
+        align-items: center;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .doc-row:hover {
+        background: #f6f7f9;
+      }
+      .doc-row:last-child {
+        border-bottom: none;
+      }
 
-    /* ── CONTACT ROWS ── */
-    .ct-row { display: grid; grid-template-columns: 120px 1fr; gap: 10px; padding: 5px 12px; font-size: 12px; border-bottom: 1px solid #f0f1f3; }
-    .ct-row:last-child { border-bottom: none; }
-    .ct-label { color: #6e7681; text-transform: uppercase; font-size: 10px; font-weight: 600; letter-spacing: 0.4px; align-self: center; }
-    .ct-val   { color: #1f2328; font-variant-numeric: tabular-nums; align-self: center; }
+      /* ── CONTACT ROWS ── */
+      .ct-row {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 10px;
+        padding: 5px 12px;
+        font-size: 12px;
+        border-bottom: 1px solid #f0f1f3;
+      }
+      .ct-row:last-child {
+        border-bottom: none;
+      }
+      .ct-label {
+        color: #6e7681;
+        text-transform: uppercase;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.4px;
+        align-self: center;
+      }
+      .ct-val {
+        color: #1f2328;
+        font-variant-numeric: tabular-nums;
+        align-self: center;
+      }
 
-    /* ── SKELETON ── */
-    .skel { background: linear-gradient(90deg, #f0f1f3 25%, #f6f7f9 50%, #f0f1f3 75%); background-size: 200% 100%; animation: shimmer 1.6s infinite; border-radius: 3px; display: inline-block; }
-    @keyframes shimmer { 0% { background-position:-200% 0; } 100% { background-position:200% 0; } }
-    .skel-row { padding: 7px 12px; border-bottom: 1px solid #f0f1f3; display: flex; align-items: center; gap: 10px; }
-    .skel-row:last-child { border-bottom: none; }
+      /* ── SKELETON ── */
+      .skel {
+        background: linear-gradient(90deg, #f0f1f3 25%, #f6f7f9 50%, #f0f1f3 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.6s infinite;
+        border-radius: 3px;
+        display: inline-block;
+      }
+      @keyframes shimmer {
+        0% {
+          background-position: -200% 0;
+        }
+        100% {
+          background-position: 200% 0;
+        }
+      }
+      .skel-row {
+        padding: 7px 12px;
+        border-bottom: 1px solid #f0f1f3;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .skel-row:last-child {
+        border-bottom: none;
+      }
 
-    /* ── EMPTY STATE ── */
-    .empty { padding: 24px 12px; text-align: center; color: #8c959f; font-size: 12px; }
-    .empty strong { display: block; color: #6e7681; margin-bottom: 6px; font-size: 13px; font-weight: 500; }
+      /* ── EMPTY STATE ── */
+      .empty {
+        padding: 24px 12px;
+        text-align: center;
+        color: #8c959f;
+        font-size: 12px;
+      }
+      .empty strong {
+        display: block;
+        color: #6e7681;
+        margin-bottom: 6px;
+        font-size: 13px;
+        font-weight: 500;
+      }
 
-    /* ── AI INSIGHT ── */
-    .ai-wrap { margin: 8px; border-radius: 3px; background: linear-gradient(135deg, #f3e8ff, #ede9fe); border: 1px solid #c4b5fd; padding: 10px 12px; }
-    .ai-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
-    .ai-l    { font-size: 10px; font-weight: 700; color: #7c3aed; text-transform: uppercase; letter-spacing: 0.5px; }
-    .ai-conf-badge { font-size: 10px; color: #7c3aed; font-variant-numeric: tabular-nums; }
-    .ai-body { font-size: 12px; color: #4c1d95; line-height: 1.5; }
+      /* ── AI INSIGHT ── */
+      .ai-wrap {
+        margin: 8px;
+        border-radius: 3px;
+        background: linear-gradient(135deg, #f3e8ff, #ede9fe);
+        border: 1px solid #c4b5fd;
+        padding: 10px 12px;
+      }
+      .ai-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 5px;
+      }
+      .ai-l {
+        font-size: 10px;
+        font-weight: 700;
+        color: #7c3aed;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .ai-conf-badge {
+        font-size: 10px;
+        color: #7c3aed;
+        font-variant-numeric: tabular-nums;
+      }
+      .ai-body {
+        font-size: 12px;
+        color: #4c1d95;
+        line-height: 1.5;
+      }
 
-    /* ── BOTTOM BAR ── */
-    .bot-bar { display: flex; justify-content: space-between; padding: 6px 0; font-size: 11px; color: #6e7681; }
-    .kbd { background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 3px; padding: 1px 5px; font-family: 'SF Mono', 'Fira Mono', monospace; font-size: 10px; color: #1f2328; }
+      /* ── BOTTOM BAR ── */
+      .bot-bar {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        font-size: 11px;
+        color: #6e7681;
+      }
+      .kbd {
+        background: #f6f8fa;
+        border: 1px solid #d0d7de;
+        border-radius: 3px;
+        padding: 1px 5px;
+        font-family: 'SF Mono', 'Fira Mono', monospace;
+        font-size: 10px;
+        color: #1f2328;
+      }
 
-    /* ── TOAST ── */
-    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1f2328; color: white; padding: 9px 16px; border-radius: 4px; font-size: 13px; box-shadow: 0 4px 16px rgba(0,0,0,0.22); z-index: 9000; white-space: nowrap; animation: tin 0.15s ease; }
-    @keyframes tin { from { opacity:0; transform:translateX(-50%) translateY(5px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
-  </style>
-</head>
-<body>
-<div id="root"></div>
+      /* ── TOAST ── */
+      .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1f2328;
+        color: white;
+        padding: 9px 16px;
+        border-radius: 4px;
+        font-size: 13px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
+        z-index: 9000;
+        white-space: nowrap;
+        animation: tin 0.15s ease;
+      }
+      @keyframes tin {
+        from {
+          opacity: 0;
+          transform: translateX(-50%) translateY(5px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
 
-<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+    <script
+      src="https://unpkg.com/react@18.3.1/umd/react.development.js"
+      integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"
+      integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"
+      integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y"
+      crossorigin="anonymous"
+    ></script>
 
-<script type="text/babel">
-const { useState } = React;
+    <script type="text/babel">
+      const { useState } = React
 
-/* ─── DATA ─── */
-const PERSON = {
-  navn:'Lars Hansen', ini:'LH', cpr:'xxxxxx-xxxx',
-  email:'lars.hansen@tandlaegeosterbro.dk', telefon:'+45 28 45 67 89',
-  adresse:'Østerbrogade 44, 2. tv., 2100 København Ø',
-  aktivSiden:'14. jan 2018', anciennitet:'8 år 4 mdr.',
-};
+      /* ─── DATA ─── */
+      const PERSON = {
+        navn: 'Lars Hansen',
+        ini: 'LH',
+        cpr: 'xxxxxx-xxxx',
+        email: 'lars.hansen@tandlaegeosterbro.dk',
+        telefon: '+45 28 45 67 89',
+        adresse: 'Østerbrogade 44, 2. tv., 2100 København Ø',
+        aktivSiden: '14. jan 2018',
+        anciennitet: '8 år 4 mdr.',
+      }
 
-const ROLLER = [
-  { id:1, selskab:'Tandlæge Østerbro ApS', rolle:'CEO', type:'Ledelse', aktivSiden:'14. jan 2018', status:'Aktiv', cvr:'12345678' },
-  { id:2, selskab:'Tandlæge Østerbro ApS', rolle:'Medejer', type:'Ejerskab', aktivSiden:'14. jan 2018', status:'Aktiv', cvr:'12345678' },
-  { id:3, selskab:'Klinik Holstebro ApS',  rolle:'Bestyrelsesmedlem', type:'Governance', aktivSiden:'10. aug 2021', status:'Aktiv', cvr:'87654321' },
-];
+      const ROLLER = [
+        {
+          id: 1,
+          selskab: 'Tandlæge Østerbro ApS',
+          rolle: 'CEO',
+          type: 'Ledelse',
+          aktivSiden: '14. jan 2018',
+          status: 'Aktiv',
+          cvr: '12345678',
+        },
+        {
+          id: 2,
+          selskab: 'Tandlæge Østerbro ApS',
+          rolle: 'Medejer',
+          type: 'Ejerskab',
+          aktivSiden: '14. jan 2018',
+          status: 'Aktiv',
+          cvr: '12345678',
+        },
+        {
+          id: 3,
+          selskab: 'Klinik Holstebro ApS',
+          rolle: 'Bestyrelsesmedlem',
+          type: 'Governance',
+          aktivSiden: '10. aug 2021',
+          status: 'Aktiv',
+          cvr: '87654321',
+        },
+      ]
 
-const EJERSKAB = [
-  { selskab:'Tandlæge Østerbro ApS', pct:'49%', type:'Direkte', siden:'14. jan 2018' },
-];
+      const EJERSKAB = [
+        { selskab: 'Tandlæge Østerbro ApS', pct: '49%', type: 'Direkte', siden: '14. jan 2018' },
+      ]
 
-const AI_VILKAAR = [
-  { label:'Månedsløn',      value:'68.000 kr',   conf:91, cls:'high' },
-  { label:'Opsigelsesvarsel', value:'6 måneder', conf:88, cls:'high' },
-  { label:'Konkurrenceklausul', value:'12 måneder', conf:74, cls:'mid' },
-  { label:'Bonus',          value:'10% af EBITDA', conf:85, cls:'high' },
-  { label:'Anciennitetsstart', value:'14. jan 2018', conf:97, cls:'high' },
-];
+      const AI_VILKAAR = [
+        { label: 'Månedsløn', value: '68.000 kr', conf: 91, cls: 'high' },
+        { label: 'Opsigelsesvarsel', value: '6 måneder', conf: 88, cls: 'high' },
+        { label: 'Konkurrenceklausul', value: '12 måneder', conf: 74, cls: 'mid' },
+        { label: 'Bonus', value: '10% af EBITDA', conf: 85, cls: 'high' },
+        { label: 'Anciennitetsstart', value: '14. jan 2018', conf: 97, cls: 'high' },
+      ]
 
-const KONTRAKTER = [
-  { id:1, ver:'v2', type:'Ansættelseskontrakt', selskab:'Tandlæge Østerbro ApS', ai:true,  status:'Aktiv', udlob:'—' },
-  { id:2, ver:'v3', type:'Ejeraftale',          selskab:'Tandlæge Østerbro ApS', ai:true,  status:'Aktiv', udlob:'3 år' },
-  { id:3, ver:'v1', type:'Ansættelseskontrakt', selskab:'Klinik Holstebro ApS',  ai:false, status:'Aktiv', udlob:'—' },
-];
+      const KONTRAKTER = [
+        {
+          id: 1,
+          ver: 'v2',
+          type: 'Ansættelseskontrakt',
+          selskab: 'Tandlæge Østerbro ApS',
+          ai: true,
+          status: 'Aktiv',
+          udlob: '—',
+        },
+        {
+          id: 2,
+          ver: 'v3',
+          type: 'Ejeraftale',
+          selskab: 'Tandlæge Østerbro ApS',
+          ai: true,
+          status: 'Aktiv',
+          udlob: '3 år',
+        },
+        {
+          id: 3,
+          ver: 'v1',
+          type: 'Ansættelseskontrakt',
+          selskab: 'Klinik Holstebro ApS',
+          ai: false,
+          status: 'Aktiv',
+          udlob: '—',
+        },
+      ]
 
-const DOKUMENTER = [
-  { ext:'PDF',  navn:'ansaettelse-lars-v2.pdf', ai:'AI ✓', date:'28. mar 2026' },
-  { ext:'PDF',  navn:'ejeraftale-final.pdf',    ai:'Review', date:'12. mar 2026' },
-  { ext:'DOCX', navn:'bonus-aftale-2024.docx',  ai:'AI ✓', date:'8. mar 2026' },
-];
+      const DOKUMENTER = [
+        { ext: 'PDF', navn: 'ansaettelse-lars-v2.pdf', ai: 'AI ✓', date: '28. mar 2026' },
+        { ext: 'PDF', navn: 'ejeraftale-final.pdf', ai: 'Review', date: '12. mar 2026' },
+        { ext: 'DOCX', navn: 'bonus-aftale-2024.docx', ai: 'AI ✓', date: '8. mar 2026' },
+      ]
 
-/* ─── SIDEBAR ─── */
-function Sidebar() {
-  return (
-    <aside className="sb">
-      <div className="sb-logo">▣ ChainHub</div>
-      <div className="sb-sec">
-        <div className="sb-lab">Overblik</div>
-        <div className="sb-item">Forside <span className="sb-cnt a">5</span></div>
-        <div className="sb-item">Kalender <span className="sb-cnt">12</span></div>
-        <div className="sb-item">Søg</div>
-      </div>
-      <div className="sb-sec">
-        <div className="sb-lab">Portefølje</div>
-        <div className="sb-item">Selskaber <span className="sb-cnt">32</span></div>
-        <div className="sb-item">Kontrakter <span className="sb-cnt w">3</span></div>
-        <div className="sb-item">Sager <span className="sb-cnt a">7</span></div>
-        <div className="sb-item">Opgaver <span className="sb-cnt w">9</span></div>
-      </div>
-      <div className="sb-sec">
-        <div className="sb-lab">Ressourcer</div>
-        <div className="sb-item">Dokumenter <span className="sb-cnt">412</span></div>
-        <div className="sb-item active">Personer <span className="sb-cnt">184</span></div>
-        <div className="sb-item">Indstillinger</div>
-      </div>
-    </aside>
-  );
-}
-
-/* ─── SKELETON ─── */
-function SkRow({ w1=120, w2=80, w3=60 }) {
-  return (
-    <div className="skel-row">
-      <span className="skel" style={{width:w1, height:12}}></span>
-      <span className="skel" style={{width:w2, height:12}}></span>
-      <span className="skel" style={{width:w3, height:12, marginLeft:'auto'}}></span>
-    </div>
-  );
-}
-
-function SkeletonStrip() {
-  return (
-    <div className="strip">
-      {Array.from({length:6}).map((_,i) => (
-        <div key={i} className="sc">
-          <span className="skel" style={{width:40,height:18,display:'block'}}></span>
-          <span className="skel" style={{width:70,height:10,display:'block',marginTop:6}}></span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/* ─── MAIN PAGE ─── */
-function PersonDetail() {
-  const [demo,    setDemo]    = useState('normal');
-  const [toast,   setToast]   = useState(null);
-  const [toastKey,setToastKey]= useState(0);
-
-  function doToast(msg) { setToast(msg); setToastKey(k=>k+1); setTimeout(()=>setToast(null),2800); }
-
-  const isSkeleton = demo === 'skeleton';
-  const isError    = demo === 'fejl';
-
-  return (
-    <div className="layout">
-      <Sidebar />
-      <main className="main">
-
-        {/* Demo bar */}
-        <div className="demo-bar">
-          <span>Demo:</span>
-          {['normal','skeleton','fejl'].map(s => (
-            <button key={s} className={`demo-btn${demo===s?' on':''}`} onClick={()=>setDemo(s)}>{s}</button>
-          ))}
-          <span style={{marginLeft:4,fontStyle:'italic'}}>skift tilstand for at teste loading og fejl</span>
-        </div>
-
-        {/* Breadcrumb */}
-        <div className="crumb">
-          <a href="#">Personer</a><span className="sep">›</span>
-          {isSkeleton ? <span className="skel" style={{width:90,height:12,display:'inline-block',verticalAlign:'middle'}}></span> : <span>Lars Hansen</span>}
-        </div>
-
-        {/* Error alert */}
-        {isError && (
-          <div className="alert-bar">
-            <div><strong>Kunne ikke hente persondata</strong> — forbindelsesfejl. Prøv igen eller kontakt support.</div>
-            <div className="alert-bar-btns">
-              <button className="btn">Prøv igen</button>
-              <button className="btn primary">Kontakt support</button>
+      /* ─── SIDEBAR ─── */
+      function Sidebar() {
+        return (
+          <aside className="sb">
+            <div className="sb-logo">▣ ChainHub</div>
+            <div className="sb-sec">
+              <div className="sb-lab">Overblik</div>
+              <div className="sb-item">
+                Forside <span className="sb-cnt a">5</span>
+              </div>
+              <div className="sb-item">
+                Kalender <span className="sb-cnt">12</span>
+              </div>
+              <div className="sb-item">Søg</div>
             </div>
-          </div>
-        )}
-
-        {/* Header */}
-        <div className="head">
-          <div className="head-l">
-            {isSkeleton
-              ? <div className="skel" style={{width:36,height:36,borderRadius:4,flexShrink:0}}></div>
-              : <div className="initials">LH</div>}
-            <div>
-              {isSkeleton ? (
-                <>
-                  <div className="skel" style={{width:160,height:18,display:'block',marginBottom:8}}></div>
-                  <div className="skel" style={{width:280,height:12,display:'block'}}></div>
-                </>
-              ) : (
-                <>
-                  <h1>
-                    Lars Hansen
-                    <span className="badge blue">CEO</span>
-                    <span className="badge gray">Medejer</span>
-                  </h1>
-                  <div className="head-meta">
-                    CPR-knyttet
-                    <span className="sep-dot">·</span>
-                    Aktiv siden 14. jan 2018
-                    <span className="sep-dot">·</span>
-                    2 selskaber
-                    <span className="sep-dot">·</span>
-                    3 kontrakter
-                  </div>
-                </>
-              )}
+            <div className="sb-sec">
+              <div className="sb-lab">Portefølje</div>
+              <div className="sb-item">
+                Selskaber <span className="sb-cnt">32</span>
+              </div>
+              <div className="sb-item">
+                Kontrakter <span className="sb-cnt w">3</span>
+              </div>
+              <div className="sb-item">
+                Sager <span className="sb-cnt a">7</span>
+              </div>
+              <div className="sb-item">
+                Opgaver <span className="sb-cnt w">9</span>
+              </div>
             </div>
-          </div>
-          <div className="head-r">
-            <button className="btn" onClick={()=>doToast('Rediger Lars Hansen')}>Rediger</button>
-            <button className="btn danger" onClick={()=>doToast('Slut rolle — åbner modal')}>Slut rolle ▾</button>
-          </div>
-        </div>
+            <div className="sb-sec">
+              <div className="sb-lab">Ressourcer</div>
+              <div className="sb-item">
+                Dokumenter <span className="sb-cnt">412</span>
+              </div>
+              <div className="sb-item active">
+                Personer <span className="sb-cnt">184</span>
+              </div>
+              <div className="sb-item">Indstillinger</div>
+            </div>
+          </aside>
+        )
+      }
 
-        {/* Strip */}
-        {isSkeleton ? <SkeletonStrip /> : (
+      /* ─── SKELETON ─── */
+      function SkRow({ w1 = 120, w2 = 80, w3 = 60 }) {
+        return (
+          <div className="skel-row">
+            <span className="skel" style={{ width: w1, height: 12 }}></span>
+            <span className="skel" style={{ width: w2, height: 12 }}></span>
+            <span className="skel" style={{ width: w3, height: 12, marginLeft: 'auto' }}></span>
+          </div>
+        )
+      }
+
+      function SkeletonStrip() {
+        return (
           <div className="strip">
-            <div className="sc"><div className="sn">3</div><div className="sl">Roller</div></div>
-            <div className="sc"><div className="sn">2</div><div className="sl">Selskaber</div></div>
-            <div className="sc"><div className="sn">3</div><div className="sl">Kontrakter</div></div>
-            <div className="sc"><div className="sn">8</div><div className="sl">Dokumenter</div></div>
-            <div className="sc"><div className="sn">8 år</div><div className="sl">Anciennitet</div></div>
-            <div className="sc"><div className="sn g">68k</div><div className="sl">Løn kr/md</div></div>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="sc">
+                <span className="skel" style={{ width: 40, height: 18, display: 'block' }}></span>
+                <span
+                  className="skel"
+                  style={{ width: 70, height: 10, display: 'block', marginTop: 6 }}
+                ></span>
+              </div>
+            ))}
           </div>
-        )}
+        )
+      }
 
-        {/* 3-col: Roller + Ejerskab + AI Vilkår */}
-        <div className="grid3">
+      /* ─── MAIN PAGE ─── */
+      function PersonDetail() {
+        const [demo, setDemo] = useState('normal')
+        const [toast, setToast] = useState(null)
+        const [toastKey, setToastKey] = useState(0)
 
-          {/* Roller og tilknytninger */}
-          <div className="pnl">
-            <div className="pnl-h">
-              <span className="pnl-t">Roller og tilknytninger</span>
-              <span className="pnl-m">{isSkeleton ? '…' : `${ROLLER.length} aktive`}</span>
-            </div>
-            <div className="pnl-body">
-              {isSkeleton
-                ? [1,2,3].map(i => <SkRow key={i} w1={150} w2={90} w3={50} />)
-                : ROLLER.length === 0
-                  ? <div className="empty"><strong>Ingen aktive roller</strong>Tilføj en rolle for at knytte personen til et selskab.</div>
-                  : ROLLER.map(r => (
-                    <div key={r.id} className="role-row" onClick={()=>doToast(`Åbner ${r.selskab}`)}>
-                      <div className="rr-l">
-                        <div className="rr-co">{r.selskab}</div>
-                        <div className="rr-meta">{r.type} · aktiv siden {r.aktivSiden}</div>
+        function doToast(msg) {
+          setToast(msg)
+          setToastKey((k) => k + 1)
+          setTimeout(() => setToast(null), 2800)
+        }
+
+        const isSkeleton = demo === 'skeleton'
+        const isError = demo === 'fejl'
+
+        return (
+          <div className="layout">
+            <Sidebar />
+            <main className="main">
+              {/* Demo bar */}
+              <div className="demo-bar">
+                <span>Demo:</span>
+                {['normal', 'skeleton', 'fejl'].map((s) => (
+                  <button
+                    key={s}
+                    className={`demo-btn${demo === s ? ' on' : ''}`}
+                    onClick={() => setDemo(s)}
+                  >
+                    {s}
+                  </button>
+                ))}
+                <span style={{ marginLeft: 4, fontStyle: 'italic' }}>
+                  skift tilstand for at teste loading og fejl
+                </span>
+              </div>
+
+              {/* Breadcrumb */}
+              <div className="crumb">
+                <a href="#">Personer</a>
+                <span className="sep">›</span>
+                {isSkeleton ? (
+                  <span
+                    className="skel"
+                    style={{
+                      width: 90,
+                      height: 12,
+                      display: 'inline-block',
+                      verticalAlign: 'middle',
+                    }}
+                  ></span>
+                ) : (
+                  <span>Lars Hansen</span>
+                )}
+              </div>
+
+              {/* Error alert */}
+              {isError && (
+                <div className="alert-bar">
+                  <div>
+                    <strong>Kunne ikke hente persondata</strong> — forbindelsesfejl. Prøv igen eller
+                    kontakt support.
+                  </div>
+                  <div className="alert-bar-btns">
+                    <button className="btn">Prøv igen</button>
+                    <button className="btn primary">Kontakt support</button>
+                  </div>
+                </div>
+              )}
+
+              {/* Header */}
+              <div className="head">
+                <div className="head-l">
+                  {isSkeleton ? (
+                    <div
+                      className="skel"
+                      style={{ width: 36, height: 36, borderRadius: 4, flexShrink: 0 }}
+                    ></div>
+                  ) : (
+                    <div className="initials">LH</div>
+                  )}
+                  <div>
+                    {isSkeleton ? (
+                      <>
+                        <div
+                          className="skel"
+                          style={{ width: 160, height: 18, display: 'block', marginBottom: 8 }}
+                        ></div>
+                        <div
+                          className="skel"
+                          style={{ width: 280, height: 12, display: 'block' }}
+                        ></div>
+                      </>
+                    ) : (
+                      <>
+                        <h1>
+                          Lars Hansen
+                          <span className="badge blue">CEO</span>
+                          <span className="badge gray">Medejer</span>
+                        </h1>
+                        <div className="head-meta">
+                          CPR-knyttet
+                          <span className="sep-dot">·</span>
+                          Aktiv siden 14. jan 2018
+                          <span className="sep-dot">·</span>2 selskaber
+                          <span className="sep-dot">·</span>3 kontrakter
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <div className="head-r">
+                  <button className="btn" onClick={() => doToast('Rediger Lars Hansen')}>
+                    Rediger
+                  </button>
+                  <button
+                    className="btn danger"
+                    onClick={() => doToast('Slut rolle — åbner modal')}
+                  >
+                    Slut rolle ▾
+                  </button>
+                </div>
+              </div>
+
+              {/* Strip */}
+              {isSkeleton ? (
+                <SkeletonStrip />
+              ) : (
+                <div className="strip">
+                  <div className="sc">
+                    <div className="sn">3</div>
+                    <div className="sl">Roller</div>
+                  </div>
+                  <div className="sc">
+                    <div className="sn">2</div>
+                    <div className="sl">Selskaber</div>
+                  </div>
+                  <div className="sc">
+                    <div className="sn">3</div>
+                    <div className="sl">Kontrakter</div>
+                  </div>
+                  <div className="sc">
+                    <div className="sn">8</div>
+                    <div className="sl">Dokumenter</div>
+                  </div>
+                  <div className="sc">
+                    <div className="sn">8 år</div>
+                    <div className="sl">Anciennitet</div>
+                  </div>
+                  <div className="sc">
+                    <div className="sn g">68k</div>
+                    <div className="sl">Løn kr/md</div>
+                  </div>
+                </div>
+              )}
+
+              {/* 3-col: Roller + Ejerskab + AI Vilkår */}
+              <div className="grid3">
+                {/* Roller og tilknytninger */}
+                <div className="pnl">
+                  <div className="pnl-h">
+                    <span className="pnl-t">Roller og tilknytninger</span>
+                    <span className="pnl-m">{isSkeleton ? '…' : `${ROLLER.length} aktive`}</span>
+                  </div>
+                  <div className="pnl-body">
+                    {isSkeleton ? (
+                      [1, 2, 3].map((i) => <SkRow key={i} w1={150} w2={90} w3={50} />)
+                    ) : ROLLER.length === 0 ? (
+                      <div className="empty">
+                        <strong>Ingen aktive roller</strong>Tilføj en rolle for at knytte personen
+                        til et selskab.
                       </div>
-                      <div className="rr-r">
-                        <span className="badge blue">{r.rolle}</span>
+                    ) : (
+                      ROLLER.map((r) => (
+                        <div
+                          key={r.id}
+                          className="role-row"
+                          onClick={() => doToast(`Åbner ${r.selskab}`)}
+                        >
+                          <div className="rr-l">
+                            <div className="rr-co">{r.selskab}</div>
+                            <div className="rr-meta">
+                              {r.type} · aktiv siden {r.aktivSiden}
+                            </div>
+                          </div>
+                          <div className="rr-r">
+                            <span className="badge blue">{r.rolle}</span>
+                            <span className="chev">›</span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <div className="pnl-foot">
+                    <span></span>
+                    <button
+                      className="btn-add"
+                      onClick={() => doToast('Tilføj rolle — åbner modal')}
+                    >
+                      + Tilføj rolle
+                    </button>
+                  </div>
+                </div>
+
+                {/* Ejerskab */}
+                <div className="pnl">
+                  <div className="pnl-h">
+                    <span className="pnl-t">Ejerskab</span>
+                    <span className="pnl-m">{isSkeleton ? '…' : `${EJERSKAB.length} selskab`}</span>
+                  </div>
+                  {isSkeleton ? (
+                    [1, 2].map((i) => <SkRow key={i} w1={130} w2={60} w3={40} />)
+                  ) : EJERSKAB.length === 0 ? (
+                    <div className="empty">
+                      <strong>Ingen ejerskabsandele</strong>Personen er ikke registreret som ejer.
+                    </div>
+                  ) : (
+                    EJERSKAB.map((e, i) => (
+                      <div key={i}>
+                        <div className="own-row">
+                          <span style={{ color: '#6e7681', fontSize: 11 }}>Selskab</span>
+                          <span style={{ fontWeight: 500, fontSize: 13 }}>{e.selskab}</span>
+                        </div>
+                        <div className="own-row">
+                          <span style={{ color: '#6e7681', fontSize: 11 }}>Andel</span>
+                          <span className="own-val">49%</span>
+                        </div>
+                        <div className="own-row">
+                          <span style={{ color: '#6e7681', fontSize: 11 }}>Type</span>
+                          <span style={{ fontSize: 12 }}>Direkte</span>
+                        </div>
+                        <div className="own-row">
+                          <span style={{ color: '#6e7681', fontSize: 11 }}>Siden</span>
+                          <span style={{ fontSize: 12, color: '#6e7681' }}>14. jan 2018</span>
+                        </div>
+                        <div className="own-row" style={{ borderBottom: 'none' }}>
+                          <span style={{ color: '#6e7681', fontSize: 11 }}>Ejeraftale</span>
+                          <span className="badge green">Aktiv</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                  <div className="pnl-foot">
+                    <span></span>
+                    <button className="btn-add" onClick={() => doToast('Tilføj ejerskab')}>
+                      + Tilføj ejerskab
+                    </button>
+                  </div>
+                </div>
+
+                {/* AI Ansættelses-vilkår (Plus) */}
+                <div className="pnl">
+                  <div className="pnl-h">
+                    <span className="pnl-t">
+                      Ansættelses-vilkår <span className="plus">PLUS</span>
+                    </span>
+                    <span className="pnl-m">AI-extracted</span>
+                  </div>
+                  {isSkeleton ? (
+                    [1, 2, 3, 4, 5].map((i) => <SkRow key={i} w1={110} w2={90} w3={55} />)
+                  ) : (
+                    <>
+                      {AI_VILKAAR.map((t, i) => (
+                        <div key={i} className="kterm-row">
+                          <span className="kt-label">{t.label}</span>
+                          <span className="kt-value">{t.value}</span>
+                          <span className={`ai-conf ${t.cls}`}>
+                            {t.cls === 'high' ? '✓' : '⚠'} AI {t.conf}%
+                          </span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                  <div className="pnl-foot">
+                    <a href="#" className="link-action" style={{ color: '#7c3aed' }}>
+                      Review AI-extractions →
+                    </a>
+                    <span>ansaettelse-lars-v2.pdf</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Kontrakter (full-width) */}
+              <div className="pnl">
+                <div className="pnl-h">
+                  <span className="pnl-t">
+                    Kontrakter{' '}
+                    <span
+                      style={{
+                        background: '#e1e4e8',
+                        color: '#57606a',
+                        padding: '1px 6px',
+                        borderRadius: 8,
+                        fontSize: 10,
+                        fontWeight: 500,
+                        textTransform: 'none',
+                        letterSpacing: 0,
+                        marginLeft: 4,
+                      }}
+                    >
+                      {isSkeleton ? '…' : KONTRAKTER.length}
+                    </span>
+                  </span>
+                  <span className="pnl-m">sortér: type</span>
+                </div>
+                {!isSkeleton && (
+                  <div className="trow th">
+                    <span className="th-lab">Ver.</span>
+                    <span className="th-lab">Type</span>
+                    <span className="th-lab">Selskab</span>
+                    <span className="th-lab">Status</span>
+                    <span className="th-lab">Udløb</span>
+                    <span></span>
+                  </div>
+                )}
+                {isSkeleton ? (
+                  [1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="skel-row"
+                      style={{
+                        gridTemplateColumns: '36px 1fr 160px 80px 70px 14px',
+                        display: 'grid',
+                        gap: 10,
+                        padding: '7px 12px',
+                        borderBottom: '1px solid #f0f1f3',
+                      }}
+                    >
+                      <span className="skel" style={{ height: 12, width: 28 }}></span>
+                      <span className="skel" style={{ height: 12, width: 140 }}></span>
+                      <span className="skel" style={{ height: 12, width: 130 }}></span>
+                      <span className="skel" style={{ height: 12, width: 50 }}></span>
+                      <span className="skel" style={{ height: 12, width: 30 }}></span>
+                    </div>
+                  ))
+                ) : KONTRAKTER.length === 0 ? (
+                  <div className="empty">
+                    <strong>Ingen kontrakter knyttet</strong>Upload den første kontrakt for at
+                    begynde.{' '}
+                    <a href="#" className="link-action">
+                      Upload kontrakt →
+                    </a>
+                  </div>
+                ) : (
+                  KONTRAKTER.map((k) => (
+                    <div key={k.id} className="trow" onClick={() => doToast(`Åbner ${k.type}`)}>
+                      <span className="badge gray">{k.ver}</span>
+                      <span style={{ fontWeight: 500 }}>
+                        {k.type}
+                        {k.ai && <span className="ai-badge">⚡</span>}
+                      </span>
+                      <span className="td-sec">{k.selskab}</span>
+                      <span>
+                        <span className="badge green">{k.status}</span>
+                      </span>
+                      <span className="td-sec">{k.udlob}</span>
+                      <span className="chev">›</span>
+                    </div>
+                  ))
+                )}
+                <div className="pnl-foot">
+                  <span>{isSkeleton ? '' : `${KONTRAKTER.length} aktive · 0 udløbne`}</span>
+                  <button className="btn-add" onClick={() => doToast('Upload kontrakt')}>
+                    + Upload kontrakt
+                  </button>
+                </div>
+              </div>
+
+              {/* 2-col: Dokumenter + Kontakt */}
+              <div className="grid2">
+                {/* Dokumenter */}
+                <div className="pnl">
+                  <div className="pnl-h">
+                    <span className="pnl-t">
+                      Dokumenter{' '}
+                      <span
+                        style={{
+                          background: '#e1e4e8',
+                          color: '#57606a',
+                          padding: '1px 6px',
+                          borderRadius: 8,
+                          fontSize: 10,
+                          fontWeight: 500,
+                          textTransform: 'none',
+                          letterSpacing: 0,
+                          marginLeft: 4,
+                        }}
+                      >
+                        {isSkeleton ? '…' : 8}
+                      </span>
+                    </span>
+                    <span className="pnl-m">3 AI-extracted</span>
+                  </div>
+                  {isSkeleton ? (
+                    [1, 2, 3].map((i) => <SkRow key={i} w1={150} w2={60} w3={50} />)
+                  ) : DOKUMENTER.length === 0 ? (
+                    <div className="empty">
+                      <strong>Ingen dokumenter</strong>Upload det første dokument.
+                    </div>
+                  ) : (
+                    DOKUMENTER.map((d, i) => (
+                      <div key={i} className="doc-row" onClick={() => doToast(`Åbner ${d.navn}`)}>
+                        <span className="badge gray">{d.ext}</span>
+                        <span
+                          style={{
+                            fontWeight: 500,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {d.navn}
+                        </span>
+                        <span
+                          className={`badge ${d.ai === 'AI ✓' ? 'green' : 'amber'}`}
+                          style={{ fontSize: 10 }}
+                        >
+                          {d.ai}
+                        </span>
+                        <span className="td-sec">{d.date}</span>
                         <span className="chev">›</span>
                       </div>
-                    </div>
-                  ))}
-            </div>
-            <div className="pnl-foot">
-              <span></span>
-              <button className="btn-add" onClick={()=>doToast('Tilføj rolle — åbner modal')}>+ Tilføj rolle</button>
-            </div>
-          </div>
-
-          {/* Ejerskab */}
-          <div className="pnl">
-            <div className="pnl-h">
-              <span className="pnl-t">Ejerskab</span>
-              <span className="pnl-m">{isSkeleton ? '…' : `${EJERSKAB.length} selskab`}</span>
-            </div>
-            {isSkeleton
-              ? [1,2].map(i => <SkRow key={i} w1={130} w2={60} w3={40} />)
-              : EJERSKAB.length === 0
-                ? <div className="empty"><strong>Ingen ejerskabsandele</strong>Personen er ikke registreret som ejer.</div>
-                : EJERSKAB.map((e,i) => (
-                  <div key={i}>
-                    <div className="own-row">
-                      <span style={{color:'#6e7681',fontSize:11}}>Selskab</span>
-                      <span style={{fontWeight:500,fontSize:13}}>{e.selskab}</span>
-                    </div>
-                    <div className="own-row">
-                      <span style={{color:'#6e7681',fontSize:11}}>Andel</span>
-                      <span className="own-val">49%</span>
-                    </div>
-                    <div className="own-row">
-                      <span style={{color:'#6e7681',fontSize:11}}>Type</span>
-                      <span style={{fontSize:12}}>Direkte</span>
-                    </div>
-                    <div className="own-row">
-                      <span style={{color:'#6e7681',fontSize:11}}>Siden</span>
-                      <span style={{fontSize:12,color:'#6e7681'}}>14. jan 2018</span>
-                    </div>
-                    <div className="own-row" style={{borderBottom:'none'}}>
-                      <span style={{color:'#6e7681',fontSize:11}}>Ejeraftale</span>
-                      <span className="badge green">Aktiv</span>
-                    </div>
+                    ))
+                  )}
+                  <div className="pnl-foot">
+                    <a href="#" className="link-action">
+                      +5 flere dokumenter
+                    </a>
+                    <button className="btn-add" onClick={() => doToast('Upload dokument')}>
+                      + Upload
+                    </button>
                   </div>
-                ))}
-            <div className="pnl-foot">
-              <span></span>
-              <button className="btn-add" onClick={()=>doToast('Tilføj ejerskab')}>+ Tilføj ejerskab</button>
-            </div>
-          </div>
-
-          {/* AI Ansættelses-vilkår (Plus) */}
-          <div className="pnl">
-            <div className="pnl-h">
-              <span className="pnl-t">Ansættelses-vilkår <span className="plus">PLUS</span></span>
-              <span className="pnl-m">AI-extracted</span>
-            </div>
-            {isSkeleton
-              ? [1,2,3,4,5].map(i => <SkRow key={i} w1={110} w2={90} w3={55} />)
-              : (
-                <>
-                  {AI_VILKAAR.map((t,i) => (
-                    <div key={i} className="kterm-row">
-                      <span className="kt-label">{t.label}</span>
-                      <span className="kt-value">{t.value}</span>
-                      <span className={`ai-conf ${t.cls}`}>
-                        {t.cls === 'high' ? '✓' : '⚠'} AI {t.conf}%
-                      </span>
-                    </div>
-                  ))}
-                </>
-              )}
-            <div className="pnl-foot">
-              <a href="#" className="link-action" style={{color:'#7c3aed'}}>Review AI-extractions →</a>
-              <span>ansaettelse-lars-v2.pdf</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Kontrakter (full-width) */}
-        <div className="pnl">
-          <div className="pnl-h">
-            <span className="pnl-t">Kontrakter <span style={{background:'#e1e4e8',color:'#57606a',padding:'1px 6px',borderRadius:8,fontSize:10,fontWeight:500,textTransform:'none',letterSpacing:0,marginLeft:4}}>{isSkeleton?'…':KONTRAKTER.length}</span></span>
-            <span className="pnl-m">sortér: type</span>
-          </div>
-          {!isSkeleton && (
-            <div className="trow th">
-              <span className="th-lab">Ver.</span>
-              <span className="th-lab">Type</span>
-              <span className="th-lab">Selskab</span>
-              <span className="th-lab">Status</span>
-              <span className="th-lab">Udløb</span>
-              <span></span>
-            </div>
-          )}
-          {isSkeleton
-            ? [1,2,3].map(i => (
-                <div key={i} className="skel-row" style={{gridTemplateColumns:'36px 1fr 160px 80px 70px 14px',display:'grid',gap:10,padding:'7px 12px',borderBottom:'1px solid #f0f1f3'}}>
-                  <span className="skel" style={{height:12,width:28}}></span>
-                  <span className="skel" style={{height:12,width:140}}></span>
-                  <span className="skel" style={{height:12,width:130}}></span>
-                  <span className="skel" style={{height:12,width:50}}></span>
-                  <span className="skel" style={{height:12,width:30}}></span>
                 </div>
-              ))
-            : KONTRAKTER.length === 0
-              ? <div className="empty"><strong>Ingen kontrakter knyttet</strong>Upload den første kontrakt for at begynde. <a href="#" className="link-action">Upload kontrakt →</a></div>
-              : KONTRAKTER.map(k => (
-                <div key={k.id} className="trow" onClick={()=>doToast(`Åbner ${k.type}`)}>
-                  <span className="badge gray">{k.ver}</span>
-                  <span style={{fontWeight:500}}>{k.type}{k.ai && <span className="ai-badge">⚡</span>}</span>
-                  <span className="td-sec">{k.selskab}</span>
-                  <span><span className="badge green">{k.status}</span></span>
-                  <span className="td-sec">{k.udlob}</span>
-                  <span className="chev">›</span>
+
+                {/* Kontakt */}
+                <div className="pnl">
+                  <div className="pnl-h">
+                    <span className="pnl-t">Kontaktoplysninger</span>
+                    <span className="pnl-m"></span>
+                  </div>
+                  {isSkeleton ? (
+                    [1, 2, 3, 4].map((i) => <SkRow key={i} w1={80} w2={150} w3={0} />)
+                  ) : (
+                    <>
+                      <div className="ct-row">
+                        <span className="ct-label">E-mail</span>
+                        <span className="ct-val">
+                          <a href="#" style={{ color: '#0969da', textDecoration: 'none' }}>
+                            {PERSON.email}
+                          </a>
+                        </span>
+                      </div>
+                      <div className="ct-row">
+                        <span className="ct-label">Telefon</span>
+                        <span className="ct-val">{PERSON.telefon}</span>
+                      </div>
+                      <div className="ct-row">
+                        <span className="ct-label">Adresse</span>
+                        <span className="ct-val">{PERSON.adresse}</span>
+                      </div>
+                      <div className="ct-row">
+                        <span className="ct-label">CPR</span>
+                        <span
+                          className="ct-val"
+                          style={{ color: '#6e7681', fontVariantNumeric: 'tabular-nums' }}
+                        >
+                          {PERSON.cpr}{' '}
+                          <span
+                            style={{
+                              fontSize: 10,
+                              background: '#f6f8fa',
+                              border: '1px solid #d0d7de',
+                              borderRadius: 3,
+                              padding: '1px 5px',
+                              color: '#57606a',
+                            }}
+                          >
+                            maskeret
+                          </span>
+                        </span>
+                      </div>
+                      <div className="ct-row" style={{ borderBottom: 'none' }}>
+                        <span className="ct-label">Aktiv siden</span>
+                        <span className="ct-val">
+                          {PERSON.aktivSiden} · {PERSON.anciennitet}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                  <div className="pnl-foot">
+                    <span></span>
+                    <button
+                      className="btn-add"
+                      onClick={() => doToast('Rediger kontaktoplysninger')}
+                    >
+                      Rediger
+                    </button>
+                  </div>
                 </div>
-              ))}
-          <div className="pnl-foot">
-            <span>{isSkeleton ? '' : `${KONTRAKTER.length} aktive · 0 udløbne`}</span>
-            <button className="btn-add" onClick={()=>doToast('Upload kontrakt')}>+ Upload kontrakt</button>
+              </div>
+
+              {/* Bottom bar */}
+              <div className="bot-bar">
+                <span>Sidst opdateret 14. mar 2026 · Lars Hansen · CPR-knyttet · 2 selskaber</span>
+                <span>
+                  <span className="kbd">⌘K</span> handling · <span className="kbd">E</span> rediger
+                  · <span className="kbd">G</span> derhen
+                </span>
+              </div>
+            </main>
+
+            {toast && (
+              <div className="toast" key={toastKey}>
+                ✓ {toast}
+              </div>
+            )}
           </div>
-        </div>
+        )
+      }
 
-        {/* 2-col: Dokumenter + Kontakt */}
-        <div className="grid2">
-
-          {/* Dokumenter */}
-          <div className="pnl">
-            <div className="pnl-h">
-              <span className="pnl-t">Dokumenter <span style={{background:'#e1e4e8',color:'#57606a',padding:'1px 6px',borderRadius:8,fontSize:10,fontWeight:500,textTransform:'none',letterSpacing:0,marginLeft:4}}>{isSkeleton?'…':8}</span></span>
-              <span className="pnl-m">3 AI-extracted</span>
-            </div>
-            {isSkeleton
-              ? [1,2,3].map(i => <SkRow key={i} w1={150} w2={60} w3={50} />)
-              : DOKUMENTER.length === 0
-                ? <div className="empty"><strong>Ingen dokumenter</strong>Upload det første dokument.</div>
-                : DOKUMENTER.map((d,i) => (
-                  <div key={i} className="doc-row" onClick={()=>doToast(`Åbner ${d.navn}`)}>
-                    <span className="badge gray">{d.ext}</span>
-                    <span style={{fontWeight:500,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{d.navn}</span>
-                    <span className={`badge ${d.ai==='AI ✓'?'green':'amber'}`} style={{fontSize:10}}>{d.ai}</span>
-                    <span className="td-sec">{d.date}</span>
-                    <span className="chev">›</span>
-                  </div>
-                ))}
-            <div className="pnl-foot">
-              <a href="#" className="link-action">+5 flere dokumenter</a>
-              <button className="btn-add" onClick={()=>doToast('Upload dokument')}>+ Upload</button>
-            </div>
-          </div>
-
-          {/* Kontakt */}
-          <div className="pnl">
-            <div className="pnl-h">
-              <span className="pnl-t">Kontaktoplysninger</span>
-              <span className="pnl-m"></span>
-            </div>
-            {isSkeleton
-              ? [1,2,3,4].map(i => <SkRow key={i} w1={80} w2={150} w3={0} />)
-              : (
-                <>
-                  <div className="ct-row">
-                    <span className="ct-label">E-mail</span>
-                    <span className="ct-val"><a href="#" style={{color:'#0969da',textDecoration:'none'}}>{PERSON.email}</a></span>
-                  </div>
-                  <div className="ct-row">
-                    <span className="ct-label">Telefon</span>
-                    <span className="ct-val">{PERSON.telefon}</span>
-                  </div>
-                  <div className="ct-row">
-                    <span className="ct-label">Adresse</span>
-                    <span className="ct-val">{PERSON.adresse}</span>
-                  </div>
-                  <div className="ct-row">
-                    <span className="ct-label">CPR</span>
-                    <span className="ct-val" style={{color:'#6e7681',fontVariantNumeric:'tabular-nums'}}>{PERSON.cpr} <span style={{fontSize:10,background:'#f6f8fa',border:'1px solid #d0d7de',borderRadius:3,padding:'1px 5px',color:'#57606a'}}>maskeret</span></span>
-                  </div>
-                  <div className="ct-row" style={{borderBottom:'none'}}>
-                    <span className="ct-label">Aktiv siden</span>
-                    <span className="ct-val">{PERSON.aktivSiden} · {PERSON.anciennitet}</span>
-                  </div>
-                </>
-              )}
-            <div className="pnl-foot">
-              <span></span>
-              <button className="btn-add" onClick={()=>doToast('Rediger kontaktoplysninger')}>Rediger</button>
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom bar */}
-        <div className="bot-bar">
-          <span>Sidst opdateret 14. mar 2026 · Lars Hansen · CPR-knyttet · 2 selskaber</span>
-          <span>
-            <span className="kbd">⌘K</span> handling ·{' '}
-            <span className="kbd">E</span> rediger ·{' '}
-            <span className="kbd">G</span> derhen
-          </span>
-        </div>
-
-      </main>
-
-      {toast && <div className="toast" key={toastKey}>✓ {toast}</div>}
-    </div>
-  );
-}
-
-ReactDOM.createRoot(document.getElementById('root')).render(<PersonDetail />);
-</script>
-</body>
+      ReactDOM.createRoot(document.getElementById('root')).render(<PersonDetail />)
+    </script>
+  </body>
 </html>

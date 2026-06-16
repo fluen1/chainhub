@@ -23,9 +23,6 @@ vi.mock('@/lib/rate-limit', () => ({
 }))
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
 
-import { auth } from '@/lib/auth'
-import { canAccessCompany } from '@/lib/permissions'
-import { checkActionRateLimit } from '@/lib/rate-limit'
 import {
   getCompanyNotes,
   createCompanyNote,
@@ -33,6 +30,9 @@ import {
   toggleNotePin,
   deleteCompanyNote,
 } from '@/actions/company-notes'
+import { auth } from '@/lib/auth'
+import { canAccessCompany } from '@/lib/permissions'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 
 function makeSession() {
   return {

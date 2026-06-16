@@ -69,7 +69,7 @@ export async function getExpiringContracts(
 
 export async function getOverdueTasks(
   organizationId: string,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   userId: string
 ): Promise<OverdueTask[]> {
   const today = new Date()

@@ -25,10 +25,10 @@ vi.mock('@/lib/rate-limit', () => ({
 vi.mock('@/lib/audit', () => ({ recordAuditEvent: vi.fn() }))
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
 
+import { addCompanyPerson, endCompanyPerson } from '@/actions/governance'
 import { auth } from '@/lib/auth'
 import { canAccessCompany } from '@/lib/permissions'
 import { checkActionRateLimit } from '@/lib/rate-limit'
-import { addCompanyPerson, endCompanyPerson } from '@/actions/governance'
 
 const mockSession = {
   user: { id: 'u1', organizationId: 'org-1', email: 'test@test.dk', name: 'Test' },

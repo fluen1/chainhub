@@ -35,7 +35,7 @@ Endpoint har kun `auth()`-check. Alle authentificerede brugere i org kan liste a
 
 ### 5. EditCaseDialog sensitivity-dropdown uden server-validering
 
-Maria (GROUP_LEGAL) kan ændre case-sensitivity til STRENGT_FORTROLIG uden at server validerer hun har ret til at _sætte_ niveauet. `updateCase` action bør tilføje `canAccessSensitivity` check på input-sensitivity.
+Maria (GROUP*LEGAL) kan ændre case-sensitivity til STRENGT_FORTROLIG uden at server validerer hun har ret til at \_sætte* niveauet. `updateCase` action bør tilføje `canAccessSensitivity` check på input-sensitivity.
 
 ### 6. /companies/[id] mangler AlertBar når healthStatus=critical
 

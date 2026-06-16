@@ -1,8 +1,13 @@
 'use server'
 
+import type { Ownership } from '@prisma/client'
+import { revalidatePath } from 'next/cache'
+import { recordAuditEvent } from '@/lib/audit'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { captureError } from '@/lib/logger'
 import { canAccessCompany, canAccessSensitivity } from '@/lib/permissions'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 import {
   addOwnerSchema,
   updateOwnershipSchema,
@@ -11,12 +16,7 @@ import {
   type UpdateOwnershipInput,
   type EndOwnershipInput,
 } from '@/lib/validations/ownership'
-import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
-import type { Ownership } from '@prisma/client'
-import { recordAuditEvent } from '@/lib/audit'
-import { captureError } from '@/lib/logger'
-import { checkActionRateLimit } from '@/lib/rate-limit'
 
 export async function addOwner(input: AddOwnerInput): Promise<ActionResult<Ownership>> {
   const session = await auth()

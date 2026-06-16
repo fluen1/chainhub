@@ -2,6 +2,9 @@
 
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
+import { CreateUserForm } from '@/components/settings/CreateUserForm'
+import { OrganizationForm } from '@/components/settings/organization-form'
+import { UserActions } from '@/components/settings/UserActions'
 import {
   Breadcrumb,
   PageHeader,
@@ -12,9 +15,6 @@ import {
   type BadgeTone,
   BottomBar,
 } from '@/components/ui/b'
-import { OrganizationForm } from '@/components/settings/organization-form'
-import { CreateUserForm } from '@/components/settings/CreateUserForm'
-import { UserActions } from '@/components/settings/UserActions'
 
 // ────────────────────────────────────────────────────────────────────────────
 // /settings — klient-komponent.

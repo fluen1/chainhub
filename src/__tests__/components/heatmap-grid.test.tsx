@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import { describe, it, expect } from 'vitest'
 import { HeatmapGrid } from '@/components/dashboard/heatmap-grid'
 import type { HeatmapCompany } from '@/lib/dashboard-helpers'
 

@@ -1,10 +1,10 @@
 'use server'
 
+import { getCostCapStatus } from '@/lib/ai/cost-cap'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { canAccessModule } from '@/lib/permissions'
-import { getCostCapStatus } from '@/lib/ai/cost-cap'
 import { captureError } from '@/lib/logger'
+import { canAccessModule } from '@/lib/permissions'
 import type { ActionResult } from '@/types/actions'
 
 // ────────────────────────────────────────────────────────────────────────────

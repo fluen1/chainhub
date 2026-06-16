@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useTransition } from 'react'
 import { Pin, Trash2, Search } from 'lucide-react'
+import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { createCompanyNote, toggleNotePin, deleteCompanyNote } from '@/actions/company-notes'
 import type { CompanyNoteWithAuthor } from '@/actions/company-notes'

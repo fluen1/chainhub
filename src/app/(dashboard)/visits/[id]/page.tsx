@@ -1,13 +1,13 @@
 import type { Metadata } from 'next'
-import { auth } from '@/lib/auth'
-import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
-import { getVisitTypeLabel, getVisitStatusLabel } from '@/lib/labels'
-import { formatDanishDate, formatDanishDateLower } from '@/lib/date-helpers'
-import { VisitStatusForm } from '@/components/visits/VisitStatusForm'
-import { VisitNotesForm } from '@/components/visits/VisitNotesForm'
-import { Breadcrumb, PageTopbar, Panel, PanelHeader, Badge } from '@/components/ui/b'
+import { redirect, notFound } from 'next/navigation'
 import { getVisitDetailPageData, getVisitTitle } from '@/actions/visits'
+import { Breadcrumb, PageTopbar, Panel, PanelHeader, Badge } from '@/components/ui/b'
+import { VisitNotesForm } from '@/components/visits/VisitNotesForm'
+import { VisitStatusForm } from '@/components/visits/VisitStatusForm'
+import { auth } from '@/lib/auth'
+import { formatDanishDate, formatDanishDateLower } from '@/lib/date-helpers'
+import { getVisitTypeLabel, getVisitStatusLabel } from '@/lib/labels'
 
 export async function generateMetadata({
   params,

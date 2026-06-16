@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import { BModal, BTextField, BFieldWrap, BSegmentedField, BFieldRow } from '@/components/ui/b'
 import { addContractParty } from '@/actions/contracts'
+import { BModal, BTextField, BFieldWrap, BSegmentedField, BFieldRow } from '@/components/ui/b'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AddContractPartyModal — BModal til tilføjelse af part på kontrakt.

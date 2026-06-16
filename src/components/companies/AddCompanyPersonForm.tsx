@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import { addCompanyPerson } from '@/actions/governance'
-import { toast } from 'sonner'
 import { Plus } from 'lucide-react'
+import { useState } from 'react'
+import { toast } from 'sonner'
+import { addCompanyPerson } from '@/actions/governance'
 import { AccessibleDialog } from '@/components/ui/accessible-dialog'
 
 interface RoleOption {

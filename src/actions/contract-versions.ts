@@ -1,15 +1,15 @@
 'use server'
 
-import { auth } from '@/lib/auth'
-import { prisma } from '@/lib/db'
-import { canAccessCompany, canAccessSensitivity } from '@/lib/permissions'
+import type { ContractVersion } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
-import type { ActionResult } from '@/types/actions'
-import type { ContractVersion } from '@prisma/client'
+import { auth } from '@/lib/auth'
+import { prisma } from '@/lib/db'
 import { captureError } from '@/lib/logger'
-import { zodChangeType } from '@/lib/zod-enums'
+import { canAccessCompany, canAccessSensitivity } from '@/lib/permissions'
 import { checkActionRateLimit } from '@/lib/rate-limit'
+import { zodChangeType } from '@/lib/zod-enums'
+import type { ActionResult } from '@/types/actions'
 
 const createContractVersionSchema = z.object({
   contractId: z.string().min(1),

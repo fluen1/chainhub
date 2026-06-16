@@ -1,6 +1,6 @@
-import { auth } from '@/lib/auth'
-import { PublicHeader } from '@/components/public/PublicHeader'
 import { PublicFooter } from '@/components/public/PublicFooter'
+import { PublicHeader } from '@/components/public/PublicHeader'
+import { auth } from '@/lib/auth'
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()

@@ -11,9 +11,9 @@
  * 8. Multi-tenancy: activity-feed + gdpr organization_id filter
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
 import fs from 'fs'
 import path from 'path'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // ─── Fix 1: Schema indeholder unique + deleted_at ──────────────────────────
 
@@ -65,14 +65,12 @@ vi.mock('@/lib/db', () => ({
     ownership: {
       create: vi.fn().mockResolvedValue({ id: 'o-1', ownership_pct: 30 }),
       findFirst: vi.fn(),
-      update: vi
-        .fn()
-        .mockResolvedValue({
-          id: 'o-1',
-          ownership_pct: 60,
-          effective_date: null,
-          contract_id: null,
-        }),
+      update: vi.fn().mockResolvedValue({
+        id: 'o-1',
+        ownership_pct: 60,
+        effective_date: null,
+        contract_id: null,
+      }),
       aggregate: vi.fn(),
     },
     $transaction: vi.fn(),

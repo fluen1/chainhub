@@ -1,10 +1,10 @@
-import { auth } from '@/lib/auth'
-import { canAccessModule } from '@/lib/permissions'
-import { gdprExportPerson } from '@/lib/export/gdpr'
-import { captureError } from '@/lib/logger'
 import { NextResponse, type NextRequest } from 'next/server'
 import { z } from 'zod'
 import { recordAuditEvent } from '@/lib/audit'
+import { auth } from '@/lib/auth'
+import { gdprExportPerson } from '@/lib/export/gdpr'
+import { captureError } from '@/lib/logger'
+import { canAccessModule } from '@/lib/permissions'
 
 /**
  * GET /api/export/gdpr/[personId]

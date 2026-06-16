@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() }),
@@ -21,12 +21,12 @@ vi.mock('@/actions/document-review', () => ({
   rejectDocumentExtraction: (...args: unknown[]) => rejectDocumentExtractionMock(...args),
 }))
 
+import type { SourceBlock } from '@/app/(dashboard)/documents/review/[id]/page'
 import ReviewClient from '@/app/(dashboard)/documents/review/[id]/review-client'
 import type {
   ReviewDocument,
   ReviewField,
 } from '@/app/(dashboard)/documents/review/[id]/review-client'
-import type { SourceBlock } from '@/app/(dashboard)/documents/review/[id]/page'
 
 function buildField(overrides: Partial<ReviewField> = {}): ReviewField {
   return {

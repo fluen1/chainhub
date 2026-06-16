@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { prisma } from '@/lib/db'
 import { invalidateCompanyInsightsCache } from '@/lib/ai/invalidate-cache'
+import { prisma } from '@/lib/db'
 
 describe('invalidateCompanyInsightsCache', () => {
   const companyId = '00000000-0000-0000-0000-0000000000aa'

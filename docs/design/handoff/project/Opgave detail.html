@@ -1,554 +1,1459 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="da">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Forny lejekontrakt — ChainHub</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #fafafa; color: #1f2328; font-size: 13px; -webkit-font-smoothing: antialiased; }
-    .layout { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Forny lejekontrakt — ChainHub</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family:
+          'Inter',
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        background: #fafafa;
+        color: #1f2328;
+        font-size: 13px;
+        -webkit-font-smoothing: antialiased;
+      }
+      .layout {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        min-height: 100vh;
+      }
 
-    /* ── SIDEBAR ── */
-    .sb      { background: #f6f7f9; border-right: 1px solid #e1e4e8; padding: 14px 8px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
-    .sb-logo { font-weight: 600; padding: 4px 10px 16px; }
-    .sb-sec  { margin-bottom: 16px; }
-    .sb-lab  { font-size: 10px; color: #6e7681; padding: 0 10px 4px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
-    .sb-item { display: flex; justify-content: space-between; align-items: center; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 13px; }
-    .sb-item.active { background: #e8eaee; font-weight: 500; }
-    .sb-item:hover:not(.active) { background: #ecedf0; }
-    .sb-cnt  { font-size: 11px; color: #6e7681; font-variant-numeric: tabular-nums; }
-    .sb-cnt.a { color: #b91c1c; font-weight: 600; } .sb-cnt.w { color: #b54708; }
+      /* ── SIDEBAR ── */
+      .sb {
+        background: #f6f7f9;
+        border-right: 1px solid #e1e4e8;
+        padding: 14px 8px;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+      }
+      .sb-logo {
+        font-weight: 600;
+        padding: 4px 10px 16px;
+      }
+      .sb-sec {
+        margin-bottom: 16px;
+      }
+      .sb-lab {
+        font-size: 10px;
+        color: #6e7681;
+        padding: 0 10px 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+      }
+      .sb-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+      }
+      .sb-item.active {
+        background: #e8eaee;
+        font-weight: 500;
+      }
+      .sb-item:hover:not(.active) {
+        background: #ecedf0;
+      }
+      .sb-cnt {
+        font-size: 11px;
+        color: #6e7681;
+        font-variant-numeric: tabular-nums;
+      }
+      .sb-cnt.a {
+        color: #b91c1c;
+        font-weight: 600;
+      }
+      .sb-cnt.w {
+        color: #b54708;
+      }
 
-    /* ── MAIN ── */
-    .main { padding: 12px 24px 32px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+      /* ── MAIN ── */
+      .main {
+        padding: 12px 24px 32px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-width: 0;
+      }
 
-    /* ── DEMO BAR ── */
-    .demo-bar { display: flex; align-items: center; gap: 8px; padding: 5px 10px; background: #f6f7f9; border: 1px solid #e1e4e8; border-radius: 4px; font-size: 11px; color: #6e7681; }
-    .demo-bar span { font-weight: 600; color: #8c959f; }
-    .demo-btn { font-size: 11px; padding: 2px 8px; border: 1px solid #d0d7de; border-radius: 3px; background: white; color: #6e7681; cursor: pointer; font-family: inherit; }
-    .demo-btn.on { background: #e8eaee; color: #1f2328; border-color: #c1c5cc; font-weight: 500; }
-    .demo-btn:hover:not(.on) { background: #f6f8fa; }
+      /* ── DEMO BAR ── */
+      .demo-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 10px;
+        background: #f6f7f9;
+        border: 1px solid #e1e4e8;
+        border-radius: 4px;
+        font-size: 11px;
+        color: #6e7681;
+      }
+      .demo-bar span {
+        font-weight: 600;
+        color: #8c959f;
+      }
+      .demo-btn {
+        font-size: 11px;
+        padding: 2px 8px;
+        border: 1px solid #d0d7de;
+        border-radius: 3px;
+        background: white;
+        color: #6e7681;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .demo-btn.on {
+        background: #e8eaee;
+        color: #1f2328;
+        border-color: #c1c5cc;
+        font-weight: 500;
+      }
+      .demo-btn:hover:not(.on) {
+        background: #f6f8fa;
+      }
 
-    /* ── BREADCRUMB ── */
-    .crumb { font-size: 12px; color: #6e7681; padding: 4px 0 2px; }
-    .crumb a { color: #6e7681; text-decoration: none; }
-    .crumb a:hover { color: #1f2328; }
-    .crumb .sep { margin: 0 6px; color: #8c959f; }
+      /* ── BREADCRUMB ── */
+      .crumb {
+        font-size: 12px;
+        color: #6e7681;
+        padding: 4px 0 2px;
+      }
+      .crumb a {
+        color: #6e7681;
+        text-decoration: none;
+      }
+      .crumb a:hover {
+        color: #1f2328;
+      }
+      .crumb .sep {
+        margin: 0 6px;
+        color: #8c959f;
+      }
 
-    /* ── HEADER ── */
-    .head     { padding-bottom: 10px; border-bottom: 1px solid #e1e4e8; }
-    .head-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 8px; }
-    .head-title { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; flex: 1; min-width: 0; }
-    .head-btns  { display: flex; gap: 6px; flex-shrink: 0; }
-    .btn        { font-size: 12px; padding: 5px 10px; border: 1px solid #d0d7de; background: white; color: #1f2328; border-radius: 4px; cursor: pointer; font-weight: 500; font-family: inherit; white-space: nowrap; }
-    .btn:hover  { background: #f6f8fa; }
-    .btn.primary { background: #0969da; color: white; border-color: #0969da; }
-    .btn.primary:hover { background: #0860c7; }
-    .btn.green   { background: #1a7f37; color: white; border-color: #1a7f37; }
-    .btn.green:hover { background: #166d30; }
-    .btn.reopen  { border-color: #d0d7de; color: #6e7681; }
-    .head-meta  { display: flex; align-items: center; gap: 0; flex-wrap: wrap; font-size: 12px; color: #6e7681; }
-    .sep-dot    { margin: 0 8px; color: #d0d7de; }
+      /* ── HEADER ── */
+      .head {
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e1e4e8;
+      }
+      .head-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 8px;
+      }
+      .head-title {
+        font-size: 18px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        flex: 1;
+        min-width: 0;
+      }
+      .head-btns {
+        display: flex;
+        gap: 6px;
+        flex-shrink: 0;
+      }
+      .btn {
+        font-size: 12px;
+        padding: 5px 10px;
+        border: 1px solid #d0d7de;
+        background: white;
+        color: #1f2328;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+        font-family: inherit;
+        white-space: nowrap;
+      }
+      .btn:hover {
+        background: #f6f8fa;
+      }
+      .btn.primary {
+        background: #0969da;
+        color: white;
+        border-color: #0969da;
+      }
+      .btn.primary:hover {
+        background: #0860c7;
+      }
+      .btn.green {
+        background: #1a7f37;
+        color: white;
+        border-color: #1a7f37;
+      }
+      .btn.green:hover {
+        background: #166d30;
+      }
+      .btn.reopen {
+        border-color: #d0d7de;
+        color: #6e7681;
+      }
+      .head-meta {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        flex-wrap: wrap;
+        font-size: 12px;
+        color: #6e7681;
+      }
+      .sep-dot {
+        margin: 0 8px;
+        color: #d0d7de;
+      }
 
-    /* ── STATUS INLINE TOGGLE ── */
-    .status-dd-wrap { position: relative; display: inline-block; }
-    .status-pill { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 3px; cursor: pointer; border: 1px solid transparent; user-select: none; }
-    .status-pill:hover { opacity: 0.85; }
-    .status-pill.Åben      { background: #f6f8fa; color: #57606a; border-color: #d0d7de; }
-    .status-pill.I\ gang   { background: #ddf4ff; color: #0969da; border-color: #79c0ff; }
-    .status-pill.Afventer  { background: #fff8c5; color: #9a6700; border-color: #d4a72c; }
-    .status-pill.Fuldført  { background: #dafbe1; color: #1a7f37; border-color: #a8f0c6; }
-    .status-pill.Annulleret { background: #f6f8fa; color: #57606a; border-color: #d0d7de; }
-    .status-menu { position: absolute; top: calc(100% + 4px); left: 0; background: white; border: 1px solid #d0d7de; border-radius: 4px; box-shadow: 0 8px 24px rgba(15,23,42,0.11); z-index: 300; min-width: 140px; overflow: hidden; }
-    .status-opt  { padding: 6px 12px; font-size: 12px; cursor: pointer; color: #1f2328; display: flex; align-items: center; gap: 8px; }
-    .status-opt:hover { background: #f6f7f9; }
-    .status-dot  { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+      /* ── STATUS INLINE TOGGLE ── */
+      .status-dd-wrap {
+        position: relative;
+        display: inline-block;
+      }
+      .status-pill {
+        font-size: 11px;
+        font-weight: 500;
+        padding: 2px 8px;
+        border-radius: 3px;
+        cursor: pointer;
+        border: 1px solid transparent;
+        user-select: none;
+      }
+      .status-pill:hover {
+        opacity: 0.85;
+      }
+      .status-pill.Åben {
+        background: #f6f8fa;
+        color: #57606a;
+        border-color: #d0d7de;
+      }
+      .status-pill.I\ gang {
+        background: #ddf4ff;
+        color: #0969da;
+        border-color: #79c0ff;
+      }
+      .status-pill.Afventer {
+        background: #fff8c5;
+        color: #9a6700;
+        border-color: #d4a72c;
+      }
+      .status-pill.Fuldført {
+        background: #dafbe1;
+        color: #1a7f37;
+        border-color: #a8f0c6;
+      }
+      .status-pill.Annulleret {
+        background: #f6f8fa;
+        color: #57606a;
+        border-color: #d0d7de;
+      }
+      .status-menu {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        background: white;
+        border: 1px solid #d0d7de;
+        border-radius: 4px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.11);
+        z-index: 300;
+        min-width: 140px;
+        overflow: hidden;
+      }
+      .status-opt {
+        padding: 6px 12px;
+        font-size: 12px;
+        cursor: pointer;
+        color: #1f2328;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .status-opt:hover {
+        background: #f6f7f9;
+      }
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
 
-    /* ── ALERT BAR ── */
-    .alert-bar { display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; background: #ffebe9; border: 1px solid #ffc1ba; border-left: 3px solid #cf222e; border-radius: 4px; font-size: 13px; color: #6e1010; }
+      /* ── ALERT BAR ── */
+      .alert-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 14px;
+        background: #ffebe9;
+        border: 1px solid #ffc1ba;
+        border-left: 3px solid #cf222e;
+        border-radius: 4px;
+        font-size: 13px;
+        color: #6e1010;
+      }
 
-    /* ── STRIP ── */
-    .strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; background: #e1e4e8; border: 1px solid #e1e4e8; border-radius: 4px; overflow: hidden; }
-    .sc   { background: white; padding: 8px 12px; }
-    .sn   { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.2; color: #1f2328; }
-    .sn.sm { font-size: 12px; }
-    .sn.a  { color: #b91c1c; } .sn.w { color: #b54708; } .sn.g { color: #1a7f37; }
-    .sl   { font-size: 10px; color: #6e7681; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.4px; }
+      /* ── STRIP ── */
+      .strip {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 1px;
+        background: #e1e4e8;
+        border: 1px solid #e1e4e8;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .sc {
+        background: white;
+        padding: 8px 12px;
+      }
+      .sn {
+        font-size: 14px;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        line-height: 1.2;
+        color: #1f2328;
+      }
+      .sn.sm {
+        font-size: 12px;
+      }
+      .sn.a {
+        color: #b91c1c;
+      }
+      .sn.w {
+        color: #b54708;
+      }
+      .sn.g {
+        color: #1a7f37;
+      }
+      .sl {
+        font-size: 10px;
+        color: #6e7681;
+        margin-top: 3px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+      }
 
-    /* ── 2-COL ── */
-    .cols2 { display: grid; grid-template-columns: 1.5fr 1fr; gap: 12px; align-items: start; }
+      /* ── 2-COL ── */
+      .cols2 {
+        display: grid;
+        grid-template-columns: 1.5fr 1fr;
+        gap: 12px;
+        align-items: start;
+      }
 
-    /* ── PANELS ── */
-    .pnl      { background: white; border: 1px solid #e1e4e8; border-radius: 4px; overflow: hidden; }
-    .pnl-h    { padding: 6px 12px; border-bottom: 1px solid #e1e4e8; background: #fbfbfc; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-    .pnl-t    { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #1f2328; display: flex; align-items: center; gap: 5px; }
-    .pnl-m    { font-size: 11px; color: #6e7681; }
-    .pnl-body { padding: 12px; }
-    .pnl-foot { padding: 6px 12px; border-top: 1px solid #f0f1f3; background: #fbfbfc; display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #6e7681; }
-    .btn-add  { font-size: 11px; padding: 3px 8px; border: 1px dashed #d0d7de; background: transparent; color: #6e7681; border-radius: 3px; cursor: pointer; font-family: inherit; }
-    .btn-add:hover { border-style: solid; border-color: #0969da; color: #0969da; }
-    .link-a   { font-size: 12px; color: #0969da; text-decoration: none; cursor: pointer; }
-    .link-a:hover { text-decoration: underline; }
+      /* ── PANELS ── */
+      .pnl {
+        background: white;
+        border: 1px solid #e1e4e8;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .pnl-h {
+        padding: 6px 12px;
+        border-bottom: 1px solid #e1e4e8;
+        background: #fbfbfc;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+      }
+      .pnl-t {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #1f2328;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .pnl-m {
+        font-size: 11px;
+        color: #6e7681;
+      }
+      .pnl-body {
+        padding: 12px;
+      }
+      .pnl-foot {
+        padding: 6px 12px;
+        border-top: 1px solid #f0f1f3;
+        background: #fbfbfc;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 11px;
+        color: #6e7681;
+      }
+      .btn-add {
+        font-size: 11px;
+        padding: 3px 8px;
+        border: 1px dashed #d0d7de;
+        background: transparent;
+        color: #6e7681;
+        border-radius: 3px;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .btn-add:hover {
+        border-style: solid;
+        border-color: #0969da;
+        color: #0969da;
+      }
+      .link-a {
+        font-size: 12px;
+        color: #0969da;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      .link-a:hover {
+        text-decoration: underline;
+      }
 
-    /* ── BADGES ── */
-    .badge { font-size: 11px; font-weight: 500; padding: 1px 6px; border-radius: 3px; font-variant-numeric: tabular-nums; white-space: nowrap; display: inline-block; }
-    .badge.red    { background: #ffebe9; color: #cf222e; }
-    .badge.amber  { background: #fff8c5; color: #9a6700; }
-    .badge.green  { background: #dafbe1; color: #1a7f37; }
-    .badge.blue   { background: #ddf4ff; color: #0969da; }
-    .badge.gray   { background: #f6f8fa; color: #57606a; }
+      /* ── BADGES ── */
+      .badge {
+        font-size: 11px;
+        font-weight: 500;
+        padding: 1px 6px;
+        border-radius: 3px;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        display: inline-block;
+      }
+      .badge.red {
+        background: #ffebe9;
+        color: #cf222e;
+      }
+      .badge.amber {
+        background: #fff8c5;
+        color: #9a6700;
+      }
+      .badge.green {
+        background: #dafbe1;
+        color: #1a7f37;
+      }
+      .badge.blue {
+        background: #ddf4ff;
+        color: #0969da;
+      }
+      .badge.gray {
+        background: #f6f8fa;
+        color: #57606a;
+      }
 
-    /* ── DESCRIPTION ── */
-    .desc-block { font-size: 13px; color: #1f2328; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+      /* ── DESCRIPTION ── */
+      .desc-block {
+        font-size: 13px;
+        color: #1f2328;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
 
-    /* ── CHECKLIST ── */
-    .cl-item  { display: flex; align-items: flex-start; gap: 9px; padding: 5px 0; border-bottom: 1px solid #f0f1f3; cursor: pointer; }
-    .cl-item:hover { background: #f6f7f9; margin: 0 -12px; padding-left: 12px; padding-right: 12px; }
-    .cl-item:last-child { border-bottom: none; }
-    .cl-cb    { width: 16px; height: 16px; border: 1.5px solid #d0d7de; border-radius: 4px; flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; transition: all 0.1s; }
-    .cl-cb.done { background: #1a7f37; border-color: #1a7f37; }
-    .cl-check { color: white; font-size: 9px; font-weight: 700; }
-    .cl-text  { font-size: 13px; color: #1f2328; line-height: 1.4; flex: 1; }
-    .cl-text.done { color: #8c959f; text-decoration: line-through; }
-    .cl-progress { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-    .cl-bar   { flex: 1; height: 4px; background: #f0f1f3; border-radius: 2px; overflow: hidden; }
-    .cl-fill  { height: 100%; background: #1a7f37; border-radius: 2px; transition: width 0.2s; }
+      /* ── CHECKLIST ── */
+      .cl-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 9px;
+        padding: 5px 0;
+        border-bottom: 1px solid #f0f1f3;
+        cursor: pointer;
+      }
+      .cl-item:hover {
+        background: #f6f7f9;
+        margin: 0 -12px;
+        padding-left: 12px;
+        padding-right: 12px;
+      }
+      .cl-item:last-child {
+        border-bottom: none;
+      }
+      .cl-cb {
+        width: 16px;
+        height: 16px;
+        border: 1.5px solid #d0d7de;
+        border-radius: 4px;
+        flex-shrink: 0;
+        margin-top: 1px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.1s;
+      }
+      .cl-cb.done {
+        background: #1a7f37;
+        border-color: #1a7f37;
+      }
+      .cl-check {
+        color: white;
+        font-size: 9px;
+        font-weight: 700;
+      }
+      .cl-text {
+        font-size: 13px;
+        color: #1f2328;
+        line-height: 1.4;
+        flex: 1;
+      }
+      .cl-text.done {
+        color: #8c959f;
+        text-decoration: line-through;
+      }
+      .cl-progress {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .cl-bar {
+        flex: 1;
+        height: 4px;
+        background: #f0f1f3;
+        border-radius: 2px;
+        overflow: hidden;
+      }
+      .cl-fill {
+        height: 100%;
+        background: #1a7f37;
+        border-radius: 2px;
+        transition: width 0.2s;
+      }
 
-    /* ── ACTIVITY ── */
-    .act-row   { padding: 7px 12px; border-bottom: 1px solid #f0f1f3; cursor: pointer; }
-    .act-row:hover { background: #f6f7f9; }
-    .act-row:last-child { border-bottom: none; }
-    .act-top   { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 2px; }
-    .act-who   { font-size: 12px; font-weight: 500; color: #1f2328; }
-    .act-lbl   { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; margin-left: 6px; }
-    .act-lbl.blue   { color: #0969da; }
-    .act-lbl.amber  { color: #9a6700; }
-    .act-lbl.green  { color: #1a7f37; }
-    .act-lbl.gray   { color: #57606a; }
-    .act-time  { font-size: 11px; color: #8c959f; flex-shrink: 0; font-variant-numeric: tabular-nums; }
-    .act-detail { font-size: 12px; color: #6e7681; line-height: 1.4; }
-    .act-detail.quote { color: #1f2328; font-style: italic; }
+      /* ── ACTIVITY ── */
+      .act-row {
+        padding: 7px 12px;
+        border-bottom: 1px solid #f0f1f3;
+        cursor: pointer;
+      }
+      .act-row:hover {
+        background: #f6f7f9;
+      }
+      .act-row:last-child {
+        border-bottom: none;
+      }
+      .act-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 12px;
+        margin-bottom: 2px;
+      }
+      .act-who {
+        font-size: 12px;
+        font-weight: 500;
+        color: #1f2328;
+      }
+      .act-lbl {
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        margin-left: 6px;
+      }
+      .act-lbl.blue {
+        color: #0969da;
+      }
+      .act-lbl.amber {
+        color: #9a6700;
+      }
+      .act-lbl.green {
+        color: #1a7f37;
+      }
+      .act-lbl.gray {
+        color: #57606a;
+      }
+      .act-time {
+        font-size: 11px;
+        color: #8c959f;
+        flex-shrink: 0;
+        font-variant-numeric: tabular-nums;
+      }
+      .act-detail {
+        font-size: 12px;
+        color: #6e7681;
+        line-height: 1.4;
+      }
+      .act-detail.quote {
+        color: #1f2328;
+        font-style: italic;
+      }
 
-    /* ── COMMENT INPUT ── */
-    .comment-wrap   { padding: 10px 12px; background: #fbfbfc; border-top: 1px solid #e1e4e8; display: flex; flex-direction: column; gap: 7px; }
-    .comment-area   { font-size: 12px; padding: 7px 10px; border: 1px solid #d0d7de; border-radius: 4px; background: white; font-family: inherit; resize: none; width: 100%; color: #1f2328; }
-    .comment-area:focus { outline: 2px solid #0969da; outline-offset: -1px; border-color: transparent; }
-    .comment-area::placeholder { color: #8c959f; }
-    .comment-actions { display: flex; justify-content: flex-end; gap: 6px; align-items: center; }
+      /* ── COMMENT INPUT ── */
+      .comment-wrap {
+        padding: 10px 12px;
+        background: #fbfbfc;
+        border-top: 1px solid #e1e4e8;
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+      }
+      .comment-area {
+        font-size: 12px;
+        padding: 7px 10px;
+        border: 1px solid #d0d7de;
+        border-radius: 4px;
+        background: white;
+        font-family: inherit;
+        resize: none;
+        width: 100%;
+        color: #1f2328;
+      }
+      .comment-area:focus {
+        outline: 2px solid #0969da;
+        outline-offset: -1px;
+        border-color: transparent;
+      }
+      .comment-area::placeholder {
+        color: #8c959f;
+      }
+      .comment-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 6px;
+        align-items: center;
+      }
 
-    /* ── DETAIL ROWS ── */
-    .dt-row  { display: grid; grid-template-columns: 110px 1fr; gap: 10px; padding: 5px 12px; font-size: 12px; border-bottom: 1px solid #f0f1f3; align-items: center; }
-    .dt-row:last-child { border-bottom: none; }
-    .dt-l    { color: #6e7681; text-transform: uppercase; font-size: 10px; font-weight: 600; letter-spacing: 0.4px; }
+      /* ── DETAIL ROWS ── */
+      .dt-row {
+        display: grid;
+        grid-template-columns: 110px 1fr;
+        gap: 10px;
+        padding: 5px 12px;
+        font-size: 12px;
+        border-bottom: 1px solid #f0f1f3;
+        align-items: center;
+      }
+      .dt-row:last-child {
+        border-bottom: none;
+      }
+      .dt-l {
+        color: #6e7681;
+        text-transform: uppercase;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.4px;
+      }
 
-    /* ── LINKED ROWS ── */
-    .link-row { display: grid; grid-template-columns: 1fr auto 14px; gap: 8px; padding: 6px 12px; border-bottom: 1px solid #f0f1f3; align-items: center; font-size: 13px; cursor: pointer; }
-    .link-row:hover { background: #f6f7f9; }
-    .link-row:last-child { border-bottom: none; }
-    .lr-name { font-size: 13px; font-weight: 500; }
-    .lr-sub  { font-size: 11px; color: #6e7681; margin-top: 2px; }
-    .chev    { color: #8c959f; font-size: 12px; }
+      /* ── LINKED ROWS ── */
+      .link-row {
+        display: grid;
+        grid-template-columns: 1fr auto 14px;
+        gap: 8px;
+        padding: 6px 12px;
+        border-bottom: 1px solid #f0f1f3;
+        align-items: center;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .link-row:hover {
+        background: #f6f7f9;
+      }
+      .link-row:last-child {
+        border-bottom: none;
+      }
+      .lr-name {
+        font-size: 13px;
+        font-weight: 500;
+      }
+      .lr-sub {
+        font-size: 11px;
+        color: #6e7681;
+        margin-top: 2px;
+      }
+      .chev {
+        color: #8c959f;
+        font-size: 12px;
+      }
 
-    /* ── SKELETON ── */
-    .skel { background: linear-gradient(90deg,#f0f1f3 25%,#f6f7f9 50%,#f0f1f3 75%); background-size: 200% 100%; animation: shimmer 1.6s infinite; border-radius: 3px; display: inline-block; }
-    @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
-    .sk-row { padding: 7px 12px; border-bottom: 1px solid #f0f1f3; display: flex; align-items: center; gap: 10px; }
-    .sk-row:last-child { border-bottom: none; }
+      /* ── SKELETON ── */
+      .skel {
+        background: linear-gradient(90deg, #f0f1f3 25%, #f6f7f9 50%, #f0f1f3 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.6s infinite;
+        border-radius: 3px;
+        display: inline-block;
+      }
+      @keyframes shimmer {
+        0% {
+          background-position: -200% 0;
+        }
+        100% {
+          background-position: 200% 0;
+        }
+      }
+      .sk-row {
+        padding: 7px 12px;
+        border-bottom: 1px solid #f0f1f3;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .sk-row:last-child {
+        border-bottom: none;
+      }
 
-    /* ── BOTTOM BAR ── */
-    .bot-bar { display: flex; justify-content: space-between; padding: 6px 0; font-size: 11px; color: #6e7681; }
-    .kbd     { background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 3px; padding: 1px 5px; font-family: 'SF Mono','Fira Mono',monospace; font-size: 10px; color: #1f2328; }
+      /* ── BOTTOM BAR ── */
+      .bot-bar {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        font-size: 11px;
+        color: #6e7681;
+      }
+      .kbd {
+        background: #f6f8fa;
+        border: 1px solid #d0d7de;
+        border-radius: 3px;
+        padding: 1px 5px;
+        font-family: 'SF Mono', 'Fira Mono', monospace;
+        font-size: 10px;
+        color: #1f2328;
+      }
 
-    /* ── TOAST ── */
-    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1f2328; color: white; padding: 9px 16px; border-radius: 4px; font-size: 13px; box-shadow: 0 4px 16px rgba(0,0,0,0.22); z-index: 9000; white-space: nowrap; animation: tin .15s ease; }
-    @keyframes tin { from{opacity:0;transform:translateX(-50%) translateY(5px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
-  </style>
-</head>
-<body>
-<div id="root"></div>
-<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
-<script type="text/babel">
-const { useState, useRef, useEffect } = React;
+      /* ── TOAST ── */
+      .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1f2328;
+        color: white;
+        padding: 9px 16px;
+        border-radius: 4px;
+        font-size: 13px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
+        z-index: 9000;
+        white-space: nowrap;
+        animation: tin 0.15s ease;
+      }
+      @keyframes tin {
+        from {
+          opacity: 0;
+          transform: translateX(-50%) translateY(5px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script
+      src="https://unpkg.com/react@18.3.1/umd/react.development.js"
+      integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"
+      integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"
+      integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y"
+      crossorigin="anonymous"
+    ></script>
+    <script type="text/babel">
+      const { useState, useRef, useEffect } = React
 
-/* ─── DATA ─── */
-const TASK = {
-  id:'#TAS-472', titel:'Forny lejekontrakt erhverv',
-  selskab:'Tandlæge Østerbro ApS', ansvarlig:'Philip Birkenborg',
-  frist:'20. maj 2026', fristDays:9, oprettet:'5. maj 2026',
-  prio:'Høj',
-  beskrivelse:'Lejekontrakt for Østerbrogade 142 udløber 24. maj 2026 — 14 dage fra nu. Forhandling skal initieres straks.\n\nNuværende leje: 38.500 kr/md. Forventet markedspris iflg. AI-analyse: 42–43.000 kr/md (+10–12%). Forhandlingsmål: max +6% (40.810 kr/md).\n\nBestyrelsen har givet forhandlingsmandat op til +8%.',
-};
+      /* ─── DATA ─── */
+      const TASK = {
+        id: '#TAS-472',
+        titel: 'Forny lejekontrakt erhverv',
+        selskab: 'Tandlæge Østerbro ApS',
+        ansvarlig: 'Philip Birkenborg',
+        frist: '20. maj 2026',
+        fristDays: 9,
+        oprettet: '5. maj 2026',
+        prio: 'Høj',
+        beskrivelse:
+          'Lejekontrakt for Østerbrogade 142 udløber 24. maj 2026 — 14 dage fra nu. Forhandling skal initieres straks.\n\nNuværende leje: 38.500 kr/md. Forventet markedspris iflg. AI-analyse: 42–43.000 kr/md (+10–12%). Forhandlingsmål: max +6% (40.810 kr/md).\n\nBestyrelsen har givet forhandlingsmandat op til +8%.',
+      }
 
-const SUBTASKS_INIT = [
-  { id:1, tekst:'Kontakt udlejer om forhandlingsmøde', done:true  },
-  { id:2, tekst:'Indhent markedsvurdering fra mægler',  done:true  },
-  { id:3, tekst:'Gennemfør forhandlingsmøde',           done:false },
-  { id:4, tekst:'Udkast til nyt tillæg / ny kontrakt',  done:false },
-  { id:5, tekst:'Indhent bestyrelsesaccept',            done:false },
-];
+      const SUBTASKS_INIT = [
+        { id: 1, tekst: 'Kontakt udlejer om forhandlingsmøde', done: true },
+        { id: 2, tekst: 'Indhent markedsvurdering fra mægler', done: true },
+        { id: 3, tekst: 'Gennemfør forhandlingsmøde', done: false },
+        { id: 4, tekst: 'Udkast til nyt tillæg / ny kontrakt', done: false },
+        { id: 5, tekst: 'Indhent bestyrelsesaccept', done: false },
+      ]
 
-const LINKED = [
-  { type:'Kontrakt', navn:'Lejekontrakt erhverv', selskab:'Tandlæge Østerbro ApS', badge:'14d', badgeCls:'red' },
-  { type:'Sag',      navn:'#2840 Forhandling udlejer', selskab:'Åben · Philip B.',  badge:'Åben', badgeCls:'blue' },
-];
+      const LINKED = [
+        {
+          type: 'Kontrakt',
+          navn: 'Lejekontrakt erhverv',
+          selskab: 'Tandlæge Østerbro ApS',
+          badge: '14d',
+          badgeCls: 'red',
+        },
+        {
+          type: 'Sag',
+          navn: '#2840 Forhandling udlejer',
+          selskab: 'Åben · Philip B.',
+          badge: 'Åben',
+          badgeCls: 'blue',
+        },
+      ]
 
-const ACTIVITY = [
-  { id:1, who:'Philip',  type:'Kommentar',  cls:'blue',  detail:'"Udlejer bekræfter møde torsdag 15. maj kl. 10. Forhandlingsmandat godkendt af bestyrelsen."', time:'10. maj 15:22' },
-  { id:2, who:'Philip',  type:'Status',     cls:'amber', detail:'Åben → I gang', time:'7. maj 09:10' },
-  { id:3, who:'Philip',  type:'Tilknyttet', cls:'gray',  detail:'Sag #2840 Forhandling udlejer tilknyttet', time:'6. maj 14:05' },
-  { id:4, who:'Philip',  type:'Oprettelse', cls:'green', detail:'Opgave oprettet · frist sat til 20. maj 2026', time:'5. maj 11:30' },
-];
+      const ACTIVITY = [
+        {
+          id: 1,
+          who: 'Philip',
+          type: 'Kommentar',
+          cls: 'blue',
+          detail:
+            '"Udlejer bekræfter møde torsdag 15. maj kl. 10. Forhandlingsmandat godkendt af bestyrelsen."',
+          time: '10. maj 15:22',
+        },
+        {
+          id: 2,
+          who: 'Philip',
+          type: 'Status',
+          cls: 'amber',
+          detail: 'Åben → I gang',
+          time: '7. maj 09:10',
+        },
+        {
+          id: 3,
+          who: 'Philip',
+          type: 'Tilknyttet',
+          cls: 'gray',
+          detail: 'Sag #2840 Forhandling udlejer tilknyttet',
+          time: '6. maj 14:05',
+        },
+        {
+          id: 4,
+          who: 'Philip',
+          type: 'Oprettelse',
+          cls: 'green',
+          detail: 'Opgave oprettet · frist sat til 20. maj 2026',
+          time: '5. maj 11:30',
+        },
+      ]
 
-const STATUS_OPTS = ['Åben','I gang','Afventer','Fuldført','Annulleret'];
-const STATUS_DOT  = { 'Åben':'#d0d7de','I gang':'#0969da','Afventer':'#d4a72c','Fuldført':'#1a7f37','Annulleret':'#d0d7de' };
+      const STATUS_OPTS = ['Åben', 'I gang', 'Afventer', 'Fuldført', 'Annulleret']
+      const STATUS_DOT = {
+        Åben: '#d0d7de',
+        'I gang': '#0969da',
+        Afventer: '#d4a72c',
+        Fuldført: '#1a7f37',
+        Annulleret: '#d0d7de',
+      }
 
-/* ─── SIDEBAR ─── */
-function Sidebar() {
-  return (
-    <aside className="sb">
-      <div className="sb-logo">▣ ChainHub</div>
-      <div className="sb-sec">
-        <div className="sb-lab">Overblik</div>
-        <div className="sb-item">Forside <span className="sb-cnt a">5</span></div>
-        <div className="sb-item">Kalender <span className="sb-cnt">12</span></div>
-        <div className="sb-item">Søg</div>
-      </div>
-      <div className="sb-sec">
-        <div className="sb-lab">Portefølje</div>
-        <div className="sb-item">Selskaber <span className="sb-cnt">32</span></div>
-        <div className="sb-item">Kontrakter <span className="sb-cnt w">3</span></div>
-        <div className="sb-item">Sager <span className="sb-cnt a">7</span></div>
-        <div className="sb-item active">Opgaver <span className="sb-cnt w">9</span></div>
-      </div>
-      <div className="sb-sec">
-        <div className="sb-lab">Ressourcer</div>
-        <div className="sb-item">Dokumenter <span className="sb-cnt">412</span></div>
-        <div className="sb-item">Personer <span className="sb-cnt">184</span></div>
-        <div className="sb-item">Indstillinger</div>
-      </div>
-    </aside>
-  );
-}
-
-/* ─── STATUS DROPDOWN ─── */
-function StatusPill({ value, onChange }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-  useEffect(() => {
-    function h(e) { if (!ref.current?.contains(e.target)) setOpen(false); }
-    document.addEventListener('mousedown', h);
-    return () => document.removeEventListener('mousedown', h);
-  }, []);
-  return (
-    <div className="status-dd-wrap" ref={ref}>
-      <span className={`status-pill ${value}`} onClick={() => setOpen(o => !o)}>
-        {value} ▾
-      </span>
-      {open && (
-        <div className="status-menu">
-          {STATUS_OPTS.map(s => (
-            <div key={s} className="status-opt" onClick={() => { onChange(s); setOpen(false); }}>
-              <span className="status-dot" style={{background: STATUS_DOT[s]}}></span>
-              {s}
+      /* ─── SIDEBAR ─── */
+      function Sidebar() {
+        return (
+          <aside className="sb">
+            <div className="sb-logo">▣ ChainHub</div>
+            <div className="sb-sec">
+              <div className="sb-lab">Overblik</div>
+              <div className="sb-item">
+                Forside <span className="sb-cnt a">5</span>
+              </div>
+              <div className="sb-item">
+                Kalender <span className="sb-cnt">12</span>
+              </div>
+              <div className="sb-item">Søg</div>
             </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ─── SKELETON ─── */
-function SkRows({ n = 4 }) {
-  return Array.from({length:n}).map((_,i) => (
-    <div key={i} className="sk-row" style={{borderBottom: i<n-1?'1px solid #f0f1f3':'none'}}>
-      <span className="skel" style={{width:140,height:12}}></span>
-      <span className="skel" style={{width:80,height:12}}></span>
-      <span className="skel" style={{width:60,height:12,marginLeft:'auto'}}></span>
-    </div>
-  ));
-}
-
-/* ─── MAIN PAGE ─── */
-function TaskDetail() {
-  const [demo,      setDemo]      = useState('normal');
-  const [status,    setStatus]    = useState('I gang');
-  const [subtasks,  setSubtasks]  = useState(SUBTASKS_INIT);
-  const [comment,   setComment]   = useState('');
-  const [toast,     setToast]     = useState(null);
-  const [toastKey,  setToastKey]  = useState(0);
-
-  const isSkeleton = demo === 'skeleton';
-  const isError    = demo === 'fejl';
-
-  function doToast(msg) { setToast(msg); setToastKey(k=>k+1); setTimeout(()=>setToast(null),2600); }
-
-  function toggleSubtask(id) {
-    setSubtasks(prev => prev.map(t => t.id === id ? {...t, done: !t.done} : t));
-  }
-
-  function handleStatusChange(s) {
-    setStatus(s);
-    doToast(`Status ændret til ${s}`);
-  }
-
-  function markDone() {
-    if (status === 'Fuldført') {
-      setStatus('Åben');
-      doToast('Opgave genåbnet');
-    } else {
-      setStatus('Fuldført');
-      doToast('Opgave markeret fuldført');
-    }
-  }
-
-  function submitComment() {
-    if (!comment.trim()) return;
-    doToast(`Kommentar tilføjet: "${comment.slice(0,40)}${comment.length>40?'…':''}"`);
-    setComment('');
-  }
-
-  const doneCount  = subtasks.filter(t => t.done).length;
-  const totalCount = subtasks.length;
-  const pct        = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
-  const isFuldfort = status === 'Fuldført';
-
-  return (
-    <div className="layout">
-      <Sidebar />
-      <main className="main">
-
-        {/* Demo bar */}
-        <div className="demo-bar">
-          <span>Demo:</span>
-          {['normal','skeleton','fejl'].map(s => (
-            <button key={s} className={`demo-btn${demo===s?' on':''}`} onClick={()=>setDemo(s)}>{s}</button>
-          ))}
-        </div>
-
-        {/* Breadcrumb */}
-        <div className="crumb">
-          <a href="#">Opgaver</a><span className="sep">›</span>
-          <a href="#">Tandlæge Østerbro ApS</a><span className="sep">›</span>
-          {isSkeleton
-            ? <span className="skel" style={{width:170,height:12,display:'inline-block',verticalAlign:'middle'}}></span>
-            : <span>Forny lejekontrakt erhverv</span>}
-        </div>
-
-        {/* Error */}
-        {isError && (
-          <div className="alert-bar">
-            <strong>Kunne ikke hente opgavedata</strong> — prøv igen.
-            <button className="btn" style={{marginLeft:12}}>Prøv igen</button>
-          </div>
-        )}
-
-        {/* Header */}
-        <div className="head">
-          <div className="head-top">
-            {isSkeleton ? (
-              <div style={{flex:1}}>
-                <div className="skel" style={{width:280,height:18,display:'block',marginBottom:10}}></div>
-                <div className="skel" style={{width:350,height:12,display:'block'}}></div>
+            <div className="sb-sec">
+              <div className="sb-lab">Portefølje</div>
+              <div className="sb-item">
+                Selskaber <span className="sb-cnt">32</span>
               </div>
-            ) : (
-              <>
-                <div style={{flex:1,minWidth:0}}>
-                  <div className="head-title" style={{textDecoration:isFuldfort?'line-through':'none',color:isFuldfort?'#8c959f':'#1f2328'}}>
-                    {TASK.titel}
-                  </div>
-                </div>
-                <div className="head-btns">
-                  <button className="btn" onClick={() => doToast('Rediger opgave')}>Rediger</button>
-                  {isFuldfort
-                    ? <button className="btn reopen" onClick={markDone}>Genåbn</button>
-                    : <button className="btn green" onClick={markDone}>Markér fuldført</button>}
-                </div>
-              </>
-            )}
-          </div>
-          {!isSkeleton && (
-            <div className="head-meta">
-              <StatusPill value={status} onChange={handleStatusChange} />
-              <span className="sep-dot">·</span>
-              <span className="badge amber" style={{fontSize:11}}>Høj prioritet</span>
-              <span className="sep-dot">·</span>
-              <span>Frist <span className={`badge ${TASK.fristDays <= 7 ? 'amber' : 'gray'}`}>{TASK.frist}</span></span>
-              <span className="sep-dot">·</span>
-              <span>{TASK.ansvarlig}</span>
-              <span className="sep-dot">·</span>
-              <span style={{color:'#8c959f'}}>{TASK.id}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Strip (5 cells) */}
-        {isSkeleton ? (
-          <div className="strip">
-            {Array.from({length:5}).map((_,i) => (
-              <div key={i} className="sc">
-                <span className="skel" style={{width:50,height:14,display:'block'}}></span>
-                <span className="skel" style={{width:70,height:10,display:'block',marginTop:5}}></span>
+              <div className="sb-item">
+                Kontrakter <span className="sb-cnt w">3</span>
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="strip">
-            <div className="sc"><div className={`sn sm`} style={{color: status==='Fuldført'?'#1a7f37':status==='Afventer'?'#9a6700':'#0969da'}}>{status}</div><div className="sl">Status</div></div>
-            <div className="sc"><div className="sn sm" style={{color:'#b54708'}}>Høj</div><div className="sl">Prioritet</div></div>
-            <div className="sc"><div className={`sn sm ${TASK.fristDays<=7?'w':''}`}>{TASK.frist}</div><div className="sl">Frist</div></div>
-            <div className="sc"><div className="sn sm">{doneCount}/{totalCount}</div><div className="sl">Fremgang</div></div>
-            <div className="sc"><div className="sn sm">Philip B.</div><div className="sl">Ansvarlig</div></div>
-          </div>
-        )}
-
-        {/* 2-col layout */}
-        <div className="cols2">
-
-          {/* LEFT: Beskrivelse + Tjekliste + Aktivitet */}
-          <div style={{display:'flex',flexDirection:'column',gap:12}}>
-
-            {/* Beskrivelse */}
-            <div className="pnl">
-              <div className="pnl-h">
-                <span className="pnl-t">Beskrivelse</span>
-                <button className="btn-add" onClick={()=>doToast('Rediger beskrivelse')}>Rediger</button>
+              <div className="sb-item">
+                Sager <span className="sb-cnt a">7</span>
               </div>
-              <div className="pnl-body">
-                {isSkeleton
-                  ? <><div className="skel" style={{width:'100%',height:12,display:'block',marginBottom:7}}></div><div className="skel" style={{width:'80%',height:12,display:'block',marginBottom:7}}></div><div className="skel" style={{width:'90%',height:12,display:'block'}}></div></>
-                  : <div className="desc-block">{TASK.beskrivelse}</div>}
+              <div className="sb-item active">
+                Opgaver <span className="sb-cnt w">9</span>
               </div>
             </div>
-
-            {/* Tjekliste */}
-            <div className="pnl">
-              <div className="pnl-h">
-                <span className="pnl-t">Tjekliste <span style={{background:'#e1e4e8',color:'#57606a',padding:'1px 6px',borderRadius:8,fontSize:10,fontWeight:500,textTransform:'none',letterSpacing:0,marginLeft:4}}>{isSkeleton?'…':`${doneCount}/${totalCount}`}</span></span>
-                <span className="pnl-m">{isSkeleton?'…':`${pct}%`}</span>
+            <div className="sb-sec">
+              <div className="sb-lab">Ressourcer</div>
+              <div className="sb-item">
+                Dokumenter <span className="sb-cnt">412</span>
               </div>
-              <div style={{padding:'8px 12px 4px'}}>
-                {!isSkeleton && (
-                  <div className="cl-progress">
-                    <div className="cl-bar"><div className="cl-fill" style={{width:`${pct}%`}}></div></div>
-                    <span style={{fontSize:11,color:'#6e7681',flexShrink:0,fontVariantNumeric:'tabular-nums'}}>{doneCount} af {totalCount}</span>
-                  </div>
-                )}
-                {isSkeleton
-                  ? <SkRows n={4} />
-                  : subtasks.map(t => (
-                    <div key={t.id} className="cl-item" onClick={() => toggleSubtask(t.id)}>
-                      <div className={`cl-cb${t.done?' done':''}`}>
-                        {t.done && <span className="cl-check">✓</span>}
-                      </div>
-                      <span className={`cl-text${t.done?' done':''}`}>{t.tekst}</span>
-                    </div>
-                  ))}
+              <div className="sb-item">
+                Personer <span className="sb-cnt">184</span>
               </div>
-              <div className="pnl-foot">
-                <span>{isSkeleton?'':pct === 100 ? 'Alle punkter fuldført' : `${totalCount - doneCount} udestående`}</span>
-                <button className="btn-add" onClick={()=>doToast('Tilføj tjeklistepunkt')}>+ Tilføj punkt</button>
-              </div>
+              <div className="sb-item">Indstillinger</div>
             </div>
+          </aside>
+        )
+      }
 
-            {/* Aktivitet + kommentar */}
-            <div className="pnl">
-              <div className="pnl-h">
-                <span className="pnl-t">Aktivitet</span>
-                <span className="pnl-m">{isSkeleton?'…':`${ACTIVITY.length} events`}</span>
-              </div>
-              {isSkeleton
-                ? <SkRows n={4} />
-                : ACTIVITY.map(a => (
-                  <div key={a.id} className="act-row">
-                    <div className="act-top">
-                      <span>
-                        <span className="act-who">{a.who}</span>
-                        <span className={`act-lbl ${a.cls}`}>{a.type}</span>
-                      </span>
-                      <span className="act-time">{a.time}</span>
-                    </div>
-                    <div className={`act-detail${a.id===1?' quote':''}`}>{a.detail}</div>
+      /* ─── STATUS DROPDOWN ─── */
+      function StatusPill({ value, onChange }) {
+        const [open, setOpen] = useState(false)
+        const ref = useRef(null)
+        useEffect(() => {
+          function h(e) {
+            if (!ref.current?.contains(e.target)) setOpen(false)
+          }
+          document.addEventListener('mousedown', h)
+          return () => document.removeEventListener('mousedown', h)
+        }, [])
+        return (
+          <div className="status-dd-wrap" ref={ref}>
+            <span className={`status-pill ${value}`} onClick={() => setOpen((o) => !o)}>
+              {value} ▾
+            </span>
+            {open && (
+              <div className="status-menu">
+                {STATUS_OPTS.map((s) => (
+                  <div
+                    key={s}
+                    className="status-opt"
+                    onClick={() => {
+                      onChange(s)
+                      setOpen(false)
+                    }}
+                  >
+                    <span className="status-dot" style={{ background: STATUS_DOT[s] }}></span>
+                    {s}
                   </div>
                 ))}
-              {!isSkeleton && (
-                <div className="comment-wrap">
-                  <textarea className="comment-area" rows={2}
-                    placeholder="Tilføj kommentar..."
-                    value={comment}
-                    onChange={e => setComment(e.target.value)}
-                    onKeyDown={e => { if ((e.metaKey||e.ctrlKey) && e.key==='Enter') submitComment(); }}
-                  />
-                  <div className="comment-actions">
-                    <span style={{fontSize:11,color:'#8c959f'}}><span className="kbd">⌘</span><span className="kbd">↵</span></span>
-                    <button className="btn primary" style={{fontSize:11,padding:'4px 10px'}} onClick={submitComment}>Gem</button>
+              </div>
+            )}
+          </div>
+        )
+      }
+
+      /* ─── SKELETON ─── */
+      function SkRows({ n = 4 }) {
+        return Array.from({ length: n }).map((_, i) => (
+          <div
+            key={i}
+            className="sk-row"
+            style={{ borderBottom: i < n - 1 ? '1px solid #f0f1f3' : 'none' }}
+          >
+            <span className="skel" style={{ width: 140, height: 12 }}></span>
+            <span className="skel" style={{ width: 80, height: 12 }}></span>
+            <span className="skel" style={{ width: 60, height: 12, marginLeft: 'auto' }}></span>
+          </div>
+        ))
+      }
+
+      /* ─── MAIN PAGE ─── */
+      function TaskDetail() {
+        const [demo, setDemo] = useState('normal')
+        const [status, setStatus] = useState('I gang')
+        const [subtasks, setSubtasks] = useState(SUBTASKS_INIT)
+        const [comment, setComment] = useState('')
+        const [toast, setToast] = useState(null)
+        const [toastKey, setToastKey] = useState(0)
+
+        const isSkeleton = demo === 'skeleton'
+        const isError = demo === 'fejl'
+
+        function doToast(msg) {
+          setToast(msg)
+          setToastKey((k) => k + 1)
+          setTimeout(() => setToast(null), 2600)
+        }
+
+        function toggleSubtask(id) {
+          setSubtasks((prev) => prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t)))
+        }
+
+        function handleStatusChange(s) {
+          setStatus(s)
+          doToast(`Status ændret til ${s}`)
+        }
+
+        function markDone() {
+          if (status === 'Fuldført') {
+            setStatus('Åben')
+            doToast('Opgave genåbnet')
+          } else {
+            setStatus('Fuldført')
+            doToast('Opgave markeret fuldført')
+          }
+        }
+
+        function submitComment() {
+          if (!comment.trim()) return
+          doToast(`Kommentar tilføjet: "${comment.slice(0, 40)}${comment.length > 40 ? '…' : ''}"`)
+          setComment('')
+        }
+
+        const doneCount = subtasks.filter((t) => t.done).length
+        const totalCount = subtasks.length
+        const pct = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0
+        const isFuldfort = status === 'Fuldført'
+
+        return (
+          <div className="layout">
+            <Sidebar />
+            <main className="main">
+              {/* Demo bar */}
+              <div className="demo-bar">
+                <span>Demo:</span>
+                {['normal', 'skeleton', 'fejl'].map((s) => (
+                  <button
+                    key={s}
+                    className={`demo-btn${demo === s ? ' on' : ''}`}
+                    onClick={() => setDemo(s)}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+
+              {/* Breadcrumb */}
+              <div className="crumb">
+                <a href="#">Opgaver</a>
+                <span className="sep">›</span>
+                <a href="#">Tandlæge Østerbro ApS</a>
+                <span className="sep">›</span>
+                {isSkeleton ? (
+                  <span
+                    className="skel"
+                    style={{
+                      width: 170,
+                      height: 12,
+                      display: 'inline-block',
+                      verticalAlign: 'middle',
+                    }}
+                  ></span>
+                ) : (
+                  <span>Forny lejekontrakt erhverv</span>
+                )}
+              </div>
+
+              {/* Error */}
+              {isError && (
+                <div className="alert-bar">
+                  <strong>Kunne ikke hente opgavedata</strong> — prøv igen.
+                  <button className="btn" style={{ marginLeft: 12 }}>
+                    Prøv igen
+                  </button>
+                </div>
+              )}
+
+              {/* Header */}
+              <div className="head">
+                <div className="head-top">
+                  {isSkeleton ? (
+                    <div style={{ flex: 1 }}>
+                      <div
+                        className="skel"
+                        style={{ width: 280, height: 18, display: 'block', marginBottom: 10 }}
+                      ></div>
+                      <div
+                        className="skel"
+                        style={{ width: 350, height: 12, display: 'block' }}
+                      ></div>
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div
+                          className="head-title"
+                          style={{
+                            textDecoration: isFuldfort ? 'line-through' : 'none',
+                            color: isFuldfort ? '#8c959f' : '#1f2328',
+                          }}
+                        >
+                          {TASK.titel}
+                        </div>
+                      </div>
+                      <div className="head-btns">
+                        <button className="btn" onClick={() => doToast('Rediger opgave')}>
+                          Rediger
+                        </button>
+                        {isFuldfort ? (
+                          <button className="btn reopen" onClick={markDone}>
+                            Genåbn
+                          </button>
+                        ) : (
+                          <button className="btn green" onClick={markDone}>
+                            Markér fuldført
+                          </button>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+                {!isSkeleton && (
+                  <div className="head-meta">
+                    <StatusPill value={status} onChange={handleStatusChange} />
+                    <span className="sep-dot">·</span>
+                    <span className="badge amber" style={{ fontSize: 11 }}>
+                      Høj prioritet
+                    </span>
+                    <span className="sep-dot">·</span>
+                    <span>
+                      Frist{' '}
+                      <span className={`badge ${TASK.fristDays <= 7 ? 'amber' : 'gray'}`}>
+                        {TASK.frist}
+                      </span>
+                    </span>
+                    <span className="sep-dot">·</span>
+                    <span>{TASK.ansvarlig}</span>
+                    <span className="sep-dot">·</span>
+                    <span style={{ color: '#8c959f' }}>{TASK.id}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Strip (5 cells) */}
+              {isSkeleton ? (
+                <div className="strip">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="sc">
+                      <span
+                        className="skel"
+                        style={{ width: 50, height: 14, display: 'block' }}
+                      ></span>
+                      <span
+                        className="skel"
+                        style={{ width: 70, height: 10, display: 'block', marginTop: 5 }}
+                      ></span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="strip">
+                  <div className="sc">
+                    <div
+                      className={`sn sm`}
+                      style={{
+                        color:
+                          status === 'Fuldført'
+                            ? '#1a7f37'
+                            : status === 'Afventer'
+                              ? '#9a6700'
+                              : '#0969da',
+                      }}
+                    >
+                      {status}
+                    </div>
+                    <div className="sl">Status</div>
+                  </div>
+                  <div className="sc">
+                    <div className="sn sm" style={{ color: '#b54708' }}>
+                      Høj
+                    </div>
+                    <div className="sl">Prioritet</div>
+                  </div>
+                  <div className="sc">
+                    <div className={`sn sm ${TASK.fristDays <= 7 ? 'w' : ''}`}>{TASK.frist}</div>
+                    <div className="sl">Frist</div>
+                  </div>
+                  <div className="sc">
+                    <div className="sn sm">
+                      {doneCount}/{totalCount}
+                    </div>
+                    <div className="sl">Fremgang</div>
+                  </div>
+                  <div className="sc">
+                    <div className="sn sm">Philip B.</div>
+                    <div className="sl">Ansvarlig</div>
                   </div>
                 </div>
               )}
-            </div>
-          </div>
 
-          {/* RIGHT: Detaljer + Tilknytninger */}
-          <div style={{display:'flex',flexDirection:'column',gap:12}}>
-
-            {/* Detaljer */}
-            <div className="pnl">
-              <div className="pnl-h"><span className="pnl-t">Detaljer</span></div>
-              {isSkeleton
-                ? <SkRows n={5} />
-                : (
-                  <>
-                    <div className="dt-row"><span className="dt-l">Selskab</span><span>{TASK.selskab}</span></div>
-                    <div className="dt-row"><span className="dt-l">Ansvarlig</span><span>{TASK.ansvarlig}</span></div>
-                    <div className="dt-row"><span className="dt-l">Frist</span><span><span className="badge amber">{TASK.frist}</span></span></div>
-                    <div className="dt-row"><span className="dt-l">Prioritet</span><span><span className="badge amber">Høj</span></span></div>
-                    <div className="dt-row"><span className="dt-l">Oprettet</span><span style={{color:'#6e7681',fontSize:11}}>{TASK.oprettet}</span></div>
-                    <div className="dt-row"><span className="dt-l">Opgave-ID</span><span style={{color:'#6e7681',fontVariantNumeric:'tabular-nums'}}>{TASK.id}</span></div>
-                  </>
-                )}
-              <div className="pnl-foot"><span></span><button className="btn-add" onClick={()=>doToast('Rediger detaljer')}>Rediger</button></div>
-            </div>
-
-            {/* Tilknytninger */}
-            <div className="pnl">
-              <div className="pnl-h"><span className="pnl-t">Tilknytninger</span><span className="pnl-m">{isSkeleton?'…':`${LINKED.length}`}</span></div>
-              {isSkeleton
-                ? <SkRows n={2} />
-                : LINKED.length === 0
-                  ? <div style={{padding:'14px 12px',textAlign:'center',fontSize:12,color:'#8c959f'}}>Ingen tilknytninger</div>
-                  : LINKED.map((l,i) => (
-                    <div key={i} className="link-row" onClick={() => doToast(`Åbner ${l.navn}`)}>
-                      <div>
-                        <div className="lr-name">{l.navn}</div>
-                        <div className="lr-sub">{l.type} · {l.selskab}</div>
-                      </div>
-                      <span className={`badge ${l.badgeCls}`}>{l.badge}</span>
-                      <span className="chev">›</span>
+              {/* 2-col layout */}
+              <div className="cols2">
+                {/* LEFT: Beskrivelse + Tjekliste + Aktivitet */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {/* Beskrivelse */}
+                  <div className="pnl">
+                    <div className="pnl-h">
+                      <span className="pnl-t">Beskrivelse</span>
+                      <button className="btn-add" onClick={() => doToast('Rediger beskrivelse')}>
+                        Rediger
+                      </button>
                     </div>
-                  ))}
-              <div className="pnl-foot"><span></span><button className="btn-add" onClick={()=>doToast('Tilknyt element')}>+ Tilknyt</button></div>
-            </div>
+                    <div className="pnl-body">
+                      {isSkeleton ? (
+                        <>
+                          <div
+                            className="skel"
+                            style={{ width: '100%', height: 12, display: 'block', marginBottom: 7 }}
+                          ></div>
+                          <div
+                            className="skel"
+                            style={{ width: '80%', height: 12, display: 'block', marginBottom: 7 }}
+                          ></div>
+                          <div
+                            className="skel"
+                            style={{ width: '90%', height: 12, display: 'block' }}
+                          ></div>
+                        </>
+                      ) : (
+                        <div className="desc-block">{TASK.beskrivelse}</div>
+                      )}
+                    </div>
+                  </div>
 
+                  {/* Tjekliste */}
+                  <div className="pnl">
+                    <div className="pnl-h">
+                      <span className="pnl-t">
+                        Tjekliste{' '}
+                        <span
+                          style={{
+                            background: '#e1e4e8',
+                            color: '#57606a',
+                            padding: '1px 6px',
+                            borderRadius: 8,
+                            fontSize: 10,
+                            fontWeight: 500,
+                            textTransform: 'none',
+                            letterSpacing: 0,
+                            marginLeft: 4,
+                          }}
+                        >
+                          {isSkeleton ? '…' : `${doneCount}/${totalCount}`}
+                        </span>
+                      </span>
+                      <span className="pnl-m">{isSkeleton ? '…' : `${pct}%`}</span>
+                    </div>
+                    <div style={{ padding: '8px 12px 4px' }}>
+                      {!isSkeleton && (
+                        <div className="cl-progress">
+                          <div className="cl-bar">
+                            <div className="cl-fill" style={{ width: `${pct}%` }}></div>
+                          </div>
+                          <span
+                            style={{
+                              fontSize: 11,
+                              color: '#6e7681',
+                              flexShrink: 0,
+                              fontVariantNumeric: 'tabular-nums',
+                            }}
+                          >
+                            {doneCount} af {totalCount}
+                          </span>
+                        </div>
+                      )}
+                      {isSkeleton ? (
+                        <SkRows n={4} />
+                      ) : (
+                        subtasks.map((t) => (
+                          <div key={t.id} className="cl-item" onClick={() => toggleSubtask(t.id)}>
+                            <div className={`cl-cb${t.done ? ' done' : ''}`}>
+                              {t.done && <span className="cl-check">✓</span>}
+                            </div>
+                            <span className={`cl-text${t.done ? ' done' : ''}`}>{t.tekst}</span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                    <div className="pnl-foot">
+                      <span>
+                        {isSkeleton
+                          ? ''
+                          : pct === 100
+                            ? 'Alle punkter fuldført'
+                            : `${totalCount - doneCount} udestående`}
+                      </span>
+                      <button className="btn-add" onClick={() => doToast('Tilføj tjeklistepunkt')}>
+                        + Tilføj punkt
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Aktivitet + kommentar */}
+                  <div className="pnl">
+                    <div className="pnl-h">
+                      <span className="pnl-t">Aktivitet</span>
+                      <span className="pnl-m">
+                        {isSkeleton ? '…' : `${ACTIVITY.length} events`}
+                      </span>
+                    </div>
+                    {isSkeleton ? (
+                      <SkRows n={4} />
+                    ) : (
+                      ACTIVITY.map((a) => (
+                        <div key={a.id} className="act-row">
+                          <div className="act-top">
+                            <span>
+                              <span className="act-who">{a.who}</span>
+                              <span className={`act-lbl ${a.cls}`}>{a.type}</span>
+                            </span>
+                            <span className="act-time">{a.time}</span>
+                          </div>
+                          <div className={`act-detail${a.id === 1 ? ' quote' : ''}`}>
+                            {a.detail}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                    {!isSkeleton && (
+                      <div className="comment-wrap">
+                        <textarea
+                          className="comment-area"
+                          rows={2}
+                          placeholder="Tilføj kommentar..."
+                          value={comment}
+                          onChange={(e) => setComment(e.target.value)}
+                          onKeyDown={(e) => {
+                            if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') submitComment()
+                          }}
+                        />
+                        <div className="comment-actions">
+                          <span style={{ fontSize: 11, color: '#8c959f' }}>
+                            <span className="kbd">⌘</span>
+                            <span className="kbd">↵</span>
+                          </span>
+                          <button
+                            className="btn primary"
+                            style={{ fontSize: 11, padding: '4px 10px' }}
+                            onClick={submitComment}
+                          >
+                            Gem
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* RIGHT: Detaljer + Tilknytninger */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {/* Detaljer */}
+                  <div className="pnl">
+                    <div className="pnl-h">
+                      <span className="pnl-t">Detaljer</span>
+                    </div>
+                    {isSkeleton ? (
+                      <SkRows n={5} />
+                    ) : (
+                      <>
+                        <div className="dt-row">
+                          <span className="dt-l">Selskab</span>
+                          <span>{TASK.selskab}</span>
+                        </div>
+                        <div className="dt-row">
+                          <span className="dt-l">Ansvarlig</span>
+                          <span>{TASK.ansvarlig}</span>
+                        </div>
+                        <div className="dt-row">
+                          <span className="dt-l">Frist</span>
+                          <span>
+                            <span className="badge amber">{TASK.frist}</span>
+                          </span>
+                        </div>
+                        <div className="dt-row">
+                          <span className="dt-l">Prioritet</span>
+                          <span>
+                            <span className="badge amber">Høj</span>
+                          </span>
+                        </div>
+                        <div className="dt-row">
+                          <span className="dt-l">Oprettet</span>
+                          <span style={{ color: '#6e7681', fontSize: 11 }}>{TASK.oprettet}</span>
+                        </div>
+                        <div className="dt-row">
+                          <span className="dt-l">Opgave-ID</span>
+                          <span style={{ color: '#6e7681', fontVariantNumeric: 'tabular-nums' }}>
+                            {TASK.id}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                    <div className="pnl-foot">
+                      <span></span>
+                      <button className="btn-add" onClick={() => doToast('Rediger detaljer')}>
+                        Rediger
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Tilknytninger */}
+                  <div className="pnl">
+                    <div className="pnl-h">
+                      <span className="pnl-t">Tilknytninger</span>
+                      <span className="pnl-m">{isSkeleton ? '…' : `${LINKED.length}`}</span>
+                    </div>
+                    {isSkeleton ? (
+                      <SkRows n={2} />
+                    ) : LINKED.length === 0 ? (
+                      <div
+                        style={{
+                          padding: '14px 12px',
+                          textAlign: 'center',
+                          fontSize: 12,
+                          color: '#8c959f',
+                        }}
+                      >
+                        Ingen tilknytninger
+                      </div>
+                    ) : (
+                      LINKED.map((l, i) => (
+                        <div
+                          key={i}
+                          className="link-row"
+                          onClick={() => doToast(`Åbner ${l.navn}`)}
+                        >
+                          <div>
+                            <div className="lr-name">{l.navn}</div>
+                            <div className="lr-sub">
+                              {l.type} · {l.selskab}
+                            </div>
+                          </div>
+                          <span className={`badge ${l.badgeCls}`}>{l.badge}</span>
+                          <span className="chev">›</span>
+                        </div>
+                      ))
+                    )}
+                    <div className="pnl-foot">
+                      <span></span>
+                      <button className="btn-add" onClick={() => doToast('Tilknyt element')}>
+                        + Tilknyt
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom bar */}
+              <div className="bot-bar">
+                <span>
+                  {isSkeleton
+                    ? 'Henter…'
+                    : `${TASK.id} · ${TASK.selskab} · Sidst opdateret 10. maj 15:22`}
+                </span>
+                <span>
+                  <span className="kbd">⌘K</span> handling · <span className="kbd">E</span> rediger
+                  · <span className="kbd">C</span> kommentar · <span className="kbd">M</span> markér
+                  fuldført
+                </span>
+              </div>
+            </main>
+            {toast && (
+              <div className="toast" key={toastKey}>
+                ✓ {toast}
+              </div>
+            )}
           </div>
-        </div>
+        )
+      }
 
-        {/* Bottom bar */}
-        <div className="bot-bar">
-          <span>{isSkeleton?'Henter…':`${TASK.id} · ${TASK.selskab} · Sidst opdateret 10. maj 15:22`}</span>
-          <span><span className="kbd">⌘K</span> handling · <span className="kbd">E</span> rediger · <span className="kbd">C</span> kommentar · <span className="kbd">M</span> markér fuldført</span>
-        </div>
-
-      </main>
-      {toast && <div className="toast" key={toastKey}>✓ {toast}</div>}
-    </div>
-  );
-}
-
-ReactDOM.createRoot(document.getElementById('root')).render(<TaskDetail />);
-</script>
-</body>
+      ReactDOM.createRoot(document.getElementById('root')).render(<TaskDetail />)
+    </script>
+  </body>
 </html>

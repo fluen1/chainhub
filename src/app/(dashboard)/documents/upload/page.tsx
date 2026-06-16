@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
-import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
+import { getDocumentUploadCompanies } from '@/actions/documents'
+import { auth } from '@/lib/auth'
 import { canAccessModule } from '@/lib/permissions'
 import { UploadFormB } from './upload-form-b'
-import { getDocumentUploadCompanies } from '@/actions/documents'
 
 export const metadata: Metadata = { title: 'Upload dokument' }
 

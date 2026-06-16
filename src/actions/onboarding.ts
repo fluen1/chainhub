@@ -2,8 +2,8 @@
 
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { canAccessModule } from '@/lib/permissions'
 import { captureError } from '@/lib/logger'
+import { canAccessModule } from '@/lib/permissions'
 
 export interface OnboardingStatus {
   shouldShow: boolean

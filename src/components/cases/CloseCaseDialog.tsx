@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import { BModal, BTextareaField } from '@/components/ui/b'
 import { closeCase } from '@/actions/cases'
+import { BModal, BTextareaField } from '@/components/ui/b'
 
 // ────────────────────────────────────────────────────────────────────────────
 // CloseCaseDialog — bekræft lukning af sag med valgfri note.

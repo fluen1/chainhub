@@ -1,10 +1,11 @@
+import { PrismaAdapter } from '@auth/prisma-adapter'
+import bcrypt from 'bcryptjs'
 import NextAuth, { type DefaultSession } from 'next-auth'
+import type { Session } from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 import Google from 'next-auth/providers/google'
-import { PrismaAdapter } from '@auth/prisma-adapter'
-import { prisma } from '@/lib/db'
-import bcrypt from 'bcryptjs'
 import { isLoginRateLimited, recordFailedLoginAttempt } from '@/lib/auth/login-rate-limit'
+import { prisma } from '@/lib/db'
 
 declare module 'next-auth' {
   interface Session extends DefaultSession {
@@ -228,8 +229,6 @@ const {
 
 // Eksportér handlers og signIn/signOut til brug i route-handler og klient-komponenter
 export { handlers, signIn, signOut }
-
-import type { Session } from 'next-auth'
 
 // auth() — server-side session getter med simpel type.
 // Typed kun som () => Promise<Session | null> (ikke middleware-overloaden)

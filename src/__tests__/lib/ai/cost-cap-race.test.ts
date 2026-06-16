@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { prisma } from '@/lib/db'
 import { reserveAIBudget } from '@/lib/ai/cost-cap'
+import { prisma } from '@/lib/db'
 
 // Denne test kræver en live database (Supabase eller lokal Postgres) HVOR
 // migration 20260419000002_cost_cap_reservation er kørt. Standard: SKIP.

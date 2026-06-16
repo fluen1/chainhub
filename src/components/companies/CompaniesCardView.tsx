@@ -1,8 +1,8 @@
 'use client'
 
 import { memo } from 'react'
-import { Badge, type BadgeTone, Panel } from '@/components/ui/b'
 import type { CompanyRow } from '@/app/(dashboard)/companies/companies-list-b'
+import { Badge, type BadgeTone, Panel } from '@/components/ui/b'
 
 // ────────────────────────────────────────────────────────────────────────────
 // Kortvisning for selskaber

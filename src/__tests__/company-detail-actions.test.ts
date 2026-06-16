@@ -4,11 +4,11 @@ vi.mock('@/lib/auth', () => ({
   auth: vi.fn(),
 }))
 
-import { auth } from '@/lib/auth'
 import { getCompanyDetailData } from '@/actions/company-detail'
-import { generateCompanyInsights } from '@/lib/ai/jobs/company-insights'
-import { isAIEnabled } from '@/lib/ai/feature-flags'
 import { checkCostCap } from '@/lib/ai/cost-cap'
+import { isAIEnabled } from '@/lib/ai/feature-flags'
+import { generateCompanyInsights } from '@/lib/ai/jobs/company-insights'
+import { auth } from '@/lib/auth'
 
 vi.mock('@/lib/ai/jobs/company-insights', () => ({
   generateCompanyInsights: vi.fn().mockResolvedValue({ ok: false, error: 'mocked' }),

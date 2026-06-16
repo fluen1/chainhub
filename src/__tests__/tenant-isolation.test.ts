@@ -107,12 +107,12 @@ vi.mock('next/cache', () => ({
 
 // ── Importer actions EFTER mocks ───────────────────────────────────────────
 
-import { auth } from '@/lib/auth'
-import { getContractsPaginated } from '@/actions/contracts'
-import { getTasksPaginated } from '@/actions/tasks'
 import { getCasesPageData } from '@/actions/cases'
-import { getPersonsPaginated } from '@/actions/persons'
 import { getCompaniesPageData } from '@/actions/companies'
+import { getContractsPaginated } from '@/actions/contracts'
+import { getPersonsPaginated } from '@/actions/persons'
+import { getTasksPaginated } from '@/actions/tasks'
+import { auth } from '@/lib/auth'
 
 // ── Fælles session-fixture ─────────────────────────────────────────────────
 

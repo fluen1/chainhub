@@ -1,10 +1,10 @@
 'use client'
 
-import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import { BModal, BTextareaField, BSegmentedField, BFieldWrap, BFieldRow } from '@/components/ui/b'
 import { upsertFinancialMetric } from '@/actions/finance'
+import { BModal, BTextareaField, BSegmentedField, BFieldWrap, BFieldRow } from '@/components/ui/b'
 
 // ────────────────────────────────────────────────────────────────────────────
 // AddMetricModal — wired til upsertFinancialMetric (server bruger upsert,

@@ -1,31 +1,57 @@
-import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import { BFieldWrap, BTextField, BTextareaField, BSegmentedField, BFieldRow } from '@/components/ui/b/BField'
+import { describe, it, expect, vi } from 'vitest'
+import {
+  BFieldWrap,
+  BTextField,
+  BTextareaField,
+  BSegmentedField,
+  BFieldRow,
+} from '@/components/ui/b/BField'
 
 describe('BFieldWrap', () => {
   it('renders label text', () => {
-    render(<BFieldWrap label="Fornavn"><input /></BFieldWrap>)
+    render(
+      <BFieldWrap label="Fornavn">
+        <input />
+      </BFieldWrap>
+    )
     expect(screen.getByText('Fornavn')).toBeInTheDocument()
   })
 
   it('renders required asterisk when required', () => {
-    render(<BFieldWrap label="Navn" required><input /></BFieldWrap>)
+    render(
+      <BFieldWrap label="Navn" required>
+        <input />
+      </BFieldWrap>
+    )
     expect(screen.getByText('*')).toBeInTheDocument()
   })
 
   it('renders hint when provided', () => {
-    render(<BFieldWrap label="CVR" hint="8 cifre"><input /></BFieldWrap>)
+    render(
+      <BFieldWrap label="CVR" hint="8 cifre">
+        <input />
+      </BFieldWrap>
+    )
     expect(screen.getByText('8 cifre')).toBeInTheDocument()
   })
 
   it('renders error message with role=alert', () => {
-    render(<BFieldWrap label="Email" error="Ugyldig email"><input /></BFieldWrap>)
+    render(
+      <BFieldWrap label="Email" error="Ugyldig email">
+        <input />
+      </BFieldWrap>
+    )
     const error = screen.getByRole('alert')
     expect(error).toHaveTextContent('Ugyldig email')
   })
 
   it('does not render error when error is null', () => {
-    render(<BFieldWrap label="Email" error={null}><input /></BFieldWrap>)
+    render(
+      <BFieldWrap label="Email" error={null}>
+        <input />
+      </BFieldWrap>
+    )
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 })

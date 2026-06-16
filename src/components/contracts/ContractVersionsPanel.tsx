@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { getChangeTypeLabel, formatDate } from '@/lib/labels'
+import { UploadVersionTrigger } from '@/components/modals/b/UploadVersionTrigger'
 import {
   Panel,
   PanelHeader,
@@ -8,7 +8,7 @@ import {
   Badge,
   type BadgeTone,
 } from '@/components/ui/b'
-import { UploadVersionTrigger } from '@/components/modals/b/UploadVersionTrigger'
+import { getChangeTypeLabel, formatDate } from '@/lib/labels'
 
 // ────────────────────────────────────────────────────────────────────────────
 // Versionshistorik-panel for kontraktdetalje-siden

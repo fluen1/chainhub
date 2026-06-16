@@ -3,8 +3,8 @@
 import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { canAccessCompany } from '@/lib/permissions'
 import { captureError } from '@/lib/logger'
+import { canAccessCompany } from '@/lib/permissions'
 import type { ActionResult } from '@/types/actions'
 
 // Løs UUID-validering: accepterer alle 8-4-4-4-12 hex-formater inkl. nil-UUIDs (seed-data)

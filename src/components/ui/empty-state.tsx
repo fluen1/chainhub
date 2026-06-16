@@ -1,6 +1,6 @@
-import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
 export interface EmptyStateAction {

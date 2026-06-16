@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
-import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { CreateVisitForm } from '@/components/visits/CreateVisitForm'
 import { Suspense } from 'react'
 import { getVisitNewPageCompanies } from '@/actions/visits'
+import { CreateVisitForm } from '@/components/visits/CreateVisitForm'
+import { auth } from '@/lib/auth'
 
 export const metadata: Metadata = { title: 'Planlæg besøg' }
 

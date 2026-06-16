@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
-import { auth } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
+import { getCaseDetailPageData, getCaseTitle } from '@/actions/cases'
+import { auth } from '@/lib/auth'
+import { formatShortDate } from '@/lib/date-helpers'
 import {
   getCaseStatusLabel,
   getCaseTypeLabel,
@@ -8,7 +10,6 @@ import {
   formatDate,
   daysUntil,
 } from '@/lib/labels'
-import { formatShortDate } from '@/lib/date-helpers'
 import {
   CaseDetailB,
   type CaseDetailData,
@@ -18,7 +19,6 @@ import {
   type CaseActivityData,
   type CaseCommentData,
 } from './case-detail-b'
-import { getCaseDetailPageData, getCaseTitle } from '@/actions/cases'
 
 interface Props {
   params: Promise<{ id: string }>

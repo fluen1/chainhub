@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
-import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
+import { describe, it, expect, vi } from 'vitest'
 import { AccessibleDialog } from '@/components/ui/accessible-dialog'
 
 describe('AccessibleDialog', () => {

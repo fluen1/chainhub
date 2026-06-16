@@ -1,8 +1,22 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-import Link from 'next/link'
 import dynamic from 'next/dynamic'
+import Link from 'next/link'
+import { useMemo, useState } from 'react'
+import type { CompanyDetailData } from '@/actions/company-detail'
+import type { CompanyNoteWithAuthor } from '@/actions/company-notes'
+import { EditStamdataDialog } from '@/components/companies/EditStamdataDialog'
+import { NotesSection } from '@/components/companies/notes-section-b'
+import {
+  AddOwnerModal,
+  AddPersonModal,
+  AddMetricModal,
+  EndOwnershipRoleModal,
+  type ExistingOwner,
+  type ExistingCompanyPerson,
+  type ExistingMetric,
+  type PersonOption,
+} from '@/components/modals/b'
 import {
   Breadcrumb,
   PageHeader,
@@ -23,22 +37,8 @@ import {
   PanelEmpty,
   SlutLink,
 } from '@/components/ui/b'
-import {
-  AddOwnerModal,
-  AddPersonModal,
-  AddMetricModal,
-  EndOwnershipRoleModal,
-  type ExistingOwner,
-  type ExistingCompanyPerson,
-  type ExistingMetric,
-  type PersonOption,
-} from '@/components/modals/b'
-import { AddDataDropdown } from './add-data-dropdown'
-import { EditStamdataDialog } from '@/components/companies/EditStamdataDialog'
-import { NotesSection } from '@/components/companies/notes-section-b'
 import { getCompanyPersonRoleLabel } from '@/lib/labels'
-import type { CompanyDetailData } from '@/actions/company-detail'
-import type { CompanyNoteWithAuthor } from '@/actions/company-notes'
+import { AddDataDropdown } from './add-data-dropdown'
 
 // Lazy-load leaflet-map — Leaflet kræver `window` (browser-only), ~150 kB.
 // ssr: false forhindrer SSR-crash; loading-skeleton matcher panel-højde.
@@ -132,11 +132,7 @@ export function CompanyDetailB({
   const topGroupCount = [showOwnership, showPersons, showInsight].filter(Boolean).length
   const midGroupCount = [showCases, showFinance, showVisits].filter(Boolean).length
   const colsClass = (n: number) =>
-    n >= 3
-      ? 'sm:grid-cols-2 lg:grid-cols-3'
-      : n === 2
-        ? 'sm:grid-cols-2'
-        : 'lg:grid-cols-1'
+    n >= 3 ? 'sm:grid-cols-2 lg:grid-cols-3' : n === 2 ? 'sm:grid-cols-2' : 'lg:grid-cols-1'
 
   const [addOwnerOpen, setAddOwnerOpen] = useState(false)
   const [addPersonOpen, setAddPersonOpen] = useState(false)

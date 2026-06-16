@@ -1,170 +1,747 @@
 <h2>Less-is-more — tre fulde dashboard-mockups</h2>
-<p class="subtitle">Komplette skærmbilleder med sidebar, header, multi-panel layout og rigtig ChainHub-data. Klik én for at vælge — eller miks elementer i din kommentar.</p>
+<p class="subtitle">
+  Komplette skærmbilleder med sidebar, header, multi-panel layout og rigtig ChainHub-data. Klik én
+  for at vælge — eller miks elementer i din kommentar.
+</p>
 
 <style>
-  .demo-grid { display: grid; gap: 32px; margin-top: 16px; }
-  .demo-card { background: white; border: 2px solid #e2e8f0; border-radius: 14px; overflow: hidden; cursor: pointer; transition: all 0.15s; }
-  .demo-card:hover { border-color: #3b82f6; transform: translateY(-2px); }
-  .demo-card.selected { border-color: #2563eb; box-shadow: 0 8px 24px rgba(37,99,235,0.2); }
-  .demo-header { padding: 14px 22px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
-  .demo-title { font-size: 17px; font-weight: 700; color: #0f172a; }
-  .demo-tag { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
-  .demo-rationale { padding: 10px 22px; background: #fefce8; border-bottom: 1px solid #fde68a; font-size: 13px; color: #713f12; }
+  .demo-grid {
+    display: grid;
+    gap: 32px;
+    margin-top: 16px;
+  }
+  .demo-card {
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 14px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .demo-card:hover {
+    border-color: #3b82f6;
+    transform: translateY(-2px);
+  }
+  .demo-card.selected {
+    border-color: #2563eb;
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.2);
+  }
+  .demo-header {
+    padding: 14px 22px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .demo-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+  .demo-tag {
+    font-size: 11px;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .demo-rationale {
+    padding: 10px 22px;
+    background: #fefce8;
+    border-bottom: 1px solid #fde68a;
+    font-size: 13px;
+    color: #713f12;
+  }
 
   /* ─── COMMON FRAME (sidebar + header layout) ─── */
-  .frame { display: grid; grid-template-columns: 220px 1fr; min-height: 720px; }
+  .frame {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    min-height: 720px;
+  }
 
   /* ═══════ STYLE A: APPLE / NOTION ═══════ */
-  .a-frame { background: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif; }
-  .a-sidebar { background: #fbfbfd; border-right: 1px solid #e8e8ed; padding: 28px 18px; }
-  .a-logo { font-size: 16px; font-weight: 600; color: #1d1d1f; margin-bottom: 32px; padding: 0 10px; letter-spacing: -0.01em; }
-  .a-nav-section { margin-bottom: 28px; }
-  .a-nav-label { font-size: 11px; color: #86868b; padding: 0 10px 10px; text-transform: uppercase; letter-spacing: 0.4px; font-weight: 500; }
-  .a-nav-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; font-size: 14px; color: #1d1d1f; margin-bottom: 2px; cursor: pointer; }
-  .a-nav-item.active { background: #f2f2f7; color: #1d1d1f; font-weight: 500; }
-  .a-nav-item:hover:not(.active) { background: #f5f5f7; }
-  .a-nav-dot { width: 6px; height: 6px; border-radius: 50%; background: #d2d2d7; }
-  .a-nav-dot.warn { background: #ff9500; }
-  .a-nav-dot.alert { background: #ff3b30; }
+  .a-frame {
+    background: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  }
+  .a-sidebar {
+    background: #fbfbfd;
+    border-right: 1px solid #e8e8ed;
+    padding: 28px 18px;
+  }
+  .a-logo {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1d1d1f;
+    margin-bottom: 32px;
+    padding: 0 10px;
+    letter-spacing: -0.01em;
+  }
+  .a-nav-section {
+    margin-bottom: 28px;
+  }
+  .a-nav-label {
+    font-size: 11px;
+    color: #86868b;
+    padding: 0 10px 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    font-weight: 500;
+  }
+  .a-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #1d1d1f;
+    margin-bottom: 2px;
+    cursor: pointer;
+  }
+  .a-nav-item.active {
+    background: #f2f2f7;
+    color: #1d1d1f;
+    font-weight: 500;
+  }
+  .a-nav-item:hover:not(.active) {
+    background: #f5f5f7;
+  }
+  .a-nav-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #d2d2d7;
+  }
+  .a-nav-dot.warn {
+    background: #ff9500;
+  }
+  .a-nav-dot.alert {
+    background: #ff3b30;
+  }
 
-  .a-main { padding: 48px 56px; overflow: hidden; }
-  .a-greeting { font-size: 14px; color: #86868b; margin-bottom: 6px; }
-  .a-headline { font-size: 36px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 6px 0; color: #1d1d1f; }
-  .a-sub { font-size: 17px; color: #86868b; margin-bottom: 48px; font-weight: 400; }
+  .a-main {
+    padding: 48px 56px;
+    overflow: hidden;
+  }
+  .a-greeting {
+    font-size: 14px;
+    color: #86868b;
+    margin-bottom: 6px;
+  }
+  .a-headline {
+    font-size: 36px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin: 0 0 6px 0;
+    color: #1d1d1f;
+  }
+  .a-sub {
+    font-size: 17px;
+    color: #86868b;
+    margin-bottom: 48px;
+    font-weight: 400;
+  }
 
-  .a-stat-trio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 56px; margin-bottom: 56px; padding-bottom: 56px; border-bottom: 1px solid #d2d2d7; }
-  .a-stat-num { font-size: 56px; font-weight: 600; letter-spacing: -0.04em; line-height: 1; color: #1d1d1f; margin-bottom: 8px; }
-  .a-stat-num.warn { color: #ff9500; }
-  .a-stat-num.alert { color: #ff3b30; }
-  .a-stat-label { font-size: 15px; color: #86868b; font-weight: 400; }
+  .a-stat-trio {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 56px;
+    margin-bottom: 56px;
+    padding-bottom: 56px;
+    border-bottom: 1px solid #d2d2d7;
+  }
+  .a-stat-num {
+    font-size: 56px;
+    font-weight: 600;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    color: #1d1d1f;
+    margin-bottom: 8px;
+  }
+  .a-stat-num.warn {
+    color: #ff9500;
+  }
+  .a-stat-num.alert {
+    color: #ff3b30;
+  }
+  .a-stat-label {
+    font-size: 15px;
+    color: #86868b;
+    font-weight: 400;
+  }
 
-  .a-section-title { font-size: 22px; font-weight: 600; margin: 0 0 24px 0; color: #1d1d1f; letter-spacing: -0.01em; }
-  .a-item { padding: 22px 0; border-bottom: 1px solid #d2d2d7; display: flex; justify-content: space-between; align-items: center; }
-  .a-item:last-child { border-bottom: none; }
-  .a-item-name { font-size: 18px; font-weight: 500; color: #1d1d1f; }
-  .a-item-meta { font-size: 14px; color: #86868b; margin-top: 3px; }
-  .a-item-time { font-size: 14px; color: #86868b; font-variant-numeric: tabular-nums; }
-  .a-cta { display: inline-block; margin-top: 32px; color: #0066cc; font-size: 15px; }
+  .a-section-title {
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0 0 24px 0;
+    color: #1d1d1f;
+    letter-spacing: -0.01em;
+  }
+  .a-item {
+    padding: 22px 0;
+    border-bottom: 1px solid #d2d2d7;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .a-item:last-child {
+    border-bottom: none;
+  }
+  .a-item-name {
+    font-size: 18px;
+    font-weight: 500;
+    color: #1d1d1f;
+  }
+  .a-item-meta {
+    font-size: 14px;
+    color: #86868b;
+    margin-top: 3px;
+  }
+  .a-item-time {
+    font-size: 14px;
+    color: #86868b;
+    font-variant-numeric: tabular-nums;
+  }
+  .a-cta {
+    display: inline-block;
+    margin-top: 32px;
+    color: #0066cc;
+    font-size: 15px;
+  }
 
   /* ═══════ STYLE B: LINEAR / SUPERHUMAN ═══════ */
-  .b-frame { background: #fafafa; font-family: 'Inter', -apple-system, sans-serif; color: #1f2328; }
-  .b-sidebar { background: #f6f7f9; border-right: 1px solid #e1e4e8; padding: 14px 8px; font-size: 13px; }
-  .b-logo { font-weight: 600; padding: 4px 10px 14px; color: #1f2328; }
-  .b-nav-section { margin-bottom: 16px; }
-  .b-nav-label { font-size: 10px; color: #6e7681; padding: 0 10px 4px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
-  .b-nav-item { display: flex; justify-content: space-between; padding: 4px 10px; border-radius: 4px; color: #1f2328; cursor: pointer; }
-  .b-nav-item.active { background: #e8eaee; font-weight: 500; }
-  .b-nav-item:hover:not(.active) { background: #ecedf0; }
-  .b-nav-count { font-size: 11px; color: #6e7681; font-variant-numeric: tabular-nums; }
-  .b-nav-count.warn { color: #b54708; }
-  .b-nav-count.alert { color: #b91c1c; font-weight: 600; }
+  .b-frame {
+    background: #fafafa;
+    font-family:
+      'Inter',
+      -apple-system,
+      sans-serif;
+    color: #1f2328;
+  }
+  .b-sidebar {
+    background: #f6f7f9;
+    border-right: 1px solid #e1e4e8;
+    padding: 14px 8px;
+    font-size: 13px;
+  }
+  .b-logo {
+    font-weight: 600;
+    padding: 4px 10px 14px;
+    color: #1f2328;
+  }
+  .b-nav-section {
+    margin-bottom: 16px;
+  }
+  .b-nav-label {
+    font-size: 10px;
+    color: #6e7681;
+    padding: 0 10px 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+  .b-nav-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 10px;
+    border-radius: 4px;
+    color: #1f2328;
+    cursor: pointer;
+  }
+  .b-nav-item.active {
+    background: #e8eaee;
+    font-weight: 500;
+  }
+  .b-nav-item:hover:not(.active) {
+    background: #ecedf0;
+  }
+  .b-nav-count {
+    font-size: 11px;
+    color: #6e7681;
+    font-variant-numeric: tabular-nums;
+  }
+  .b-nav-count.warn {
+    color: #b54708;
+  }
+  .b-nav-count.alert {
+    color: #b91c1c;
+    font-weight: 600;
+  }
 
-  .b-main { padding: 14px 24px; overflow: hidden; display: flex; flex-direction: column; gap: 14px; }
-  .b-topbar { display: flex; justify-content: space-between; align-items: center; padding: 4px 0 12px; border-bottom: 1px solid #e1e4e8; }
-  .b-topbar-title { font-size: 14px; font-weight: 600; color: #1f2328; }
-  .b-topbar-meta { font-size: 12px; color: #6e7681; font-variant-numeric: tabular-nums; }
+  .b-main {
+    padding: 14px 24px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .b-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0 12px;
+    border-bottom: 1px solid #e1e4e8;
+  }
+  .b-topbar-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2328;
+  }
+  .b-topbar-meta {
+    font-size: 12px;
+    color: #6e7681;
+    font-variant-numeric: tabular-nums;
+  }
 
-  .b-strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; background: #e1e4e8; border: 1px solid #e1e4e8; border-radius: 4px; overflow: hidden; }
-  .b-strip-cell { background: white; padding: 10px 12px; }
-  .b-strip-num { font-size: 18px; font-weight: 600; color: #1f2328; font-variant-numeric: tabular-nums; line-height: 1; }
-  .b-strip-num.warn { color: #b54708; }
-  .b-strip-num.alert { color: #b91c1c; }
-  .b-strip-lab { font-size: 11px; color: #6e7681; margin-top: 4px; }
+  .b-strip {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1px;
+    background: #e1e4e8;
+    border: 1px solid #e1e4e8;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .b-strip-cell {
+    background: white;
+    padding: 10px 12px;
+  }
+  .b-strip-num {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f2328;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .b-strip-num.warn {
+    color: #b54708;
+  }
+  .b-strip-num.alert {
+    color: #b91c1c;
+  }
+  .b-strip-lab {
+    font-size: 11px;
+    color: #6e7681;
+    margin-top: 4px;
+  }
 
-  .b-cols { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; flex: 1; }
-  .b-panel { background: white; border: 1px solid #e1e4e8; border-radius: 4px; }
-  .b-panel-h { padding: 8px 12px; border-bottom: 1px solid #e1e4e8; display: flex; justify-content: space-between; align-items: center; }
-  .b-panel-t { font-size: 12px; font-weight: 600; color: #1f2328; text-transform: uppercase; letter-spacing: 0.4px; }
-  .b-panel-m { font-size: 11px; color: #6e7681; }
-  .b-row { display: grid; grid-template-columns: 50px 1fr 70px 14px; gap: 10px; padding: 7px 12px; border-bottom: 1px solid #f0f1f3; align-items: center; font-size: 13px; cursor: pointer; }
-  .b-row:hover { background: #f6f7f9; }
-  .b-row:last-child { border-bottom: none; }
-  .b-badge { font-size: 11px; font-weight: 500; padding: 1px 6px; border-radius: 3px; text-align: center; font-variant-numeric: tabular-nums; }
-  .b-badge.red { background: #ffebe9; color: #cf222e; }
-  .b-badge.amber { background: #fff8c5; color: #9a6700; }
-  .b-badge.blue { background: #ddf4ff; color: #0969da; }
-  .b-badge.gray { background: #f6f8fa; color: #57606a; }
-  .b-meta { color: #6e7681; font-size: 12px; }
-  .b-chev { color: #8c959f; }
-  .b-glabel { font-size: 10px; font-weight: 600; color: #6e7681; padding: 10px 12px 4px; text-transform: uppercase; letter-spacing: 0.4px; background: #fbfbfc; border-bottom: 1px solid #f0f1f3; }
+  .b-cols {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 14px;
+    flex: 1;
+  }
+  .b-panel {
+    background: white;
+    border: 1px solid #e1e4e8;
+    border-radius: 4px;
+  }
+  .b-panel-h {
+    padding: 8px 12px;
+    border-bottom: 1px solid #e1e4e8;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .b-panel-t {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1f2328;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .b-panel-m {
+    font-size: 11px;
+    color: #6e7681;
+  }
+  .b-row {
+    display: grid;
+    grid-template-columns: 50px 1fr 70px 14px;
+    gap: 10px;
+    padding: 7px 12px;
+    border-bottom: 1px solid #f0f1f3;
+    align-items: center;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .b-row:hover {
+    background: #f6f7f9;
+  }
+  .b-row:last-child {
+    border-bottom: none;
+  }
+  .b-badge {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 1px 6px;
+    border-radius: 3px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  .b-badge.red {
+    background: #ffebe9;
+    color: #cf222e;
+  }
+  .b-badge.amber {
+    background: #fff8c5;
+    color: #9a6700;
+  }
+  .b-badge.blue {
+    background: #ddf4ff;
+    color: #0969da;
+  }
+  .b-badge.gray {
+    background: #f6f8fa;
+    color: #57606a;
+  }
+  .b-meta {
+    color: #6e7681;
+    font-size: 12px;
+  }
+  .b-chev {
+    color: #8c959f;
+  }
+  .b-glabel {
+    font-size: 10px;
+    font-weight: 600;
+    color: #6e7681;
+    padding: 10px 12px 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    background: #fbfbfc;
+    border-bottom: 1px solid #f0f1f3;
+  }
 
-  .b-heatmap { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; padding: 12px; }
-  .b-cell { aspect-ratio: 1; border-radius: 2px; }
-  .b-cell.l0 { background: #ebedf0; }
-  .b-cell.l1 { background: #c6e48b; }
-  .b-cell.l2 { background: #7bc96f; }
-  .b-cell.l3 { background: #239a3b; }
-  .b-cell.l4 { background: #196127; }
-  .b-cell.r1 { background: #fdb8b1; }
-  .b-cell.r2 { background: #f87171; }
-  .b-cell.r3 { background: #b91c1c; }
-  .b-heat-leg { padding: 0 12px 12px; font-size: 10px; color: #6e7681; display: flex; justify-content: space-between; }
+  .b-heatmap {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 2px;
+    padding: 12px;
+  }
+  .b-cell {
+    aspect-ratio: 1;
+    border-radius: 2px;
+  }
+  .b-cell.l0 {
+    background: #ebedf0;
+  }
+  .b-cell.l1 {
+    background: #c6e48b;
+  }
+  .b-cell.l2 {
+    background: #7bc96f;
+  }
+  .b-cell.l3 {
+    background: #239a3b;
+  }
+  .b-cell.l4 {
+    background: #196127;
+  }
+  .b-cell.r1 {
+    background: #fdb8b1;
+  }
+  .b-cell.r2 {
+    background: #f87171;
+  }
+  .b-cell.r3 {
+    background: #b91c1c;
+  }
+  .b-heat-leg {
+    padding: 0 12px 12px;
+    font-size: 10px;
+    color: #6e7681;
+    display: flex;
+    justify-content: space-between;
+  }
 
-  .b-bot { display: flex; justify-content: space-between; padding: 6px 0; font-size: 11px; color: #6e7681; }
-  .b-kbd { background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 3px; padding: 1px 5px; font-family: 'SF Mono', monospace; font-size: 10px; }
+  .b-bot {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 11px;
+    color: #6e7681;
+  }
+  .b-kbd {
+    background: #f6f8fa;
+    border: 1px solid #d0d7de;
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-family: 'SF Mono', monospace;
+    font-size: 10px;
+  }
 
   /* ═══════ STYLE C: STRIPE DASHBOARD ═══════ */
-  .c-frame { background: #f7f9fc; font-family: 'Inter', -apple-system, sans-serif; color: #0a2540; }
-  .c-sidebar { background: white; border-right: 1px solid #e3e8ee; padding: 22px 14px; }
-  .c-logo { font-size: 15px; font-weight: 600; color: #0a2540; padding: 0 10px 24px; }
-  .c-nav-section { margin-bottom: 22px; }
-  .c-nav-label { font-size: 11px; color: #697386; padding: 0 10px 8px; text-transform: uppercase; letter-spacing: 0.4px; font-weight: 600; }
-  .c-nav-item { display: flex; justify-content: space-between; align-items: center; padding: 7px 10px; border-radius: 5px; font-size: 14px; color: #0a2540; cursor: pointer; margin-bottom: 1px; }
-  .c-nav-item.active { background: #eef4ff; color: #1d4ed8; font-weight: 500; }
-  .c-nav-item:hover:not(.active) { background: #f7f9fc; }
-  .c-nav-pill { font-size: 11px; background: #e3e8ee; color: #425466; padding: 1px 7px; border-radius: 10px; font-variant-numeric: tabular-nums; }
-  .c-nav-pill.alert { background: #fef2f2; color: #b91c1c; font-weight: 600; }
+  .c-frame {
+    background: #f7f9fc;
+    font-family:
+      'Inter',
+      -apple-system,
+      sans-serif;
+    color: #0a2540;
+  }
+  .c-sidebar {
+    background: white;
+    border-right: 1px solid #e3e8ee;
+    padding: 22px 14px;
+  }
+  .c-logo {
+    font-size: 15px;
+    font-weight: 600;
+    color: #0a2540;
+    padding: 0 10px 24px;
+  }
+  .c-nav-section {
+    margin-bottom: 22px;
+  }
+  .c-nav-label {
+    font-size: 11px;
+    color: #697386;
+    padding: 0 10px 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    font-weight: 600;
+  }
+  .c-nav-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 10px;
+    border-radius: 5px;
+    font-size: 14px;
+    color: #0a2540;
+    cursor: pointer;
+    margin-bottom: 1px;
+  }
+  .c-nav-item.active {
+    background: #eef4ff;
+    color: #1d4ed8;
+    font-weight: 500;
+  }
+  .c-nav-item:hover:not(.active) {
+    background: #f7f9fc;
+  }
+  .c-nav-pill {
+    font-size: 11px;
+    background: #e3e8ee;
+    color: #425466;
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-variant-numeric: tabular-nums;
+  }
+  .c-nav-pill.alert {
+    background: #fef2f2;
+    color: #b91c1c;
+    font-weight: 600;
+  }
 
-  .c-main { padding: 24px 32px; overflow: hidden; display: flex; flex-direction: column; gap: 20px; }
-  .c-h1 { font-size: 22px; font-weight: 600; color: #0a2540; margin: 0; }
-  .c-h1-meta { font-size: 14px; color: #697386; font-weight: 400; margin-left: 12px; }
+  .c-main {
+    padding: 24px 32px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .c-h1 {
+    font-size: 22px;
+    font-weight: 600;
+    color: #0a2540;
+    margin: 0;
+  }
+  .c-h1-meta {
+    font-size: 14px;
+    color: #697386;
+    font-weight: 400;
+    margin-left: 12px;
+  }
 
-  .c-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-  .c-kpi { background: white; border: 1px solid #e3e8ee; border-radius: 8px; padding: 16px 18px; }
-  .c-kpi-l { font-size: 12px; color: #697386; font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 6px; }
-  .c-kpi-v { font-size: 26px; font-weight: 600; color: #0a2540; font-variant-numeric: tabular-nums; line-height: 1.1; }
-  .c-kpi-d { font-size: 12px; color: #00875a; margin-top: 6px; }
-  .c-kpi-d.warn { color: #b54708; }
-  .c-kpi-d.alert { color: #b91c1c; }
+  .c-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+  .c-kpi {
+    background: white;
+    border: 1px solid #e3e8ee;
+    border-radius: 8px;
+    padding: 16px 18px;
+  }
+  .c-kpi-l {
+    font-size: 12px;
+    color: #697386;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 6px;
+  }
+  .c-kpi-v {
+    font-size: 26px;
+    font-weight: 600;
+    color: #0a2540;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+  }
+  .c-kpi-d {
+    font-size: 12px;
+    color: #00875a;
+    margin-top: 6px;
+  }
+  .c-kpi-d.warn {
+    color: #b54708;
+  }
+  .c-kpi-d.alert {
+    color: #b91c1c;
+  }
 
-  .c-cols { display: grid; grid-template-columns: 2fr 1fr; gap: 18px; flex: 1; }
-  .c-pnl { background: white; border: 1px solid #e3e8ee; border-radius: 8px; overflow: hidden; }
-  .c-pnl-h { padding: 14px 18px; border-bottom: 1px solid #e3e8ee; display: flex; justify-content: space-between; align-items: center; }
-  .c-pnl-t { font-size: 14px; font-weight: 600; color: #0a2540; }
-  .c-pnl-m { font-size: 12px; color: #697386; }
-  .c-row { display: grid; grid-template-columns: 1fr 90px 80px 24px; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #f0f4f8; align-items: center; cursor: pointer; }
-  .c-row:hover { background: #f7f9fc; }
-  .c-row:last-of-type { border-bottom: none; }
-  .c-row-n { font-size: 14px; font-weight: 500; color: #0a2540; }
-  .c-row-s { font-size: 12px; color: #697386; margin-top: 3px; }
-  .c-pill { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 500; text-align: center; font-variant-numeric: tabular-nums; }
-  .c-pill.red { background: #fef2f2; color: #b91c1c; }
-  .c-pill.amber { background: #fffbeb; color: #b45309; }
-  .c-pill.blue { background: #eff6ff; color: #1d4ed8; }
-  .c-pill.gray { background: #f0f4f8; color: #425466; }
-  .c-typ { font-size: 12px; color: #697386; }
-  .c-foot { padding: 12px 18px; background: #f7f9fc; font-size: 13px; color: #1d4ed8; cursor: pointer; }
+  .c-cols {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 18px;
+    flex: 1;
+  }
+  .c-pnl {
+    background: white;
+    border: 1px solid #e3e8ee;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .c-pnl-h {
+    padding: 14px 18px;
+    border-bottom: 1px solid #e3e8ee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .c-pnl-t {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0a2540;
+  }
+  .c-pnl-m {
+    font-size: 12px;
+    color: #697386;
+  }
+  .c-row {
+    display: grid;
+    grid-template-columns: 1fr 90px 80px 24px;
+    gap: 12px;
+    padding: 14px 18px;
+    border-bottom: 1px solid #f0f4f8;
+    align-items: center;
+    cursor: pointer;
+  }
+  .c-row:hover {
+    background: #f7f9fc;
+  }
+  .c-row:last-of-type {
+    border-bottom: none;
+  }
+  .c-row-n {
+    font-size: 14px;
+    font-weight: 500;
+    color: #0a2540;
+  }
+  .c-row-s {
+    font-size: 12px;
+    color: #697386;
+    margin-top: 3px;
+  }
+  .c-pill {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  .c-pill.red {
+    background: #fef2f2;
+    color: #b91c1c;
+  }
+  .c-pill.amber {
+    background: #fffbeb;
+    color: #b45309;
+  }
+  .c-pill.blue {
+    background: #eff6ff;
+    color: #1d4ed8;
+  }
+  .c-pill.gray {
+    background: #f0f4f8;
+    color: #425466;
+  }
+  .c-typ {
+    font-size: 12px;
+    color: #697386;
+  }
+  .c-foot {
+    padding: 12px 18px;
+    background: #f7f9fc;
+    font-size: 13px;
+    color: #1d4ed8;
+    cursor: pointer;
+  }
 
-  .c-mini { padding: 14px 18px; }
-  .c-mini-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f4f8; font-size: 13px; }
-  .c-mini-row:last-child { border-bottom: none; }
-  .c-mini-l { color: #425466; }
-  .c-mini-v { font-weight: 600; color: #0a2540; font-variant-numeric: tabular-nums; }
-  .c-coverage { padding: 14px 18px; }
-  .c-bar { height: 8px; background: #f0f4f8; border-radius: 4px; overflow: hidden; margin: 8px 0 4px; }
-  .c-bar-fill { height: 100%; background: linear-gradient(90deg, #1d4ed8, #3b82f6); border-radius: 4px; }
-  .c-bar-row { display: flex; justify-content: space-between; font-size: 12px; color: #697386; margin-top: 12px; margin-bottom: 4px; }
+  .c-mini {
+    padding: 14px 18px;
+  }
+  .c-mini-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f4f8;
+    font-size: 13px;
+  }
+  .c-mini-row:last-child {
+    border-bottom: none;
+  }
+  .c-mini-l {
+    color: #425466;
+  }
+  .c-mini-v {
+    font-weight: 600;
+    color: #0a2540;
+    font-variant-numeric: tabular-nums;
+  }
+  .c-coverage {
+    padding: 14px 18px;
+  }
+  .c-bar {
+    height: 8px;
+    background: #f0f4f8;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 8px 0 4px;
+  }
+  .c-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #1d4ed8, #3b82f6);
+    border-radius: 4px;
+  }
+  .c-bar-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #697386;
+    margin-top: 12px;
+    margin-bottom: 4px;
+  }
 </style>
 
 <div class="demo-grid">
-
   <!-- ═══════════ A: APPLE / NOTION ═══════════ -->
   <div class="demo-card" data-choice="a" onclick="toggleSelect(this)">
     <div class="demo-header">
       <span class="demo-title">A · Apple/Notion — minimalistisk ro</span>
       <span class="demo-tag">STORE TAL · MEGET LUFT · ÉN TING AD GANGEN</span>
     </div>
-    <div class="demo-rationale">Brugeren scroller mere men behandler mindre per skærm. Hver datablok har plads omkring sig. Egnet hvis "ny eller stresset bruger" er målgruppen — power-user vil typisk synes der er for lidt info pr. skærm.</div>
+    <div class="demo-rationale">
+      Brugeren scroller mere men behandler mindre per skærm. Hver datablok har plads omkring sig.
+      Egnet hvis "ny eller stresset bruger" er målgruppen — power-user vil typisk synes der er for
+      lidt info pr. skærm.
+    </div>
     <div class="frame a-frame">
       <div class="a-sidebar">
         <div class="a-logo">ChainHub</div>
@@ -240,7 +817,10 @@
       <span class="demo-title">B · Linear/Superhuman — power-user dense</span>
       <span class="demo-tag">MAKS DATA · INGEN DEKORATION · KEYBOARD-FIRST</span>
     </div>
-    <div class="demo-rationale">Alt vises på én skærm. Små badges, hover-states, ⌘K-palet. Ingen ikoner uden funktion, ingen runde billeder, ingen brand-fluff. Power-user paradis — ny bruger føler sig overvældet.</div>
+    <div class="demo-rationale">
+      Alt vises på én skærm. Små badges, hover-states, ⌘K-palet. Ingen ikoner uden funktion, ingen
+      runde billeder, ingen brand-fluff. Power-user paradis — ny bruger føler sig overvældet.
+    </div>
     <div class="frame b-frame">
       <div class="b-sidebar">
         <div class="b-logo">▣ ChainHub</div>
@@ -271,50 +851,150 @@
         </div>
 
         <div class="b-strip">
-          <div class="b-strip-cell"><div class="b-strip-num">32</div><div class="b-strip-lab">Selskaber</div></div>
-          <div class="b-strip-cell"><div class="b-strip-num alert">3</div><div class="b-strip-lab">Udløber 30d</div></div>
-          <div class="b-strip-cell"><div class="b-strip-num alert">7</div><div class="b-strip-lab">Åbne sager</div></div>
-          <div class="b-strip-cell"><div class="b-strip-num warn">9</div><div class="b-strip-lab">Forfaldne opg.</div></div>
-          <div class="b-strip-cell"><div class="b-strip-num">412</div><div class="b-strip-lab">Dokumenter</div></div>
+          <div class="b-strip-cell">
+            <div class="b-strip-num">32</div>
+            <div class="b-strip-lab">Selskaber</div>
+          </div>
+          <div class="b-strip-cell">
+            <div class="b-strip-num alert">3</div>
+            <div class="b-strip-lab">Udløber 30d</div>
+          </div>
+          <div class="b-strip-cell">
+            <div class="b-strip-num alert">7</div>
+            <div class="b-strip-lab">Åbne sager</div>
+          </div>
+          <div class="b-strip-cell">
+            <div class="b-strip-num warn">9</div>
+            <div class="b-strip-lab">Forfaldne opg.</div>
+          </div>
+          <div class="b-strip-cell">
+            <div class="b-strip-num">412</div>
+            <div class="b-strip-lab">Dokumenter</div>
+          </div>
         </div>
 
         <div class="b-cols">
           <div class="b-panel">
-            <div class="b-panel-h"><span class="b-panel-t">Kræver opmærksomhed</span><span class="b-panel-m">11 elementer · sortér: hastighed</span></div>
+            <div class="b-panel-h">
+              <span class="b-panel-t">Kræver opmærksomhed</span
+              ><span class="b-panel-m">11 elementer · sortér: hastighed</span>
+            </div>
             <div class="b-glabel">Forfaldent</div>
-            <div class="b-row"><span class="b-badge red">3d</span><span><strong>Klinik Aalborg</strong> · <span class="b-meta">Patientklage #2841</span></span><span class="b-meta">Frist</span><span class="b-chev">›</span></div>
-            <div class="b-row"><span class="b-badge red">14d</span><span><strong>Tandlæge Østerbro</strong> · <span class="b-meta">Lejekontrakt erhverv</span></span><span class="b-meta">Udløb</span><span class="b-chev">›</span></div>
+            <div class="b-row">
+              <span class="b-badge red">3d</span
+              ><span
+                ><strong>Klinik Aalborg</strong> ·
+                <span class="b-meta">Patientklage #2841</span></span
+              ><span class="b-meta">Frist</span><span class="b-chev">›</span>
+            </div>
+            <div class="b-row">
+              <span class="b-badge red">14d</span
+              ><span
+                ><strong>Tandlæge Østerbro</strong> ·
+                <span class="b-meta">Lejekontrakt erhverv</span></span
+              ><span class="b-meta">Udløb</span><span class="b-chev">›</span>
+            </div>
             <div class="b-glabel">Denne uge</div>
-            <div class="b-row"><span class="b-badge amber">7d</span><span><strong>Klinik Aarhus</strong> · <span class="b-meta">Bestyrelsesmøde Q2</span></span><span class="b-meta">Møde</span><span class="b-chev">›</span></div>
-            <div class="b-row"><span class="b-badge blue">Ons</span><span><strong>Klinik Odense</strong> · <span class="b-meta">Tilsynsbesøg</span></span><span class="b-meta">Besøg</span><span class="b-chev">›</span></div>
-            <div class="b-row"><span class="b-badge blue">Tor</span><span><strong>Tandlæge Østerbro</strong> · <span class="b-meta">Forny lejekontrakt</span></span><span class="b-meta">Opg.</span><span class="b-chev">›</span></div>
-            <div class="b-row"><span class="b-badge blue">Fre</span><span><strong>Klinik Esbjerg</strong> · <span class="b-meta">Q1-finansrapport</span></span><span class="b-meta">Opg.</span><span class="b-chev">›</span></div>
+            <div class="b-row">
+              <span class="b-badge amber">7d</span
+              ><span
+                ><strong>Klinik Aarhus</strong> ·
+                <span class="b-meta">Bestyrelsesmøde Q2</span></span
+              ><span class="b-meta">Møde</span><span class="b-chev">›</span>
+            </div>
+            <div class="b-row">
+              <span class="b-badge blue">Ons</span
+              ><span><strong>Klinik Odense</strong> · <span class="b-meta">Tilsynsbesøg</span></span
+              ><span class="b-meta">Besøg</span><span class="b-chev">›</span>
+            </div>
+            <div class="b-row">
+              <span class="b-badge blue">Tor</span
+              ><span
+                ><strong>Tandlæge Østerbro</strong> ·
+                <span class="b-meta">Forny lejekontrakt</span></span
+              ><span class="b-meta">Opg.</span><span class="b-chev">›</span>
+            </div>
+            <div class="b-row">
+              <span class="b-badge blue">Fre</span
+              ><span
+                ><strong>Klinik Esbjerg</strong> ·
+                <span class="b-meta">Q1-finansrapport</span></span
+              ><span class="b-meta">Opg.</span><span class="b-chev">›</span>
+            </div>
             <div class="b-glabel">Næste uge</div>
-            <div class="b-row"><span class="b-badge amber">28d</span><span><strong>Klinik Holstebro</strong> · <span class="b-meta">Ansættelseskontrakt</span></span><span class="b-meta">Udløb</span><span class="b-chev">›</span></div>
-            <div class="b-row"><span class="b-badge gray">+4</span><span class="b-meta" style="grid-column: 2 / -1;">flere — vis hele listen</span></div>
+            <div class="b-row">
+              <span class="b-badge amber">28d</span
+              ><span
+                ><strong>Klinik Holstebro</strong> ·
+                <span class="b-meta">Ansættelseskontrakt</span></span
+              ><span class="b-meta">Udløb</span><span class="b-chev">›</span>
+            </div>
+            <div class="b-row">
+              <span class="b-badge gray">+4</span
+              ><span class="b-meta" style="grid-column: 2 / -1">flere — vis hele listen</span>
+            </div>
           </div>
           <div class="b-panel">
-            <div class="b-panel-h"><span class="b-panel-t">Health-heatmap</span><span class="b-panel-m">32 selskaber · grøn = OK</span></div>
+            <div class="b-panel-h">
+              <span class="b-panel-t">Health-heatmap</span
+              ><span class="b-panel-m">32 selskaber · grøn = OK</span>
+            </div>
             <div class="b-heatmap">
-              <div class="b-cell l3"></div><div class="b-cell l4"></div><div class="b-cell l2"></div><div class="b-cell r2"></div>
-              <div class="b-cell l3"></div><div class="b-cell l4"></div><div class="b-cell l2"></div><div class="b-cell l3"></div>
-              <div class="b-cell l4"></div><div class="b-cell r1"></div><div class="b-cell l3"></div><div class="b-cell l3"></div>
-              <div class="b-cell l3"></div><div class="b-cell l2"></div><div class="b-cell l4"></div><div class="b-cell r3"></div>
-              <div class="b-cell l3"></div><div class="b-cell l4"></div><div class="b-cell l3"></div><div class="b-cell l3"></div>
-              <div class="b-cell l2"></div><div class="b-cell l4"></div><div class="b-cell l3"></div><div class="b-cell l3"></div>
-              <div class="b-cell l4"></div><div class="b-cell r1"></div><div class="b-cell l3"></div><div class="b-cell l3"></div>
-              <div class="b-cell l3"></div><div class="b-cell l3"></div><div class="b-cell l4"></div><div class="b-cell l3"></div>
+              <div class="b-cell l3"></div>
+              <div class="b-cell l4"></div>
+              <div class="b-cell l2"></div>
+              <div class="b-cell r2"></div>
+              <div class="b-cell l3"></div>
+              <div class="b-cell l4"></div>
+              <div class="b-cell l2"></div>
+              <div class="b-cell l3"></div>
+              <div class="b-cell l4"></div>
+              <div class="b-cell r1"></div>
+              <div class="b-cell l3"></div>
+              <div class="b-cell l3"></div>
+              <div class="b-cell l3"></div>
+              <div class="b-cell l2"></div>
+              <div class="b-cell l4"></div>
+              <div class="b-cell r3"></div>
+              <div class="b-cell l3"></div>
+              <div class="b-cell l4"></div>
+              <div class="b-cell l3"></div>
+              <div class="b-cell l3"></div>
+              <div class="b-cell l2"></div>
+              <div class="b-cell l4"></div>
+              <div class="b-cell l3"></div>
+              <div class="b-cell l3"></div>
+              <div class="b-cell l4"></div>
+              <div class="b-cell r1"></div>
+              <div class="b-cell l3"></div>
+              <div class="b-cell l3"></div>
+              <div class="b-cell l3"></div>
+              <div class="b-cell l3"></div>
+              <div class="b-cell l4"></div>
+              <div class="b-cell l3"></div>
             </div>
             <div class="b-heat-leg"><span>3 kritiske</span><span>29 OK</span></div>
             <div class="b-glabel">Top urgency</div>
-            <div class="b-row" style="grid-template-columns: 1fr 14px;"><span><strong>Aalborg</strong> · <span class="b-meta">3 åbne sager</span></span><span class="b-chev">›</span></div>
-            <div class="b-row" style="grid-template-columns: 1fr 14px;"><span><strong>Holstebro</strong> · <span class="b-meta">2 udløb</span></span><span class="b-chev">›</span></div>
-            <div class="b-row" style="grid-template-columns: 1fr 14px;"><span><strong>Esbjerg</strong> · <span class="b-meta">Q1-rapport mangler</span></span><span class="b-chev">›</span></div>
+            <div class="b-row" style="grid-template-columns: 1fr 14px">
+              <span><strong>Aalborg</strong> · <span class="b-meta">3 åbne sager</span></span
+              ><span class="b-chev">›</span>
+            </div>
+            <div class="b-row" style="grid-template-columns: 1fr 14px">
+              <span><strong>Holstebro</strong> · <span class="b-meta">2 udløb</span></span
+              ><span class="b-chev">›</span>
+            </div>
+            <div class="b-row" style="grid-template-columns: 1fr 14px">
+              <span><strong>Esbjerg</strong> · <span class="b-meta">Q1-rapport mangler</span></span
+              ><span class="b-chev">›</span>
+            </div>
           </div>
         </div>
         <div class="b-bot">
           <span>32 selskaber · 184 kontrakter · 412 dokumenter</span>
-          <span><span class="b-kbd">⌘K</span> handling · <span class="b-kbd">G</span> derhen · <span class="b-kbd">N</span> ny</span>
+          <span
+            ><span class="b-kbd">⌘K</span> handling · <span class="b-kbd">G</span> derhen ·
+            <span class="b-kbd">N</span> ny</span
+          >
         </div>
       </div>
     </div>
@@ -326,7 +1006,11 @@
       <span class="demo-title">C · Stripe Dashboard — funktionel SaaS-balance</span>
       <span class="demo-tag">KPI-KORT · LISTER · MAINSTREAM-PROFESSIONEL</span>
     </div>
-    <div class="demo-rationale">Mest "professionel SaaS"-look. KPI'er øverst giver instant pulse, paneler nedenunder for action. Bredt anerkendt mønster — kunde forstår det med det samme. Kompromis mellem density og ro.</div>
+    <div class="demo-rationale">
+      Mest "professionel SaaS"-look. KPI'er øverst giver instant pulse, paneler nedenunder for
+      action. Bredt anerkendt mønster — kunde forstår det med det samme. Kompromis mellem density og
+      ro.
+    </div>
     <div class="frame c-frame">
       <div class="c-sidebar">
         <div class="c-logo">⬢ ChainHub</div>
@@ -379,37 +1063,87 @@
 
         <div class="c-cols">
           <div class="c-pnl">
-            <div class="c-pnl-h"><span class="c-pnl-t">Kræver opmærksomhed</span><span class="c-pnl-m">7 elementer</span></div>
-            <div class="c-row"><div><div class="c-row-n">Klinik Aalborg</div><div class="c-row-s">Patientklage #2841</div></div><span class="c-pill red">3 dage</span><span class="c-typ">Frist</span><span>›</span></div>
-            <div class="c-row"><div><div class="c-row-n">Tandlæge Østerbro</div><div class="c-row-s">Lejekontrakt erhverv</div></div><span class="c-pill red">14 dage</span><span class="c-typ">Udløb</span><span>›</span></div>
-            <div class="c-row"><div><div class="c-row-n">Klinik Aarhus</div><div class="c-row-s">Bestyrelsesmøde Q2</div></div><span class="c-pill amber">7 dage</span><span class="c-typ">Møde</span><span>›</span></div>
-            <div class="c-row"><div><div class="c-row-n">Klinik Odense</div><div class="c-row-s">Tilsynsbesøg planlagt</div></div><span class="c-pill blue">Ons</span><span class="c-typ">Besøg</span><span>›</span></div>
-            <div class="c-row"><div><div class="c-row-n">Klinik Holstebro</div><div class="c-row-s">Ansættelseskontrakt</div></div><span class="c-pill amber">28 dage</span><span class="c-typ">Udløb</span><span>›</span></div>
-            <div class="c-row"><div><div class="c-row-n">Klinik Esbjerg</div><div class="c-row-s">Q1-finansrapport</div></div><span class="c-pill blue">Fre</span><span class="c-typ">Opgave</span><span>›</span></div>
+            <div class="c-pnl-h">
+              <span class="c-pnl-t">Kræver opmærksomhed</span
+              ><span class="c-pnl-m">7 elementer</span>
+            </div>
+            <div class="c-row">
+              <div>
+                <div class="c-row-n">Klinik Aalborg</div>
+                <div class="c-row-s">Patientklage #2841</div>
+              </div>
+              <span class="c-pill red">3 dage</span><span class="c-typ">Frist</span><span>›</span>
+            </div>
+            <div class="c-row">
+              <div>
+                <div class="c-row-n">Tandlæge Østerbro</div>
+                <div class="c-row-s">Lejekontrakt erhverv</div>
+              </div>
+              <span class="c-pill red">14 dage</span><span class="c-typ">Udløb</span><span>›</span>
+            </div>
+            <div class="c-row">
+              <div>
+                <div class="c-row-n">Klinik Aarhus</div>
+                <div class="c-row-s">Bestyrelsesmøde Q2</div>
+              </div>
+              <span class="c-pill amber">7 dage</span><span class="c-typ">Møde</span><span>›</span>
+            </div>
+            <div class="c-row">
+              <div>
+                <div class="c-row-n">Klinik Odense</div>
+                <div class="c-row-s">Tilsynsbesøg planlagt</div>
+              </div>
+              <span class="c-pill blue">Ons</span><span class="c-typ">Besøg</span><span>›</span>
+            </div>
+            <div class="c-row">
+              <div>
+                <div class="c-row-n">Klinik Holstebro</div>
+                <div class="c-row-s">Ansættelseskontrakt</div>
+              </div>
+              <span class="c-pill amber">28 dage</span><span class="c-typ">Udløb</span
+              ><span>›</span>
+            </div>
+            <div class="c-row">
+              <div>
+                <div class="c-row-n">Klinik Esbjerg</div>
+                <div class="c-row-s">Q1-finansrapport</div>
+              </div>
+              <span class="c-pill blue">Fre</span><span class="c-typ">Opgave</span><span>›</span>
+            </div>
             <div class="c-foot">Vis alle 47 →</div>
           </div>
-          <div style="display: flex; flex-direction: column; gap: 18px;">
+          <div style="display: flex; flex-direction: column; gap: 18px">
             <div class="c-pnl">
               <div class="c-pnl-h"><span class="c-pnl-t">Portefølje-tal</span></div>
               <div class="c-mini">
-                <div class="c-mini-row"><span class="c-mini-l">Lokationer</span><span class="c-mini-v">32</span></div>
-                <div class="c-mini-row"><span class="c-mini-l">Heraf 100% ejet</span><span class="c-mini-v">11</span></div>
-                <div class="c-mini-row"><span class="c-mini-l">Co-ejet</span><span class="c-mini-v">21</span></div>
-                <div class="c-mini-row"><span class="c-mini-l">Aktive medarbejdere</span><span class="c-mini-v">184</span></div>
-                <div class="c-mini-row"><span class="c-mini-l">Total m²</span><span class="c-mini-v">8.420</span></div>
+                <div class="c-mini-row">
+                  <span class="c-mini-l">Lokationer</span><span class="c-mini-v">32</span>
+                </div>
+                <div class="c-mini-row">
+                  <span class="c-mini-l">Heraf 100% ejet</span><span class="c-mini-v">11</span>
+                </div>
+                <div class="c-mini-row">
+                  <span class="c-mini-l">Co-ejet</span><span class="c-mini-v">21</span>
+                </div>
+                <div class="c-mini-row">
+                  <span class="c-mini-l">Aktive medarbejdere</span><span class="c-mini-v">184</span>
+                </div>
+                <div class="c-mini-row">
+                  <span class="c-mini-l">Total m²</span><span class="c-mini-v">8.420</span>
+                </div>
               </div>
             </div>
             <div class="c-pnl">
               <div class="c-pnl-h"><span class="c-pnl-t">Kontrakt-dækning</span></div>
               <div class="c-coverage">
                 <div class="c-bar-row"><span>Ejeraftaler</span><span>32 / 32</span></div>
-                <div class="c-bar"><div class="c-bar-fill" style="width:100%"></div></div>
+                <div class="c-bar"><div class="c-bar-fill" style="width: 100%"></div></div>
                 <div class="c-bar-row"><span>Lejekontrakter</span><span>30 / 32</span></div>
-                <div class="c-bar"><div class="c-bar-fill" style="width:94%"></div></div>
+                <div class="c-bar"><div class="c-bar-fill" style="width: 94%"></div></div>
                 <div class="c-bar-row"><span>Ansættelse</span><span>178 / 184</span></div>
-                <div class="c-bar"><div class="c-bar-fill" style="width:97%"></div></div>
+                <div class="c-bar"><div class="c-bar-fill" style="width: 97%"></div></div>
                 <div class="c-bar-row"><span>Forsikring</span><span>27 / 32</span></div>
-                <div class="c-bar"><div class="c-bar-fill" style="width:84%"></div></div>
+                <div class="c-bar"><div class="c-bar-fill" style="width: 84%"></div></div>
               </div>
             </div>
           </div>
@@ -417,5 +1151,4 @@
       </div>
     </div>
   </div>
-
 </div>

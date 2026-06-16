@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, act } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // ── Mocks ──────────────────────────────────────────────────────────────────
 
@@ -109,8 +109,8 @@ vi.mock('@/components/ui/b', async () => {
 
 vi.mock('@/lib/utils', () => ({ cn: (...c: string[]) => c.filter(Boolean).join(' ') }))
 
-import { EditStamdataDialog } from '@/components/companies/EditStamdataDialog'
 import { updateCompanyStamdata } from '@/actions/companies'
+import { EditStamdataDialog } from '@/components/companies/EditStamdataDialog'
 import { toast } from 'sonner'
 
 const INITIAL = {

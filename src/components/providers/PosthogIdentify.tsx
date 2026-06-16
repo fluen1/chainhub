@@ -1,7 +1,7 @@
 'use client'
 
-import posthog from 'posthog-js'
 import { useSession } from 'next-auth/react'
+import posthog from 'posthog-js'
 import { useEffect } from 'react'
 
 /**

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { runSanityChecks } from '@/lib/ai/pipeline/pass4-sanity-checks'
-import type { SanityRule } from '@/lib/ai/schemas/types'
 import type { ExtractedField } from '@/lib/ai/pipeline/types'
+import type { SanityRule } from '@/lib/ai/schemas/types'
 
 // Eksempel-regler til test
 const ownershipRule: SanityRule = {

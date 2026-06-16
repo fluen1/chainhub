@@ -5,8 +5,8 @@ import type { Metadata } from 'next'
 import '@fontsource-variable/inter/index.css'
 import './globals.css'
 import { Toaster } from 'sonner'
-import { PosthogProvider } from '@/components/providers/PosthogProvider'
 import { CookieConsent } from '@/components/CookieConsent'
+import { PosthogProvider } from '@/components/providers/PosthogProvider'
 
 export const metadata: Metadata = {
   title: {

@@ -2,8 +2,8 @@
 /**
  * Tests for EditVisitModal — G1-012: dialog skal preloade eksisterende noter.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn() },

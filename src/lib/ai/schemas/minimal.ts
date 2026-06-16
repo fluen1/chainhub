@@ -1,6 +1,6 @@
+import { registerSchema } from './registry'
 import type { ContractSchema } from './types'
 import { COMMON_TOOL_PROPERTIES } from './types'
-import { registerSchema } from './registry'
 
 const minimalSchema: ContractSchema = {
   contract_type: 'MINIMAL',

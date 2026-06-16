@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
+import { describe, it, expect } from 'vitest'
 import { InsightCard } from '@/components/ui/insight-card'
 import type { Insight } from '@/types/ui'
 

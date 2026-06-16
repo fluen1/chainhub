@@ -1,12 +1,12 @@
 'use server'
 
-import { z } from 'zod'
 import bcrypt from 'bcryptjs'
+import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { captureError } from '@/lib/logger'
-import type { ActionResult } from '@/types/actions'
 import { checkActionRateLimit } from '@/lib/rate-limit'
+import type { ActionResult } from '@/types/actions'
 
 // ────────────────────────────────────────────────────────────────────────────
 // Zod schemas

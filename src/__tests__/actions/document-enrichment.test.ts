@@ -49,9 +49,9 @@ const { prismaMock, mockDocument, mockExtraction } = vi.hoisted(() => {
 
 vi.mock('@/lib/db', () => ({ prisma: prismaMock }))
 
+import { getDocumentEnrichment } from '@/actions/document-enrichment'
 import { auth } from '@/lib/auth'
 import { canAccessCompany } from '@/lib/permissions'
-import { getDocumentEnrichment } from '@/actions/document-enrichment'
 
 describe('getDocumentEnrichment', () => {
   beforeEach(() => {

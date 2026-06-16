@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest'
 import type { Contract, ContractParty, Person, Ownership } from '@prisma/client'
+import { describe, it, expect } from 'vitest'
 import { getExistingValue } from '@/lib/ai/review/existing-values'
 
 type ContractWithRelations = Contract & {

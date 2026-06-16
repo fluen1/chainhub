@@ -33,9 +33,6 @@ vi.mock('@/lib/ai/assistant/tools/registry', () => ({
   toolRegistry: new Map(),
 }))
 
-import { auth } from '@/lib/auth'
-import { isAIEnabled } from '@/lib/ai/feature-flags'
-import { processMessage } from '@/lib/ai/assistant/orchestrator'
 import {
   sendMessage,
   createConversation,
@@ -43,6 +40,9 @@ import {
   rejectAction,
   getConversationHistory,
 } from '@/actions/assistant'
+import { processMessage } from '@/lib/ai/assistant/orchestrator'
+import { isAIEnabled } from '@/lib/ai/feature-flags'
+import { auth } from '@/lib/auth'
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 function mockSession() {

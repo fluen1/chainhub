@@ -14,9 +14,9 @@ vi.mock('@/lib/permissions', () => ({
   canAccessModule: vi.fn(),
 }))
 
+import { getOnboardingStatus } from '@/actions/onboarding'
 import { auth } from '@/lib/auth'
 import { canAccessModule } from '@/lib/permissions'
-import { getOnboardingStatus } from '@/actions/onboarding'
 
 describe('onboarding hardening', () => {
   beforeEach(() => vi.clearAllMocks())

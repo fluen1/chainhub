@@ -1,7 +1,7 @@
 import { createClaudeClient, computeCostUsd } from '@/lib/ai/client'
 import type { ClaudeModel } from '@/lib/ai/client'
-import { prisma } from '@/lib/db'
 import { createLogger } from '@/lib/ai/logger'
+import { prisma } from '@/lib/db'
 
 const log = createLogger('pass6-entity-matching')
 

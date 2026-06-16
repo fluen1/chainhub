@@ -1,15 +1,15 @@
-import { SkipToMain } from '@/components/layout/SkipToMain'
-import { Providers } from '@/components/providers'
-import { auth } from '@/lib/auth'
+import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { getSidebarData, buildSidebarBadges } from '@/lib/sidebar-data'
 import { getAlertStats } from '@/actions/alerts'
 import { BShell } from '@/components/layout/b-shell'
 import { GlobalKeyboardShortcuts } from '@/components/layout/global-keyboard-shortcuts'
-import { PosthogIdentify } from '@/components/providers/PosthogIdentify'
+import { SkipToMain } from '@/components/layout/SkipToMain'
 import { TrialBanner } from '@/components/layout/TrialBanner'
+import { Providers } from '@/components/providers'
+import { PosthogIdentify } from '@/components/providers/PosthogIdentify'
+import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { headers } from 'next/headers'
+import { getSidebarData, buildSidebarBadges } from '@/lib/sidebar-data'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()

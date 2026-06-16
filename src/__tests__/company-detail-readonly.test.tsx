@@ -1,9 +1,9 @@
 // @vitest-environment jsdom
 // Tester at readonly-gating skjuler +Opret/*-knapper for GROUP_READONLY-rolle.
 
-import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import React from 'react'
+import { describe, it, expect, vi } from 'vitest'
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
@@ -81,8 +81,8 @@ vi.mock('@/components/companies/EditStamdataDialog', () => ({
   EditStamdataDialog: () => null,
 }))
 
-import { CompanyDetailB } from '@/app/(dashboard)/companies/[id]/company-detail-b'
 import type { CompanyDetailData } from '@/actions/company-detail'
+import { CompanyDetailB } from '@/app/(dashboard)/companies/[id]/company-detail-b'
 
 function makeData(role: string): CompanyDetailData {
   // Cast via unknown — vi tester kun readonly-UI-logik, ikke alle felter

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
-import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { getCalendarEvents } from '@/actions/calendar'
+import { auth } from '@/lib/auth'
 import { CalendarPageB } from './calendar-b'
 
 export const metadata: Metadata = { title: 'Kalender' }

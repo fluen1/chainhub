@@ -1,9 +1,9 @@
-import { auth } from '@/lib/auth'
-import { canAccessModule } from '@/lib/permissions'
-import { fetchEntityForExport, type ExportableEntity } from '@/lib/export/entities'
-import { toCsvBuffer } from '@/lib/export/csv'
-import { captureError } from '@/lib/logger'
 import { recordAuditEvent } from '@/lib/audit'
+import { auth } from '@/lib/auth'
+import { toCsvBuffer } from '@/lib/export/csv'
+import { fetchEntityForExport, type ExportableEntity } from '@/lib/export/entities'
+import { captureError } from '@/lib/logger'
+import { canAccessModule } from '@/lib/permissions'
 
 const VALID_ENTITIES: ExportableEntity[] = [
   'companies',

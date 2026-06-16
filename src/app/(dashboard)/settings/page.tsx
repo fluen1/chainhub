@@ -1,12 +1,12 @@
 import type { Metadata } from 'next'
-import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { canAccessModule } from '@/lib/permissions'
-import { getUserRoleLabel, formatDate } from '@/lib/labels'
-// formatDate bruges til organization.plan_expires_at + created_at nedenfor.
-import { SettingsPageB, type SettingsUser } from './settings-b'
 import { getSettingsAIUsage } from '@/actions/ai-usage'
 import { getSettingsPageData } from '@/actions/users'
+import { auth } from '@/lib/auth'
+import { getUserRoleLabel, formatDate } from '@/lib/labels'
+import { canAccessModule } from '@/lib/permissions'
+// formatDate bruges til organization.plan_expires_at + created_at nedenfor.
+import { SettingsPageB, type SettingsUser } from './settings-b'
 
 export const metadata: Metadata = { title: 'Indstillinger' }
 

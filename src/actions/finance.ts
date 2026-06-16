@@ -1,15 +1,15 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
+import { z } from 'zod'
+import { invalidateCompanyInsightsCache } from '@/lib/ai/invalidate-cache'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { canAccessCompany, canAccessModule } from '@/lib/permissions'
-import { z } from 'zod'
-import { revalidatePath } from 'next/cache'
-import type { ActionResult } from '@/types/actions'
 import { captureError } from '@/lib/logger'
-import { zodMetricType, zodPeriodType, zodMetricSource } from '@/lib/zod-enums'
-import { invalidateCompanyInsightsCache } from '@/lib/ai/invalidate-cache'
+import { canAccessCompany, canAccessModule } from '@/lib/permissions'
 import { checkActionRateLimit } from '@/lib/rate-limit'
+import { zodMetricType, zodPeriodType, zodMetricSource } from '@/lib/zod-enums'
+import type { ActionResult } from '@/types/actions'
 
 const upsertMetricSchema = z.object({
   companyId: z.string().min(1, 'Selskab mangler'),

@@ -1,11 +1,11 @@
 'use server'
 
+import type { SensitivityLevel } from '@prisma/client'
 import { z } from 'zod'
+import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { getAccessibleCompanies, canAccessSensitivity } from '@/lib/permissions'
 import { MIN_SEARCH_LENGTH, RESULTS_PER_TYPE } from '@/lib/search/constants'
-import type { SensitivityLevel } from '@prisma/client'
-import { auth } from '@/lib/auth'
 
 const searchSchema = z.object({
   query: z.string().min(1).max(200),

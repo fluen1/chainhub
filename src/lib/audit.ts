@@ -1,6 +1,6 @@
+import type { SensitivityLevel } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { captureError } from '@/lib/logger'
-import type { SensitivityLevel } from '@prisma/client'
 
 export interface AuditEventInput {
   organizationId: string

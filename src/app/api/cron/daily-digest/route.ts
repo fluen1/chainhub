@@ -1,14 +1,14 @@
+import { timingSafeEqual } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { resend, DIGEST_FROM } from '@/lib/email/resend'
+import { buildDigestHtml, buildDigestSubject } from '@/lib/email/templates/digest'
+import { captureError } from '@/lib/logger'
 import {
   getExpiringContracts,
   getOverdueTasks,
   getUpcomingTasks,
 } from '@/lib/notifications/deadlines'
-import { buildDigestHtml, buildDigestSubject } from '@/lib/email/templates/digest'
-import { timingSafeEqual } from 'crypto'
-import { captureError } from '@/lib/logger'
 
 export async function POST(request: NextRequest) {
   // Auth: timing-safe sammenligning af cron-hemmelighed (forhindrer timing-angreb)

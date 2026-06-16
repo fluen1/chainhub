@@ -150,7 +150,6 @@ export function CasesListB({
     setTypeFil(searchParams.get('type') ?? 'Alle')
     setStatusFil(normalizeStatusParam(searchParams.get('status')))
     setPage(parseInt(searchParams.get('page') ?? '1', 10) || 1)
-     
   }, [searchParams])
   /* eslint-enable react-hooks/set-state-in-effect */
 

@@ -18,11 +18,11 @@ vi.mock('@/lib/export/gdpr', () => ({
 }))
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
 
-import { auth } from '@/lib/auth'
-import { canAccessModule } from '@/lib/permissions'
-import { recordAuditEvent } from '@/lib/audit'
-import { gdprDeletePerson } from '@/lib/export/gdpr'
 import { prepareGdprExport, executeGdprDelete } from '@/actions/gdpr'
+import { recordAuditEvent } from '@/lib/audit'
+import { auth } from '@/lib/auth'
+import { gdprDeletePerson } from '@/lib/export/gdpr'
+import { canAccessModule } from '@/lib/permissions'
 
 const VALID_UUID = '00000000-0000-0000-0000-000000000001'
 

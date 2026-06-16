@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
-import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { canAccessModule } from '@/lib/permissions'
 import { getContractsPaginated } from '@/actions/contracts'
+import { auth } from '@/lib/auth'
+import { canAccessModule } from '@/lib/permissions'
 import { ContractsListB } from './contracts-list-b'
 
 export const metadata: Metadata = { title: 'Kontrakter' }

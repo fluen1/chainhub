@@ -201,9 +201,9 @@ describe('rejectDocumentExtraction', () => {
 
 // ─── submitDocumentForReview ──────────────────────────────────────────────────
 
+import { submitDocumentForReview, reviewDocument } from '@/actions/documents'
 import { auth } from '@/lib/auth'
 import { canAccessCompany } from '@/lib/permissions'
-import { submitDocumentForReview, reviewDocument } from '@/actions/documents'
 
 describe('submitDocumentForReview', () => {
   beforeEach(() => {

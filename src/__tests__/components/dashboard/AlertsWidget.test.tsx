@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { AlertsWidget } from '@/components/dashboard/AlertsWidget'
+import { describe, it, expect } from 'vitest'
 import type { AlertItem } from '@/actions/alerts'
+import { AlertsWidget } from '@/components/dashboard/AlertsWidget'
 
 const makeAlert = (overrides: Partial<AlertItem> = {}): AlertItem => ({
   id: 'alert-1',

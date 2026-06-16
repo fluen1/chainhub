@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client'
-import { prisma } from '@/lib/db'
-import { isAIEnabled } from '@/lib/ai/feature-flags'
+import { sha256 } from '@/lib/ai/content-hash'
+import { loadForExtraction } from '@/lib/ai/content-loader'
 import {
   checkCostCap,
   reserveAIBudget,
@@ -8,13 +8,13 @@ import {
   releaseReservation,
   estimateExtractionCost,
 } from '@/lib/ai/cost-cap'
-import { recordAIUsage } from '@/lib/ai/usage'
-import { loadForExtraction } from '@/lib/ai/content-loader'
+import { isAIEnabled } from '@/lib/ai/feature-flags'
+import { createLogger } from '@/lib/ai/logger'
 import { runExtractionPipeline } from '@/lib/ai/pipeline/orchestrator'
 import { runEntityMatching } from '@/lib/ai/pipeline/pass6-entity-matching'
 import type { PipelineCheckpoint } from '@/lib/ai/pipeline/types'
-import { sha256 } from '@/lib/ai/content-hash'
-import { createLogger } from '@/lib/ai/logger'
+import { recordAIUsage } from '@/lib/ai/usage'
+import { prisma } from '@/lib/db'
 
 const log = createLogger('extract-document')
 

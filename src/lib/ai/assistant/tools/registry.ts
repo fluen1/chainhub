@@ -1,12 +1,12 @@
-import type { ToolDefinition } from './types'
-import { searchContractsTool } from './search-contracts'
-import { searchCompaniesTool } from './search-companies'
-import { searchPersonsTool } from './search-persons'
-import { getAlertsTool } from './get-alerts'
-import { generateReportTool } from './generate-report'
-import { createTaskTool } from './create-task'
 import { createCaseTool } from './create-case'
 import { createReminderTool } from './create-reminder'
+import { createTaskTool } from './create-task'
+import { generateReportTool } from './generate-report'
+import { getAlertsTool } from './get-alerts'
+import { searchCompaniesTool } from './search-companies'
+import { searchContractsTool } from './search-contracts'
+import { searchPersonsTool } from './search-persons'
+import type { ToolDefinition } from './types'
 
 export const toolRegistry: Map<string, ToolDefinition> = new Map([
   [searchContractsTool.name, searchContractsTool],

@@ -1,6 +1,6 @@
+import { redirect } from 'next/navigation'
 import { getAIUsageDashboard } from '@/actions/ai-usage'
 import { AIUsageClient } from './ai-usage-client'
-import { redirect } from 'next/navigation'
 
 export const metadata = { title: 'AI-forbrug' }
 

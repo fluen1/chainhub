@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createCompany } from '@/actions/companies'
-import { getAutofillSuggestions, type AutofillSuggestion } from '@/actions/autofill'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { toast } from 'sonner'
-import { COMPANY_TYPE_OPTIONS } from '@/lib/labels'
+import { getAutofillSuggestions, type AutofillSuggestion } from '@/actions/autofill'
+import { createCompany } from '@/actions/companies'
+import { AutofillField, type AutofillSuggestionProp } from '@/components/ui/AutofillField'
 import {
   Panel,
   BButton,
@@ -17,7 +17,7 @@ import {
   BFieldWrap,
   Breadcrumb,
 } from '@/components/ui/b'
-import { AutofillField, type AutofillSuggestionProp } from '@/components/ui/AutofillField'
+import { COMPANY_TYPE_OPTIONS } from '@/lib/labels'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CreateCompanyForm — B-stil port. Felter: name, cvr, companyType, address,

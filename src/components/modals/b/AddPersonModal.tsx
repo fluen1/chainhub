@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import { BModal, BTextField, BSegmentedField, BFieldWrap, BFieldRow } from '@/components/ui/b'
 import { addCompanyPerson } from '@/actions/governance'
+import { BModal, BTextField, BSegmentedField, BFieldWrap, BFieldRow } from '@/components/ui/b'
 import type { PersonOption } from './AddOwnerModal'
 
 // ────────────────────────────────────────────────────────────────────────────

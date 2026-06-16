@@ -30,12 +30,12 @@ vi.mock('@/lib/db', () => ({
   },
 }))
 
-import { extractDocument } from '@/lib/ai/jobs/extract-document'
-import { isAIEnabled } from '@/lib/ai/feature-flags'
-import { checkCostCap } from '@/lib/ai/cost-cap'
-import { recordAIUsage } from '@/lib/ai/usage'
 import { loadForExtraction } from '@/lib/ai/content-loader'
+import { checkCostCap } from '@/lib/ai/cost-cap'
+import { isAIEnabled } from '@/lib/ai/feature-flags'
+import { extractDocument } from '@/lib/ai/jobs/extract-document'
 import { runExtractionPipeline } from '@/lib/ai/pipeline/orchestrator'
+import { recordAIUsage } from '@/lib/ai/usage'
 import { prisma } from '@/lib/db'
 
 const basePayload = {

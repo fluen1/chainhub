@@ -1,9 +1,9 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { TableWrap, TableEmpty, Badge } from '@/components/ui/b'
-import { TaskTr } from '@/components/tasks/TasksFlatTable'
 import type { TaskRow } from '@/app/(dashboard)/tasks/tasks-list-b'
+import { TaskTr } from '@/components/tasks/TasksFlatTable'
+import { TableWrap, TableEmpty, Badge } from '@/components/ui/b'
 
 // ────────────────────────────────────────────────────────────────────────────
 // Grupperet visning — grupperer opgaver per selskab

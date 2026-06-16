@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
-import { auth } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
 import { getTaskDetailData } from '@/actions/task-detail'
+import { auth } from '@/lib/auth'
 import { getTaskStatusLabel, getPriorityLabel, formatDate, daysUntil } from '@/lib/labels'
 import { TaskDetailB, type TaskDetailViewData } from './task-detail-b'
 

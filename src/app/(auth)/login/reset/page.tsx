@@ -1,8 +1,8 @@
 'use client'
 
-import { resetPassword } from '@/actions/auth'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useState } from 'react'
+import { resetPassword } from '@/actions/auth'
 
 // ────────────────────────────────────────────────────────────────────────────
 // /login/reset?token=<uuid> — Sæt ny adgangskode via reset-token

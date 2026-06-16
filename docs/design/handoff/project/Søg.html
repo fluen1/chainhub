@@ -1,462 +1,1147 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="da">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Søg — ChainHub</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #fafafa; color: #1f2328; font-size: 13px; -webkit-font-smoothing: antialiased; }
-    .layout { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
-
-    /* ── SIDEBAR ── */
-    .sb      { background: #f6f7f9; border-right: 1px solid #e1e4e8; padding: 14px 8px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
-    .sb-logo { font-weight: 600; padding: 4px 10px 16px; }
-    .sb-sec  { margin-bottom: 16px; }
-    .sb-lab  { font-size: 10px; color: #6e7681; padding: 0 10px 4px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
-    .sb-item { display: flex; justify-content: space-between; align-items: center; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 13px; }
-    .sb-item.active { background: #e8eaee; font-weight: 500; }
-    .sb-item:hover:not(.active) { background: #ecedf0; }
-    .sb-cnt  { font-size: 11px; color: #6e7681; font-variant-numeric: tabular-nums; }
-    .sb-cnt.a { color: #b91c1c; font-weight: 600; } .sb-cnt.w { color: #b54708; }
-
-    /* ── MAIN ── */
-    .main { padding: 12px 24px 32px; display: flex; flex-direction: column; gap: 12px; min-width: 0; max-width: 860px; }
-
-    /* ── SEARCH INPUT ── */
-    .search-wrap { position: relative; }
-    .search-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: #6e7681; font-size: 14px; pointer-events: none; }
-    .search-input { width: 100%; font-size: 16px; font-family: inherit; padding: 11px 40px 11px 38px; border: 1px solid #d0d7de; border-radius: 6px; background: white; color: #1f2328; outline: none; transition: border-color 0.1s, box-shadow 0.1s; }
-    .search-input:focus { border-color: #0969da; box-shadow: 0 0 0 3px rgba(9,105,218,0.12); }
-    .search-input::placeholder { color: #8c959f; }
-    .search-clear { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #8c959f; cursor: pointer; font-size: 16px; padding: 4px; line-height: 1; }
-    .search-clear:hover { color: #1f2328; }
-
-    /* ── FILTER PILLS ── */
-    .filter-pills { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-    .fp-lab { font-size: 11px; color: #8c959f; }
-    .fpill  { font-size: 12px; padding: 3px 10px; border: 1px solid #d0d7de; background: white; color: #6e7681; border-radius: 12px; cursor: pointer; font-family: inherit; }
-    .fpill:hover { background: #f6f8fa; color: #1f2328; }
-    .fpill.on { background: #1f2328; color: white; border-color: #1f2328; }
-    .fpill.all.on { background: #0969da; border-color: #0969da; }
-    .sep-dot { margin: 0 4px; color: #d0d7de; }
-
-    /* ── RESULTS CONTAINER ── */
-    .results { display: flex; flex-direction: column; gap: 16px; }
-
-    /* ── SECTION ── */
-    .section { background: white; border: 1px solid #e1e4e8; border-radius: 4px; overflow: hidden; }
-    .sec-h   { padding: 6px 12px; border-bottom: 1px solid #e1e4e8; background: #fbfbfc; display: flex; justify-content: space-between; align-items: center; }
-    .sec-t   { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #1f2328; }
-    .sec-m   { font-size: 11px; color: #6e7681; cursor: pointer; }
-    .sec-m:hover { color: #0969da; }
-
-    /* ── RESULT ROWS ── */
-    .r-row  { display: flex; align-items: center; gap: 10px; padding: 7px 12px; border-bottom: 1px solid #f0f1f3; cursor: pointer; }
-    .r-row:hover { background: #f6f7f9; }
-    .r-row:last-child { border-bottom: none; }
-    .r-icon { width: 28px; height: 28px; border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; }
-    .r-main { flex: 1; min-width: 0; }
-    .r-title { font-size: 13px; font-weight: 500; color: #1f2328; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .r-title mark { background: #fff8c5; color: #1f2328; border-radius: 2px; padding: 0 1px; font-weight: 600; }
-    .r-sub  { font-size: 11px; color: #6e7681; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .r-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-    .chev   { color: #8c959f; font-size: 12px; }
-
-    /* ── BADGES ── */
-    .badge { font-size: 11px; font-weight: 500; padding: 1px 6px; border-radius: 3px; font-variant-numeric: tabular-nums; white-space: nowrap; display: inline-block; }
-    .badge.red    { background: #ffebe9; color: #cf222e; }
-    .badge.amber  { background: #fff8c5; color: #9a6700; }
-    .badge.green  { background: #dafbe1; color: #1a7f37; }
-    .badge.blue   { background: #ddf4ff; color: #0969da; }
-    .badge.gray   { background: #f6f8fa; color: #57606a; }
-    .badge.purple { background: #f3e8ff; color: #7c3aed; }
-
-    /* ── ICON COLORS ── */
-    .ic-sel  { background: #e8eaee; color: #1f2328; }
-    .ic-kon  { background: #ddf4ff; color: #0969da; }
-    .ic-sag  { background: #ffebe9; color: #cf222e; }
-    .ic-opg  { background: #fff8c5; color: #9a6700; }
-    .ic-per  { background: #dafbe1; color: #1a7f37; }
-    .ic-dok  { background: #f3e8ff; color: #7c3aed; }
-
-    /* ── RECENT / EMPTY STATES ── */
-    .recent-wrap { display: flex; flex-direction: column; gap: 14px; }
-    .recent-sec  { display: flex; flex-direction: column; gap: 4px; }
-    .recent-h    { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #8c959f; padding: 0 2px 4px; }
-    .recent-row  { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border: 1px solid #e1e4e8; border-radius: 4px; background: white; cursor: pointer; }
-    .recent-row:hover { border-color: #0969da; background: #f8fbff; }
-    .rr-icon { font-size: 12px; color: #8c959f; flex-shrink: 0; width: 16px; }
-    .rr-txt  { font-size: 13px; color: #1f2328; flex: 1; }
-    .rr-meta { font-size: 11px; color: #8c959f; }
-    .qs-row  { display: flex; gap: 6px; flex-wrap: wrap; }
-    .qs-btn  { font-size: 12px; padding: 4px 10px; border: 1px solid #d0d7de; background: white; color: #6e7681; border-radius: 4px; cursor: pointer; font-family: inherit; }
-    .qs-btn:hover { background: #f6f8fa; color: #0969da; border-color: #0969da; }
-
-    /* ── SKELETON ── */
-    .skel { background: linear-gradient(90deg,#f0f1f3 25%,#f6f7f9 50%,#f0f1f3 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 3px; display: inline-block; }
-    @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
-
-    /* ── STATS ROW ── */
-    .stats-row { display: flex; gap: 16px; font-size: 11px; color: #6e7681; padding: 0 2px; flex-wrap: wrap; }
-    .stat-item { display: flex; align-items: center; gap: 4px; font-variant-numeric: tabular-nums; }
-    .stat-num  { font-weight: 600; color: #1f2328; }
-
-    /* ── BOTTOM BAR ── */
-    .bot-bar { display: flex; justify-content: space-between; padding: 6px 0; font-size: 11px; color: #6e7681; }
-    .kbd { background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 3px; padding: 1px 5px; font-family: 'SF Mono','Fira Mono',monospace; font-size: 10px; color: #1f2328; }
-
-    /* ── TOAST ── */
-    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1f2328; color: white; padding: 9px 16px; border-radius: 4px; font-size: 13px; box-shadow: 0 4px 16px rgba(0,0,0,0.22); z-index: 9000; white-space: nowrap; animation: tin .15s ease; }
-    @keyframes tin { from{opacity:0;transform:translateX(-50%) translateY(5px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
-  </style>
-</head>
-<body>
-<div id="root"></div>
-<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
-<script type="text/babel">
-const { useState, useEffect, useRef } = React;
-
-/* ─── SEARCH INDEX ─── */
-const INDEX = [
-  // Selskaber
-  { type:'selskab', icon:'SEL', icCls:'ic-sel', id:'s1', title:'Tandlæge Østerbro ApS',    sub:'CVR 12345678 · Østerbrogade 142 · Co-ejet 51%', badges:[{cls:'red',l:'14d'}],        tags:'tandlæge østerbro selskab' },
-  { type:'selskab', icon:'SEL', icCls:'ic-sel', id:'s2', title:'Klinik Aalborg',            sub:'CVR 22334455 · Aalborg · Co-ejet 60%',           badges:[{cls:'red',l:'Kritisk'}],    tags:'aalborg klinik selskab' },
-  { type:'selskab', icon:'SEL', icCls:'ic-sel', id:'s3', title:'Klinik Aarhus C',           sub:'CVR 33445566 · Aarhus · Co-ejet 55%',            badges:[{cls:'green',l:'OK'}],       tags:'aarhus klinik selskab' },
-  { type:'selskab', icon:'SEL', icCls:'ic-sel', id:'s4', title:'Klinik Esbjerg',            sub:'CVR 55667788 · Esbjerg · Co-ejet 51%',           badges:[{cls:'green',l:'OK'}],       tags:'esbjerg klinik selskab' },
-  // Kontrakter
-  { type:'kontrakt', icon:'KON', icCls:'ic-kon', id:'k1', title:'Lejekontrakt erhverv',     sub:'Tandlæge Østerbro ApS · v3 · Aktiv',             badges:[{cls:'red',l:'14d'}],        tags:'lejekontrakt erhverv kontrakt' },
-  { type:'kontrakt', icon:'KON', icCls:'ic-kon', id:'k2', title:'Ejeraftale',                sub:'Tandlæge Østerbro ApS + Lars Hansen · Aktiv',    badges:[{cls:'green',l:'Aktiv'}],    tags:'ejeraftale kontrakt' },
-  { type:'kontrakt', icon:'KON', icCls:'ic-kon', id:'k3', title:'Ansættelse · Lars Hansen', sub:'Tandlæge Østerbro ApS · CEO-aftale',             badges:[{cls:'green',l:'Aktiv'}],    tags:'ansættelse lars hansen kontrakt' },
-  { type:'kontrakt', icon:'KON', icCls:'ic-kon', id:'k4', title:'Lejekontrakt erhverv',     sub:'Klinik Holstebro · v1 · Aktiv',                  badges:[{cls:'amber',l:'28d'}],      tags:'lejekontrakt holstebro kontrakt' },
-  // Sager
-  { type:'sag',      icon:'SAG', icCls:'ic-sag', id:'sg1', title:'#2841 Patientklage',      sub:'Klinik Aalborg · Åben · Philip B. · Frist 13. maj', badges:[{cls:'red',l:'Kritisk'}], tags:'patientklage aalborg sag 2841' },
-  { type:'sag',      icon:'SAG', icCls:'ic-sag', id:'sg2', title:'#2840 Forhandling udl.',  sub:'Tandlæge Østerbro ApS · Åben',                   badges:[{cls:'blue',l:'Åben'}],      tags:'forhandling østerbro sag 2840' },
-  { type:'sag',      icon:'SAG', icCls:'ic-sag', id:'sg3', title:'#2833 Juridisk tvist',    sub:'Klinik Randers · Eskaleret · Philip B.',          badges:[{cls:'red',l:'Eskaleret'}],  tags:'juridisk tvist randers sag 2833' },
-  // Opgaver
-  { type:'opgave',   icon:'OPG', icCls:'ic-opg', id:'o1', title:'Forny lejekontrakt erhverv', sub:'Tandlæge Østerbro ApS · I gang · Frist 20. maj', badges:[{cls:'amber',l:'Høj'}],   tags:'forny lejekontrakt opgave' },
-  { type:'opgave',   icon:'OPG', icCls:'ic-opg', id:'o2', title:'Kontakt patient og advokat', sub:'Klinik Aalborg · Åben · Frist 13. maj',         badges:[{cls:'red',l:'Kritisk'}],    tags:'patient advokat aalborg opgave' },
-  { type:'opgave',   icon:'OPG', icCls:'ic-opg', id:'o3', title:'Q1-finansrapport Esbjerg',   sub:'Klinik Esbjerg · Afventer · Frist 16. maj',     badges:[{cls:'gray',l:'Normal'}],    tags:'finansrapport esbjerg opgave' },
-  // Personer
-  { type:'person',   icon:'PER', icCls:'ic-per', id:'p1', title:'Lars Hansen',               sub:'CEO · Medejer · Tandlæge Østerbro ApS',         badges:[{cls:'blue',l:'CEO'}],       tags:'lars hansen person ceo' },
-  { type:'person',   icon:'PER', icCls:'ic-per', id:'p2', title:'Marie Kristensen',           sub:'Bestyrelsesformand · Tandlæge Østerbro ApS',    badges:[{cls:'blue',l:'Bestyrelse'}],tags:'marie kristensen person bestyrelse' },
-  { type:'person',   icon:'PER', icCls:'ic-per', id:'p3', title:'Peter Brandt',               sub:'Tandlæge · Tandlæge Østerbro ApS · ans. 2019',  badges:[{cls:'gray',l:'Tandlæge'}],  tags:'peter brandt tandlæge person' },
-  { type:'person',   icon:'PER', icCls:'ic-per', id:'p4', title:'Tina Hansen',                sub:'Tandlæge · Klinik Aalborg · ans. 2022',         badges:[{cls:'gray',l:'Tandlæge'}],  tags:'tina hansen tandlæge aalborg person' },
-  // Dokumenter
-  { type:'dokument', icon:'DOK', icCls:'ic-dok', id:'d1', title:'lejekontrakt-2021.pdf',      sub:'Tandlæge Østerbro ApS · 2,4 MB · AI ✓ 94%',    badges:[{cls:'green',l:'AI ✓'}],     tags:'lejekontrakt pdf dokument' },
-  { type:'dokument', icon:'DOK', icCls:'ic-dok', id:'d2', title:'ejeraftale-final.pdf',        sub:'Tandlæge Østerbro ApS · 1,1 MB · Review',       badges:[{cls:'amber',l:'Review'}],   tags:'ejeraftale pdf dokument' },
-  { type:'dokument', icon:'DOK', icCls:'ic-dok', id:'d3', title:'patientklage-brev.pdf',       sub:'Klinik Aalborg · 2,1 MB · AI ✓ 91%',           badges:[{cls:'green',l:'AI ✓'}],     tags:'patientklage pdf dokument aalborg' },
-  { type:'dokument', icon:'DOK', icCls:'ic-dok', id:'d4', title:'ansaettelse-peter.docx',      sub:'Tandlæge Østerbro ApS · 340 KB · AI ✓ 88%',    badges:[{cls:'green',l:'AI ✓'}],     tags:'ansættelse peter docx dokument' },
-];
-
-const RECENT = [
-  { q:'Tandlæge Østerbro', tid:'2 min siden' },
-  { q:'patientklage',      tid:'14 min siden' },
-  { q:'Lars Hansen',       tid:'1t siden' },
-  { q:'lejekontrakt',      tid:'3t siden' },
-];
-
-const QUICK_SEARCHES = ['Udløber 30d','Åbne sager','Kritiske selskaber','Review pending','Min portefølje'];
-
-const TYPES = [
-  { key:'alle',     label:'Alle' },
-  { key:'selskab',  label:'Selskaber' },
-  { key:'kontrakt', label:'Kontrakter' },
-  { key:'sag',      label:'Sager' },
-  { key:'opgave',   label:'Opgaver' },
-  { key:'person',   label:'Personer' },
-  { key:'dokument', label:'Dokumenter' },
-];
-
-const TYPE_LABELS = {
-  selskab:'Selskaber', kontrakt:'Kontrakter', sag:'Sager',
-  opgave:'Opgaver', person:'Personer', dokument:'Dokumenter',
-};
-
-function highlight(text, query) {
-  if (!query.trim()) return text;
-  const parts = text.split(new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'));
-  return parts.map((p, i) =>
-    p.toLowerCase() === query.toLowerCase()
-      ? <mark key={i}>{p}</mark>
-      : p
-  );
-}
-
-/* ─── SIDEBAR ─── */
-function Sidebar() {
-  return (
-    <aside className="sb">
-      <div className="sb-logo">▣ ChainHub</div>
-      <div className="sb-sec">
-        <div className="sb-lab">Overblik</div>
-        <div className="sb-item">Forside <span className="sb-cnt a">5</span></div>
-        <div className="sb-item">Kalender <span className="sb-cnt">12</span></div>
-        <div className="sb-item active">Søg</div>
-      </div>
-      <div className="sb-sec">
-        <div className="sb-lab">Portefølje</div>
-        <div className="sb-item">Selskaber <span className="sb-cnt">32</span></div>
-        <div className="sb-item">Kontrakter <span className="sb-cnt w">3</span></div>
-        <div className="sb-item">Sager <span className="sb-cnt a">7</span></div>
-        <div className="sb-item">Opgaver <span className="sb-cnt w">9</span></div>
-      </div>
-      <div className="sb-sec">
-        <div className="sb-lab">Ressourcer</div>
-        <div className="sb-item">Dokumenter <span className="sb-cnt">412</span></div>
-        <div className="sb-item">Personer <span className="sb-cnt">184</span></div>
-        <div className="sb-item">Indstillinger</div>
-      </div>
-    </aside>
-  );
-}
-
-/* ─── RESULT ROW ─── */
-function ResultRow({ item, query, onToast }) {
-  return (
-    <div className="r-row" onClick={() => onToast(`Åbner ${item.title}`)}>
-      <div className={`r-icon ${item.icCls}`}>{item.icon}</div>
-      <div className="r-main">
-        <div className="r-title">{highlight(item.title, query)}</div>
-        <div className="r-sub">{item.sub}</div>
-      </div>
-      <div className="r-right">
-        {item.badges.map((b,i) => <span key={i} className={`badge ${b.cls}`}>{b.l}</span>)}
-        <span className="chev">›</span>
-      </div>
-    </div>
-  );
-}
-
-/* ─── SKELETON SECTION ─── */
-function SkeletonSection({ label, n = 3 }) {
-  return (
-    <div className="section">
-      <div className="sec-h">
-        <span className="sec-t">{label}</span>
-        <span className="skel" style={{width:30,height:10}}></span>
-      </div>
-      {Array.from({length:n}).map((_,i) => (
-        <div key={i} className="r-row" style={{cursor:'default'}}>
-          <span className="skel" style={{width:28,height:28,borderRadius:4,flexShrink:0}}></span>
-          <div style={{flex:1,display:'flex',flexDirection:'column',gap:5}}>
-            <span className="skel" style={{width:'60%',height:12}}></span>
-            <span className="skel" style={{width:'40%',height:10}}></span>
-          </div>
-          <span className="skel" style={{width:50,height:18,borderRadius:3}}></span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/* ─── MAIN ─── */
-function SogPage() {
-  const [query,    setQuery]    = useState('');
-  const [activeType, setActiveType] = useState('alle');
-  const [isSearching, setIsSearching] = useState(false);
-  const [toast,    setToast]    = useState(null);
-  const [toastKey, setToastKey] = useState(0);
-  const inputRef = useRef(null);
-  const timerRef = useRef(null);
-
-  function doToast(msg) { setToast(msg); setToastKey(k=>k+1); setTimeout(()=>setToast(null),2600); }
-
-  // Simulate search delay
-  useEffect(() => {
-    if (!query.trim()) { setIsSearching(false); return; }
-    setIsSearching(true);
-    clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => setIsSearching(false), 350);
-    return () => clearTimeout(timerRef.current);
-  }, [query]);
-
-  // Focus input on mount + keyboard shortcut
-  useEffect(() => {
-    inputRef.current?.focus();
-    function onKey(e) {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        inputRef.current?.focus();
-        inputRef.current?.select();
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Søg — ChainHub</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
       }
-      if (e.key === 'Escape' && document.activeElement === inputRef.current) {
-        setQuery('');
-        inputRef.current?.blur();
+      body {
+        font-family:
+          'Inter',
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        background: #fafafa;
+        color: #1f2328;
+        font-size: 13px;
+        -webkit-font-smoothing: antialiased;
       }
-    }
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, []);
+      .layout {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        min-height: 100vh;
+      }
 
-  // Filter results
-  const q = query.trim().toLowerCase();
-  const allResults = q
-    ? INDEX.filter(item =>
-        item.title.toLowerCase().includes(q) ||
-        item.sub.toLowerCase().includes(q) ||
-        item.tags.toLowerCase().includes(q)
-      )
-    : [];
+      /* ── SIDEBAR ── */
+      .sb {
+        background: #f6f7f9;
+        border-right: 1px solid #e1e4e8;
+        padding: 14px 8px;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+      }
+      .sb-logo {
+        font-weight: 600;
+        padding: 4px 10px 16px;
+      }
+      .sb-sec {
+        margin-bottom: 16px;
+      }
+      .sb-lab {
+        font-size: 10px;
+        color: #6e7681;
+        padding: 0 10px 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+      }
+      .sb-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+      }
+      .sb-item.active {
+        background: #e8eaee;
+        font-weight: 500;
+      }
+      .sb-item:hover:not(.active) {
+        background: #ecedf0;
+      }
+      .sb-cnt {
+        font-size: 11px;
+        color: #6e7681;
+        font-variant-numeric: tabular-nums;
+      }
+      .sb-cnt.a {
+        color: #b91c1c;
+        font-weight: 600;
+      }
+      .sb-cnt.w {
+        color: #b54708;
+      }
 
-  const filtered = activeType === 'alle'
-    ? allResults
-    : allResults.filter(r => r.type === activeType);
+      /* ── MAIN ── */
+      .main {
+        padding: 12px 24px 32px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-width: 0;
+        max-width: 860px;
+      }
 
-  // Group by type
-  const grouped = filtered.reduce((acc, r) => {
-    (acc[r.type] = acc[r.type] || []).push(r);
-    return acc;
-  }, {});
+      /* ── SEARCH INPUT ── */
+      .search-wrap {
+        position: relative;
+      }
+      .search-icon {
+        position: absolute;
+        left: 13px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6e7681;
+        font-size: 14px;
+        pointer-events: none;
+      }
+      .search-input {
+        width: 100%;
+        font-size: 16px;
+        font-family: inherit;
+        padding: 11px 40px 11px 38px;
+        border: 1px solid #d0d7de;
+        border-radius: 6px;
+        background: white;
+        color: #1f2328;
+        outline: none;
+        transition:
+          border-color 0.1s,
+          box-shadow 0.1s;
+      }
+      .search-input:focus {
+        border-color: #0969da;
+        box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.12);
+      }
+      .search-input::placeholder {
+        color: #8c959f;
+      }
+      .search-clear {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: #8c959f;
+        cursor: pointer;
+        font-size: 16px;
+        padding: 4px;
+        line-height: 1;
+      }
+      .search-clear:hover {
+        color: #1f2328;
+      }
 
-  const totalCount = filtered.length;
-  const hasResults = totalCount > 0;
-  const hasQuery   = q.length > 0;
+      /* ── FILTER PILLS ── */
+      .filter-pills {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .fp-lab {
+        font-size: 11px;
+        color: #8c959f;
+      }
+      .fpill {
+        font-size: 12px;
+        padding: 3px 10px;
+        border: 1px solid #d0d7de;
+        background: white;
+        color: #6e7681;
+        border-radius: 12px;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .fpill:hover {
+        background: #f6f8fa;
+        color: #1f2328;
+      }
+      .fpill.on {
+        background: #1f2328;
+        color: white;
+        border-color: #1f2328;
+      }
+      .fpill.all.on {
+        background: #0969da;
+        border-color: #0969da;
+      }
+      .sep-dot {
+        margin: 0 4px;
+        color: #d0d7de;
+      }
 
-  return (
-    <div className="layout">
-      <Sidebar />
-      <main className="main">
+      /* ── RESULTS CONTAINER ── */
+      .results {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
 
-        {/* Search input */}
-        <div className="search-wrap">
-          <span className="search-icon">⌕</span>
-          <input
-            ref={inputRef}
-            className="search-input"
-            placeholder="Søg i hele porteføljen — selskaber, kontrakter, sager, personer, dokumenter..."
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            autoComplete="off"
-            spellCheck={false}
-          />
-          {query && (
-            <button className="search-clear" onClick={() => { setQuery(''); inputRef.current?.focus(); }}>×</button>
-          )}
-        </div>
+      /* ── SECTION ── */
+      .section {
+        background: white;
+        border: 1px solid #e1e4e8;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .sec-h {
+        padding: 6px 12px;
+        border-bottom: 1px solid #e1e4e8;
+        background: #fbfbfc;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .sec-t {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #1f2328;
+      }
+      .sec-m {
+        font-size: 11px;
+        color: #6e7681;
+        cursor: pointer;
+      }
+      .sec-m:hover {
+        color: #0969da;
+      }
 
-        {/* Type filter pills */}
-        {hasQuery && (
-          <div className="filter-pills">
-            <span className="fp-lab">Vis:</span>
-            {TYPES.map(t => (
-              <button key={t.key}
-                className={`fpill${activeType === t.key ? (t.key==='alle'?' on all':' on') : ''}`}
-                onClick={() => setActiveType(t.key)}>
-                {t.label}
-                {t.key !== 'alle' && allResults.filter(r=>r.type===t.key).length > 0 && (
-                  <span style={{marginLeft:4,opacity:0.7}}>{allResults.filter(r=>r.type===t.key).length}</span>
-                )}
-              </button>
-            ))}
-          </div>
-        )}
+      /* ── RESULT ROWS ── */
+      .r-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 7px 12px;
+        border-bottom: 1px solid #f0f1f3;
+        cursor: pointer;
+      }
+      .r-row:hover {
+        background: #f6f7f9;
+      }
+      .r-row:last-child {
+        border-bottom: none;
+      }
+      .r-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 4px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        font-weight: 700;
+      }
+      .r-main {
+        flex: 1;
+        min-width: 0;
+      }
+      .r-title {
+        font-size: 13px;
+        font-weight: 500;
+        color: #1f2328;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .r-title mark {
+        background: #fff8c5;
+        color: #1f2328;
+        border-radius: 2px;
+        padding: 0 1px;
+        font-weight: 600;
+      }
+      .r-sub {
+        font-size: 11px;
+        color: #6e7681;
+        margin-top: 2px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .r-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+      .chev {
+        color: #8c959f;
+        font-size: 12px;
+      }
 
-        {/* Result count */}
-        {hasQuery && !isSearching && (
-          <div className="stats-row">
-            <span className="stat-item">
-              <span className="stat-num">{totalCount}</span> resultat{totalCount !== 1 ? 'er' : ''} for "{query}"
-            </span>
-            {Object.entries(grouped).map(([type, items]) => (
-              <span key={type} className="stat-item">
-                <span className="stat-num">{items.length}</span> {TYPE_LABELS[type].toLowerCase()}
-              </span>
-            ))}
-          </div>
-        )}
+      /* ── BADGES ── */
+      .badge {
+        font-size: 11px;
+        font-weight: 500;
+        padding: 1px 6px;
+        border-radius: 3px;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        display: inline-block;
+      }
+      .badge.red {
+        background: #ffebe9;
+        color: #cf222e;
+      }
+      .badge.amber {
+        background: #fff8c5;
+        color: #9a6700;
+      }
+      .badge.green {
+        background: #dafbe1;
+        color: #1a7f37;
+      }
+      .badge.blue {
+        background: #ddf4ff;
+        color: #0969da;
+      }
+      .badge.gray {
+        background: #f6f8fa;
+        color: #57606a;
+      }
+      .badge.purple {
+        background: #f3e8ff;
+        color: #7c3aed;
+      }
 
-        {/* SKELETON */}
-        {hasQuery && isSearching && (
-          <div className="results">
-            <SkeletonSection label="Selskaber" n={2} />
-            <SkeletonSection label="Kontrakter" n={2} />
-            <SkeletonSection label="Sager" n={1} />
-          </div>
-        )}
+      /* ── ICON COLORS ── */
+      .ic-sel {
+        background: #e8eaee;
+        color: #1f2328;
+      }
+      .ic-kon {
+        background: #ddf4ff;
+        color: #0969da;
+      }
+      .ic-sag {
+        background: #ffebe9;
+        color: #cf222e;
+      }
+      .ic-opg {
+        background: #fff8c5;
+        color: #9a6700;
+      }
+      .ic-per {
+        background: #dafbe1;
+        color: #1a7f37;
+      }
+      .ic-dok {
+        background: #f3e8ff;
+        color: #7c3aed;
+      }
 
-        {/* NO RESULTS */}
-        {hasQuery && !isSearching && !hasResults && (
-          <div style={{background:'white',border:'1px solid #e1e4e8',borderRadius:4,padding:'32px',textAlign:'center'}}>
-            <div style={{fontSize:13,fontWeight:500,color:'#6e7681',marginBottom:6}}>Ingen resultater for "{query}"</div>
-            <div style={{fontSize:12,color:'#8c959f'}}>Prøv et kortere søgeord, eller søg på CVR-nummer, sagsnummer eller filnavn.</div>
-          </div>
-        )}
+      /* ── RECENT / EMPTY STATES ── */
+      .recent-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .recent-sec {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .recent-h {
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #8c959f;
+        padding: 0 2px 4px;
+      }
+      .recent-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        border: 1px solid #e1e4e8;
+        border-radius: 4px;
+        background: white;
+        cursor: pointer;
+      }
+      .recent-row:hover {
+        border-color: #0969da;
+        background: #f8fbff;
+      }
+      .rr-icon {
+        font-size: 12px;
+        color: #8c959f;
+        flex-shrink: 0;
+        width: 16px;
+      }
+      .rr-txt {
+        font-size: 13px;
+        color: #1f2328;
+        flex: 1;
+      }
+      .rr-meta {
+        font-size: 11px;
+        color: #8c959f;
+      }
+      .qs-row {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .qs-btn {
+        font-size: 12px;
+        padding: 4px 10px;
+        border: 1px solid #d0d7de;
+        background: white;
+        color: #6e7681;
+        border-radius: 4px;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .qs-btn:hover {
+        background: #f6f8fa;
+        color: #0969da;
+        border-color: #0969da;
+      }
 
-        {/* RESULTS */}
-        {hasQuery && !isSearching && hasResults && (
-          <div className="results">
-            {Object.entries(grouped).map(([type, items]) => (
-              <div key={type} className="section">
-                <div className="sec-h">
-                  <span className="sec-t">{TYPE_LABELS[type]}</span>
-                  <span className="sec-m" onClick={() => doToast(`Vis alle ${TYPE_LABELS[type].toLowerCase()}`)}>
-                    {items.length} resultat{items.length!==1?'er':''} · Vis alle →
-                  </span>
-                </div>
-                {items.map(item => (
-                  <ResultRow key={item.id} item={item} query={query} onToast={doToast} />
-                ))}
+      /* ── SKELETON ── */
+      .skel {
+        background: linear-gradient(90deg, #f0f1f3 25%, #f6f7f9 50%, #f0f1f3 75%);
+        background-size: 200% 100%;
+        animation: shimmer 1.4s infinite;
+        border-radius: 3px;
+        display: inline-block;
+      }
+      @keyframes shimmer {
+        0% {
+          background-position: -200% 0;
+        }
+        100% {
+          background-position: 200% 0;
+        }
+      }
+
+      /* ── STATS ROW ── */
+      .stats-row {
+        display: flex;
+        gap: 16px;
+        font-size: 11px;
+        color: #6e7681;
+        padding: 0 2px;
+        flex-wrap: wrap;
+      }
+      .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-variant-numeric: tabular-nums;
+      }
+      .stat-num {
+        font-weight: 600;
+        color: #1f2328;
+      }
+
+      /* ── BOTTOM BAR ── */
+      .bot-bar {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        font-size: 11px;
+        color: #6e7681;
+      }
+      .kbd {
+        background: #f6f8fa;
+        border: 1px solid #d0d7de;
+        border-radius: 3px;
+        padding: 1px 5px;
+        font-family: 'SF Mono', 'Fira Mono', monospace;
+        font-size: 10px;
+        color: #1f2328;
+      }
+
+      /* ── TOAST ── */
+      .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1f2328;
+        color: white;
+        padding: 9px 16px;
+        border-radius: 4px;
+        font-size: 13px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
+        z-index: 9000;
+        white-space: nowrap;
+        animation: tin 0.15s ease;
+      }
+      @keyframes tin {
+        from {
+          opacity: 0;
+          transform: translateX(-50%) translateY(5px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script
+      src="https://unpkg.com/react@18.3.1/umd/react.development.js"
+      integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"
+      integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"
+      integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y"
+      crossorigin="anonymous"
+    ></script>
+    <script type="text/babel">
+      const { useState, useEffect, useRef } = React
+
+      /* ─── SEARCH INDEX ─── */
+      const INDEX = [
+        // Selskaber
+        {
+          type: 'selskab',
+          icon: 'SEL',
+          icCls: 'ic-sel',
+          id: 's1',
+          title: 'Tandlæge Østerbro ApS',
+          sub: 'CVR 12345678 · Østerbrogade 142 · Co-ejet 51%',
+          badges: [{ cls: 'red', l: '14d' }],
+          tags: 'tandlæge østerbro selskab',
+        },
+        {
+          type: 'selskab',
+          icon: 'SEL',
+          icCls: 'ic-sel',
+          id: 's2',
+          title: 'Klinik Aalborg',
+          sub: 'CVR 22334455 · Aalborg · Co-ejet 60%',
+          badges: [{ cls: 'red', l: 'Kritisk' }],
+          tags: 'aalborg klinik selskab',
+        },
+        {
+          type: 'selskab',
+          icon: 'SEL',
+          icCls: 'ic-sel',
+          id: 's3',
+          title: 'Klinik Aarhus C',
+          sub: 'CVR 33445566 · Aarhus · Co-ejet 55%',
+          badges: [{ cls: 'green', l: 'OK' }],
+          tags: 'aarhus klinik selskab',
+        },
+        {
+          type: 'selskab',
+          icon: 'SEL',
+          icCls: 'ic-sel',
+          id: 's4',
+          title: 'Klinik Esbjerg',
+          sub: 'CVR 55667788 · Esbjerg · Co-ejet 51%',
+          badges: [{ cls: 'green', l: 'OK' }],
+          tags: 'esbjerg klinik selskab',
+        },
+        // Kontrakter
+        {
+          type: 'kontrakt',
+          icon: 'KON',
+          icCls: 'ic-kon',
+          id: 'k1',
+          title: 'Lejekontrakt erhverv',
+          sub: 'Tandlæge Østerbro ApS · v3 · Aktiv',
+          badges: [{ cls: 'red', l: '14d' }],
+          tags: 'lejekontrakt erhverv kontrakt',
+        },
+        {
+          type: 'kontrakt',
+          icon: 'KON',
+          icCls: 'ic-kon',
+          id: 'k2',
+          title: 'Ejeraftale',
+          sub: 'Tandlæge Østerbro ApS + Lars Hansen · Aktiv',
+          badges: [{ cls: 'green', l: 'Aktiv' }],
+          tags: 'ejeraftale kontrakt',
+        },
+        {
+          type: 'kontrakt',
+          icon: 'KON',
+          icCls: 'ic-kon',
+          id: 'k3',
+          title: 'Ansættelse · Lars Hansen',
+          sub: 'Tandlæge Østerbro ApS · CEO-aftale',
+          badges: [{ cls: 'green', l: 'Aktiv' }],
+          tags: 'ansættelse lars hansen kontrakt',
+        },
+        {
+          type: 'kontrakt',
+          icon: 'KON',
+          icCls: 'ic-kon',
+          id: 'k4',
+          title: 'Lejekontrakt erhverv',
+          sub: 'Klinik Holstebro · v1 · Aktiv',
+          badges: [{ cls: 'amber', l: '28d' }],
+          tags: 'lejekontrakt holstebro kontrakt',
+        },
+        // Sager
+        {
+          type: 'sag',
+          icon: 'SAG',
+          icCls: 'ic-sag',
+          id: 'sg1',
+          title: '#2841 Patientklage',
+          sub: 'Klinik Aalborg · Åben · Philip B. · Frist 13. maj',
+          badges: [{ cls: 'red', l: 'Kritisk' }],
+          tags: 'patientklage aalborg sag 2841',
+        },
+        {
+          type: 'sag',
+          icon: 'SAG',
+          icCls: 'ic-sag',
+          id: 'sg2',
+          title: '#2840 Forhandling udl.',
+          sub: 'Tandlæge Østerbro ApS · Åben',
+          badges: [{ cls: 'blue', l: 'Åben' }],
+          tags: 'forhandling østerbro sag 2840',
+        },
+        {
+          type: 'sag',
+          icon: 'SAG',
+          icCls: 'ic-sag',
+          id: 'sg3',
+          title: '#2833 Juridisk tvist',
+          sub: 'Klinik Randers · Eskaleret · Philip B.',
+          badges: [{ cls: 'red', l: 'Eskaleret' }],
+          tags: 'juridisk tvist randers sag 2833',
+        },
+        // Opgaver
+        {
+          type: 'opgave',
+          icon: 'OPG',
+          icCls: 'ic-opg',
+          id: 'o1',
+          title: 'Forny lejekontrakt erhverv',
+          sub: 'Tandlæge Østerbro ApS · I gang · Frist 20. maj',
+          badges: [{ cls: 'amber', l: 'Høj' }],
+          tags: 'forny lejekontrakt opgave',
+        },
+        {
+          type: 'opgave',
+          icon: 'OPG',
+          icCls: 'ic-opg',
+          id: 'o2',
+          title: 'Kontakt patient og advokat',
+          sub: 'Klinik Aalborg · Åben · Frist 13. maj',
+          badges: [{ cls: 'red', l: 'Kritisk' }],
+          tags: 'patient advokat aalborg opgave',
+        },
+        {
+          type: 'opgave',
+          icon: 'OPG',
+          icCls: 'ic-opg',
+          id: 'o3',
+          title: 'Q1-finansrapport Esbjerg',
+          sub: 'Klinik Esbjerg · Afventer · Frist 16. maj',
+          badges: [{ cls: 'gray', l: 'Normal' }],
+          tags: 'finansrapport esbjerg opgave',
+        },
+        // Personer
+        {
+          type: 'person',
+          icon: 'PER',
+          icCls: 'ic-per',
+          id: 'p1',
+          title: 'Lars Hansen',
+          sub: 'CEO · Medejer · Tandlæge Østerbro ApS',
+          badges: [{ cls: 'blue', l: 'CEO' }],
+          tags: 'lars hansen person ceo',
+        },
+        {
+          type: 'person',
+          icon: 'PER',
+          icCls: 'ic-per',
+          id: 'p2',
+          title: 'Marie Kristensen',
+          sub: 'Bestyrelsesformand · Tandlæge Østerbro ApS',
+          badges: [{ cls: 'blue', l: 'Bestyrelse' }],
+          tags: 'marie kristensen person bestyrelse',
+        },
+        {
+          type: 'person',
+          icon: 'PER',
+          icCls: 'ic-per',
+          id: 'p3',
+          title: 'Peter Brandt',
+          sub: 'Tandlæge · Tandlæge Østerbro ApS · ans. 2019',
+          badges: [{ cls: 'gray', l: 'Tandlæge' }],
+          tags: 'peter brandt tandlæge person',
+        },
+        {
+          type: 'person',
+          icon: 'PER',
+          icCls: 'ic-per',
+          id: 'p4',
+          title: 'Tina Hansen',
+          sub: 'Tandlæge · Klinik Aalborg · ans. 2022',
+          badges: [{ cls: 'gray', l: 'Tandlæge' }],
+          tags: 'tina hansen tandlæge aalborg person',
+        },
+        // Dokumenter
+        {
+          type: 'dokument',
+          icon: 'DOK',
+          icCls: 'ic-dok',
+          id: 'd1',
+          title: 'lejekontrakt-2021.pdf',
+          sub: 'Tandlæge Østerbro ApS · 2,4 MB · AI ✓ 94%',
+          badges: [{ cls: 'green', l: 'AI ✓' }],
+          tags: 'lejekontrakt pdf dokument',
+        },
+        {
+          type: 'dokument',
+          icon: 'DOK',
+          icCls: 'ic-dok',
+          id: 'd2',
+          title: 'ejeraftale-final.pdf',
+          sub: 'Tandlæge Østerbro ApS · 1,1 MB · Review',
+          badges: [{ cls: 'amber', l: 'Review' }],
+          tags: 'ejeraftale pdf dokument',
+        },
+        {
+          type: 'dokument',
+          icon: 'DOK',
+          icCls: 'ic-dok',
+          id: 'd3',
+          title: 'patientklage-brev.pdf',
+          sub: 'Klinik Aalborg · 2,1 MB · AI ✓ 91%',
+          badges: [{ cls: 'green', l: 'AI ✓' }],
+          tags: 'patientklage pdf dokument aalborg',
+        },
+        {
+          type: 'dokument',
+          icon: 'DOK',
+          icCls: 'ic-dok',
+          id: 'd4',
+          title: 'ansaettelse-peter.docx',
+          sub: 'Tandlæge Østerbro ApS · 340 KB · AI ✓ 88%',
+          badges: [{ cls: 'green', l: 'AI ✓' }],
+          tags: 'ansættelse peter docx dokument',
+        },
+      ]
+
+      const RECENT = [
+        { q: 'Tandlæge Østerbro', tid: '2 min siden' },
+        { q: 'patientklage', tid: '14 min siden' },
+        { q: 'Lars Hansen', tid: '1t siden' },
+        { q: 'lejekontrakt', tid: '3t siden' },
+      ]
+
+      const QUICK_SEARCHES = [
+        'Udløber 30d',
+        'Åbne sager',
+        'Kritiske selskaber',
+        'Review pending',
+        'Min portefølje',
+      ]
+
+      const TYPES = [
+        { key: 'alle', label: 'Alle' },
+        { key: 'selskab', label: 'Selskaber' },
+        { key: 'kontrakt', label: 'Kontrakter' },
+        { key: 'sag', label: 'Sager' },
+        { key: 'opgave', label: 'Opgaver' },
+        { key: 'person', label: 'Personer' },
+        { key: 'dokument', label: 'Dokumenter' },
+      ]
+
+      const TYPE_LABELS = {
+        selskab: 'Selskaber',
+        kontrakt: 'Kontrakter',
+        sag: 'Sager',
+        opgave: 'Opgaver',
+        person: 'Personer',
+        dokument: 'Dokumenter',
+      }
+
+      function highlight(text, query) {
+        if (!query.trim()) return text
+        const parts = text.split(
+          new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')
+        )
+        return parts.map((p, i) =>
+          p.toLowerCase() === query.toLowerCase() ? <mark key={i}>{p}</mark> : p
+        )
+      }
+
+      /* ─── SIDEBAR ─── */
+      function Sidebar() {
+        return (
+          <aside className="sb">
+            <div className="sb-logo">▣ ChainHub</div>
+            <div className="sb-sec">
+              <div className="sb-lab">Overblik</div>
+              <div className="sb-item">
+                Forside <span className="sb-cnt a">5</span>
               </div>
-            ))}
-          </div>
-        )}
+              <div className="sb-item">
+                Kalender <span className="sb-cnt">12</span>
+              </div>
+              <div className="sb-item active">Søg</div>
+            </div>
+            <div className="sb-sec">
+              <div className="sb-lab">Portefølje</div>
+              <div className="sb-item">
+                Selskaber <span className="sb-cnt">32</span>
+              </div>
+              <div className="sb-item">
+                Kontrakter <span className="sb-cnt w">3</span>
+              </div>
+              <div className="sb-item">
+                Sager <span className="sb-cnt a">7</span>
+              </div>
+              <div className="sb-item">
+                Opgaver <span className="sb-cnt w">9</span>
+              </div>
+            </div>
+            <div className="sb-sec">
+              <div className="sb-lab">Ressourcer</div>
+              <div className="sb-item">
+                Dokumenter <span className="sb-cnt">412</span>
+              </div>
+              <div className="sb-item">
+                Personer <span className="sb-cnt">184</span>
+              </div>
+              <div className="sb-item">Indstillinger</div>
+            </div>
+          </aside>
+        )
+      }
 
-        {/* EMPTY STATE — recent searches + quick access */}
-        {!hasQuery && (
-          <div className="recent-wrap">
-            <div className="recent-sec">
-              <div className="recent-h">Seneste søgninger</div>
-              {RECENT.map((r,i) => (
-                <div key={i} className="recent-row" onClick={() => setQuery(r.q)}>
-                  <span className="rr-icon">↩</span>
-                  <span className="rr-txt">{r.q}</span>
-                  <span className="rr-meta">{r.tid}</span>
-                </div>
+      /* ─── RESULT ROW ─── */
+      function ResultRow({ item, query, onToast }) {
+        return (
+          <div className="r-row" onClick={() => onToast(`Åbner ${item.title}`)}>
+            <div className={`r-icon ${item.icCls}`}>{item.icon}</div>
+            <div className="r-main">
+              <div className="r-title">{highlight(item.title, query)}</div>
+              <div className="r-sub">{item.sub}</div>
+            </div>
+            <div className="r-right">
+              {item.badges.map((b, i) => (
+                <span key={i} className={`badge ${b.cls}`}>
+                  {b.l}
+                </span>
               ))}
-            </div>
-            <div className="recent-sec">
-              <div className="recent-h">Hurtig adgang</div>
-              <div className="qs-row">
-                {QUICK_SEARCHES.map((qs,i) => (
-                  <button key={i} className="qs-btn" onClick={() => setQuery(qs)}>{qs}</button>
-                ))}
-              </div>
-            </div>
-            <div className="recent-sec">
-              <div className="recent-h">Tip</div>
-              <div style={{fontSize:12,color:'#6e7681',lineHeight:1.5}}>
-                Søg på CVR-nummer, sagsnummer (fx #2841), filnavn eller personnavn.
-                Brug <span style={{fontFamily:'SF Mono,Fira Mono,monospace',fontSize:11,background:'#f6f8fa',border:'1px solid #d0d7de',borderRadius:3,padding:'1px 5px'}}>⌘K</span> fra enhver side for at åbne denne søgning.
-              </div>
+              <span className="chev">›</span>
             </div>
           </div>
-        )}
+        )
+      }
 
-        {/* Bottom bar */}
-        <div className="bot-bar">
-          <span>
-            {hasQuery && !isSearching
-              ? `${totalCount} resultater · søgte i ${INDEX.length} indexerede elementer`
-              : '412 dokumenter · 184 personer · 32 selskaber indexeret'}
-          </span>
-          <span>
-            <span className="kbd">⌘K</span> åbn søgning ·{' '}
-            <span className="kbd">Esc</span> ryd ·{' '}
-            <span className="kbd">↑↓</span> naviger
-          </span>
-        </div>
+      /* ─── SKELETON SECTION ─── */
+      function SkeletonSection({ label, n = 3 }) {
+        return (
+          <div className="section">
+            <div className="sec-h">
+              <span className="sec-t">{label}</span>
+              <span className="skel" style={{ width: 30, height: 10 }}></span>
+            </div>
+            {Array.from({ length: n }).map((_, i) => (
+              <div key={i} className="r-row" style={{ cursor: 'default' }}>
+                <span
+                  className="skel"
+                  style={{ width: 28, height: 28, borderRadius: 4, flexShrink: 0 }}
+                ></span>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 5 }}>
+                  <span className="skel" style={{ width: '60%', height: 12 }}></span>
+                  <span className="skel" style={{ width: '40%', height: 10 }}></span>
+                </div>
+                <span className="skel" style={{ width: 50, height: 18, borderRadius: 3 }}></span>
+              </div>
+            ))}
+          </div>
+        )
+      }
 
-      </main>
-      {toast && <div className="toast" key={toastKey}>✓ {toast}</div>}
-    </div>
-  );
-}
+      /* ─── MAIN ─── */
+      function SogPage() {
+        const [query, setQuery] = useState('')
+        const [activeType, setActiveType] = useState('alle')
+        const [isSearching, setIsSearching] = useState(false)
+        const [toast, setToast] = useState(null)
+        const [toastKey, setToastKey] = useState(0)
+        const inputRef = useRef(null)
+        const timerRef = useRef(null)
 
-ReactDOM.createRoot(document.getElementById('root')).render(<SogPage />);
-</script>
-</body>
+        function doToast(msg) {
+          setToast(msg)
+          setToastKey((k) => k + 1)
+          setTimeout(() => setToast(null), 2600)
+        }
+
+        // Simulate search delay
+        useEffect(() => {
+          if (!query.trim()) {
+            setIsSearching(false)
+            return
+          }
+          setIsSearching(true)
+          clearTimeout(timerRef.current)
+          timerRef.current = setTimeout(() => setIsSearching(false), 350)
+          return () => clearTimeout(timerRef.current)
+        }, [query])
+
+        // Focus input on mount + keyboard shortcut
+        useEffect(() => {
+          inputRef.current?.focus()
+          function onKey(e) {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+              e.preventDefault()
+              inputRef.current?.focus()
+              inputRef.current?.select()
+            }
+            if (e.key === 'Escape' && document.activeElement === inputRef.current) {
+              setQuery('')
+              inputRef.current?.blur()
+            }
+          }
+          document.addEventListener('keydown', onKey)
+          return () => document.removeEventListener('keydown', onKey)
+        }, [])
+
+        // Filter results
+        const q = query.trim().toLowerCase()
+        const allResults = q
+          ? INDEX.filter(
+              (item) =>
+                item.title.toLowerCase().includes(q) ||
+                item.sub.toLowerCase().includes(q) ||
+                item.tags.toLowerCase().includes(q)
+            )
+          : []
+
+        const filtered =
+          activeType === 'alle' ? allResults : allResults.filter((r) => r.type === activeType)
+
+        // Group by type
+        const grouped = filtered.reduce((acc, r) => {
+          ;(acc[r.type] = acc[r.type] || []).push(r)
+          return acc
+        }, {})
+
+        const totalCount = filtered.length
+        const hasResults = totalCount > 0
+        const hasQuery = q.length > 0
+
+        return (
+          <div className="layout">
+            <Sidebar />
+            <main className="main">
+              {/* Search input */}
+              <div className="search-wrap">
+                <span className="search-icon">⌕</span>
+                <input
+                  ref={inputRef}
+                  className="search-input"
+                  placeholder="Søg i hele porteføljen — selskaber, kontrakter, sager, personer, dokumenter..."
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+                {query && (
+                  <button
+                    className="search-clear"
+                    onClick={() => {
+                      setQuery('')
+                      inputRef.current?.focus()
+                    }}
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+
+              {/* Type filter pills */}
+              {hasQuery && (
+                <div className="filter-pills">
+                  <span className="fp-lab">Vis:</span>
+                  {TYPES.map((t) => (
+                    <button
+                      key={t.key}
+                      className={`fpill${activeType === t.key ? (t.key === 'alle' ? ' on all' : ' on') : ''}`}
+                      onClick={() => setActiveType(t.key)}
+                    >
+                      {t.label}
+                      {t.key !== 'alle' &&
+                        allResults.filter((r) => r.type === t.key).length > 0 && (
+                          <span style={{ marginLeft: 4, opacity: 0.7 }}>
+                            {allResults.filter((r) => r.type === t.key).length}
+                          </span>
+                        )}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Result count */}
+              {hasQuery && !isSearching && (
+                <div className="stats-row">
+                  <span className="stat-item">
+                    <span className="stat-num">{totalCount}</span> resultat
+                    {totalCount !== 1 ? 'er' : ''} for "{query}"
+                  </span>
+                  {Object.entries(grouped).map(([type, items]) => (
+                    <span key={type} className="stat-item">
+                      <span className="stat-num">{items.length}</span>{' '}
+                      {TYPE_LABELS[type].toLowerCase()}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* SKELETON */}
+              {hasQuery && isSearching && (
+                <div className="results">
+                  <SkeletonSection label="Selskaber" n={2} />
+                  <SkeletonSection label="Kontrakter" n={2} />
+                  <SkeletonSection label="Sager" n={1} />
+                </div>
+              )}
+
+              {/* NO RESULTS */}
+              {hasQuery && !isSearching && !hasResults && (
+                <div
+                  style={{
+                    background: 'white',
+                    border: '1px solid #e1e4e8',
+                    borderRadius: 4,
+                    padding: '32px',
+                    textAlign: 'center',
+                  }}
+                >
+                  <div style={{ fontSize: 13, fontWeight: 500, color: '#6e7681', marginBottom: 6 }}>
+                    Ingen resultater for "{query}"
+                  </div>
+                  <div style={{ fontSize: 12, color: '#8c959f' }}>
+                    Prøv et kortere søgeord, eller søg på CVR-nummer, sagsnummer eller filnavn.
+                  </div>
+                </div>
+              )}
+
+              {/* RESULTS */}
+              {hasQuery && !isSearching && hasResults && (
+                <div className="results">
+                  {Object.entries(grouped).map(([type, items]) => (
+                    <div key={type} className="section">
+                      <div className="sec-h">
+                        <span className="sec-t">{TYPE_LABELS[type]}</span>
+                        <span
+                          className="sec-m"
+                          onClick={() => doToast(`Vis alle ${TYPE_LABELS[type].toLowerCase()}`)}
+                        >
+                          {items.length} resultat{items.length !== 1 ? 'er' : ''} · Vis alle →
+                        </span>
+                      </div>
+                      {items.map((item) => (
+                        <ResultRow key={item.id} item={item} query={query} onToast={doToast} />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* EMPTY STATE — recent searches + quick access */}
+              {!hasQuery && (
+                <div className="recent-wrap">
+                  <div className="recent-sec">
+                    <div className="recent-h">Seneste søgninger</div>
+                    {RECENT.map((r, i) => (
+                      <div key={i} className="recent-row" onClick={() => setQuery(r.q)}>
+                        <span className="rr-icon">↩</span>
+                        <span className="rr-txt">{r.q}</span>
+                        <span className="rr-meta">{r.tid}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="recent-sec">
+                    <div className="recent-h">Hurtig adgang</div>
+                    <div className="qs-row">
+                      {QUICK_SEARCHES.map((qs, i) => (
+                        <button key={i} className="qs-btn" onClick={() => setQuery(qs)}>
+                          {qs}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="recent-sec">
+                    <div className="recent-h">Tip</div>
+                    <div style={{ fontSize: 12, color: '#6e7681', lineHeight: 1.5 }}>
+                      Søg på CVR-nummer, sagsnummer (fx #2841), filnavn eller personnavn. Brug{' '}
+                      <span
+                        style={{
+                          fontFamily: 'SF Mono,Fira Mono,monospace',
+                          fontSize: 11,
+                          background: '#f6f8fa',
+                          border: '1px solid #d0d7de',
+                          borderRadius: 3,
+                          padding: '1px 5px',
+                        }}
+                      >
+                        ⌘K
+                      </span>{' '}
+                      fra enhver side for at åbne denne søgning.
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Bottom bar */}
+              <div className="bot-bar">
+                <span>
+                  {hasQuery && !isSearching
+                    ? `${totalCount} resultater · søgte i ${INDEX.length} indexerede elementer`
+                    : '412 dokumenter · 184 personer · 32 selskaber indexeret'}
+                </span>
+                <span>
+                  <span className="kbd">⌘K</span> åbn søgning · <span className="kbd">Esc</span> ryd
+                  · <span className="kbd">↑↓</span> naviger
+                </span>
+              </div>
+            </main>
+            {toast && (
+              <div className="toast" key={toastKey}>
+                ✓ {toast}
+              </div>
+            )}
+          </div>
+        )
+      }
+
+      ReactDOM.createRoot(document.getElementById('root')).render(<SogPage />)
+    </script>
+  </body>
 </html>

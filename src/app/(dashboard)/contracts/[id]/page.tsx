@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { auth } from '@/lib/auth'
-import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
+import { redirect, notFound } from 'next/navigation'
 import { getContractDetailPageData, getContractDisplayName } from '@/actions/contracts'
 
 export async function generateMetadata({
@@ -12,19 +12,11 @@ export async function generateMetadata({
   const { id } = await params
   return { title: await getContractDisplayName(id) }
 }
-import {
-  getContractTypeLabel,
-  getContractStatusLabel,
-  getSensitivityLabel,
-  getChangeTypeLabel,
-  formatDate,
-  daysUntil,
-} from '@/lib/labels'
-import { UploadVersionTrigger } from '@/components/modals/b/UploadVersionTrigger'
-import { ContractStatusButton } from '@/components/contracts/ContractStatusButton'
-import { ContractEditTrigger } from '@/components/contracts/ContractEditTrigger'
-import { ContractVersionsPanel } from '@/components/contracts/ContractVersionsPanel'
 import { ContractBottomPanels } from '@/components/contracts/ContractBottomPanels'
+import { ContractEditTrigger } from '@/components/contracts/ContractEditTrigger'
+import { ContractStatusButton } from '@/components/contracts/ContractStatusButton'
+import { ContractVersionsPanel } from '@/components/contracts/ContractVersionsPanel'
+import { UploadVersionTrigger } from '@/components/modals/b/UploadVersionTrigger'
 import {
   Breadcrumb,
   PageHeader,
@@ -43,6 +35,14 @@ import {
   BottomBar,
   PanelEmpty,
 } from '@/components/ui/b'
+import {
+  getContractTypeLabel,
+  getContractStatusLabel,
+  getSensitivityLabel,
+  getChangeTypeLabel,
+  formatDate,
+  daysUntil,
+} from '@/lib/labels'
 
 // ────────────────────────────────────────────────────────────────────────────
 // /contracts/[id] — B-stil detail-side.

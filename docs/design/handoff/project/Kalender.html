@@ -1,428 +1,1064 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="da">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kalender — ChainHub</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #fafafa; color: #1f2328; font-size: 13px; -webkit-font-smoothing: antialiased; }
-    .layout { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kalender — ChainHub</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family:
+          'Inter',
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        background: #fafafa;
+        color: #1f2328;
+        font-size: 13px;
+        -webkit-font-smoothing: antialiased;
+      }
+      .layout {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        min-height: 100vh;
+      }
 
-    /* ── SIDEBAR ── */
-    .sb      { background: #f6f7f9; border-right: 1px solid #e1e4e8; padding: 14px 8px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
-    .sb-logo { font-weight: 600; padding: 4px 10px 16px; }
-    .sb-sec  { margin-bottom: 16px; }
-    .sb-lab  { font-size: 10px; color: #6e7681; padding: 0 10px 4px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
-    .sb-item { display: flex; justify-content: space-between; align-items: center; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 13px; }
-    .sb-item.active { background: #e8eaee; font-weight: 500; }
-    .sb-item:hover:not(.active) { background: #ecedf0; }
-    .sb-cnt  { font-size: 11px; color: #6e7681; font-variant-numeric: tabular-nums; }
-    .sb-cnt.a { color: #b91c1c; font-weight: 600; } .sb-cnt.w { color: #b54708; }
+      /* ── SIDEBAR ── */
+      .sb {
+        background: #f6f7f9;
+        border-right: 1px solid #e1e4e8;
+        padding: 14px 8px;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+      }
+      .sb-logo {
+        font-weight: 600;
+        padding: 4px 10px 16px;
+      }
+      .sb-sec {
+        margin-bottom: 16px;
+      }
+      .sb-lab {
+        font-size: 10px;
+        color: #6e7681;
+        padding: 0 10px 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+      }
+      .sb-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+      }
+      .sb-item.active {
+        background: #e8eaee;
+        font-weight: 500;
+      }
+      .sb-item:hover:not(.active) {
+        background: #ecedf0;
+      }
+      .sb-cnt {
+        font-size: 11px;
+        color: #6e7681;
+        font-variant-numeric: tabular-nums;
+      }
+      .sb-cnt.a {
+        color: #b91c1c;
+        font-weight: 600;
+      }
+      .sb-cnt.w {
+        color: #b54708;
+      }
 
-    /* ── MAIN ── */
-    .main { padding: 12px 24px 24px; display: flex; flex-direction: column; gap: 10px; min-width: 0; overflow: hidden; }
+      /* ── MAIN ── */
+      .main {
+        padding: 12px 24px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        min-width: 0;
+        overflow: hidden;
+      }
 
-    /* ── BREADCRUMB + HEADER ── */
-    .crumb  { font-size: 12px; color: #6e7681; padding: 4px 0 2px; }
-    .head   { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 1px solid #e1e4e8; }
-    .head-l { display: flex; align-items: center; gap: 10px; }
-    .head-title { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
-    .head-month { font-size: 14px; color: #6e7681; font-variant-numeric: tabular-nums; }
-    .nav-btn { font-size: 12px; padding: 4px 9px; border: 1px solid #d0d7de; background: white; color: #1f2328; border-radius: 4px; cursor: pointer; font-family: inherit; }
-    .nav-btn:hover { background: #f6f8fa; }
-    .btn    { font-size: 12px; padding: 5px 10px; border: 1px solid #d0d7de; background: white; color: #1f2328; border-radius: 4px; cursor: pointer; font-weight: 500; font-family: inherit; }
-    .btn:hover { background: #f6f8fa; }
-    .btn.primary { background: #0969da; color: white; border-color: #0969da; }
-    .btn.primary:hover { background: #0860c7; }
-    .head-r { display: flex; gap: 6px; align-items: center; }
-    .seg    { display: inline-flex; border: 1px solid #d0d7de; border-radius: 4px; overflow: hidden; }
-    .sopt   { padding: 5px 11px; font-size: 12px; color: #6e7681; background: white; border-right: 1px solid #d0d7de; cursor: pointer; font-family: inherit; }
-    .sopt:last-child { border-right: none; }
-    .sopt.on { background: #1f2328; color: white; }
-    .sopt:hover:not(.on) { background: #f6f8fa; }
+      /* ── BREADCRUMB + HEADER ── */
+      .crumb {
+        font-size: 12px;
+        color: #6e7681;
+        padding: 4px 0 2px;
+      }
+      .head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e1e4e8;
+      }
+      .head-l {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .head-title {
+        font-size: 18px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+      .head-month {
+        font-size: 14px;
+        color: #6e7681;
+        font-variant-numeric: tabular-nums;
+      }
+      .nav-btn {
+        font-size: 12px;
+        padding: 4px 9px;
+        border: 1px solid #d0d7de;
+        background: white;
+        color: #1f2328;
+        border-radius: 4px;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .nav-btn:hover {
+        background: #f6f8fa;
+      }
+      .btn {
+        font-size: 12px;
+        padding: 5px 10px;
+        border: 1px solid #d0d7de;
+        background: white;
+        color: #1f2328;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+        font-family: inherit;
+      }
+      .btn:hover {
+        background: #f6f8fa;
+      }
+      .btn.primary {
+        background: #0969da;
+        color: white;
+        border-color: #0969da;
+      }
+      .btn.primary:hover {
+        background: #0860c7;
+      }
+      .head-r {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+      .seg {
+        display: inline-flex;
+        border: 1px solid #d0d7de;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .sopt {
+        padding: 5px 11px;
+        font-size: 12px;
+        color: #6e7681;
+        background: white;
+        border-right: 1px solid #d0d7de;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .sopt:last-child {
+        border-right: none;
+      }
+      .sopt.on {
+        background: #1f2328;
+        color: white;
+      }
+      .sopt:hover:not(.on) {
+        background: #f6f8fa;
+      }
 
-    /* ── TWO-COL LAYOUT ── */
-    .cal-wrap { display: grid; grid-template-columns: 1fr 220px; gap: 12px; align-items: start; }
+      /* ── TWO-COL LAYOUT ── */
+      .cal-wrap {
+        display: grid;
+        grid-template-columns: 1fr 220px;
+        gap: 12px;
+        align-items: start;
+      }
 
-    /* ── CALENDAR GRID ── */
-    .cal-header { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 1px; }
-    .cal-hday   { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #6e7681; padding: 5px 0 5px 6px; }
-    .cal-hday.we { color: #b54708; }
+      /* ── CALENDAR GRID ── */
+      .cal-header {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        margin-bottom: 1px;
+      }
+      .cal-hday {
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #6e7681;
+        padding: 5px 0 5px 6px;
+      }
+      .cal-hday.we {
+        color: #b54708;
+      }
 
-    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #e1e4e8; border: 1px solid #e1e4e8; border-radius: 4px; overflow: hidden; }
-    .cal-day  { background: white; min-height: 82px; padding: 4px 5px; cursor: pointer; }
-    .cal-day:hover { background: #f6f7f9; }
-    .cal-day.other { background: #fbfbfc; }
-    .cal-day.we    { background: #fdfdfe; }
-    .cal-day.other.we { background: #fafafa; }
-    .day-num  { font-size: 12px; font-variant-numeric: tabular-nums; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 50%; margin-bottom: 3px; color: #1f2328; }
-    .cal-day.other .day-num { color: #8c959f; }
-    .cal-day.today .day-num { background: #0969da; color: white; font-weight: 600; }
-    .ev-pill  { font-size: 10px; padding: 1px 5px; border-radius: 2px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; display: block; line-height: 1.5; }
-    .ev-pill:hover { filter: brightness(0.93); }
-    .ev-more  { font-size: 10px; color: #6e7681; padding: 0 5px; cursor: pointer; }
-    .ev-more:hover { color: #0969da; }
+      .cal-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 1px;
+        background: #e1e4e8;
+        border: 1px solid #e1e4e8;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .cal-day {
+        background: white;
+        min-height: 82px;
+        padding: 4px 5px;
+        cursor: pointer;
+      }
+      .cal-day:hover {
+        background: #f6f7f9;
+      }
+      .cal-day.other {
+        background: #fbfbfc;
+      }
+      .cal-day.we {
+        background: #fdfdfe;
+      }
+      .cal-day.other.we {
+        background: #fafafa;
+      }
+      .day-num {
+        font-size: 12px;
+        font-variant-numeric: tabular-nums;
+        width: 22px;
+        height: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        margin-bottom: 3px;
+        color: #1f2328;
+      }
+      .cal-day.other .day-num {
+        color: #8c959f;
+      }
+      .cal-day.today .day-num {
+        background: #0969da;
+        color: white;
+        font-weight: 600;
+      }
+      .ev-pill {
+        font-size: 10px;
+        padding: 1px 5px;
+        border-radius: 2px;
+        margin-bottom: 2px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        cursor: pointer;
+        display: block;
+        line-height: 1.5;
+      }
+      .ev-pill:hover {
+        filter: brightness(0.93);
+      }
+      .ev-more {
+        font-size: 10px;
+        color: #6e7681;
+        padding: 0 5px;
+        cursor: pointer;
+      }
+      .ev-more:hover {
+        color: #0969da;
+      }
 
-    /* Event colors */
-    .ev-red    { background: #ffebe9; color: #cf222e; }
-    .ev-amber  { background: #fff8c5; color: #9a6700; }
-    .ev-blue   { background: #ddf4ff; color: #0969da; }
-    .ev-purple { background: #f3e8ff; color: #7c3aed; }
-    .ev-green  { background: #dafbe1; color: #1a7f37; }
-    .ev-gray   { background: #f6f8fa; color: #57606a; }
+      /* Event colors */
+      .ev-red {
+        background: #ffebe9;
+        color: #cf222e;
+      }
+      .ev-amber {
+        background: #fff8c5;
+        color: #9a6700;
+      }
+      .ev-blue {
+        background: #ddf4ff;
+        color: #0969da;
+      }
+      .ev-purple {
+        background: #f3e8ff;
+        color: #7c3aed;
+      }
+      .ev-green {
+        background: #dafbe1;
+        color: #1a7f37;
+      }
+      .ev-gray {
+        background: #f6f8fa;
+        color: #57606a;
+      }
 
-    /* ── AGENDA VIEW ── */
-    .agenda   { background: white; border: 1px solid #e1e4e8; border-radius: 4px; overflow: hidden; }
-    .ag-date  { padding: 7px 12px 5px; background: #fbfbfc; border-bottom: 1px solid #e1e4e8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #6e7681; }
-    .ag-date.today-d { color: #0969da; background: #f0f8ff; }
-    .ag-event { display: flex; align-items: center; gap: 8px; padding: 7px 12px; border-bottom: 1px solid #f0f1f3; cursor: pointer; }
-    .ag-event:hover { background: #f6f7f9; }
-    .ag-event:last-of-type { border-bottom: none; }
-    .ag-dot   { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-    .ag-info  { flex: 1; min-width: 0; }
-    .ag-title { font-size: 13px; font-weight: 500; color: #1f2328; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .ag-sub   { font-size: 11px; color: #6e7681; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .ag-time  { font-size: 11px; color: #6e7681; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+      /* ── AGENDA VIEW ── */
+      .agenda {
+        background: white;
+        border: 1px solid #e1e4e8;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .ag-date {
+        padding: 7px 12px 5px;
+        background: #fbfbfc;
+        border-bottom: 1px solid #e1e4e8;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #6e7681;
+      }
+      .ag-date.today-d {
+        color: #0969da;
+        background: #f0f8ff;
+      }
+      .ag-event {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 12px;
+        border-bottom: 1px solid #f0f1f3;
+        cursor: pointer;
+      }
+      .ag-event:hover {
+        background: #f6f7f9;
+      }
+      .ag-event:last-of-type {
+        border-bottom: none;
+      }
+      .ag-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .ag-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .ag-title {
+        font-size: 13px;
+        font-weight: 500;
+        color: #1f2328;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .ag-sub {
+        font-size: 11px;
+        color: #6e7681;
+        margin-top: 1px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .ag-time {
+        font-size: 11px;
+        color: #6e7681;
+        flex-shrink: 0;
+        font-variant-numeric: tabular-nums;
+      }
 
-    /* ── RIGHT PANEL ── */
-    .pnl      { background: white; border: 1px solid #e1e4e8; border-radius: 4px; overflow: hidden; }
-    .pnl-h    { padding: 6px 12px; border-bottom: 1px solid #e1e4e8; background: #fbfbfc; display: flex; justify-content: space-between; align-items: center; }
-    .pnl-t    { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #1f2328; }
-    .pnl-m    { font-size: 11px; color: #6e7681; }
-    .up-row   { display: flex; align-items: flex-start; gap: 7px; padding: 6px 12px; border-bottom: 1px solid #f0f1f3; cursor: pointer; }
-    .up-row:hover { background: #f6f7f9; }
-    .up-row:last-child { border-bottom: none; }
-    .up-dot   { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
-    .up-info  { flex: 1; min-width: 0; }
-    .up-title { font-size: 12px; font-weight: 500; color: #1f2328; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .up-sub   { font-size: 10px; color: #6e7681; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
-    .leg-row  { display: flex; align-items: center; gap: 8px; padding: 4px 12px; font-size: 11px; color: #6e7681; }
-    .leg-dot  { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+      /* ── RIGHT PANEL ── */
+      .pnl {
+        background: white;
+        border: 1px solid #e1e4e8;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .pnl-h {
+        padding: 6px 12px;
+        border-bottom: 1px solid #e1e4e8;
+        background: #fbfbfc;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .pnl-t {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #1f2328;
+      }
+      .pnl-m {
+        font-size: 11px;
+        color: #6e7681;
+      }
+      .up-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 7px;
+        padding: 6px 12px;
+        border-bottom: 1px solid #f0f1f3;
+        cursor: pointer;
+      }
+      .up-row:hover {
+        background: #f6f7f9;
+      }
+      .up-row:last-child {
+        border-bottom: none;
+      }
+      .up-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        margin-top: 3px;
+      }
+      .up-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .up-title {
+        font-size: 12px;
+        font-weight: 500;
+        color: #1f2328;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .up-sub {
+        font-size: 10px;
+        color: #6e7681;
+        margin-top: 1px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+      }
+      .leg-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 12px;
+        font-size: 11px;
+        color: #6e7681;
+      }
+      .leg-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 2px;
+        flex-shrink: 0;
+      }
 
-    /* ── BADGES ── */
-    .badge { font-size: 11px; font-weight: 500; padding: 1px 6px; border-radius: 3px; display: inline-block; }
-    .badge.red   { background: #ffebe9; color: #cf222e; }
-    .badge.amber { background: #fff8c5; color: #9a6700; }
+      /* ── BADGES ── */
+      .badge {
+        font-size: 11px;
+        font-weight: 500;
+        padding: 1px 6px;
+        border-radius: 3px;
+        display: inline-block;
+      }
+      .badge.red {
+        background: #ffebe9;
+        color: #cf222e;
+      }
+      .badge.amber {
+        background: #fff8c5;
+        color: #9a6700;
+      }
 
-    /* ── BOTTOM BAR ── */
-    .bot-bar { display: flex; justify-content: space-between; padding: 6px 0; font-size: 11px; color: #6e7681; }
-    .kbd { background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 3px; padding: 1px 5px; font-family: 'SF Mono','Fira Mono',monospace; font-size: 10px; color: #1f2328; }
+      /* ── BOTTOM BAR ── */
+      .bot-bar {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        font-size: 11px;
+        color: #6e7681;
+      }
+      .kbd {
+        background: #f6f8fa;
+        border: 1px solid #d0d7de;
+        border-radius: 3px;
+        padding: 1px 5px;
+        font-family: 'SF Mono', 'Fira Mono', monospace;
+        font-size: 10px;
+        color: #1f2328;
+      }
 
-    /* ── TOAST ── */
-    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1f2328; color: white; padding: 9px 16px; border-radius: 4px; font-size: 13px; box-shadow: 0 4px 16px rgba(0,0,0,0.22); z-index: 9000; white-space: nowrap; animation: tin .15s ease; }
-    @keyframes tin { from{opacity:0;transform:translateX(-50%) translateY(5px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
-  </style>
-</head>
-<body>
-<div id="root"></div>
-<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
-<script type="text/babel">
-const { useState } = React;
+      /* ── TOAST ── */
+      .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1f2328;
+        color: white;
+        padding: 9px 16px;
+        border-radius: 4px;
+        font-size: 13px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
+        z-index: 9000;
+        white-space: nowrap;
+        animation: tin 0.15s ease;
+      }
+      @keyframes tin {
+        from {
+          opacity: 0;
+          transform: translateX(-50%) translateY(5px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script
+      src="https://unpkg.com/react@18.3.1/umd/react.development.js"
+      integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"
+      integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"
+      integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y"
+      crossorigin="anonymous"
+    ></script>
+    <script type="text/babel">
+      const { useState } = React
 
-/* ─── DATA ─── */
-const EVENTS = [
-  { date:'2026-05-12', color:'blue',   dot:'#0969da', title:'Tilsynsbesøg',          selskab:'Klinik Odense',        time:'12:00', type:'Besøg' },
-  { date:'2026-05-13', color:'red',    dot:'#cf222e', title:'Sag #2841 frist',        selskab:'Klinik Aalborg',       time:'',      type:'Sagsfrist' },
-  { date:'2026-05-14', color:'amber',  dot:'#d4a72c', title:'Forhandle lejekontrakt', selskab:'Tandlæge Østerbro ApS',time:'',      type:'Opgave' },
-  { date:'2026-05-15', color:'purple', dot:'#7c3aed', title:'Bestyrelsesmøde',        selskab:'Klinik Aalborg',       time:'14:00', type:'Møde' },
-  { date:'2026-05-19', color:'amber',  dot:'#d4a72c', title:'Dagsorden B-møde Q2',    selskab:'Klinik Aarhus',        time:'',      type:'Opgave' },
-  { date:'2026-05-20', color:'amber',  dot:'#d4a72c', title:'Personaleklage svar',    selskab:'Klinik Aarhus',        time:'',      type:'Sagsfrist' },
-  { date:'2026-05-22', color:'blue',   dot:'#0969da', title:'Quality review',         selskab:'Tandlæge Østerbro ApS',time:'10:00', type:'Besøg' },
-  { date:'2026-05-24', color:'red',    dot:'#cf222e', title:'Lejekontrakt udløber',   selskab:'Tandlæge Østerbro ApS',time:'',      type:'Udløb' },
-  { date:'2026-05-25', color:'amber',  dot:'#d4a72c', title:'Upload Q4 regnskab',     selskab:'Klinik Randers',       time:'',      type:'Opgave' },
-  { date:'2026-05-28', color:'amber',  dot:'#d4a72c', title:'Ansætt. kontrakt udl.',  selskab:'Klinik Holstebro',     time:'',      type:'Udløb' },
-  { date:'2026-05-30', color:'gray',   dot:'#57606a', title:'Forsikring fornyelse',   selskab:'Klinik Odense',        time:'',      type:'Opgave' },
-  { date:'2026-06-12', color:'purple', dot:'#7c3aed', title:'Bestyrelsesmøde Q2',     selskab:'Klinik Aarhus',        time:'10:00', type:'Møde' },
-];
+      /* ─── DATA ─── */
+      const EVENTS = [
+        {
+          date: '2026-05-12',
+          color: 'blue',
+          dot: '#0969da',
+          title: 'Tilsynsbesøg',
+          selskab: 'Klinik Odense',
+          time: '12:00',
+          type: 'Besøg',
+        },
+        {
+          date: '2026-05-13',
+          color: 'red',
+          dot: '#cf222e',
+          title: 'Sag #2841 frist',
+          selskab: 'Klinik Aalborg',
+          time: '',
+          type: 'Sagsfrist',
+        },
+        {
+          date: '2026-05-14',
+          color: 'amber',
+          dot: '#d4a72c',
+          title: 'Forhandle lejekontrakt',
+          selskab: 'Tandlæge Østerbro ApS',
+          time: '',
+          type: 'Opgave',
+        },
+        {
+          date: '2026-05-15',
+          color: 'purple',
+          dot: '#7c3aed',
+          title: 'Bestyrelsesmøde',
+          selskab: 'Klinik Aalborg',
+          time: '14:00',
+          type: 'Møde',
+        },
+        {
+          date: '2026-05-19',
+          color: 'amber',
+          dot: '#d4a72c',
+          title: 'Dagsorden B-møde Q2',
+          selskab: 'Klinik Aarhus',
+          time: '',
+          type: 'Opgave',
+        },
+        {
+          date: '2026-05-20',
+          color: 'amber',
+          dot: '#d4a72c',
+          title: 'Personaleklage svar',
+          selskab: 'Klinik Aarhus',
+          time: '',
+          type: 'Sagsfrist',
+        },
+        {
+          date: '2026-05-22',
+          color: 'blue',
+          dot: '#0969da',
+          title: 'Quality review',
+          selskab: 'Tandlæge Østerbro ApS',
+          time: '10:00',
+          type: 'Besøg',
+        },
+        {
+          date: '2026-05-24',
+          color: 'red',
+          dot: '#cf222e',
+          title: 'Lejekontrakt udløber',
+          selskab: 'Tandlæge Østerbro ApS',
+          time: '',
+          type: 'Udløb',
+        },
+        {
+          date: '2026-05-25',
+          color: 'amber',
+          dot: '#d4a72c',
+          title: 'Upload Q4 regnskab',
+          selskab: 'Klinik Randers',
+          time: '',
+          type: 'Opgave',
+        },
+        {
+          date: '2026-05-28',
+          color: 'amber',
+          dot: '#d4a72c',
+          title: 'Ansætt. kontrakt udl.',
+          selskab: 'Klinik Holstebro',
+          time: '',
+          type: 'Udløb',
+        },
+        {
+          date: '2026-05-30',
+          color: 'gray',
+          dot: '#57606a',
+          title: 'Forsikring fornyelse',
+          selskab: 'Klinik Odense',
+          time: '',
+          type: 'Opgave',
+        },
+        {
+          date: '2026-06-12',
+          color: 'purple',
+          dot: '#7c3aed',
+          title: 'Bestyrelsesmøde Q2',
+          selskab: 'Klinik Aarhus',
+          time: '10:00',
+          type: 'Møde',
+        },
+      ]
 
-const TODAY = '2026-05-11';
-const MAAN  = ['Januar','Februar','Marts','April','Maj','Juni','Juli','August','September','Oktober','November','December'];
-const UGEDAGE     = ['Man','Tir','Ons','Tor','Fre','Lør','Søn'];
-const UGEDAGE_FULL = ['mandag','tirsdag','onsdag','torsdag','fredag','lørdag','søndag'];
+      const TODAY = '2026-05-11'
+      const MAAN = [
+        'Januar',
+        'Februar',
+        'Marts',
+        'April',
+        'Maj',
+        'Juni',
+        'Juli',
+        'August',
+        'September',
+        'Oktober',
+        'November',
+        'December',
+      ]
+      const UGEDAGE = ['Man', 'Tir', 'Ons', 'Tor', 'Fre', 'Lør', 'Søn']
+      const UGEDAGE_FULL = ['mandag', 'tirsdag', 'onsdag', 'torsdag', 'fredag', 'lørdag', 'søndag']
 
-function dateStr(y,m,d) { return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+      function dateStr(y, m, d) {
+        return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+      }
 
-function getCalDays(year, month) {
-  const firstDay = new Date(year, month, 1).getDay();
-  const offset   = firstDay === 0 ? 6 : firstDay - 1; // Mon=0
-  const inMonth  = new Date(year, month + 1, 0).getDate();
-  const inPrev   = new Date(year, month, 0).getDate();
-  const days = [];
-  for (let i = offset - 1; i >= 0; i--) {
-    const pm = month === 0 ? 11 : month - 1;
-    const py = month === 0 ? year - 1 : year;
-    days.push({ y: py, m: pm, d: inPrev - i, curr: false });
-  }
-  for (let d = 1; d <= inMonth; d++) days.push({ y: year, m: month, d, curr: true });
-  while (days.length < 35) {
-    const nm = month === 11 ? 0 : month + 1;
-    const ny = month === 11 ? year + 1 : year;
-    days.push({ y: ny, m: nm, d: days.length - offset - inMonth + 1, curr: false });
-  }
-  return days;
-}
+      function getCalDays(year, month) {
+        const firstDay = new Date(year, month, 1).getDay()
+        const offset = firstDay === 0 ? 6 : firstDay - 1 // Mon=0
+        const inMonth = new Date(year, month + 1, 0).getDate()
+        const inPrev = new Date(year, month, 0).getDate()
+        const days = []
+        for (let i = offset - 1; i >= 0; i--) {
+          const pm = month === 0 ? 11 : month - 1
+          const py = month === 0 ? year - 1 : year
+          days.push({ y: py, m: pm, d: inPrev - i, curr: false })
+        }
+        for (let d = 1; d <= inMonth; d++) days.push({ y: year, m: month, d, curr: true })
+        while (days.length < 35) {
+          const nm = month === 11 ? 0 : month + 1
+          const ny = month === 11 ? year + 1 : year
+          days.push({ y: ny, m: nm, d: days.length - offset - inMonth + 1, curr: false })
+        }
+        return days
+      }
 
-function eventsFor(y, m, d) {
-  const ds = dateStr(y, m, d);
-  return EVENTS.filter(e => e.date === ds);
-}
+      function eventsFor(y, m, d) {
+        const ds = dateStr(y, m, d)
+        return EVENTS.filter((e) => e.date === ds)
+      }
 
-function upcomingEvents(afterDate) {
-  return EVENTS.filter(e => e.date >= afterDate).sort((a,b) => a.date.localeCompare(b.date)).slice(0, 8);
-}
+      function upcomingEvents(afterDate) {
+        return EVENTS.filter((e) => e.date >= afterDate)
+          .sort((a, b) => a.date.localeCompare(b.date))
+          .slice(0, 8)
+      }
 
-function formatAgendaDate(dateString) {
-  const [y, m, d] = dateString.split('-').map(Number);
-  const dow = new Date(y, m-1, d).getDay();
-  const dowEU = dow === 0 ? 6 : dow - 1;
-  const cap = UGEDAGE_FULL[dowEU].charAt(0).toUpperCase() + UGEDAGE_FULL[dowEU].slice(1);
-  return `${cap} ${d}. ${MAAN[m-1].toLowerCase()}`;
-}
+      function formatAgendaDate(dateString) {
+        const [y, m, d] = dateString.split('-').map(Number)
+        const dow = new Date(y, m - 1, d).getDay()
+        const dowEU = dow === 0 ? 6 : dow - 1
+        const cap = UGEDAGE_FULL[dowEU].charAt(0).toUpperCase() + UGEDAGE_FULL[dowEU].slice(1)
+        return `${cap} ${d}. ${MAAN[m - 1].toLowerCase()}`
+      }
 
-/* ─── SIDEBAR ─── */
-function Sidebar() {
-  return (
-    <aside className="sb">
-      <div className="sb-logo">▣ ChainHub</div>
-      <div className="sb-sec">
-        <div className="sb-lab">Overblik</div>
-        <div className="sb-item">Forside <span className="sb-cnt a">5</span></div>
-        <div className="sb-item active">Kalender <span className="sb-cnt">12</span></div>
-        <div className="sb-item">Søg</div>
-      </div>
-      <div className="sb-sec">
-        <div className="sb-lab">Portefølje</div>
-        <div className="sb-item">Selskaber <span className="sb-cnt">32</span></div>
-        <div className="sb-item">Kontrakter <span className="sb-cnt w">3</span></div>
-        <div className="sb-item">Sager <span className="sb-cnt a">7</span></div>
-        <div className="sb-item">Opgaver <span className="sb-cnt w">9</span></div>
-      </div>
-      <div className="sb-sec">
-        <div className="sb-lab">Ressourcer</div>
-        <div className="sb-item">Dokumenter <span className="sb-cnt">412</span></div>
-        <div className="sb-item">Personer <span className="sb-cnt">184</span></div>
-        <div className="sb-item">Indstillinger</div>
-      </div>
-    </aside>
-  );
-}
+      /* ─── SIDEBAR ─── */
+      function Sidebar() {
+        return (
+          <aside className="sb">
+            <div className="sb-logo">▣ ChainHub</div>
+            <div className="sb-sec">
+              <div className="sb-lab">Overblik</div>
+              <div className="sb-item">
+                Forside <span className="sb-cnt a">5</span>
+              </div>
+              <div className="sb-item active">
+                Kalender <span className="sb-cnt">12</span>
+              </div>
+              <div className="sb-item">Søg</div>
+            </div>
+            <div className="sb-sec">
+              <div className="sb-lab">Portefølje</div>
+              <div className="sb-item">
+                Selskaber <span className="sb-cnt">32</span>
+              </div>
+              <div className="sb-item">
+                Kontrakter <span className="sb-cnt w">3</span>
+              </div>
+              <div className="sb-item">
+                Sager <span className="sb-cnt a">7</span>
+              </div>
+              <div className="sb-item">
+                Opgaver <span className="sb-cnt w">9</span>
+              </div>
+            </div>
+            <div className="sb-sec">
+              <div className="sb-lab">Ressourcer</div>
+              <div className="sb-item">
+                Dokumenter <span className="sb-cnt">412</span>
+              </div>
+              <div className="sb-item">
+                Personer <span className="sb-cnt">184</span>
+              </div>
+              <div className="sb-item">Indstillinger</div>
+            </div>
+          </aside>
+        )
+      }
 
-/* ─── MONTH VIEW ─── */
-function MonthView({ year, month, onToast }) {
-  const days = getCalDays(year, month);
-  return (
-    <div>
-      <div className="cal-header">
-        {UGEDAGE.map((d, i) => (
-          <div key={d} className={`cal-hday${i >= 5 ? ' we' : ''}`}>{d}</div>
-        ))}
-      </div>
-      <div className="cal-grid">
-        {days.map((day, i) => {
-          const evs   = eventsFor(day.y, day.m, day.d);
-          const ds    = dateStr(day.y, day.m, day.d);
-          const isToday = ds === TODAY;
-          const isWE  = (i % 7) >= 5;
-          const visible = evs.slice(0, 2);
-          const more  = evs.length - visible.length;
-          return (
-            <div key={i}
-              className={`cal-day${!day.curr ? ' other' : ''}${isWE ? ' we' : ''}${isToday ? ' today' : ''}`}
-              onClick={() => onToast(`${day.d}. ${MAAN[day.m]} ${day.y}`)}>
-              <div className="day-num">{day.d}</div>
-              {visible.map((ev, j) => (
-                <div key={j} className={`ev-pill ev-${ev.color}`}
-                  onClick={e => { e.stopPropagation(); onToast(`${ev.title} · ${ev.selskab}`); }}>
-                  {ev.time && <span style={{fontWeight:600}}>{ev.time} </span>}{ev.title}
+      /* ─── MONTH VIEW ─── */
+      function MonthView({ year, month, onToast }) {
+        const days = getCalDays(year, month)
+        return (
+          <div>
+            <div className="cal-header">
+              {UGEDAGE.map((d, i) => (
+                <div key={d} className={`cal-hday${i >= 5 ? ' we' : ''}`}>
+                  {d}
                 </div>
               ))}
-              {more > 0 && <div className="ev-more">+{more} mere</div>}
             </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-/* ─── AGENDA VIEW ─── */
-function AgendaView({ onToast }) {
-  const upcoming = EVENTS.filter(e => e.date >= TODAY).sort((a,b) => a.date.localeCompare(b.date));
-  const grouped  = upcoming.reduce((acc, ev) => {
-    (acc[ev.date] = acc[ev.date] || []).push(ev);
-    return acc;
-  }, {});
-
-  if (upcoming.length === 0) {
-    return (
-      <div className="agenda" style={{padding:'32px',textAlign:'center',color:'#8c959f',fontSize:13}}>
-        Ingen kommende begivenheder
-      </div>
-    );
-  }
-
-  return (
-    <div className="agenda">
-      {Object.entries(grouped).map(([date, evs]) => (
-        <div key={date}>
-          <div className={`ag-date${date === TODAY ? ' today-d' : ''}`}>
-            {formatAgendaDate(date)}{date === TODAY ? ' — i dag' : ''}
+            <div className="cal-grid">
+              {days.map((day, i) => {
+                const evs = eventsFor(day.y, day.m, day.d)
+                const ds = dateStr(day.y, day.m, day.d)
+                const isToday = ds === TODAY
+                const isWE = i % 7 >= 5
+                const visible = evs.slice(0, 2)
+                const more = evs.length - visible.length
+                return (
+                  <div
+                    key={i}
+                    className={`cal-day${!day.curr ? ' other' : ''}${isWE ? ' we' : ''}${isToday ? ' today' : ''}`}
+                    onClick={() => onToast(`${day.d}. ${MAAN[day.m]} ${day.y}`)}
+                  >
+                    <div className="day-num">{day.d}</div>
+                    {visible.map((ev, j) => (
+                      <div
+                        key={j}
+                        className={`ev-pill ev-${ev.color}`}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onToast(`${ev.title} · ${ev.selskab}`)
+                        }}
+                      >
+                        {ev.time && <span style={{ fontWeight: 600 }}>{ev.time} </span>}
+                        {ev.title}
+                      </div>
+                    ))}
+                    {more > 0 && <div className="ev-more">+{more} mere</div>}
+                  </div>
+                )
+              })}
+            </div>
           </div>
-          {evs.map((ev, i) => (
-            <div key={i} className="ag-event" onClick={() => onToast(`${ev.title} · ${ev.selskab}`)}>
-              <div className="ag-dot" style={{background: ev.dot}}></div>
-              <div className="ag-info">
-                <div className="ag-title">{ev.title}</div>
-                <div className="ag-sub">{ev.selskab} · {ev.type}</div>
-              </div>
-              {ev.time && <div className="ag-time">{ev.time}</div>}
-            </div>
-          ))}
-        </div>
-      ))}
-    </div>
-  );
-}
+        )
+      }
 
-/* ─── RIGHT: UPCOMING + LEGEND ─── */
-function RightPanel({ onToast }) {
-  const upcoming = upcomingEvents(TODAY);
-  return (
-    <div style={{display:'flex',flexDirection:'column',gap:10}}>
+      /* ─── AGENDA VIEW ─── */
+      function AgendaView({ onToast }) {
+        const upcoming = EVENTS.filter((e) => e.date >= TODAY).sort((a, b) =>
+          a.date.localeCompare(b.date)
+        )
+        const grouped = upcoming.reduce((acc, ev) => {
+          ;(acc[ev.date] = acc[ev.date] || []).push(ev)
+          return acc
+        }, {})
 
-      <div className="pnl">
-        <div className="pnl-h">
-          <span className="pnl-t">Kommende</span>
-          <span className="pnl-m">{upcoming.length} events</span>
-        </div>
-        {upcoming.map((ev, i) => {
-          const [y,m,d] = ev.date.split('-').map(Number);
-          const shortDate = `${d}. ${MAAN[m-1].slice(0,3).toLowerCase()}`;
+        if (upcoming.length === 0) {
           return (
-            <div key={i} className="up-row" onClick={() => onToast(`${ev.title} · ${ev.selskab}`)}>
-              <div className="up-dot" style={{background: ev.dot}}></div>
-              <div className="up-info">
-                <div className="up-title">{ev.title}</div>
-                <div className="up-sub">{ev.selskab}</div>
+            <div
+              className="agenda"
+              style={{ padding: '32px', textAlign: 'center', color: '#8c959f', fontSize: 13 }}
+            >
+              Ingen kommende begivenheder
+            </div>
+          )
+        }
+
+        return (
+          <div className="agenda">
+            {Object.entries(grouped).map(([date, evs]) => (
+              <div key={date}>
+                <div className={`ag-date${date === TODAY ? ' today-d' : ''}`}>
+                  {formatAgendaDate(date)}
+                  {date === TODAY ? ' — i dag' : ''}
+                </div>
+                {evs.map((ev, i) => (
+                  <div
+                    key={i}
+                    className="ag-event"
+                    onClick={() => onToast(`${ev.title} · ${ev.selskab}`)}
+                  >
+                    <div className="ag-dot" style={{ background: ev.dot }}></div>
+                    <div className="ag-info">
+                      <div className="ag-title">{ev.title}</div>
+                      <div className="ag-sub">
+                        {ev.selskab} · {ev.type}
+                      </div>
+                    </div>
+                    {ev.time && <div className="ag-time">{ev.time}</div>}
+                  </div>
+                ))}
               </div>
-              <div style={{fontSize:10,color:'#6e7681',flexShrink:0,fontVariantNumeric:'tabular-nums',textAlign:'right',lineHeight:1.4}}>
-                <div>{shortDate}</div>
-                {ev.time && <div>{ev.time}</div>}
+            ))}
+          </div>
+        )
+      }
+
+      /* ─── RIGHT: UPCOMING + LEGEND ─── */
+      function RightPanel({ onToast }) {
+        const upcoming = upcomingEvents(TODAY)
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div className="pnl">
+              <div className="pnl-h">
+                <span className="pnl-t">Kommende</span>
+                <span className="pnl-m">{upcoming.length} events</span>
+              </div>
+              {upcoming.map((ev, i) => {
+                const [y, m, d] = ev.date.split('-').map(Number)
+                const shortDate = `${d}. ${MAAN[m - 1].slice(0, 3).toLowerCase()}`
+                return (
+                  <div
+                    key={i}
+                    className="up-row"
+                    onClick={() => onToast(`${ev.title} · ${ev.selskab}`)}
+                  >
+                    <div className="up-dot" style={{ background: ev.dot }}></div>
+                    <div className="up-info">
+                      <div className="up-title">{ev.title}</div>
+                      <div className="up-sub">{ev.selskab}</div>
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 10,
+                        color: '#6e7681',
+                        flexShrink: 0,
+                        fontVariantNumeric: 'tabular-nums',
+                        textAlign: 'right',
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      <div>{shortDate}</div>
+                      {ev.time && <div>{ev.time}</div>}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            <div className="pnl">
+              <div className="pnl-h">
+                <span className="pnl-t">Legende</span>
+              </div>
+              <div style={{ padding: '6px 0' }}>
+                {[
+                  { color: '#0969da', label: 'Besøg / Tilsyn' },
+                  { color: '#7c3aed', label: 'Bestyrelsesmøde' },
+                  { color: '#cf222e', label: 'Sagsfrist' },
+                  { color: '#d4a72c', label: 'Opgave / Frist' },
+                  { color: '#cf222e', label: 'Kontraktudløb' },
+                  { color: '#57606a', label: 'Andet' },
+                ].map(({ color, label }) => (
+                  <div key={label} className="leg-row">
+                    <div className="leg-dot" style={{ background: color }}></div>
+                    <span>{label}</span>
+                  </div>
+                ))}
               </div>
             </div>
-          );
-        })}
-      </div>
-
-      <div className="pnl">
-        <div className="pnl-h"><span className="pnl-t">Legende</span></div>
-        <div style={{padding:'6px 0'}}>
-          {[
-            {color:'#0969da', label:'Besøg / Tilsyn'},
-            {color:'#7c3aed', label:'Bestyrelsesmøde'},
-            {color:'#cf222e', label:'Sagsfrist'},
-            {color:'#d4a72c', label:'Opgave / Frist'},
-            {color:'#cf222e', label:'Kontraktudløb'},
-            {color:'#57606a', label:'Andet'},
-          ].map(({color, label}) => (
-            <div key={label} className="leg-row">
-              <div className="leg-dot" style={{background:color}}></div>
-              <span>{label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-    </div>
-  );
-}
-
-/* ─── MAIN PAGE ─── */
-function KalenderPage() {
-  const [viewMode, setViewMode] = useState('måned');
-  const [curYear,  setCurYear]  = useState(2026);
-  const [curMonth, setCurMonth] = useState(4); // 0-indexed: May = 4
-  const [toast,    setToast]    = useState(null);
-  const [toastKey, setToastKey] = useState(0);
-
-  function doToast(msg) { setToast(msg); setToastKey(k=>k+1); setTimeout(()=>setToast(null),2600); }
-
-  function prevMonth() {
-    if (curMonth === 0) { setCurYear(y => y - 1); setCurMonth(11); }
-    else setCurMonth(m => m - 1);
-  }
-  function nextMonth() {
-    if (curMonth === 11) { setCurYear(y => y + 1); setCurMonth(0); }
-    else setCurMonth(m => m + 1);
-  }
-  function goToday() { setCurYear(2026); setCurMonth(4); }
-
-  const monthEvents = EVENTS.filter(e => {
-    const [y, m] = e.date.split('-').map(Number);
-    return y === curYear && m - 1 === curMonth;
-  });
-  const criticalThisMonth = monthEvents.filter(e => e.color === 'red').length;
-  const meetingsThisMonth = monthEvents.filter(e => e.type === 'Møde' || e.type === 'Besøg').length;
-
-  return (
-    <div className="layout">
-      <Sidebar />
-      <main className="main">
-        <div className="crumb">Kalender</div>
-
-        <div className="head">
-          <div className="head-l">
-            <span className="head-title">Kalender</span>
-            <button className="nav-btn" onClick={prevMonth}>←</button>
-            <span className="head-month">{MAAN[curMonth]} {curYear}</span>
-            <button className="nav-btn" onClick={nextMonth}>→</button>
-            <button className="btn" onClick={goToday}>I dag</button>
           </div>
-          <div className="head-r">
-            <span style={{fontSize:12,color:'#6e7681'}}>
-              {monthEvents.length} begivenheder
-              {criticalThisMonth > 0 && <span style={{color:'#b91c1c',fontWeight:500,marginLeft:8}}>{criticalThisMonth} kritiske</span>}
-            </span>
-            <div className="seg">
-              {[['måned','Måned'],['agenda','Agenda']].map(([v,l]) => (
-                <button key={v} className={`sopt${viewMode===v?' on':''}`} onClick={() => setViewMode(v)}>{l}</button>
-              ))}
-            </div>
-            <button className="btn primary" onClick={() => doToast('Planlæg besøg — åbner modal')}>+ Planlæg besøg</button>
-          </div>
-        </div>
+        )
+      }
 
-        {viewMode === 'måned' ? (
-          <div className="cal-wrap">
-            <MonthView year={curYear} month={curMonth} onToast={doToast} />
-            <RightPanel onToast={doToast} />
-          </div>
-        ) : (
-          <div className="cal-wrap">
-            <AgendaView onToast={doToast} />
-            <RightPanel onToast={doToast} />
-          </div>
-        )}
+      /* ─── MAIN PAGE ─── */
+      function KalenderPage() {
+        const [viewMode, setViewMode] = useState('måned')
+        const [curYear, setCurYear] = useState(2026)
+        const [curMonth, setCurMonth] = useState(4) // 0-indexed: May = 4
+        const [toast, setToast] = useState(null)
+        const [toastKey, setToastKey] = useState(0)
 
-        <div className="bot-bar">
-          <span>Kalender · {MAAN[curMonth]} {curYear} · {monthEvents.length} begivenheder</span>
-          <span>
-            <span className="kbd">⌘K</span> handling ·{' '}
-            <span className="kbd">←</span><span className="kbd">→</span> forrige/næste måned ·{' '}
-            <span className="kbd">T</span> i dag
-          </span>
-        </div>
-      </main>
-      {toast && <div className="toast" key={toastKey}>✓ {toast}</div>}
-    </div>
-  );
-}
+        function doToast(msg) {
+          setToast(msg)
+          setToastKey((k) => k + 1)
+          setTimeout(() => setToast(null), 2600)
+        }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<KalenderPage />);
-</script>
-</body>
+        function prevMonth() {
+          if (curMonth === 0) {
+            setCurYear((y) => y - 1)
+            setCurMonth(11)
+          } else setCurMonth((m) => m - 1)
+        }
+        function nextMonth() {
+          if (curMonth === 11) {
+            setCurYear((y) => y + 1)
+            setCurMonth(0)
+          } else setCurMonth((m) => m + 1)
+        }
+        function goToday() {
+          setCurYear(2026)
+          setCurMonth(4)
+        }
+
+        const monthEvents = EVENTS.filter((e) => {
+          const [y, m] = e.date.split('-').map(Number)
+          return y === curYear && m - 1 === curMonth
+        })
+        const criticalThisMonth = monthEvents.filter((e) => e.color === 'red').length
+        const meetingsThisMonth = monthEvents.filter(
+          (e) => e.type === 'Møde' || e.type === 'Besøg'
+        ).length
+
+        return (
+          <div className="layout">
+            <Sidebar />
+            <main className="main">
+              <div className="crumb">Kalender</div>
+
+              <div className="head">
+                <div className="head-l">
+                  <span className="head-title">Kalender</span>
+                  <button className="nav-btn" onClick={prevMonth}>
+                    ←
+                  </button>
+                  <span className="head-month">
+                    {MAAN[curMonth]} {curYear}
+                  </span>
+                  <button className="nav-btn" onClick={nextMonth}>
+                    →
+                  </button>
+                  <button className="btn" onClick={goToday}>
+                    I dag
+                  </button>
+                </div>
+                <div className="head-r">
+                  <span style={{ fontSize: 12, color: '#6e7681' }}>
+                    {monthEvents.length} begivenheder
+                    {criticalThisMonth > 0 && (
+                      <span style={{ color: '#b91c1c', fontWeight: 500, marginLeft: 8 }}>
+                        {criticalThisMonth} kritiske
+                      </span>
+                    )}
+                  </span>
+                  <div className="seg">
+                    {[
+                      ['måned', 'Måned'],
+                      ['agenda', 'Agenda'],
+                    ].map(([v, l]) => (
+                      <button
+                        key={v}
+                        className={`sopt${viewMode === v ? ' on' : ''}`}
+                        onClick={() => setViewMode(v)}
+                      >
+                        {l}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    className="btn primary"
+                    onClick={() => doToast('Planlæg besøg — åbner modal')}
+                  >
+                    + Planlæg besøg
+                  </button>
+                </div>
+              </div>
+
+              {viewMode === 'måned' ? (
+                <div className="cal-wrap">
+                  <MonthView year={curYear} month={curMonth} onToast={doToast} />
+                  <RightPanel onToast={doToast} />
+                </div>
+              ) : (
+                <div className="cal-wrap">
+                  <AgendaView onToast={doToast} />
+                  <RightPanel onToast={doToast} />
+                </div>
+              )}
+
+              <div className="bot-bar">
+                <span>
+                  Kalender · {MAAN[curMonth]} {curYear} · {monthEvents.length} begivenheder
+                </span>
+                <span>
+                  <span className="kbd">⌘K</span> handling · <span className="kbd">←</span>
+                  <span className="kbd">→</span> forrige/næste måned ·{' '}
+                  <span className="kbd">T</span> i dag
+                </span>
+              </div>
+            </main>
+            {toast && (
+              <div className="toast" key={toastKey}>
+                ✓ {toast}
+              </div>
+            )}
+          </div>
+        )
+      }
+
+      ReactDOM.createRoot(document.getElementById('root')).render(<KalenderPage />)
+    </script>
+  </body>
 </html>

@@ -1,6 +1,6 @@
 import { distance } from 'fastest-levenshtein'
-import type { ExtractedField, SourceVerificationResult } from './types'
 import { createLogger } from '@/lib/ai/logger'
+import type { ExtractedField, SourceVerificationResult } from './types'
 
 const log = createLogger('pass3-source-verification')
 

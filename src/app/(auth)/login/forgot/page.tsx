@@ -1,7 +1,7 @@
 'use client'
 
-import { requestPasswordReset } from '@/actions/auth'
 import { useState } from 'react'
+import { requestPasswordReset } from '@/actions/auth'
 
 // ────────────────────────────────────────────────────────────────────────────
 // /login/forgot — Anmod om password reset via email

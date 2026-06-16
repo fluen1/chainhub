@@ -45,8 +45,9 @@ vi.mock('@/lib/ai/logger', () => ({
   }),
 }))
 
+import type { ExtractionContent } from '@/lib/ai/content-loader'
+import { compareRuns, computeAllFieldConfidences } from '@/lib/ai/pipeline/confidence'
 import { runExtractionPipeline } from '@/lib/ai/pipeline/orchestrator'
-import { getSchema } from '@/lib/ai/schemas/registry'
 import { detectDocumentType } from '@/lib/ai/pipeline/pass1-type-detection'
 import { extractWithSchema } from '@/lib/ai/pipeline/pass2-schema-extraction'
 import {
@@ -55,9 +56,8 @@ import {
 } from '@/lib/ai/pipeline/pass3-source-verification'
 import { runSanityChecks } from '@/lib/ai/pipeline/pass4-sanity-checks'
 import { crossValidate } from '@/lib/ai/pipeline/pass5-cross-validation'
-import { compareRuns, computeAllFieldConfidences } from '@/lib/ai/pipeline/confidence'
-import type { ExtractionContent } from '@/lib/ai/content-loader'
 import type { PipelineOptions } from '@/lib/ai/pipeline/types'
+import { getSchema } from '@/lib/ai/schemas/registry'
 
 const mockSchema = {
   contract_type: 'EJERAFTALE',

@@ -1,29 +1,29 @@
 'use server'
 
+import type { CompanyPerson, Ownership, Person, Prisma } from '@prisma/client'
+import { revalidatePath } from 'next/cache'
+import { z } from 'zod'
+import { recordAuditEvent } from '@/lib/audit'
 import { auth } from '@/lib/auth'
+import { formatShortDate } from '@/lib/date-helpers'
 import { prisma } from '@/lib/db'
+import { getCompanyPersonRoleLabel, getInitials } from '@/lib/labels'
+import { captureError } from '@/lib/logger'
+import { parsePaginationParams } from '@/lib/pagination'
 import {
   canAccessCompany,
   canAccessModule,
   canAccessSensitivity,
   getAccessibleCompanies,
 } from '@/lib/permissions'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 import {
   createPersonSchema,
   updatePersonSchema,
   type CreatePersonInput,
   type UpdatePersonInput,
 } from '@/lib/validations/person'
-import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
-import type { CompanyPerson, Ownership, Person, Prisma } from '@prisma/client'
-import { captureError } from '@/lib/logger'
-import { recordAuditEvent } from '@/lib/audit'
-import { checkActionRateLimit } from '@/lib/rate-limit'
-import { z } from 'zod'
-import { parsePaginationParams } from '@/lib/pagination'
-import { getCompanyPersonRoleLabel, getInitials } from '@/lib/labels'
-import { formatShortDate } from '@/lib/date-helpers'
 
 // ────────────────────────────────────────────────────────────────────────────
 // getPersonsPaginated — server-side pagineret liste til /persons

@@ -1,7 +1,7 @@
 'use client'
 
-import { signIn } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { signIn } from 'next-auth/react'
 import { useRef, useState, Suspense } from 'react'
 import { acceptInvite } from '@/actions/users'
 

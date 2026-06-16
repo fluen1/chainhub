@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
-import { getStripe } from '@/lib/stripe'
-import { captureError } from '@/lib/logger'
-import { env } from '@/lib/env'
 import type Stripe from 'stripe'
+import { prisma } from '@/lib/db'
+import { env } from '@/lib/env'
+import { captureError } from '@/lib/logger'
+import { getStripe } from '@/lib/stripe'
 
 // ────────────────────────────────────────────────────────────────────────────
 // Hjælper — udtræk kunde-ID uanset om Stripe returnerer string eller objekt

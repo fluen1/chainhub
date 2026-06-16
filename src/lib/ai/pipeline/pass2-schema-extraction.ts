@@ -1,8 +1,8 @@
 import type { ClaudeClient, ClaudeContentBlock } from '@/lib/ai/client/types'
 import type { ExtractionContent } from '@/lib/ai/content-loader'
+import { createLogger } from '@/lib/ai/logger'
 import type { ContractSchema } from '@/lib/ai/schemas/types'
 import type { SchemaExtractionResult, ExtractedField } from './types'
-import { createLogger } from '@/lib/ai/logger'
 
 const log = createLogger('pass2-schema-extraction')
 

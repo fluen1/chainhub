@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
-import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { canAccessModule } from '@/lib/permissions'
 import { CreateCompanyForm } from '@/components/companies/CreateCompanyForm'
+import { auth } from '@/lib/auth'
+import { canAccessModule } from '@/lib/permissions'
 
 export const metadata: Metadata = { title: 'Nyt selskab' }
 

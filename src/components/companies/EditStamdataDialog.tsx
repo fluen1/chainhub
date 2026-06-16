@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import { BModal, BTextField, BTextareaField, BFieldWrap, BFieldRow } from '@/components/ui/b'
 import { updateCompanyStamdata } from '@/actions/companies'
+import { BModal, BTextField, BTextareaField, BFieldWrap, BFieldRow } from '@/components/ui/b'
 
 // ────────────────────────────────────────────────────────────────────────────
 // EditStamdataDialog — BModal til redigering af selskabets stamdata.

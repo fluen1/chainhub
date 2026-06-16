@@ -28,10 +28,10 @@ vi.mock('@/lib/rate-limit', () => ({
 vi.mock('@/lib/audit', () => ({ recordAuditEvent: vi.fn() }))
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
 
+import { addOwner, updateOwnership, endOwnership } from '@/actions/ownership'
 import { auth } from '@/lib/auth'
 import { canAccessCompany, canAccessSensitivity } from '@/lib/permissions'
 import { checkActionRateLimit } from '@/lib/rate-limit'
-import { addOwner, updateOwnership, endOwnership } from '@/actions/ownership'
 
 const mockSession = {
   user: { id: 'u1', organizationId: 'org-1', email: 'test@test.dk', name: 'Test' },

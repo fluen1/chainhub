@@ -1,9 +1,8 @@
 'use client'
 
-import { useMemo, useState, useTransition } from 'react'
-import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { Mail, Phone, Building2 } from 'lucide-react'
-import { ExportButton } from '@/components/ui/export-button'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
+import { useMemo, useState, useTransition } from 'react'
 import {
   Breadcrumb,
   PageHeader,
@@ -25,6 +24,7 @@ import {
   BottomBar,
   Panel,
 } from '@/components/ui/b'
+import { ExportButton } from '@/components/ui/export-button'
 
 // ────────────────────────────────────────────────────────────────────────────
 // /persons — klient-komponent.

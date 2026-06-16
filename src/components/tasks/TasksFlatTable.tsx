@@ -1,16 +1,8 @@
 'use client'
 
 import { memo } from 'react'
-import {
-  TableWrap,
-  Th,
-  Tr,
-  Td,
-  TableEmpty,
-  Badge,
-  type BadgeTone,
-} from '@/components/ui/b'
 import type { TaskRow } from '@/app/(dashboard)/tasks/tasks-list-b'
+import { TableWrap, Th, Tr, Td, TableEmpty, Badge, type BadgeTone } from '@/components/ui/b'
 
 // ────────────────────────────────────────────────────────────────────────────
 // Flat tabel + grupperet tabel for opgaver

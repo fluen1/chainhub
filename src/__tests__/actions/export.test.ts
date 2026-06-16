@@ -28,11 +28,11 @@ vi.mock('@/lib/export/entities', () => ({
   }),
 }))
 
-import { auth } from '@/lib/auth'
-import { canAccessModule } from '@/lib/permissions'
-import { recordAuditEvent } from '@/lib/audit'
 import { prepareExport, getExportPreview } from '@/actions/export'
+import { recordAuditEvent } from '@/lib/audit'
+import { auth } from '@/lib/auth'
 import { fetchEntityForExport } from '@/lib/export/entities'
+import { canAccessModule } from '@/lib/permissions'
 
 function makeSession() {
   return {
