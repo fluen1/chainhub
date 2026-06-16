@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db'
+import { env } from '@/lib/env'
 
 export type AIFeature =
   | 'extraction'
@@ -11,7 +12,7 @@ export type AIFeature =
   | 'assistant'
 
 export async function isAIEnabled(organizationId: string, feature: AIFeature): Promise<boolean> {
-  if (process.env.AI_EXTRACTION_ENABLED !== 'true') {
+  if (env.AI_EXTRACTION_ENABLED !== 'true') {
     return false
   }
 

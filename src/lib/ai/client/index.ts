@@ -1,3 +1,4 @@
+import { env } from '@/lib/env'
 import { OpenAIDirectClient } from './openai-direct'
 import type { ClaudeClient } from './types'
 
@@ -5,10 +6,10 @@ export type { ClaudeClient, ClaudeRequest, ClaudeResponse, ClaudeModel, ClaudeTo
 export { ClaudeClientError, computeCostUsd, MODEL_COSTS } from './types'
 
 export function createClaudeClient(): ClaudeClient {
-  const apiKey = process.env.OPENAI_API_KEY
+  const apiKey = env.OPENAI_API_KEY
   if (!apiKey) {
     throw new Error('OPENAI_API_KEY environment variable is required')
   }
-  const baseURL = process.env.OPENAI_BASE_URL || undefined
+  const baseURL = env.OPENAI_BASE_URL ?? undefined
   return new OpenAIDirectClient(apiKey, baseURL)
 }

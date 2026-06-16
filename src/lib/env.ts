@@ -6,7 +6,11 @@ const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build'
 const isProd = process.env.NODE_ENV === 'production' && !isBuildPhase
 
 const requiredInProd = (msg: string) =>
-  isProd ? z.string().min(1, `${msg} — påkrævet i production`) : z.string().optional()
+  isProd
+    ? z
+        .string({ error: () => `${msg} — påkrævet i production` })
+        .min(1, `${msg} — påkrævet i production`)
+    : z.string().optional()
 
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1, 'DATABASE_URL mangler — sæt den i .env.local'),
@@ -17,7 +21,9 @@ const envSchema = z.object({
     : z.string().url('NEXTAUTH_URL skal være en gyldig URL').optional(),
   NEXT_PUBLIC_APP_URL: z.string().url().optional(),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  OPENAI_API_KEY: z.string().optional(),
+  OPENAI_API_KEY: requiredInProd('OPENAI_API_KEY'),
+  AI_EXTRACTION_ENABLED: z.enum(['true', 'false']).optional().default('false'),
+  OPENAI_BASE_URL: z.string().url().optional(),
   RESEND_API_KEY: z.string().optional(),
   CONTACT_TO_EMAIL: z.string().optional(),
   STORAGE_PROVIDER: z.enum(['local', 'r2']).optional().default('local'),
