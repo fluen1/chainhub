@@ -1,7 +1,8 @@
+import type { JWT } from '@auth/core/jwt'
 import { PrismaAdapter } from '@auth/prisma-adapter'
 import bcrypt from 'bcryptjs'
 import NextAuth, { type DefaultSession } from 'next-auth'
-import type { Session } from 'next-auth'
+import type { Account, Session } from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 import Google from 'next-auth/providers/google'
 import { isLoginRateLimited, recordFailedLoginAttempt } from '@/lib/auth/login-rate-limit'
@@ -23,9 +24,63 @@ declare module 'next-auth' {
 
 declare module '@auth/core/jwt' {
   interface JWT {
-    id: string
-    organizationId: string
+    id?: string
+    organizationId?: string
   }
+}
+
+interface JwtCallbackParams {
+  token: JWT
+  user?: { id?: string; organizationId?: string } | undefined
+  account?: Account | null
+}
+
+/**
+ * jwt-callback — navngiven funktion for testbarhed.
+ *
+ * Kører på HVERT request (ikke kun ved login):
+ * 1. Ved første login (user er sat): sæt token.id + token.organizationId fra login-data.
+ * 2. På alle efterfølgende requests: tjek DB at brugeren stadig er aktiv og ikke slettet.
+ *    Hvis deaktiveret/slettet → fjern id/organizationId så session-callbacken og auth()-guards fejler.
+ *
+ * DB-last: ét indekseret PK-lookup (user.findUnique) pr. request med eksisterende session.
+ */
+export async function jwtCallback({ token, user, account }: JwtCallbackParams): Promise<JWT> {
+  // Fase 1: første login — sæt identitet fra login-provider
+  if (user) {
+    if (account?.provider === 'credentials') {
+      token.id = user.id!
+      token.organizationId = (user as { organizationId?: string }).organizationId
+    } else {
+      const dbUser = await prisma.user.findFirst({
+        where: {
+          email: { equals: token.email ?? '', mode: 'insensitive' },
+          deleted_at: null,
+          active: true,
+        },
+        select: { id: true, organization_id: true },
+      })
+      if (dbUser) {
+        token.id = dbUser.id
+        token.organizationId = dbUser.organization_id
+      }
+    }
+  }
+
+  // Fase 2: revaliderér på hvert request — deaktiverede/slettede brugere mister adgang straks.
+  if (token.id) {
+    const dbUser = await prisma.user.findUnique({
+      where: { id: token.id },
+      select: { active: true, deleted_at: true },
+    })
+    if (!dbUser || !dbUser.active || dbUser.deleted_at) {
+      // Invalidér token — session-callback og auth()-guards fejler herefter.
+      delete (token as Record<string, unknown>).id
+      delete (token as Record<string, unknown>).organizationId
+    }
+  }
+
+  return token
 }
 
 const {
@@ -190,31 +245,10 @@ const {
 
       return '/signup/organization'
     },
-    async jwt({ token, user, account }) {
-      if (user) {
-        if (account?.provider === 'credentials') {
-          token.id = user.id!
-          token.organizationId = user.organizationId
-        } else {
-          const dbUser = await prisma.user.findFirst({
-            where: {
-              email: { equals: token.email ?? '', mode: 'insensitive' },
-              deleted_at: null,
-              active: true,
-            },
-            select: { id: true, organization_id: true },
-          })
-          if (dbUser) {
-            token.id = dbUser.id
-            token.organizationId = dbUser.organization_id
-          }
-        }
-      }
-      return token
-    },
+    jwt: jwtCallback,
     async session({ session, token }) {
-      session.user.id = token.id
-      session.user.organizationId = token.organizationId
+      session.user.id = token.id ?? ''
+      session.user.organizationId = token.organizationId ?? ''
       return session
     },
   },
