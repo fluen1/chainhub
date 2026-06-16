@@ -9,6 +9,8 @@ vi.mock('@/lib/auth', () => ({
 vi.mock('@/lib/db', () => ({
   prisma: {
     document: {
+      findMany: vi.fn().mockResolvedValue([]),
+      count: vi.fn().mockResolvedValue(0),
       findFirst: vi.fn(),
       update: vi.fn().mockResolvedValue({}),
     },
@@ -17,13 +19,42 @@ vi.mock('@/lib/db', () => ({
 
 vi.mock('@/lib/permissions', () => ({
   canAccessCompany: vi.fn().mockResolvedValue(true),
+  canAccessModule: vi.fn().mockResolvedValue(true),
+  canAccessSensitivity: vi.fn().mockResolvedValue(true),
+  getAccessibleCompanies: vi.fn().mockResolvedValue(['co-1']),
+  getAllowedSensitivityLevels: vi.fn().mockResolvedValue(['PUBLIC', 'STANDARD', 'INTERN']),
+}))
+
+vi.mock('@/lib/rate-limit', () => ({
+  checkActionRateLimit: vi.fn().mockResolvedValue({ limited: false }),
 }))
 
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
 
-import { deleteDocument } from '@/actions/documents'
+import { deleteDocument, getDocumentsPageData } from '@/actions/documents'
 
 const UUID = 'a1b2c3d4-e5f6-4789-9abc-def012345678'
+
+describe('getDocumentsPageData', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('getDocumentsPageData begrænser WHERE til allowedSensitivity', async () => {
+    const perms = await import('@/lib/permissions')
+    const { prisma: mockPrisma } = await import('@/lib/db')
+    vi.mocked(perms.getAllowedSensitivityLevels).mockResolvedValue(['PUBLIC', 'STANDARD', 'INTERN'])
+    vi.mocked(perms.getAccessibleCompanies).mockResolvedValue(['co-1'])
+    vi.mocked(mockPrisma.document.findMany).mockResolvedValue([])
+    vi.mocked(mockPrisma.document.count).mockResolvedValue(0)
+
+    await getDocumentsPageData(1, 25)
+
+    const where = vi.mocked(mockPrisma.document.findMany).mock.calls[0]?.[0]?.where as Record<
+      string,
+      unknown
+    >
+    expect(where.sensitivity).toEqual({ in: ['PUBLIC', 'STANDARD', 'INTERN'] })
+  })
+})
 
 describe('deleteDocument', () => {
   beforeEach(() => vi.clearAllMocks())
@@ -64,5 +95,22 @@ describe('deleteDocument', () => {
     const result = await deleteDocument(UUID)
     expect('data' in result).toBe(true)
     expect(perms.canAccessCompany).not.toHaveBeenCalled()
+  })
+
+  it('deleteDocument afviser når brugeren ikke kan se dokumentets sensitivity', async () => {
+    const { prisma } = await import('@/lib/db')
+    vi.mocked(prisma.document.findFirst).mockImplementation((() =>
+      Promise.resolve({
+        id: UUID,
+        company_id: null,
+        sensitivity: 'STRENGT_FORTROLIG',
+      })) as never)
+    const perms = await import('@/lib/permissions')
+    vi.mocked(perms.canAccessSensitivity).mockResolvedValueOnce(false)
+
+    const res = await deleteDocument(UUID)
+
+    expect(res).toEqual({ error: 'Ingen adgang til dette dokument' })
+    expect(prisma.document.update).not.toHaveBeenCalled()
   })
 })

@@ -5,7 +5,13 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { canAccessCompany, canAccessModule, getAccessibleCompanies } from '@/lib/permissions'
+import {
+  canAccessCompany,
+  canAccessModule,
+  canAccessSensitivity,
+  getAccessibleCompanies,
+  getAllowedSensitivityLevels,
+} from '@/lib/permissions'
 import { checkActionRateLimit } from '@/lib/rate-limit'
 import { submitForReviewSchema, reviewDocumentSchema } from '@/lib/validations/document-review'
 import type { ActionResult } from '@/types/actions'
@@ -129,6 +135,7 @@ export async function getDocumentsPageData(page = 1, pageSize = 25): Promise<Doc
   if (!hasAccess) return { rows: [], totalCount: 0, page: 1, pageSize }
 
   const companyIds = await getAccessibleCompanies(session.user.id, orgId)
+  const allowedLevels = await getAllowedSensitivityLevels(session.user.id, orgId)
 
   const safePage = Math.max(1, page)
   const safePageSize = Math.min(Math.max(1, pageSize), 100)
@@ -137,6 +144,7 @@ export async function getDocumentsPageData(page = 1, pageSize = 25): Promise<Doc
   const where = {
     organization_id: orgId,
     deleted_at: null,
+    sensitivity: { in: allowedLevels },
     // Vis kun dokumenter tilknyttet selskaber brugeren har adgang til,
     // eller dokumenter uden selskabstilknytning (org-niveau dokumenter).
     OR: [{ company_id: null }, { company_id: { in: companyIds } }],
@@ -268,6 +276,9 @@ export async function getDocumentReviewPageData(
     if (!hasAccess) return null
   }
 
+  const canSens = await canAccessSensitivity(session.user.id, doc.sensitivity, orgId)
+  if (!canSens) return null
+
   const reviewQueueDocs = await prisma.document.findMany({
     where: {
       organization_id: orgId,
@@ -320,7 +331,7 @@ export async function deleteDocument(documentId: string): Promise<ActionResult<v
       organization_id: session.user.organizationId,
       deleted_at: null,
     },
-    select: { id: true, company_id: true },
+    select: { id: true, company_id: true, sensitivity: true },
   })
   if (!doc) return { error: 'Dokument ikke fundet' }
 
@@ -332,6 +343,13 @@ export async function deleteDocument(documentId: string): Promise<ActionResult<v
     )
     if (!hasAccess) return { error: 'Ingen adgang til dette dokument' }
   }
+
+  const canSens = await canAccessSensitivity(
+    session.user.id,
+    doc.sensitivity,
+    session.user.organizationId
+  )
+  if (!canSens) return { error: 'Ingen adgang til dette dokument' }
 
   const rl = await checkActionRateLimit(session.user.organizationId)
   if (rl.limited) return { error: 'For mange handlinger. Vent venligst.' }
@@ -359,7 +377,7 @@ export async function submitDocumentForReview(input: unknown): Promise<ActionRes
       organization_id: session.user.organizationId,
       deleted_at: null,
     },
-    select: { id: true, status: true, company_id: true },
+    select: { id: true, status: true, company_id: true, sensitivity: true },
   })
   if (!doc) return { error: 'Dokument ikke fundet' }
   if (doc.status !== 'KLADDE') return { error: 'Kun kladde-dokumenter kan sendes til godkendelse' }
@@ -372,6 +390,13 @@ export async function submitDocumentForReview(input: unknown): Promise<ActionRes
     )
     if (!hasAccess) return { error: 'Ingen adgang til dette dokument' }
   }
+
+  const canSens = await canAccessSensitivity(
+    session.user.id,
+    doc.sensitivity,
+    session.user.organizationId
+  )
+  if (!canSens) return { error: 'Ingen adgang til dette dokument' }
 
   await prisma.document.update({
     where: { id: parsed.data.documentId },
@@ -395,7 +420,7 @@ export async function reviewDocument(input: unknown): Promise<ActionResult<void>
       organization_id: session.user.organizationId,
       deleted_at: null,
     },
-    select: { id: true, status: true, company_id: true },
+    select: { id: true, status: true, company_id: true, sensitivity: true },
   })
   if (!doc) return { error: 'Dokument ikke fundet' }
   if (doc.status !== 'TIL_REVIEW') return { error: 'Kun dokumenter til godkendelse kan reviewes' }
@@ -408,6 +433,13 @@ export async function reviewDocument(input: unknown): Promise<ActionResult<void>
     )
     if (!hasAccess) return { error: 'Ingen adgang til dette dokument' }
   }
+
+  const canSens = await canAccessSensitivity(
+    session.user.id,
+    doc.sensitivity,
+    session.user.organizationId
+  )
+  if (!canSens) return { error: 'Ingen adgang til dette dokument' }
 
   await prisma.document.update({
     where: { id: parsed.data.documentId },
