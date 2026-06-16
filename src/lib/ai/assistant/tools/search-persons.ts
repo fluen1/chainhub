@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db'
+import { getAccessibleCompanies } from '@/lib/permissions'
 import type { ToolDefinition, ToolContext, ToolResult } from './types'
 
 export const searchPersonsTool: ToolDefinition = {
@@ -17,22 +18,38 @@ export const searchPersonsTool: ToolDefinition = {
   },
   requiresConfirmation: false,
   async execute(params: Record<string, unknown>, context: ToolContext): Promise<ToolResult> {
-    const { organizationId } = context
+    const { organizationId, userId } = context
     const query = typeof params.query === 'string' ? params.query : undefined
+
+    const accessibleCompanyIds = await getAccessibleCompanies(userId, organizationId)
 
     const persons = await prisma.person.findMany({
       where: {
         organization_id: organizationId,
         deleted_at: null,
-        ...(query
-          ? {
-              OR: [
-                { first_name: { contains: query, mode: 'insensitive' } },
-                { last_name: { contains: query, mode: 'insensitive' } },
-                { email: { contains: query, mode: 'insensitive' } },
-              ],
-            }
-          : {}),
+        AND: [
+          {
+            OR: [
+              { company_persons: { none: {} } },
+              {
+                company_persons: {
+                  some: { company_id: { in: accessibleCompanyIds }, deleted_at: null },
+                },
+              },
+            ],
+          },
+          ...(query
+            ? [
+                {
+                  OR: [
+                    { first_name: { contains: query, mode: 'insensitive' as const } },
+                    { last_name: { contains: query, mode: 'insensitive' as const } },
+                    { email: { contains: query, mode: 'insensitive' as const } },
+                  ],
+                },
+              ]
+            : []),
+        ],
       },
       include: {
         company_persons: {

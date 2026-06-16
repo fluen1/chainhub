@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db'
+import { getAccessibleCompanies } from '@/lib/permissions'
 import type { ToolDefinition, ToolContext, ToolResult } from './types'
 
 export const searchCompaniesTool: ToolDefinition = {
@@ -21,14 +22,17 @@ export const searchCompaniesTool: ToolDefinition = {
   },
   requiresConfirmation: false,
   async execute(params: Record<string, unknown>, context: ToolContext): Promise<ToolResult> {
-    const { organizationId } = context
+    const { organizationId, userId } = context
     const query = typeof params.query === 'string' ? params.query : undefined
     const status = typeof params.status === 'string' ? params.status : undefined
+
+    const accessibleCompanyIds = await getAccessibleCompanies(userId, organizationId)
 
     const companies = await prisma.company.findMany({
       where: {
         organization_id: organizationId,
         deleted_at: null,
+        id: { in: accessibleCompanyIds },
         ...(query
           ? {
               OR: [
