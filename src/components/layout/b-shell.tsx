@@ -1,14 +1,14 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { usePathname } from 'next/navigation'
 import { Menu } from 'lucide-react'
-import { BSidebar } from './b-sidebar'
+import dynamic from 'next/dynamic'
+import { usePathname } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
 import { BrandMark } from '@/components/ui/b'
 import type { SidebarBadge } from '@/types/ui'
-import { NotificationBell } from './NotificationBell'
+import { BSidebar } from './b-sidebar'
 import { ChatToggle } from './ChatToggle'
-import dynamic from 'next/dynamic'
+import { NotificationBell } from './NotificationBell'
 
 const ChatPanel = dynamic(
   () => import('@/components/assistant/ChatPanel').then((m) => ({ default: m.ChatPanel })),

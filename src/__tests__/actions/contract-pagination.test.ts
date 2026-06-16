@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 vi.mock('@/lib/auth', () => ({ auth: vi.fn() }))
-import { auth } from '@/lib/auth'
 import { getContractsPaginated } from '@/actions/contracts'
+import { auth } from '@/lib/auth'
 
 describe('getContractsPaginated', () => {
   it('returnerer tom data uden session', async () => {

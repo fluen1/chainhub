@@ -1,10 +1,10 @@
 'use client'
 
-import { useCallback, useState } from 'react'
 import Link from 'next/link'
+import { useCallback, useState } from 'react'
 import { Panel, PanelHeader, PanelGroupLabel } from '@/components/ui/b'
-import { HEATMAP_STATUS_LABELS } from '@/lib/labels'
 import type { HeatmapCompany } from '@/lib/dashboard-helpers'
+import { HEATMAP_STATUS_LABELS } from '@/lib/labels'
 
 // ────────────────────────────────────────────────────────────────────────────
 // Health-heatmap — én celle pr. selskab.

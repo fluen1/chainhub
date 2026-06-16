@@ -1,6 +1,6 @@
-import { prisma } from '@/lib/db'
 import { Prisma } from '@prisma/client'
 import { createLogger } from '@/lib/ai/logger'
+import { prisma } from '@/lib/db'
 
 const log = createLogger('portfolio-scan')
 

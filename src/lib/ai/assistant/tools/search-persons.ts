@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db'
+import { getAccessibleCompanies } from '@/lib/permissions'
 import type { ToolDefinition, ToolContext, ToolResult } from './types'
 
 export const searchPersonsTool: ToolDefinition = {
@@ -17,22 +18,43 @@ export const searchPersonsTool: ToolDefinition = {
   },
   requiresConfirmation: false,
   async execute(params: Record<string, unknown>, context: ToolContext): Promise<ToolResult> {
-    const { organizationId } = context
+    const { organizationId, userId } = context
     const query = typeof params.query === 'string' ? params.query : undefined
+
+    const accessibleCompanyIds = await getAccessibleCompanies(userId, organizationId)
 
     const persons = await prisma.person.findMany({
       where: {
         organization_id: organizationId,
         deleted_at: null,
-        ...(query
-          ? {
-              OR: [
-                { first_name: { contains: query, mode: 'insensitive' } },
-                { last_name: { contains: query, mode: 'insensitive' } },
-                { email: { contains: query, mode: 'insensitive' } },
-              ],
-            }
-          : {}),
+        AND: [
+          {
+            // Scope: org-brede personer UDEN selskabstilknytning er synlige for alle
+            // (bevidst — admin-oprettede kontakter), ELLER personer tilknyttet et
+            // selskab brugeren har adgang til. `deleted_at: null` på relationen er en
+            // bevidst stramning ift. de øvrige callers (persons.ts/search.ts/dashboard.ts):
+            // en soft-deleted tilknytning giver ikke scope-adgang. Flag de øvrige til oprydning.
+            OR: [
+              { company_persons: { none: {} } },
+              {
+                company_persons: {
+                  some: { company_id: { in: accessibleCompanyIds }, deleted_at: null },
+                },
+              },
+            ],
+          },
+          ...(query
+            ? [
+                {
+                  OR: [
+                    { first_name: { contains: query, mode: 'insensitive' as const } },
+                    { last_name: { contains: query, mode: 'insensitive' as const } },
+                    { email: { contains: query, mode: 'insensitive' as const } },
+                  ],
+                },
+              ]
+            : []),
+        ],
       },
       include: {
         company_persons: {

@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeAll } from 'vitest'
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
+import { describe, it, expect, beforeAll } from 'vitest'
 import { loadForExtraction, ContentLoaderError } from '@/lib/ai/content-loader'
 
 const FIXTURES = join(__dirname, '..', 'fixtures')

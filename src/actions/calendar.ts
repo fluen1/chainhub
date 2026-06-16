@@ -1,14 +1,14 @@
 'use server'
 
-import { z } from 'zod'
-import { prisma } from '@/lib/db'
-import { getAccessibleCompanies, canAccessModule } from '@/lib/permissions'
-import { createLogger } from '@/lib/logger'
-import { getVisitTypeLabel } from '@/lib/labels'
-import type { CalendarEvent } from '@/types/ui'
-import { auth } from '@/lib/auth'
 import { unstable_cache } from 'next/cache'
+import { z } from 'zod'
+import { auth } from '@/lib/auth'
 import { reviveDates } from '@/lib/cache-dates'
+import { prisma } from '@/lib/db'
+import { getVisitTypeLabel } from '@/lib/labels'
+import { createLogger } from '@/lib/logger'
+import { getAccessibleCompanies, canAccessModule } from '@/lib/permissions'
+import type { CalendarEvent } from '@/types/ui'
 
 const calendarSchema = z.object({
   year: z.number().int().min(2020).max(2100),

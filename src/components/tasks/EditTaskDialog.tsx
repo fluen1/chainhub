@@ -3,6 +3,12 @@
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import {
+  updateTaskPriority,
+  updateTaskAssignee,
+  updateTaskDueDate,
+  updateTaskStatus,
+} from '@/actions/tasks'
+import {
   BModal,
   BTextField,
   BTextareaField,
@@ -10,12 +16,6 @@ import {
   BFieldRow,
   BFieldWrap,
 } from '@/components/ui/b'
-import {
-  updateTaskPriority,
-  updateTaskAssignee,
-  updateTaskDueDate,
-  updateTaskStatus,
-} from '@/actions/tasks'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // EditTaskDialog — redigér opgave-metadata via BModal.

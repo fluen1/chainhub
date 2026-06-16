@@ -1,10 +1,10 @@
-﻿import { prisma } from '@/lib/db'
-import { createClaudeClient, computeCostUsd } from '@/lib/ai/client'
+﻿import { createClaudeClient, computeCostUsd } from '@/lib/ai/client'
+import { createLogger } from '@/lib/ai/logger'
 import { recordAIUsage } from '@/lib/ai/usage'
+import { prisma } from '@/lib/db'
 import { buildSystemPrompt } from './context'
 import { toolRegistry, getToolDefinitions } from './tools/registry'
 import type { ToolResult } from './tools/types'
-import { createLogger } from '@/lib/ai/logger'
 
 const log = createLogger('ai:assistant:orchestrator')
 
@@ -88,6 +88,15 @@ function buildToolInstructions(): string {
 
 export async function processMessage(input: ProcessMessageInput): Promise<ProcessMessageResult> {
   const { conversationId, userMessage, organizationId, userId } = input
+
+  // Plan-gate: AI-assistenten kræver plus-abonnement
+  const org = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: { plan: true },
+  })
+  if (!org || org.plan !== 'plus') {
+    throw new Error('AI-assistenten kræver Plus-abonnement')
+  }
 
   // 1. Gem bruger-besked i DB
   await prisma.message.create({

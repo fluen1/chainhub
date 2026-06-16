@@ -272,6 +272,27 @@ export async function getAllowedSensitivityLevels(
   return ['PUBLIC', 'STANDARD', 'INTERN']
 }
 
+/**
+ * Eksport leverer hele datasæt på tværs af selskaber og er en compliance/admin-funktion.
+ * Beslutning (Philip 2026-06-16): KUN GROUP_OWNER/GROUP_ADMIN må eksportere.
+ * GROUP_LEGAL/GROUP_FINANCE og alle COMPANY_*-roller afvises (fail-closed), selv
+ * med ALL-scope/top-sensitivity. Kræver tillige ALL-scope, så en company-begrænset
+ * admin-tildeling ikke kan exfiltrere data på tværs af selskaber.
+ * Ren funktion for testbarhed — wrappes af canExportAllScope nedenfor.
+ */
+export function rolesCanExportAllScope(
+  roles: ReadonlyArray<{ role: UserRole; scope: string }>
+): boolean {
+  return roles.some(
+    (a) => (a.role === 'GROUP_OWNER' || a.role === 'GROUP_ADMIN') && a.scope === 'ALL'
+  )
+}
+
+export async function canExportAllScope(userId: string, organizationId: string): Promise<boolean> {
+  const roles = await getUserRoles(userId, organizationId)
+  return rolesCanExportAllScope(roles)
+}
+
 export function getSensitivityIndex(level: SensitivityLevel): number {
   return SENSITIVITY_ORDER.indexOf(level)
 }

@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import { AccessibleDialog } from '@/components/ui/accessible-dialog'
 import { prepareGdprExport, executeGdprDelete } from '@/actions/gdpr'
+import { AccessibleDialog } from '@/components/ui/accessible-dialog'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GdprPanel — GDPR Art. 15 eksport + Art. 17 sletning.

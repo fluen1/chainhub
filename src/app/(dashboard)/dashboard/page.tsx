@@ -1,20 +1,20 @@
 import type { Metadata } from 'next'
 import { Suspense } from 'react'
-import { auth } from '@/lib/auth'
-import { getDashboardData } from '@/actions/dashboard'
 import { getRecentActivity } from '@/actions/activity-feed'
 import { getActiveAlerts } from '@/actions/alerts'
-import { getSidebarData } from '@/lib/sidebar-data'
-import { getAccessibleCompanies } from '@/lib/permissions'
-import { formatMio } from '@/lib/labels'
-import { WEEKDAYS_DA_FULL_SUN, MONTH_NAMES_DA_LOWER } from '@/lib/calendar-constants'
-import { PageTopbar, Strip, BottomBar, SyncDot, type StripCellData } from '@/components/ui/b'
-import { UrgencyPanel } from '@/components/dashboard/b/UrgencyPanel'
-import { HeatmapPanel } from '@/components/dashboard/b/HeatmapPanel'
-import { ActivityPanel } from '@/components/dashboard/b/ActivityPanel'
+import { getDashboardData } from '@/actions/dashboard'
 import { AlertsWidget } from '@/components/dashboard/AlertsWidget'
-import { pickHighestPriorityRole } from '@/lib/dashboard-helpers'
+import { ActivityPanel } from '@/components/dashboard/b/ActivityPanel'
+import { HeatmapPanel } from '@/components/dashboard/b/HeatmapPanel'
 import { OnboardingPanel } from '@/components/dashboard/b/OnboardingPanel'
+import { UrgencyPanel } from '@/components/dashboard/b/UrgencyPanel'
+import { PageTopbar, Strip, BottomBar, SyncDot, type StripCellData } from '@/components/ui/b'
+import { auth } from '@/lib/auth'
+import { WEEKDAYS_DA_FULL_SUN, MONTH_NAMES_DA_LOWER } from '@/lib/calendar-constants'
+import { pickHighestPriorityRole } from '@/lib/dashboard-helpers'
+import { formatMio } from '@/lib/labels'
+import { getAccessibleCompanies } from '@/lib/permissions'
+import { getSidebarData } from '@/lib/sidebar-data'
 
 // ─── Async server-wrappers til Suspense-streaming ────────────────────────────
 
@@ -25,8 +25,7 @@ async function AlertsSection() {
 }
 
 async function ActivitySection({ companyIds }: { companyIds: string[] }) {
-  const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000)
-  const activity = await getRecentActivity(companyIds, since24h)
+  const activity = await getRecentActivity(companyIds)
   return <ActivityPanel events={activity} />
 }
 

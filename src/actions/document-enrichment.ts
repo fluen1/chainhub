@@ -3,7 +3,7 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { captureError } from '@/lib/logger'
-import { canAccessCompany } from '@/lib/permissions'
+import { canAccessCompany, canAccessSensitivity } from '@/lib/permissions'
 import type { ActionResult } from '@/types/actions'
 
 export interface EntityMatchResult {
@@ -49,7 +49,7 @@ export async function getDocumentEnrichment(
       organization_id: session.user.organizationId,
       deleted_at: null,
     },
-    select: { id: true, company_id: true },
+    select: { id: true, company_id: true, sensitivity: true },
   })
 
   if (!document) return { error: 'Dokument ikke fundet' }
@@ -62,6 +62,13 @@ export async function getDocumentEnrichment(
     )
     if (!hasAccess) return { error: 'Ingen adgang til dette dokument' }
   }
+
+  const canSens = await canAccessSensitivity(
+    session.user.id,
+    document.sensitivity,
+    session.user.organizationId
+  )
+  if (!canSens) return { error: 'Ingen adgang til dette dokument' }
 
   try {
     const extraction = await prisma.documentExtraction.findFirst({

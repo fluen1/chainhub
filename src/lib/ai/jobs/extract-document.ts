@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client'
-import { prisma } from '@/lib/db'
-import { isAIEnabled } from '@/lib/ai/feature-flags'
+import { sha256 } from '@/lib/ai/content-hash'
+import { loadForExtraction } from '@/lib/ai/content-loader'
 import {
   checkCostCap,
   reserveAIBudget,
@@ -8,13 +8,13 @@ import {
   releaseReservation,
   estimateExtractionCost,
 } from '@/lib/ai/cost-cap'
-import { recordAIUsage } from '@/lib/ai/usage'
-import { loadForExtraction } from '@/lib/ai/content-loader'
+import { isAIEnabled } from '@/lib/ai/feature-flags'
+import { createLogger } from '@/lib/ai/logger'
 import { runExtractionPipeline } from '@/lib/ai/pipeline/orchestrator'
 import { runEntityMatching } from '@/lib/ai/pipeline/pass6-entity-matching'
 import type { PipelineCheckpoint } from '@/lib/ai/pipeline/types'
-import { sha256 } from '@/lib/ai/content-hash'
-import { createLogger } from '@/lib/ai/logger'
+import { recordAIUsage } from '@/lib/ai/usage'
+import { prisma } from '@/lib/db'
 
 const log = createLogger('extract-document')
 
@@ -55,6 +55,24 @@ export async function extractDocument(
       skipped: true,
       status: 'skipped',
       reason: 'AI extraction ikke aktiveret for denne organisation',
+    }
+  }
+
+  // Plan-gate: extraction kræver plus-abonnement
+  const org = await prisma.organization.findUnique({
+    where: { id: payload.organization_id },
+    select: { plan: true },
+  })
+  if (!org || org.plan !== 'plus') {
+    log.info({ document_id: payload.document_id }, 'AI extraction kræver Plus — skipping')
+    return {
+      extraction_id: '',
+      detected_type: '',
+      field_count: 0,
+      total_cost_usd: 0,
+      skipped: true,
+      status: 'skipped',
+      reason: 'AI extraction kræver Plus-abonnement',
     }
   }
 

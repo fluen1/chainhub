@@ -2,6 +2,7 @@
  * Phase N1 — Sensitivity-server-validering + RBAC-data-scope
  * Fix 4: updateCase/createCase sensitivity-validering
  * Fix 5: documentsCount + personsCount company-scope
+ * Task 5: updateCaseStatus company+sensitivity, createCaseComment sensitivity, createComment company, createPerson/updatePerson modul
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -28,6 +29,10 @@ vi.mock('@/lib/audit', () => ({
 
 vi.mock('@/lib/logger', () => ({
   captureError: vi.fn(),
+}))
+
+vi.mock('@/lib/rate-limit', () => ({
+  checkActionRateLimit: vi.fn().mockResolvedValue({ limited: false }),
 }))
 
 vi.mock('next/cache', () => ({
@@ -67,6 +72,18 @@ vi.mock('@/lib/db', () => ({
     caseCompany: {
       create: vi.fn().mockResolvedValue({}),
       findMany: vi.fn().mockResolvedValue([{ company_id: 'company-1' }]),
+      findFirst: vi.fn().mockResolvedValue(null),
+    },
+    task: {
+      findFirst: vi.fn().mockResolvedValue(null),
+    },
+    comment: {
+      create: vi.fn().mockResolvedValue({ id: 'c1' }),
+    },
+    person: {
+      create: vi.fn().mockResolvedValue({ id: 'p1' }),
+      findFirst: vi.fn().mockResolvedValue({ id: 'p1' }),
+      update: vi.fn().mockResolvedValue({ id: 'p1' }),
     },
   },
 }))

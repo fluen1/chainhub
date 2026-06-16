@@ -385,3 +385,69 @@ describe('deleteTask', () => {
     expect(whereArg?.organization_id).toBe('org-1')
   })
 })
+
+// ─── mutation-WHERE invariant-tests ──────────────────────────────────────────
+
+describe('mutation-WHERE: organization_id i alle update/soft-delete kald', () => {
+  it('updateTaskStatus: tx.task.update-WHERE indeholder organization_id', async () => {
+    const updatedTask = { ...mockTask, status: 'AKTIV_TASK' as const }
+    txMock.task.update.mockResolvedValueOnce(updatedTask)
+
+    await updateTaskStatus({ taskId: 't1', status: 'AKTIV_TASK' })
+
+    expect(txMock.task.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: 't1', organization_id: 'org-1' }),
+      })
+    )
+  })
+
+  it('updateTaskPriority: tx.task.update-WHERE indeholder organization_id', async () => {
+    const updatedTask = { ...mockTask, priority: 'HOEJ' as const }
+    txMock.task.update.mockResolvedValueOnce(updatedTask)
+
+    await updateTaskPriority({ taskId: 't1', priority: 'HOEJ' })
+
+    expect(txMock.task.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: 't1', organization_id: 'org-1' }),
+      })
+    )
+  })
+
+  it('updateTaskAssignee: tx.task.update-WHERE indeholder organization_id', async () => {
+    const taskWithAssignee = { ...mockTask, assignee: null, assigned_to: null }
+    prismaMock.task.findFirst.mockResolvedValueOnce(taskWithAssignee)
+    txMock.task.update.mockResolvedValueOnce({ ...mockTask, assigned_to: 'u2' })
+
+    await updateTaskAssignee({ taskId: 't1', assignedTo: 'u2' })
+
+    expect(txMock.task.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: 't1', organization_id: 'org-1' }),
+      })
+    )
+  })
+
+  it('updateTaskDueDate: tx.task.update-WHERE indeholder organization_id', async () => {
+    txMock.task.update.mockResolvedValueOnce({ ...mockTask, due_date: new Date('2026-12-31') })
+
+    await updateTaskDueDate({ taskId: 't1', dueDate: '2026-12-31' })
+
+    expect(txMock.task.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: 't1', organization_id: 'org-1' }),
+      })
+    )
+  })
+
+  it('deleteTask: prisma.task.update-WHERE indeholder organization_id', async () => {
+    await deleteTask('t1')
+
+    expect(prismaMock.task.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: 't1', organization_id: 'org-1' }),
+      })
+    )
+  })
+})

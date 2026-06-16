@@ -1,8 +1,9 @@
 'use client'
 
-import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
+import { addOwner } from '@/actions/ownership'
 import {
   BModal,
   BTextField,
@@ -11,7 +12,6 @@ import {
   BFieldWrap,
   BFieldRow,
 } from '@/components/ui/b'
-import { addOwner } from '@/actions/ownership'
 
 // ────────────────────────────────────────────────────────────────────────────
 // AddOwnerModal — canonical B-stil modal.

@@ -1,5 +1,5 @@
-import type { CrossValidationResult } from './types'
 import { createLogger } from '@/lib/ai/logger'
+import type { CrossValidationResult } from './types'
 
 const log = createLogger('pass5-cross-validation')
 

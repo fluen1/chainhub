@@ -9,10 +9,25 @@ vi.mock('@/lib/db', () => ({
   },
 }))
 
+// Mock env for at undgå at env.ts kaster ved manglende DATABASE_URL i tests.
+// Factory bruges med et mutable objekt — vi.mock er hoisted, så ingen closure-variabel.
+vi.mock('@/lib/env', () => {
+  const envMock = {
+    AI_EXTRACTION_ENABLED: 'true' as 'true' | 'false',
+    OPENAI_API_KEY: undefined as string | undefined,
+    OPENAI_BASE_URL: undefined as string | undefined,
+    DATABASE_URL: 'postgresql://test',
+    NEXTAUTH_SECRET: 'test',
+  }
+  return { env: envMock, baseUrl: 'http://localhost:3000' }
+})
+
 import { isAIEnabled, type AIFeature } from '@/lib/ai/feature-flags'
 import { prisma } from '@/lib/db'
+import { env } from '@/lib/env'
 
 const mockFindUnique = vi.mocked(prisma.organizationAISettings.findUnique)
+const mutableEnv = env as { AI_EXTRACTION_ENABLED: 'true' | 'false' }
 
 const ORG_ID = 'org-test-123'
 
@@ -29,11 +44,11 @@ function mockSettings(overrides: Record<string, unknown> = {}) {
 describe('isAIEnabled', () => {
   beforeEach(() => {
     vi.resetAllMocks()
-    process.env.AI_EXTRACTION_ENABLED = 'true'
+    mutableEnv.AI_EXTRACTION_ENABLED = 'true'
   })
 
   it('returnerer false når AI_EXTRACTION_ENABLED ikke er true', async () => {
-    process.env.AI_EXTRACTION_ENABLED = 'false'
+    mutableEnv.AI_EXTRACTION_ENABLED = 'false'
     const result = await isAIEnabled(ORG_ID, 'extraction')
     expect(result).toBe(false)
     expect(mockFindUnique).not.toHaveBeenCalled()

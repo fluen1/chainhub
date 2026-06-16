@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { formatDate } from '@/lib/labels'
+import { AddContractPartyTrigger } from '@/components/contracts/AddContractPartyTrigger'
 import {
   BAddButton,
   Panel,
@@ -9,7 +9,7 @@ import {
   Badge,
   type BadgeTone,
 } from '@/components/ui/b'
-import { AddContractPartyTrigger } from '@/components/contracts/AddContractPartyTrigger'
+import { formatDate } from '@/lib/labels'
 
 // ────────────────────────────────────────────────────────────────────────────
 // 3-kolonne bundsektion: Parter + Tilknytninger + Aktivitet

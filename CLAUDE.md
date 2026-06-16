@@ -19,18 +19,18 @@ ChainHub er et B2B SaaS-system til kædegrupper (optiker-, fysio-, læge- og fra
 
 **Domæne:** B2B SaaS / Portfolio Management
 **Sprog:** Dansk UI, dansk kodekommentering, engelske variabelnavne
-**Status:** Sprint 7 færdig. Sprint 8 (Accountability + Dokumenter) er næste.
+**Status:** Go-live readiness i gang (2/5). Se `docs/superpowers/plans/2026-06-16-go-live-readiness-roadmap.md`.
 
 ---
 
 ## Tech Stack
 
-- **Frontend:** Next.js 14 (App Router), React 18, TypeScript 5 (strict), Tailwind CSS
-- **Backend:** Next.js Server Actions (primært mønster), NextAuth 4 (JWT, 8h sessions)
-- **Database:** PostgreSQL (Supabase), Prisma 5 ORM
+- **Frontend:** Next.js 16 (App Router), React 19, TypeScript 5 (strict), Tailwind CSS
+- **Backend:** Next.js Server Actions (primært mønster), NextAuth 5 (JWT, 8h sessions)
+- **Database:** PostgreSQL (Supabase), Prisma 6 ORM
 - **UI:** shadcn/ui-inspirerede komponenter, Lucide icons, Sonner (toasts)
 - **Validering:** Zod på al brugerinput
-- **Test:** Vitest (1190 unit tests), Playwright (E2E — setup klar)
+- **Test:** Vitest (~2179 unit tests), Playwright (E2E — setup klar)
 
 ---
 
@@ -159,7 +159,7 @@ docker compose up -d              # Start lokal PostgreSQL
 docker compose down               # Stop lokal PostgreSQL
 npm run dev                     # Start dev server (port 3000)
 npm run build                   # Production build
-npm test                        # Vitest (1190 tests)
+npm test                        # Vitest (~2179 tests)
 npx prisma generate             # Regenerér Prisma client
 npx prisma db push              # Push schema til DB (kræver aktiv Supabase)
 npx prisma migrate dev          # Kør migrationer (bruger DIRECT_URL)

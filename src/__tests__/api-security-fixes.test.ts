@@ -6,9 +6,9 @@
  * Fix 10: export/gdpr/[personId]/route.ts — UUID-validering + audit + RFC 5987
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { readFileSync } from 'fs'
 import { join } from 'path'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // Helper: læs fil relativt til projektroden
 function readSrc(path: string): string {
@@ -49,6 +49,7 @@ vi.mock('@/lib/permissions', () => ({
   canAccessCompany: vi.fn().mockResolvedValue(true),
   canAccessModule: vi.fn().mockResolvedValue(true),
   getAccessibleCompanies: vi.fn().mockResolvedValue([]),
+  canExportAllScope: vi.fn().mockResolvedValue(true),
 }))
 
 vi.mock('@/lib/audit', () => ({

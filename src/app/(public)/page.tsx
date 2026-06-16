@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
-import { auth } from '@/lib/auth'
 import { BButton } from '@/components/ui/b'
+import { auth } from '@/lib/auth'
 
 export const metadata: Metadata = {
   title: 'ChainHub — CRM og kontraktstyring for kæder',

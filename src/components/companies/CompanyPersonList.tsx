@@ -1,8 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { endCompanyPerson } from '@/actions/governance'
 import { toast } from 'sonner'
+import { endCompanyPerson } from '@/actions/governance'
 import { formatDate } from '@/lib/labels'
 
 interface PersonItem {

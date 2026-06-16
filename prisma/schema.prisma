@@ -991,6 +991,14 @@ model Subscription {
   @@index([status])
 }
 
+model ProcessedStripeEvent {
+  event_id     String   @id
+  event_type   String
+  processed_at DateTime @default(now())
+
+  @@index([processed_at])
+}
+
 // ============================================================
 // VISIT MANAGEMENT
 // ============================================================

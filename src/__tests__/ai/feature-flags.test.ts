@@ -1,6 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { isAIEnabled } from '@/lib/ai/feature-flags'
 
+// Mock env for at undgå at env.ts kaster ved manglende DATABASE_URL i tests.
+// Factory bruges med et mutable objekt — vi.mock er hoisted, så ingen closure-variabel.
+vi.mock('@/lib/env', () => {
+  const envMock = {
+    AI_EXTRACTION_ENABLED: 'false' as 'true' | 'false',
+    OPENAI_API_KEY: undefined as string | undefined,
+    OPENAI_BASE_URL: undefined as string | undefined,
+    DATABASE_URL: 'postgresql://test',
+    NEXTAUTH_SECRET: 'test',
+  }
+  return { env: envMock, baseUrl: 'http://localhost:3000' }
+})
+
 // Mock the Prisma client
 vi.mock('@/lib/db', () => ({
   prisma: {
@@ -11,30 +24,33 @@ vi.mock('@/lib/db', () => ({
 }))
 
 import { prisma } from '@/lib/db'
+import { env } from '@/lib/env'
+
+// Cast så vi kan mutere AI_EXTRACTION_ENABLED i tests
+const mutableEnv = env as { AI_EXTRACTION_ENABLED: 'true' | 'false' }
 
 describe('isAIEnabled', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mutableEnv.AI_EXTRACTION_ENABLED = 'false'
   })
 
   it('returns false when global AI_EXTRACTION_ENABLED is false', async () => {
-    const oldEnv = process.env.AI_EXTRACTION_ENABLED
-    process.env.AI_EXTRACTION_ENABLED = 'false'
+    mutableEnv.AI_EXTRACTION_ENABLED = 'false'
     const result = await isAIEnabled('org-1', 'extraction')
     expect(result).toBe(false)
     expect(prisma.organizationAISettings.findUnique).not.toHaveBeenCalled()
-    process.env.AI_EXTRACTION_ENABLED = oldEnv
   })
 
   it('returns false when organization has no AI settings', async () => {
-    process.env.AI_EXTRACTION_ENABLED = 'true'
+    mutableEnv.AI_EXTRACTION_ENABLED = 'true'
     vi.mocked(prisma.organizationAISettings.findUnique).mockResolvedValue(null)
     const result = await isAIEnabled('org-1', 'extraction')
     expect(result).toBe(false)
   })
 
   it('returns false when kill_switch is true', async () => {
-    process.env.AI_EXTRACTION_ENABLED = 'true'
+    mutableEnv.AI_EXTRACTION_ENABLED = 'true'
     vi.mocked(prisma.organizationAISettings.findUnique).mockResolvedValue({
       id: 's1',
       organization_id: 'org-1',
@@ -52,7 +68,7 @@ describe('isAIEnabled', () => {
   })
 
   it('returns false when ai_mode is OFF', async () => {
-    process.env.AI_EXTRACTION_ENABLED = 'true'
+    mutableEnv.AI_EXTRACTION_ENABLED = 'true'
     vi.mocked(prisma.organizationAISettings.findUnique).mockResolvedValue({
       id: 's1',
       organization_id: 'org-1',
@@ -70,7 +86,7 @@ describe('isAIEnabled', () => {
   })
 
   it('returns true when ai_mode is SHADOW', async () => {
-    process.env.AI_EXTRACTION_ENABLED = 'true'
+    mutableEnv.AI_EXTRACTION_ENABLED = 'true'
     vi.mocked(prisma.organizationAISettings.findUnique).mockResolvedValue({
       id: 's1',
       organization_id: 'org-1',
@@ -88,7 +104,7 @@ describe('isAIEnabled', () => {
   })
 
   it('returns true when ai_mode is BETA and feature is in beta_features', async () => {
-    process.env.AI_EXTRACTION_ENABLED = 'true'
+    mutableEnv.AI_EXTRACTION_ENABLED = 'true'
     vi.mocked(prisma.organizationAISettings.findUnique).mockResolvedValue({
       id: 's1',
       organization_id: 'org-1',
@@ -106,7 +122,7 @@ describe('isAIEnabled', () => {
   })
 
   it('returns false when ai_mode is BETA but feature is not in beta_features', async () => {
-    process.env.AI_EXTRACTION_ENABLED = 'true'
+    mutableEnv.AI_EXTRACTION_ENABLED = 'true'
     vi.mocked(prisma.organizationAISettings.findUnique).mockResolvedValue({
       id: 's1',
       organization_id: 'org-1',
@@ -124,7 +140,7 @@ describe('isAIEnabled', () => {
   })
 
   it('returns true when ai_mode is LIVE', async () => {
-    process.env.AI_EXTRACTION_ENABLED = 'true'
+    mutableEnv.AI_EXTRACTION_ENABLED = 'true'
     vi.mocked(prisma.organizationAISettings.findUnique).mockResolvedValue({
       id: 's1',
       organization_id: 'org-1',

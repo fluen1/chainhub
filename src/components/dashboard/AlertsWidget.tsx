@@ -1,9 +1,9 @@
 'use client'
 
-import Link from 'next/link'
 import { Clock, FileQuestion, AlertTriangle, ShieldAlert } from 'lucide-react'
-import { Panel, PanelHeader, PanelBody, PanelEmpty, Badge, type BadgeTone } from '@/components/ui/b'
+import Link from 'next/link'
 import type { AlertItem } from '@/actions/alerts'
+import { Panel, PanelHeader, PanelBody, PanelEmpty, Badge, type BadgeTone } from '@/components/ui/b'
 
 // ────────────────────────────────────────────────────────────────────────────
 // Hjælpere

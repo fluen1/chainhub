@@ -64,6 +64,9 @@ vi.mock('@/lib/db', () => ({
       upsert: mockPrismaUpsert,
       update: mockPrismaUpdate,
     },
+    organization: {
+      findUnique: vi.fn().mockResolvedValue({ plan: 'plus' }),
+    },
   },
 }))
 

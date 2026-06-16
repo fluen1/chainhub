@@ -1,8 +1,8 @@
 'use client'
 
 import { useMemo } from 'react'
-import { Badge, type BadgeTone, Panel, PanelHeader } from '@/components/ui/b'
 import type { CompanyRow } from '@/app/(dashboard)/companies/companies-list-b'
+import { Badge, type BadgeTone, Panel, PanelHeader } from '@/components/ui/b'
 
 // ────────────────────────────────────────────────────────────────────────────
 // Right rail — Health heatmap, kritiske selskaber, fordeling

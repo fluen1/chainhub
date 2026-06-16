@@ -285,8 +285,8 @@ export async function createContract(input: CreateContractInput): Promise<Action
         display_name: parsed.data.displayName,
         sensitivity: parsed.data.sensitivity,
         status: parsed.data.status ?? 'UDKAST',
-        effective_date: parsed.data.effectiveDate ? new Date(parsed.data.effectiveDate) : null,
-        expiry_date: parsed.data.expiryDate ? new Date(parsed.data.expiryDate) : null,
+        effective_date: parsed.data.effectiveDate ?? null,
+        expiry_date: parsed.data.expiryDate instanceof Date ? parsed.data.expiryDate : null,
         notice_period_days: parsed.data.noticePeriodDays ?? null,
         notes: parsed.data.notes || null,
         reminder_90_days: parsed.data.reminder90Days ?? true,
@@ -374,7 +374,7 @@ export async function updateContractStatus(
 
   try {
     const updated = await prisma.contract.update({
-      where: { id: parsed.data.contractId },
+      where: { id: parsed.data.contractId, organization_id: session.user.organizationId },
       data: {
         status: parsed.data.status,
         ...(parsed.data.status === 'OPSAGT' ? { termination_date: new Date() } : {}),
@@ -440,7 +440,7 @@ export async function deleteContract(contractId: string): Promise<ActionResult<v
 
   try {
     await prisma.contract.update({
-      where: { id: contractId },
+      where: { id: contractId, organization_id: session.user.organizationId },
       data: { deleted_at: new Date() },
     })
 
@@ -514,7 +514,7 @@ export async function updateContract(input: UpdateContractInput): Promise<Action
 
   try {
     const updated = await prisma.contract.update({
-      where: { id: parsed.data.contractId },
+      where: { id: parsed.data.contractId, organization_id: session.user.organizationId },
       data: {
         ...(parsed.data.displayName ? { display_name: parsed.data.displayName } : {}),
         ...(parsed.data.sensitivity ? { sensitivity: parsed.data.sensitivity } : {}),
@@ -760,7 +760,7 @@ export async function getContractDetailPageData(
       },
     })
     await prisma.contract.update({
-      where: { id: contract.id },
+      where: { id: contract.id, organization_id: orgId },
       data: { last_viewed_at: new Date(), last_viewed_by: session.user.id },
     })
   }

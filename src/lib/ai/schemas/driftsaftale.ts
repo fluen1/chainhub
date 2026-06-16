@@ -1,6 +1,6 @@
+import { registerSchema } from './registry'
 import type { ContractSchema } from './types'
 import { COMMON_TOOL_PROPERTIES } from './types'
-import { registerSchema } from './registry'
 
 // Hjælpefunktion til at wrappe et felt i ExtractedFieldValue-struktur
 function extractedField(

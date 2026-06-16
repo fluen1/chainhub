@@ -58,13 +58,13 @@ vi.mock('@/lib/permissions', () => ({
   canAccessCompany: vi.fn().mockResolvedValue(true),
 }))
 
-import { auth } from '@/lib/auth'
-import { getAccessibleCompanies, canAccessSensitivity } from '@/lib/permissions'
 import {
   getCompanyDetailData,
   getCompanyDetailPageExtras,
   getCompanyName,
 } from '@/actions/company-detail'
+import { auth } from '@/lib/auth'
+import { getAccessibleCompanies, canAccessSensitivity } from '@/lib/permissions'
 
 const mockSession = {
   user: { id: 'u1', organizationId: 'org-1', email: 'test@test.dk', name: 'Test' },

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // Mock deleteDocument action
 vi.mock('@/actions/documents', () => ({
@@ -22,8 +22,8 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ refresh: mockRefresh }),
 }))
 
-import { DeleteDocumentButton } from '@/components/documents/DeleteDocumentButton'
 import { deleteDocument } from '@/actions/documents'
+import { DeleteDocumentButton } from '@/components/documents/DeleteDocumentButton'
 import { toast } from 'sonner'
 
 describe('DeleteDocumentButton', () => {

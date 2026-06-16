@@ -1,8 +1,10 @@
 'use client'
 
-import { useMemo, useState, useTransition } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
-import { ExportButton } from '@/components/ui/export-button'
+import { useMemo, useState, useTransition } from 'react'
+import { TasksFlatTable } from '@/components/tasks/TasksFlatTable'
+import { TasksGroupedView } from '@/components/tasks/TasksGroupedView'
+import { KanbanView } from '@/components/tasks/TasksKanban'
 import {
   Breadcrumb,
   PageHeader,
@@ -18,9 +20,7 @@ import {
   Pager,
   BottomBar,
 } from '@/components/ui/b'
-import { TasksFlatTable } from '@/components/tasks/TasksFlatTable'
-import { TasksGroupedView } from '@/components/tasks/TasksGroupedView'
-import { KanbanView } from '@/components/tasks/TasksKanban'
+import { ExportButton } from '@/components/ui/export-button'
 
 // ────────────────────────────────────────────────────────────────────────────
 // /tasks — klient-komponent.

@@ -21,8 +21,8 @@ vi.mock('@/lib/permissions', () => ({
   canAccessModule: vi.fn().mockResolvedValue(true),
 }))
 
-import { auth } from '@/lib/auth'
 import { createCheckoutSession, createPortalSession } from '@/actions/billing'
+import { auth } from '@/lib/auth'
 
 describe('billing actions', () => {
   it('createCheckoutSession afviser uden session', async () => {

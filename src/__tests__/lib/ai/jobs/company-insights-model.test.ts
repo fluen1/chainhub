@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { describe, it, expect } from 'vitest'
 
 describe('company-insights — model-valg', () => {
   it('bruger gpt-5-nano (ikke større model)', () => {

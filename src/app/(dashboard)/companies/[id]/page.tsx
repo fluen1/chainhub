@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { auth } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
 import {
   getCompanyDetailData,
@@ -7,6 +6,7 @@ import {
   getCompanyName,
 } from '@/actions/company-detail'
 import { getCompanyNotes } from '@/actions/company-notes'
+import { auth } from '@/lib/auth'
 import { formatDate, daysUntil } from '@/lib/labels'
 import {
   CompanyDetailB,

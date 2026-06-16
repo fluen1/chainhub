@@ -50,6 +50,10 @@ vi.mock('@/lib/permissions', () => ({
   canAccessCompany: vi.fn().mockResolvedValue(true),
   canAccessModule: vi.fn().mockResolvedValue(true),
   getAccessibleCompanies: vi.fn().mockResolvedValue(['c1']),
+  canAccessSensitivity: vi.fn().mockResolvedValue(true),
+  getAllowedSensitivityLevels: vi
+    .fn()
+    .mockResolvedValue(['PUBLIC', 'STANDARD', 'INTERN', 'FORTROLIG', 'STRENGT_FORTROLIG']),
 }))
 
 import {
@@ -262,6 +266,7 @@ describe('getDocumentTitle', () => {
     prismaMock.document.findFirst.mockResolvedValueOnce({
       file_name: 'kontrakt.pdf',
       title: 'Kontrakt',
+      sensitivity: 'STANDARD',
     })
     const result = await getDocumentTitle('d1')
     expect(result).toBe('Review · kontrakt.pdf')

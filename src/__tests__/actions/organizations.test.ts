@@ -32,10 +32,10 @@ vi.mock('@/lib/action-helpers', async () => {
   }
 })
 
+import { updateOrganization } from '@/actions/organizations'
 import { auth } from '@/lib/auth'
 import { canAccessModule } from '@/lib/permissions'
 import { checkActionRateLimit } from '@/lib/rate-limit'
-import { updateOrganization } from '@/actions/organizations'
 
 function makeSession() {
   return {

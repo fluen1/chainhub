@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import {
   AlertTriangle,
   TrendingDown,
@@ -10,6 +9,7 @@ import {
   ArrowRight,
   X,
 } from 'lucide-react'
+import { useState } from 'react'
 import { cn } from '@/lib/utils'
 import type { Insight, InsightType } from '@/types/ui'
 

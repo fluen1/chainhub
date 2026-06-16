@@ -1,29 +1,29 @@
 'use server'
 
+import type { CompanyPerson, Ownership, Person, Prisma } from '@prisma/client'
+import { revalidatePath } from 'next/cache'
+import { z } from 'zod'
+import { recordAuditEvent } from '@/lib/audit'
 import { auth } from '@/lib/auth'
+import { formatShortDate } from '@/lib/date-helpers'
 import { prisma } from '@/lib/db'
+import { getCompanyPersonRoleLabel, getInitials } from '@/lib/labels'
+import { captureError } from '@/lib/logger'
+import { parsePaginationParams } from '@/lib/pagination'
 import {
   canAccessCompany,
   canAccessModule,
   canAccessSensitivity,
   getAccessibleCompanies,
 } from '@/lib/permissions'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 import {
   createPersonSchema,
   updatePersonSchema,
   type CreatePersonInput,
   type UpdatePersonInput,
 } from '@/lib/validations/person'
-import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
-import type { CompanyPerson, Ownership, Person, Prisma } from '@prisma/client'
-import { captureError } from '@/lib/logger'
-import { recordAuditEvent } from '@/lib/audit'
-import { checkActionRateLimit } from '@/lib/rate-limit'
-import { z } from 'zod'
-import { parsePaginationParams } from '@/lib/pagination'
-import { getCompanyPersonRoleLabel, getInitials } from '@/lib/labels'
-import { formatShortDate } from '@/lib/date-helpers'
 
 // ────────────────────────────────────────────────────────────────────────────
 // getPersonsPaginated — server-side pagineret liste til /persons
@@ -169,6 +169,10 @@ export async function createPerson(input: CreatePersonInput): Promise<ActionResu
   const parsed = createPersonSchema.safeParse(input)
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Ugyldigt input' }
 
+  if (!(await canAccessModule(session.user.id, 'persons', session.user.organizationId))) {
+    return { error: 'Du har ikke adgang til persondatabasen' }
+  }
+
   const rl = await checkActionRateLimit(session.user.organizationId)
   if (rl.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
@@ -219,6 +223,10 @@ export async function updatePerson(input: UpdatePersonInput): Promise<ActionResu
   const parsed = updatePersonSchema.safeParse(input)
   if (!parsed.success) return { error: 'Udfyld alle påkrævede felter og prøv igen.' }
 
+  if (!(await canAccessModule(session.user.id, 'persons', session.user.organizationId))) {
+    return { error: 'Du har ikke adgang til persondatabasen' }
+  }
+
   const rlUpd = await checkActionRateLimit(session.user.organizationId)
   if (rlUpd.limited) return { error: 'For mange handlinger. Vent venligst.' }
 
@@ -235,7 +243,7 @@ export async function updatePerson(input: UpdatePersonInput): Promise<ActionResu
 
   try {
     const person = await prisma.person.update({
-      where: { id: parsed.data.personId },
+      where: { id: parsed.data.personId, organization_id: session.user.organizationId },
       data: {
         ...(parsed.data.firstName && { first_name: parsed.data.firstName }),
         ...(parsed.data.lastName && { last_name: parsed.data.lastName }),
@@ -300,14 +308,14 @@ export async function deletePerson(personId: string): Promise<ActionResult<void>
 
   // Tenant isolation
   const person = await prisma.person.findFirst({
-    where: { id: personId, organization_id: session.user.organizationId },
+    where: { id: personId, organization_id: session.user.organizationId, deleted_at: null },
     select: { id: true },
   })
   if (!person) return { error: 'Person ikke fundet' }
 
   try {
     await prisma.person.update({
-      where: { id: personId },
+      where: { id: personId, organization_id: session.user.organizationId },
       data: { deleted_at: new Date() },
     })
 

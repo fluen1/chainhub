@@ -1,23 +1,23 @@
 'use server'
 
+import type { Company } from '@prisma/client'
+import { revalidatePath, revalidateTag } from 'next/cache'
+import { z } from 'zod'
+import { invalidateCompanyInsightsCache } from '@/lib/ai/invalidate-cache'
+import { recordAuditEvent } from '@/lib/audit'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { geocodeAddress } from '@/lib/geocode'
+import { captureError } from '@/lib/logger'
 import { canAccessCompany, canAccessModule, getAccessibleCompanies } from '@/lib/permissions'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 import {
   createCompanySchema,
   updateCompanySchema,
   type CreateCompanyInput,
   type UpdateCompanyInput,
 } from '@/lib/validations/company'
-import { revalidatePath, revalidateTag } from 'next/cache'
-import { z } from 'zod'
 import type { ActionResult } from '@/types/actions'
-import type { Company } from '@prisma/client'
-import { captureError } from '@/lib/logger'
-import { geocodeAddress } from '@/lib/geocode'
-import { invalidateCompanyInsightsCache } from '@/lib/ai/invalidate-cache'
-import { recordAuditEvent } from '@/lib/audit'
-import { checkActionRateLimit } from '@/lib/rate-limit'
 
 const stamdataSchema = z.object({
   name: z.string().min(1, 'Navn er paakraevet').max(200, 'Navn maa maks vaere 200 tegn'),
@@ -349,23 +349,30 @@ export async function getCompaniesPageData(
     deleted_at: null,
   }
 
-  const [companies, totalCount, openCaseCounts, expiredCounts, expiringCounts, financials, personsCount] =
-    await Promise.all([
-      prisma.company.findMany({
-        where: companyWhere,
-        include: {
-          _count: { select: { contracts: { where: { deleted_at: null } } } },
-          ownerships: {
-            where: { end_date: null },
-            select: { ownership_pct: true, owner_person_id: true, owner_company_id: true },
-          },
+  const [
+    companies,
+    totalCount,
+    openCaseCounts,
+    expiredCounts,
+    expiringCounts,
+    financials,
+    personsCount,
+  ] = await Promise.all([
+    prisma.company.findMany({
+      where: companyWhere,
+      include: {
+        _count: { select: { contracts: { where: { deleted_at: null } } } },
+        ownerships: {
+          where: { end_date: null },
+          select: { ownership_pct: true, owner_person_id: true, owner_company_id: true },
         },
-        orderBy: { name: 'asc' },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-      }),
-      prisma.company.count({ where: companyWhere }),
-      prisma.$queryRaw<Array<{ company_id: string; count: bigint }>>`
+      },
+      orderBy: { name: 'asc' },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.company.count({ where: companyWhere }),
+    prisma.$queryRaw<Array<{ company_id: string; count: bigint }>>`
         SELECT cc.company_id, COUNT(DISTINCT c.id)::bigint as count
         FROM "CaseCompany" cc
         JOIN "Case" c ON c.id = cc.case_id
@@ -374,7 +381,7 @@ export async function getCompaniesPageData(
           AND c.status NOT IN ('LUKKET', 'ARKIVERET')
         GROUP BY cc.company_id
       `,
-      prisma.$queryRaw<Array<{ company_id: string; count: bigint }>>`
+    prisma.$queryRaw<Array<{ company_id: string; count: bigint }>>`
         SELECT company_id, COUNT(id)::bigint as count
         FROM "Contract"
         WHERE organization_id = ${orgId}
@@ -382,7 +389,7 @@ export async function getCompaniesPageData(
           AND status = 'UDLOBET'
         GROUP BY company_id
       `,
-      prisma.$queryRaw<Array<{ company_id: string; count: bigint }>>`
+    prisma.$queryRaw<Array<{ company_id: string; count: bigint }>>`
         SELECT company_id, COUNT(id)::bigint as count
         FROM "Contract"
         WHERE organization_id = ${orgId}
@@ -393,25 +400,25 @@ export async function getCompaniesPageData(
           AND expiry_date > ${now}
         GROUP BY company_id
       `,
-      prisma.financialMetric.findMany({
-        where: {
-          organization_id: orgId,
-          company_id: { in: companyIds },
-          period_type: 'HELAAR',
-        },
-        select: {
-          company_id: true,
-          metric_type: true,
-          period_type: true,
-          period_year: true,
-          value: true,
-        },
-        orderBy: { period_year: 'desc' },
-      }),
-      prisma.person.count({
-        where: { organization_id: orgId, deleted_at: null },
-      }),
-    ])
+    prisma.financialMetric.findMany({
+      where: {
+        organization_id: orgId,
+        company_id: { in: companyIds },
+        period_type: 'HELAAR',
+      },
+      select: {
+        company_id: true,
+        metric_type: true,
+        period_type: true,
+        period_year: true,
+        value: true,
+      },
+      orderBy: { period_year: 'desc' },
+    }),
+    prisma.person.count({
+      where: { organization_id: orgId, deleted_at: null },
+    }),
+  ])
 
   return {
     companies,

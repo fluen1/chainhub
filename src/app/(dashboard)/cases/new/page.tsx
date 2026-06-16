@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
-import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { CreateCaseForm } from '@/components/cases/CreateCaseForm'
 import { Suspense } from 'react'
+import { CreateCaseForm } from '@/components/cases/CreateCaseForm'
+import { auth } from '@/lib/auth'
 
 export const metadata: Metadata = { title: 'Ny sag' }
 

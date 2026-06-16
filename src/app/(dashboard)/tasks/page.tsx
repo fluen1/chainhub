@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
-import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
+import { getTasksPaginated } from '@/actions/tasks'
+import { auth } from '@/lib/auth'
 import { canAccessModule } from '@/lib/permissions'
 import { TasksListB } from './tasks-list-b'
-import { getTasksPaginated } from '@/actions/tasks'
 
 export const metadata: Metadata = { title: 'Opgaver' }
 

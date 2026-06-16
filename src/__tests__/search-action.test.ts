@@ -4,8 +4,8 @@ vi.mock('@/lib/auth', () => ({
   auth: vi.fn(),
 }))
 
-import { auth } from '@/lib/auth'
 import { runSearch } from '@/actions/search'
+import { auth } from '@/lib/auth'
 import { MIN_SEARCH_LENGTH } from '@/lib/search/constants'
 
 // Smoke-test mod seed-data. Kræver aktiv DATABASE_URL og at seed-data er indlæst.

@@ -15,6 +15,7 @@ const prismaMock = vi.hoisted(() => ({
 vi.mock('@/lib/db', () => ({ prisma: prismaMock }))
 vi.mock('@/lib/permissions', () => ({
   canAccessCompany: vi.fn().mockResolvedValue(true),
+  canAccessSensitivity: vi.fn().mockResolvedValue(true),
 }))
 vi.mock('@/lib/rate-limit', () => ({
   checkActionRateLimit: vi.fn().mockResolvedValue({ limited: false }),
@@ -22,10 +23,10 @@ vi.mock('@/lib/rate-limit', () => ({
 vi.mock('@/lib/audit', () => ({ recordAuditEvent: vi.fn() }))
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
 
-import { auth } from '@/lib/auth'
-import { canAccessCompany } from '@/lib/permissions'
-import { checkActionRateLimit } from '@/lib/rate-limit'
 import { createComment, createCaseComment, deleteComment } from '@/actions/comments'
+import { auth } from '@/lib/auth'
+import { canAccessCompany, canAccessSensitivity } from '@/lib/permissions'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 
 const mockSession = {
   user: { id: 'u1', organizationId: 'org-1', email: 'test@test.dk', name: 'Test' },
@@ -67,6 +68,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   vi.mocked(auth).mockResolvedValue(mockSession as never)
   vi.mocked(canAccessCompany).mockResolvedValue(true)
+  vi.mocked(canAccessSensitivity).mockResolvedValue(true)
   vi.mocked(checkActionRateLimit).mockResolvedValue({ limited: false } as never)
 })
 

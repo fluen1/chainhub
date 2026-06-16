@@ -1,20 +1,20 @@
 import { createClaudeClient, computeCostUsd } from '@/lib/ai/client'
 import type { ClaudeModel } from '@/lib/ai/client'
 import type { ExtractionContent } from '@/lib/ai/content-loader'
+import { createLogger } from '@/lib/ai/logger'
 import { getSchema } from '@/lib/ai/schemas/registry'
+import { compareRuns, computeAllFieldConfidences } from './confidence'
 import { detectDocumentType } from './pass1-type-detection'
 import { extractWithSchema } from './pass2-schema-extraction'
 import { verifySourceAttribution, extractDocumentText } from './pass3-source-verification'
 import { runSanityChecks } from './pass4-sanity-checks'
 import { crossValidate } from './pass5-cross-validation'
-import { compareRuns, computeAllFieldConfidences } from './confidence'
 import type {
   PipelineResult,
   PipelineOptions,
   TypeDetectionResult,
   SchemaExtractionResult,
 } from './types'
-import { createLogger } from '@/lib/ai/logger'
 
 const log = createLogger('pipeline-orchestrator')
 

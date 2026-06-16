@@ -1,7 +1,7 @@
 import type { ClaudeClient, ClaudeContentBlock } from '@/lib/ai/client/types'
 import type { ExtractionContent } from '@/lib/ai/content-loader'
-import { getAllSchemaTypes } from '@/lib/ai/schemas/registry'
 import { createLogger } from '@/lib/ai/logger'
+import { getAllSchemaTypes } from '@/lib/ai/schemas/registry'
 import type { TypeDetectionResult } from './types'
 
 const log = createLogger('pass1-type-detection')

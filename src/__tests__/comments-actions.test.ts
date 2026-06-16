@@ -21,6 +21,7 @@ vi.mock('@/lib/db', () => ({
 
 vi.mock('@/lib/permissions', () => ({
   canAccessCompany: vi.fn().mockResolvedValue(true),
+  canAccessSensitivity: vi.fn().mockResolvedValue(true),
 }))
 
 vi.mock('@/lib/audit', () => ({

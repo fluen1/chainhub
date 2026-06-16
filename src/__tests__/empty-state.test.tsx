@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
-import { describe, it, expect } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { EmptyState } from '@/components/ui/empty-state'
 import { Briefcase } from 'lucide-react'
+import { describe, it, expect } from 'vitest'
+import { EmptyState } from '@/components/ui/empty-state'
 
 describe('EmptyState', () => {
   it('renderer titel + beskrivelse', () => {

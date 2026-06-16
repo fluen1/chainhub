@@ -2,8 +2,8 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { cn } from '@/lib/utils'
 import { DOCS_NAV } from '@/lib/docs-nav'
+import { cn } from '@/lib/utils'
 
 export function DocsSidebar() {
   const pathname = usePathname()

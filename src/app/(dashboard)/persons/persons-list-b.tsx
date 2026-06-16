@@ -1,9 +1,8 @@
 'use client'
 
-import { useMemo, useState, useEffect, useTransition } from 'react'
-import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { Mail, Phone, Building2 } from 'lucide-react'
-import { ExportButton } from '@/components/ui/export-button'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
+import { useMemo, useState, useTransition } from 'react'
 import {
   Breadcrumb,
   PageHeader,
@@ -25,6 +24,7 @@ import {
   BottomBar,
   Panel,
 } from '@/components/ui/b'
+import { ExportButton } from '@/components/ui/export-button'
 
 // ────────────────────────────────────────────────────────────────────────────
 // /persons — klient-komponent.
@@ -100,15 +100,12 @@ export function PersonsListB({
   const searchParams = useSearchParams()
   const [, startTransition] = useTransition()
 
-  const [viewMode, setViewMode] = useState<ViewMode>(
-    () => (searchParams.get('view') as ViewMode) || 'tabel'
-  )
-  const [search, setSearch] = useState(() => searchParams.get('search') ?? '')
+  const viewMode: ViewMode = (searchParams.get('view') as ViewMode) || 'tabel'
+  const search = searchParams.get('search') ?? ''
   const [sortCol, setSortCol] = useState<SortKey>('navn')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
-  // page og pageSize er nu drevet af server — vi sporer kun lokalt til UI-sync
-  const [page, setPage] = useState(initialPage)
-  const [pageSize] = useState(initialPageSize)
+  const page = initialPage
+  const pageSize = initialPageSize
 
   function pushUrl(overrides: Record<string, string>) {
     const sp = new URLSearchParams(searchParams.toString())
@@ -121,13 +118,6 @@ export function PersonsListB({
       router.push(`${pathname}?${sp.toString()}`, { scroll: false })
     })
   }
-
-  useEffect(() => {
-    setViewMode((searchParams.get('view') as ViewMode) || 'tabel')
-    setSearch(searchParams.get('search') ?? '')
-    setPage(initialPage)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, initialPage])
 
   // Sortering er klient-side inden for den aktuelle side
   const sorted = useMemo(() => {
@@ -156,7 +146,6 @@ export function PersonsListB({
   }
 
   function resetFilters() {
-    setSearch('')
     pushUrl({ search: '', page: '1' })
   }
 
@@ -195,8 +184,6 @@ export function PersonsListB({
         <FilterSearch
           value={search}
           onChange={(v) => {
-            setSearch(v)
-            setPage(1)
             pushUrl({ search: v, page: '1' })
           }}
           placeholder="Søg personer..."
@@ -206,7 +193,6 @@ export function PersonsListB({
         <SegmentedToggle<ViewMode>
           value={viewMode}
           onChange={(v) => {
-            setViewMode(v)
             pushUrl({ view: v })
           }}
           options={[
@@ -243,7 +229,6 @@ export function PersonsListB({
           page={safePage}
           maxPage={maxPage}
           onPage={(n) => {
-            setPage(n)
             pushUrl({ page: String(n) })
           }}
           pageSize={pageSize}

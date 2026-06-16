@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
-import { getStripe } from '@/lib/stripe'
-import { captureError } from '@/lib/logger'
-import { env } from '@/lib/env'
 import type Stripe from 'stripe'
+import { planFromPrice } from '@/lib/billing/plan-from-price'
+import { prisma } from '@/lib/db'
+import { env } from '@/lib/env'
+import { captureError } from '@/lib/logger'
+import { getStripe } from '@/lib/stripe'
 
 // ────────────────────────────────────────────────────────────────────────────
 // Hjælper — udtræk kunde-ID uanset om Stripe returnerer string eller objekt
@@ -57,6 +58,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Ugyldig webhook-signatur' }, { status: 400 })
   }
 
+  // Idempotens (læse-tjek): er eventet allerede behandlet? → 200 tidligt.
+  // Bemærk: vi markerer FØRST som behandlet EFTER succesfuld behandling (nederst),
+  // så en fejl undervejs ikke permanent springer eventet over ved Stripes retry.
+  const alreadyProcessed = await prisma.processedStripeEvent.findUnique({
+    where: { event_id: event.id },
+  })
+  if (alreadyProcessed) {
+    return NextResponse.json({ received: true, duplicate: true })
+  }
+
   try {
     switch (event.type) {
       case 'checkout.session.completed': {
@@ -83,8 +94,11 @@ export async function POST(req: NextRequest) {
 
         if (!orgId) break
 
-        const plan = stripeSubscription.items.data[0]?.price.lookup_key ?? 'standard'
         const firstItem = stripeSubscription.items.data[0]
+        const plan = planFromPrice({
+          lookupKey: firstItem?.price.lookup_key,
+          priceId: firstItem?.price.id,
+        })
         const { periodStart, periodEnd } = resolvePeriod(firstItem)
 
         await prisma.subscription.upsert({
@@ -93,7 +107,7 @@ export async function POST(req: NextRequest) {
             organization_id: orgId,
             stripe_customer_id: customerId,
             stripe_subscription_id: subscriptionId,
-            plan,
+            plan: plan ?? 'trial',
             status: stripeSubscription.status,
             seat_count: 1,
             current_period_start: new Date(periodStart * 1000),
@@ -104,7 +118,7 @@ export async function POST(req: NextRequest) {
           },
           update: {
             stripe_subscription_id: subscriptionId,
-            plan,
+            ...(plan ? { plan } : {}),
             status: stripeSubscription.status,
             current_period_start: new Date(periodStart * 1000),
             current_period_end: new Date(periodEnd * 1000),
@@ -114,10 +128,17 @@ export async function POST(req: NextRequest) {
           },
         })
 
-        await prisma.organization.update({
-          where: { id: orgId },
-          data: { plan },
-        })
+        if (plan) {
+          await prisma.organization.update({
+            where: { id: orgId },
+            data: { plan },
+          })
+        } else {
+          captureError(new Error('Ukendt Stripe-price ved checkout — plan ikke opdateret'), {
+            namespace: 'api:webhooks:stripe',
+            extra: { step: 'checkout.session.completed', orgId, priceId: firstItem?.price.id },
+          })
+        }
 
         break
       }
@@ -140,8 +161,11 @@ export async function POST(req: NextRequest) {
           },
         })
 
-        // Opdater plan på organisation hvis lookup_key er tilgængeligt
-        const plan = firstItem?.price.lookup_key
+        // Opdater plan på organisation hvis vi kan mappe price → plan
+        const plan = planFromPrice({
+          lookupKey: firstItem?.price.lookup_key,
+          priceId: firstItem?.price.id,
+        })
         if (plan) {
           const existing = await prisma.subscription.findFirst({
             where: { stripe_customer_id: customerId },
@@ -181,6 +205,23 @@ export async function POST(req: NextRequest) {
         break
       }
 
+      case 'invoice.payment_succeeded': {
+        const invoice = event.data.object as Stripe.Invoice
+        const customerId = resolveCustomerId(invoice.customer)
+        if (!customerId) break
+
+        // Ryd past_due → active. Rør IKKE canceled-abonnementer.
+        await prisma.subscription.updateMany({
+          where: {
+            stripe_customer_id: customerId,
+            status: { not: 'canceled' },
+          },
+          data: { status: 'active' },
+        })
+
+        break
+      }
+
       case 'invoice.payment_failed': {
         const invoice = event.data.object as Stripe.Invoice
         const customerId = resolveCustomerId(invoice.customer)
@@ -203,7 +244,25 @@ export async function POST(req: NextRequest) {
       namespace: 'api:webhooks:stripe',
       extra: { eventType: event.type, eventId: event.id },
     })
+    // Eventet markeres BEVIDST IKKE som behandlet her → Stripes retry kører rent igen.
     return NextResponse.json({ error: 'Intern fejl ved event-behandling' }, { status: 500 })
+  }
+
+  // Markér som behandlet FØRST efter succesfuld behandling (undgår fail-open state drift).
+  // Handlerne er idempotente (upsert/updateMany), så en sjælden dobbelt-levering er harmløs.
+  // P2002 = en samtidig levering nåede at indsætte rækken → ignorér.
+  try {
+    await prisma.processedStripeEvent.create({
+      data: { event_id: event.id, event_type: event.type },
+    })
+  } catch (err) {
+    const code = (err as { code?: string } | null)?.code
+    if (code !== 'P2002') {
+      captureError(err, {
+        namespace: 'api:webhooks:stripe',
+        extra: { step: 'idempotency-mark', eventId: event.id },
+      })
+    }
   }
 
   return NextResponse.json({ received: true })

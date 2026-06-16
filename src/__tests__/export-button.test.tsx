@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 // Mock prepareExport — skal mockes FØR komponenten importeres
 vi.mock('@/actions/export', () => ({
@@ -15,8 +15,8 @@ vi.mock('sonner', () => ({
   },
 }))
 
-import { ExportButton } from '@/components/ui/export-button'
 import { prepareExport } from '@/actions/export'
+import { ExportButton } from '@/components/ui/export-button'
 import { toast } from 'sonner'
 
 describe('ExportButton', () => {

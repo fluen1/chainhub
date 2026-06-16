@@ -52,9 +52,6 @@ vi.mock('bcryptjs', () => ({
   default: { hash: vi.fn().mockResolvedValue('hashed-password') },
 }))
 
-import { auth } from '@/lib/auth'
-import { canAccessModule } from '@/lib/permissions'
-import { checkActionRateLimit } from '@/lib/rate-limit'
 import {
   getOrganizationUsers,
   createUser,
@@ -64,6 +61,9 @@ import {
   inviteUser,
   acceptInvite,
 } from '@/actions/users'
+import { auth } from '@/lib/auth'
+import { canAccessModule } from '@/lib/permissions'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 
 function makeSession(id = 'u1') {
   return {

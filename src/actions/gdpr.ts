@@ -1,12 +1,12 @@
 'use server'
 
-import { z } from 'zod'
-import { auth } from '@/lib/auth'
-import { canAccessModule } from '@/lib/permissions'
-import { gdprDeletePerson } from '@/lib/export/gdpr'
-import { recordAuditEvent } from '@/lib/audit'
-import { captureError } from '@/lib/logger'
 import { revalidatePath } from 'next/cache'
+import { z } from 'zod'
+import { recordAuditEvent } from '@/lib/audit'
+import { auth } from '@/lib/auth'
+import { gdprDeletePerson } from '@/lib/export/gdpr'
+import { captureError } from '@/lib/logger'
+import { canAccessModule } from '@/lib/permissions'
 import type { ActionResult } from '@/types/actions'
 
 // Løs UUID-validering: accepterer alle 8-4-4-4-12 hex-formater inkl. nil-UUIDs (seed-data)

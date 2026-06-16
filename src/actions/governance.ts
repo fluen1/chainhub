@@ -1,20 +1,20 @@
 'use server'
 
+import type { CompanyPerson, SensitivityLevel } from '@prisma/client'
+import { revalidatePath } from 'next/cache'
+import { recordAuditEvent } from '@/lib/audit'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { captureError } from '@/lib/logger'
 import { canAccessCompany } from '@/lib/permissions'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 import {
   addCompanyPersonSchema,
   endCompanyPersonSchema,
   type AddCompanyPersonInput,
   type EndCompanyPersonInput,
 } from '@/lib/validations/governance'
-import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
-import type { CompanyPerson, SensitivityLevel } from '@prisma/client'
-import { recordAuditEvent } from '@/lib/audit'
-import { captureError } from '@/lib/logger'
-import { checkActionRateLimit } from '@/lib/rate-limit'
 
 // Direktør og bestyrelse er governance-roller — INTERN sensitivity på audit
 const GOVERNANCE_ROLES = new Set(['direktoer', 'bestyrelsesformand', 'bestyrelsesmedlem'])
@@ -148,7 +148,7 @@ export async function endCompanyPerson(
 
   try {
     const companyPerson = await prisma.companyPerson.update({
-      where: { id: parsed.data.companyPersonId },
+      where: { id: parsed.data.companyPersonId, organization_id: session.user.organizationId },
       data: { end_date: new Date(parsed.data.endDate) },
     })
 

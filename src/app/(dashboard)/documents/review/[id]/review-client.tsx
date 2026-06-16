@@ -1,8 +1,5 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import {
   ChevronRight,
   ArrowRight,
@@ -13,15 +10,18 @@ import {
   ChevronDown,
   FileQuestion,
 } from 'lucide-react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import { cn } from '@/lib/utils'
 import {
   approveDocumentReview,
   saveFieldDecision,
   rejectDocumentExtraction,
 } from '@/actions/document-review'
-import { EmptyState } from '@/components/ui/empty-state'
 import { DeleteDocumentButton } from '@/components/documents/DeleteDocumentButton'
+import { EmptyState } from '@/components/ui/empty-state'
+import { cn } from '@/lib/utils'
 import type { SourceBlock } from './page'
 
 // ---------------------------------------------------------------
@@ -796,7 +796,6 @@ export default function ReviewClient({
       </div>
 
       {rejecting && (
-        // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- backdrop-click lukker dialog; Escape håndteres af autoFocus'd textarea
         <div
           className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4"
           role="dialog"
@@ -809,7 +808,7 @@ export default function ReviewClient({
             }
           }}
         >
-          {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- stopPropagation forhindrer backdrop-close ved klik på dialog-indhold */}
+          {}
           <div
             className="bg-white rounded-xl ring-1 ring-slate-900/10 p-5 max-w-md w-full"
             onClick={(e) => e.stopPropagation()}

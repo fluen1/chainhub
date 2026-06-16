@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
 import { Upload, X, FileIcon, Loader2, ChevronDown, ChevronUp } from 'lucide-react'
-import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import { cn } from '@/lib/utils'
+import { useState, useCallback, useRef } from 'react'
+import { toast } from 'sonner'
 import { createContractVersion } from '@/actions/contract-versions'
 import { CHANGE_TYPE_LABELS, formatFileSize } from '@/lib/labels'
+import { cn } from '@/lib/utils'
 
 interface UploadVersionFormProps {
   contractId: string

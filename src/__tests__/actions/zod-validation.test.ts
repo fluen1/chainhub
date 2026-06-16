@@ -5,6 +5,18 @@
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
+// Mock env for at undgå at env.ts kaster ved manglende DATABASE_URL i tests
+vi.mock('@/lib/env', () => ({
+  env: {
+    AI_EXTRACTION_ENABLED: 'false',
+    OPENAI_API_KEY: undefined,
+    OPENAI_BASE_URL: undefined,
+    DATABASE_URL: 'postgresql://test',
+    NEXTAUTH_SECRET: 'test',
+  },
+  baseUrl: 'http://localhost:3000',
+}))
+
 // Mock alle tunge deps FØR imports af actions
 vi.mock('@/lib/auth', () => ({ auth: vi.fn() }))
 vi.mock('@/lib/db', () => ({

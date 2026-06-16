@@ -1,9 +1,16 @@
 'use server'
 
+import type { User, UserRoleAssignment, UserRole } from '@prisma/client'
+import bcrypt from 'bcryptjs'
+import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { sendInviteEmail } from '@/lib/email/resend'
+import { env } from '@/lib/env'
+import { captureError } from '@/lib/logger'
 import { canAccessModule } from '@/lib/permissions'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 import {
   createUserSchema,
   updateUserRoleSchema,
@@ -14,14 +21,7 @@ import {
   type InviteUserInput,
   type AcceptInviteInput,
 } from '@/lib/validations/user'
-import { sendInviteEmail } from '@/lib/email/resend'
-import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
-import type { User, UserRoleAssignment, UserRole } from '@prisma/client'
-import bcrypt from 'bcryptjs'
-import { captureError } from '@/lib/logger'
-import { env } from '@/lib/env'
-import { checkActionRateLimit } from '@/lib/rate-limit'
 
 export type UserWithRoles = User & {
   roles: UserRoleAssignment[]

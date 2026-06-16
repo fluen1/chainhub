@@ -1,14 +1,14 @@
 'use client'
 
+import { LogOut } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut, useSession } from 'next-auth/react'
-import { LogOut } from 'lucide-react'
+import { BrandMark } from '@/components/ui/b'
 import { cn } from '@/lib/utils'
 import type { SidebarBadge } from '@/types/ui'
-import { BrandMark } from '@/components/ui/b'
-import { NotificationBell } from './NotificationBell'
 import { ChatToggle } from './ChatToggle'
+import { NotificationBell } from './NotificationBell'
 
 // ────────────────────────────────────────────────────────────────────────────
 // B-stil sidebar (Linear/Superhuman dense, 220px lys)

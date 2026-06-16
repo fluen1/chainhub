@@ -1,33 +1,45 @@
-import { SkipToMain } from '@/components/layout/SkipToMain'
-import { Providers } from '@/components/providers'
-import { auth } from '@/lib/auth'
+import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { getSidebarData, buildSidebarBadges } from '@/lib/sidebar-data'
 import { getAlertStats } from '@/actions/alerts'
 import { BShell } from '@/components/layout/b-shell'
 import { GlobalKeyboardShortcuts } from '@/components/layout/global-keyboard-shortcuts'
-import { PosthogIdentify } from '@/components/providers/PosthogIdentify'
+import { SkipToMain } from '@/components/layout/SkipToMain'
 import { TrialBanner } from '@/components/layout/TrialBanner'
+import { Providers } from '@/components/providers'
+import { PosthogIdentify } from '@/components/providers/PosthogIdentify'
+import { auth } from '@/lib/auth'
+import { shouldGateBilling } from '@/lib/billing/access-gate'
 import { prisma } from '@/lib/db'
-import { headers } from 'next/headers'
+import { getSidebarData, buildSidebarBadges } from '@/lib/sidebar-data'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
   if (!session) redirect('/login')
 
-  // Subscription gate: udløbne trials og annullerede abonnementer sendes til /billing.
+  // Subscription gate: udløbne trials, annullerede og past_due abonnementer sendes til /billing.
   // Pathname hentes fra x-pathname headeren, som middleware sætter pålideligt.
   const org = await prisma.organization.findUnique({
     where: { id: session.user.organizationId },
-    select: { plan: true, plan_expires_at: true },
+    select: {
+      plan: true,
+      plan_expires_at: true,
+      subscriptions: {
+        where: { status: { not: 'canceled' } },
+        select: { status: true },
+        take: 1,
+      },
+    },
   })
 
   if (org) {
-    const isExpired =
-      org.plan === 'trial' && org.plan_expires_at != null && org.plan_expires_at < new Date()
-    const isCanceled = org.plan === 'canceled'
+    const subStatus = org.subscriptions[0]?.status ?? null
+    const gate = shouldGateBilling({
+      plan: org.plan,
+      planExpiresAt: org.plan_expires_at,
+      subStatus,
+    })
 
-    if (isExpired || isCanceled) {
+    if (gate) {
       const headersList = await headers()
       const pathname = headersList.get('x-pathname') ?? ''
       const isAllowed = pathname.startsWith('/billing') || pathname.startsWith('/settings')

@@ -20,9 +20,9 @@ vi.mock('@/lib/permissions', () => ({
   canAccessModule: vi.fn(),
 }))
 
+import { getSettingsAIUsage } from '@/actions/ai-usage'
 import { auth } from '@/lib/auth'
 import { canAccessModule } from '@/lib/permissions'
-import { getSettingsAIUsage } from '@/actions/ai-usage'
 
 describe('ai-usage hardening', () => {
   beforeEach(() => vi.clearAllMocks())

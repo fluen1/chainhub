@@ -1,7 +1,7 @@
 'use client'
 
-import Link from 'next/link'
 import { Bell } from 'lucide-react'
+import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
 // ────────────────────────────────────────────────────────────────────────────

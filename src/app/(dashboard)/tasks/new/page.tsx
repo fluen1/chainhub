@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
-import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { CreateTaskForm } from '@/components/tasks/CreateTaskForm'
 import { Suspense } from 'react'
+import { CreateTaskForm } from '@/components/tasks/CreateTaskForm'
+import { auth } from '@/lib/auth'
 
 export const metadata: Metadata = { title: 'Ny opgave' }
 

@@ -1,10 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { createUser } from '@/actions/users'
 import { toast } from 'sonner'
-import { USER_ROLE_LABELS } from '@/lib/labels'
+import { createUser } from '@/actions/users'
 import { BButton, BTextField, BFieldWrap, Panel } from '@/components/ui/b'
+import { USER_ROLE_LABELS } from '@/lib/labels'
 
 const ROLES = [
   'GROUP_OWNER',

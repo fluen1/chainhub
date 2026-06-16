@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import posthog from 'posthog-js'
 import Link from 'next/link'
+import posthog from 'posthog-js'
+import { useEffect, useState } from 'react'
 import { BButton } from '@/components/ui/b'
 import { COOKIE_CONSENT_KEY, type CookieConsentChoice } from '@/lib/cookie-consent'
 

@@ -1,4 +1,3 @@
-import { z } from 'zod'
 import type {
   SagsType,
   SagsSubtype,
@@ -15,6 +14,7 @@ import type {
   ChangeType,
   SensitivityLevel,
 } from '@prisma/client'
+import { z } from 'zod'
 
 /**
  * Zod-schemaer der matcher Prisma-enums eksakt.

@@ -1,5 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
+// Mock env for at undgå at env.ts kaster ved manglende DATABASE_URL i tests
+vi.mock('@/lib/env', () => ({
+  env: {
+    AI_EXTRACTION_ENABLED: 'true',
+    OPENAI_API_KEY: 'sk-test',
+    OPENAI_BASE_URL: undefined,
+    DATABASE_URL: 'postgresql://test',
+    NEXTAUTH_SECRET: 'test',
+  },
+  baseUrl: 'http://localhost:3000',
+}))
+
 // Mock alle eksterne afhængigheder før import af SUT
 vi.mock('@/lib/ai/feature-flags', () => ({
   isAIEnabled: vi.fn(),
@@ -27,15 +39,18 @@ vi.mock('@/lib/db', () => ({
       findFirst: vi.fn().mockResolvedValue(null),
       findUnique: vi.fn().mockResolvedValue(null),
     },
+    organization: {
+      findUnique: vi.fn().mockResolvedValue({ plan: 'plus' }),
+    },
   },
 }))
 
-import { extractDocument } from '@/lib/ai/jobs/extract-document'
-import { isAIEnabled } from '@/lib/ai/feature-flags'
-import { checkCostCap } from '@/lib/ai/cost-cap'
-import { recordAIUsage } from '@/lib/ai/usage'
 import { loadForExtraction } from '@/lib/ai/content-loader'
+import { checkCostCap } from '@/lib/ai/cost-cap'
+import { isAIEnabled } from '@/lib/ai/feature-flags'
+import { extractDocument } from '@/lib/ai/jobs/extract-document'
 import { runExtractionPipeline } from '@/lib/ai/pipeline/orchestrator'
+import { recordAIUsage } from '@/lib/ai/usage'
 import { prisma } from '@/lib/db'
 
 const basePayload = {

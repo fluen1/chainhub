@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
-import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { canAccessModule } from '@/lib/permissions'
 import { getPersonsPaginated } from '@/actions/persons'
+import { auth } from '@/lib/auth'
+import { canAccessModule } from '@/lib/permissions'
 import { PersonsListB } from './persons-list-b'
 
 export const metadata: Metadata = { title: 'Personer' }

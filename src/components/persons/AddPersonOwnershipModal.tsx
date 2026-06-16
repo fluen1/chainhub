@@ -2,8 +2,8 @@
 
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import { BModal, BTextField, BFieldWrap, BFieldRow } from '@/components/ui/b'
 import { addPersonOwnership } from '@/actions/persons'
+import { BModal, BTextField, BFieldWrap, BFieldRow } from '@/components/ui/b'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AddPersonOwnershipModal — registrér ejerskab (% andel) for person i selskab.

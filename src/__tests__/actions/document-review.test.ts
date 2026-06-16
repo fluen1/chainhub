@@ -8,6 +8,10 @@ vi.mock('@/lib/auth', () => ({
 
 vi.mock('@/lib/permissions', () => ({
   canAccessCompany: vi.fn(async () => true),
+  canAccessSensitivity: vi.fn(async () => true),
+  getAllowedSensitivityLevels: vi
+    .fn()
+    .mockResolvedValue(['PUBLIC', 'STANDARD', 'INTERN', 'FORTROLIG', 'STRENGT_FORTROLIG']),
 }))
 
 const { prismaMock, mockExtraction, mockDocument } = vi.hoisted(() => {
@@ -201,9 +205,9 @@ describe('rejectDocumentExtraction', () => {
 
 // ─── submitDocumentForReview ──────────────────────────────────────────────────
 
+import { submitDocumentForReview, reviewDocument } from '@/actions/documents'
 import { auth } from '@/lib/auth'
 import { canAccessCompany } from '@/lib/permissions'
-import { submitDocumentForReview, reviewDocument } from '@/actions/documents'
 
 describe('submitDocumentForReview', () => {
   beforeEach(() => {

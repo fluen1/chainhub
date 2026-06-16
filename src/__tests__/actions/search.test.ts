@@ -21,9 +21,9 @@ vi.mock('@/lib/permissions', () => ({
   canAccessSensitivity: vi.fn(),
 }))
 
+import { runSearch } from '@/actions/search'
 import { auth } from '@/lib/auth'
 import { getAccessibleCompanies, canAccessSensitivity } from '@/lib/permissions'
-import { runSearch } from '@/actions/search'
 
 function makeSession() {
   return {

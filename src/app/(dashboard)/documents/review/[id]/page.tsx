@@ -1,14 +1,14 @@
 import type { Metadata } from 'next'
-import { auth } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
+import { getDocumentEnrichment } from '@/actions/document-enrichment'
+import { getDocumentReviewPageData, getDocumentTitle } from '@/actions/documents'
+import { EnrichmentPanel } from '@/components/documents/EnrichmentPanel'
 import { getExistingValue, type ContractWithRelations } from '@/lib/ai/review/existing-values'
 import { getSchema } from '@/lib/ai/schemas/registry'
 import type { ContractSchema } from '@/lib/ai/schemas/types'
+import { auth } from '@/lib/auth'
 import ReviewClient from './review-client'
 import type { ReviewDocument, ReviewField, ReviewQueueItem } from './review-client'
-import { getDocumentReviewPageData, getDocumentTitle } from '@/actions/documents'
-import { getDocumentEnrichment } from '@/actions/document-enrichment'
-import { EnrichmentPanel } from '@/components/documents/EnrichmentPanel'
 
 export async function generateMetadata({
   params,

@@ -66,7 +66,7 @@ describe('updateContract', () => {
     expect('data' in result).toBe(true)
     expect(prisma.contract.update).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: UUID_1 },
+        where: { id: UUID_1, organization_id: expect.any(String) },
         data: expect.objectContaining({ display_name: 'Nyt navn' }),
       })
     )

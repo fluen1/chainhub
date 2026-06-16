@@ -119,7 +119,11 @@ describe('updateCaseStatus', () => {
     const { prisma } = await import('@/lib/db')
     const audit = await import('@/lib/audit')
     vi.mocked(prisma.case.findFirst).mockImplementation((() =>
-      Promise.resolve({ status: 'NY', sensitivity: 'INTERN' })) as never)
+      Promise.resolve({
+        status: 'NY',
+        sensitivity: 'INTERN',
+        case_companies: [{ company_id: UUID_1 }],
+      })) as never)
     const result = await updateCaseStatus({ caseId: UUID_1, status: 'AKTIV' } as never)
     expect('data' in result).toBe(true)
     expect(audit.recordAuditEvent).toHaveBeenCalled()

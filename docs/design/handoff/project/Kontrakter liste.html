@@ -1,545 +1,1369 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="da">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Kontrakter — ChainHub</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #fafafa; color: #1f2328; font-size: 13px; -webkit-font-smoothing: antialiased; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kontrakter — ChainHub</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family:
+          'Inter',
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        background: #fafafa;
+        color: #1f2328;
+        font-size: 13px;
+        -webkit-font-smoothing: antialiased;
+      }
 
-    /* ── LAYOUT ── */
-    .layout { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+      /* ── LAYOUT ── */
+      .layout {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        min-height: 100vh;
+      }
 
-    /* ── SIDEBAR ── */
-    .sidebar { background: #f6f7f9; border-right: 1px solid #e1e4e8; padding: 14px 8px; font-size: 13px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
-    .sb-logo { font-weight: 600; padding: 4px 10px 16px; color: #1f2328; }
-    .sb-sec  { margin-bottom: 16px; }
-    .sb-lab  { font-size: 10px; color: #6e7681; padding: 0 10px 4px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
-    .sb-item { display: flex; justify-content: space-between; align-items: center; padding: 4px 10px; border-radius: 4px; color: #1f2328; cursor: pointer; }
-    .sb-item.active { background: #e8eaee; font-weight: 500; }
-    .sb-item:hover:not(.active) { background: #ecedf0; }
-    .sb-cnt  { font-size: 11px; color: #6e7681; font-variant-numeric: tabular-nums; }
-    .sb-cnt.a { color: #b91c1c; font-weight: 600; } .sb-cnt.w { color: #b54708; }
+      /* ── SIDEBAR ── */
+      .sidebar {
+        background: #f6f7f9;
+        border-right: 1px solid #e1e4e8;
+        padding: 14px 8px;
+        font-size: 13px;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+      }
+      .sb-logo {
+        font-weight: 600;
+        padding: 4px 10px 16px;
+        color: #1f2328;
+      }
+      .sb-sec {
+        margin-bottom: 16px;
+      }
+      .sb-lab {
+        font-size: 10px;
+        color: #6e7681;
+        padding: 0 10px 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+      }
+      .sb-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 4px;
+        color: #1f2328;
+        cursor: pointer;
+      }
+      .sb-item.active {
+        background: #e8eaee;
+        font-weight: 500;
+      }
+      .sb-item:hover:not(.active) {
+        background: #ecedf0;
+      }
+      .sb-cnt {
+        font-size: 11px;
+        color: #6e7681;
+        font-variant-numeric: tabular-nums;
+      }
+      .sb-cnt.a {
+        color: #b91c1c;
+        font-weight: 600;
+      }
+      .sb-cnt.w {
+        color: #b54708;
+      }
 
-    /* ── MAIN ── */
-    .main { padding: 12px 24px 24px; display: flex; flex-direction: column; gap: 10px; min-width: 0; overflow: hidden; }
+      /* ── MAIN ── */
+      .main {
+        padding: 12px 24px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        min-width: 0;
+        overflow: hidden;
+      }
 
-    /* ── HEADER ── */
-    .crumb { font-size: 12px; color: #6e7681; padding: 4px 0 2px; }
-    .head  { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 1px solid #e1e4e8; }
-    .head h1   { font-size: 18px; font-weight: 600; letter-spacing: -0.01em; }
-    .head-meta { font-size: 12px; color: #6e7681; margin-top: 3px; font-variant-numeric: tabular-nums; }
-    .head-btns { display: flex; gap: 6px; }
-    .btn { font-size: 12px; padding: 5px 10px; border: 1px solid #d0d7de; background: white; color: #1f2328; border-radius: 4px; cursor: pointer; font-weight: 500; font-family: inherit; white-space: nowrap; }
-    .btn:hover { background: #f6f8fa; }
-    .btn.primary { background: #0969da; color: white; border-color: #0969da; }
-    .btn.primary:hover { background: #0860c7; }
+      /* ── HEADER ── */
+      .crumb {
+        font-size: 12px;
+        color: #6e7681;
+        padding: 4px 0 2px;
+      }
+      .head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e1e4e8;
+      }
+      .head h1 {
+        font-size: 18px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+      .head-meta {
+        font-size: 12px;
+        color: #6e7681;
+        margin-top: 3px;
+        font-variant-numeric: tabular-nums;
+      }
+      .head-btns {
+        display: flex;
+        gap: 6px;
+      }
+      .btn {
+        font-size: 12px;
+        padding: 5px 10px;
+        border: 1px solid #d0d7de;
+        background: white;
+        color: #1f2328;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+        font-family: inherit;
+        white-space: nowrap;
+      }
+      .btn:hover {
+        background: #f6f8fa;
+      }
+      .btn.primary {
+        background: #0969da;
+        color: white;
+        border-color: #0969da;
+      }
+      .btn.primary:hover {
+        background: #0860c7;
+      }
 
-    /* ── FILTER ROW ── */
-    .filter-row { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
-    .filter-search { font-size: 12px; padding: 5px 10px; border: 1px solid #d0d7de; border-radius: 4px; background: white; color: #1f2328; font-family: inherit; width: 200px; outline: none; }
-    .filter-search:focus { border-color: #0969da; outline: 2px solid #ddf4ff; outline-offset: 0; }
-    .filter-sep { width: 1px; height: 20px; background: #e1e4e8; margin: 0 2px; flex-shrink: 0; }
-    .filter-btn { font-size: 12px; padding: 5px 10px; border: 1px solid #d0d7de; background: white; color: #6e7681; border-radius: 4px; cursor: pointer; font-family: inherit; white-space: nowrap; }
-    .filter-btn:hover { background: #f6f8fa; color: #1f2328; }
-    .filter-btn.active { background: #ddf4ff; border-color: #0969da; color: #0969da; }
-    .filter-spacer { flex: 1; }
-    .seg { display: inline-flex; border: 1px solid #d0d7de; border-radius: 4px; overflow: hidden; flex-shrink: 0; }
-    .sopt { padding: 5px 11px; font-size: 12px; color: #6e7681; background: white; border-right: 1px solid #d0d7de; cursor: pointer; font-family: inherit; white-space: nowrap; }
-    .sopt:last-child { border-right: none; }
-    .sopt.on { background: #1f2328; color: white; }
-    .sopt:hover:not(.on) { background: #f6f8fa; }
+      /* ── FILTER ROW ── */
+      .filter-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: nowrap;
+      }
+      .filter-search {
+        font-size: 12px;
+        padding: 5px 10px;
+        border: 1px solid #d0d7de;
+        border-radius: 4px;
+        background: white;
+        color: #1f2328;
+        font-family: inherit;
+        width: 200px;
+        outline: none;
+      }
+      .filter-search:focus {
+        border-color: #0969da;
+        outline: 2px solid #ddf4ff;
+        outline-offset: 0;
+      }
+      .filter-sep {
+        width: 1px;
+        height: 20px;
+        background: #e1e4e8;
+        margin: 0 2px;
+        flex-shrink: 0;
+      }
+      .filter-btn {
+        font-size: 12px;
+        padding: 5px 10px;
+        border: 1px solid #d0d7de;
+        background: white;
+        color: #6e7681;
+        border-radius: 4px;
+        cursor: pointer;
+        font-family: inherit;
+        white-space: nowrap;
+      }
+      .filter-btn:hover {
+        background: #f6f8fa;
+        color: #1f2328;
+      }
+      .filter-btn.active {
+        background: #ddf4ff;
+        border-color: #0969da;
+        color: #0969da;
+      }
+      .filter-spacer {
+        flex: 1;
+      }
+      .seg {
+        display: inline-flex;
+        border: 1px solid #d0d7de;
+        border-radius: 4px;
+        overflow: hidden;
+        flex-shrink: 0;
+      }
+      .sopt {
+        padding: 5px 11px;
+        font-size: 12px;
+        color: #6e7681;
+        background: white;
+        border-right: 1px solid #d0d7de;
+        cursor: pointer;
+        font-family: inherit;
+        white-space: nowrap;
+      }
+      .sopt:last-child {
+        border-right: none;
+      }
+      .sopt.on {
+        background: #1f2328;
+        color: white;
+      }
+      .sopt:hover:not(.on) {
+        background: #f6f8fa;
+      }
 
-    /* ── DROPDOWN ── */
-    .dd-wrap  { position: relative; }
-    .dd-menu  { position: absolute; top: calc(100% + 3px); left: 0; min-width: 160px; background: white; border: 1px solid #d0d7de; border-radius: 4px; box-shadow: 0 8px 24px rgba(15,23,42,0.11); z-index: 200; overflow: hidden; }
-    .dd-item  { padding: 6px 12px; font-size: 12px; color: #1f2328; cursor: pointer; white-space: nowrap; }
-    .dd-item:hover { background: #f6f7f9; }
-    .dd-item.on { background: #ddf4ff; color: #0969da; font-weight: 500; }
-    .dd-div   { padding: 4px 12px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #8c959f; background: #fbfbfc; border-bottom: 1px solid #f0f1f3; }
+      /* ── DROPDOWN ── */
+      .dd-wrap {
+        position: relative;
+      }
+      .dd-menu {
+        position: absolute;
+        top: calc(100% + 3px);
+        left: 0;
+        min-width: 160px;
+        background: white;
+        border: 1px solid #d0d7de;
+        border-radius: 4px;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.11);
+        z-index: 200;
+        overflow: hidden;
+      }
+      .dd-item {
+        padding: 6px 12px;
+        font-size: 12px;
+        color: #1f2328;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .dd-item:hover {
+        background: #f6f7f9;
+      }
+      .dd-item.on {
+        background: #ddf4ff;
+        color: #0969da;
+        font-weight: 500;
+      }
+      .dd-div {
+        padding: 4px 12px;
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #8c959f;
+        background: #fbfbfc;
+        border-bottom: 1px solid #f0f1f3;
+      }
 
-    /* ── TABLE ── */
-    .tbl-wrap { background: white; border: 1px solid #e1e4e8; border-radius: 4px; overflow: hidden; }
-    .tbl { width: 100%; border-collapse: collapse; table-layout: fixed; }
+      /* ── TABLE ── */
+      .tbl-wrap {
+        background: white;
+        border: 1px solid #e1e4e8;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .tbl {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+      }
 
-    /* Column widths */
-    .col-type  { width: 148px; }
-    .col-selskab { width: 175px; }
-    .col-parter  { width: 160px; }
-    .col-vaerdi  { width: 110px; }
-    .col-eff   { width: 82px; }
-    .col-udlob { width: 70px; }
-    .col-status { width: 72px; }
-    .col-sens  { width: 84px; }
-    .col-act   { width: 20px; }
+      /* Column widths */
+      .col-type {
+        width: 148px;
+      }
+      .col-selskab {
+        width: 175px;
+      }
+      .col-parter {
+        width: 160px;
+      }
+      .col-vaerdi {
+        width: 110px;
+      }
+      .col-eff {
+        width: 82px;
+      }
+      .col-udlob {
+        width: 70px;
+      }
+      .col-status {
+        width: 72px;
+      }
+      .col-sens {
+        width: 84px;
+      }
+      .col-act {
+        width: 20px;
+      }
 
-    .tbl th { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #6e7681; padding: 6px 12px; background: #fbfbfc; border-bottom: 1px solid #e1e4e8; text-align: left; cursor: pointer; user-select: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .tbl th:hover { color: #1f2328; }
-    .tbl th.sorted { color: #1f2328; }
-    .tbl td { font-size: 13px; padding: 6px 12px; border-bottom: 1px solid #f0f1f3; color: #1f2328; font-variant-numeric: tabular-nums; vertical-align: middle; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .tbl tr:last-child td { border-bottom: none; }
-    .tbl tr:hover td { background: #f6f7f9; cursor: pointer; }
-    .td-sec { color: #6e7681; font-size: 12px; }
-    .td-right { text-align: right; }
+      .tbl th {
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #6e7681;
+        padding: 6px 12px;
+        background: #fbfbfc;
+        border-bottom: 1px solid #e1e4e8;
+        text-align: left;
+        cursor: pointer;
+        user-select: none;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .tbl th:hover {
+        color: #1f2328;
+      }
+      .tbl th.sorted {
+        color: #1f2328;
+      }
+      .tbl td {
+        font-size: 13px;
+        padding: 6px 12px;
+        border-bottom: 1px solid #f0f1f3;
+        color: #1f2328;
+        font-variant-numeric: tabular-nums;
+        vertical-align: middle;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .tbl tr:last-child td {
+        border-bottom: none;
+      }
+      .tbl tr:hover td {
+        background: #f6f7f9;
+        cursor: pointer;
+      }
+      .td-sec {
+        color: #6e7681;
+        font-size: 12px;
+      }
+      .td-right {
+        text-align: right;
+      }
 
-    /* Type cell with AI badge */
-    .type-cell { display: flex; align-items: center; gap: 5px; }
-    .ai-badge  { font-size: 9px; font-weight: 700; padding: 1px 4px; border-radius: 2px; background: #f3e8ff; color: #7c3aed; flex-shrink: 0; line-height: 1.4; }
+      /* Type cell with AI badge */
+      .type-cell {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .ai-badge {
+        font-size: 9px;
+        font-weight: 700;
+        padding: 1px 4px;
+        border-radius: 2px;
+        background: #f3e8ff;
+        color: #7c3aed;
+        flex-shrink: 0;
+        line-height: 1.4;
+      }
 
-    /* Badges */
-    .badge { font-size: 11px; font-weight: 500; padding: 1px 6px; border-radius: 3px; font-variant-numeric: tabular-nums; white-space: nowrap; display: inline-block; }
-    .badge.red    { background: #ffebe9; color: #cf222e; }
-    .badge.amber  { background: #fff8c5; color: #9a6700; }
-    .badge.green  { background: #dafbe1; color: #1a7f37; }
-    .badge.blue   { background: #ddf4ff; color: #0969da; }
-    .badge.gray   { background: #f6f8fa; color: #57606a; }
-    .badge.purple { background: #f3e8ff; color: #7c3aed; }
-    .chev { color: #8c959f; font-size: 12px; }
+      /* Badges */
+      .badge {
+        font-size: 11px;
+        font-weight: 500;
+        padding: 1px 6px;
+        border-radius: 3px;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        display: inline-block;
+      }
+      .badge.red {
+        background: #ffebe9;
+        color: #cf222e;
+      }
+      .badge.amber {
+        background: #fff8c5;
+        color: #9a6700;
+      }
+      .badge.green {
+        background: #dafbe1;
+        color: #1a7f37;
+      }
+      .badge.blue {
+        background: #ddf4ff;
+        color: #0969da;
+      }
+      .badge.gray {
+        background: #f6f8fa;
+        color: #57606a;
+      }
+      .badge.purple {
+        background: #f3e8ff;
+        color: #7c3aed;
+      }
+      .chev {
+        color: #8c959f;
+        font-size: 12px;
+      }
 
-    /* ── GROUPED VIEW ── */
-    .group-header { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: #f6f7f9; border-bottom: 1px solid #e1e4e8; cursor: pointer; user-select: none; }
-    .group-header:hover { background: #ecedf0; }
-    .group-toggle { font-size: 10px; color: #6e7681; width: 12px; flex-shrink: 0; }
-    .group-name { font-size: 12px; font-weight: 600; color: #1f2328; flex: 1; }
-    .group-count { font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 10px; background: #e1e4e8; color: #57606a; font-variant-numeric: tabular-nums; }
-    .group-count.has-alert { background: #ffebe9; color: #cf222e; }
+      /* ── GROUPED VIEW ── */
+      .group-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        background: #f6f7f9;
+        border-bottom: 1px solid #e1e4e8;
+        cursor: pointer;
+        user-select: none;
+      }
+      .group-header:hover {
+        background: #ecedf0;
+      }
+      .group-toggle {
+        font-size: 10px;
+        color: #6e7681;
+        width: 12px;
+        flex-shrink: 0;
+      }
+      .group-name {
+        font-size: 12px;
+        font-weight: 600;
+        color: #1f2328;
+        flex: 1;
+      }
+      .group-count {
+        font-size: 10px;
+        font-weight: 600;
+        padding: 1px 7px;
+        border-radius: 10px;
+        background: #e1e4e8;
+        color: #57606a;
+        font-variant-numeric: tabular-nums;
+      }
+      .group-count.has-alert {
+        background: #ffebe9;
+        color: #cf222e;
+      }
 
-    /* ── KANBAN ── */
-    .kanban { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; align-items: start; }
-    .kb-col { background: white; border: 1px solid #e1e4e8; border-radius: 4px; overflow: hidden; }
-    .kb-h   { padding: 6px 10px; border-bottom: 1px solid #e1e4e8; display: flex; justify-content: space-between; align-items: center; }
-    .kb-ht  { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-    .kb-hc  { font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 10px; background: #e1e4e8; color: #57606a; font-variant-numeric: tabular-nums; }
-    .kb-h.aktiv   { background: #fbfbfc; }
-    .kb-h.udlober { background: #fff8c5; }
-    .kb-h.udlober .kb-ht { color: #9a6700; }
-    .kb-h.udlober .kb-hc { background: #f5d673; color: #9a6700; }
-    .kb-h.udloebet { background: #ffebe9; }
-    .kb-h.udloebet .kb-ht { color: #cf222e; }
-    .kb-h.udloebet .kb-hc { background: #ffc1ba; color: #cf222e; }
-    .kb-h.opsagt  { background: #f6f8fa; }
-    .kb-h.opsagt  .kb-ht { color: #57606a; }
-    .kb-card { padding: 7px 10px; border-bottom: 1px solid #f0f1f3; cursor: pointer; }
-    .kb-card:hover { background: #f6f7f9; }
-    .kb-card:last-child { border-bottom: none; }
-    .kb-card-t  { font-size: 12px; font-weight: 500; color: #1f2328; display: flex; align-items: center; gap: 4px; }
-    .kb-card-s  { font-size: 11px; color: #6e7681; margin-top: 2px; }
-    .kb-card-b  { margin-top: 4px; display: flex; gap: 4px; flex-wrap: wrap; }
+      /* ── KANBAN ── */
+      .kanban {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        align-items: start;
+      }
+      .kb-col {
+        background: white;
+        border: 1px solid #e1e4e8;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .kb-h {
+        padding: 6px 10px;
+        border-bottom: 1px solid #e1e4e8;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .kb-ht {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .kb-hc {
+        font-size: 10px;
+        font-weight: 600;
+        padding: 1px 6px;
+        border-radius: 10px;
+        background: #e1e4e8;
+        color: #57606a;
+        font-variant-numeric: tabular-nums;
+      }
+      .kb-h.aktiv {
+        background: #fbfbfc;
+      }
+      .kb-h.udlober {
+        background: #fff8c5;
+      }
+      .kb-h.udlober .kb-ht {
+        color: #9a6700;
+      }
+      .kb-h.udlober .kb-hc {
+        background: #f5d673;
+        color: #9a6700;
+      }
+      .kb-h.udloebet {
+        background: #ffebe9;
+      }
+      .kb-h.udloebet .kb-ht {
+        color: #cf222e;
+      }
+      .kb-h.udloebet .kb-hc {
+        background: #ffc1ba;
+        color: #cf222e;
+      }
+      .kb-h.opsagt {
+        background: #f6f8fa;
+      }
+      .kb-h.opsagt .kb-ht {
+        color: #57606a;
+      }
+      .kb-card {
+        padding: 7px 10px;
+        border-bottom: 1px solid #f0f1f3;
+        cursor: pointer;
+      }
+      .kb-card:hover {
+        background: #f6f7f9;
+      }
+      .kb-card:last-child {
+        border-bottom: none;
+      }
+      .kb-card-t {
+        font-size: 12px;
+        font-weight: 500;
+        color: #1f2328;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .kb-card-s {
+        font-size: 11px;
+        color: #6e7681;
+        margin-top: 2px;
+      }
+      .kb-card-b {
+        margin-top: 4px;
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+      }
 
-    /* ── PAGINATION ── */
-    .pager { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: white; border: 1px solid #e1e4e8; border-radius: 4px; }
-    .pager-info  { font-size: 12px; color: #6e7681; font-variant-numeric: tabular-nums; }
-    .pager-pages { display: flex; gap: 4px; align-items: center; }
-    .pager-pages span { font-size: 12px; color: #6e7681; font-variant-numeric: tabular-nums; padding: 0 4px; }
-    .page-btn    { font-size: 11px; padding: 3px 8px; border: 1px solid #d0d7de; background: white; color: #1f2328; border-radius: 3px; cursor: pointer; font-family: inherit; }
-    .page-btn:hover:not(:disabled) { background: #f6f8fa; }
-    .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .page-sz-btn { font-size: 11px; padding: 2px 7px; border: 1px solid #d0d7de; background: white; color: #6e7681; border-radius: 3px; cursor: pointer; font-family: inherit; }
-    .page-sz-btn.on { background: #e8eaee; color: #1f2328; border-color: #c1c5cc; font-weight: 500; }
-    .page-sz-btn:hover:not(.on) { background: #f6f8fa; }
+      /* ── PAGINATION ── */
+      .pager {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        background: white;
+        border: 1px solid #e1e4e8;
+        border-radius: 4px;
+      }
+      .pager-info {
+        font-size: 12px;
+        color: #6e7681;
+        font-variant-numeric: tabular-nums;
+      }
+      .pager-pages {
+        display: flex;
+        gap: 4px;
+        align-items: center;
+      }
+      .pager-pages span {
+        font-size: 12px;
+        color: #6e7681;
+        font-variant-numeric: tabular-nums;
+        padding: 0 4px;
+      }
+      .page-btn {
+        font-size: 11px;
+        padding: 3px 8px;
+        border: 1px solid #d0d7de;
+        background: white;
+        color: #1f2328;
+        border-radius: 3px;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .page-btn:hover:not(:disabled) {
+        background: #f6f8fa;
+      }
+      .page-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      .page-sz-btn {
+        font-size: 11px;
+        padding: 2px 7px;
+        border: 1px solid #d0d7de;
+        background: white;
+        color: #6e7681;
+        border-radius: 3px;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .page-sz-btn.on {
+        background: #e8eaee;
+        color: #1f2328;
+        border-color: #c1c5cc;
+        font-weight: 500;
+      }
+      .page-sz-btn:hover:not(.on) {
+        background: #f6f8fa;
+      }
 
-    /* ── EMPTY STATE ── */
-    .empty { padding: 32px; text-align: center; color: #8c959f; font-size: 13px; }
+      /* ── EMPTY STATE ── */
+      .empty {
+        padding: 32px;
+        text-align: center;
+        color: #8c959f;
+        font-size: 13px;
+      }
 
-    /* ── BOTTOM BAR ── */
-    .bot-bar { display: flex; justify-content: space-between; padding: 6px 0; font-size: 11px; color: #6e7681; }
-    .kbd { background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 3px; padding: 1px 5px; font-family: 'SF Mono', 'Fira Mono', monospace; font-size: 10px; color: #1f2328; }
-  </style>
-</head>
-<body>
-<div id="root"></div>
+      /* ── BOTTOM BAR ── */
+      .bot-bar {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        font-size: 11px;
+        color: #6e7681;
+      }
+      .kbd {
+        background: #f6f8fa;
+        border: 1px solid #d0d7de;
+        border-radius: 3px;
+        padding: 1px 5px;
+        font-family: 'SF Mono', 'Fira Mono', monospace;
+        font-size: 10px;
+        color: #1f2328;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
 
-<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+    <script
+      src="https://unpkg.com/react@18.3.1/umd/react.development.js"
+      integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"
+      integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"
+      integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y"
+      crossorigin="anonymous"
+    ></script>
 
-<script type="text/babel">
-const { useState, useRef, useEffect } = React;
+    <script type="text/babel">
+      const { useState, useRef, useEffect } = React
 
-/* ─── DATA ─── */
-const CONTRACTS = [
-  { id:1,  type:'Lejekontrakt', ai:true,  selskab:'Tandlæge Østerbro ApS', parter:'Selskabet + Ejendomsselskab Ø.', vaerdi:'38.500', unit:'kr/md', effektiv:'14.03.21', udlob:'14d',  udlobDays:14,   status:'Aktiv',   sens:'STANDARD'   },
-  { id:2,  type:'Ansættelse',   ai:true,  selskab:'Klinik Aalborg',         parter:'Selskabet + Tina Hansen',        vaerdi:'52.000', unit:'kr/md', effektiv:'01.02.22', udlob:'—',    udlobDays:9999, status:'Aktiv',   sens:'INTERN'     },
-  { id:3,  type:'Ejeraftale',   ai:false, selskab:'Klinik Esbjerg',         parter:'Holding + Per Larsen',           vaerdi:'—',      unit:'',     effektiv:'14.06.20', udlob:'—',    udlobDays:9999, status:'Aktiv',   sens:'FORTROLIG'  },
-  { id:4,  type:'Lejekontrakt', ai:true,  selskab:'Klinik Holstebro',       parter:'Selskabet + Udlejer ApS',        vaerdi:'24.000', unit:'kr/md', effektiv:'01.03.19', udlob:'28d',  udlobDays:28,   status:'Aktiv',   sens:'STANDARD'   },
-  { id:5,  type:'Ansættelse',   ai:true,  selskab:'Tandlæge Østerbro ApS',  parter:'Selskabet + Lars Hansen',        vaerdi:'68.000', unit:'kr/md', effektiv:'01.01.18', udlob:'—',    udlobDays:9999, status:'Aktiv',   sens:'INTERN'     },
-  { id:6,  type:'Driftsaftale', ai:false, selskab:'Klinik Aarhus',          parter:'Selskabet + Drift A/S',          vaerdi:'12.500', unit:'kr/md', effektiv:'01.01.26', udlob:'8m',   udlobDays:240,  status:'Aktiv',   sens:'STANDARD'   },
-  { id:7,  type:'Forsikring',   ai:true,  selskab:'Klinik Odense',          parter:'Selskabet + Tryg',               vaerdi:'4.200',  unit:'kr/md', effektiv:'01.06.25', udlob:'11m',  udlobDays:330,  status:'Aktiv',   sens:'STANDARD'   },
-  { id:8,  type:'Ejeraftale',   ai:true,  selskab:'Klinik Aalborg',         parter:'Holding + Erik Nielsen',         vaerdi:'—',      unit:'',     effektiv:'10.08.21', udlob:'—',    udlobDays:9999, status:'Aktiv',   sens:'FORTROLIG'  },
-  { id:9,  type:'Lejekontrakt', ai:false, selskab:'Klinik Randers',         parter:'Selskabet + Udlejer',            vaerdi:'18.000', unit:'kr/md', effektiv:'01.09.22', udlob:'Udl.', udlobDays:-1,   status:'Udløbet', sens:'STANDARD'   },
-  { id:10, type:'Ansættelse',   ai:true,  selskab:'Klinik Aarhus',          parter:'Selskabet + Henrik Sch.',        vaerdi:'55.000', unit:'kr/md', effektiv:'15.03.23', udlob:'—',    udlobDays:9999, status:'Opsagt',  sens:'INTERN'     },
-];
+      /* ─── DATA ─── */
+      const CONTRACTS = [
+        {
+          id: 1,
+          type: 'Lejekontrakt',
+          ai: true,
+          selskab: 'Tandlæge Østerbro ApS',
+          parter: 'Selskabet + Ejendomsselskab Ø.',
+          vaerdi: '38.500',
+          unit: 'kr/md',
+          effektiv: '14.03.21',
+          udlob: '14d',
+          udlobDays: 14,
+          status: 'Aktiv',
+          sens: 'STANDARD',
+        },
+        {
+          id: 2,
+          type: 'Ansættelse',
+          ai: true,
+          selskab: 'Klinik Aalborg',
+          parter: 'Selskabet + Tina Hansen',
+          vaerdi: '52.000',
+          unit: 'kr/md',
+          effektiv: '01.02.22',
+          udlob: '—',
+          udlobDays: 9999,
+          status: 'Aktiv',
+          sens: 'INTERN',
+        },
+        {
+          id: 3,
+          type: 'Ejeraftale',
+          ai: false,
+          selskab: 'Klinik Esbjerg',
+          parter: 'Holding + Per Larsen',
+          vaerdi: '—',
+          unit: '',
+          effektiv: '14.06.20',
+          udlob: '—',
+          udlobDays: 9999,
+          status: 'Aktiv',
+          sens: 'FORTROLIG',
+        },
+        {
+          id: 4,
+          type: 'Lejekontrakt',
+          ai: true,
+          selskab: 'Klinik Holstebro',
+          parter: 'Selskabet + Udlejer ApS',
+          vaerdi: '24.000',
+          unit: 'kr/md',
+          effektiv: '01.03.19',
+          udlob: '28d',
+          udlobDays: 28,
+          status: 'Aktiv',
+          sens: 'STANDARD',
+        },
+        {
+          id: 5,
+          type: 'Ansættelse',
+          ai: true,
+          selskab: 'Tandlæge Østerbro ApS',
+          parter: 'Selskabet + Lars Hansen',
+          vaerdi: '68.000',
+          unit: 'kr/md',
+          effektiv: '01.01.18',
+          udlob: '—',
+          udlobDays: 9999,
+          status: 'Aktiv',
+          sens: 'INTERN',
+        },
+        {
+          id: 6,
+          type: 'Driftsaftale',
+          ai: false,
+          selskab: 'Klinik Aarhus',
+          parter: 'Selskabet + Drift A/S',
+          vaerdi: '12.500',
+          unit: 'kr/md',
+          effektiv: '01.01.26',
+          udlob: '8m',
+          udlobDays: 240,
+          status: 'Aktiv',
+          sens: 'STANDARD',
+        },
+        {
+          id: 7,
+          type: 'Forsikring',
+          ai: true,
+          selskab: 'Klinik Odense',
+          parter: 'Selskabet + Tryg',
+          vaerdi: '4.200',
+          unit: 'kr/md',
+          effektiv: '01.06.25',
+          udlob: '11m',
+          udlobDays: 330,
+          status: 'Aktiv',
+          sens: 'STANDARD',
+        },
+        {
+          id: 8,
+          type: 'Ejeraftale',
+          ai: true,
+          selskab: 'Klinik Aalborg',
+          parter: 'Holding + Erik Nielsen',
+          vaerdi: '—',
+          unit: '',
+          effektiv: '10.08.21',
+          udlob: '—',
+          udlobDays: 9999,
+          status: 'Aktiv',
+          sens: 'FORTROLIG',
+        },
+        {
+          id: 9,
+          type: 'Lejekontrakt',
+          ai: false,
+          selskab: 'Klinik Randers',
+          parter: 'Selskabet + Udlejer',
+          vaerdi: '18.000',
+          unit: 'kr/md',
+          effektiv: '01.09.22',
+          udlob: 'Udl.',
+          udlobDays: -1,
+          status: 'Udløbet',
+          sens: 'STANDARD',
+        },
+        {
+          id: 10,
+          type: 'Ansættelse',
+          ai: true,
+          selskab: 'Klinik Aarhus',
+          parter: 'Selskabet + Henrik Sch.',
+          vaerdi: '55.000',
+          unit: 'kr/md',
+          effektiv: '15.03.23',
+          udlob: '—',
+          udlobDays: 9999,
+          status: 'Opsagt',
+          sens: 'INTERN',
+        },
+      ]
 
-const UNIQUE_SELSKABER = [...new Set(CONTRACTS.map(c => c.selskab))].sort();
-const UNIQUE_TYPES     = [...new Set(CONTRACTS.map(c => c.type))].sort();
-const STATUS_OPTS      = ['Alle', 'Aktiv', 'Udløber 30d', 'Udløbet', 'Opsagt'];
-const STATUS_CLS       = { 'Aktiv': 'green', 'Udløbet': 'red', 'Opsagt': 'gray' };
-const SENS_CLS         = { 'PUBLIC': 'gray', 'STANDARD': 'gray', 'INTERN': 'blue', 'FORTROLIG': 'amber' };
+      const UNIQUE_SELSKABER = [...new Set(CONTRACTS.map((c) => c.selskab))].sort()
+      const UNIQUE_TYPES = [...new Set(CONTRACTS.map((c) => c.type))].sort()
+      const STATUS_OPTS = ['Alle', 'Aktiv', 'Udløber 30d', 'Udløbet', 'Opsagt']
+      const STATUS_CLS = { Aktiv: 'green', Udløbet: 'red', Opsagt: 'gray' }
+      const SENS_CLS = { PUBLIC: 'gray', STANDARD: 'gray', INTERN: 'blue', FORTROLIG: 'amber' }
 
-function udlobCls(days) {
-  if (days < 0)    return 'red';
-  if (days <= 30)  return 'red';
-  if (days <= 60)  return 'amber';
-  return 'gray';
-}
+      function udlobCls(days) {
+        if (days < 0) return 'red'
+        if (days <= 30) return 'red'
+        if (days <= 60) return 'amber'
+        return 'gray'
+      }
 
-/* ─── SIDEBAR ─── */
-function Sidebar() {
-  return (
-    <aside className="sidebar">
-      <div className="sb-logo">▣ ChainHub</div>
-      <div className="sb-sec">
-        <div className="sb-lab">Overblik</div>
-        <div className="sb-item">Forside <span className="sb-cnt a">5</span></div>
-        <div className="sb-item">Kalender <span className="sb-cnt">12</span></div>
-        <div className="sb-item">Søg</div>
-      </div>
-      <div className="sb-sec">
-        <div className="sb-lab">Portefølje</div>
-        <div className="sb-item">Selskaber <span className="sb-cnt">32</span></div>
-        <div className="sb-item active">Kontrakter <span className="sb-cnt w">3</span></div>
-        <div className="sb-item">Sager <span className="sb-cnt a">7</span></div>
-        <div className="sb-item">Opgaver <span className="sb-cnt w">9</span></div>
-      </div>
-      <div className="sb-sec">
-        <div className="sb-lab">Ressourcer</div>
-        <div className="sb-item">Dokumenter <span className="sb-cnt">412</span></div>
-        <div className="sb-item">Personer <span className="sb-cnt">184</span></div>
-        <div className="sb-item">Indstillinger</div>
-      </div>
-    </aside>
-  );
-}
-
-/* ─── DROPDOWN ─── */
-function FilterDropdown({ label, options, value, onChange, divider }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-  useEffect(() => {
-    function h(e) { if (!ref.current?.contains(e.target)) setOpen(false); }
-    document.addEventListener('mousedown', h);
-    return () => document.removeEventListener('mousedown', h);
-  }, []);
-  return (
-    <div className="dd-wrap" ref={ref}>
-      <button className={`filter-btn${value && value !== 'Alle' ? ' active' : ''}`}
-        onClick={() => setOpen(o => !o)}>
-        {value && value !== 'Alle' ? value : label} ▾
-      </button>
-      {open && (
-        <div className="dd-menu">
-          {divider && <div className="dd-div">{divider}</div>}
-          {options.map(o => (
-            <div key={o} className={`dd-item${value === o ? ' on' : ''}`}
-              onClick={() => { onChange(o); setOpen(false); }}>{o}</div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ─── TABLE ROW ─── */
-function ContractRow({ c, hideSelskab }) {
-  return (
-    <tr>
-      <td className="col-type">
-        <div className="type-cell">
-          <span>{c.type}</span>
-          {c.ai && <span className="ai-badge">⚡</span>}
-        </div>
-      </td>
-      {!hideSelskab && <td className="col-selskab td-sec">{c.selskab}</td>}
-      <td className="col-parter td-sec">{c.parter}</td>
-      <td className="col-vaerdi td-right">
-        {c.vaerdi !== '—'
-          ? <span>{c.vaerdi} <span style={{color:'#8c959f',fontSize:11}}>{c.unit}</span></span>
-          : <span style={{color:'#d0d7de'}}>—</span>}
-      </td>
-      <td className="col-eff td-sec">{c.effektiv}</td>
-      <td className="col-udlob">
-        {c.udlob === '—'
-          ? <span style={{color:'#d0d7de'}}>—</span>
-          : <span className={`badge ${udlobCls(c.udlobDays)}`}>{c.udlob}</span>}
-      </td>
-      <td className="col-status">
-        <span className={`badge ${STATUS_CLS[c.status] || 'gray'}`}>{c.status}</span>
-      </td>
-      <td className="col-sens">
-        <span className={`badge ${SENS_CLS[c.sens] || 'gray'}`} style={{fontSize:10}}>{c.sens}</span>
-      </td>
-      <td className="col-act"><span className="chev">›</span></td>
-    </tr>
-  );
-}
-
-/* ─── FLAT TABLE ─── */
-function FlatTable({ contracts, sortCol, sortDir, onSort }) {
-  const Th = ({ col, label, cls, style }) => (
-    <th className={`${cls||''} ${sortCol === col ? 'sorted' : ''}`} style={style} onClick={() => onSort(col)}>
-      {label}{sortCol === col ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''}
-    </th>
-  );
-  return (
-    <div className="tbl-wrap">
-      {contracts.length === 0
-        ? <div className="empty">Ingen kontrakter matcher de aktive filtre.</div>
-        : (
-          <table className="tbl">
-            <colgroup>
-              <col className="col-type" /><col className="col-selskab" /><col className="col-parter" />
-              <col className="col-vaerdi" /><col className="col-eff" /><col className="col-udlob" />
-              <col className="col-status" /><col className="col-sens" /><col className="col-act" />
-            </colgroup>
-            <thead>
-              <tr>
-                <Th col="type"    label="Type"       />
-                <Th col="selskab" label="Selskab"    />
-                <Th col="parter"  label="Parter"     />
-                <Th col="vaerdi"  label="Værdi"      style={{textAlign:'right'}} />
-                <Th col="effektiv" label="Effektiv"  />
-                <Th col="udlobDays" label="Udløb"    />
-                <Th col="status"  label="Status"     />
-                <Th col="sens"    label="Sensitivity"/>
-                <th className="col-act"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {contracts.map(c => <ContractRow key={c.id} c={c} />)}
-            </tbody>
-          </table>
-        )}
-    </div>
-  );
-}
-
-/* ─── GROUPED VIEW ─── */
-function GroupedView({ contracts }) {
-  const [collapsed, setCollapsed] = useState(new Set());
-  const toggle = name => setCollapsed(prev => { const n = new Set(prev); n.has(name) ? n.delete(name) : n.add(name); return n; });
-
-  const groups = contracts.reduce((acc, c) => { (acc[c.selskab] = acc[c.selskab] || []).push(c); return acc; }, {});
-
-  return (
-    <div className="tbl-wrap">
-      {Object.entries(groups).map(([name, rows]) => {
-        const hasAlert = rows.some(r => r.udlobDays <= 30 && r.udlobDays >= 0);
-        const isOpen   = !collapsed.has(name);
+      /* ─── SIDEBAR ─── */
+      function Sidebar() {
         return (
-          <div key={name}>
-            <div className="group-header" onClick={() => toggle(name)}>
-              <span className="group-toggle">{isOpen ? '▾' : '▸'}</span>
-              <span className="group-name">{name}</span>
-              <span className={`group-count${hasAlert ? ' has-alert' : ''}`}>{rows.length}</span>
-              {hasAlert && <span className="badge red" style={{fontSize:10}}>⚠ udløber</span>}
+          <aside className="sidebar">
+            <div className="sb-logo">▣ ChainHub</div>
+            <div className="sb-sec">
+              <div className="sb-lab">Overblik</div>
+              <div className="sb-item">
+                Forside <span className="sb-cnt a">5</span>
+              </div>
+              <div className="sb-item">
+                Kalender <span className="sb-cnt">12</span>
+              </div>
+              <div className="sb-item">Søg</div>
             </div>
-            {isOpen && (
-              <table className="tbl" style={{tableLayout:'fixed',width:'100%'}}>
+            <div className="sb-sec">
+              <div className="sb-lab">Portefølje</div>
+              <div className="sb-item">
+                Selskaber <span className="sb-cnt">32</span>
+              </div>
+              <div className="sb-item active">
+                Kontrakter <span className="sb-cnt w">3</span>
+              </div>
+              <div className="sb-item">
+                Sager <span className="sb-cnt a">7</span>
+              </div>
+              <div className="sb-item">
+                Opgaver <span className="sb-cnt w">9</span>
+              </div>
+            </div>
+            <div className="sb-sec">
+              <div className="sb-lab">Ressourcer</div>
+              <div className="sb-item">
+                Dokumenter <span className="sb-cnt">412</span>
+              </div>
+              <div className="sb-item">
+                Personer <span className="sb-cnt">184</span>
+              </div>
+              <div className="sb-item">Indstillinger</div>
+            </div>
+          </aside>
+        )
+      }
+
+      /* ─── DROPDOWN ─── */
+      function FilterDropdown({ label, options, value, onChange, divider }) {
+        const [open, setOpen] = useState(false)
+        const ref = useRef(null)
+        useEffect(() => {
+          function h(e) {
+            if (!ref.current?.contains(e.target)) setOpen(false)
+          }
+          document.addEventListener('mousedown', h)
+          return () => document.removeEventListener('mousedown', h)
+        }, [])
+        return (
+          <div className="dd-wrap" ref={ref}>
+            <button
+              className={`filter-btn${value && value !== 'Alle' ? ' active' : ''}`}
+              onClick={() => setOpen((o) => !o)}
+            >
+              {value && value !== 'Alle' ? value : label} ▾
+            </button>
+            {open && (
+              <div className="dd-menu">
+                {divider && <div className="dd-div">{divider}</div>}
+                {options.map((o) => (
+                  <div
+                    key={o}
+                    className={`dd-item${value === o ? ' on' : ''}`}
+                    onClick={() => {
+                      onChange(o)
+                      setOpen(false)
+                    }}
+                  >
+                    {o}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      }
+
+      /* ─── TABLE ROW ─── */
+      function ContractRow({ c, hideSelskab }) {
+        return (
+          <tr>
+            <td className="col-type">
+              <div className="type-cell">
+                <span>{c.type}</span>
+                {c.ai && <span className="ai-badge">⚡</span>}
+              </div>
+            </td>
+            {!hideSelskab && <td className="col-selskab td-sec">{c.selskab}</td>}
+            <td className="col-parter td-sec">{c.parter}</td>
+            <td className="col-vaerdi td-right">
+              {c.vaerdi !== '—' ? (
+                <span>
+                  {c.vaerdi} <span style={{ color: '#8c959f', fontSize: 11 }}>{c.unit}</span>
+                </span>
+              ) : (
+                <span style={{ color: '#d0d7de' }}>—</span>
+              )}
+            </td>
+            <td className="col-eff td-sec">{c.effektiv}</td>
+            <td className="col-udlob">
+              {c.udlob === '—' ? (
+                <span style={{ color: '#d0d7de' }}>—</span>
+              ) : (
+                <span className={`badge ${udlobCls(c.udlobDays)}`}>{c.udlob}</span>
+              )}
+            </td>
+            <td className="col-status">
+              <span className={`badge ${STATUS_CLS[c.status] || 'gray'}`}>{c.status}</span>
+            </td>
+            <td className="col-sens">
+              <span className={`badge ${SENS_CLS[c.sens] || 'gray'}`} style={{ fontSize: 10 }}>
+                {c.sens}
+              </span>
+            </td>
+            <td className="col-act">
+              <span className="chev">›</span>
+            </td>
+          </tr>
+        )
+      }
+
+      /* ─── FLAT TABLE ─── */
+      function FlatTable({ contracts, sortCol, sortDir, onSort }) {
+        const Th = ({ col, label, cls, style }) => (
+          <th
+            className={`${cls || ''} ${sortCol === col ? 'sorted' : ''}`}
+            style={style}
+            onClick={() => onSort(col)}
+          >
+            {label}
+            {sortCol === col ? (sortDir === 'asc' ? ' ↑' : ' ↓') : ''}
+          </th>
+        )
+        return (
+          <div className="tbl-wrap">
+            {contracts.length === 0 ? (
+              <div className="empty">Ingen kontrakter matcher de aktive filtre.</div>
+            ) : (
+              <table className="tbl">
                 <colgroup>
-                  <col style={{width:148}} /><col style={{width:175}} /><col style={{width:160}} />
-                  <col style={{width:110}} /><col style={{width:82}} /><col style={{width:70}} />
-                  <col style={{width:72}} /><col style={{width:84}} /><col style={{width:20}} />
+                  <col className="col-type" />
+                  <col className="col-selskab" />
+                  <col className="col-parter" />
+                  <col className="col-vaerdi" />
+                  <col className="col-eff" />
+                  <col className="col-udlob" />
+                  <col className="col-status" />
+                  <col className="col-sens" />
+                  <col className="col-act" />
                 </colgroup>
+                <thead>
+                  <tr>
+                    <Th col="type" label="Type" />
+                    <Th col="selskab" label="Selskab" />
+                    <Th col="parter" label="Parter" />
+                    <Th col="vaerdi" label="Værdi" style={{ textAlign: 'right' }} />
+                    <Th col="effektiv" label="Effektiv" />
+                    <Th col="udlobDays" label="Udløb" />
+                    <Th col="status" label="Status" />
+                    <Th col="sens" label="Sensitivity" />
+                    <th className="col-act"></th>
+                  </tr>
+                </thead>
                 <tbody>
-                  {rows.map(c => <ContractRow key={c.id} c={c} />)}
+                  {contracts.map((c) => (
+                    <ContractRow key={c.id} c={c} />
+                  ))}
                 </tbody>
               </table>
             )}
           </div>
-        );
-      })}
-      {contracts.length === 0 && <div className="empty">Ingen kontrakter matcher de aktive filtre.</div>}
-    </div>
-  );
-}
+        )
+      }
 
-/* ─── KANBAN ─── */
-function KanbanView({ contracts }) {
-  const aktiv    = contracts.filter(c => c.status === 'Aktiv' && c.udlobDays > 60);
-  const udlober  = contracts.filter(c => c.status === 'Aktiv' && c.udlobDays <= 60);
-  const udloebet = contracts.filter(c => c.status === 'Udløbet');
-  const opsagt   = contracts.filter(c => c.status === 'Opsagt');
+      /* ─── GROUPED VIEW ─── */
+      function GroupedView({ contracts }) {
+        const [collapsed, setCollapsed] = useState(new Set())
+        const toggle = (name) =>
+          setCollapsed((prev) => {
+            const n = new Set(prev)
+            n.has(name) ? n.delete(name) : n.add(name)
+            return n
+          })
 
-  const KbCol = ({ title, cls, items }) => (
-    <div className="kb-col">
-      <div className={`kb-h ${cls}`}>
-        <span className="kb-ht">{title}</span>
-        <span className="kb-hc">{items.length}</span>
-      </div>
-      {items.length === 0
-        ? <div style={{padding:'10px 12px',fontSize:12,color:'#8c959f'}}>Ingen</div>
-        : items.map(c => (
-          <div key={c.id} className="kb-card">
-            <div className="kb-card-t">
-              {c.type}{c.ai && <span className="ai-badge">⚡</span>}
-            </div>
-            <div className="kb-card-s">{c.selskab}</div>
-            <div className="kb-card-b">
-              {c.udlob !== '—' && <span className={`badge ${udlobCls(c.udlobDays)}`} style={{fontSize:10}}>{c.udlob}</span>}
-              <span className={`badge ${SENS_CLS[c.sens]}`} style={{fontSize:10}}>{c.sens}</span>
-            </div>
-          </div>
-        ))}
-    </div>
-  );
+        const groups = contracts.reduce((acc, c) => {
+          ;(acc[c.selskab] = acc[c.selskab] || []).push(c)
+          return acc
+        }, {})
 
-  return (
-    <div className="kanban">
-      <KbCol title="Aktiv"       cls="aktiv"    items={aktiv}    />
-      <KbCol title="Udløber 30d" cls="udlober"  items={udlober}  />
-      <KbCol title="Udløbet"     cls="udloebet" items={udloebet} />
-      <KbCol title="Opsagt"      cls="opsagt"   items={opsagt}   />
-    </div>
-  );
-}
-
-/* ─── MAIN ─── */
-function KontrakterPage() {
-  const [viewMode,   setViewMode]   = useState('flat');
-  const [statusFil,  setStatusFil]  = useState('Alle');
-  const [selskabFil, setSelskabFil] = useState('Alle');
-  const [typeFil,    setTypeFil]    = useState('Alle');
-  const [search,     setSearch]     = useState('');
-  const [sortCol,    setSortCol]    = useState('udlobDays');
-  const [sortDir,    setSortDir]    = useState('asc');
-  const [page,       setPage]       = useState(1);
-  const [pageSize,   setPageSize]   = useState(10);
-
-  function handleSort(col) {
-    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
-    else { setSortCol(col); setSortDir('asc'); }
-  }
-
-  const filtered = CONTRACTS.filter(c => {
-    const q = search.toLowerCase();
-    if (q && !c.selskab.toLowerCase().includes(q) && !c.type.toLowerCase().includes(q) && !c.parter.toLowerCase().includes(q)) return false;
-    if (statusFil === 'Udløber 30d' && !(c.status === 'Aktiv' && c.udlobDays <= 30 && c.udlobDays >= 0)) return false;
-    if (statusFil !== 'Alle' && statusFil !== 'Udløber 30d' && c.status !== statusFil) return false;
-    if (selskabFil !== 'Alle' && c.selskab !== selskabFil) return false;
-    if (typeFil !== 'Alle' && c.type !== typeFil) return false;
-    return true;
-  });
-
-  const sorted = [...filtered].sort((a, b) => {
-    const av = a[sortCol] ?? 0, bv = b[sortCol] ?? 0;
-    if (av < bv) return sortDir === 'asc' ? -1 : 1;
-    if (av > bv) return sortDir === 'asc' ? 1 : -1;
-    return 0;
-  });
-
-  const paged    = sorted.slice((page-1)*pageSize, page*pageSize);
-  const maxPage  = Math.max(1, Math.ceil(sorted.length / pageSize));
-  const hasFilter = statusFil !== 'Alle' || selskabFil !== 'Alle' || typeFil !== 'Alle' || search;
-
-  return (
-    <div className="layout">
-      <Sidebar />
-      <main className="main">
-
-        {/* Breadcrumb */}
-        <div className="crumb">Kontrakter</div>
-
-        {/* Header */}
-        <div className="head">
-          <div>
-            <h1>Kontrakter</h1>
-            <div className="head-meta">184 aktive · <span style={{color:'#b54708',fontWeight:500}}>3 udløber inden for 30 dage</span></div>
-          </div>
-          <div className="head-btns">
-            <button className="btn primary">+ Opret kontrakt</button>
-          </div>
-        </div>
-
-        {/* Filter row */}
-        <div className="filter-row">
-          <input className="filter-search" placeholder="Søg kontrakter..."
-            value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
-          <FilterDropdown label="Selskab" options={['Alle', ...UNIQUE_SELSKABER]}
-            value={selskabFil} onChange={v => { setSelskabFil(v); setPage(1); }} />
-          <FilterDropdown label="Type" options={['Alle', ...UNIQUE_TYPES]}
-            value={typeFil} onChange={v => { setTypeFil(v); setPage(1); }}
-            divider="Typer i porteføljen" />
-          <FilterDropdown label="Status" options={STATUS_OPTS}
-            value={statusFil} onChange={v => { setStatusFil(v); setPage(1); }} />
-          {hasFilter && (
-            <button className="filter-btn" style={{color:'#cf222e',borderColor:'#ffc1ba'}}
-              onClick={() => { setStatusFil('Alle'); setSelskabFil('Alle'); setTypeFil('Alle'); setSearch(''); }}>
-              Nulstil ×
-            </button>
-          )}
-          <div className="filter-sep"></div>
-          <div className="seg">
-            {[['flat','Flat'],['grouped','Grupperet'],['kanban','Kanban']].map(([v,l]) => (
-              <button key={v} className={`sopt${viewMode===v?' on':''}`}
-                onClick={() => setViewMode(v)}>{l}</button>
-            ))}
-          </div>
-          <div className="filter-spacer"></div>
-          <button className="filter-btn">Eksportér ▾</button>
-        </div>
-
-        {/* Active filter info */}
-        {hasFilter && (
-          <div style={{fontSize:11,color:'#6e7681'}}>
-            {sorted.length} resultat{sorted.length !== 1 ? 'er' : ''} — filtreret fra 184 kontrakter
-          </div>
-        )}
-
-        {/* Main view */}
-        {viewMode === 'flat' && (
-          <FlatTable contracts={paged} sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
-        )}
-        {viewMode === 'grouped' && <GroupedView contracts={sorted} />}
-        {viewMode === 'kanban'  && <KanbanView  contracts={filtered} />}
-
-        {/* Pagination (flat + grouped only) */}
-        {viewMode !== 'kanban' && sorted.length > 0 && (
-          <div className="pager">
-            <span className="pager-info">
-              {viewMode === 'flat'
-                ? `${Math.min((page-1)*pageSize+1, sorted.length)}–${Math.min(page*pageSize, sorted.length)} af ${sorted.length}`
-                : `${sorted.length} kontrakter · ${Object.keys(sorted.reduce((a,c) => ({...a,[c.selskab]:1}),{})).length} selskaber`}
-            </span>
-            {viewMode === 'flat' && (
-              <>
-                <div className="pager-pages">
-                  <button className="page-btn" disabled={page === 1} onClick={() => setPage(p=>p-1)}>←</button>
-                  <span>{page} / {maxPage}</span>
-                  <button className="page-btn" disabled={page === maxPage} onClick={() => setPage(p=>p+1)}>→</button>
+        return (
+          <div className="tbl-wrap">
+            {Object.entries(groups).map(([name, rows]) => {
+              const hasAlert = rows.some((r) => r.udlobDays <= 30 && r.udlobDays >= 0)
+              const isOpen = !collapsed.has(name)
+              return (
+                <div key={name}>
+                  <div className="group-header" onClick={() => toggle(name)}>
+                    <span className="group-toggle">{isOpen ? '▾' : '▸'}</span>
+                    <span className="group-name">{name}</span>
+                    <span className={`group-count${hasAlert ? ' has-alert' : ''}`}>
+                      {rows.length}
+                    </span>
+                    {hasAlert && (
+                      <span className="badge red" style={{ fontSize: 10 }}>
+                        ⚠ udløber
+                      </span>
+                    )}
+                  </div>
+                  {isOpen && (
+                    <table className="tbl" style={{ tableLayout: 'fixed', width: '100%' }}>
+                      <colgroup>
+                        <col style={{ width: 148 }} />
+                        <col style={{ width: 175 }} />
+                        <col style={{ width: 160 }} />
+                        <col style={{ width: 110 }} />
+                        <col style={{ width: 82 }} />
+                        <col style={{ width: 70 }} />
+                        <col style={{ width: 72 }} />
+                        <col style={{ width: 84 }} />
+                        <col style={{ width: 20 }} />
+                      </colgroup>
+                      <tbody>
+                        {rows.map((c) => (
+                          <ContractRow key={c.id} c={c} />
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
                 </div>
-                <div style={{display:'flex', gap:4, alignItems:'center'}}>
-                  <span style={{fontSize:11,color:'#6e7681'}}>Vis:</span>
-                  {[10,25,50].map(n => (
-                    <button key={n} className={`page-sz-btn${pageSize===n?' on':''}`}
-                      onClick={() => { setPageSize(n); setPage(1); }}>{n}</button>
-                  ))}
-                </div>
-              </>
+              )
+            })}
+            {contracts.length === 0 && (
+              <div className="empty">Ingen kontrakter matcher de aktive filtre.</div>
             )}
           </div>
-        )}
+        )
+      }
 
-        {/* Bottom bar */}
-        <div className="bot-bar">
-          <span>
-            {sorted.length} kontrakter vist · {CONTRACTS.filter(c=>c.ai).length} AI-extracted
-            {hasFilter && ` · filtreret fra 184`}
-          </span>
-          <span>
-            <span className="kbd">⌘K</span> handling ·
-            <span className="kbd" style={{margin:'0 3px'}}>N</span> ny kontrakt ·
-            <span className="kbd" style={{marginLeft:3}}>F</span> filter
-          </span>
-        </div>
+      /* ─── KANBAN ─── */
+      function KanbanView({ contracts }) {
+        const aktiv = contracts.filter((c) => c.status === 'Aktiv' && c.udlobDays > 60)
+        const udlober = contracts.filter((c) => c.status === 'Aktiv' && c.udlobDays <= 60)
+        const udloebet = contracts.filter((c) => c.status === 'Udløbet')
+        const opsagt = contracts.filter((c) => c.status === 'Opsagt')
 
-      </main>
-    </div>
-  );
-}
+        const KbCol = ({ title, cls, items }) => (
+          <div className="kb-col">
+            <div className={`kb-h ${cls}`}>
+              <span className="kb-ht">{title}</span>
+              <span className="kb-hc">{items.length}</span>
+            </div>
+            {items.length === 0 ? (
+              <div style={{ padding: '10px 12px', fontSize: 12, color: '#8c959f' }}>Ingen</div>
+            ) : (
+              items.map((c) => (
+                <div key={c.id} className="kb-card">
+                  <div className="kb-card-t">
+                    {c.type}
+                    {c.ai && <span className="ai-badge">⚡</span>}
+                  </div>
+                  <div className="kb-card-s">{c.selskab}</div>
+                  <div className="kb-card-b">
+                    {c.udlob !== '—' && (
+                      <span className={`badge ${udlobCls(c.udlobDays)}`} style={{ fontSize: 10 }}>
+                        {c.udlob}
+                      </span>
+                    )}
+                    <span className={`badge ${SENS_CLS[c.sens]}`} style={{ fontSize: 10 }}>
+                      {c.sens}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )
 
-ReactDOM.createRoot(document.getElementById('root')).render(<KontrakterPage />);
-</script>
-</body>
+        return (
+          <div className="kanban">
+            <KbCol title="Aktiv" cls="aktiv" items={aktiv} />
+            <KbCol title="Udløber 30d" cls="udlober" items={udlober} />
+            <KbCol title="Udløbet" cls="udloebet" items={udloebet} />
+            <KbCol title="Opsagt" cls="opsagt" items={opsagt} />
+          </div>
+        )
+      }
+
+      /* ─── MAIN ─── */
+      function KontrakterPage() {
+        const [viewMode, setViewMode] = useState('flat')
+        const [statusFil, setStatusFil] = useState('Alle')
+        const [selskabFil, setSelskabFil] = useState('Alle')
+        const [typeFil, setTypeFil] = useState('Alle')
+        const [search, setSearch] = useState('')
+        const [sortCol, setSortCol] = useState('udlobDays')
+        const [sortDir, setSortDir] = useState('asc')
+        const [page, setPage] = useState(1)
+        const [pageSize, setPageSize] = useState(10)
+
+        function handleSort(col) {
+          if (sortCol === col) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+          else {
+            setSortCol(col)
+            setSortDir('asc')
+          }
+        }
+
+        const filtered = CONTRACTS.filter((c) => {
+          const q = search.toLowerCase()
+          if (
+            q &&
+            !c.selskab.toLowerCase().includes(q) &&
+            !c.type.toLowerCase().includes(q) &&
+            !c.parter.toLowerCase().includes(q)
+          )
+            return false
+          if (
+            statusFil === 'Udløber 30d' &&
+            !(c.status === 'Aktiv' && c.udlobDays <= 30 && c.udlobDays >= 0)
+          )
+            return false
+          if (statusFil !== 'Alle' && statusFil !== 'Udløber 30d' && c.status !== statusFil)
+            return false
+          if (selskabFil !== 'Alle' && c.selskab !== selskabFil) return false
+          if (typeFil !== 'Alle' && c.type !== typeFil) return false
+          return true
+        })
+
+        const sorted = [...filtered].sort((a, b) => {
+          const av = a[sortCol] ?? 0,
+            bv = b[sortCol] ?? 0
+          if (av < bv) return sortDir === 'asc' ? -1 : 1
+          if (av > bv) return sortDir === 'asc' ? 1 : -1
+          return 0
+        })
+
+        const paged = sorted.slice((page - 1) * pageSize, page * pageSize)
+        const maxPage = Math.max(1, Math.ceil(sorted.length / pageSize))
+        const hasFilter =
+          statusFil !== 'Alle' || selskabFil !== 'Alle' || typeFil !== 'Alle' || search
+
+        return (
+          <div className="layout">
+            <Sidebar />
+            <main className="main">
+              {/* Breadcrumb */}
+              <div className="crumb">Kontrakter</div>
+
+              {/* Header */}
+              <div className="head">
+                <div>
+                  <h1>Kontrakter</h1>
+                  <div className="head-meta">
+                    184 aktive ·{' '}
+                    <span style={{ color: '#b54708', fontWeight: 500 }}>
+                      3 udløber inden for 30 dage
+                    </span>
+                  </div>
+                </div>
+                <div className="head-btns">
+                  <button className="btn primary">+ Opret kontrakt</button>
+                </div>
+              </div>
+
+              {/* Filter row */}
+              <div className="filter-row">
+                <input
+                  className="filter-search"
+                  placeholder="Søg kontrakter..."
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value)
+                    setPage(1)
+                  }}
+                />
+                <FilterDropdown
+                  label="Selskab"
+                  options={['Alle', ...UNIQUE_SELSKABER]}
+                  value={selskabFil}
+                  onChange={(v) => {
+                    setSelskabFil(v)
+                    setPage(1)
+                  }}
+                />
+                <FilterDropdown
+                  label="Type"
+                  options={['Alle', ...UNIQUE_TYPES]}
+                  value={typeFil}
+                  onChange={(v) => {
+                    setTypeFil(v)
+                    setPage(1)
+                  }}
+                  divider="Typer i porteføljen"
+                />
+                <FilterDropdown
+                  label="Status"
+                  options={STATUS_OPTS}
+                  value={statusFil}
+                  onChange={(v) => {
+                    setStatusFil(v)
+                    setPage(1)
+                  }}
+                />
+                {hasFilter && (
+                  <button
+                    className="filter-btn"
+                    style={{ color: '#cf222e', borderColor: '#ffc1ba' }}
+                    onClick={() => {
+                      setStatusFil('Alle')
+                      setSelskabFil('Alle')
+                      setTypeFil('Alle')
+                      setSearch('')
+                    }}
+                  >
+                    Nulstil ×
+                  </button>
+                )}
+                <div className="filter-sep"></div>
+                <div className="seg">
+                  {[
+                    ['flat', 'Flat'],
+                    ['grouped', 'Grupperet'],
+                    ['kanban', 'Kanban'],
+                  ].map(([v, l]) => (
+                    <button
+                      key={v}
+                      className={`sopt${viewMode === v ? ' on' : ''}`}
+                      onClick={() => setViewMode(v)}
+                    >
+                      {l}
+                    </button>
+                  ))}
+                </div>
+                <div className="filter-spacer"></div>
+                <button className="filter-btn">Eksportér ▾</button>
+              </div>
+
+              {/* Active filter info */}
+              {hasFilter && (
+                <div style={{ fontSize: 11, color: '#6e7681' }}>
+                  {sorted.length} resultat{sorted.length !== 1 ? 'er' : ''} — filtreret fra 184
+                  kontrakter
+                </div>
+              )}
+
+              {/* Main view */}
+              {viewMode === 'flat' && (
+                <FlatTable
+                  contracts={paged}
+                  sortCol={sortCol}
+                  sortDir={sortDir}
+                  onSort={handleSort}
+                />
+              )}
+              {viewMode === 'grouped' && <GroupedView contracts={sorted} />}
+              {viewMode === 'kanban' && <KanbanView contracts={filtered} />}
+
+              {/* Pagination (flat + grouped only) */}
+              {viewMode !== 'kanban' && sorted.length > 0 && (
+                <div className="pager">
+                  <span className="pager-info">
+                    {viewMode === 'flat'
+                      ? `${Math.min((page - 1) * pageSize + 1, sorted.length)}–${Math.min(page * pageSize, sorted.length)} af ${sorted.length}`
+                      : `${sorted.length} kontrakter · ${Object.keys(sorted.reduce((a, c) => ({ ...a, [c.selskab]: 1 }), {})).length} selskaber`}
+                  </span>
+                  {viewMode === 'flat' && (
+                    <>
+                      <div className="pager-pages">
+                        <button
+                          className="page-btn"
+                          disabled={page === 1}
+                          onClick={() => setPage((p) => p - 1)}
+                        >
+                          ←
+                        </button>
+                        <span>
+                          {page} / {maxPage}
+                        </span>
+                        <button
+                          className="page-btn"
+                          disabled={page === maxPage}
+                          onClick={() => setPage((p) => p + 1)}
+                        >
+                          →
+                        </button>
+                      </div>
+                      <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                        <span style={{ fontSize: 11, color: '#6e7681' }}>Vis:</span>
+                        {[10, 25, 50].map((n) => (
+                          <button
+                            key={n}
+                            className={`page-sz-btn${pageSize === n ? ' on' : ''}`}
+                            onClick={() => {
+                              setPageSize(n)
+                              setPage(1)
+                            }}
+                          >
+                            {n}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Bottom bar */}
+              <div className="bot-bar">
+                <span>
+                  {sorted.length} kontrakter vist · {CONTRACTS.filter((c) => c.ai).length}{' '}
+                  AI-extracted
+                  {hasFilter && ` · filtreret fra 184`}
+                </span>
+                <span>
+                  <span className="kbd">⌘K</span> handling ·
+                  <span className="kbd" style={{ margin: '0 3px' }}>
+                    N
+                  </span>{' '}
+                  ny kontrakt ·
+                  <span className="kbd" style={{ marginLeft: 3 }}>
+                    F
+                  </span>{' '}
+                  filter
+                </span>
+              </div>
+            </main>
+          </div>
+        )
+      }
+
+      ReactDOM.createRoot(document.getElementById('root')).render(<KontrakterPage />)
+    </script>
+  </body>
 </html>

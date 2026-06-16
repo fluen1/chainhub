@@ -8,6 +8,10 @@ vi.mock('@/lib/auth', () => ({
 
 vi.mock('@/lib/permissions', () => ({
   canAccessCompany: vi.fn(async () => true),
+  canAccessSensitivity: vi.fn(async () => true),
+  getAllowedSensitivityLevels: vi
+    .fn()
+    .mockResolvedValue(['PUBLIC', 'STANDARD', 'INTERN', 'FORTROLIG', 'STRENGT_FORTROLIG']),
 }))
 
 const { prismaMock, mockDocument, mockExtraction } = vi.hoisted(() => {
@@ -49,9 +53,9 @@ const { prismaMock, mockDocument, mockExtraction } = vi.hoisted(() => {
 
 vi.mock('@/lib/db', () => ({ prisma: prismaMock }))
 
+import { getDocumentEnrichment } from '@/actions/document-enrichment'
 import { auth } from '@/lib/auth'
 import { canAccessCompany } from '@/lib/permissions'
-import { getDocumentEnrichment } from '@/actions/document-enrichment'
 
 describe('getDocumentEnrichment', () => {
   beforeEach(() => {

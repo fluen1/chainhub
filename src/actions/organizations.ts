@@ -1,18 +1,18 @@
 'use server'
 
+import type { Organization } from '@prisma/client'
+import { revalidatePath } from 'next/cache'
+import { withActionLogging } from '@/lib/action-helpers'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { captureError } from '@/lib/logger'
 import { canAccessModule } from '@/lib/permissions'
+import { checkActionRateLimit } from '@/lib/rate-limit'
 import {
   updateOrganizationSchema,
   type UpdateOrganizationInput,
 } from '@/lib/validations/organization'
-import { revalidatePath } from 'next/cache'
 import type { ActionResult } from '@/types/actions'
-import type { Organization } from '@prisma/client'
-import { withActionLogging } from '@/lib/action-helpers'
-import { captureError } from '@/lib/logger'
-import { checkActionRateLimit } from '@/lib/rate-limit'
 
 export async function updateOrganization(
   input: UpdateOrganizationInput

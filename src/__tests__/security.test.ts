@@ -94,13 +94,13 @@ vi.mock('next/cache', () => ({
 
 // ── Importer actions EFTER mocks ───────────────────────────────────────────
 
-import { auth } from '@/lib/auth'
-import { createContract, updateContractStatus, deleteContract } from '@/actions/contracts'
 import { createCase, closeCase, deleteCase } from '@/actions/cases'
-import { createTask, updateTaskStatus, deleteTask } from '@/actions/tasks'
 import { createCompany, deleteCompany } from '@/actions/companies'
-import { createPerson, deletePerson } from '@/actions/persons'
+import { createContract, updateContractStatus, deleteContract } from '@/actions/contracts'
 import { addOwner } from '@/actions/ownership'
+import { createPerson, deletePerson } from '@/actions/persons'
+import { createTask, updateTaskStatus, deleteTask } from '@/actions/tasks'
+import { auth } from '@/lib/auth'
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 

@@ -21,9 +21,9 @@ vi.mock('@/lib/permissions', () => ({
   canAccessModule: vi.fn(),
 }))
 
+import { getBillingPageData, createCheckoutSession, createPortalSession } from '@/actions/billing'
 import { auth } from '@/lib/auth'
 import { canAccessModule } from '@/lib/permissions'
-import { getBillingPageData, createCheckoutSession, createPortalSession } from '@/actions/billing'
 
 describe('billing action hardening', () => {
   beforeEach(() => {

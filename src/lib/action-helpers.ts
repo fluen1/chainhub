@@ -1,5 +1,5 @@
-import type { ActionResult } from '@/types/actions'
 import { captureError, createLogger } from '@/lib/logger'
+import type { ActionResult } from '@/types/actions'
 
 /**
  * Wrapper for server actions der logger start/succes/fejl med strukturerede

@@ -186,6 +186,44 @@ describe('updateOwnership', () => {
   })
 })
 
+// ─── mutation-WHERE invariant-tests ──────────────────────────────────────────
+
+describe('mutation-WHERE: organization_id i alle update/soft-delete kald', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('updateOwnership: update-WHERE indeholder organization_id', async () => {
+    const { prisma } = await import('@/lib/db')
+    vi.mocked(prisma.ownership.findFirst).mockImplementation((() =>
+      Promise.resolve({
+        organization_id: 'org-1',
+        company_id: UUID,
+        ownership_pct: 50,
+        effective_date: null,
+        contract_id: null,
+      })) as never)
+    await updateOwnership({ ownershipId: UUID, ownershipPct: 60 } as never)
+
+    expect(prisma.ownership.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: UUID, organization_id: 'org-1' }),
+      })
+    )
+  })
+
+  it('endOwnership: update-WHERE indeholder organization_id', async () => {
+    const { prisma } = await import('@/lib/db')
+    vi.mocked(prisma.ownership.findFirst).mockImplementation((() =>
+      Promise.resolve({ organization_id: 'org-1', company_id: UUID })) as never)
+    await endOwnership({ ownershipId: UUID, endDate: '2026-04-18' } as never)
+
+    expect(prisma.ownership.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: UUID, organization_id: 'org-1' }),
+      })
+    )
+  })
+})
+
 describe('endOwnership', () => {
   beforeEach(() => vi.clearAllMocks())
 

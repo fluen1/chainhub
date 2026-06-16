@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
-import { LegalPageLayout, LegalListItem, LegalMailLink } from '@/components/ui/b/LegalPageLayout'
 import { PrintButton } from '@/components/public/PrintButton'
+import { LegalPageLayout, LegalListItem, LegalMailLink } from '@/components/ui/b/LegalPageLayout'
 
 export const metadata: Metadata = {
   title: 'Databehandleraftale',

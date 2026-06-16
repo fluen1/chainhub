@@ -26,10 +26,10 @@ vi.mock('@/lib/rate-limit', () => ({
 }))
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
 
+import { upsertFinancialMetric, createDividendRecord } from '@/actions/finance'
 import { auth } from '@/lib/auth'
 import { canAccessCompany, canAccessModule } from '@/lib/permissions'
 import { checkActionRateLimit } from '@/lib/rate-limit'
-import { upsertFinancialMetric, createDividendRecord } from '@/actions/finance'
 
 const mockSession = {
   user: { id: 'u1', organizationId: 'org-1', email: 'test@test.dk', name: 'Test' },

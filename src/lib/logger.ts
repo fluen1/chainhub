@@ -1,5 +1,5 @@
-import pino from 'pino'
 import * as Sentry from '@sentry/nextjs'
+import pino from 'pino'
 
 // Shared Pino-logger til hele app'en. Matcher mønstret fra src/lib/ai/logger.ts
 // (som er AI-specifik). Bruger samme BLK-004-workaround: ingen transport i

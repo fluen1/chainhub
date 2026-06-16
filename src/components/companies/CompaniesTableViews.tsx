@@ -1,8 +1,8 @@
 'use client'
 
 import { memo, useMemo, useState } from 'react'
-import { TableWrap, Th, Tr, Td, TableEmpty, Badge, type BadgeTone } from '@/components/ui/b'
 import type { CompanyRow } from '@/app/(dashboard)/companies/companies-list-b'
+import { TableWrap, Th, Tr, Td, TableEmpty, Badge, type BadgeTone } from '@/components/ui/b'
 
 // ────────────────────────────────────────────────────────────────────────────
 // Tabel- og regionsvisning for selskaber
@@ -119,7 +119,13 @@ export function CompaniesFlatTable({
   )
 }
 
-export const CompanyTr = memo(function CompanyTr({ c, onClick }: { c: CompanyRow; onClick: () => void }) {
+export const CompanyTr = memo(function CompanyTr({
+  c,
+  onClick,
+}: {
+  c: CompanyRow
+  onClick: () => void
+}) {
   const hb = healthLabel(c.health)
   return (
     <Tr onClick={onClick}>

@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
-import { endOwnership } from '@/actions/ownership'
-import { toast } from 'sonner'
-import { formatDate } from '@/lib/labels'
 import type { Decimal } from '@prisma/client/runtime/library'
+import { useState } from 'react'
+import { toast } from 'sonner'
+import { endOwnership } from '@/actions/ownership'
+import { formatDate } from '@/lib/labels'
 
 interface OwnershipItem {
   id: string

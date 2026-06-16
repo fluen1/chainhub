@@ -1,15 +1,16 @@
 'use server'
 
-import { z } from 'zod'
 import { Prisma } from '@prisma/client'
-import { prisma } from '@/lib/db'
-import { getAccessibleCompanies, canAccessSensitivity } from '@/lib/permissions'
-
-// Løs UUID-validering: accepterer alle 8-4-4-4-12 hex-formater inkl. nil-UUIDs (seed-data)
-const uuidSchema = z
-  .string()
-  .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
-import { formatDate, getVisitTypeLabel } from '@/lib/labels'
+import { z } from 'zod'
+import { checkCostCap } from '@/lib/ai/cost-cap'
+import { isAIEnabled } from '@/lib/ai/feature-flags'
+import {
+  generateCompanyInsights,
+  type CompanySnapshot,
+  type CompanyAlert,
+  type AiInsight,
+} from '@/lib/ai/jobs/company-insights'
+import { auth } from '@/lib/auth'
 import {
   sectionsForRole,
   pickHighestPriorityRole,
@@ -22,16 +23,15 @@ import {
   type HealthDimensions,
   type StatusBadge,
 } from '@/lib/company-detail/helpers'
-import {
-  generateCompanyInsights,
-  type CompanySnapshot,
-  type CompanyAlert,
-  type AiInsight,
-} from '@/lib/ai/jobs/company-insights'
-import { isAIEnabled } from '@/lib/ai/feature-flags'
-import { checkCostCap } from '@/lib/ai/cost-cap'
+import { prisma } from '@/lib/db'
+import { formatDate, getVisitTypeLabel } from '@/lib/labels'
 import { createLogger } from '@/lib/logger'
-import { auth } from '@/lib/auth'
+import { getAccessibleCompanies, canAccessSensitivity } from '@/lib/permissions'
+
+// Løs UUID-validering: accepterer alle 8-4-4-4-12 hex-formater inkl. nil-UUIDs (seed-data)
+const uuidSchema = z
+  .string()
+  .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
 
 const log = createLogger('action:company-detail')
 

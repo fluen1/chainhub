@@ -7,7 +7,7 @@ vi.mock('@/lib/auth', () => ({
 }))
 
 vi.mock('@/lib/permissions', () => ({
-  canAccessModule: vi.fn().mockResolvedValue(true),
+  canExportAllScope: vi.fn().mockResolvedValue(true),
 }))
 
 vi.mock('@/lib/audit', () => ({
@@ -62,7 +62,7 @@ describe('prepareExport', () => {
 
   it('afviser brugere uden export-adgang', async () => {
     const perms = await import('@/lib/permissions')
-    vi.mocked(perms.canAccessModule).mockResolvedValueOnce(false)
+    vi.mocked(perms.canExportAllScope).mockResolvedValueOnce(false)
 
     const result = await prepareExport({ entity: 'cases' })
     expect(result).toEqual({ error: 'Du har ikke adgang til at eksportere data' })

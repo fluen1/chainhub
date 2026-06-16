@@ -1,9 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import { addOwner } from '@/actions/ownership'
-import { toast } from 'sonner'
 import { Plus } from 'lucide-react'
+import { useState } from 'react'
+import { toast } from 'sonner'
+import { addOwner } from '@/actions/ownership'
 import { AccessibleDialog } from '@/components/ui/accessible-dialog'
 
 interface AddOwnerFormProps {

@@ -1,8 +1,7 @@
 import type { Metadata } from 'next'
-import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { runSearch } from '@/actions/search'
-import { MIN_SEARCH_LENGTH } from '@/lib/search/constants'
+import { auth } from '@/lib/auth'
 import {
   getContractTypeLabel,
   getContractStatusLabel,
@@ -13,6 +12,7 @@ import {
   getPriorityLabel,
   formatDate,
 } from '@/lib/labels'
+import { MIN_SEARCH_LENGTH } from '@/lib/search/constants'
 import { SearchPageB, type SearchResultRow } from './search-b'
 
 export const metadata: Metadata = { title: 'Søg' }

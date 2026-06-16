@@ -1,7 +1,7 @@
 'use server'
 
-import { contactSchema, type ContactFormData } from '@/lib/validations/contact'
 import { sendContactEmail } from '@/lib/email/resend'
+import { contactSchema, type ContactFormData } from '@/lib/validations/contact'
 import type { ActionResult } from '@/types/actions'
 
 export type ContactSubmission = ContactFormData & { honeypot?: string }

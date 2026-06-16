@@ -1,485 +1,1027 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="da">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lejekontrakt erhverv — ChainHub</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lejekontrakt erhverv — ChainHub</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #fafafa;
-      color: #1f2328;
-      font-size: 13px;
-      -webkit-font-smoothing: antialiased;
-    }
+      body {
+        font-family:
+          'Inter',
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        background: #fafafa;
+        color: #1f2328;
+        font-size: 13px;
+        -webkit-font-smoothing: antialiased;
+      }
 
-    /* ── LAYOUT ── */
-    .layout { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+      /* ── LAYOUT ── */
+      .layout {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        min-height: 100vh;
+      }
 
-    /* ── SIDEBAR ── */
-    .sidebar { background: #f6f7f9; border-right: 1px solid #e1e4e8; padding: 14px 8px; font-size: 13px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
-    .sb-logo { font-weight: 600; padding: 4px 10px 16px; color: #1f2328; letter-spacing: -0.01em; }
-    .sb-sec  { margin-bottom: 16px; }
-    .sb-lab  { font-size: 10px; color: #6e7681; padding: 0 10px 4px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
-    .sb-item { display: flex; justify-content: space-between; align-items: center; padding: 4px 10px; border-radius: 4px; color: #1f2328; cursor: pointer; }
-    .sb-item.active { background: #e8eaee; font-weight: 500; }
-    .sb-item:hover:not(.active) { background: #ecedf0; }
-    .sb-cnt  { font-size: 11px; color: #6e7681; font-variant-numeric: tabular-nums; }
-    .sb-cnt.a { color: #b91c1c; font-weight: 600; }
-    .sb-cnt.w { color: #b54708; }
+      /* ── SIDEBAR ── */
+      .sidebar {
+        background: #f6f7f9;
+        border-right: 1px solid #e1e4e8;
+        padding: 14px 8px;
+        font-size: 13px;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+      }
+      .sb-logo {
+        font-weight: 600;
+        padding: 4px 10px 16px;
+        color: #1f2328;
+        letter-spacing: -0.01em;
+      }
+      .sb-sec {
+        margin-bottom: 16px;
+      }
+      .sb-lab {
+        font-size: 10px;
+        color: #6e7681;
+        padding: 0 10px 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+      }
+      .sb-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 4px;
+        color: #1f2328;
+        cursor: pointer;
+      }
+      .sb-item.active {
+        background: #e8eaee;
+        font-weight: 500;
+      }
+      .sb-item:hover:not(.active) {
+        background: #ecedf0;
+      }
+      .sb-cnt {
+        font-size: 11px;
+        color: #6e7681;
+        font-variant-numeric: tabular-nums;
+      }
+      .sb-cnt.a {
+        color: #b91c1c;
+        font-weight: 600;
+      }
+      .sb-cnt.w {
+        color: #b54708;
+      }
 
-    /* ── MAIN ── */
-    .main { padding: 12px 24px 32px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+      /* ── MAIN ── */
+      .main {
+        padding: 12px 24px 32px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-width: 0;
+      }
 
-    /* ── BREADCRUMB ── */
-    .crumb      { font-size: 12px; color: #6e7681; padding: 4px 0; }
-    .crumb a    { color: #6e7681; text-decoration: none; }
-    .crumb a:hover { color: #1f2328; }
-    .crumb .sep { margin: 0 6px; color: #8c959f; }
+      /* ── BREADCRUMB ── */
+      .crumb {
+        font-size: 12px;
+        color: #6e7681;
+        padding: 4px 0;
+      }
+      .crumb a {
+        color: #6e7681;
+        text-decoration: none;
+      }
+      .crumb a:hover {
+        color: #1f2328;
+      }
+      .crumb .sep {
+        margin: 0 6px;
+        color: #8c959f;
+      }
 
-    /* ── HEADER ── */
-    .head { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 10px; border-bottom: 1px solid #e1e4e8; }
-    .head h1 { font-size: 18px; font-weight: 600; margin-bottom: 4px; letter-spacing: -0.01em; }
-    .head-meta { font-size: 12px; color: #6e7681; font-variant-numeric: tabular-nums; }
-    .head-meta .sep { margin: 0 8px; color: #d0d7de; }
-    .head-btns { display: flex; gap: 6px; align-items: flex-start; }
-    .btn { font-size: 12px; padding: 5px 10px; border: 1px solid #d0d7de; background: white; color: #1f2328; border-radius: 4px; cursor: pointer; font-weight: 500; font-family: inherit; white-space: nowrap; }
-    .btn:hover { background: #f6f8fa; }
-    .btn.primary { background: #0969da; color: white; border-color: #0969da; }
-    .btn.primary:hover { background: #0860c7; }
+      /* ── HEADER ── */
+      .head {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e1e4e8;
+      }
+      .head h1 {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 4px;
+        letter-spacing: -0.01em;
+      }
+      .head-meta {
+        font-size: 12px;
+        color: #6e7681;
+        font-variant-numeric: tabular-nums;
+      }
+      .head-meta .sep {
+        margin: 0 8px;
+        color: #d0d7de;
+      }
+      .head-btns {
+        display: flex;
+        gap: 6px;
+        align-items: flex-start;
+      }
+      .btn {
+        font-size: 12px;
+        padding: 5px 10px;
+        border: 1px solid #d0d7de;
+        background: white;
+        color: #1f2328;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+        font-family: inherit;
+        white-space: nowrap;
+      }
+      .btn:hover {
+        background: #f6f8fa;
+      }
+      .btn.primary {
+        background: #0969da;
+        color: white;
+        border-color: #0969da;
+      }
+      .btn.primary:hover {
+        background: #0860c7;
+      }
 
-    /* ── STRIP ── */
-    .strip { display: grid; grid-template-columns: repeat(6, 1fr); gap: 1px; background: #e1e4e8; border: 1px solid #e1e4e8; border-radius: 4px; overflow: hidden; }
-    .strip-cell { background: white; padding: 8px 12px; }
-    .strip-num  { font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1; color: #1f2328; }
-    .strip-num.sm   { font-size: 12px; letter-spacing: 0; }
-    .strip-num.warn { color: #b54708; }
-    .strip-num.alert { color: #b91c1c; }
-    .strip-lab  { font-size: 10px; color: #6e7681; margin-top: 3px; text-transform: uppercase; letter-spacing: 0.4px; }
+      /* ── STRIP ── */
+      .strip {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 1px;
+        background: #e1e4e8;
+        border: 1px solid #e1e4e8;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .strip-cell {
+        background: white;
+        padding: 8px 12px;
+      }
+      .strip-num {
+        font-size: 16px;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        line-height: 1.1;
+        color: #1f2328;
+      }
+      .strip-num.sm {
+        font-size: 12px;
+        letter-spacing: 0;
+      }
+      .strip-num.warn {
+        color: #b54708;
+      }
+      .strip-num.alert {
+        color: #b91c1c;
+      }
+      .strip-lab {
+        font-size: 10px;
+        color: #6e7681;
+        margin-top: 3px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+      }
 
-    /* ── ALERT BAR ── */
-    .alert-bar { display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; background: #ffebe9; border: 1px solid #ffc1ba; border-left: 3px solid #cf222e; border-radius: 4px; font-size: 13px; color: #6e1010; }
-    .alert-bar strong { color: #1f2328; }
-    .alert-bar-btns { display: flex; gap: 6px; }
+      /* ── ALERT BAR ── */
+      .alert-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 14px;
+        background: #ffebe9;
+        border: 1px solid #ffc1ba;
+        border-left: 3px solid #cf222e;
+        border-radius: 4px;
+        font-size: 13px;
+        color: #6e1010;
+      }
+      .alert-bar strong {
+        color: #1f2328;
+      }
+      .alert-bar-btns {
+        display: flex;
+        gap: 6px;
+      }
 
-    /* ── GRIDS ── */
-    .grid-2 { display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; align-items: start; }
-    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; align-items: start; }
+      /* ── GRIDS ── */
+      .grid-2 {
+        display: grid;
+        grid-template-columns: 1.4fr 1fr;
+        gap: 12px;
+        align-items: start;
+      }
+      .grid-3 {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 12px;
+        align-items: start;
+      }
 
-    /* ── PANELS ── */
-    .pnl { background: white; border: 1px solid #e1e4e8; border-radius: 4px; overflow: hidden; }
-    .pnl-h { padding: 6px 12px; border-bottom: 1px solid #e1e4e8; background: #fbfbfc; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-    .pnl-t { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #1f2328; display: flex; align-items: center; gap: 5px; }
-    .pnl-m { font-size: 11px; color: #6e7681; white-space: nowrap; }
-    .pnl-body { padding: 10px 12px; }
-    .pnl-foot { padding: 6px 12px; border-top: 1px solid #f0f1f3; background: #fbfbfc; display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #6e7681; }
+      /* ── PANELS ── */
+      .pnl {
+        background: white;
+        border: 1px solid #e1e4e8;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .pnl-h {
+        padding: 6px 12px;
+        border-bottom: 1px solid #e1e4e8;
+        background: #fbfbfc;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+      }
+      .pnl-t {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #1f2328;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .pnl-m {
+        font-size: 11px;
+        color: #6e7681;
+        white-space: nowrap;
+      }
+      .pnl-body {
+        padding: 10px 12px;
+      }
+      .pnl-foot {
+        padding: 6px 12px;
+        border-top: 1px solid #f0f1f3;
+        background: #fbfbfc;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 11px;
+        color: #6e7681;
+      }
 
-    /* ── PLUS BADGE ── */
-    .plus-badge { font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 3px; background: #f3e8ff; color: #7c3aed; letter-spacing: 0.4px; text-transform: uppercase; white-space: nowrap; }
+      /* ── PLUS BADGE ── */
+      .plus-badge {
+        font-size: 9px;
+        font-weight: 700;
+        padding: 2px 5px;
+        border-radius: 3px;
+        background: #f3e8ff;
+        color: #7c3aed;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
 
-    /* ── AI VILKÅR ROWS ── */
-    .kterm-row { display: grid; grid-template-columns: 148px 1fr auto; gap: 12px; padding: 6px 0; border-bottom: 1px solid #f0f1f3; align-items: center; }
-    .kterm-row:last-child { border-bottom: none; }
-    .kterm-label { font-size: 11px; color: #6e7681; text-transform: uppercase; letter-spacing: 0.3px; }
-    .kterm-value { font-size: 13px; color: #1f2328; font-weight: 500; font-variant-numeric: tabular-nums; }
-    .ai-conf { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 3px; font-variant-numeric: tabular-nums; white-space: nowrap; }
-    .ai-conf.high { background: #dafbe1; color: #1a7f37; }
-    .ai-conf.mid  { background: #fff8c5; color: #9a6700; }
-    .ai-conf.low  { background: #ffebe9; color: #cf222e; }
+      /* ── AI VILKÅR ROWS ── */
+      .kterm-row {
+        display: grid;
+        grid-template-columns: 148px 1fr auto;
+        gap: 12px;
+        padding: 6px 0;
+        border-bottom: 1px solid #f0f1f3;
+        align-items: center;
+      }
+      .kterm-row:last-child {
+        border-bottom: none;
+      }
+      .kterm-label {
+        font-size: 11px;
+        color: #6e7681;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+      .kterm-value {
+        font-size: 13px;
+        color: #1f2328;
+        font-weight: 500;
+        font-variant-numeric: tabular-nums;
+      }
+      .ai-conf {
+        font-size: 10px;
+        font-weight: 600;
+        padding: 2px 7px;
+        border-radius: 3px;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      .ai-conf.high {
+        background: #dafbe1;
+        color: #1a7f37;
+      }
+      .ai-conf.mid {
+        background: #fff8c5;
+        color: #9a6700;
+      }
+      .ai-conf.low {
+        background: #ffebe9;
+        color: #cf222e;
+      }
 
-    /* ── AI INSIGHT PANEL ── */
-    .ai-insight-wrap { margin: 8px; border-radius: 3px; background: linear-gradient(135deg, #f3e8ff 0%, #ede9fe 100%); border: 1px solid #c4b5fd; padding: 10px 12px; }
-    .ai-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-    .ai-label { font-size: 10px; font-weight: 700; color: #7c3aed; text-transform: uppercase; letter-spacing: 0.5px; }
-    .ai-conf-badge { font-size: 10px; color: #7c3aed; font-variant-numeric: tabular-nums; }
-    .ai-body { font-size: 12px; color: #4c1d95; line-height: 1.5; }
-    .ai-cite { font-size: 11px; color: #7c3aed; margin-top: 6px; font-style: italic; }
-    .ai-action { margin-top: 8px; }
-    .ai-action a { font-size: 11px; color: #7c3aed; font-weight: 600; text-decoration: none; }
-    .ai-action a:hover { text-decoration: underline; }
+      /* ── AI INSIGHT PANEL ── */
+      .ai-insight-wrap {
+        margin: 8px;
+        border-radius: 3px;
+        background: linear-gradient(135deg, #f3e8ff 0%, #ede9fe 100%);
+        border: 1px solid #c4b5fd;
+        padding: 10px 12px;
+      }
+      .ai-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+      }
+      .ai-label {
+        font-size: 10px;
+        font-weight: 700;
+        color: #7c3aed;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .ai-conf-badge {
+        font-size: 10px;
+        color: #7c3aed;
+        font-variant-numeric: tabular-nums;
+      }
+      .ai-body {
+        font-size: 12px;
+        color: #4c1d95;
+        line-height: 1.5;
+      }
+      .ai-cite {
+        font-size: 11px;
+        color: #7c3aed;
+        margin-top: 6px;
+        font-style: italic;
+      }
+      .ai-action {
+        margin-top: 8px;
+      }
+      .ai-action a {
+        font-size: 11px;
+        color: #7c3aed;
+        font-weight: 600;
+        text-decoration: none;
+      }
+      .ai-action a:hover {
+        text-decoration: underline;
+      }
 
-    /* ── VERSION HISTORY ── */
-    .vrow { display: grid; grid-template-columns: 36px 110px 72px 1fr 60px; gap: 10px; padding: 6px 12px; border-bottom: 1px solid #f0f1f3; align-items: center; font-size: 13px; cursor: pointer; }
-    .vrow:hover:not(.vh) { background: #f6f7f9; }
-    .vrow.vh { background: #fbfbfc; cursor: default; border-bottom: 1px solid #e1e4e8; }
-    .vrow:last-child { border-bottom: none; }
-    .v-ver { font-weight: 600; font-variant-numeric: tabular-nums; color: #1f2328; }
-    .v-date { color: #6e7681; font-variant-numeric: tabular-nums; }
-    .v-user { color: #6e7681; }
-    .v-dl { font-size: 11px; color: #0969da; text-decoration: none; cursor: pointer; }
-    .v-dl:hover { text-decoration: underline; }
-    .vh-lab { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #8c959f; }
+      /* ── VERSION HISTORY ── */
+      .vrow {
+        display: grid;
+        grid-template-columns: 36px 110px 72px 1fr 60px;
+        gap: 10px;
+        padding: 6px 12px;
+        border-bottom: 1px solid #f0f1f3;
+        align-items: center;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .vrow:hover:not(.vh) {
+        background: #f6f7f9;
+      }
+      .vrow.vh {
+        background: #fbfbfc;
+        cursor: default;
+        border-bottom: 1px solid #e1e4e8;
+      }
+      .vrow:last-child {
+        border-bottom: none;
+      }
+      .v-ver {
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        color: #1f2328;
+      }
+      .v-date {
+        color: #6e7681;
+        font-variant-numeric: tabular-nums;
+      }
+      .v-user {
+        color: #6e7681;
+      }
+      .v-dl {
+        font-size: 11px;
+        color: #0969da;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      .v-dl:hover {
+        text-decoration: underline;
+      }
+      .vh-lab {
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #8c959f;
+      }
 
-    /* ── BADGES ── */
-    .badge { font-size: 11px; font-weight: 500; padding: 1px 6px; border-radius: 3px; text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap; }
-    .badge.red    { background: #ffebe9; color: #cf222e; }
-    .badge.amber  { background: #fff8c5; color: #9a6700; }
-    .badge.green  { background: #dafbe1; color: #1a7f37; }
-    .badge.blue   { background: #ddf4ff; color: #0969da; }
-    .badge.gray   { background: #f6f8fa; color: #57606a; }
-    .badge.purple { background: #f3e8ff; color: #7c3aed; }
+      /* ── BADGES ── */
+      .badge {
+        font-size: 11px;
+        font-weight: 500;
+        padding: 1px 6px;
+        border-radius: 3px;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      .badge.red {
+        background: #ffebe9;
+        color: #cf222e;
+      }
+      .badge.amber {
+        background: #fff8c5;
+        color: #9a6700;
+      }
+      .badge.green {
+        background: #dafbe1;
+        color: #1a7f37;
+      }
+      .badge.blue {
+        background: #ddf4ff;
+        color: #0969da;
+      }
+      .badge.gray {
+        background: #f6f8fa;
+        color: #57606a;
+      }
+      .badge.purple {
+        background: #f3e8ff;
+        color: #7c3aed;
+      }
 
-    /* ── PARTER ── */
-    .part-row { display: grid; grid-template-columns: 1fr auto 14px; gap: 8px; padding: 6px 12px; border-bottom: 1px solid #f0f1f3; align-items: center; }
-    .part-row:last-child { border-bottom: none; }
-    .part-name { font-size: 13px; color: #1f2328; font-weight: 500; }
-    .part-sub  { font-size: 11px; color: #6e7681; margin-top: 1px; }
-    .chev { color: #8c959f; font-size: 12px; }
+      /* ── PARTER ── */
+      .part-row {
+        display: grid;
+        grid-template-columns: 1fr auto 14px;
+        gap: 8px;
+        padding: 6px 12px;
+        border-bottom: 1px solid #f0f1f3;
+        align-items: center;
+      }
+      .part-row:last-child {
+        border-bottom: none;
+      }
+      .part-name {
+        font-size: 13px;
+        color: #1f2328;
+        font-weight: 500;
+      }
+      .part-sub {
+        font-size: 11px;
+        color: #6e7681;
+        margin-top: 1px;
+      }
+      .chev {
+        color: #8c959f;
+        font-size: 12px;
+      }
 
-    /* ── TILKNYTNINGER ── */
-    .link-row { display: grid; grid-template-columns: 1fr auto 14px; gap: 8px; padding: 6px 12px; border-bottom: 1px solid #f0f1f3; align-items: center; font-size: 13px; cursor: pointer; }
-    .link-row:hover { background: #f6f7f9; }
-    .link-row:last-child { border-bottom: none; }
-    .link-name { color: #1f2328; }
-    .link-sub  { font-size: 11px; color: #6e7681; margin-top: 1px; }
-    .link-count { font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 10px; background: #e1e4e8; color: #57606a; font-variant-numeric: tabular-nums; }
-    .link-count.a { background: #ffebe9; color: #cf222e; }
+      /* ── TILKNYTNINGER ── */
+      .link-row {
+        display: grid;
+        grid-template-columns: 1fr auto 14px;
+        gap: 8px;
+        padding: 6px 12px;
+        border-bottom: 1px solid #f0f1f3;
+        align-items: center;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .link-row:hover {
+        background: #f6f7f9;
+      }
+      .link-row:last-child {
+        border-bottom: none;
+      }
+      .link-name {
+        color: #1f2328;
+      }
+      .link-sub {
+        font-size: 11px;
+        color: #6e7681;
+        margin-top: 1px;
+      }
+      .link-count {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 1px 7px;
+        border-radius: 10px;
+        background: #e1e4e8;
+        color: #57606a;
+        font-variant-numeric: tabular-nums;
+      }
+      .link-count.a {
+        background: #ffebe9;
+        color: #cf222e;
+      }
 
-    /* ── AKTIVITET ── */
-    .act-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 5px 12px; border-bottom: 1px solid #f0f1f3; gap: 12px; }
-    .act-row:last-child { border-bottom: none; }
-    .act-desc { font-size: 12px; color: #1f2328; line-height: 1.4; }
-    .act-desc .who { font-weight: 500; }
-    .act-when { font-size: 11px; color: #8c959f; font-variant-numeric: tabular-nums; white-space: nowrap; flex-shrink: 0; }
+      /* ── AKTIVITET ── */
+      .act-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 5px 12px;
+        border-bottom: 1px solid #f0f1f3;
+        gap: 12px;
+      }
+      .act-row:last-child {
+        border-bottom: none;
+      }
+      .act-desc {
+        font-size: 12px;
+        color: #1f2328;
+        line-height: 1.4;
+      }
+      .act-desc .who {
+        font-weight: 500;
+      }
+      .act-when {
+        font-size: 11px;
+        color: #8c959f;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
 
-    /* ── MISC ── */
-    .btn-add { font-size: 11px; padding: 3px 8px; border: 1px dashed #d0d7de; background: transparent; color: #6e7681; border-radius: 3px; cursor: pointer; font-family: inherit; font-weight: 500; }
-    .btn-add:hover { border-style: solid; border-color: #0969da; color: #0969da; }
-    .link-action { font-size: 12px; color: #0969da; text-decoration: none; cursor: pointer; }
-    .link-action:hover { text-decoration: underline; }
-    .meta-sep { margin: 0 8px; color: #d0d7de; }
+      /* ── MISC ── */
+      .btn-add {
+        font-size: 11px;
+        padding: 3px 8px;
+        border: 1px dashed #d0d7de;
+        background: transparent;
+        color: #6e7681;
+        border-radius: 3px;
+        cursor: pointer;
+        font-family: inherit;
+        font-weight: 500;
+      }
+      .btn-add:hover {
+        border-style: solid;
+        border-color: #0969da;
+        color: #0969da;
+      }
+      .link-action {
+        font-size: 12px;
+        color: #0969da;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      .link-action:hover {
+        text-decoration: underline;
+      }
+      .meta-sep {
+        margin: 0 8px;
+        color: #d0d7de;
+      }
 
-    /* ── BOTTOM BAR ── */
-    .bot-bar { display: flex; justify-content: space-between; padding: 6px 0; font-size: 11px; color: #6e7681; }
-    .kbd { background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 3px; padding: 1px 5px; font-family: 'SF Mono', 'Fira Mono', monospace; font-size: 10px; color: #1f2328; }
+      /* ── BOTTOM BAR ── */
+      .bot-bar {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        font-size: 11px;
+        color: #6e7681;
+      }
+      .kbd {
+        background: #f6f8fa;
+        border: 1px solid #d0d7de;
+        border-radius: 3px;
+        padding: 1px 5px;
+        font-family: 'SF Mono', 'Fira Mono', monospace;
+        font-size: 10px;
+        color: #1f2328;
+      }
 
-    /* ── ROW HOVER ── */
-    .row-hover { cursor: pointer; }
-    .row-hover:hover { background: #f6f7f9; }
-  </style>
-</head>
-<body>
-<div class="layout">
-
-  <!-- ═══ SIDEBAR ═══ -->
-  <aside class="sidebar">
-    <div class="sb-logo">▣ ChainHub</div>
-    <div class="sb-sec">
-      <div class="sb-lab">Overblik</div>
-      <div class="sb-item">Forside <span class="sb-cnt a">5</span></div>
-      <div class="sb-item">Kalender <span class="sb-cnt">12</span></div>
-      <div class="sb-item">Søg</div>
-    </div>
-    <div class="sb-sec">
-      <div class="sb-lab">Portefølje</div>
-      <div class="sb-item">Selskaber <span class="sb-cnt">32</span></div>
-      <div class="sb-item active">Kontrakter <span class="sb-cnt w">3</span></div>
-      <div class="sb-item">Sager <span class="sb-cnt a">7</span></div>
-      <div class="sb-item">Opgaver <span class="sb-cnt w">9</span></div>
-    </div>
-    <div class="sb-sec">
-      <div class="sb-lab">Ressourcer</div>
-      <div class="sb-item">Dokumenter <span class="sb-cnt">412</span></div>
-      <div class="sb-item">Personer <span class="sb-cnt">184</span></div>
-      <div class="sb-item">Indstillinger</div>
-    </div>
-  </aside>
-
-  <!-- ═══ MAIN ═══ -->
-  <main class="main">
-
-    <!-- Breadcrumb -->
-    <div class="crumb">
-      <a href="#">Kontrakter</a><span class="sep">›</span><span>Lejekontrakt erhverv · Tandlæge Østerbro ApS</span>
-    </div>
-
-    <!-- Header -->
-    <div class="head">
-      <div>
-        <h1>Lejekontrakt erhverv <span class="badge gray" style="font-size:12px; vertical-align:middle; margin-left:6px;">Aktiv</span></h1>
-        <div class="head-meta">
-          Tandlæge Østerbro ApS<span class="meta-sep">·</span>Ejendomsselskab Østerbro ApS<span class="meta-sep">·</span>LEJEKONTRAKT<span class="meta-sep">·</span>STANDARD<span class="meta-sep">·</span>Oprettet 14. jan 2018
+      /* ── ROW HOVER ── */
+      .row-hover {
+        cursor: pointer;
+      }
+      .row-hover:hover {
+        background: #f6f7f9;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <!-- ═══ SIDEBAR ═══ -->
+      <aside class="sidebar">
+        <div class="sb-logo">▣ ChainHub</div>
+        <div class="sb-sec">
+          <div class="sb-lab">Overblik</div>
+          <div class="sb-item">Forside <span class="sb-cnt a">5</span></div>
+          <div class="sb-item">Kalender <span class="sb-cnt">12</span></div>
+          <div class="sb-item">Søg</div>
         </div>
-      </div>
-      <div class="head-btns">
-        <button class="btn">Rediger</button>
-        <button class="btn primary">Upload ny version ▾</button>
-      </div>
-    </div>
-
-    <!-- 6-cell strip -->
-    <div class="strip">
-      <div class="strip-cell">
-        <div class="strip-num sm">Erhverv</div>
-        <div class="strip-lab">Type</div>
-      </div>
-      <div class="strip-cell">
-        <div class="strip-num sm">STANDARD</div>
-        <div class="strip-lab">Sensitivitet</div>
-      </div>
-      <div class="strip-cell">
-        <div class="strip-num">v3</div>
-        <div class="strip-lab">Aktuel version</div>
-      </div>
-      <div class="strip-cell">
-        <div class="strip-num" style="font-size:14px;">14. mar 2026</div>
-        <div class="strip-lab">Effektiv</div>
-      </div>
-      <div class="strip-cell">
-        <div class="strip-num alert">14d</div>
-        <div class="strip-lab">Udløb · 24. maj 2026</div>
-      </div>
-      <div class="strip-cell">
-        <div class="strip-num">2</div>
-        <div class="strip-lab">Parter</div>
-      </div>
-    </div>
-
-    <!-- Alert bar -->
-    <div class="alert-bar">
-      <div><strong>Lejekontrakt udløber om 14 dage</strong> · forhandling med udlejer ikke startet</div>
-      <div class="alert-bar-btns">
-        <button class="btn">Se dokument</button>
-        <button class="btn primary">Start forny-flow</button>
-      </div>
-    </div>
-
-    <!-- 2-col: Vilkår + AI Insight -->
-    <div class="grid-2">
-
-      <!-- Vilkår panel (Plus-tier) -->
-      <div class="pnl">
-        <div class="pnl-h">
-          <span class="pnl-t">
-            Vilkår
-            <span class="plus-badge">PLUS</span>
-          </span>
-          <span class="pnl-m">5 AI-extracted · <a href="#" class="link-action" style="color:#7c3aed;">Review status →</a></span>
+        <div class="sb-sec">
+          <div class="sb-lab">Portefølje</div>
+          <div class="sb-item">Selskaber <span class="sb-cnt">32</span></div>
+          <div class="sb-item active">Kontrakter <span class="sb-cnt w">3</span></div>
+          <div class="sb-item">Sager <span class="sb-cnt a">7</span></div>
+          <div class="sb-item">Opgaver <span class="sb-cnt w">9</span></div>
         </div>
-        <div class="pnl-body">
-          <div class="kterm-row">
-            <span class="kterm-label">Månedlig leje</span>
-            <span class="kterm-value">38.500 kr</span>
-            <span class="ai-conf high">✓ AI 94%</span>
-          </div>
-          <div class="kterm-row">
-            <span class="kterm-label">Opsigelsesvarsel</span>
-            <span class="kterm-value">6 måneder</span>
-            <span class="ai-conf mid">⚠ AI 72%</span>
-          </div>
-          <div class="kterm-row">
-            <span class="kterm-label">Indeksregulering</span>
-            <span class="kterm-value">Nettoprisindeks</span>
-            <span class="ai-conf high">✓ AI 89%</span>
-          </div>
-          <div class="kterm-row">
-            <span class="kterm-label">Depositum</span>
-            <span class="kterm-value">115.500 kr</span>
-            <span class="ai-conf high">✓ AI 96%</span>
-          </div>
-          <div class="kterm-row">
-            <span class="kterm-label">Fremlejeret</span>
-            <span class="kterm-value">Ikke tilladt</span>
-            <span class="ai-conf low">⚠ AI 68%</span>
-          </div>
+        <div class="sb-sec">
+          <div class="sb-lab">Ressourcer</div>
+          <div class="sb-item">Dokumenter <span class="sb-cnt">412</span></div>
+          <div class="sb-item">Personer <span class="sb-cnt">184</span></div>
+          <div class="sb-item">Indstillinger</div>
         </div>
-        <div class="pnl-foot">
-          <a href="#" class="link-action">Review AI-extractions →</a>
-          <span>Opdateret 14. mar 2026 · lejekontrakt-v3.pdf</span>
-        </div>
-      </div>
+      </aside>
 
-      <!-- AI Insight -->
-      <div class="pnl">
-        <div class="pnl-h">
-          <span class="pnl-t">AI Insight <span class="plus-badge">PLUS</span></span>
-          <span class="pnl-m">Opdateret 4t siden</span>
+      <!-- ═══ MAIN ═══ -->
+      <main class="main">
+        <!-- Breadcrumb -->
+        <div class="crumb">
+          <a href="#">Kontrakter</a><span class="sep">›</span
+          ><span>Lejekontrakt erhverv · Tandlæge Østerbro ApS</span>
         </div>
-        <div class="pnl-body" style="padding:0;">
-          <div class="ai-insight-wrap">
-            <div class="ai-head">
-              <span class="ai-label">⚡ Renewal-risk</span>
-              <span class="ai-conf-badge">82% konfidens</span>
+
+        <!-- Header -->
+        <div class="head">
+          <div>
+            <h1>
+              Lejekontrakt erhverv
+              <span
+                class="badge gray"
+                style="font-size: 12px; vertical-align: middle; margin-left: 6px"
+                >Aktiv</span
+              >
+            </h1>
+            <div class="head-meta">
+              Tandlæge Østerbro ApS<span class="meta-sep">·</span>Ejendomsselskab Østerbro ApS<span
+                class="meta-sep"
+                >·</span
+              >LEJEKONTRAKT<span class="meta-sep">·</span>STANDARD<span class="meta-sep">·</span
+              >Oprettet 14. jan 2018
             </div>
-            <div class="ai-body">
-              Forventet markedsleje for Østerbrogade-segmentet er <strong>10–12% over</strong> nuværende kontrakt. Anbefaling: start forhandling nu, ikke efter udløb — udlejer har fordel ved passivitet.
-            </div>
-            <div class="ai-cite">Baseret på 4 sammenlignelige kontrakter Q1–Q2 2026, Indre Østerbro.</div>
-            <div class="ai-action">
-              <a href="#">Se sammenligningsgrundlag →</a>
-            </div>
           </div>
-          <div style="padding: 8px 12px; border-top: 1px solid #e1e4e8;">
-            <div style="font-size:10px; font-weight:600; color:#6e7681; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Handlingsforslag</div>
-            <div style="display:flex; flex-direction:column; gap:4px;">
-              <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px;">
-                <span style="color:#1f2328;">Kontakt udlejer om forhandling</span>
-                <span class="badge amber">Haster</span>
+          <div class="head-btns">
+            <button class="btn">Rediger</button>
+            <button class="btn primary">Upload ny version ▾</button>
+          </div>
+        </div>
+
+        <!-- 6-cell strip -->
+        <div class="strip">
+          <div class="strip-cell">
+            <div class="strip-num sm">Erhverv</div>
+            <div class="strip-lab">Type</div>
+          </div>
+          <div class="strip-cell">
+            <div class="strip-num sm">STANDARD</div>
+            <div class="strip-lab">Sensitivitet</div>
+          </div>
+          <div class="strip-cell">
+            <div class="strip-num">v3</div>
+            <div class="strip-lab">Aktuel version</div>
+          </div>
+          <div class="strip-cell">
+            <div class="strip-num" style="font-size: 14px">14. mar 2026</div>
+            <div class="strip-lab">Effektiv</div>
+          </div>
+          <div class="strip-cell">
+            <div class="strip-num alert">14d</div>
+            <div class="strip-lab">Udløb · 24. maj 2026</div>
+          </div>
+          <div class="strip-cell">
+            <div class="strip-num">2</div>
+            <div class="strip-lab">Parter</div>
+          </div>
+        </div>
+
+        <!-- Alert bar -->
+        <div class="alert-bar">
+          <div>
+            <strong>Lejekontrakt udløber om 14 dage</strong> · forhandling med udlejer ikke startet
+          </div>
+          <div class="alert-bar-btns">
+            <button class="btn">Se dokument</button>
+            <button class="btn primary">Start forny-flow</button>
+          </div>
+        </div>
+
+        <!-- 2-col: Vilkår + AI Insight -->
+        <div class="grid-2">
+          <!-- Vilkår panel (Plus-tier) -->
+          <div class="pnl">
+            <div class="pnl-h">
+              <span class="pnl-t">
+                Vilkår
+                <span class="plus-badge">PLUS</span>
+              </span>
+              <span class="pnl-m"
+                >5 AI-extracted ·
+                <a href="#" class="link-action" style="color: #7c3aed">Review status →</a></span
+              >
+            </div>
+            <div class="pnl-body">
+              <div class="kterm-row">
+                <span class="kterm-label">Månedlig leje</span>
+                <span class="kterm-value">38.500 kr</span>
+                <span class="ai-conf high">✓ AI 94%</span>
               </div>
-              <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px;">
-                <span style="color:#1f2328;">Indhent markedsvurdering</span>
-                <span class="badge gray">Anbefalet</span>
+              <div class="kterm-row">
+                <span class="kterm-label">Opsigelsesvarsel</span>
+                <span class="kterm-value">6 måneder</span>
+                <span class="ai-conf mid">⚠ AI 72%</span>
+              </div>
+              <div class="kterm-row">
+                <span class="kterm-label">Indeksregulering</span>
+                <span class="kterm-value">Nettoprisindeks</span>
+                <span class="ai-conf high">✓ AI 89%</span>
+              </div>
+              <div class="kterm-row">
+                <span class="kterm-label">Depositum</span>
+                <span class="kterm-value">115.500 kr</span>
+                <span class="ai-conf high">✓ AI 96%</span>
+              </div>
+              <div class="kterm-row">
+                <span class="kterm-label">Fremlejeret</span>
+                <span class="kterm-value">Ikke tilladt</span>
+                <span class="ai-conf low">⚠ AI 68%</span>
+              </div>
+            </div>
+            <div class="pnl-foot">
+              <a href="#" class="link-action">Review AI-extractions →</a>
+              <span>Opdateret 14. mar 2026 · lejekontrakt-v3.pdf</span>
+            </div>
+          </div>
+
+          <!-- AI Insight -->
+          <div class="pnl">
+            <div class="pnl-h">
+              <span class="pnl-t">AI Insight <span class="plus-badge">PLUS</span></span>
+              <span class="pnl-m">Opdateret 4t siden</span>
+            </div>
+            <div class="pnl-body" style="padding: 0">
+              <div class="ai-insight-wrap">
+                <div class="ai-head">
+                  <span class="ai-label">⚡ Renewal-risk</span>
+                  <span class="ai-conf-badge">82% konfidens</span>
+                </div>
+                <div class="ai-body">
+                  Forventet markedsleje for Østerbrogade-segmentet er
+                  <strong>10–12% over</strong> nuværende kontrakt. Anbefaling: start forhandling nu,
+                  ikke efter udløb — udlejer har fordel ved passivitet.
+                </div>
+                <div class="ai-cite">
+                  Baseret på 4 sammenlignelige kontrakter Q1–Q2 2026, Indre Østerbro.
+                </div>
+                <div class="ai-action">
+                  <a href="#">Se sammenligningsgrundlag →</a>
+                </div>
+              </div>
+              <div style="padding: 8px 12px; border-top: 1px solid #e1e4e8">
+                <div
+                  style="
+                    font-size: 10px;
+                    font-weight: 600;
+                    color: #6e7681;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    margin-bottom: 6px;
+                  "
+                >
+                  Handlingsforslag
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px">
+                  <div
+                    style="
+                      display: flex;
+                      justify-content: space-between;
+                      align-items: center;
+                      font-size: 12px;
+                    "
+                  >
+                    <span style="color: #1f2328">Kontakt udlejer om forhandling</span>
+                    <span class="badge amber">Haster</span>
+                  </div>
+                  <div
+                    style="
+                      display: flex;
+                      justify-content: space-between;
+                      align-items: center;
+                      font-size: 12px;
+                    "
+                  >
+                    <span style="color: #1f2328">Indhent markedsvurdering</span>
+                    <span class="badge gray">Anbefalet</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+
+        <!-- Versionshistorik (full-width) -->
+        <div class="pnl">
+          <div class="pnl-h">
+            <span class="pnl-t"
+              >Versionshistorik
+              <span
+                style="
+                  background: #e1e4e8;
+                  color: #57606a;
+                  padding: 1px 6px;
+                  border-radius: 8px;
+                  font-size: 10px;
+                  font-weight: 500;
+                  text-transform: none;
+                  letter-spacing: 0;
+                  margin-left: 4px;
+                "
+                >3</span
+              ></span
+            >
+            <span class="pnl-m">v3 er aktuel · sortér: nyeste</span>
+          </div>
+          <!-- Header row -->
+          <div class="vrow vh">
+            <span class="vh-lab">Ver.</span>
+            <span class="vh-lab">Dato</span>
+            <span class="vh-lab">Af</span>
+            <span class="vh-lab">Type</span>
+            <span class="vh-lab">Dokument</span>
+          </div>
+          <!-- v3 -->
+          <div class="vrow">
+            <span class="v-ver">v3</span>
+            <span class="v-date">14. mar 2026</span>
+            <span class="v-user">Philip</span>
+            <span><span class="badge gray">ALLONGE</span></span>
+            <span><a href="#" class="v-dl">↓ Hent</a></span>
+          </div>
+          <!-- v2 -->
+          <div class="vrow">
+            <span class="v-ver">v2</span>
+            <span class="v-date">8. jan 2024</span>
+            <span class="v-user">Maria</span>
+            <span><span class="badge amber">MATERIEL</span></span>
+            <span><a href="#" class="v-dl">↓ Hent</a></span>
+          </div>
+          <!-- v1 -->
+          <div class="vrow">
+            <span class="v-ver" style="color: #8c959f">v1</span>
+            <span class="v-date">14. jan 2018</span>
+            <span class="v-user">Lars</span>
+            <span><span class="badge blue">NY VERSION</span></span>
+            <span><a href="#" class="v-dl">↓ Hent</a></span>
+          </div>
+          <div class="pnl-foot">
+            <span>3 versioner · v1 er original</span>
+            <button class="btn-add">+ Upload ny version</button>
+          </div>
+        </div>
+
+        <!-- 3-col: Parter + Tilknytninger + Aktivitet -->
+        <div class="grid-3">
+          <!-- Parter -->
+          <div class="pnl">
+            <div class="pnl-h">
+              <span class="pnl-t">Parter</span>
+              <span class="pnl-m">2 parter</span>
+            </div>
+            <div class="part-row row-hover">
+              <div>
+                <div class="part-name">Tandlæge Østerbro ApS</div>
+                <div class="part-sub">CVR 12345678 · Lejer</div>
+              </div>
+              <span class="badge blue">Lejer</span>
+              <span class="chev">›</span>
+            </div>
+            <div class="part-row row-hover">
+              <div>
+                <div class="part-name">Ejendomsselskab Østerbro ApS</div>
+                <div class="part-sub">CVR 87654321 · Udlejer</div>
+              </div>
+              <span class="badge gray">Udlejer</span>
+              <span class="chev">›</span>
+            </div>
+            <div class="pnl-foot">
+              <span>Kontaktperson: Jens Madsen</span>
+              <button class="btn-add">+ Tilføj part</button>
+            </div>
+          </div>
+
+          <!-- Tilknytninger -->
+          <div class="pnl">
+            <div class="pnl-h">
+              <span class="pnl-t">Tilknytninger</span>
+              <span class="pnl-m">3 elementer</span>
+            </div>
+            <div class="link-row">
+              <div>
+                <div class="link-name">Sag #2841 · Forhandling udlejer</div>
+                <div class="link-sub">Åben · oprettet 4. apr 2026</div>
+              </div>
+              <span class="link-count a">1</span>
+              <span class="chev">›</span>
+            </div>
+            <div class="link-row">
+              <div>
+                <div class="link-name">Forny lejekontrakt</div>
+                <div class="link-sub">Opgave · frist 20. maj 2026</div>
+              </div>
+              <span class="link-count">2</span>
+              <span class="chev">›</span>
+            </div>
+            <div class="link-row" style="cursor: default">
+              <div>
+                <div class="link-name" style="color: #8c959f">Ingen tilknyttede dokumenter</div>
+                <div class="link-sub">Upload for at knytte til denne kontrakt</div>
+              </div>
+              <span class="link-count">0</span>
+              <span class="chev" style="color: transparent">›</span>
+            </div>
+            <div class="pnl-foot">
+              <span></span>
+              <button class="btn-add">+ Tilknyt element</button>
+            </div>
+          </div>
+
+          <!-- Aktivitet -->
+          <div class="pnl">
+            <div class="pnl-h">
+              <span class="pnl-t">Aktivitet</span>
+              <span class="pnl-m">Seneste 5</span>
+            </div>
+            <div class="act-row">
+              <div class="act-desc"><span class="who">Philip</span> uploadede v3 · Allonge</div>
+              <span class="act-when">14. mar 14:22</span>
+            </div>
+            <div class="act-row">
+              <div class="act-desc">
+                <span class="who">Philip</span> kommenterede: "Forhandling om indeksklausul..."
+              </div>
+              <span class="act-when">10. mar 09:15</span>
+            </div>
+            <div class="act-row">
+              <div class="act-desc">
+                <span class="who">AI</span> gennemførte extraction · 5 felter · 1 lav konfidens
+              </div>
+              <span class="act-when">14. mar 14:24</span>
+            </div>
+            <div class="act-row">
+              <div class="act-desc">
+                <span class="who">Maria</span> uploadede v2 · Materiel ændring
+              </div>
+              <span class="act-when">8. jan 2024</span>
+            </div>
+            <div class="act-row">
+              <div class="act-desc"><span class="who">Lars</span> oprettede kontrakten · v1</div>
+              <span class="act-when">14. jan 2018</span>
+            </div>
+            <div class="pnl-foot">
+              <a href="#" class="link-action">Vis fuld historik →</a>
+              <span></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom bar -->
+        <div class="bot-bar">
+          <span>Sidst opdateret 14. mar 2026 · Tandlæge Østerbro ApS · Lejekontrakt v3</span>
+          <span
+            ><span class="kbd">⌘K</span> handling · <span class="kbd">E</span> rediger ·
+            <span class="kbd">U</span> upload · <span class="kbd">G</span> derhen</span
+          >
+        </div>
+      </main>
     </div>
-
-    <!-- Versionshistorik (full-width) -->
-    <div class="pnl">
-      <div class="pnl-h">
-        <span class="pnl-t">Versionshistorik <span style="background:#e1e4e8;color:#57606a;padding:1px 6px;border-radius:8px;font-size:10px;font-weight:500;text-transform:none;letter-spacing:0;margin-left:4px;">3</span></span>
-        <span class="pnl-m">v3 er aktuel · sortér: nyeste</span>
-      </div>
-      <!-- Header row -->
-      <div class="vrow vh">
-        <span class="vh-lab">Ver.</span>
-        <span class="vh-lab">Dato</span>
-        <span class="vh-lab">Af</span>
-        <span class="vh-lab">Type</span>
-        <span class="vh-lab">Dokument</span>
-      </div>
-      <!-- v3 -->
-      <div class="vrow">
-        <span class="v-ver">v3</span>
-        <span class="v-date">14. mar 2026</span>
-        <span class="v-user">Philip</span>
-        <span><span class="badge gray">ALLONGE</span></span>
-        <span><a href="#" class="v-dl">↓ Hent</a></span>
-      </div>
-      <!-- v2 -->
-      <div class="vrow">
-        <span class="v-ver">v2</span>
-        <span class="v-date">8. jan 2024</span>
-        <span class="v-user">Maria</span>
-        <span><span class="badge amber">MATERIEL</span></span>
-        <span><a href="#" class="v-dl">↓ Hent</a></span>
-      </div>
-      <!-- v1 -->
-      <div class="vrow">
-        <span class="v-ver" style="color:#8c959f;">v1</span>
-        <span class="v-date">14. jan 2018</span>
-        <span class="v-user">Lars</span>
-        <span><span class="badge blue">NY VERSION</span></span>
-        <span><a href="#" class="v-dl">↓ Hent</a></span>
-      </div>
-      <div class="pnl-foot">
-        <span>3 versioner · v1 er original</span>
-        <button class="btn-add">+ Upload ny version</button>
-      </div>
-    </div>
-
-    <!-- 3-col: Parter + Tilknytninger + Aktivitet -->
-    <div class="grid-3">
-
-      <!-- Parter -->
-      <div class="pnl">
-        <div class="pnl-h">
-          <span class="pnl-t">Parter</span>
-          <span class="pnl-m">2 parter</span>
-        </div>
-        <div class="part-row row-hover">
-          <div>
-            <div class="part-name">Tandlæge Østerbro ApS</div>
-            <div class="part-sub">CVR 12345678 · Lejer</div>
-          </div>
-          <span class="badge blue">Lejer</span>
-          <span class="chev">›</span>
-        </div>
-        <div class="part-row row-hover">
-          <div>
-            <div class="part-name">Ejendomsselskab Østerbro ApS</div>
-            <div class="part-sub">CVR 87654321 · Udlejer</div>
-          </div>
-          <span class="badge gray">Udlejer</span>
-          <span class="chev">›</span>
-        </div>
-        <div class="pnl-foot">
-          <span>Kontaktperson: Jens Madsen</span>
-          <button class="btn-add">+ Tilføj part</button>
-        </div>
-      </div>
-
-      <!-- Tilknytninger -->
-      <div class="pnl">
-        <div class="pnl-h">
-          <span class="pnl-t">Tilknytninger</span>
-          <span class="pnl-m">3 elementer</span>
-        </div>
-        <div class="link-row">
-          <div>
-            <div class="link-name">Sag #2841 · Forhandling udlejer</div>
-            <div class="link-sub">Åben · oprettet 4. apr 2026</div>
-          </div>
-          <span class="link-count a">1</span>
-          <span class="chev">›</span>
-        </div>
-        <div class="link-row">
-          <div>
-            <div class="link-name">Forny lejekontrakt</div>
-            <div class="link-sub">Opgave · frist 20. maj 2026</div>
-          </div>
-          <span class="link-count">2</span>
-          <span class="chev">›</span>
-        </div>
-        <div class="link-row" style="cursor:default;">
-          <div>
-            <div class="link-name" style="color:#8c959f;">Ingen tilknyttede dokumenter</div>
-            <div class="link-sub">Upload for at knytte til denne kontrakt</div>
-          </div>
-          <span class="link-count">0</span>
-          <span class="chev" style="color:transparent;">›</span>
-        </div>
-        <div class="pnl-foot">
-          <span></span>
-          <button class="btn-add">+ Tilknyt element</button>
-        </div>
-      </div>
-
-      <!-- Aktivitet -->
-      <div class="pnl">
-        <div class="pnl-h">
-          <span class="pnl-t">Aktivitet</span>
-          <span class="pnl-m">Seneste 5</span>
-        </div>
-        <div class="act-row">
-          <div class="act-desc"><span class="who">Philip</span> uploadede v3 · Allonge</div>
-          <span class="act-when">14. mar 14:22</span>
-        </div>
-        <div class="act-row">
-          <div class="act-desc"><span class="who">Philip</span> kommenterede: "Forhandling om indeksklausul..."</div>
-          <span class="act-when">10. mar 09:15</span>
-        </div>
-        <div class="act-row">
-          <div class="act-desc"><span class="who">AI</span> gennemførte extraction · 5 felter · 1 lav konfidens</div>
-          <span class="act-when">14. mar 14:24</span>
-        </div>
-        <div class="act-row">
-          <div class="act-desc"><span class="who">Maria</span> uploadede v2 · Materiel ændring</div>
-          <span class="act-when">8. jan 2024</span>
-        </div>
-        <div class="act-row">
-          <div class="act-desc"><span class="who">Lars</span> oprettede kontrakten · v1</div>
-          <span class="act-when">14. jan 2018</span>
-        </div>
-        <div class="pnl-foot">
-          <a href="#" class="link-action">Vis fuld historik →</a>
-          <span></span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Bottom bar -->
-    <div class="bot-bar">
-      <span>Sidst opdateret 14. mar 2026 · Tandlæge Østerbro ApS · Lejekontrakt v3</span>
-      <span><span class="kbd">⌘K</span> handling · <span class="kbd">E</span> rediger · <span class="kbd">U</span> upload · <span class="kbd">G</span> derhen</span>
-    </div>
-
-  </main>
-</div>
-</body>
+  </body>
 </html>

@@ -1,7 +1,7 @@
-import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import { EnrichmentPanel } from '@/components/documents/EnrichmentPanel'
+import { describe, it, expect, vi } from 'vitest'
 import type { DocumentEnrichmentData } from '@/actions/document-enrichment'
+import { EnrichmentPanel } from '@/components/documents/EnrichmentPanel'
 
 // next/link renders as <a> in tests
 vi.mock('next/link', () => ({

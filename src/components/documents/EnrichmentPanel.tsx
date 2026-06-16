@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
-import Link from 'next/link'
 import { Sparkles, Building2, User, Copy, ExternalLink } from 'lucide-react'
+import Link from 'next/link'
+import { useState } from 'react'
 import { toast } from 'sonner'
-import { Panel, PanelHeader, PanelBody, PanelEmpty, Badge } from '@/components/ui/b'
 import type { DocumentEnrichmentData, EntityMatchResult } from '@/actions/document-enrichment'
+import { Panel, PanelHeader, PanelBody, PanelEmpty, Badge } from '@/components/ui/b'
 
 // Mapning af confidence til Badge-tone
 function confidenceTone(confidence: number | null): 'green' | 'amber' | 'red' {

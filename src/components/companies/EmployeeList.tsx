@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
 import { Users, Search, ChevronDown, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
-import { endCompanyPerson } from '@/actions/governance'
+import { useState } from 'react'
 import { toast } from 'sonner'
+import { endCompanyPerson } from '@/actions/governance'
 import { getCompanyPersonRoleLabel, formatDate } from '@/lib/labels'
 
 interface PersonItem {

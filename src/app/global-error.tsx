@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect } from 'react'
 import * as Sentry from '@sentry/nextjs'
+import { useEffect } from 'react'
 
 // Global fallback-boundary. Aktiveres hvis root-layout crasher —
 // kan ikke bruge SectionCard eller app-specifik UI pga. root-layout
@@ -14,7 +14,6 @@ export default function GlobalError({
   reset: () => void
 }) {
   useEffect(() => {
-    // eslint-disable-next-line no-console
     console.error('[global] critical error:', error)
     Sentry.captureException(error, { tags: { page: 'global' } })
   }, [error])

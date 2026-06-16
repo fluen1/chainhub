@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect } from 'react'
 import * as Sentry from '@sentry/nextjs'
+import { useEffect } from 'react'
 import { ErrorBoundaryUI } from '@/components/ui/error-boundary'
 
 interface ErrorBoundaryPageProps {
@@ -27,7 +27,6 @@ export function ErrorBoundaryPage({
   showDashboardLink,
 }: ErrorBoundaryPageProps) {
   useEffect(() => {
-    // eslint-disable-next-line no-console
     console.error(`[${page}] render error:`, error)
     Sentry.captureException(error, { tags: { page } })
   }, [error, page])

@@ -1,7 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
+import { useState } from 'react'
+import { AddPersonOwnershipModal } from '@/components/persons/AddPersonOwnershipModal'
+import { AddPersonRoleModal } from '@/components/persons/AddPersonRoleModal'
+import { EditPersonDialog } from '@/components/persons/EditPersonDialog'
 import {
   Breadcrumb,
   PageHeader,
@@ -19,15 +23,11 @@ import {
   BottomBar,
   AIBadge,
 } from '@/components/ui/b'
-import dynamic from 'next/dynamic'
+import { getCaseStatusLabel } from '@/lib/labels'
 import { EndRoleLink } from './end-role-link'
-import { EditPersonDialog } from '@/components/persons/EditPersonDialog'
 
 // Lazy-load GdprPanel — kun vist for admins, splittes fra hoved-bundle
 const GdprPanel = dynamic(() => import('@/components/persons/GdprPanel').then((m) => m.GdprPanel))
-import { AddPersonRoleModal } from '@/components/persons/AddPersonRoleModal'
-import { AddPersonOwnershipModal } from '@/components/persons/AddPersonOwnershipModal'
-import { getCaseStatusLabel } from '@/lib/labels'
 
 // ────────────────────────────────────────────────────────────────────────────
 // /persons/[id] — server-component (ingen client interaktivitet behov for V1).

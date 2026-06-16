@@ -1,639 +1,1409 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="da">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Indstillinger — ChainHub</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #fafafa; color: #1f2328; font-size: 13px; -webkit-font-smoothing: antialiased; }
-    .layout { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Indstillinger — ChainHub</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family:
+          'Inter',
+          -apple-system,
+          BlinkMacSystemFont,
+          sans-serif;
+        background: #fafafa;
+        color: #1f2328;
+        font-size: 13px;
+        -webkit-font-smoothing: antialiased;
+      }
+      .layout {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        min-height: 100vh;
+      }
 
-    /* ── APP SIDEBAR ── */
-    .sb      { background: #f6f7f9; border-right: 1px solid #e1e4e8; padding: 14px 8px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
-    .sb-logo { font-weight: 600; padding: 4px 10px 16px; }
-    .sb-sec  { margin-bottom: 16px; }
-    .sb-lab  { font-size: 10px; color: #6e7681; padding: 0 10px 4px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
-    .sb-item { display: flex; justify-content: space-between; align-items: center; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 13px; }
-    .sb-item.active { background: #e8eaee; font-weight: 500; }
-    .sb-item:hover:not(.active) { background: #ecedf0; }
-    .sb-cnt  { font-size: 11px; color: #6e7681; font-variant-numeric: tabular-nums; }
-    .sb-cnt.a { color: #b91c1c; font-weight: 600; }
+      /* ── APP SIDEBAR ── */
+      .sb {
+        background: #f6f7f9;
+        border-right: 1px solid #e1e4e8;
+        padding: 14px 8px;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+      }
+      .sb-logo {
+        font-weight: 600;
+        padding: 4px 10px 16px;
+      }
+      .sb-sec {
+        margin-bottom: 16px;
+      }
+      .sb-lab {
+        font-size: 10px;
+        color: #6e7681;
+        padding: 0 10px 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+      }
+      .sb-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+      }
+      .sb-item.active {
+        background: #e8eaee;
+        font-weight: 500;
+      }
+      .sb-item:hover:not(.active) {
+        background: #ecedf0;
+      }
+      .sb-cnt {
+        font-size: 11px;
+        color: #6e7681;
+        font-variant-numeric: tabular-nums;
+      }
+      .sb-cnt.a {
+        color: #b91c1c;
+        font-weight: 600;
+      }
 
-    /* ── SETTINGS LAYOUT ── */
-    .s-layout { display: grid; grid-template-columns: 168px 1fr; min-height: 100vh; }
+      /* ── SETTINGS LAYOUT ── */
+      .s-layout {
+        display: grid;
+        grid-template-columns: 168px 1fr;
+        min-height: 100vh;
+      }
 
-    /* ── SETTINGS NAV ── */
-    .s-nav  { border-right: 1px solid #e1e4e8; padding: 14px 8px; background: white; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
-    .s-nav-lab  { font-size: 10px; color: #6e7681; padding: 0 10px 5px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 2px; }
-    .s-nav-item { display: flex; align-items: center; gap: 8px; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 13px; color: #1f2328; margin-bottom: 1px; }
-    .s-nav-item.active { background: #e8eaee; font-weight: 500; }
-    .s-nav-item:hover:not(.active) { background: #ecedf0; }
-    .s-nav-dot { width: 6px; height: 6px; border-radius: 50%; background: #d0d7de; flex-shrink: 0; }
-    .s-nav-dot.warn { background: #b54708; }
-    .s-nav-sec { margin-bottom: 18px; }
+      /* ── SETTINGS NAV ── */
+      .s-nav {
+        border-right: 1px solid #e1e4e8;
+        padding: 14px 8px;
+        background: white;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+      }
+      .s-nav-lab {
+        font-size: 10px;
+        color: #6e7681;
+        padding: 0 10px 5px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+        margin-bottom: 2px;
+      }
+      .s-nav-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        color: #1f2328;
+        margin-bottom: 1px;
+      }
+      .s-nav-item.active {
+        background: #e8eaee;
+        font-weight: 500;
+      }
+      .s-nav-item:hover:not(.active) {
+        background: #ecedf0;
+      }
+      .s-nav-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #d0d7de;
+        flex-shrink: 0;
+      }
+      .s-nav-dot.warn {
+        background: #b54708;
+      }
+      .s-nav-sec {
+        margin-bottom: 18px;
+      }
 
-    /* ── MAIN ── */
-    .s-main { padding: 14px 28px 32px; display: flex; flex-direction: column; gap: 14px; min-width: 0; max-width: 700px; }
+      /* ── MAIN ── */
+      .s-main {
+        padding: 14px 28px 32px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        min-width: 0;
+        max-width: 700px;
+      }
 
-    /* ── HEADER ── */
-    .crumb  { font-size: 12px; color: #6e7681; padding: 4px 0 2px; }
-    .crumb a { color: #6e7681; text-decoration: none; }
-    .crumb .sep { margin: 0 6px; color: #8c959f; }
-    .s-head { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 1px solid #e1e4e8; }
-    .s-h1   { font-size: 16px; font-weight: 600; }
-    .s-sub  { font-size: 12px; color: #6e7681; margin-top: 2px; }
-    .btn    { font-size: 12px; padding: 5px 10px; border: 1px solid #d0d7de; background: white; color: #1f2328; border-radius: 4px; cursor: pointer; font-weight: 500; font-family: inherit; }
-    .btn:hover { background: #f6f8fa; }
-    .btn.primary { background: #0969da; color: white; border-color: #0969da; }
-    .btn.primary:hover { background: #0860c7; }
-    .btn.danger  { color: #cf222e; border-color: #ffc1ba; }
-    .btn.danger:hover { background: #ffebe9; }
+      /* ── HEADER ── */
+      .crumb {
+        font-size: 12px;
+        color: #6e7681;
+        padding: 4px 0 2px;
+      }
+      .crumb a {
+        color: #6e7681;
+        text-decoration: none;
+      }
+      .crumb .sep {
+        margin: 0 6px;
+        color: #8c959f;
+      }
+      .s-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e1e4e8;
+      }
+      .s-h1 {
+        font-size: 16px;
+        font-weight: 600;
+      }
+      .s-sub {
+        font-size: 12px;
+        color: #6e7681;
+        margin-top: 2px;
+      }
+      .btn {
+        font-size: 12px;
+        padding: 5px 10px;
+        border: 1px solid #d0d7de;
+        background: white;
+        color: #1f2328;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+        font-family: inherit;
+      }
+      .btn:hover {
+        background: #f6f8fa;
+      }
+      .btn.primary {
+        background: #0969da;
+        color: white;
+        border-color: #0969da;
+      }
+      .btn.primary:hover {
+        background: #0860c7;
+      }
+      .btn.danger {
+        color: #cf222e;
+        border-color: #ffc1ba;
+      }
+      .btn.danger:hover {
+        background: #ffebe9;
+      }
 
-    /* ── PANELS ── */
-    .pnl    { background: white; border: 1px solid #e1e4e8; border-radius: 4px; overflow: hidden; }
-    .pnl-h  { padding: 7px 14px; border-bottom: 1px solid #e1e4e8; background: #fbfbfc; display: flex; justify-content: space-between; align-items: center; }
-    .pnl-t  { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #1f2328; display: flex; align-items: center; gap: 6px; }
-    .pnl-m  { font-size: 11px; color: #6e7681; }
-    .pnl-foot { padding: 7px 14px; border-top: 1px solid #f0f1f3; background: #fbfbfc; display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #6e7681; }
-    .btn-add { font-size: 11px; padding: 3px 8px; border: 1px dashed #d0d7de; background: transparent; color: #6e7681; border-radius: 3px; cursor: pointer; font-family: inherit; }
-    .btn-add:hover { border-style: solid; border-color: #0969da; color: #0969da; }
+      /* ── PANELS ── */
+      .pnl {
+        background: white;
+        border: 1px solid #e1e4e8;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .pnl-h {
+        padding: 7px 14px;
+        border-bottom: 1px solid #e1e4e8;
+        background: #fbfbfc;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .pnl-t {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #1f2328;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .pnl-m {
+        font-size: 11px;
+        color: #6e7681;
+      }
+      .pnl-foot {
+        padding: 7px 14px;
+        border-top: 1px solid #f0f1f3;
+        background: #fbfbfc;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 11px;
+        color: #6e7681;
+      }
+      .btn-add {
+        font-size: 11px;
+        padding: 3px 8px;
+        border: 1px dashed #d0d7de;
+        background: transparent;
+        color: #6e7681;
+        border-radius: 3px;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      .btn-add:hover {
+        border-style: solid;
+        border-color: #0969da;
+        color: #0969da;
+      }
 
-    /* ── FIELD ROWS ── */
-    .f-row  { display: grid; grid-template-columns: 140px 1fr; gap: 16px; padding: 8px 14px; border-bottom: 1px solid #f0f1f3; align-items: center; }
-    .f-row:last-child { border-bottom: none; }
-    .f-label { font-size: 11px; font-weight: 600; color: #6e7681; text-transform: uppercase; letter-spacing: 0.4px; }
-    .f-val   { font-size: 13px; color: #1f2328; display: flex; align-items: center; gap: 8px; }
-    .f-val.edit input { font-size: 12px; padding: 5px 8px; border: 1px solid #0969da; border-radius: 4px; background: white; font-family: inherit; color: #1f2328; outline: none; width: 100%; }
-    .f-edit-btn { font-size: 11px; color: #0969da; background: none; border: none; cursor: pointer; padding: 0; font-family: inherit; flex-shrink: 0; }
-    .f-edit-btn:hover { text-decoration: underline; }
-    .f-hint  { font-size: 11px; color: #8c959f; margin-top: 2px; }
+      /* ── FIELD ROWS ── */
+      .f-row {
+        display: grid;
+        grid-template-columns: 140px 1fr;
+        gap: 16px;
+        padding: 8px 14px;
+        border-bottom: 1px solid #f0f1f3;
+        align-items: center;
+      }
+      .f-row:last-child {
+        border-bottom: none;
+      }
+      .f-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: #6e7681;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+      }
+      .f-val {
+        font-size: 13px;
+        color: #1f2328;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .f-val.edit input {
+        font-size: 12px;
+        padding: 5px 8px;
+        border: 1px solid #0969da;
+        border-radius: 4px;
+        background: white;
+        font-family: inherit;
+        color: #1f2328;
+        outline: none;
+        width: 100%;
+      }
+      .f-edit-btn {
+        font-size: 11px;
+        color: #0969da;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        font-family: inherit;
+        flex-shrink: 0;
+      }
+      .f-edit-btn:hover {
+        text-decoration: underline;
+      }
+      .f-hint {
+        font-size: 11px;
+        color: #8c959f;
+        margin-top: 2px;
+      }
 
-    /* ── USER ROWS ── */
-    .u-row  { display: grid; grid-template-columns: 28px 1fr auto auto; gap: 10px; padding: 7px 14px; border-bottom: 1px solid #f0f1f3; align-items: center; }
-    .u-row:last-child { border-bottom: none; }
-    .u-ini  { width: 28px; height: 28px; border-radius: 50%; background: #d0d7de; color: #57606a; font-size: 10px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .u-name { font-size: 13px; font-weight: 500; }
-    .u-email { font-size: 11px; color: #6e7681; margin-top: 1px; }
-    .u-self  { font-size: 10px; color: #6e7681; border: 1px solid #d0d7de; border-radius: 3px; padding: 1px 5px; flex-shrink: 0; }
+      /* ── USER ROWS ── */
+      .u-row {
+        display: grid;
+        grid-template-columns: 28px 1fr auto auto;
+        gap: 10px;
+        padding: 7px 14px;
+        border-bottom: 1px solid #f0f1f3;
+        align-items: center;
+      }
+      .u-row:last-child {
+        border-bottom: none;
+      }
+      .u-ini {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: #d0d7de;
+        color: #57606a;
+        font-size: 10px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .u-name {
+        font-size: 13px;
+        font-weight: 500;
+      }
+      .u-email {
+        font-size: 11px;
+        color: #6e7681;
+        margin-top: 1px;
+      }
+      .u-self {
+        font-size: 10px;
+        color: #6e7681;
+        border: 1px solid #d0d7de;
+        border-radius: 3px;
+        padding: 1px 5px;
+        flex-shrink: 0;
+      }
 
-    /* ── BADGES ── */
-    .badge { font-size: 11px; font-weight: 500; padding: 1px 6px; border-radius: 3px; display: inline-block; white-space: nowrap; }
-    .badge.green  { background: #dafbe1; color: #1a7f37; }
-    .badge.blue   { background: #ddf4ff; color: #0969da; }
-    .badge.amber  { background: #fff8c5; color: #9a6700; }
-    .badge.gray   { background: #f6f8fa; color: #57606a; }
-    .badge.purple { background: #f3e8ff; color: #7c3aed; }
-    .badge.red    { background: #ffebe9; color: #cf222e; }
+      /* ── BADGES ── */
+      .badge {
+        font-size: 11px;
+        font-weight: 500;
+        padding: 1px 6px;
+        border-radius: 3px;
+        display: inline-block;
+        white-space: nowrap;
+      }
+      .badge.green {
+        background: #dafbe1;
+        color: #1a7f37;
+      }
+      .badge.blue {
+        background: #ddf4ff;
+        color: #0969da;
+      }
+      .badge.amber {
+        background: #fff8c5;
+        color: #9a6700;
+      }
+      .badge.gray {
+        background: #f6f8fa;
+        color: #57606a;
+      }
+      .badge.purple {
+        background: #f3e8ff;
+        color: #7c3aed;
+      }
+      .badge.red {
+        background: #ffebe9;
+        color: #cf222e;
+      }
 
-    /* ── PLUS BADGE ── */
-    .plus   { font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 3px; background: #f3e8ff; color: #7c3aed; letter-spacing: 0.4px; text-transform: uppercase; }
+      /* ── PLUS BADGE ── */
+      .plus {
+        font-size: 9px;
+        font-weight: 700;
+        padding: 2px 5px;
+        border-radius: 3px;
+        background: #f3e8ff;
+        color: #7c3aed;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+      }
 
-    /* ── AI USAGE BAR ── */
-    .ai-usage { padding: 10px 14px; }
-    .usage-bar { height: 6px; background: #f0f1f3; border-radius: 3px; overflow: hidden; margin: 6px 0 4px; }
-    .usage-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
-    .usage-fill.ok   { background: #1a7f37; }
-    .usage-fill.warn { background: #d4a72c; }
-    .usage-fill.full { background: #cf222e; }
-    .usage-nums { display: flex; justify-content: space-between; font-size: 11px; color: #6e7681; font-variant-numeric: tabular-nums; }
+      /* ── AI USAGE BAR ── */
+      .ai-usage {
+        padding: 10px 14px;
+      }
+      .usage-bar {
+        height: 6px;
+        background: #f0f1f3;
+        border-radius: 3px;
+        overflow: hidden;
+        margin: 6px 0 4px;
+      }
+      .usage-fill {
+        height: 100%;
+        border-radius: 3px;
+        transition: width 0.3s;
+      }
+      .usage-fill.ok {
+        background: #1a7f37;
+      }
+      .usage-fill.warn {
+        background: #d4a72c;
+      }
+      .usage-fill.full {
+        background: #cf222e;
+      }
+      .usage-nums {
+        display: flex;
+        justify-content: space-between;
+        font-size: 11px;
+        color: #6e7681;
+        font-variant-numeric: tabular-nums;
+      }
 
-    /* ── INTEGRATION ROWS ── */
-    .int-row { display: grid; grid-template-columns: 28px 1fr auto; gap: 10px; padding: 8px 14px; border-bottom: 1px solid #f0f1f3; align-items: center; }
-    .int-row:last-child { border-bottom: none; }
-    .int-icon { width: 28px; height: 28px; border-radius: 4px; background: #f6f8fa; border: 1px solid #e1e4e8; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #57606a; flex-shrink: 0; }
-    .int-name { font-size: 13px; font-weight: 500; }
-    .int-sub  { font-size: 11px; color: #6e7681; margin-top: 1px; }
+      /* ── INTEGRATION ROWS ── */
+      .int-row {
+        display: grid;
+        grid-template-columns: 28px 1fr auto;
+        gap: 10px;
+        padding: 8px 14px;
+        border-bottom: 1px solid #f0f1f3;
+        align-items: center;
+      }
+      .int-row:last-child {
+        border-bottom: none;
+      }
+      .int-icon {
+        width: 28px;
+        height: 28px;
+        border-radius: 4px;
+        background: #f6f8fa;
+        border: 1px solid #e1e4e8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 700;
+        color: #57606a;
+        flex-shrink: 0;
+      }
+      .int-name {
+        font-size: 13px;
+        font-weight: 500;
+      }
+      .int-sub {
+        font-size: 11px;
+        color: #6e7681;
+        margin-top: 1px;
+      }
 
-    /* ── TOGGLE ── */
-    .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; border-bottom: 1px solid #f0f1f3; }
-    .toggle-row:last-child { border-bottom: none; }
-    .tl-info { flex: 1; min-width: 0; }
-    .tl-name { font-size: 13px; font-weight: 500; }
-    .tl-sub  { font-size: 11px; color: #6e7681; margin-top: 2px; }
-    .sw-wrap { position: relative; width: 34px; height: 20px; flex-shrink: 0; margin-left: 16px; cursor: pointer; }
-    .sw-track { position: absolute; inset: 0; border-radius: 10px; background: #d0d7de; transition: background 0.15s; }
-    .sw-track.on { background: #0969da; }
-    .sw-thumb { position: absolute; height: 14px; width: 14px; left: 3px; top: 3px; border-radius: 50%; background: white; transition: transform 0.15s; box-shadow: 0 1px 3px rgba(0,0,0,0.18); }
-    .sw-track.on .sw-thumb { transform: translateX(14px); }
+      /* ── TOGGLE ── */
+      .toggle-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 14px;
+        border-bottom: 1px solid #f0f1f3;
+      }
+      .toggle-row:last-child {
+        border-bottom: none;
+      }
+      .tl-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .tl-name {
+        font-size: 13px;
+        font-weight: 500;
+      }
+      .tl-sub {
+        font-size: 11px;
+        color: #6e7681;
+        margin-top: 2px;
+      }
+      .sw-wrap {
+        position: relative;
+        width: 34px;
+        height: 20px;
+        flex-shrink: 0;
+        margin-left: 16px;
+        cursor: pointer;
+      }
+      .sw-track {
+        position: absolute;
+        inset: 0;
+        border-radius: 10px;
+        background: #d0d7de;
+        transition: background 0.15s;
+      }
+      .sw-track.on {
+        background: #0969da;
+      }
+      .sw-thumb {
+        position: absolute;
+        height: 14px;
+        width: 14px;
+        left: 3px;
+        top: 3px;
+        border-radius: 50%;
+        background: white;
+        transition: transform 0.15s;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+      }
+      .sw-track.on .sw-thumb {
+        transform: translateX(14px);
+      }
 
-    /* ── DANGER ZONE ── */
-    .danger-pnl { background: white; border: 1px solid #ffc1ba; border-radius: 4px; overflow: hidden; }
-    .danger-h   { padding: 7px 14px; border-bottom: 1px solid #ffc1ba; background: #fff8f8; }
-    .danger-ht  { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #cf222e; }
-    .danger-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-bottom: 1px solid #ffebe9; }
-    .danger-row:last-child { border-bottom: none; }
-    .dr-l   { font-size: 13px; font-weight: 500; }
-    .dr-sub { font-size: 11px; color: #6e7681; margin-top: 2px; }
+      /* ── DANGER ZONE ── */
+      .danger-pnl {
+        background: white;
+        border: 1px solid #ffc1ba;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .danger-h {
+        padding: 7px 14px;
+        border-bottom: 1px solid #ffc1ba;
+        background: #fff8f8;
+      }
+      .danger-ht {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #cf222e;
+      }
+      .danger-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 14px;
+        border-bottom: 1px solid #ffebe9;
+      }
+      .danger-row:last-child {
+        border-bottom: none;
+      }
+      .dr-l {
+        font-size: 13px;
+        font-weight: 500;
+      }
+      .dr-sub {
+        font-size: 11px;
+        color: #6e7681;
+        margin-top: 2px;
+      }
 
-    /* ── BOTTOM BAR ── */
-    .bot-bar { display: flex; justify-content: space-between; padding: 6px 0; font-size: 11px; color: #6e7681; }
-    .kbd { background: #f6f8fa; border: 1px solid #d0d7de; border-radius: 3px; padding: 1px 5px; font-family: 'SF Mono','Fira Mono',monospace; font-size: 10px; color: #1f2328; }
+      /* ── BOTTOM BAR ── */
+      .bot-bar {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        font-size: 11px;
+        color: #6e7681;
+      }
+      .kbd {
+        background: #f6f8fa;
+        border: 1px solid #d0d7de;
+        border-radius: 3px;
+        padding: 1px 5px;
+        font-family: 'SF Mono', 'Fira Mono', monospace;
+        font-size: 10px;
+        color: #1f2328;
+      }
 
-    /* ── TOAST ── */
-    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1f2328; color: white; padding: 9px 16px; border-radius: 4px; font-size: 13px; box-shadow: 0 4px 16px rgba(0,0,0,0.22); z-index: 9000; white-space: nowrap; animation: tin .15s ease; }
-    @keyframes tin { from{opacity:0;transform:translateX(-50%) translateY(5px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
-  </style>
-</head>
-<body>
-<div id="root"></div>
-<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
-<script type="text/babel">
-const { useState } = React;
+      /* ── TOAST ── */
+      .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1f2328;
+        color: white;
+        padding: 9px 16px;
+        border-radius: 4px;
+        font-size: 13px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22);
+        z-index: 9000;
+        white-space: nowrap;
+        animation: tin 0.15s ease;
+      }
+      @keyframes tin {
+        from {
+          opacity: 0;
+          transform: translateX(-50%) translateY(5px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script
+      src="https://unpkg.com/react@18.3.1/umd/react.development.js"
+      integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"
+      integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"
+      integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y"
+      crossorigin="anonymous"
+    ></script>
+    <script type="text/babel">
+      const { useState } = React
 
-/* ─── DATA ─── */
-const USERS = [
-  { ini:'PB', navn:'Philip Birkenborg',  email:'philip@chainhub.dk',  rolle:'GROUP_OWNER',  self:true,  sidst:'Nu' },
-  { ini:'MK', navn:'Marie Kristensen',   email:'marie@chainhub.dk',   rolle:'GROUP_LEGAL',  self:false, sidst:'2t siden' },
-  { ini:'TN', navn:'Thomas Nielsen',     email:'thomas@chainhub.dk',  rolle:'GROUP_FINANCE',self:false, sidst:'1d siden' },
-  { ini:'LH', navn:'Lars Hansen',        email:'lars@klinikken.dk',   rolle:'READ_ONLY',    self:false, sidst:'3d siden' },
-];
-const ROLLE_LABELS = {
-  GROUP_OWNER:'Ejer', GROUP_LEGAL:'Juridisk', GROUP_FINANCE:'Finans', READ_ONLY:'Læse adgang'
-};
-const ROLLE_CLS = {
-  GROUP_OWNER:'purple', GROUP_LEGAL:'blue', GROUP_FINANCE:'amber', READ_ONLY:'gray'
-};
+      /* ─── DATA ─── */
+      const USERS = [
+        {
+          ini: 'PB',
+          navn: 'Philip Birkenborg',
+          email: 'philip@chainhub.dk',
+          rolle: 'GROUP_OWNER',
+          self: true,
+          sidst: 'Nu',
+        },
+        {
+          ini: 'MK',
+          navn: 'Marie Kristensen',
+          email: 'marie@chainhub.dk',
+          rolle: 'GROUP_LEGAL',
+          self: false,
+          sidst: '2t siden',
+        },
+        {
+          ini: 'TN',
+          navn: 'Thomas Nielsen',
+          email: 'thomas@chainhub.dk',
+          rolle: 'GROUP_FINANCE',
+          self: false,
+          sidst: '1d siden',
+        },
+        {
+          ini: 'LH',
+          navn: 'Lars Hansen',
+          email: 'lars@klinikken.dk',
+          rolle: 'READ_ONLY',
+          self: false,
+          sidst: '3d siden',
+        },
+      ]
+      const ROLLE_LABELS = {
+        GROUP_OWNER: 'Ejer',
+        GROUP_LEGAL: 'Juridisk',
+        GROUP_FINANCE: 'Finans',
+        READ_ONLY: 'Læse adgang',
+      }
+      const ROLLE_CLS = {
+        GROUP_OWNER: 'purple',
+        GROUP_LEGAL: 'blue',
+        GROUP_FINANCE: 'amber',
+        READ_ONLY: 'gray',
+      }
 
-const INTEGRATIONS = [
-  { icon:'EC', navn:'E-conomic',   sub:'Finans-sync aktiv · Sidst synk. 12. maj 14:32',  status:'Aktiv',  statusCls:'green' },
-  { icon:'SD', navn:'Sundhedsdatastyrelsen', sub:'Ikke tilkoblet — kræver certifikat',     status:'Inaktiv',statusCls:'gray'  },
-  { icon:'CS', navn:'CVR-service',  sub:'Auto-opdatering af CVR-stamdata · Aktiv',        status:'Aktiv',  statusCls:'green' },
-  { icon:'SL', navn:'Slack',        sub:'Notifikationer til #chainhub-alerts',            status:'Aktiv',  statusCls:'green' },
-];
+      const INTEGRATIONS = [
+        {
+          icon: 'EC',
+          navn: 'E-conomic',
+          sub: 'Finans-sync aktiv · Sidst synk. 12. maj 14:32',
+          status: 'Aktiv',
+          statusCls: 'green',
+        },
+        {
+          icon: 'SD',
+          navn: 'Sundhedsdatastyrelsen',
+          sub: 'Ikke tilkoblet — kræver certifikat',
+          status: 'Inaktiv',
+          statusCls: 'gray',
+        },
+        {
+          icon: 'CS',
+          navn: 'CVR-service',
+          sub: 'Auto-opdatering af CVR-stamdata · Aktiv',
+          status: 'Aktiv',
+          statusCls: 'green',
+        },
+        {
+          icon: 'SL',
+          navn: 'Slack',
+          sub: 'Notifikationer til #chainhub-alerts',
+          status: 'Aktiv',
+          statusCls: 'green',
+        },
+      ]
 
-const AI_USED = 847; const AI_MAX = 1000;
-const AI_PCT  = Math.round(AI_USED / AI_MAX * 100);
+      const AI_USED = 847
+      const AI_MAX = 1000
+      const AI_PCT = Math.round((AI_USED / AI_MAX) * 100)
 
-const SETTINGS_NAV = [
-  { key:'org',      label:'Organisation' },
-  { key:'brugere',  label:'Brugere og adgang' },
-  { key:'ai',       label:'AI-brug', dot:'warn' },
-  { key:'notif',    label:'Notifikationer' },
-  { key:'integr',   label:'Integrationer' },
-  { key:'sikkerhed',label:'Sikkerhed' },
-  { key:'faktura',  label:'Abonnement' },
-];
+      const SETTINGS_NAV = [
+        { key: 'org', label: 'Organisation' },
+        { key: 'brugere', label: 'Brugere og adgang' },
+        { key: 'ai', label: 'AI-brug', dot: 'warn' },
+        { key: 'notif', label: 'Notifikationer' },
+        { key: 'integr', label: 'Integrationer' },
+        { key: 'sikkerhed', label: 'Sikkerhed' },
+        { key: 'faktura', label: 'Abonnement' },
+      ]
 
-/* ─── TOGGLE ─── */
-function Toggle({ value, onChange }) {
-  return (
-    <div className="sw-wrap" onClick={() => onChange(!value)}>
-      <div className={`sw-track${value?' on':''}`}>
-        <div className="sw-thumb"></div>
-      </div>
-    </div>
-  );
-}
-
-/* ─── EDITABLE FIELD ─── */
-function EditField({ label, value, hint }) {
-  const [editing, setEditing] = useState(false);
-  const [val, setVal]         = useState(value);
-  return (
-    <div className="f-row">
-      <span className="f-label">{label}</span>
-      <div className="f-val edit">
-        {editing
-          ? <input value={val} onChange={e => setVal(e.target.value)} autoFocus onBlur={() => setEditing(false)} onKeyDown={e => e.key==='Enter' && setEditing(false)} />
-          : <><span>{val}</span>{hint && <span className="f-hint">{hint}</span>}</>}
-        <button className="f-edit-btn" onClick={() => setEditing(v=>!v)}>{editing ? 'Gem' : 'Rediger'}</button>
-      </div>
-    </div>
-  );
-}
-
-/* ─── SIDEBAR ─── */
-function Sidebar() {
-  return (
-    <aside className="sb">
-      <div className="sb-logo">▣ ChainHub</div>
-      <div className="sb-sec">
-        <div className="sb-lab">Overblik</div>
-        <div className="sb-item">Forside <span className="sb-cnt a">5</span></div>
-        <div className="sb-item">Kalender <span className="sb-cnt">12</span></div>
-      </div>
-      <div className="sb-sec">
-        <div className="sb-lab">Portefølje</div>
-        <div className="sb-item">Selskaber <span className="sb-cnt">32</span></div>
-        <div className="sb-item">Kontrakter <span className="sb-cnt">3</span></div>
-        <div className="sb-item">Sager <span className="sb-cnt a">7</span></div>
-        <div className="sb-item">Opgaver <span className="sb-cnt">9</span></div>
-      </div>
-      <div className="sb-sec">
-        <div className="sb-lab">Ressourcer</div>
-        <div className="sb-item">Dokumenter <span className="sb-cnt">412</span></div>
-        <div className="sb-item">Personer <span className="sb-cnt">184</span></div>
-        <div className="sb-item active">Indstillinger</div>
-      </div>
-    </aside>
-  );
-}
-
-/* ─── SECTIONS ─── */
-
-function OrgSection({ onToast }) {
-  return (
-    <>
-      <div className="s-head">
-        <div>
-          <div className="s-h1">Organisation</div>
-          <div className="s-sub">Stamdata og kontaktoplysninger for kædegruppen</div>
-        </div>
-        <button className="btn primary" onClick={() => onToast('Ændringer gemt')}>Gem ændringer</button>
-      </div>
-      <div className="pnl">
-        <div className="pnl-h"><span className="pnl-t">Kædegruppe</span></div>
-        <EditField label="Navn"        value="Tandlæge Gruppen A/S" />
-        <EditField label="CVR"         value="10203040" />
-        <EditField label="Adresse"     value="Kronprinsessegade 28, 1306 København K" />
-        <EditField label="Kontakt-email" value="admin@tandlaegegruppen.dk" />
-        <EditField label="Telefon"     value="+45 33 12 34 56" />
-        <div className="f-row">
-          <span className="f-label">Plan</span>
-          <div className="f-val">
-            <span className="badge purple">Plus</span>
-            <span style={{fontSize:11,color:'#6e7681'}}>Fornyelse 1. jan 2027</span>
-            <button className="f-edit-btn" onClick={() => onToast('Åbner abonnement')}>Opgradér</button>
-          </div>
-        </div>
-        <div className="f-row">
-          <span className="f-label">Oprettet</span>
-          <div className="f-val" style={{color:'#6e7681'}}>14. januar 2022</div>
-        </div>
-        <div className="pnl-foot"><span>Ændringer gemmes ikke automatisk</span></div>
-      </div>
-    </>
-  );
-}
-
-function BrugereSection({ onToast }) {
-  const [users, setUsers] = useState(USERS);
-  return (
-    <>
-      <div className="s-head">
-        <div>
-          <div className="s-h1">Brugere og adgang</div>
-          <div className="s-sub">{users.length} brugere · Roller styrer adgang til data</div>
-        </div>
-        <button className="btn primary" onClick={() => onToast('Inviter bruger — åbner modal')}>+ Inviter bruger</button>
-      </div>
-      <div className="pnl">
-        <div className="pnl-h">
-          <span className="pnl-t">Aktive brugere</span>
-          <span className="pnl-m">{users.length} brugere</span>
-        </div>
-        {users.map((u,i) => (
-          <div key={i} className="u-row">
-            <div className="u-ini">{u.ini}</div>
-            <div>
-              <div className="u-name">{u.navn} {u.self && <span className="u-self">dig</span>}</div>
-              <div className="u-email">{u.email} · Sidst aktiv: {u.sidst}</div>
+      /* ─── TOGGLE ─── */
+      function Toggle({ value, onChange }) {
+        return (
+          <div className="sw-wrap" onClick={() => onChange(!value)}>
+            <div className={`sw-track${value ? ' on' : ''}`}>
+              <div className="sw-thumb"></div>
             </div>
-            <span className={`badge ${ROLLE_CLS[u.rolle]}`}>{ROLLE_LABELS[u.rolle]}</span>
-            {!u.self && (
-              <button className="btn" style={{fontSize:11,padding:'3px 8px'}}
-                onClick={() => onToast(`Rediger ${u.navn}`)}>Rediger</button>
-            )}
-            {u.self && <div style={{width:54}}></div>}
           </div>
-        ))}
-        <div className="pnl-foot">
-          <span>Roller: Ejer · Juridisk · Finans · Læse adgang</span>
-          <button className="btn-add" onClick={() => onToast('Inviter bruger')}>+ Inviter</button>
-        </div>
-      </div>
-      <div className="pnl">
-        <div className="pnl-h"><span className="pnl-t">Ventende invitationer</span><span className="pnl-m">0</span></div>
-        <div style={{padding:'14px',textAlign:'center',fontSize:12,color:'#8c959f'}}>
-          Ingen ventende invitationer
-        </div>
-      </div>
-    </>
-  );
-}
+        )
+      }
 
-function AISection({ onToast }) {
-  const pctFil = AI_PCT >= 80 ? 'full' : AI_PCT >= 60 ? 'warn' : 'ok';
-  const [autoExtract, setAutoExtract]   = useState(true);
-  const [aiInsights,  setAiInsights]    = useState(true);
-  const [aiRisk,      setAiRisk]        = useState(true);
-  return (
-    <>
-      <div className="s-head">
-        <div>
-          <div className="s-h1">AI-brug <span className="plus" style={{marginLeft:6,verticalAlign:'middle'}}>PLUS</span></div>
-          <div className="s-sub">Extraction, insights og risikovurdering · Maj 2026</div>
-        </div>
-      </div>
-      <div className="pnl">
-        <div className="pnl-h">
-          <span className="pnl-t">Månedlig kvota</span>
-          <span className="pnl-m" style={{color: AI_PCT>=80?'#cf222e':AI_PCT>=60?'#9a6700':'#1a7f37', fontWeight:500}}>
-            {AI_PCT}% brugt
-          </span>
-        </div>
-        <div className="ai-usage">
-          <div className="usage-bar">
-            <div className={`usage-fill ${pctFil}`} style={{width:`${AI_PCT}%`}}></div>
-          </div>
-          <div className="usage-nums">
-            <span>{AI_USED.toLocaleString('da')} extractions brugt</span>
-            <span>{AI_MAX.toLocaleString('da')} pr. måned (Plus)</span>
-          </div>
-          {AI_PCT >= 80 && (
-            <div style={{marginTop:8,padding:'7px 10px',background:'#fff8c5',border:'1px solid #d4a72c',borderLeft:'3px solid #9a6700',borderRadius:4,fontSize:12,color:'#4d2d00'}}>
-              Du nærmer dig kvotegrænsen. Opgrader til Plus Max for ubegrænset brug.
-              <button className="f-edit-btn" style={{marginLeft:8}} onClick={() => onToast('Åbner opgraderingsflow')}>Opgrader →</button>
-            </div>
-          )}
-        </div>
-        <div className="pnl-foot">
-          <span>Nulstilles 1. jun · {AI_MAX - AI_USED} extractions tilbage</span>
-          <button className="btn" style={{fontSize:11,padding:'3px 8px'}} onClick={() => onToast('Åbner AI-brugslog')}>Se log →</button>
-        </div>
-      </div>
-      <div className="pnl">
-        <div className="pnl-h"><span className="pnl-t">AI-funktioner</span></div>
-        <div className="toggle-row">
-          <div className="tl-info">
-            <div className="tl-name">Auto-extraction ved upload</div>
-            <div className="tl-sub">Dokumenter analyseres automatisk ved upload — kræver review</div>
-          </div>
-          <Toggle value={autoExtract} onChange={setAutoExtract} />
-        </div>
-        <div className="toggle-row">
-          <div className="tl-info">
-            <div className="tl-name">AI Insights på selskabsdetaljer</div>
-            <div className="tl-sub">Renewal-risk, markedsanalyse og anbefalinger</div>
-          </div>
-          <Toggle value={aiInsights} onChange={setAiInsights} />
-        </div>
-        <div className="toggle-row">
-          <div className="tl-info">
-            <div className="tl-name">Sagsrisikovurdering</div>
-            <div className="tl-sub">AI analyserer sager og foreslår sandsynlighed for forlig</div>
-          </div>
-          <Toggle value={aiRisk} onChange={setAiRisk} />
-        </div>
-        <div className="pnl-foot">
-          <span>Databehandleraftale · AI-output kræver altid menneskelig godkendelse</span>
-        </div>
-      </div>
-      <div className="pnl">
-        <div className="pnl-h"><span className="pnl-t">Extraction-statistik · Maj 2026</span></div>
-        {[
-          {label:'Kontrakter analyseret', val:'214', sub:''},
-          {label:'Felter extracted',      val:'1.847', sub:''},
-          {label:'Review gennemført',     val:'198', sub:'93% godkendelsesrate'},
-          {label:'Lav konfidens-felter',  val:'23', sub:'kræver manuel review'},
-        ].map(({label,val,sub}) => (
-          <div key={label} className="f-row">
+      /* ─── EDITABLE FIELD ─── */
+      function EditField({ label, value, hint }) {
+        const [editing, setEditing] = useState(false)
+        const [val, setVal] = useState(value)
+        return (
+          <div className="f-row">
             <span className="f-label">{label}</span>
-            <div className="f-val">
-              <span style={{fontVariantNumeric:'tabular-nums',fontWeight:500}}>{val}</span>
-              {sub && <span style={{fontSize:11,color:'#6e7681'}}>{sub}</span>}
-            </div>
-          </div>
-        ))}
-      </div>
-    </>
-  );
-}
-
-function NotifSection({ onToast }) {
-  const [settings, setSettings] = useState({
-    kontraktUdlob: true, sagsDeadline: true, nySag: false,
-    aiReview: true, brugerLogin: false, ugerapport: true,
-  });
-  const toggle = key => setSettings(s => ({...s, [key]: !s[key]}));
-  const rows = [
-    {key:'kontraktUdlob', label:'Kontrakt udløber', sub:'Besked 30, 14 og 7 dage før udløb'},
-    {key:'sagsDeadline',  label:'Sagsfrist nærmer sig', sub:'Besked 7 og 2 dage før frist'},
-    {key:'nySag',         label:'Ny sag oprettet', sub:'Øjeblikkelig besked ved ny sag'},
-    {key:'aiReview',      label:'AI-extraction klar til review', sub:'Besked når dokumenter er analyseret'},
-    {key:'brugerLogin',   label:'Ny bruger logger ind', sub:'Sikkerhedsnotifikation'},
-    {key:'ugerapport',    label:'Ugentlig portefølje-rapport', sub:'Mandage kl. 08:00'},
-  ];
-  return (
-    <>
-      <div className="s-head">
-        <div>
-          <div className="s-h1">Notifikationer</div>
-          <div className="s-sub">E-mail og push-notifikationer</div>
-        </div>
-        <button className="btn primary" onClick={() => onToast('Notifikationsindstillinger gemt')}>Gem</button>
-      </div>
-      <div className="pnl">
-        <div className="pnl-h"><span className="pnl-t">E-mail-notifikationer</span></div>
-        {rows.map(r => (
-          <div key={r.key} className="toggle-row">
-            <div className="tl-info">
-              <div className="tl-name">{r.label}</div>
-              <div className="tl-sub">{r.sub}</div>
-            </div>
-            <Toggle value={settings[r.key]} onChange={() => toggle(r.key)} />
-          </div>
-        ))}
-        <div className="pnl-foot"><span>Sendt til philip@chainhub.dk</span></div>
-      </div>
-    </>
-  );
-}
-
-function IntegrSection({ onToast }) {
-  return (
-    <>
-      <div className="s-head">
-        <div>
-          <div className="s-h1">Integrationer</div>
-          <div className="s-sub">{INTEGRATIONS.filter(i=>i.status==='Aktiv').length} aktive · {INTEGRATIONS.filter(i=>i.status!=='Aktiv').length} inaktive</div>
-        </div>
-      </div>
-      <div className="pnl">
-        <div className="pnl-h"><span className="pnl-t">Tilgængelige integrationer</span></div>
-        {INTEGRATIONS.map((int,i) => (
-          <div key={i} className="int-row">
-            <div className="int-icon">{int.icon}</div>
-            <div>
-              <div className="int-name">{int.navn}</div>
-              <div className="int-sub">{int.sub}</div>
-            </div>
-            <div style={{display:'flex',gap:6,alignItems:'center'}}>
-              <span className={`badge ${int.statusCls}`}>{int.status}</span>
-              <button className="btn" style={{fontSize:11,padding:'3px 8px'}}
-                onClick={() => onToast(`Konfigurer ${int.navn}`)}>
-                {int.status === 'Aktiv' ? 'Konfigurer' : 'Tilknyt'}
+            <div className="f-val edit">
+              {editing ? (
+                <input
+                  value={val}
+                  onChange={(e) => setVal(e.target.value)}
+                  autoFocus
+                  onBlur={() => setEditing(false)}
+                  onKeyDown={(e) => e.key === 'Enter' && setEditing(false)}
+                />
+              ) : (
+                <>
+                  <span>{val}</span>
+                  {hint && <span className="f-hint">{hint}</span>}
+                </>
+              )}
+              <button className="f-edit-btn" onClick={() => setEditing((v) => !v)}>
+                {editing ? 'Gem' : 'Rediger'}
               </button>
             </div>
           </div>
-        ))}
-        <div className="pnl-foot">
-          <span>Flere integrationer på vej</span>
-          <button className="btn-add" onClick={() => onToast('Anmod om integration')}>+ Anmod om integration</button>
-        </div>
-      </div>
-    </>
-  );
-}
+        )
+      }
 
-function SikkerhedSection({ onToast }) {
-  return (
-    <>
-      <div className="s-head">
-        <div>
-          <div className="s-h1">Sikkerhed</div>
-          <div className="s-sub">Adgangskontrol, 2FA og session-indstillinger</div>
-        </div>
-      </div>
-      <div className="pnl">
-        <div className="pnl-h"><span className="pnl-t">Adgangskontrol</span></div>
-        <div className="f-row">
-          <span className="f-label">To-faktor-godkendelse</span>
-          <div className="f-val"><span className="badge green">Aktiv</span><span style={{fontSize:11,color:'#6e7681'}}>App-baseret (TOTP)</span></div>
-        </div>
-        <div className="f-row">
-          <span className="f-label">Session timeout</span>
-          <div className="f-val"><span>8 timer</span><button className="f-edit-btn" onClick={() => onToast('Rediger session-timeout')}>Rediger</button></div>
-        </div>
-        <div className="f-row">
-          <span className="f-label">Seneste login</span>
-          <div className="f-val" style={{color:'#6e7681'}}>12. maj 2026 · 09:14 · Chrome / macOS</div>
-        </div>
-        <div className="f-row">
-          <span className="f-label">Aktive sessioner</span>
-          <div className="f-val"><span>1 aktiv</span><button className="f-edit-btn" style={{color:'#cf222e'}} onClick={() => onToast('Afslutter alle andre sessioner')}>Afslut alle andre</button></div>
-        </div>
-      </div>
-      <div className="danger-pnl">
-        <div className="danger-h"><div className="danger-ht">Fare-zone</div></div>
-        <div className="danger-row">
-          <div>
-            <div className="dr-l">Eksportér alle data</div>
-            <div className="dr-sub">Henter en komplet eksport af alle organisations-data som ZIP</div>
-          </div>
-          <button className="btn" onClick={() => onToast('Data-eksport igangsættes — du modtager en e-mail')}>Eksportér</button>
-        </div>
-        <div className="danger-row">
-          <div>
-            <div className="dr-l">Slet organisation</div>
-            <div className="dr-sub">Permanent sletning — kan ikke fortrydes. Kræver bekræftelse via e-mail.</div>
-          </div>
-          <button className="btn danger" onClick={() => onToast('Bekræftelse sendt til philip@chainhub.dk')}>Slet organisation</button>
-        </div>
-      </div>
-    </>
-  );
-}
-
-function FakturaSection({ onToast }) {
-  return (
-    <>
-      <div className="s-head">
-        <div>
-          <div className="s-h1">Abonnement</div>
-          <div className="s-sub">Plus-plan · Fornyelse 1. jan 2027</div>
-        </div>
-        <button className="btn primary" onClick={() => onToast('Åbner opgraderingsflow')}>Opgradér til Plus Max</button>
-      </div>
-      <div className="pnl">
-        <div className="pnl-h"><span className="pnl-t">Nuværende plan</span></div>
-        <div className="f-row">
-          <span className="f-label">Plan</span>
-          <div className="f-val"><span className="badge purple">Plus</span></div>
-        </div>
-        <div className="f-row">
-          <span className="f-label">Pris</span>
-          <div className="f-val" style={{fontVariantNumeric:'tabular-nums'}}>2.990 kr/md · ekskl. moms</div>
-        </div>
-        <div className="f-row">
-          <span className="f-label">Brugere inkl.</span>
-          <div className="f-val">5 brugere (4 aktive)</div>
-        </div>
-        <div className="f-row">
-          <span className="f-label">AI-kvota</span>
-          <div className="f-val" style={{fontVariantNumeric:'tabular-nums'}}>1.000 extractions/md</div>
-        </div>
-        <div className="f-row">
-          <span className="f-label">Fornyelse</span>
-          <div className="f-val" style={{color:'#6e7681'}}>1. januar 2027 · automatisk fornyelse til</div>
-        </div>
-        <div className="pnl-foot">
-          <a href="#" style={{fontSize:11,color:'#0969da',textDecoration:'none'}}>Se fakturahistorik →</a>
-          <button className="btn" style={{fontSize:11,padding:'3px 8px'}} onClick={() => onToast('Opdater betalingsoplysninger')}>Betalingsoplysninger</button>
-        </div>
-      </div>
-    </>
-  );
-}
-
-/* ─── MAIN PAGE ─── */
-function IndstillingerPage() {
-  const [activeSection, setActiveSection] = useState('org');
-  const [toast,         setToast]         = useState(null);
-  const [toastKey,      setToastKey]      = useState(0);
-
-  function doToast(msg) { setToast(msg); setToastKey(k=>k+1); setTimeout(()=>setToast(null),2600); }
-
-  const section = (() => {
-    switch(activeSection) {
-      case 'org':       return <OrgSection        onToast={doToast} />;
-      case 'brugere':   return <BrugereSection    onToast={doToast} />;
-      case 'ai':        return <AISection         onToast={doToast} />;
-      case 'notif':     return <NotifSection      onToast={doToast} />;
-      case 'integr':    return <IntegrSection     onToast={doToast} />;
-      case 'sikkerhed': return <SikkerhedSection  onToast={doToast} />;
-      case 'faktura':   return <FakturaSection    onToast={doToast} />;
-      default:          return null;
-    }
-  })();
-
-  const sectionLabel = SETTINGS_NAV.find(s => s.key === activeSection)?.label || '';
-
-  return (
-    <div className="layout">
-      <Sidebar />
-      <div className="s-layout">
-
-        {/* Settings nav */}
-        <nav className="s-nav">
-          <div className="s-nav-sec">
-            <div className="s-nav-lab">Indstillinger</div>
-            {SETTINGS_NAV.map(s => (
-              <div key={s.key}
-                className={`s-nav-item${activeSection===s.key?' active':''}`}
-                onClick={() => setActiveSection(s.key)}>
-                <span className={`s-nav-dot${s.dot?' '+s.dot:''}`}></span>
-                {s.label}
+      /* ─── SIDEBAR ─── */
+      function Sidebar() {
+        return (
+          <aside className="sb">
+            <div className="sb-logo">▣ ChainHub</div>
+            <div className="sb-sec">
+              <div className="sb-lab">Overblik</div>
+              <div className="sb-item">
+                Forside <span className="sb-cnt a">5</span>
               </div>
-            ))}
-          </div>
-        </nav>
+              <div className="sb-item">
+                Kalender <span className="sb-cnt">12</span>
+              </div>
+            </div>
+            <div className="sb-sec">
+              <div className="sb-lab">Portefølje</div>
+              <div className="sb-item">
+                Selskaber <span className="sb-cnt">32</span>
+              </div>
+              <div className="sb-item">
+                Kontrakter <span className="sb-cnt">3</span>
+              </div>
+              <div className="sb-item">
+                Sager <span className="sb-cnt a">7</span>
+              </div>
+              <div className="sb-item">
+                Opgaver <span className="sb-cnt">9</span>
+              </div>
+            </div>
+            <div className="sb-sec">
+              <div className="sb-lab">Ressourcer</div>
+              <div className="sb-item">
+                Dokumenter <span className="sb-cnt">412</span>
+              </div>
+              <div className="sb-item">
+                Personer <span className="sb-cnt">184</span>
+              </div>
+              <div className="sb-item active">Indstillinger</div>
+            </div>
+          </aside>
+        )
+      }
 
-        {/* Content */}
-        <main className="s-main">
-          <div className="crumb">
-            <a href="#">Indstillinger</a>
-            <span className="sep">›</span>
-            <span>{sectionLabel}</span>
-          </div>
-          {section}
-          <div className="bot-bar">
-            <span>Tandlæge Gruppen A/S · Plus · philip@chainhub.dk</span>
-            <span><span className="kbd">⌘K</span> handling · <span className="kbd">S</span> gem</span>
-          </div>
-        </main>
+      /* ─── SECTIONS ─── */
 
-      </div>
-      {toast && <div className="toast" key={toastKey}>✓ {toast}</div>}
-    </div>
-  );
-}
+      function OrgSection({ onToast }) {
+        return (
+          <>
+            <div className="s-head">
+              <div>
+                <div className="s-h1">Organisation</div>
+                <div className="s-sub">Stamdata og kontaktoplysninger for kædegruppen</div>
+              </div>
+              <button className="btn primary" onClick={() => onToast('Ændringer gemt')}>
+                Gem ændringer
+              </button>
+            </div>
+            <div className="pnl">
+              <div className="pnl-h">
+                <span className="pnl-t">Kædegruppe</span>
+              </div>
+              <EditField label="Navn" value="Tandlæge Gruppen A/S" />
+              <EditField label="CVR" value="10203040" />
+              <EditField label="Adresse" value="Kronprinsessegade 28, 1306 København K" />
+              <EditField label="Kontakt-email" value="admin@tandlaegegruppen.dk" />
+              <EditField label="Telefon" value="+45 33 12 34 56" />
+              <div className="f-row">
+                <span className="f-label">Plan</span>
+                <div className="f-val">
+                  <span className="badge purple">Plus</span>
+                  <span style={{ fontSize: 11, color: '#6e7681' }}>Fornyelse 1. jan 2027</span>
+                  <button className="f-edit-btn" onClick={() => onToast('Åbner abonnement')}>
+                    Opgradér
+                  </button>
+                </div>
+              </div>
+              <div className="f-row">
+                <span className="f-label">Oprettet</span>
+                <div className="f-val" style={{ color: '#6e7681' }}>
+                  14. januar 2022
+                </div>
+              </div>
+              <div className="pnl-foot">
+                <span>Ændringer gemmes ikke automatisk</span>
+              </div>
+            </div>
+          </>
+        )
+      }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<IndstillingerPage />);
-</script>
-</body>
+      function BrugereSection({ onToast }) {
+        const [users, setUsers] = useState(USERS)
+        return (
+          <>
+            <div className="s-head">
+              <div>
+                <div className="s-h1">Brugere og adgang</div>
+                <div className="s-sub">{users.length} brugere · Roller styrer adgang til data</div>
+              </div>
+              <button
+                className="btn primary"
+                onClick={() => onToast('Inviter bruger — åbner modal')}
+              >
+                + Inviter bruger
+              </button>
+            </div>
+            <div className="pnl">
+              <div className="pnl-h">
+                <span className="pnl-t">Aktive brugere</span>
+                <span className="pnl-m">{users.length} brugere</span>
+              </div>
+              {users.map((u, i) => (
+                <div key={i} className="u-row">
+                  <div className="u-ini">{u.ini}</div>
+                  <div>
+                    <div className="u-name">
+                      {u.navn} {u.self && <span className="u-self">dig</span>}
+                    </div>
+                    <div className="u-email">
+                      {u.email} · Sidst aktiv: {u.sidst}
+                    </div>
+                  </div>
+                  <span className={`badge ${ROLLE_CLS[u.rolle]}`}>{ROLLE_LABELS[u.rolle]}</span>
+                  {!u.self && (
+                    <button
+                      className="btn"
+                      style={{ fontSize: 11, padding: '3px 8px' }}
+                      onClick={() => onToast(`Rediger ${u.navn}`)}
+                    >
+                      Rediger
+                    </button>
+                  )}
+                  {u.self && <div style={{ width: 54 }}></div>}
+                </div>
+              ))}
+              <div className="pnl-foot">
+                <span>Roller: Ejer · Juridisk · Finans · Læse adgang</span>
+                <button className="btn-add" onClick={() => onToast('Inviter bruger')}>
+                  + Inviter
+                </button>
+              </div>
+            </div>
+            <div className="pnl">
+              <div className="pnl-h">
+                <span className="pnl-t">Ventende invitationer</span>
+                <span className="pnl-m">0</span>
+              </div>
+              <div style={{ padding: '14px', textAlign: 'center', fontSize: 12, color: '#8c959f' }}>
+                Ingen ventende invitationer
+              </div>
+            </div>
+          </>
+        )
+      }
+
+      function AISection({ onToast }) {
+        const pctFil = AI_PCT >= 80 ? 'full' : AI_PCT >= 60 ? 'warn' : 'ok'
+        const [autoExtract, setAutoExtract] = useState(true)
+        const [aiInsights, setAiInsights] = useState(true)
+        const [aiRisk, setAiRisk] = useState(true)
+        return (
+          <>
+            <div className="s-head">
+              <div>
+                <div className="s-h1">
+                  AI-brug{' '}
+                  <span className="plus" style={{ marginLeft: 6, verticalAlign: 'middle' }}>
+                    PLUS
+                  </span>
+                </div>
+                <div className="s-sub">Extraction, insights og risikovurdering · Maj 2026</div>
+              </div>
+            </div>
+            <div className="pnl">
+              <div className="pnl-h">
+                <span className="pnl-t">Månedlig kvota</span>
+                <span
+                  className="pnl-m"
+                  style={{
+                    color: AI_PCT >= 80 ? '#cf222e' : AI_PCT >= 60 ? '#9a6700' : '#1a7f37',
+                    fontWeight: 500,
+                  }}
+                >
+                  {AI_PCT}% brugt
+                </span>
+              </div>
+              <div className="ai-usage">
+                <div className="usage-bar">
+                  <div className={`usage-fill ${pctFil}`} style={{ width: `${AI_PCT}%` }}></div>
+                </div>
+                <div className="usage-nums">
+                  <span>{AI_USED.toLocaleString('da')} extractions brugt</span>
+                  <span>{AI_MAX.toLocaleString('da')} pr. måned (Plus)</span>
+                </div>
+                {AI_PCT >= 80 && (
+                  <div
+                    style={{
+                      marginTop: 8,
+                      padding: '7px 10px',
+                      background: '#fff8c5',
+                      border: '1px solid #d4a72c',
+                      borderLeft: '3px solid #9a6700',
+                      borderRadius: 4,
+                      fontSize: 12,
+                      color: '#4d2d00',
+                    }}
+                  >
+                    Du nærmer dig kvotegrænsen. Opgrader til Plus Max for ubegrænset brug.
+                    <button
+                      className="f-edit-btn"
+                      style={{ marginLeft: 8 }}
+                      onClick={() => onToast('Åbner opgraderingsflow')}
+                    >
+                      Opgrader →
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="pnl-foot">
+                <span>Nulstilles 1. jun · {AI_MAX - AI_USED} extractions tilbage</span>
+                <button
+                  className="btn"
+                  style={{ fontSize: 11, padding: '3px 8px' }}
+                  onClick={() => onToast('Åbner AI-brugslog')}
+                >
+                  Se log →
+                </button>
+              </div>
+            </div>
+            <div className="pnl">
+              <div className="pnl-h">
+                <span className="pnl-t">AI-funktioner</span>
+              </div>
+              <div className="toggle-row">
+                <div className="tl-info">
+                  <div className="tl-name">Auto-extraction ved upload</div>
+                  <div className="tl-sub">
+                    Dokumenter analyseres automatisk ved upload — kræver review
+                  </div>
+                </div>
+                <Toggle value={autoExtract} onChange={setAutoExtract} />
+              </div>
+              <div className="toggle-row">
+                <div className="tl-info">
+                  <div className="tl-name">AI Insights på selskabsdetaljer</div>
+                  <div className="tl-sub">Renewal-risk, markedsanalyse og anbefalinger</div>
+                </div>
+                <Toggle value={aiInsights} onChange={setAiInsights} />
+              </div>
+              <div className="toggle-row">
+                <div className="tl-info">
+                  <div className="tl-name">Sagsrisikovurdering</div>
+                  <div className="tl-sub">
+                    AI analyserer sager og foreslår sandsynlighed for forlig
+                  </div>
+                </div>
+                <Toggle value={aiRisk} onChange={setAiRisk} />
+              </div>
+              <div className="pnl-foot">
+                <span>Databehandleraftale · AI-output kræver altid menneskelig godkendelse</span>
+              </div>
+            </div>
+            <div className="pnl">
+              <div className="pnl-h">
+                <span className="pnl-t">Extraction-statistik · Maj 2026</span>
+              </div>
+              {[
+                { label: 'Kontrakter analyseret', val: '214', sub: '' },
+                { label: 'Felter extracted', val: '1.847', sub: '' },
+                { label: 'Review gennemført', val: '198', sub: '93% godkendelsesrate' },
+                { label: 'Lav konfidens-felter', val: '23', sub: 'kræver manuel review' },
+              ].map(({ label, val, sub }) => (
+                <div key={label} className="f-row">
+                  <span className="f-label">{label}</span>
+                  <div className="f-val">
+                    <span style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 500 }}>
+                      {val}
+                    </span>
+                    {sub && <span style={{ fontSize: 11, color: '#6e7681' }}>{sub}</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )
+      }
+
+      function NotifSection({ onToast }) {
+        const [settings, setSettings] = useState({
+          kontraktUdlob: true,
+          sagsDeadline: true,
+          nySag: false,
+          aiReview: true,
+          brugerLogin: false,
+          ugerapport: true,
+        })
+        const toggle = (key) => setSettings((s) => ({ ...s, [key]: !s[key] }))
+        const rows = [
+          {
+            key: 'kontraktUdlob',
+            label: 'Kontrakt udløber',
+            sub: 'Besked 30, 14 og 7 dage før udløb',
+          },
+          {
+            key: 'sagsDeadline',
+            label: 'Sagsfrist nærmer sig',
+            sub: 'Besked 7 og 2 dage før frist',
+          },
+          { key: 'nySag', label: 'Ny sag oprettet', sub: 'Øjeblikkelig besked ved ny sag' },
+          {
+            key: 'aiReview',
+            label: 'AI-extraction klar til review',
+            sub: 'Besked når dokumenter er analyseret',
+          },
+          { key: 'brugerLogin', label: 'Ny bruger logger ind', sub: 'Sikkerhedsnotifikation' },
+          { key: 'ugerapport', label: 'Ugentlig portefølje-rapport', sub: 'Mandage kl. 08:00' },
+        ]
+        return (
+          <>
+            <div className="s-head">
+              <div>
+                <div className="s-h1">Notifikationer</div>
+                <div className="s-sub">E-mail og push-notifikationer</div>
+              </div>
+              <button
+                className="btn primary"
+                onClick={() => onToast('Notifikationsindstillinger gemt')}
+              >
+                Gem
+              </button>
+            </div>
+            <div className="pnl">
+              <div className="pnl-h">
+                <span className="pnl-t">E-mail-notifikationer</span>
+              </div>
+              {rows.map((r) => (
+                <div key={r.key} className="toggle-row">
+                  <div className="tl-info">
+                    <div className="tl-name">{r.label}</div>
+                    <div className="tl-sub">{r.sub}</div>
+                  </div>
+                  <Toggle value={settings[r.key]} onChange={() => toggle(r.key)} />
+                </div>
+              ))}
+              <div className="pnl-foot">
+                <span>Sendt til philip@chainhub.dk</span>
+              </div>
+            </div>
+          </>
+        )
+      }
+
+      function IntegrSection({ onToast }) {
+        return (
+          <>
+            <div className="s-head">
+              <div>
+                <div className="s-h1">Integrationer</div>
+                <div className="s-sub">
+                  {INTEGRATIONS.filter((i) => i.status === 'Aktiv').length} aktive ·{' '}
+                  {INTEGRATIONS.filter((i) => i.status !== 'Aktiv').length} inaktive
+                </div>
+              </div>
+            </div>
+            <div className="pnl">
+              <div className="pnl-h">
+                <span className="pnl-t">Tilgængelige integrationer</span>
+              </div>
+              {INTEGRATIONS.map((int, i) => (
+                <div key={i} className="int-row">
+                  <div className="int-icon">{int.icon}</div>
+                  <div>
+                    <div className="int-name">{int.navn}</div>
+                    <div className="int-sub">{int.sub}</div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <span className={`badge ${int.statusCls}`}>{int.status}</span>
+                    <button
+                      className="btn"
+                      style={{ fontSize: 11, padding: '3px 8px' }}
+                      onClick={() => onToast(`Konfigurer ${int.navn}`)}
+                    >
+                      {int.status === 'Aktiv' ? 'Konfigurer' : 'Tilknyt'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+              <div className="pnl-foot">
+                <span>Flere integrationer på vej</span>
+                <button className="btn-add" onClick={() => onToast('Anmod om integration')}>
+                  + Anmod om integration
+                </button>
+              </div>
+            </div>
+          </>
+        )
+      }
+
+      function SikkerhedSection({ onToast }) {
+        return (
+          <>
+            <div className="s-head">
+              <div>
+                <div className="s-h1">Sikkerhed</div>
+                <div className="s-sub">Adgangskontrol, 2FA og session-indstillinger</div>
+              </div>
+            </div>
+            <div className="pnl">
+              <div className="pnl-h">
+                <span className="pnl-t">Adgangskontrol</span>
+              </div>
+              <div className="f-row">
+                <span className="f-label">To-faktor-godkendelse</span>
+                <div className="f-val">
+                  <span className="badge green">Aktiv</span>
+                  <span style={{ fontSize: 11, color: '#6e7681' }}>App-baseret (TOTP)</span>
+                </div>
+              </div>
+              <div className="f-row">
+                <span className="f-label">Session timeout</span>
+                <div className="f-val">
+                  <span>8 timer</span>
+                  <button className="f-edit-btn" onClick={() => onToast('Rediger session-timeout')}>
+                    Rediger
+                  </button>
+                </div>
+              </div>
+              <div className="f-row">
+                <span className="f-label">Seneste login</span>
+                <div className="f-val" style={{ color: '#6e7681' }}>
+                  12. maj 2026 · 09:14 · Chrome / macOS
+                </div>
+              </div>
+              <div className="f-row">
+                <span className="f-label">Aktive sessioner</span>
+                <div className="f-val">
+                  <span>1 aktiv</span>
+                  <button
+                    className="f-edit-btn"
+                    style={{ color: '#cf222e' }}
+                    onClick={() => onToast('Afslutter alle andre sessioner')}
+                  >
+                    Afslut alle andre
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="danger-pnl">
+              <div className="danger-h">
+                <div className="danger-ht">Fare-zone</div>
+              </div>
+              <div className="danger-row">
+                <div>
+                  <div className="dr-l">Eksportér alle data</div>
+                  <div className="dr-sub">
+                    Henter en komplet eksport af alle organisations-data som ZIP
+                  </div>
+                </div>
+                <button
+                  className="btn"
+                  onClick={() => onToast('Data-eksport igangsættes — du modtager en e-mail')}
+                >
+                  Eksportér
+                </button>
+              </div>
+              <div className="danger-row">
+                <div>
+                  <div className="dr-l">Slet organisation</div>
+                  <div className="dr-sub">
+                    Permanent sletning — kan ikke fortrydes. Kræver bekræftelse via e-mail.
+                  </div>
+                </div>
+                <button
+                  className="btn danger"
+                  onClick={() => onToast('Bekræftelse sendt til philip@chainhub.dk')}
+                >
+                  Slet organisation
+                </button>
+              </div>
+            </div>
+          </>
+        )
+      }
+
+      function FakturaSection({ onToast }) {
+        return (
+          <>
+            <div className="s-head">
+              <div>
+                <div className="s-h1">Abonnement</div>
+                <div className="s-sub">Plus-plan · Fornyelse 1. jan 2027</div>
+              </div>
+              <button className="btn primary" onClick={() => onToast('Åbner opgraderingsflow')}>
+                Opgradér til Plus Max
+              </button>
+            </div>
+            <div className="pnl">
+              <div className="pnl-h">
+                <span className="pnl-t">Nuværende plan</span>
+              </div>
+              <div className="f-row">
+                <span className="f-label">Plan</span>
+                <div className="f-val">
+                  <span className="badge purple">Plus</span>
+                </div>
+              </div>
+              <div className="f-row">
+                <span className="f-label">Pris</span>
+                <div className="f-val" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  2.990 kr/md · ekskl. moms
+                </div>
+              </div>
+              <div className="f-row">
+                <span className="f-label">Brugere inkl.</span>
+                <div className="f-val">5 brugere (4 aktive)</div>
+              </div>
+              <div className="f-row">
+                <span className="f-label">AI-kvota</span>
+                <div className="f-val" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  1.000 extractions/md
+                </div>
+              </div>
+              <div className="f-row">
+                <span className="f-label">Fornyelse</span>
+                <div className="f-val" style={{ color: '#6e7681' }}>
+                  1. januar 2027 · automatisk fornyelse til
+                </div>
+              </div>
+              <div className="pnl-foot">
+                <a href="#" style={{ fontSize: 11, color: '#0969da', textDecoration: 'none' }}>
+                  Se fakturahistorik →
+                </a>
+                <button
+                  className="btn"
+                  style={{ fontSize: 11, padding: '3px 8px' }}
+                  onClick={() => onToast('Opdater betalingsoplysninger')}
+                >
+                  Betalingsoplysninger
+                </button>
+              </div>
+            </div>
+          </>
+        )
+      }
+
+      /* ─── MAIN PAGE ─── */
+      function IndstillingerPage() {
+        const [activeSection, setActiveSection] = useState('org')
+        const [toast, setToast] = useState(null)
+        const [toastKey, setToastKey] = useState(0)
+
+        function doToast(msg) {
+          setToast(msg)
+          setToastKey((k) => k + 1)
+          setTimeout(() => setToast(null), 2600)
+        }
+
+        const section = (() => {
+          switch (activeSection) {
+            case 'org':
+              return <OrgSection onToast={doToast} />
+            case 'brugere':
+              return <BrugereSection onToast={doToast} />
+            case 'ai':
+              return <AISection onToast={doToast} />
+            case 'notif':
+              return <NotifSection onToast={doToast} />
+            case 'integr':
+              return <IntegrSection onToast={doToast} />
+            case 'sikkerhed':
+              return <SikkerhedSection onToast={doToast} />
+            case 'faktura':
+              return <FakturaSection onToast={doToast} />
+            default:
+              return null
+          }
+        })()
+
+        const sectionLabel = SETTINGS_NAV.find((s) => s.key === activeSection)?.label || ''
+
+        return (
+          <div className="layout">
+            <Sidebar />
+            <div className="s-layout">
+              {/* Settings nav */}
+              <nav className="s-nav">
+                <div className="s-nav-sec">
+                  <div className="s-nav-lab">Indstillinger</div>
+                  {SETTINGS_NAV.map((s) => (
+                    <div
+                      key={s.key}
+                      className={`s-nav-item${activeSection === s.key ? ' active' : ''}`}
+                      onClick={() => setActiveSection(s.key)}
+                    >
+                      <span className={`s-nav-dot${s.dot ? ' ' + s.dot : ''}`}></span>
+                      {s.label}
+                    </div>
+                  ))}
+                </div>
+              </nav>
+
+              {/* Content */}
+              <main className="s-main">
+                <div className="crumb">
+                  <a href="#">Indstillinger</a>
+                  <span className="sep">›</span>
+                  <span>{sectionLabel}</span>
+                </div>
+                {section}
+                <div className="bot-bar">
+                  <span>Tandlæge Gruppen A/S · Plus · philip@chainhub.dk</span>
+                  <span>
+                    <span className="kbd">⌘K</span> handling · <span className="kbd">S</span> gem
+                  </span>
+                </div>
+              </main>
+            </div>
+            {toast && (
+              <div className="toast" key={toastKey}>
+                ✓ {toast}
+              </div>
+            )}
+          </div>
+        )
+      }
+
+      ReactDOM.createRoot(document.getElementById('root')).render(<IndstillingerPage />)
+    </script>
+  </body>
 </html>

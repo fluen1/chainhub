@@ -2,8 +2,8 @@
 // Verificerer at alle 5 list-sider (companies, contracts, cases, tasks, persons)
 // bruger ExportButton med korrekt entity, og at klik kalder prepareExport korrekt.
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
@@ -15,8 +15,8 @@ vi.mock('sonner', () => ({
   toast: { error: vi.fn(), success: vi.fn() },
 }))
 
-import { ExportButton } from '@/components/ui/export-button'
 import { prepareExport } from '@/actions/export'
+import { ExportButton } from '@/components/ui/export-button'
 import type { ExportableEntity } from '@/lib/export/entities'
 
 describe('ExportButton — entity-wiring pr. liste', () => {

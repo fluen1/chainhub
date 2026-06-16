@@ -1,13 +1,13 @@
 'use client'
 
-import { useState, useTransition, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { toast } from 'sonner'
-import { BModal, BTextField, BTextareaField, BFieldWrap } from '@/components/ui/b'
-import { updateCase } from '@/actions/cases'
-import { CASE_TYPE_LABELS, CASE_SUBTYPE_BY_TYPE } from '@/lib/validations/case'
-import { SENSITIVITY_LABELS } from '@/lib/labels'
 import type { SagsSubtype, SagsType, SensitivityLevel } from '@prisma/client'
+import { useRouter } from 'next/navigation'
+import { useState, useTransition, useEffect } from 'react'
+import { toast } from 'sonner'
+import { updateCase } from '@/actions/cases'
+import { BModal, BTextField, BTextareaField, BFieldWrap } from '@/components/ui/b'
+import { SENSITIVITY_LABELS } from '@/lib/labels'
+import { CASE_TYPE_LABELS, CASE_SUBTYPE_BY_TYPE } from '@/lib/validations/case'
 
 // ────────────────────────────────────────────────────────────────────────────
 // EditCaseDialog — rediger sag inkl. titel, beskrivelse, type, sensitivitet,
@@ -36,7 +36,10 @@ const SENSITIVITY_OPTIONS: Array<{ value: SensitivityLevel; label: string }> = [
   { value: 'STANDARD', label: SENSITIVITY_LABELS['STANDARD'] ?? 'STANDARD' },
   { value: 'INTERN', label: SENSITIVITY_LABELS['INTERN'] ?? 'INTERN' },
   { value: 'FORTROLIG', label: SENSITIVITY_LABELS['FORTROLIG'] ?? 'FORTROLIG' },
-  { value: 'STRENGT_FORTROLIG', label: SENSITIVITY_LABELS['STRENGT_FORTROLIG'] ?? 'STRENGT_FORTROLIG' },
+  {
+    value: 'STRENGT_FORTROLIG',
+    label: SENSITIVITY_LABELS['STRENGT_FORTROLIG'] ?? 'STRENGT_FORTROLIG',
+  },
 ]
 
 interface OrgUser {

@@ -1,7 +1,7 @@
 // @vitest-environment node
+import type { PgBoss } from 'pg-boss'
 import { describe, it, expect, afterAll, beforeAll } from 'vitest'
 import { createQueue, stopQueue, JOB_NAMES } from '@/lib/ai/queue'
-import type { PgBoss } from 'pg-boss'
 
 const runIntegrationTests = !!process.env.DIRECT_URL || !!process.env.DATABASE_URL
 

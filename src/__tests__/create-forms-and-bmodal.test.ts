@@ -10,8 +10,8 @@
  * 6. CreateContractForm: getSensitivityLabel i hint (ikke rå enum)
  */
 
-import { describe, it, expect } from 'vitest'
 import * as fs from 'fs'
+import { describe, it, expect } from 'vitest'
 
 function read(relativePath: string): string {
   return fs.readFileSync(`${process.cwd()}/${relativePath}`, 'utf-8')

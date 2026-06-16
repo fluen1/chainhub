@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 
 // Lytter på ⌘K (mac) / Ctrl+K (windows) og navigerer til /search.
 // Ignorerer hvis fokus allerede er i et input — så genvejen ikke

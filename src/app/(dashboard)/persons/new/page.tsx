@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
-import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { CreatePersonForm } from '@/components/persons/CreatePersonForm'
 import { Suspense } from 'react'
+import { CreatePersonForm } from '@/components/persons/CreatePersonForm'
+import { auth } from '@/lib/auth'
 
 export const metadata: Metadata = { title: 'Ny person' }
 

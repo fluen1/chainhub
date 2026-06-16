@@ -1,7 +1,7 @@
 'use client'
 
-import { useMemo, useState } from 'react'
 import Link from 'next/link'
+import { useMemo, useState } from 'react'
 import { Panel, PanelHeader, PanelGroupLabel, Badge, type BadgeTone } from '@/components/ui/b'
 import type { TimelineColor, TimelineSectionData } from '@/lib/dashboard-helpers'
 
@@ -84,41 +84,41 @@ export function UrgencyPanel({ sections }: { sections: TimelineSectionData[] }) 
       </div>
 
       <div aria-live="polite" aria-atomic="false">
-      {filtered.length === 0 ? (
-        <div className="px-3 py-3 text-center text-[12px] text-b-3">
-          {filter
-            ? `Ingen elementer matcher "${filter}"`
-            : 'Ingen forfaldne eller kommende elementer'}
-        </div>
-      ) : (
-        filtered.map((section) => (
-          <div key={section.id}>
-            <PanelGroupLabel>{section.label}</PanelGroupLabel>
-            <div className="overflow-x-auto">
-            {section.items.map((item) => {
-              const badge = badgeForItem(section.id, item.time, item.color)
-              return (
-                <Link
-                  key={item.id}
-                  href={item.href}
-                  className="grid cursor-pointer grid-cols-[50px_1fr_70px_14px] items-center gap-2.5 border-b border-b-divider px-3 py-1.5 text-[13px] no-underline last:border-b-0 hover:bg-b-row-hover"
-                >
-                  <Badge tone={badge.tone}>{badge.text}</Badge>
-                  <span className="truncate text-b-1">
-                    <strong className="font-medium">{item.title}</strong>
-                    <span className="text-b-2"> · {item.subtitle}</span>
-                  </span>
-                  <span className="text-[12px] text-b-2">
-                    {SECTION_SHORT_LABEL[section.label] ?? section.label}
-                  </span>
-                  <span className="text-b-3">›</span>
-                </Link>
-              )
-            })}
-            </div>
+        {filtered.length === 0 ? (
+          <div className="px-3 py-3 text-center text-[12px] text-b-3">
+            {filter
+              ? `Ingen elementer matcher "${filter}"`
+              : 'Ingen forfaldne eller kommende elementer'}
           </div>
-        ))
-      )}
+        ) : (
+          filtered.map((section) => (
+            <div key={section.id}>
+              <PanelGroupLabel>{section.label}</PanelGroupLabel>
+              <div className="overflow-x-auto">
+                {section.items.map((item) => {
+                  const badge = badgeForItem(section.id, item.time, item.color)
+                  return (
+                    <Link
+                      key={item.id}
+                      href={item.href}
+                      className="grid cursor-pointer grid-cols-[50px_1fr_70px_14px] items-center gap-2.5 border-b border-b-divider px-3 py-1.5 text-[13px] no-underline last:border-b-0 hover:bg-b-row-hover"
+                    >
+                      <Badge tone={badge.tone}>{badge.text}</Badge>
+                      <span className="truncate text-b-1">
+                        <strong className="font-medium">{item.title}</strong>
+                        <span className="text-b-2"> · {item.subtitle}</span>
+                      </span>
+                      <span className="text-[12px] text-b-2">
+                        {SECTION_SHORT_LABEL[section.label] ?? section.label}
+                      </span>
+                      <span className="text-b-3">›</span>
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </Panel>
   )

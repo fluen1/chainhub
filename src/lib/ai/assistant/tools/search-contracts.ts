@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db'
+import { getAccessibleCompanies, getAllowedSensitivityLevels } from '@/lib/permissions'
 import type { ToolDefinition, ToolContext, ToolResult } from './types'
 
 export const searchContractsTool: ToolDefinition = {
@@ -30,7 +31,7 @@ export const searchContractsTool: ToolDefinition = {
   },
   requiresConfirmation: false,
   async execute(params: Record<string, unknown>, context: ToolContext): Promise<ToolResult> {
-    const { organizationId } = context
+    const { organizationId, userId } = context
     const query = typeof params.query === 'string' ? params.query : undefined
     const status = typeof params.status === 'string' ? params.status : undefined
     const contractType = typeof params.contract_type === 'string' ? params.contract_type : undefined
@@ -43,10 +44,17 @@ export const searchContractsTool: ToolDefinition = {
         ? new Date(now.getTime() + expiringWithinDays * 24 * 60 * 60 * 1000)
         : undefined
 
+    const [accessibleCompanyIds, allowedSensitivity] = await Promise.all([
+      getAccessibleCompanies(userId, organizationId),
+      getAllowedSensitivityLevels(userId, organizationId),
+    ])
+
     const contracts = await prisma.contract.findMany({
       where: {
         organization_id: organizationId,
         deleted_at: null,
+        company_id: { in: accessibleCompanyIds },
+        sensitivity: { in: allowedSensitivity },
         ...(query ? { display_name: { contains: query, mode: 'insensitive' } } : {}),
         ...(status ? { status: status as never } : {}),
         ...(contractType ? { system_type: contractType as never } : {}),

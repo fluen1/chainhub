@@ -1,8 +1,8 @@
 import { describe, it, expect, vi } from 'vitest'
-import { extractWithSchema } from '@/lib/ai/pipeline/pass2-schema-extraction'
 import type { ClaudeClient } from '@/lib/ai/client/types'
-import type { ContractSchema } from '@/lib/ai/schemas/types'
 import type { ExtractionContent } from '@/lib/ai/content-loader'
+import { extractWithSchema } from '@/lib/ai/pipeline/pass2-schema-extraction'
+import type { ContractSchema } from '@/lib/ai/schemas/types'
 
 const mockSchema: ContractSchema = {
   contract_type: 'TEST',

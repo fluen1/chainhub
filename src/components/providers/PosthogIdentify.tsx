@@ -1,7 +1,7 @@
 'use client'
 
-import posthog from 'posthog-js'
 import { useSession } from 'next-auth/react'
+import posthog from 'posthog-js'
 import { useEffect } from 'react'
 
 /**
@@ -12,17 +12,21 @@ import { useEffect } from 'react'
 export function PosthogIdentify() {
   const { data: session } = useSession()
 
+  const userId = session?.user?.id
+  const email = session?.user?.email
+  const organizationId = session?.user?.organizationId
+
   useEffect(() => {
-    if (!session?.user) return
+    if (!userId) return
 
     const key = process.env.NEXT_PUBLIC_POSTHOG_KEY
     if (!key) return
 
-    posthog.identify(session.user.id, {
-      email: session.user.email,
-      organization_id: session.user.organizationId,
+    posthog.identify(userId, {
+      email,
+      organization_id: organizationId,
     })
-  }, [session?.user?.id])
+  }, [userId, email, organizationId])
 
   return null
 }

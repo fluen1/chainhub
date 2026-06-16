@@ -1,5 +1,5 @@
-import bcrypt from 'bcryptjs'
 import { randomUUID } from 'node:crypto'
+import bcrypt from 'bcryptjs'
 
 export type BootstrapInput = {
   orgName: string

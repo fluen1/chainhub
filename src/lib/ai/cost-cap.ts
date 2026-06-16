@@ -234,13 +234,14 @@ export async function releaseReservation(
  * pre-debet før pipeline kører, så parallelle jobs ikke alle kan overskride
  * capen. Overestimat er sikrere end underestimat.
  *
- * Antagelser: 4000 tokens/side, Sonnet 4.6 pricing (~$3 input / $15 output
- * per M-token), default 2 runs, plus Haiku type-detection.
+ * Antagelser: 4000 tokens/side, gpt-5-mini pricing ($0.25 input / $2.0 output
+ * per M-token), 2 runs (pass2 + pass3 extraction), plus nano type-detection ($0.001 fast).
  */
 export function estimateExtractionCost(pageCount: number): number {
-  const inputTokens = pageCount * 4000
-  const outputTokens = 3000
-  const sonnetCost = (inputTokens * 3 + outputTokens * 15) / 1_000_000
-  const haikuCost = 0.01
-  return sonnetCost * 2 + haikuCost
+  const inputTokensPerRun = pageCount * 4000
+  const outputTokensPerRun = 3000
+  const miniInputCost = (inputTokensPerRun * 0.25) / 1_000_000
+  const miniOutputCost = (outputTokensPerRun * 2.0) / 1_000_000
+  const typeDetectionCost = 0.001 // gpt-5-nano, fast
+  return miniInputCost * 2 + miniOutputCost * 2 + typeDetectionCost
 }

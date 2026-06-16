@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import { BModal, BTextField, BTextareaField, BSegmentedField } from '@/components/ui/b'
-import { endOwnership } from '@/actions/ownership'
 import { endCompanyPerson } from '@/actions/governance'
+import { endOwnership } from '@/actions/ownership'
+import { BModal, BTextField, BTextareaField, BSegmentedField } from '@/components/ui/b'
 
 // ────────────────────────────────────────────────────────────────────────────
 // EndOwnershipRoleModal — parameteriseret modal til både ejerskab og rolle.

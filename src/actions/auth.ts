@@ -1,12 +1,13 @@
 'use server'
 
-import { prisma } from '@/lib/db'
-import { sendPasswordResetEmail } from '@/lib/email/resend'
-import { captureError } from '@/lib/logger'
-import type { ActionResult } from '@/types/actions'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
+import { prisma } from '@/lib/db'
+import { sendPasswordResetEmail } from '@/lib/email/resend'
+import { baseUrl } from '@/lib/env'
+import { captureError } from '@/lib/logger'
 import { checkActionRateLimit } from '@/lib/rate-limit'
+import type { ActionResult } from '@/types/actions'
 
 const requestResetSchema = z.object({
   email: z.string().email('Ugyldig e-mail-adresse'),
@@ -16,8 +17,6 @@ const resetPasswordSchema = z.object({
   token: z.string().uuid('Ugyldigt token-format'),
   newPassword: z.string().min(8, 'Adgangskoden skal være mindst 8 tegn'),
 })
-
-import { baseUrl } from '@/lib/env'
 
 const NEXTAUTH_URL = baseUrl
 

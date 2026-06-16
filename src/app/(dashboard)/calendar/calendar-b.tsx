@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useEffect, useMemo, useState } from 'react'
+import { EditVisitModal, type EditVisitData } from '@/components/calendar/edit-visit-modal'
 import {
   Breadcrumb,
   PageHeader,
@@ -12,8 +13,6 @@ import {
   SegmentedToggle,
   BottomBar,
 } from '@/components/ui/b'
-import type { CalendarEvent, CalendarEventType } from '@/types/ui'
-import { EditVisitModal, type EditVisitData } from '@/components/calendar/edit-visit-modal'
 import {
   MONTH_NAMES_DA,
   MONTH_NAMES_DA_SHORT,
@@ -21,6 +20,7 @@ import {
   WEEKDAYS_DA_SHORT,
   WEEKDAYS_DA_FULL,
 } from '@/lib/calendar-constants'
+import type { CalendarEvent, CalendarEventType } from '@/types/ui'
 
 // ────────────────────────────────────────────────────────────────────────────
 // /calendar — klient-komponent.

@@ -250,6 +250,8 @@ describe('updateCaseStatus', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(checkActionRateLimit).mockResolvedValue({ limited: false, remaining: 59 } as any)
+    vi.mocked(canAccessCompany).mockResolvedValue(true)
+    vi.mocked(canAccessSensitivity).mockResolvedValue(true)
   })
 
   it('returnerer fejl uden session', async () => {
@@ -276,7 +278,7 @@ describe('updateCaseStatus', () => {
 
   it('opdaterer status fra NY til AKTIV', async () => {
     vi.mocked(auth).mockResolvedValue(makeSession())
-    prismaMock.case.findFirst.mockResolvedValue({ ...baseCase, status: 'NY' })
+    prismaMock.case.findFirst.mockResolvedValue({ ...baseCaseWithCompanies, status: 'NY' })
     prismaMock.case.update.mockResolvedValue({ ...baseCase, status: 'AKTIV' })
     prismaMock.caseCompany.findFirst.mockResolvedValue({ company_id: 'company-1' })
     prismaMock.caseCompany.findMany.mockResolvedValue([{ company_id: 'company-1' }])
@@ -288,7 +290,7 @@ describe('updateCaseStatus', () => {
 
   it('sÃ¦tter closed_at ved status LUKKET', async () => {
     vi.mocked(auth).mockResolvedValue(makeSession())
-    prismaMock.case.findFirst.mockResolvedValue({ ...baseCase, status: 'AKTIV' })
+    prismaMock.case.findFirst.mockResolvedValue({ ...baseCaseWithCompanies, status: 'AKTIV' })
     prismaMock.case.update.mockResolvedValue({
       ...baseCase,
       status: 'LUKKET',
@@ -319,7 +321,7 @@ describe('updateCaseStatus', () => {
 
   it('recordAuditEvent kaldes efter status-Ã¦ndring', async () => {
     vi.mocked(auth).mockResolvedValue(makeSession())
-    prismaMock.case.findFirst.mockResolvedValue({ ...baseCase, status: 'NY' })
+    prismaMock.case.findFirst.mockResolvedValue({ ...baseCaseWithCompanies, status: 'NY' })
     prismaMock.case.update.mockResolvedValue({ ...baseCase, status: 'AKTIV' })
     prismaMock.caseCompany.findFirst.mockResolvedValue({ company_id: 'company-1' })
     prismaMock.caseCompany.findMany.mockResolvedValue([{ company_id: 'company-1' }])
@@ -585,6 +587,85 @@ describe('deleteCase', () => {
     expect(prismaMock.case.findFirst).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({ organization_id: 'org-1' }),
+      })
+    )
+  })
+})
+
+// ─── mutation-WHERE invariant-tests ──────────────────────────────────────────
+
+describe('mutation-WHERE: organization_id i alle update/soft-delete kald', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(checkActionRateLimit).mockResolvedValue({ limited: false, remaining: 59 } as any)
+    vi.mocked(canAccessCompany).mockResolvedValue(true)
+    vi.mocked(canAccessSensitivity).mockResolvedValue(true)
+  })
+
+  it('updateCaseStatus: update-WHERE indeholder organization_id', async () => {
+    vi.mocked(auth).mockResolvedValue(makeSession())
+    prismaMock.case.findFirst.mockResolvedValue({ ...baseCaseWithCompanies, status: 'NY' })
+    prismaMock.case.update.mockResolvedValue({ ...baseCase, status: 'AKTIV' })
+    prismaMock.caseCompany.findFirst.mockResolvedValue({ company_id: 'company-1' })
+    prismaMock.caseCompany.findMany.mockResolvedValue([{ company_id: 'company-1' }])
+
+    await updateCaseStatus({ caseId: 'case-1', status: 'AKTIV' })
+
+    expect(prismaMock.case.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: 'case-1', organization_id: 'org-1' }),
+      })
+    )
+  })
+
+  it('closeCase: update-WHERE indeholder organization_id', async () => {
+    vi.mocked(auth).mockResolvedValue(makeSession())
+    vi.mocked(canAccessModule).mockResolvedValue(true)
+    prismaMock.case.findFirst.mockResolvedValue(baseCaseWithCompanies)
+    vi.mocked(canAccessCompany).mockResolvedValue(true)
+    prismaMock.case.update.mockResolvedValue({
+      ...baseCase,
+      status: 'LUKKET',
+      closed_at: new Date(),
+    })
+
+    await closeCase('case-1')
+
+    expect(prismaMock.case.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: 'case-1', organization_id: 'org-1' }),
+      })
+    )
+  })
+
+  it('updateCase: update-WHERE indeholder organization_id', async () => {
+    vi.mocked(auth).mockResolvedValue(makeSession())
+    vi.mocked(canAccessModule).mockResolvedValue(true)
+    prismaMock.case.findFirst.mockResolvedValue(baseCaseWithCompanies)
+    vi.mocked(canAccessCompany).mockResolvedValue(true)
+    prismaMock.case.update.mockResolvedValue({ ...baseCase, title: 'Ny Titel' })
+
+    await updateCase({ caseId: 'case-1', title: 'Ny Titel' })
+
+    expect(prismaMock.case.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: 'case-1', organization_id: 'org-1' }),
+      })
+    )
+  })
+
+  it('deleteCase: update-WHERE indeholder organization_id', async () => {
+    vi.mocked(auth).mockResolvedValue(makeSession())
+    vi.mocked(canAccessModule).mockResolvedValue(true)
+    prismaMock.case.findFirst.mockResolvedValue(baseCase)
+    prismaMock.case.update.mockResolvedValue({ ...baseCase, deleted_at: new Date() })
+    prismaMock.caseCompany.findMany.mockResolvedValue([{ company_id: 'company-1' }])
+
+    await deleteCase('case-1')
+
+    expect(prismaMock.case.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: 'case-1', organization_id: 'org-1' }),
       })
     )
   })

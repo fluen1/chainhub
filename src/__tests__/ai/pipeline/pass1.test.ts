@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest'
-import { detectDocumentType } from '@/lib/ai/pipeline/pass1-type-detection'
 import type { ClaudeClient, ClaudeResponse } from '@/lib/ai/client/types'
 import type { ExtractionContent } from '@/lib/ai/content-loader'
+import { detectDocumentType } from '@/lib/ai/pipeline/pass1-type-detection'
 
 // Registrér mindst ét schema så getAllSchemaTypes returnerer noget
 beforeAll(async () => {

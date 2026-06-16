@@ -11,7 +11,12 @@ const { prismaMock } = vi.hoisted(() => {
 })
 
 vi.mock('@/lib/db', () => ({ prisma: prismaMock }))
+vi.mock('@/lib/permissions', () => ({
+  getAccessibleCompanies: vi.fn().mockResolvedValue(['co-1', 'co-2']),
+  getAllowedSensitivityLevels: vi.fn().mockResolvedValue(['PUBLIC', 'STANDARD', 'INTERN']),
+}))
 
+import * as perms from '@/lib/permissions'
 import { searchContractsTool } from '@/lib/ai/assistant/tools/search-contracts'
 
 const context = { organizationId: 'org-1', userId: 'user-1' }
@@ -81,5 +86,28 @@ describe('searchContractsTool', () => {
 
   it('requiresConfirmation er false (read-only)', () => {
     expect(searchContractsTool.requiresConfirmation).toBe(false)
+  })
+
+  it('begrænser til accessible companies og tilladte sensitivity-niveauer (RBAC)', async () => {
+    prismaMock.contract.findMany.mockResolvedValue([])
+
+    await searchContractsTool.execute({ query: 'x' }, context)
+
+    const where = prismaMock.contract.findMany.mock.calls[0]?.[0]?.where as Record<string, unknown>
+    expect(where.company_id).toEqual({ in: ['co-1', 'co-2'] })
+    expect(where.sensitivity).toEqual({ in: ['PUBLIC', 'STANDARD', 'INTERN'] })
+    expect(perms.getAccessibleCompanies).toHaveBeenCalledWith('user-1', 'org-1')
+    expect(perms.getAllowedSensitivityLevels).toHaveBeenCalledWith('user-1', 'org-1')
+  })
+
+  it('COMPANY_READONLY uden adgang til selskaber får tomt resultat (ingen lækage)', async () => {
+    vi.mocked(perms.getAccessibleCompanies).mockResolvedValueOnce([])
+    prismaMock.contract.findMany.mockResolvedValue([])
+
+    const result = await searchContractsTool.execute({}, context)
+
+    const where = prismaMock.contract.findMany.mock.calls[0]?.[0]?.where as Record<string, unknown>
+    expect(where.company_id).toEqual({ in: [] })
+    expect(result.data).toEqual([])
   })
 })

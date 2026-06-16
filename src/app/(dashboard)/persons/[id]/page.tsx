@@ -1,14 +1,14 @@
 import type { Metadata } from 'next'
-import { auth } from '@/lib/auth'
 import { redirect, notFound } from 'next/navigation'
+import { getPersonAIExtractions } from '@/actions/person-ai'
+import { getPersonDetailPageData, getPersonFullName } from '@/actions/persons'
+import { auth } from '@/lib/auth'
 import {
   getCompanyPersonRoleLabel,
   getContractStatusLabel,
   getContractTypeLabel,
   formatDate,
 } from '@/lib/labels'
-import { getPersonAIExtractions } from '@/actions/person-ai'
-import { getPersonDetailPageData, getPersonFullName } from '@/actions/persons'
 import {
   PersonDetailB,
   type PersonView,

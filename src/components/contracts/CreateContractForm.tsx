@@ -1,20 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import { createContract } from '@/actions/contracts'
-import {
-  CONTRACT_TYPE_LABELS,
-  CONTRACT_SYSTEM_TYPES,
-  SENSITIVITY_MINIMUM,
-  type ContractSystemTypeKey,
-  type SensitivityLevelValue,
-} from '@/lib/validations/contract'
-import { zodContractSystemType } from '@/lib/zod-enums'
 import { ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
-import { getSensitivityLabel } from '@/lib/labels'
+import { createContract } from '@/actions/contracts'
 import {
   Panel,
   BButton,
@@ -24,6 +15,15 @@ import {
   BFieldWrap,
   Breadcrumb,
 } from '@/components/ui/b'
+import { getSensitivityLabel } from '@/lib/labels'
+import {
+  CONTRACT_TYPE_LABELS,
+  CONTRACT_SYSTEM_TYPES,
+  SENSITIVITY_MINIMUM,
+  type ContractSystemTypeKey,
+  type SensitivityLevelValue,
+} from '@/lib/validations/contract'
+import { zodContractSystemType } from '@/lib/zod-enums'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CreateContractForm — B-stil port. Felter: companyId, systemType, displayName,
@@ -53,7 +53,10 @@ export function CreateContractForm() {
 
   const [loading, setLoading] = useState(false)
   const [selectedType, setSelectedType] = useState<ContractSystemTypeKey | ''>('')
-  const [minSensitivity, setMinSensitivity] = useState<SensitivityLevelValue>('STANDARD')
+  const minSensitivity: SensitivityLevelValue =
+    selectedType && SENSITIVITY_MINIMUM[selectedType as ContractSystemTypeKey]
+      ? (SENSITIVITY_MINIMUM[selectedType as ContractSystemTypeKey] as SensitivityLevelValue)
+      : 'STANDARD'
   const [companyId, setCompanyId] = useState(preselectedCompanyId)
   const [displayName, setDisplayName] = useState('')
   const [effectiveDate, setEffectiveDate] = useState('')
@@ -80,16 +83,6 @@ export function CreateContractForm() {
         setLoadError('Kunne ikke hente selskaber. Genindlæs siden eller kontakt support.')
       )
   }, [])
-
-  useEffect(() => {
-    if (selectedType && SENSITIVITY_MINIMUM[selectedType as ContractSystemTypeKey]) {
-      setMinSensitivity(
-        SENSITIVITY_MINIMUM[selectedType as ContractSystemTypeKey] as SensitivityLevelValue
-      )
-    } else {
-      setMinSensitivity('STANDARD')
-    }
-  }, [selectedType])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()

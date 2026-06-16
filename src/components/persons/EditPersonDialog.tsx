@@ -2,8 +2,8 @@
 
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import { BModal, BTextField, BTextareaField } from '@/components/ui/b'
 import { updatePerson } from '@/actions/persons'
+import { BModal, BTextField, BTextareaField } from '@/components/ui/b'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // EditPersonDialog — BModal til redigering af persondata.

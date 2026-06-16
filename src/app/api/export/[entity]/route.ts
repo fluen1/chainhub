@@ -1,9 +1,9 @@
-import { auth } from '@/lib/auth'
-import { canAccessModule } from '@/lib/permissions'
-import { fetchEntityForExport, type ExportableEntity } from '@/lib/export/entities'
-import { toCsvBuffer } from '@/lib/export/csv'
-import { captureError } from '@/lib/logger'
 import { recordAuditEvent } from '@/lib/audit'
+import { auth } from '@/lib/auth'
+import { toCsvBuffer } from '@/lib/export/csv'
+import { fetchEntityForExport, type ExportableEntity } from '@/lib/export/entities'
+import { captureError } from '@/lib/logger'
+import { canExportAllScope } from '@/lib/permissions'
 
 const VALID_ENTITIES: ExportableEntity[] = [
   'companies',
@@ -27,9 +27,12 @@ export async function GET(
     return Response.json({ error: 'Ikke autoriseret' }, { status: 401 })
   }
 
-  const canExport = await canAccessModule(session.user.id, 'settings', session.user.organizationId)
+  const canExport = await canExportAllScope(session.user.id, session.user.organizationId)
   if (!canExport) {
-    return Response.json({ error: 'Kun admin kan eksportere data' }, { status: 403 })
+    return Response.json(
+      { error: 'Kun gruppe-administratorer med fuld adgang kan eksportere data' },
+      { status: 403 }
+    )
   }
 
   const { entity } = await params
