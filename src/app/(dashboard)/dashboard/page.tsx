@@ -25,8 +25,7 @@ async function AlertsSection() {
 }
 
 async function ActivitySection({ companyIds }: { companyIds: string[] }) {
-  const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000)
-  const activity = await getRecentActivity(companyIds, since24h)
+  const activity = await getRecentActivity(companyIds)
   return <ActivityPanel events={activity} />
 }
 

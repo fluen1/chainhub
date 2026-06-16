@@ -53,7 +53,10 @@ export function CreateContractForm() {
 
   const [loading, setLoading] = useState(false)
   const [selectedType, setSelectedType] = useState<ContractSystemTypeKey | ''>('')
-  const [minSensitivity, setMinSensitivity] = useState<SensitivityLevelValue>('STANDARD')
+  const minSensitivity: SensitivityLevelValue =
+    selectedType && SENSITIVITY_MINIMUM[selectedType as ContractSystemTypeKey]
+      ? (SENSITIVITY_MINIMUM[selectedType as ContractSystemTypeKey] as SensitivityLevelValue)
+      : 'STANDARD'
   const [companyId, setCompanyId] = useState(preselectedCompanyId)
   const [displayName, setDisplayName] = useState('')
   const [effectiveDate, setEffectiveDate] = useState('')
@@ -80,16 +83,6 @@ export function CreateContractForm() {
         setLoadError('Kunne ikke hente selskaber. Genindlæs siden eller kontakt support.')
       )
   }, [])
-
-  useEffect(() => {
-    if (selectedType && SENSITIVITY_MINIMUM[selectedType as ContractSystemTypeKey]) {
-      setMinSensitivity(
-        SENSITIVITY_MINIMUM[selectedType as ContractSystemTypeKey] as SensitivityLevelValue
-      )
-    } else {
-      setMinSensitivity('STANDARD')
-    }
-  }, [selectedType])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
