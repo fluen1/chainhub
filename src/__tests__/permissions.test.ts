@@ -5,6 +5,30 @@
 
 import { describe, it, expect } from 'vitest'
 import { meetsMinimumSensitivity, SENSITIVITY_MINIMUM } from '@/lib/validations/contract'
+import { rolesCanExportAllScope } from '@/lib/permissions'
+
+// ──── rolesCanExportAllScope tests (Stream C Task 2 — Philips beslutning) ────
+
+describe('rolesCanExportAllScope — kun GROUP_OWNER/GROUP_ADMIN med ALL-scope', () => {
+  it('GROUP_OWNER med ALL-scope → true', () => {
+    expect(rolesCanExportAllScope([{ role: 'GROUP_OWNER', scope: 'ALL' }])).toBe(true)
+  })
+  it('GROUP_ADMIN med ALL-scope → true', () => {
+    expect(rolesCanExportAllScope([{ role: 'GROUP_ADMIN', scope: 'ALL' }])).toBe(true)
+  })
+  it('GROUP_LEGAL afvises (Philips beslutning) selv med ALL-scope', () => {
+    expect(rolesCanExportAllScope([{ role: 'GROUP_LEGAL', scope: 'ALL' }])).toBe(false)
+  })
+  it('GROUP_FINANCE afvises selv med ALL-scope', () => {
+    expect(rolesCanExportAllScope([{ role: 'GROUP_FINANCE', scope: 'ALL' }])).toBe(false)
+  })
+  it('GROUP_OWNER UDEN ALL-scope (ASSIGNED) → false', () => {
+    expect(rolesCanExportAllScope([{ role: 'GROUP_OWNER', scope: 'ASSIGNED' }])).toBe(false)
+  })
+  it('COMPANY_MANAGER → false', () => {
+    expect(rolesCanExportAllScope([{ role: 'COMPANY_MANAGER', scope: 'ASSIGNED' }])).toBe(false)
+  })
+})
 
 // ──── meetsMinimumSensitivity tests ────────────────────────────────────────
 
