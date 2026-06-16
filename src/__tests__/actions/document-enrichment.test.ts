@@ -8,6 +8,10 @@ vi.mock('@/lib/auth', () => ({
 
 vi.mock('@/lib/permissions', () => ({
   canAccessCompany: vi.fn(async () => true),
+  canAccessSensitivity: vi.fn(async () => true),
+  getAllowedSensitivityLevels: vi
+    .fn()
+    .mockResolvedValue(['PUBLIC', 'STANDARD', 'INTERN', 'FORTROLIG', 'STRENGT_FORTROLIG']),
 }))
 
 const { prismaMock, mockDocument, mockExtraction } = vi.hoisted(() => {

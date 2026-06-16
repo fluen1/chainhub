@@ -304,14 +304,21 @@ export async function getDocumentReviewPageData(
   return { doc, reviewQueue }
 }
 
-export async function getDocumentTitle(documentId: string): Promise<string> {
+export async function getDocumentTitle(documentId: string): Promise<string | null> {
   const session = await auth()
   if (!session) return 'Review'
   const doc = await prisma.document.findFirst({
     where: { id: documentId, organization_id: session.user.organizationId, deleted_at: null },
-    select: { file_name: true, title: true },
+    select: { file_name: true, title: true, sensitivity: true },
   })
-  return `Review · ${doc?.file_name ?? doc?.title ?? 'dokument'}`
+  if (!doc) return 'Review · dokument'
+  const canSens = await canAccessSensitivity(
+    session.user.id,
+    doc.sensitivity,
+    session.user.organizationId
+  )
+  if (!canSens) return null
+  return `Review · ${doc.file_name ?? doc.title ?? 'dokument'}`
 }
 
 // Løs UUID-validering: accepterer alle 8-4-4-4-12 hex-formater inkl. nil-UUIDs (seed-data)

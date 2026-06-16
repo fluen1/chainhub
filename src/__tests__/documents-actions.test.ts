@@ -14,6 +14,9 @@ vi.mock('@/lib/db', () => ({
       findFirst: vi.fn(),
       update: vi.fn().mockResolvedValue({}),
     },
+    documentExtraction: {
+      findFirst: vi.fn().mockResolvedValue(null),
+    },
   },
 }))
 
@@ -31,7 +34,14 @@ vi.mock('@/lib/rate-limit', () => ({
 
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
 
-import { deleteDocument, getDocumentsPageData } from '@/actions/documents'
+import { getDocumentEnrichment } from '@/actions/document-enrichment'
+import {
+  deleteDocument,
+  getDocumentsPageData,
+  submitDocumentForReview,
+  reviewDocument,
+  getDocumentReviewPageData,
+} from '@/actions/documents'
 
 const UUID = 'a1b2c3d4-e5f6-4789-9abc-def012345678'
 
@@ -112,5 +122,101 @@ describe('deleteDocument', () => {
 
     expect(res).toEqual({ error: 'Ingen adgang til dette dokument' })
     expect(prisma.document.update).not.toHaveBeenCalled()
+  })
+})
+
+// ─── Negative sensitivity-tests ───────────────────────────────────────────────
+// Disse tests verificerer at sensitivity-checket er load-bearing:
+// de SKAL fejle hvis canAccessSensitivity-checket fjernes fra den pågældende action.
+
+describe('submitDocumentForReview — sensitivity-afvisning', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('afviser submitDocumentForReview når canAccessSensitivity returnerer false', async () => {
+    const { prisma } = await import('@/lib/db')
+    vi.mocked(prisma.document.findFirst).mockImplementation((() =>
+      Promise.resolve({
+        id: UUID,
+        company_id: null,
+        status: 'KLADDE',
+        sensitivity: 'STRENGT_FORTROLIG',
+      })) as never)
+    const perms = await import('@/lib/permissions')
+    vi.mocked(perms.canAccessSensitivity).mockResolvedValueOnce(false)
+
+    const result = await submitDocumentForReview({ documentId: UUID })
+
+    expect(result).toMatchObject({ error: expect.any(String) })
+    expect(prisma.document.update).not.toHaveBeenCalled()
+  })
+})
+
+describe('reviewDocument — sensitivity-afvisning', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('afviser reviewDocument når canAccessSensitivity returnerer false', async () => {
+    const { prisma } = await import('@/lib/db')
+    vi.mocked(prisma.document.findFirst).mockImplementation((() =>
+      Promise.resolve({
+        id: UUID,
+        company_id: null,
+        status: 'TIL_REVIEW',
+        sensitivity: 'STRENGT_FORTROLIG',
+      })) as never)
+    const perms = await import('@/lib/permissions')
+    vi.mocked(perms.canAccessSensitivity).mockResolvedValueOnce(false)
+
+    const result = await reviewDocument({ documentId: UUID, decision: 'GODKENDT' })
+
+    expect(result).toMatchObject({ error: expect.any(String) })
+    expect(prisma.document.update).not.toHaveBeenCalled()
+  })
+})
+
+describe('getDocumentReviewPageData — sensitivity-afvisning', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('returnerer null fra getDocumentReviewPageData når canAccessSensitivity returnerer false', async () => {
+    const { prisma } = await import('@/lib/db')
+    vi.mocked(prisma.document.findFirst).mockImplementation((() =>
+      Promise.resolve({
+        id: UUID,
+        company_id: null,
+        sensitivity: 'STRENGT_FORTROLIG',
+        file_name: 'test.pdf',
+        title: 'Test',
+        organization_id: 'org-1',
+        deleted_at: null,
+        company: null,
+        extraction: null,
+        contract: null,
+        case: null,
+      })) as never)
+    const perms = await import('@/lib/permissions')
+    vi.mocked(perms.canAccessSensitivity).mockResolvedValueOnce(false)
+
+    const result = await getDocumentReviewPageData(UUID)
+
+    expect(result).toBeNull()
+  })
+})
+
+describe('getDocumentEnrichment — sensitivity-afvisning', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('afviser getDocumentEnrichment når canAccessSensitivity returnerer false', async () => {
+    const { prisma } = await import('@/lib/db')
+    vi.mocked(prisma.document.findFirst).mockImplementation((() =>
+      Promise.resolve({
+        id: UUID,
+        company_id: null,
+        sensitivity: 'STRENGT_FORTROLIG',
+      })) as never)
+    const perms = await import('@/lib/permissions')
+    vi.mocked(perms.canAccessSensitivity).mockResolvedValueOnce(false)
+
+    const result = await getDocumentEnrichment(UUID)
+
+    expect(result).toMatchObject({ error: expect.any(String) })
   })
 })
