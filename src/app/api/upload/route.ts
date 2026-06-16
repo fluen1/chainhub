@@ -51,13 +51,6 @@ export async function POST(request: NextRequest) {
   if (file.size > MAX_FILE_SIZE) {
     return NextResponse.json({ error: 'Filen er for stor (max 10 MB)' }, { status: 400 })
   }
-  if (!ALLOWED_TYPES.includes(file.type)) {
-    return NextResponse.json(
-      { error: 'Filtypen er ikke tilladt (PDF, DOCX, PNG, JPG)' },
-      { status: 400 }
-    )
-  }
-
   // Permission check if company specified
   if (companyId) {
     const hasAccess = await canAccessCompany(
@@ -104,6 +97,32 @@ export async function POST(request: NextRequest) {
 
   const bytes = await file.arrayBuffer()
   const buffer = Buffer.from(bytes)
+
+  // Verificér filindhold via magic bytes — stoler ikke på browser-MIME
+  const { fileTypeFromBuffer } = await import('file-type')
+  const detectedType = await fileTypeFromBuffer(buffer)
+  const detectedMime = detectedType?.mime
+
+  // DOCX/XLSX er ZIP-arkiver — file-type returnerer "application/zip" for disse.
+  // Accepter zip-base hvis claimed MIME er et godkendt Office-format.
+  const ZIP_BASED_OFFICE_TYPES = [
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  ]
+  const isZipBasedOffice =
+    (detectedMime === 'application/zip' || detectedMime === 'application/x-zip-compressed') &&
+    ZIP_BASED_OFFICE_TYPES.includes(file.type)
+
+  const mimeToCheck = isZipBasedOffice ? file.type : (detectedMime ?? file.type)
+
+  if (!ALLOWED_TYPES.includes(mimeToCheck)) {
+    return NextResponse.json(
+      { error: 'Filtypen er ikke tilladt eller kan ikke verificeres (PDF, DOCX, PNG, JPG)' },
+      { status: 400 }
+    )
+  }
+
   await storage.upload({
     key,
     buffer,
