@@ -5,7 +5,7 @@ import { recordAuditEvent } from '@/lib/audit'
 import { auth } from '@/lib/auth'
 import { fetchEntityForExport, type ExportableEntity } from '@/lib/export/entities'
 import { captureError } from '@/lib/logger'
-import { canAccessModule } from '@/lib/permissions'
+import { canExportAllScope } from '@/lib/permissions'
 import type { ActionResult } from '@/types/actions'
 
 const exportableEntityValues = [
@@ -46,7 +46,7 @@ export async function prepareExport(
   const parsed = prepareExportSchema.safeParse(input)
   if (!parsed.success) return { error: 'Ugyldigt input' }
 
-  const canExport = await canAccessModule(session.user.id, 'export', session.user.organizationId)
+  const canExport = await canExportAllScope(session.user.id, session.user.organizationId)
   if (!canExport) return { error: 'Du har ikke adgang til at eksportere data' }
 
   try {
@@ -85,7 +85,7 @@ export async function getExportPreview(
   const parsed = prepareExportSchema.safeParse(input)
   if (!parsed.success) return { error: 'Ugyldigt input' }
 
-  const canExport = await canAccessModule(session.user.id, 'export', session.user.organizationId)
+  const canExport = await canExportAllScope(session.user.id, session.user.organizationId)
   if (!canExport) return { error: 'Du har ikke adgang til at eksportere data' }
 
   try {

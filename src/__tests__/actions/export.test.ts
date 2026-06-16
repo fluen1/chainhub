@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 vi.mock('@/lib/auth', () => ({ auth: vi.fn() }))
 vi.mock('@/lib/permissions', () => ({
-  canAccessModule: vi.fn(),
+  canExportAllScope: vi.fn(),
 }))
 vi.mock('@/lib/audit', () => ({
   recordAuditEvent: vi.fn().mockResolvedValue(undefined),
@@ -32,7 +32,7 @@ import { prepareExport, getExportPreview } from '@/actions/export'
 import { recordAuditEvent } from '@/lib/audit'
 import { auth } from '@/lib/auth'
 import { fetchEntityForExport } from '@/lib/export/entities'
-import { canAccessModule } from '@/lib/permissions'
+import { canExportAllScope } from '@/lib/permissions'
 
 function makeSession() {
   return {
@@ -54,21 +54,21 @@ describe('prepareExport', () => {
 
   it('returnerer fejl ved ugyldigt entity', async () => {
     vi.mocked(auth).mockResolvedValue(makeSession() as any)
-    vi.mocked(canAccessModule).mockResolvedValue(true)
+    vi.mocked(canExportAllScope).mockResolvedValue(true)
     const result = await prepareExport({ entity: 'invalid' as any })
     expect(result).toMatchObject({ error: 'Ugyldigt input' })
   })
 
   it('returnerer fejl hvis mangler export-adgang', async () => {
     vi.mocked(auth).mockResolvedValue(makeSession() as any)
-    vi.mocked(canAccessModule).mockResolvedValue(false)
+    vi.mocked(canExportAllScope).mockResolvedValue(false)
     const result = await prepareExport({ entity: 'companies' })
     expect(result).toMatchObject({ error: 'Du har ikke adgang til at eksportere data' })
   })
 
   it('returnerer download-URL (happy path)', async () => {
     vi.mocked(auth).mockResolvedValue(makeSession() as any)
-    vi.mocked(canAccessModule).mockResolvedValue(true)
+    vi.mocked(canExportAllScope).mockResolvedValue(true)
 
     const result = await prepareExport({ entity: 'companies' })
 
@@ -78,7 +78,7 @@ describe('prepareExport', () => {
 
   it('returnerer download-URL for alle entity-typer', async () => {
     vi.mocked(auth).mockResolvedValue(makeSession() as any)
-    vi.mocked(canAccessModule).mockResolvedValue(true)
+    vi.mocked(canExportAllScope).mockResolvedValue(true)
 
     const entities = ['companies', 'contracts', 'cases', 'tasks', 'persons', 'visits'] as const
     for (const entity of entities) {
@@ -89,7 +89,7 @@ describe('prepareExport', () => {
 
   it('returnerer fejl hvis audit-log kaster', async () => {
     vi.mocked(auth).mockResolvedValue(makeSession() as any)
-    vi.mocked(canAccessModule).mockResolvedValue(true)
+    vi.mocked(canExportAllScope).mockResolvedValue(true)
     vi.mocked(recordAuditEvent).mockRejectedValue(new Error('DB fejl'))
 
     const result = await prepareExport({ entity: 'companies' })
@@ -106,21 +106,21 @@ describe('getExportPreview', () => {
 
   it('returnerer fejl ved ugyldigt entity', async () => {
     vi.mocked(auth).mockResolvedValue(makeSession() as any)
-    vi.mocked(canAccessModule).mockResolvedValue(true)
+    vi.mocked(canExportAllScope).mockResolvedValue(true)
     const result = await getExportPreview({ entity: 'invalid' as any })
     expect(result).toMatchObject({ error: 'Ugyldigt input' })
   })
 
   it('returnerer fejl hvis mangler export-adgang', async () => {
     vi.mocked(auth).mockResolvedValue(makeSession() as any)
-    vi.mocked(canAccessModule).mockResolvedValue(false)
+    vi.mocked(canExportAllScope).mockResolvedValue(false)
     const result = await getExportPreview({ entity: 'companies' })
     expect(result).toMatchObject({ error: 'Du har ikke adgang til at eksportere data' })
   })
 
   it('returnerer preview-data (happy path)', async () => {
     vi.mocked(auth).mockResolvedValue(makeSession() as any)
-    vi.mocked(canAccessModule).mockResolvedValue(true)
+    vi.mocked(canExportAllScope).mockResolvedValue(true)
 
     const result = await getExportPreview({ entity: 'companies' })
 
@@ -138,7 +138,7 @@ describe('getExportPreview', () => {
 
   it('begrænser preview til 50 rækker ved store datasets', async () => {
     vi.mocked(auth).mockResolvedValue(makeSession() as any)
-    vi.mocked(canAccessModule).mockResolvedValue(true)
+    vi.mocked(canExportAllScope).mockResolvedValue(true)
 
     // Mock 100 rækker
     const manyRows = Array.from({ length: 100 }, (_, i) => ({ id: `c${i}`, name: `Klinik ${i}` }))
@@ -159,7 +159,7 @@ describe('getExportPreview', () => {
 
   it('returnerer fejl hvis fetchEntityForExport kaster', async () => {
     vi.mocked(auth).mockResolvedValue(makeSession() as any)
-    vi.mocked(canAccessModule).mockResolvedValue(true)
+    vi.mocked(canExportAllScope).mockResolvedValue(true)
     vi.mocked(fetchEntityForExport).mockRejectedValueOnce(new Error('DB fejl'))
 
     const result = await getExportPreview({ entity: 'contracts' })
