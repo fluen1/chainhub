@@ -108,10 +108,18 @@ export const createContractSchema = z.object({
   displayName: z.string().min(1, 'Kontraktnavn er påkrævet').max(255),
   sensitivity: zodSensitivityLevel,
   status: zodContractStatus.optional(),
-  effectiveDate: z.string().optional(),
-  expiryDate: z.string().optional().or(z.literal('')),
+  effectiveDate: z
+    .string()
+    .optional()
+    .transform((v) => (v ? new Date(v) : undefined))
+    .pipe(z.date().optional()),
+  expiryDate: z
+    .string()
+    .optional()
+    .transform((v) => (v ? new Date(v) : undefined))
+    .pipe(z.date().optional()),
   noticePeriodDays: z.coerce.number().int().min(0).optional(),
-  notes: z.string().optional(),
+  notes: z.string().max(5000, 'Noter må maks. være 5000 tegn').optional(),
   reminder90Days: z.boolean().optional(),
   reminder30Days: z.boolean().optional(),
   reminder7Days: z.boolean().optional(),
@@ -124,5 +132,7 @@ export const updateContractStatusSchema = z.object({
   note: z.string().optional(),
 })
 
-export type CreateContractInput = z.infer<typeof createContractSchema>
+// Input-typen accepterer strenge (formData) — Zod transformer dem til Date internt
+export type CreateContractInput = z.input<typeof createContractSchema>
+export type CreateContractOutput = z.infer<typeof createContractSchema>
 export type UpdateContractStatusInput = z.infer<typeof updateContractStatusSchema>
