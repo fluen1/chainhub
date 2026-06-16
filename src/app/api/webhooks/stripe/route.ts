@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import type Stripe from 'stripe'
+import { planFromPrice } from '@/lib/billing/plan-from-price'
 import { prisma } from '@/lib/db'
 import { env } from '@/lib/env'
 import { captureError } from '@/lib/logger'
@@ -83,8 +84,11 @@ export async function POST(req: NextRequest) {
 
         if (!orgId) break
 
-        const plan = stripeSubscription.items.data[0]?.price.lookup_key ?? 'standard'
         const firstItem = stripeSubscription.items.data[0]
+        const plan = planFromPrice({
+          lookupKey: firstItem?.price.lookup_key,
+          priceId: firstItem?.price.id,
+        })
         const { periodStart, periodEnd } = resolvePeriod(firstItem)
 
         await prisma.subscription.upsert({
@@ -93,7 +97,7 @@ export async function POST(req: NextRequest) {
             organization_id: orgId,
             stripe_customer_id: customerId,
             stripe_subscription_id: subscriptionId,
-            plan,
+            plan: plan ?? 'trial',
             status: stripeSubscription.status,
             seat_count: 1,
             current_period_start: new Date(periodStart * 1000),
@@ -104,7 +108,7 @@ export async function POST(req: NextRequest) {
           },
           update: {
             stripe_subscription_id: subscriptionId,
-            plan,
+            ...(plan ? { plan } : {}),
             status: stripeSubscription.status,
             current_period_start: new Date(periodStart * 1000),
             current_period_end: new Date(periodEnd * 1000),
@@ -114,10 +118,17 @@ export async function POST(req: NextRequest) {
           },
         })
 
-        await prisma.organization.update({
-          where: { id: orgId },
-          data: { plan },
-        })
+        if (plan) {
+          await prisma.organization.update({
+            where: { id: orgId },
+            data: { plan },
+          })
+        } else {
+          captureError(new Error('Ukendt Stripe-price ved checkout — plan ikke opdateret'), {
+            namespace: 'api:webhooks:stripe',
+            extra: { step: 'checkout.session.completed', orgId, priceId: firstItem?.price.id },
+          })
+        }
 
         break
       }
@@ -140,8 +151,11 @@ export async function POST(req: NextRequest) {
           },
         })
 
-        // Opdater plan på organisation hvis lookup_key er tilgængeligt
-        const plan = firstItem?.price.lookup_key
+        // Opdater plan på organisation hvis vi kan mappe price → plan
+        const plan = planFromPrice({
+          lookupKey: firstItem?.price.lookup_key,
+          priceId: firstItem?.price.id,
+        })
         if (plan) {
           const existing = await prisma.subscription.findFirst({
             where: { stripe_customer_id: customerId },
@@ -177,6 +191,23 @@ export async function POST(req: NextRequest) {
             data: { plan: 'canceled' },
           })
         }
+
+        break
+      }
+
+      case 'invoice.payment_succeeded': {
+        const invoice = event.data.object as Stripe.Invoice
+        const customerId = resolveCustomerId(invoice.customer)
+        if (!customerId) break
+
+        // Ryd past_due → active. Rør IKKE canceled-abonnementer.
+        await prisma.subscription.updateMany({
+          where: {
+            stripe_customer_id: customerId,
+            status: { not: 'canceled' },
+          },
+          data: { status: 'active' },
+        })
 
         break
       }
