@@ -24,6 +24,7 @@ const envSchema = z.object({
   DIGEST_FROM_EMAIL: z.string().optional(),
   SENTRY_DSN: z.string().optional(),
   DIGEST_CRON_SECRET: requiredInProd('DIGEST_CRON_SECRET'),
+  CRON_SECRET: z.string().optional(), // Vercels standard — injiceres automatisk ved cron-kald
   R2_ACCOUNT_ID: z.string().optional(),
   R2_ACCESS_KEY_ID: z.string().optional(),
   R2_SECRET_ACCESS_KEY: z.string().optional(),

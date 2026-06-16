@@ -12,18 +12,27 @@ import {
 
 export async function POST(request: NextRequest) {
   // Auth: timing-safe sammenligning af cron-hemmelighed (forhindrer timing-angreb)
+  // Accepterer CRON_SECRET (Vercels standard, injiceres automatisk) ELLER DIGEST_CRON_SECRET
+  // (bagudkompatibel — bruges ved manuel curl og ældre opsætning).
   const authHeader = request.headers.get('authorization')
-  const cronSecret = process.env.DIGEST_CRON_SECRET
-  if (!cronSecret) {
+  const provided = authHeader ?? ''
+
+  const secrets = [process.env.CRON_SECRET, process.env.DIGEST_CRON_SECRET].filter(
+    Boolean
+  ) as string[]
+  if (secrets.length === 0) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
-  const expected = `Bearer ${cronSecret}`
-  const provided = authHeader ?? ''
-  // Buffer-længder SKAL matche — ellers er comparisons altid false (og returnerer 401 korrekt)
-  if (
-    provided.length !== expected.length ||
-    !timingSafeEqual(Buffer.from(provided), Buffer.from(expected))
-  ) {
+
+  const authorized = secrets.some((secret) => {
+    const expected = `Bearer ${secret}`
+    return (
+      provided.length === expected.length &&
+      timingSafeEqual(Buffer.from(provided), Buffer.from(expected))
+    )
+  })
+
+  if (!authorized) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
