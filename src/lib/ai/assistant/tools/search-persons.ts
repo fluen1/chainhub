@@ -29,6 +29,11 @@ export const searchPersonsTool: ToolDefinition = {
         deleted_at: null,
         AND: [
           {
+            // Scope: org-brede personer UDEN selskabstilknytning er synlige for alle
+            // (bevidst — admin-oprettede kontakter), ELLER personer tilknyttet et
+            // selskab brugeren har adgang til. `deleted_at: null` på relationen er en
+            // bevidst stramning ift. de øvrige callers (persons.ts/search.ts/dashboard.ts):
+            // en soft-deleted tilknytning giver ikke scope-adgang. Flag de øvrige til oprydning.
             OR: [
               { company_persons: { none: {} } },
               {
