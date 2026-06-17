@@ -72,7 +72,12 @@ jobs:
   e2e:
     name: E2E (Playwright)
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
+    # Officielt Playwright-image med browsere FORUDINSTALLERET (matcher playwright 1.59.1).
+    # Eliminerer `playwright install`-steppet, som hang ~29 min på extraction efter
+    # download (runner/Playwright-bug) og ramte timeout i 3 kørsler.
+    container:
+      image: mcr.microsoft.com/playwright:v1.59.1-noble
     services:
       postgres:
         image: postgres:15
@@ -80,8 +85,6 @@ jobs:
           POSTGRES_USER: chainhub
           POSTGRES_PASSWORD: chainhub
           POSTGRES_DB: chainhub_e2e
-        ports:
-          - 5432:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -100,30 +103,20 @@ jobs:
       - name: Generate Prisma client
         run: npx prisma generate
 
+      # I container-jobs nås service-containeren via service-navnet (postgres), ikke localhost.
       - name: Reset E2E database
         run: npm run db:e2e:reset
         env:
-          E2E_DATABASE_URL: postgresql://chainhub:chainhub@localhost:5432/chainhub_e2e
-          DATABASE_URL: postgresql://chainhub:chainhub@localhost:5432/chainhub_e2e
-          DIRECT_URL: postgresql://chainhub:chainhub@localhost:5432/chainhub_e2e
-
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            playwright-${{ runner.os }}-
-
-      - name: Install Playwright browsers
-        # Uden --with-deps: ubuntu-latest har allerede chromium-systembiblioteker.
-        # --with-deps kørte sudo apt-get som hang (>28 min → timeout) på runneren.
-        run: npx playwright install chromium
+          E2E_DATABASE_URL: postgresql://chainhub:chainhub@postgres:5432/chainhub_e2e
+          DATABASE_URL: postgresql://chainhub:chainhub@postgres:5432/chainhub_e2e
+          DIRECT_URL: postgresql://chainhub:chainhub@postgres:5432/chainhub_e2e
 
       - name: Run E2E tests
         run: npx playwright test
         env:
-          E2E_DATABASE_URL: postgresql://chainhub:chainhub@localhost:5432/chainhub_e2e
+          E2E_DATABASE_URL: postgresql://chainhub:chainhub@postgres:5432/chainhub_e2e
+          DATABASE_URL: postgresql://chainhub:chainhub@postgres:5432/chainhub_e2e
+          DIRECT_URL: postgresql://chainhub:chainhub@postgres:5432/chainhub_e2e
           E2E_PORT: 3010
           NEXTAUTH_SECRET: e2e-test-secret-min-32-chars-long-x
           NEXTAUTH_URL: http://localhost:3010
