@@ -194,6 +194,7 @@ Fuld detaljer i `docs/build/CONVENTIONS.md`. Kernepointer:
 - **Fejl:** `ActionResult<T>` return, `toast.error()` i UI, dansk besked
 - **Test:** Happy path + uautoriseret + forkert tenant + ugyldig input pr. action
 - **Git:** `[type]: beskrivelse på dansk` (feat/fix/chore/docs/refactor)
+- **⚠️ Lockfile:** `package-lock.json` SKAL genereres på Linux (CI = ubuntu-latest). En Windows-genereret lock brækker `npm ci` i CI (EUSAGE — manglende peer-subtræer som webpack/ajv pga. OS-afhængig dedup). Regenerér via Docker: `MSYS_NO_PATHCONV=1 docker run --rm -v "$(pwd -W):/app" -w /app node:24 npm install --package-lock-only`. Dependabot-locks er OK (GitHub = Linux). Commit ALDRIG en lock genereret af lokal Windows-`npm install`.
 
 ---
 
