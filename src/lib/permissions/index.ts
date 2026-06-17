@@ -1,4 +1,5 @@
 import { type SensitivityLevel, type UserRole } from '@prisma/client'
+import { cache } from 'react'
 import { prisma } from '@/lib/db'
 
 // Sensitivity hierarchy — higher index = more sensitive
@@ -30,23 +31,25 @@ const GROUP_ROLES: UserRole[] = [
   'GROUP_READONLY',
 ]
 
-async function getUserRoles(
-  userId: string,
-  organizationId: string
-): Promise<
-  Array<{
-    role: UserRole
-    scope: string
-    company_ids: string[]
-  }>
-> {
-  // organization_id-filter forhindrer cross-tenant rolle-leak ved UUID-kollision
-  const assignments = await prisma.userRoleAssignment.findMany({
-    where: { user_id: userId, organization_id: organizationId },
-    select: { role: true, scope: true, company_ids: true },
-  })
-  return assignments
-}
+const getUserRoles = cache(
+  async (
+    userId: string,
+    organizationId: string
+  ): Promise<
+    Array<{
+      role: UserRole
+      scope: string
+      company_ids: string[]
+    }>
+  > => {
+    // organization_id-filter forhindrer cross-tenant rolle-leak ved UUID-kollision
+    const assignments = await prisma.userRoleAssignment.findMany({
+      where: { user_id: userId, organization_id: organizationId },
+      select: { role: true, scope: true, company_ids: true },
+    })
+    return assignments
+  }
+)
 
 export async function canAccessCompany(
   userId: string,

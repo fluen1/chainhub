@@ -52,10 +52,13 @@ export function TasksGroupedView({
         const hasUrgent = rows.some(
           (r) => r.fristDays <= 1 && r.fristDays < 9999 && r.rawStatus !== 'LUKKET'
         )
+        const contentId = `task-group-${name.replace(/\s+/g, '-').toLowerCase()}`
         return (
           <div key={name}>
             <button
               type="button"
+              aria-expanded={isOpen}
+              aria-controls={contentId}
               onClick={() => toggle(name)}
               className="flex w-full items-center gap-2 border-b border-b-border bg-b-row-hover px-3 py-1.5 text-left hover:bg-[#ecedf0]"
             >
@@ -75,7 +78,7 @@ export function TasksGroupedView({
               )}
             </button>
             {isOpen && (
-              <table className="w-full table-fixed border-collapse">
+              <table id={contentId} className="w-full table-fixed border-collapse">
                 <tbody>
                   {rows.map((t) => (
                     <TaskTr key={t.id} t={t} hideSelskab onClick={() => onRowClick(t.id)} />

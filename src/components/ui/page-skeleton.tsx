@@ -1,6 +1,11 @@
 export function PageSkeleton({ rows = 6 }: { rows?: number }) {
   return (
-    <div className="space-y-6 animate-pulse">
+    <div
+      role="status"
+      aria-label="Indlæser indhold"
+      aria-busy="true"
+      className="space-y-6 animate-pulse"
+    >
       {/* Header skeleton */}
       <div className="flex items-center justify-between">
         <div>
@@ -39,7 +44,12 @@ export function PageSkeleton({ rows = 6 }: { rows?: number }) {
 
 export function DashboardSkeleton() {
   return (
-    <div className="p-5 h-full animate-pulse">
+    <div
+      role="status"
+      aria-label="Indlæser dashboard"
+      aria-busy="true"
+      className="p-5 h-full animate-pulse"
+    >
       <div className="grid grid-cols-[1fr_320px] gap-5 max-w-[1400px] mx-auto">
         {/* Timeline skeleton */}
         <div className="space-y-4">

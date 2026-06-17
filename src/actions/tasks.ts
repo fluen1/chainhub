@@ -145,22 +145,11 @@ export async function getTasksPaginated(
         assigned_to: true,
         assignee: { select: { id: true, name: true } },
         case: { select: { id: true, title: true } },
+        company: { select: { id: true, name: true } },
       },
     }),
     prisma.task.count({ where }),
   ])
-
-  // Resolv company-navne (Task.company_id har ingen direkte relation)
-  const companyIdsInPage = Array.from(
-    new Set(rawTasks.map((t) => t.company_id).filter((id): id is string => !!id))
-  )
-  const companies = companyIdsInPage.length
-    ? await prisma.company.findMany({
-        where: { id: { in: companyIdsInPage }, organization_id: orgId, deleted_at: null },
-        select: { id: true, name: true },
-      })
-    : []
-  const companyMap = new Map(companies.map((c) => [c.id, c.name]))
 
   const rows: TaskRow[] = rawTasks.map((t) => {
     const dDue = t.due_date ? daysUntil(t.due_date) : null
@@ -176,7 +165,7 @@ export async function getTasksPaginated(
     return {
       id: t.id,
       titel: t.title,
-      selskab: t.company_id ? (companyMap.get(t.company_id) ?? '—') : '—',
+      selskab: t.company?.name ?? '—',
       type: inferTaskType(t),
       prio: getPriorityLabel(t.priority),
       rawPrio: t.priority,
