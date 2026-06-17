@@ -16,7 +16,15 @@ const createAccountSchema = z.object({
   name: z.string().min(2, 'Navn skal være mindst 2 tegn'),
   email: z.string().email('Ugyldig e-mailadresse'),
   password: z.string().min(8, 'Adgangskoden skal være mindst 8 tegn'),
+  termsAccepted: z.literal(true, {
+    message: 'Du skal acceptere servicevilkårene for at fortsætte',
+  }),
+  dpaAccepted: z.literal(true, {
+    message: 'Du skal acceptere databehandleraftalen for at fortsætte',
+  }),
 })
+
+export type CreateAccountInput = z.infer<typeof createAccountSchema>
 
 // organizationId fjernet — hentes fra session (§7: aldrig orgId som parameter)
 const updateOrganizationOnboardingSchema = z.object({
@@ -25,7 +33,6 @@ const updateOrganizationOnboardingSchema = z.object({
   estimatedLocations: z.string().optional(),
 })
 
-export type CreateAccountInput = z.infer<typeof createAccountSchema>
 export type UpdateOrganizationOnboardingInput = z.infer<typeof updateOrganizationOnboardingSchema>
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -65,11 +72,15 @@ export async function createAccount(
     const planExpiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
 
     const result = await prisma.$transaction(async (tx) => {
+      const acceptedAt = new Date()
+
       const org = await tx.organization.create({
         data: {
           name: orgName,
           plan: 'trial',
           plan_expires_at: planExpiresAt,
+          terms_accepted_at: acceptedAt,
+          dpa_accepted_at: acceptedAt,
         },
       })
 

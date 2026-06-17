@@ -19,6 +19,8 @@ export default function SignupPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPw, setShowPw] = useState(false)
+  const [termsAccepted, setTermsAccepted] = useState(false)
+  const [dpaAccepted, setDpaAccepted] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -34,7 +36,13 @@ export default function SignupPage() {
     setError(null)
     setLoading(true)
 
-    const result = await createAccount({ name: name.trim(), email: email.trim(), password })
+    const result = await createAccount({
+      name: name.trim(),
+      email: email.trim(),
+      password,
+      termsAccepted: termsAccepted as true,
+      dpaAccepted: dpaAccepted as true,
+    })
 
     if ('error' in result && result.error) {
       setError(result.error)
@@ -61,7 +69,12 @@ export default function SignupPage() {
   }
 
   const canSubmit =
-    name.trim().length >= 2 && email.trim().length > 0 && password.length >= 8 && !loading
+    name.trim().length >= 2 &&
+    email.trim().length > 0 &&
+    password.length >= 8 &&
+    termsAccepted &&
+    dpaAccepted &&
+    !loading
 
   return (
     <div className="flex min-h-screen flex-col bg-b-canvas text-b-1">
@@ -193,6 +206,55 @@ export default function SignupPage() {
                 </button>
               </div>
               <p className="text-[11px] text-b-3">Mindst 8 tegn</p>
+            </div>
+
+            {/* Accept-checkboxe — obligatoriske (GDPR art. 28 + servicevilkår) */}
+            <div className="flex flex-col gap-2 rounded-[4px] border border-b-border bg-b-panel-h px-3 py-2.5">
+              <label className="flex cursor-pointer items-start gap-2">
+                <input
+                  type="checkbox"
+                  checked={termsAccepted}
+                  onChange={(e) => setTermsAccepted(e.target.checked)}
+                  disabled={loading}
+                  className="mt-0.5 shrink-0 accent-b-blue-fg"
+                  aria-required="true"
+                />
+                <span className="text-[12px] text-b-2">
+                  Jeg accepterer{' '}
+                  <a
+                    href="/legal/vilkaar"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-b-blue-fg underline hover:no-underline"
+                  >
+                    servicevilkårene
+                  </a>{' '}
+                  (påkrævet)
+                </span>
+              </label>
+
+              <label className="flex cursor-pointer items-start gap-2">
+                <input
+                  type="checkbox"
+                  checked={dpaAccepted}
+                  onChange={(e) => setDpaAccepted(e.target.checked)}
+                  disabled={loading}
+                  className="mt-0.5 shrink-0 accent-b-blue-fg"
+                  aria-required="true"
+                />
+                <span className="text-[12px] text-b-2">
+                  Jeg accepterer{' '}
+                  <a
+                    href="/legal/databehandleraftale"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-b-blue-fg underline hover:no-underline"
+                  >
+                    databehandleraftalen
+                  </a>{' '}
+                  (påkrævet — GDPR art. 28)
+                </span>
+              </label>
             </div>
 
             <button

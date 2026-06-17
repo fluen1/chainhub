@@ -105,7 +105,10 @@ export function GdprPanel({ personId, personFullName, isAdmin }: GdprPanelProps)
         className="max-w-md"
       >
         <div className="flex flex-col gap-4">
-          <div className="rounded-[4px] border border-red-200 bg-red-50 p-3 text-[12px] text-red-700">
+          <div
+            role="alert"
+            className="rounded-[4px] border border-red-200 bg-red-50 p-3 text-[12px] text-red-700"
+          >
             <strong>Advarsel: Denne handling kan ikke fortrydes.</strong> Al persondata
             pseudonymiseres og alle relationer afregistreres permanent (GDPR Art. 17). Audit-loggen
             bevares af juridiske hensyn.

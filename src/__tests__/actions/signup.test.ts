@@ -66,6 +66,8 @@ describe('createAccount', () => {
       name: 'Philip Birkenborg',
       email: 'philip@test.dk',
       password: 'sikkerPass1',
+      termsAccepted: true,
+      dpaAccepted: true,
     })
 
     expect('error' in result).toBe(false)
@@ -80,6 +82,8 @@ describe('createAccount', () => {
       name: 'Philip Birkenborg',
       email: 'philip@test.dk',
       password: 'kort',
+      termsAccepted: true,
+      dpaAccepted: true,
     })
 
     expect('error' in result).toBe(true)
@@ -93,6 +97,8 @@ describe('createAccount', () => {
       name: 'P',
       email: 'philip@test.dk',
       password: 'godAdgangskode1',
+      termsAccepted: true,
+      dpaAccepted: true,
     })
 
     expect('error' in result).toBe(true)
@@ -106,6 +112,8 @@ describe('createAccount', () => {
       name: 'Philip Birkenborg',
       email: 'ikke-en-email',
       password: 'godAdgangskode1',
+      termsAccepted: true,
+      dpaAccepted: true,
     })
 
     expect('error' in result).toBe(true)
@@ -122,6 +130,8 @@ describe('createAccount', () => {
       name: 'Philip Birkenborg',
       email: 'allerede@test.dk',
       password: 'godAdgangskode1',
+      termsAccepted: true,
+      dpaAccepted: true,
     })
 
     expect('error' in result).toBe(true)
