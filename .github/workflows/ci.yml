@@ -116,7 +116,9 @@ jobs:
             playwright-${{ runner.os }}-
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        # Uden --with-deps: ubuntu-latest har allerede chromium-systembiblioteker.
+        # --with-deps kørte sudo apt-get som hang (>28 min → timeout) på runneren.
+        run: npx playwright install chromium
 
       - name: Run E2E tests
         run: npx playwright test
