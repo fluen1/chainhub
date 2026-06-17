@@ -142,7 +142,10 @@ jobs:
   deploy:
     name: Deploy to Vercel (production)
     needs: [lint-test, build]
-    if: github.ref == 'refs/heads/master'
+    # Kører kun på master NÅR deploy er aktiveret via repo-variablen VERCEL_DEPLOY='true'.
+    # Indtil Vercel-secrets (VERCEL_TOKEN/ORG_ID/PROJECT_ID) er sat, holdes jobbet skipped
+    # så master-CI er grøn. Aktivér: gh variable set VERCEL_DEPLOY --body true (+ sæt secrets).
+    if: ${{ github.ref == 'refs/heads/master' && vars.VERCEL_DEPLOY == 'true' }}
     runs-on: ubuntu-latest
     # Kræver tre GitHub Secrets:
     #   VERCEL_TOKEN      — fra vercel.com/account/tokens
