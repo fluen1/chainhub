@@ -307,6 +307,8 @@ model Organization {
   created_at           DateTime  @default(now())
   updated_at      DateTime  @updatedAt
   created_by      String?
+  terms_accepted_at    DateTime?
+  dpa_accepted_at      DateTime?
 
   users                 User[]
   companies             Company[]

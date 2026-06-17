@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
+import { CookieWithdrawPanel } from '@/components/settings/CookieWithdrawPanel'
 import { CreateUserForm } from '@/components/settings/CreateUserForm'
 import { OrganizationForm } from '@/components/settings/organization-form'
 import { UserActions } from '@/components/settings/UserActions'
@@ -542,6 +543,7 @@ function SikkerhedSection() {
   return (
     <>
       <PageHeader title="Sikkerhed" meta="2FA, session-timeout, audit log" />
+      <CookieWithdrawPanel />
       <Panel>
         <PanelHeader title="Under udvikling" />
         <div className="px-3 py-3">

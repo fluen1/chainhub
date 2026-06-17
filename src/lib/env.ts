@@ -47,6 +47,11 @@ const envSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   VERCEL_URL: z.string().optional(),
+  CHAINHUB_CVR: z
+    .string()
+    .regex(/^\d{8}$/, 'CHAINHUB_CVR skal være 8 cifre')
+    .optional(),
+  CHAINHUB_ADDRESS: z.string().optional(),
 })
 
 const parsed = envSchema.safeParse(process.env)

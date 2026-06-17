@@ -8,6 +8,7 @@ import {
   LegalMailLink,
   LegalExternalLink,
 } from '@/components/ui/b/LegalPageLayout'
+import { env } from '@/lib/env'
 
 export const metadata: Metadata = {
   title: 'Privatlivspolitik',
@@ -29,7 +30,8 @@ export default function PrivacyPage() {
         </p>
         <LegalContactBox>
           <p className="font-semibold text-b-1">ChainHub</p>
-          <p>CVR: [indsættes ved registrering]</p>
+          {env.CHAINHUB_CVR && <p>CVR: {env.CHAINHUB_CVR}</p>}
+          {env.CHAINHUB_ADDRESS && <p>{env.CHAINHUB_ADDRESS}</p>}
           <p>Danmark</p>
           <p className="mt-1">
             E-mail: <LegalMailLink address="kontakt@chainhub.dk" />
