@@ -7,7 +7,9 @@ import { z } from 'zod'
 import { invalidateCompanyInsightsCache } from '@/lib/ai/invalidate-cache'
 import { recordAuditEvent } from '@/lib/audit'
 import { auth } from '@/lib/auth'
+import { formatShortDate } from '@/lib/date-helpers'
 import { prisma } from '@/lib/db'
+import { getCaseStatusLabel, getCaseTypeLabel } from '@/lib/labels'
 import { captureError } from '@/lib/logger'
 import {
   canAccessCompany,
@@ -596,26 +598,17 @@ export async function getCasesPageData(page = 1, pageSize = 25): Promise<CasesPa
   const hasAccess = await canAccessModule(session.user.id, 'cases', orgId)
   if (!hasAccess) return { cases: [], totalCount: 0, page, pageSize }
 
-  const companyIds = await getAccessibleCompanies(session.user.id, orgId)
+  const [companyIds, allowedLevels] = await Promise.all([
+    getAccessibleCompanies(session.user.id, orgId),
+    getAllowedSensitivityLevels(session.user.id, orgId),
+  ])
   if (companyIds.length === 0) return { cases: [], totalCount: 0, page, pageSize }
-
-  const caseCompanyLinks = await prisma.caseCompany.findMany({
-    where: {
-      organization_id: orgId,
-      company_id: { in: companyIds },
-    },
-    select: { case_id: true },
-    distinct: ['case_id'],
-  })
-  const allowedLevels = await getAllowedSensitivityLevels(session.user.id, orgId)
-  const caseIds = caseCompanyLinks.map((cc) => cc.case_id)
-  if (caseIds.length === 0) return { cases: [], totalCount: 0, page, pageSize }
 
   const caseWhere = {
     organization_id: orgId,
     deleted_at: null,
-    id: { in: caseIds },
     sensitivity: { in: allowedLevels },
+    case_companies: { some: { company_id: { in: companyIds } } },
   }
 
   const [rawCases, totalCount] = await Promise.all([
@@ -646,8 +639,6 @@ export async function getCasesPageData(page = 1, pageSize = 25): Promise<CasesPa
   const userMap = new Map(users.map((u) => [u.id, u.name ?? u.email ?? 'Ukendt']))
 
   const today = new Date()
-  const { getCaseStatusLabel, getCaseTypeLabel } = await import('@/lib/labels')
-  const { formatShortDate } = await import('@/lib/date-helpers')
 
   const cases: CaseListRow[] = rawCases.map((c) => {
     const dueMs = c.due_date?.getTime() ?? null

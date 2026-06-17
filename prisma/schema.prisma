@@ -449,6 +449,7 @@ model Company {
   insights_cache  CompanyInsightsCache?
 
   company_notes   CompanyNote[]
+  tasks           Task[]          @relation("TaskCompany")
 
   @@unique([organization_id, cvr])
   @@index([organization_id, deleted_at])
@@ -773,6 +774,7 @@ model Task {
   organization Organization @relation(fields: [organization_id], references: [id])
   assignee     User?        @relation("TaskAssignedTo", fields: [assigned_to], references: [id])
   case         Case?        @relation(fields: [case_id], references: [id])
+  company      Company?     @relation("TaskCompany", fields: [company_id], references: [id])
   comments     Comment[]
   history      TaskHistory[]
 
@@ -912,6 +914,7 @@ model FinancialMetric {
   @@unique([organization_id, company_id, metric_type, period_type, period_year])
   @@index([organization_id, company_id])
   @@index([organization_id, company_id, metric_type, period_year])
+  @@index([organization_id, company_id, period_type, metric_type, period_year])
 }
 
 model TimeEntry {

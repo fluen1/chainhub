@@ -131,7 +131,7 @@ export function GdprPanel({ personId, personFullName, isAdmin }: GdprPanelProps)
               className="rounded-[4px] border border-gray-300 bg-white px-2.5 py-1.5 text-[13px] text-gray-900 placeholder:text-gray-400 focus:border-transparent focus:outline focus:outline-2 focus:outline-red-500 focus:outline-offset-[-1px]"
             />
             {confirmName.length > 0 && !nameMatches && (
-              <p className="text-[11px] text-red-600">
+              <p role="alert" className="text-[11px] text-red-600">
                 Navnet matcher ikke — skriv nøjagtigt: {personFullName}
               </p>
             )}

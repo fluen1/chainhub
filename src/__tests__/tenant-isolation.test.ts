@@ -162,10 +162,12 @@ describe('Tenant isolation — Prisma queries inkluderer organization_id', () =>
     )
   })
 
-  it('getCasesPageData sender organization_id til prisma.caseCompany.findMany', async () => {
+  it('getCasesPageData sender organization_id til prisma.case.findMany (case_companies JOIN)', async () => {
     await getCasesPageData()
 
-    expect(mockPrisma.caseCompany.findMany).toHaveBeenCalledWith(
+    // Efter perf-fix: org-scoped JOIN i case.findMany WHERE i stedet for separat caseCompany.findMany
+    expect(mockPrisma.caseCompany.findMany).not.toHaveBeenCalled()
+    expect(mockPrisma.case.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
           organization_id: ORG_ID,

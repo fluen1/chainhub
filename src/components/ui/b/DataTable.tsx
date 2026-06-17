@@ -54,6 +54,15 @@ export function Th<TKey extends string>({
   return (
     <th
       onClick={clickable && col ? () => onSort(col) : undefined}
+      aria-sort={
+        clickable && col
+          ? sorted
+            ? sortDir === 'asc'
+              ? 'ascending'
+              : 'descending'
+            : 'none'
+          : undefined
+      }
       className={cn(
         'truncate border-b border-b-border bg-b-panel-h px-3 py-1.5 text-[10px] font-semibold uppercase',
         sorted ? 'text-b-1' : 'text-b-2',
@@ -63,7 +72,11 @@ export function Th<TKey extends string>({
       style={styleObj}
     >
       {children}
-      {sorted && <span className="ml-1">{sortDir === 'asc' ? '↑' : '↓'}</span>}
+      {sorted && (
+        <span className="ml-1" aria-hidden="true">
+          {sortDir === 'asc' ? '↑' : '↓'}
+        </span>
+      )}
     </th>
   )
 }
