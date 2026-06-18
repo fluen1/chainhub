@@ -139,26 +139,6 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
-  deploy:
-    name: Deploy to Vercel (production)
-    needs: [lint-test, build]
-    # Kører kun på master NÅR deploy er aktiveret via repo-variablen VERCEL_DEPLOY='true'.
-    # Indtil Vercel-secrets (VERCEL_TOKEN/ORG_ID/PROJECT_ID) er sat, holdes jobbet skipped
-    # så master-CI er grøn. Aktivér: gh variable set VERCEL_DEPLOY --body true (+ sæt secrets).
-    if: ${{ github.ref == 'refs/heads/master' && vars.VERCEL_DEPLOY == 'true' }}
-    runs-on: ubuntu-latest
-    # Kræver tre GitHub Secrets:
-    #   VERCEL_TOKEN      — fra vercel.com/account/tokens
-    #   VERCEL_ORG_ID     — fra `vercel link` (.vercel/project.json → orgId)
-    #   VERCEL_PROJECT_ID — fra `vercel link` (.vercel/project.json → projectId)
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Vercel CLI
-        run: npm install -g vercel
-
-      - name: Deploy to Vercel
-        run: vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  # Deploy håndteres af Vercels egen Git-integration (auto-deploy på master-push),
+  # ikke af GitHub Actions. Tidligere Vercel-CLI-deploy-job fjernet for at undgå
+  # dobbelt-deploy. Vercel-projektet kræver prisma generate ved install (postinstall).
