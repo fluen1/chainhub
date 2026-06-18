@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 
 // env.ts evaluerer process.env ved modul-load → vi isolerer moduler pr. test
-describe('env — Stripe price-IDs requiredInProd', () => {
+describe('env — staged launch: Stripe valgfri, Upstash påkrævet', () => {
   const ORIGINAL = { ...process.env }
 
   beforeEach(() => {
@@ -28,18 +28,30 @@ describe('env — Stripe price-IDs requiredInProd', () => {
     process.env.STRIPE_WEBHOOK_SECRET = 'whsec_x'
   }
 
-  it('kaster når STRIPE_BASIS_PRICE_ID mangler i production', async () => {
+  // STAGED_LAUNCH (18/6): billing/AI/digest er valgfri i prod til nøglerne sættes —
+  // env må IKKE kaste på manglende Stripe price-IDs. (Sæt STAGED_LAUNCH=false → kræves igen.)
+  it('tillader manglende STRIPE_BASIS_PRICE_ID i production under staged launch', async () => {
     setProdBase()
     process.env.STRIPE_PLUS_PRICE_ID = 'price_plus'
     delete process.env.STRIPE_BASIS_PRICE_ID
-    await expect(import('@/lib/env')).rejects.toThrow(/STRIPE_BASIS_PRICE_ID/)
+    await expect(import('@/lib/env')).resolves.toBeDefined()
   })
 
-  it('kaster når STRIPE_PLUS_PRICE_ID mangler i production', async () => {
+  it('tillader manglende STRIPE_PLUS_PRICE_ID i production under staged launch', async () => {
     setProdBase()
     process.env.STRIPE_BASIS_PRICE_ID = 'price_basis'
     delete process.env.STRIPE_PLUS_PRICE_ID
-    await expect(import('@/lib/env')).rejects.toThrow(/STRIPE_PLUS_PRICE_ID/)
+    await expect(import('@/lib/env')).resolves.toBeDefined()
+  })
+
+  // Sikkerhedskontrol: Upstash (login-rate-limiting) kan ALDRIG staged-launches væk.
+  it('kaster når UPSTASH mangler i production (sikkerhedskontrol)', async () => {
+    setProdBase()
+    process.env.STRIPE_BASIS_PRICE_ID = 'price_basis'
+    process.env.STRIPE_PLUS_PRICE_ID = 'price_plus'
+    delete process.env.UPSTASH_REDIS_REST_URL
+    delete process.env.UPSTASH_REDIS_REST_TOKEN
+    await expect(import('@/lib/env')).rejects.toThrow(/UPSTASH/)
   })
 
   it('accepterer manglende price-IDs udenfor production', async () => {
