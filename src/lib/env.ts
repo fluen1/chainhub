@@ -5,10 +5,10 @@ import { z } from 'zod'
 const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build'
 const isProd = process.env.NODE_ENV === 'production' && !isBuildPhase
 
-// STAGED LAUNCH (18/6): siden skal kunne STARTE i prod uden Stripe/Upstash/OpenAI/
-// digest-cron endnu — de funktioner er slukket indtil nøglerne tilføjes (klienterne er
-// lazy + guarded, så de fejler kun hvis funktionen faktisk bruges uden nøgle).
-// DATABASE_URL + NEXTAUTH_SECRET/URL kræves stadig altid (de står uden for denne helper).
+// STAGED LAUNCH (18/6): siden skal kunne STARTE i prod uden at ALLE
+// forretnings-features er konfigureret endnu. Dækker KUN billing (Stripe), AI (OpenAI)
+// og digest-cron — funktioner der er lazy+guarded og bare er slukket til nøglerne sættes.
+// ⚠️ Dækker ALDRIG auth/sikkerheds-kontroller (se securityRequiredInProd nedenfor).
 // ⚠️ SÆT STAGED_LAUNCH = false FØR FØRSTE BETALENDE KUNDE — så håndhæves Stripe m.fl. igen.
 const STAGED_LAUNCH = true
 
@@ -17,6 +17,17 @@ const requiredInProd = (msg: string) =>
     ? z
         .string({ error: () => `${msg} — påkrævet i production` })
         .min(1, `${msg} — påkrævet i production`)
+    : z.string().optional()
+
+// Sikkerheds-kritiske vars: ALTID påkrævet i production, uafhængigt af STAGED_LAUNCH.
+// Fx Upstash, der driver login-rate-limiting — uden den er in-memory-fallbacken
+// virkningsløs på tværs af serverless-instanser (fail-open mod brute-force). Auth
+// må aldrig kunne "staged-launches" væk.
+const securityRequiredInProd = (msg: string) =>
+  isProd
+    ? z
+        .string({ error: () => `${msg} — påkrævet i production (sikkerhedskontrol)` })
+        .min(1, `${msg} — påkrævet i production (sikkerhedskontrol)`)
     : z.string().optional()
 
 const envSchema = z.object({
@@ -42,8 +53,8 @@ const envSchema = z.object({
   R2_ACCESS_KEY_ID: z.string().optional(),
   R2_SECRET_ACCESS_KEY: z.string().optional(),
   R2_BUCKET: z.string().optional(),
-  UPSTASH_REDIS_REST_URL: requiredInProd('UPSTASH_REDIS_REST_URL'),
-  UPSTASH_REDIS_REST_TOKEN: requiredInProd('UPSTASH_REDIS_REST_TOKEN'),
+  UPSTASH_REDIS_REST_URL: securityRequiredInProd('UPSTASH_REDIS_REST_URL'),
+  UPSTASH_REDIS_REST_TOKEN: securityRequiredInProd('UPSTASH_REDIS_REST_TOKEN'),
   NEXT_PUBLIC_POSTHOG_KEY: z.string().optional(),
   NEXT_PUBLIC_POSTHOG_HOST: z.string().url().optional(),
   STRIPE_SECRET_KEY: requiredInProd('STRIPE_SECRET_KEY'),
