@@ -5,8 +5,15 @@ import { z } from 'zod'
 const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build'
 const isProd = process.env.NODE_ENV === 'production' && !isBuildPhase
 
+// STAGED LAUNCH (18/6): siden skal kunne STARTE i prod uden Stripe/Upstash/OpenAI/
+// digest-cron endnu — de funktioner er slukket indtil nøglerne tilføjes (klienterne er
+// lazy + guarded, så de fejler kun hvis funktionen faktisk bruges uden nøgle).
+// DATABASE_URL + NEXTAUTH_SECRET/URL kræves stadig altid (de står uden for denne helper).
+// ⚠️ SÆT STAGED_LAUNCH = false FØR FØRSTE BETALENDE KUNDE — så håndhæves Stripe m.fl. igen.
+const STAGED_LAUNCH = true
+
 const requiredInProd = (msg: string) =>
-  isProd
+  isProd && !STAGED_LAUNCH
     ? z
         .string({ error: () => `${msg} — påkrævet i production` })
         .min(1, `${msg} — påkrævet i production`)
