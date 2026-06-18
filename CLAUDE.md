@@ -93,6 +93,8 @@ export async function myAction(orgId: string, data: FormData) { ... }
 
 Miljøvariable valideres ved startup via `src/lib/env.ts`. Tilføj nye påkrævede variabler der — aldrig `process.env.X` direkte uden fallback.
 
+**Staged launch (18/6):** `env.ts` har en `STAGED_LAUNCH=true`-flag der gør billing (Stripe), AI (OpenAI) og digest-cron VALGFRI i prod, så siden kan køre uden dem (klienterne er lazy+guarded → funktionen er bare slukket til nøglen sættes). DATABASE_URL + NEXTAUTH samt **Upstash (login-rate-limiting, sikkerhedskontrol via `securityRequiredInProd`)** kræves ALTID i prod. ⚠️ Sæt `STAGED_LAUNCH=false` før første betalende kunde. Vercel-prod-env er sat (DB-pooler IPv4, NEXTAUTH, Resend, Upstash); Stripe-nøgler venter.
+
 ### 9. Server-side pagination via `parsePaginationParams`
 
 ```typescript
