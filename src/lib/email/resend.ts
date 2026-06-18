@@ -9,7 +9,13 @@ function escHtml(s: string): string {
     .replace(/'/g, '&#39;')
 }
 
-const resendApiKey = process.env.RESEND_API_KEY
+// Strip BOM (U+FEFF) + whitespace: en nøgle sat fra en BOM-kilde giver ellers
+// "Cannot convert argument to a ByteString" når Resend-SDK'en bygger Bearer-headeren
+// (crasher prod-build ved modul-load). Defensivt uanset hvordan secret'en blev sat.
+const BOM = String.fromCharCode(0xfeff)
+const rawResendKey = process.env.RESEND_API_KEY ?? ''
+const resendApiKey =
+  (rawResendKey.startsWith(BOM) ? rawResendKey.slice(1) : rawResendKey).trim() || undefined
 
 export const resend = resendApiKey ? new Resend(resendApiKey) : null
 
