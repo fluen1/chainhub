@@ -68,7 +68,7 @@ export function CompaniesFlatTable({
       <table className="w-full table-fixed border-collapse">
         <thead>
           <tr>
-            <Th col="navn" sortCol={sortCol} sortDir={sortDir} onSort={onSort}>
+            <Th col="navn" sortCol={sortCol} sortDir={sortDir} onSort={onSort} sticky>
               Selskab
             </Th>
             <Th col="cvr" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={104}>
@@ -128,8 +128,8 @@ export const CompanyTr = memo(function CompanyTr({
 }) {
   const hb = healthLabel(c.health)
   return (
-    <Tr onClick={onClick}>
-      <Td>
+    <Tr onClick={onClick} ariaLabel={`${c.navn} – åbn selskab`}>
+      <Td sticky>
         <div className="flex items-center gap-2">
           <span className={`h-2 w-2 shrink-0 rounded-full ${healthDot(c.health)}`} />
           <span className="truncate font-medium text-b-1">{c.navn}</span>

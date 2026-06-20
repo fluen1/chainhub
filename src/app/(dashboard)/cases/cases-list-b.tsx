@@ -412,7 +412,7 @@ function FlatTable({
       <table className="w-full table-fixed border-collapse">
         <thead>
           <tr>
-            <Th col="nr" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={104}>
+            <Th col="nr" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={104} sticky>
               Nr.
             </Th>
             <Th col="type" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={130}>
@@ -454,8 +454,8 @@ function CaseTr({
   hideSelskab?: boolean
 }) {
   return (
-    <Tr onClick={onClick}>
-      <Td width={104} secondary>
+    <Tr onClick={onClick} ariaLabel={`Sag ${c.nr} – åbn`}>
+      <Td width={104} secondary sticky>
         {c.nr}
       </Td>
       <Td width={130}>

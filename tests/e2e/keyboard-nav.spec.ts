@@ -50,6 +50,40 @@ test.describe('keyboard navigation', () => {
     }
   })
 
+  test('Liste-række er tastatur-fokuserbar og Enter åbner detalje', async ({
+    loggedInPage: page,
+  }) => {
+    await page.goto('/companies')
+    await page.waitForLoadState('networkidle')
+
+    // Klikbare rækker er nu fokuserbare (tabindex=0) med skærmlæser-navn
+    const row = page.locator('tbody tr[tabindex="0"]').first()
+    await expect(row).toHaveAttribute('aria-label', /åbn/)
+    await row.focus()
+    await expect(row).toBeFocused()
+
+    // Enter aktiverer rækken → åbner selskabets detaljeside
+    await page.keyboard.press('Enter')
+    await expect(page).toHaveURL(/\/companies\/[0-9a-f-]+$/)
+  })
+
+  test('Sorterbar kolonne-header er en tastatur-aktiverbar knap', async ({
+    loggedInPage: page,
+  }) => {
+    await page.goto('/companies')
+    await page.waitForLoadState('networkidle')
+
+    // Sort-headers er nu rigtige <button>'er (tidligere mus-only <th onClick>)
+    const sortButton = page.getByRole('button', { name: 'Selskab' })
+    await sortButton.focus()
+    await expect(sortButton).toBeFocused()
+
+    // Enter sorterer → headeren afspejler sorteringen via aria-sort
+    await page.keyboard.press('Enter')
+    const navTh = page.locator('th', { hasText: 'Selskab' })
+    await expect(navTh).toHaveAttribute('aria-sort', /ascending|descending/)
+  })
+
   test('Mobil: burger-menu åbner sidebar via Enter', async ({ loggedInPage: page }) => {
     await page.setViewportSize({ width: 375, height: 812 })
     await page.goto('/dashboard')

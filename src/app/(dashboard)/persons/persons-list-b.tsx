@@ -279,7 +279,7 @@ function FlatTable({
       <table className="w-full table-fixed border-collapse">
         <thead>
           <tr>
-            <Th col="navn" sortCol={sortCol} sortDir={sortDir} onSort={onSort}>
+            <Th col="navn" sortCol={sortCol} sortDir={sortDir} onSort={onSort} sticky>
               Navn
             </Th>
             <Th col="rolle" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={155}>
@@ -320,8 +320,8 @@ function PersonTr({
   hideSelskab?: boolean
 }) {
   return (
-    <Tr onClick={onClick}>
-      <Td>
+    <Tr onClick={onClick} ariaLabel={`${p.navn} – åbn person`}>
+      <Td sticky>
         <div className="flex items-center gap-2">
           <InitialsBox ini={p.ini} />
           <span className="font-medium text-b-1">{p.navn}</span>

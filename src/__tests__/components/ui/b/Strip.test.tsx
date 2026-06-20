@@ -54,10 +54,13 @@ describe('Strip', () => {
     expect(container.querySelector('.text-b-green-fg')).toBeInTheDocument()
   })
 
-  it('applies grid with correct number of columns', () => {
+  it('bruger responsivt auto-fit-grid så KPI-celler wrapper på smalle skærme (i stedet for at trunkere tallene)', () => {
     const { container } = render(<Strip cells={basicCells} />)
     const grid = container.firstChild as HTMLElement
-    expect(grid.style.gridTemplateColumns).toContain('repeat(3')
+    // Responsivt: celler er mindst 120px og wrapper til flere rækker frem for
+    // at presses sammen til ulæselige stumper på mobil.
+    expect(grid.style.gridTemplateColumns).toContain('auto-fit')
+    expect(grid.style.gridTemplateColumns).toContain('minmax(120px')
   })
 
   it('renders ReactNode as num', () => {
