@@ -120,8 +120,19 @@ jobs:
           DATABASE_URL: postgresql://chainhub:chainhub@postgres:5432/chainhub_e2e
           DIRECT_URL: postgresql://chainhub:chainhub@postgres:5432/chainhub_e2e
 
+      # DIAG (midlertidig): bevis om reset rent faktisk skabte tabeller i den DB
+      # webServeren læser fra. Connecter med app'ens egen PrismaClient.
+      - name: DIAG verify schema after reset
+        run: |
+          echo "DIAG node $(node -v)"
+          node -e "const {PrismaClient}=require('@prisma/client');const p=new PrismaClient();(async()=>{try{const t=await p.\$queryRawUnsafe(\"SELECT table_name FROM information_schema.tables WHERE table_schema='public' ORDER BY 1\");console.log('DIAG_TABLES='+t.map(r=>r.table_name).join(','));const c=await p.user.count();console.log('DIAG_USER_COUNT='+c);}catch(e){console.log('DIAG_ERR='+e.message.split(String.fromCharCode(10))[0]);}await p.\$disconnect();})()"
+        env:
+          E2E_DATABASE_URL: postgresql://chainhub:chainhub@postgres:5432/chainhub_e2e
+          DATABASE_URL: postgresql://chainhub:chainhub@postgres:5432/chainhub_e2e
+          DIRECT_URL: postgresql://chainhub:chainhub@postgres:5432/chainhub_e2e
+
       - name: Run E2E tests
-        run: npx playwright test
+        run: npx playwright test --max-failures=1
         env:
           E2E_DATABASE_URL: postgresql://chainhub:chainhub@postgres:5432/chainhub_e2e
           DATABASE_URL: postgresql://chainhub:chainhub@postgres:5432/chainhub_e2e
