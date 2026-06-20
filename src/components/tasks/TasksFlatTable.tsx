@@ -74,7 +74,7 @@ export function TasksFlatTable({
       <table className="w-full table-fixed border-collapse">
         <thead>
           <tr>
-            <Th col="titel" sortCol={sortCol} sortDir={sortDir} onSort={onSort}>
+            <Th col="titel" sortCol={sortCol} sortDir={sortDir} onSort={onSort} sticky>
               Titel
             </Th>
             <Th col="selskab" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={170}>
@@ -119,8 +119,8 @@ export const TaskTr = memo(function TaskTr({
 }) {
   const done = t.rawStatus === 'LUKKET'
   return (
-    <Tr onClick={onClick}>
-      <Td>
+    <Tr onClick={onClick} ariaLabel={`${t.titel} – åbn opgave`}>
+      <Td sticky>
         <span className={done ? 'text-b-3 line-through' : 'font-medium text-b-1'}>{t.titel}</span>
       </Td>
       {!hideSelskab && (

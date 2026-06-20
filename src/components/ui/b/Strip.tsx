@@ -24,7 +24,6 @@ export interface StripCellData {
 }
 
 export function Strip({ cells, className }: { cells: StripCellData[]; className?: string }) {
-  const cols = cells.length
   return (
     <div
       role="region"
@@ -35,14 +34,17 @@ export function Strip({ cells, className }: { cells: StripCellData[]; className?
         'grid gap-px overflow-hidden rounded-[4px] border border-b-border bg-b-border',
         className
       )}
-      style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+      // Responsivt: celler er mindst 120px og wrapper til flere rækker når de ikke
+      // kan stå på én linje — i stedet for at trunkere KPI-tallene til ulæselige
+      // stumper på mobil. På desktop står alle på én række som hidtil.
+      style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))' }}
     >
       {cells.map((c, i) => {
         const inner = (
           <>
             <div
               className={cn(
-                'b-tnum truncate text-[18px] font-semibold leading-none',
+                'b-tnum text-[18px] font-semibold leading-none',
                 numColor[c.color ?? 'default']
               )}
               title={

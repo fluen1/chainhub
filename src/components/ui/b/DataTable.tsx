@@ -38,6 +38,7 @@ export function Th<TKey extends string>({
   alignRight,
   children,
   width,
+  sticky,
 }: {
   col?: TKey
   sortCol?: TKey | null
@@ -46,14 +47,20 @@ export function Th<TKey extends string>({
   alignRight?: boolean
   children: React.ReactNode
   width?: string | number
+  /** Gør kolonnen klæbende i venstre kant under horisontal scroll (primær-kolonne). */
+  sticky?: boolean
 }) {
   const sorted = col && sortCol === col
   const clickable = col != null && onSort != null
   const styleObj: React.CSSProperties = { letterSpacing: '0.5px' }
   if (width != null) styleObj.width = typeof width === 'number' ? `${width}px` : width
+  const arrow = sorted ? (
+    <span className="ml-1" aria-hidden="true">
+      {sortDir === 'asc' ? '↑' : '↓'}
+    </span>
+  ) : null
   return (
     <th
-      onClick={clickable && col ? () => onSort(col) : undefined}
       aria-sort={
         clickable && col
           ? sorted
@@ -66,16 +73,30 @@ export function Th<TKey extends string>({
       className={cn(
         'truncate border-b border-b-border bg-b-panel-h px-3 py-1.5 text-[10px] font-semibold uppercase',
         sorted ? 'text-b-1' : 'text-b-2',
-        clickable && 'cursor-pointer select-none hover:text-b-1',
+        sticky && 'sticky left-0 z-20',
         alignRight ? 'text-right' : 'text-left'
       )}
       style={styleObj}
     >
-      {children}
-      {sorted && (
-        <span className="ml-1" aria-hidden="true">
-          {sortDir === 'asc' ? '↑' : '↓'}
-        </span>
+      {clickable && col ? (
+        // Rigtig <button> → sortering er tab-bar og aktiveres med Enter/Space
+        // (tidligere kun klikbar med mus → utilgængelig for tastatur/skærmlæser).
+        <button
+          type="button"
+          onClick={() => onSort(col)}
+          className={cn(
+            'inline-flex items-center font-[inherit] uppercase tracking-[inherit] select-none hover:text-b-1 focus-visible:underline focus-visible:outline-none',
+            alignRight && 'flex-row-reverse'
+          )}
+        >
+          {children}
+          {arrow}
+        </button>
+      ) : (
+        <>
+          {children}
+          {arrow}
+        </>
       )}
     </th>
   )
@@ -85,22 +106,40 @@ export function Tr({
   children,
   onClick,
   href,
+  ariaLabel,
   className,
 }: {
   children: React.ReactNode
   onClick?: () => void
   href?: string
+  /** Skærmlæser-navn for en klikbar række, fx "Optik Østerbro ApS – åbn". */
+  ariaLabel?: string
   className?: string
 }) {
-  // Bemærk: href håndteres ikke direkte i tr (Next har problemer med nested
-  // anchors i tabel-rækker). Pages der vil have row-as-link bør wrappe sin
-  // egen <Link>. onClick + cursor-pointer giver klikbarhed.
+  // Klikbare rækker var tidligere KUN mus (onClick på <tr> uden tabIndex/keydown)
+  // → kerneworkflowet "åbn et selskab/kontrakt/sag" var utilgængeligt for tastatur
+  // og skærmlæser. Nu er rækken fokuserbar og aktiveres med Enter/Space.
+  const interactive = onClick != null
   return (
     <tr
       onClick={onClick}
+      tabIndex={interactive ? 0 : undefined}
+      aria-label={interactive ? ariaLabel : undefined}
+      onKeyDown={
+        interactive
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                onClick?.()
+              }
+            }
+          : undefined
+      }
       className={cn(
         'border-b border-b-divider last:border-b-0 hover:bg-b-row-hover',
         (onClick || href) && 'cursor-pointer',
+        interactive &&
+          'focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-b-blue-fg',
         className
       )}
     >
@@ -115,12 +154,16 @@ export function Td({
   secondary,
   className,
   width,
+  sticky,
 }: {
   children: React.ReactNode
   alignRight?: boolean
   secondary?: boolean
   className?: string
   width?: string | number
+  /** Klæbende venstre-kolonne under horisontal scroll. Matcher rækkens baggrund
+   *  så indhold scroller pænt under (primær-identifikator forsvinder aldrig). */
+  sticky?: boolean
 }) {
   const styleObj: React.CSSProperties = {}
   if (width != null) styleObj.width = typeof width === 'number' ? `${width}px` : width
@@ -130,6 +173,7 @@ export function Td({
       className={cn(
         'b-tnum truncate px-3 py-1.5 align-middle text-[13px]',
         secondary ? 'text-b-2' : 'text-b-1',
+        sticky && 'sticky left-0 z-10 bg-b-panel',
         alignRight ? 'text-right' : 'text-left',
         className
       )}

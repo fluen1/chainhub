@@ -390,7 +390,7 @@ function FlatTable({
       <table className="w-full table-fixed border-collapse">
         <thead>
           <tr>
-            <Th col="type" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={148}>
+            <Th col="type" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={148} sticky>
               Type
             </Th>
             <Th col="selskab" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={175}>
@@ -444,8 +444,8 @@ function ContractTr({
   hideSelskab?: boolean
 }) {
   return (
-    <Tr onClick={onClick}>
-      <Td width={148}>
+    <Tr onClick={onClick} ariaLabel={`${c.type} – åbn kontrakt`}>
+      <Td width={148} sticky>
         <div className="flex items-center gap-1.5">
           <span className="truncate">{c.type}</span>
           {c.ai && <AIBadge />}
