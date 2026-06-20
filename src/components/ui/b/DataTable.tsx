@@ -155,6 +155,7 @@ export function Td({
   className,
   width,
   sticky,
+  title,
 }: {
   children: React.ReactNode
   alignRight?: boolean
@@ -164,11 +165,16 @@ export function Td({
   /** Klæbende venstre-kolonne under horisontal scroll. Matcher rækkens baggrund
    *  så indhold scroller pænt under (primær-identifikator forsvinder aldrig). */
   sticky?: boolean
+  /** Tooltip ved afkortet tekst. Udledes automatisk når indholdet er en streng. */
+  title?: string
 }) {
   const styleObj: React.CSSProperties = {}
   if (width != null) styleObj.width = typeof width === 'number' ? `${width}px` : width
+  // Celler trunkeres (truncate) → vis fuld tekst i tooltip ved hover.
+  const cellTitle = title ?? (typeof children === 'string' ? children : undefined)
   return (
     <td
+      title={cellTitle}
       style={styleObj}
       className={cn(
         'b-tnum truncate px-3 py-1.5 align-middle text-[13px]',

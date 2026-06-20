@@ -445,7 +445,7 @@ function ContractTr({
 }) {
   return (
     <Tr onClick={onClick} ariaLabel={`${c.type} – åbn kontrakt`}>
-      <Td width={148} sticky>
+      <Td width={148} sticky title={c.type}>
         <div className="flex items-center gap-1.5">
           <span className="truncate">{c.type}</span>
           {c.ai && <AIBadge />}

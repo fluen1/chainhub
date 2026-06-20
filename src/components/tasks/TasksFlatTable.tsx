@@ -120,7 +120,7 @@ export const TaskTr = memo(function TaskTr({
   const done = t.rawStatus === 'LUKKET'
   return (
     <Tr onClick={onClick} ariaLabel={`${t.titel} – åbn opgave`}>
-      <Td sticky>
+      <Td sticky title={t.titel}>
         <span className={done ? 'text-b-3 line-through' : 'font-medium text-b-1'}>{t.titel}</span>
       </Td>
       {!hideSelskab && (
