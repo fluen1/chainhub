@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { createCheckoutSession, createPortalSession } from '@/actions/billing'
 import { Panel, PanelHeader, PanelFooter, Badge, PageHeader } from '@/components/ui/b'
+import { planLabel } from '@/lib/labels'
 
 // ────────────────────────────────────────────────────────────────────────────
 // BillingClient — klient-komponent til abonnementsstyring
@@ -61,16 +62,7 @@ export function BillingClient({
     }
   }
 
-  const planLabel =
-    plan === 'trial'
-      ? 'Prøveperiode'
-      : plan === 'basis'
-        ? 'Basis'
-        : plan === 'plus'
-          ? 'Plus'
-          : plan === 'enterprise'
-            ? 'Enterprise'
-            : plan
+  const planLabelText = planLabel(plan)
 
   return (
     <div className="flex flex-col gap-3">
@@ -88,7 +80,9 @@ export function BillingClient({
 
       <PageHeader
         title="Abonnement"
-        meta={trialDaysLeft !== null ? `${trialDaysLeft} dage tilbage af prøveperioden` : planLabel}
+        meta={
+          trialDaysLeft !== null ? `${trialDaysLeft} dage tilbage af prøveperioden` : planLabelText
+        }
       />
 
       {/* Nuværende plan */}
@@ -97,7 +91,7 @@ export function BillingClient({
         <div className="grid grid-cols-[140px_1fr] items-center gap-3 px-3 py-2 border-b border-b-divider">
           <span className="text-[11px] uppercase text-b-2 tracking-[0.3px]">Plan</span>
           <span className="text-[13px] text-b-1">
-            <Badge tone={plan === 'trial' ? 'amber' : 'blue'}>{planLabel}</Badge>
+            <Badge tone={plan === 'trial' ? 'amber' : 'blue'}>{planLabelText}</Badge>
           </span>
         </div>
         {trialDaysLeft !== null && (

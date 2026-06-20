@@ -680,3 +680,21 @@ export function getInitials(firstName: string, lastName: string): string {
   const l = lastName?.[0] ?? ''
   return (f + l).toUpperCase() || '?'
 }
+
+// ─── Abonnements-plan ─────────────────────────────────────────────────────────
+
+// `Organization.plan` er en fri String (default "trial"). Map til dansk label så
+// rå enum-værdier (fx legacy "business") aldrig vises i UI.
+const PLAN_LABELS: Record<string, string> = {
+  trial: 'Prøveperiode',
+  basis: 'Basis',
+  plus: 'Plus',
+  enterprise: 'Enterprise',
+  business: 'Business',
+}
+
+/** Dansk label for en abonnements-plan. Ukendte værdier kapitaliseres, vises aldrig rå-lowercase. */
+export function planLabel(plan: string | null | undefined): string {
+  if (!plan) return '—'
+  return PLAN_LABELS[plan] ?? plan.charAt(0).toUpperCase() + plan.slice(1)
+}

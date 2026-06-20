@@ -284,7 +284,7 @@ export function TasksListB({
           ]}
         />
         <FilterSpacer />
-        <ExportButton entity="tasks" label="Eksportér ▾" canExport={canExport} />
+        <ExportButton entity="tasks" label="Eksportér CSV" canExport={canExport} />
       </FilterRow>
 
       {hasFilter && (

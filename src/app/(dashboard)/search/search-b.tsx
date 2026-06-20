@@ -336,8 +336,6 @@ export function SearchPageB({
             <KbdHint k="⌘K" label="åbn søgning" />
             <span>·</span>
             <KbdHint k="Esc" label="ryd" />
-            <span>·</span>
-            <KbdHint k="↑↓" label="naviger" />
           </>
         }
       />

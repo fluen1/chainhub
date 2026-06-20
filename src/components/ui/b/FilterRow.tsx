@@ -22,11 +22,13 @@ export function FilterSearch({
   value,
   onChange,
   placeholder,
+  ariaLabel,
   width = 200,
 }: {
   value: string
   onChange: (v: string) => void
   placeholder?: string
+  ariaLabel?: string
   width?: number
 }) {
   return (
@@ -35,6 +37,9 @@ export function FilterSearch({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder ?? 'Søg...'}
+      // Placeholder er ikke et pålideligt accessible name → eksplicit aria-label
+      // (falder tilbage på placeholder-teksten, der typisk er sigende, fx "Søg selskaber...").
+      aria-label={ariaLabel ?? placeholder ?? 'Søg'}
       style={{ width }}
       className="shrink-0 rounded-[4px] border border-b-border-strong bg-white px-2.5 py-1 text-[12px] text-b-1 placeholder:text-b-3 focus:border-b-blue-fg focus:outline-none focus:ring-2 focus:ring-b-blue-bg"
     />

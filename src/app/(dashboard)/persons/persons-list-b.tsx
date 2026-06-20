@@ -202,7 +202,7 @@ export function PersonsListB({
           ]}
         />
         <FilterSpacer />
-        <ExportButton entity="persons" label="Eksportér ▾" />
+        <ExportButton entity="persons" label="Eksportér CSV" />
       </FilterRow>
 
       {hasFilter && (

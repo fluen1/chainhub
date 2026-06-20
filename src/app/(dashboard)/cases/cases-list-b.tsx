@@ -316,7 +316,7 @@ export function CasesListB({
           ]}
         />
         <FilterSpacer />
-        <ExportButton entity="cases" label="Eksportér ▾" />
+        <ExportButton entity="cases" label="Eksportér CSV" />
       </FilterRow>
 
       {hasFilter && (
