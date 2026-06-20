@@ -1,3 +1,5 @@
+> ⚠️ **FORÆLDET / AFLØST (20-06-2026).** Dette er den oprindelige LegalHub-spec og afspejler IKKE den byggede virkelighed (forkert tech stack, fiktiv Microsoft-integration, forkerte priser, AI markeret som Fase 2). Brug i stedet den as-built kravspec: **`KRAVSPEC-CHAINHUB-2026-06.md`**. Bevaret for historik.
+
 # Kravspecifikation: ChainHub — Porteføljestyring for kæder med delejede lokationsselskaber
 
 **Version 2.3**
