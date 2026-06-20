@@ -69,9 +69,9 @@
     --b-heat-l1: #9be9a8; /* healthy + 0 sager */
     --b-heat-l2: #40c463; /* healthy + 1-2 sager */
     --b-heat-l3: #239a3b; /* healthy + 3+ sager */
-    --b-heat-r1: #fdb8b1; /* warning + 0-2 sager */
-    --b-heat-r2: #ef6f5e; /* warning + 3+ sager */
-    --b-heat-r3: #b91c1c; /* critical */
+    --b-heat-r1: #fde68a; /* warning + 0-2 sager — ravgul (adskilt fra critical-rød) */
+    --b-heat-r2: #f59e0b; /* warning + 3+ sager — dyb ravgul/orange */
+    --b-heat-r3: #b91c1c; /* critical — rød, forbeholdt kritisk */
   }
 }
 

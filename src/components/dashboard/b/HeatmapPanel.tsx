@@ -58,6 +58,12 @@ export function HeatmapPanel({ heatmap }: { heatmap: HeatmapCompany[] }) {
     })
   }, [])
 
+  // Tooltip også ved tastatur-fokus (ikke kun mus-hover) — positioneret ved cellen.
+  const handleFocus = useCallback((e: React.FocusEvent<HTMLElement>, c: HeatmapCompany) => {
+    const r = e.currentTarget.getBoundingClientRect()
+    setTooltip({ x: r.right + 8, y: r.top - 8, name: c.name, status: statusFor(c) })
+  }, [])
+
   const critical = heatmap.filter((c) => c.healthStatus === 'critical').length
   const warning = heatmap.filter((c) => c.healthStatus === 'warning').length
   const ok = heatmap.length - critical - warning
@@ -75,7 +81,10 @@ export function HeatmapPanel({ heatmap }: { heatmap: HeatmapCompany[] }) {
   return (
     <>
       <Panel>
-        <PanelHeader title="Trivsel pr. selskab" meta={`${heatmap.length} selskaber · grøn = OK`} />
+        <PanelHeader
+          title="Trivsel pr. selskab"
+          meta={antalEnhed(heatmap.length, 'selskab', 'selskaber')}
+        />
 
         <div className="grid grid-cols-8 gap-0.5 p-3">
           {heatmap.length === 0 ? (
@@ -91,27 +100,38 @@ export function HeatmapPanel({ heatmap }: { heatmap: HeatmapCompany[] }) {
                 onMouseEnter={(e) => handleMove(e, c)}
                 onMouseMove={(e) => handleMove(e, c)}
                 onMouseLeave={() => setTooltip(null)}
+                onFocus={(e) => handleFocus(e, c)}
+                onBlur={() => setTooltip(null)}
                 aria-label={`${c.name} — ${statusFor(c)}`}
               />
             ))
           )}
         </div>
 
-        <div className="flex items-center justify-between px-3 pb-3 text-[10px] text-b-2">
-          <span>
-            {critical} kritisk{critical === 1 ? '' : 'e'}
-            {critical > 3 && (
-              <Link
-                href="/companies?health=critical"
-                className="ml-2 text-b-blue-fg underline-offset-2 hover:underline"
-              >
-                Se alle {critical} kritiske →
-              </Link>
-            )}
+        {/* Farve-legende: forklarer hvad hver farve betyder (ikke kun farve alene). */}
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-3 pb-3 text-[10px] text-b-2">
+          <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span className="inline-flex items-center gap-1">
+              <span aria-hidden className="h-2 w-2 rounded-[2px] bg-b-heat-l2" />
+              {ok} OK
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <span aria-hidden className="h-2 w-2 rounded-[2px] bg-b-heat-r2" />
+              {antalEnhed(warning, 'advarsel', 'advarsler')}
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <span aria-hidden className="h-2 w-2 rounded-[2px] bg-b-heat-r3" />
+              {antalEnhed(critical, 'kritisk', 'kritiske')}
+            </span>
           </span>
-          <span>
-            {ok} OK · {warning} afventer
-          </span>
+          {critical > 3 && (
+            <Link
+              href="/companies?health=critical"
+              className="text-b-blue-fg underline-offset-2 hover:underline"
+            >
+              Se alle {critical} kritiske →
+            </Link>
+          )}
         </div>
 
         {topUrgency.length > 0 && (

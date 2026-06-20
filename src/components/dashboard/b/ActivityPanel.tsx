@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import type { ActivityEvent } from '@/actions/activity-feed'
 import { Panel } from '@/components/ui/b'
+import { antalEnhed } from '@/lib/labels'
 
 // ────────────────────────────────────────────────────────────────────────────
 // "Sidste aktivitet"-panel — kollapsibel, klik header for at åbne/lukke.
@@ -46,7 +47,7 @@ export function ActivityPanel({ events }: { events: ActivityEvent[] }) {
           Sidste aktivitet
         </span>
         <span className="flex items-center gap-1.5 text-[11px] text-b-2">
-          <span>{events.length} hændelser · seneste 24 timer</span>
+          <span>{antalEnhed(events.length, 'hændelse', 'hændelser')} · seneste 24 timer</span>
           <span className="text-[10px] text-b-3">{open ? '▾' : '▸'}</span>
         </span>
       </button>
