@@ -377,9 +377,10 @@ export default function ReviewClient({
           </div>
           <div className="bg-white rounded-xl ring-1 ring-slate-900/[0.06] p-16 text-center">
             <XCircle className="mx-auto h-10 w-10 text-slate-200 mb-3" />
-            <p className="text-[13px] font-medium text-slate-700 mb-1">Ikke AI-behandlet</p>
-            <p className="text-[12px] text-slate-400">
-              Dette dokument har ikke gennemgået AI-ekstraktion endnu.
+            <p className="text-[13px] font-medium text-slate-700 mb-1">Ikke AI-udlæst endnu</p>
+            <p className="mx-auto max-w-md text-[12px] text-slate-400">
+              AI-udlæsning af kontraktdata er en del af Plus-planen. Når et dokument er udlæst, kan
+              du gennemgå og godkende de udlæste felter her.
             </p>
             <Link
               href="/documents"

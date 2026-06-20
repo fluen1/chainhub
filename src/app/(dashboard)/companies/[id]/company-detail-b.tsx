@@ -415,7 +415,9 @@ export function CompanyDetailB({
                   </AIInsightCard>
                 </div>
               ) : (
-                <PanelEmpty>AI-analyse er ikke konfigureret eller cap-blokeret</PanelEmpty>
+                <PanelEmpty>
+                  Ingen AI-analyse for dette selskab endnu. AI-indsigt er en del af Plus-planen.
+                </PanelEmpty>
               )}
             </Panel>
           )}
