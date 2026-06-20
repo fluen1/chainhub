@@ -56,6 +56,19 @@ test.describe('public-lag — tilgængeligt uden login', () => {
     }
   })
 
+  test('status-side viser systemstatus og rapporterer drift når DB er oppe', async ({ page }) => {
+    await page.goto('/status')
+    await expect(page.getByRole('heading', { name: 'Systemstatus', level: 1 })).toBeVisible()
+    await expect(page.getByText('Alle systemer kører')).toBeVisible()
+    await expect(page.getByText('Database')).toBeVisible()
+  })
+
+  test('Status-link i footer fører til /status', async ({ page }) => {
+    await page.goto('/')
+    await page.getByRole('contentinfo').getByRole('link', { name: 'Status' }).click()
+    await expect(page).toHaveURL(/\/status$/)
+  })
+
   test('/terms og /privacy redirecter til /legal/*', async ({ page }) => {
     await page.goto('/terms')
     await expect(page).toHaveURL(/\/legal\/vilkaar$/)
