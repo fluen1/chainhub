@@ -91,9 +91,9 @@ export const CONTRACT_TYPE_LABELS: Record<string, string> = {
   ANSAETTELSE_IKKE_FUNKTIONAER: 'Ansættelseskontrakt (ikke-funktionær)',
   VIKARAFTALE: 'Vikaraftale',
   UDDANNELSESAFTALE: 'Uddannelsesaftale',
-  FRATROEDELSESAFTALE: 'Fratrædelsesaftale',
+  FRATRAEDELSESAFTALE: 'Fratrædelsesaftale',
   KONKURRENCEKLAUSUL: 'Konkurrenceklausulaftale',
-  PERSONALEHAANDBOG: 'Personalehåndbog',
+  PERSONALHAANDBOG: 'Personalehåndbog',
   LEJEKONTRAKT_ERHVERV: 'Lejekontrakt (erhverv)',
   LEASINGAFTALE: 'Leasingaftale',
   LEVERANDOERKONTRAKT: 'Leverandørkontrakt',
@@ -157,9 +157,9 @@ export const CONTRACT_CATEGORY_MAP: Record<string, ContractCategory> = {
   ANSAETTELSE_IKKE_FUNKTIONAER: 'ANSAETTELSE_OG_PERSONALE',
   VIKARAFTALE: 'ANSAETTELSE_OG_PERSONALE',
   UDDANNELSESAFTALE: 'ANSAETTELSE_OG_PERSONALE',
-  FRATROEDELSESAFTALE: 'ANSAETTELSE_OG_PERSONALE',
+  FRATRAEDELSESAFTALE: 'ANSAETTELSE_OG_PERSONALE',
   KONKURRENCEKLAUSUL: 'ANSAETTELSE_OG_PERSONALE',
-  PERSONALEHAANDBOG: 'ANSAETTELSE_OG_PERSONALE',
+  PERSONALHAANDBOG: 'ANSAETTELSE_OG_PERSONALE',
   // Lokaler og udstyr
   LEJEKONTRAKT_ERHVERV: 'LOKALER_OG_UDSTYR',
   LEASINGAFTALE: 'LOKALER_OG_UDSTYR',
@@ -697,4 +697,11 @@ const PLAN_LABELS: Record<string, string> = {
 export function planLabel(plan: string | null | undefined): string {
   if (!plan) return '—'
   return PLAN_LABELS[plan] ?? plan.charAt(0).toUpperCase() + plan.slice(1)
+}
+
+// ─── Dansk bøjning ────────────────────────────────────────────────────────────
+
+/** "1 åben sag" / "3 åbne sager" — vælger ental/flertal korrekt. Fjerner "1 åbne sager"-fejl. */
+export function antalEnhed(n: number, ental: string, flertal: string): string {
+  return `${n} ${n === 1 ? ental : flertal}`
 }

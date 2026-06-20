@@ -111,9 +111,12 @@ export function CompaniesRightRail({
           <RailRow label="100% ejet" value={companies.filter((c) => c.kaedePct === 100).length} />
           <RailRow label="Co-ejet" value={companies.filter((c) => c.kaedePct < 100).length} />
           <div className="my-1 border-t border-b-divider" />
-          {(['Kbh', 'Sjælland', 'Midt', 'Syd', 'Nord'] as Region[]).map((r) => (
-            <RailRow key={r} label={REGION_LABEL[r]} value={byRegion.get(r) ?? 0} />
-          ))}
+          {(['Kbh', 'Sjælland', 'Midt', 'Syd', 'Nord'] as Region[])
+            // Skjul regioner uden selskaber — tomme 0-rækker er bare støj.
+            .filter((r) => (byRegion.get(r) ?? 0) > 0)
+            .map((r) => (
+              <RailRow key={r} label={REGION_LABEL[r]} value={byRegion.get(r) ?? 0} />
+            ))}
         </div>
       </Panel>
     </aside>

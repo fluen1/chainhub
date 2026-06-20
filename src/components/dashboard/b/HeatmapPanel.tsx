@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useCallback, useState } from 'react'
 import { Panel, PanelHeader, PanelGroupLabel } from '@/components/ui/b'
 import type { HeatmapCompany } from '@/lib/dashboard-helpers'
-import { HEATMAP_STATUS_LABELS } from '@/lib/labels'
+import { HEATMAP_STATUS_LABELS, antalEnhed } from '@/lib/labels'
 
 // ────────────────────────────────────────────────────────────────────────────
 // Health-heatmap — én celle pr. selskab.
@@ -33,11 +33,10 @@ function levelFor(c: HeatmapCompany): keyof typeof LEVEL_CLASS {
 }
 
 function statusFor(c: HeatmapCompany): string {
-  if (c.healthStatus === 'critical')
-    return `${HEATMAP_STATUS_LABELS.critical} · ${c.openCaseCount} åbne sager`
-  if (c.healthStatus === 'warning')
-    return `${HEATMAP_STATUS_LABELS.warning} · ${c.openCaseCount} åbne sager`
-  return c.openCaseCount === 0 ? HEATMAP_STATUS_LABELS.ok : `OK · ${c.openCaseCount} åbne sager`
+  const sager = antalEnhed(c.openCaseCount, 'åben sag', 'åbne sager')
+  if (c.healthStatus === 'critical') return `${HEATMAP_STATUS_LABELS.critical} · ${sager}`
+  if (c.healthStatus === 'warning') return `${HEATMAP_STATUS_LABELS.warning} · ${sager}`
+  return c.openCaseCount === 0 ? HEATMAP_STATUS_LABELS.ok : `OK · ${sager}`
 }
 
 interface Tooltip {
@@ -76,7 +75,7 @@ export function HeatmapPanel({ heatmap }: { heatmap: HeatmapCompany[] }) {
   return (
     <>
       <Panel>
-        <PanelHeader title="Health-heatmap" meta={`${heatmap.length} selskaber · grøn = OK`} />
+        <PanelHeader title="Trivsel pr. selskab" meta={`${heatmap.length} selskaber · grøn = OK`} />
 
         <div className="grid grid-cols-8 gap-0.5 p-3">
           {heatmap.length === 0 ? (
@@ -117,7 +116,7 @@ export function HeatmapPanel({ heatmap }: { heatmap: HeatmapCompany[] }) {
 
         {topUrgency.length > 0 && (
           <>
-            <PanelGroupLabel>Top urgency</PanelGroupLabel>
+            <PanelGroupLabel>Mest presserende</PanelGroupLabel>
             {topUrgency.map((c) => (
               <Link
                 key={c.id}

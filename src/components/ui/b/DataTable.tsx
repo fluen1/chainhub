@@ -205,7 +205,7 @@ export function AIBadge() {
   return (
     <span
       className="rounded-[2px] bg-[#f3e8ff] px-1 py-px text-[9px] font-bold leading-tight text-b-ai-accent"
-      title="AI-extracted"
+      title="AI-udlæst"
     >
       ⚡
     </span>

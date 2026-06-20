@@ -548,7 +548,7 @@ export function CaseDetailB({
         <Panel>
           <PanelHeader
             title="Aktivitet"
-            meta={`${activity.length} events · ${comments.length} kommentarer`}
+            meta={`${activity.length} hændelser · ${comments.length} kommentarer`}
           />
           {activity.length === 0 ? (
             <div className="px-3 py-3 text-center text-[12px] text-b-3">Ingen aktivitet</div>
@@ -647,7 +647,7 @@ export function CaseDetailB({
                 </span>
               </span>
             }
-            meta={`${aiDocs} AI-extracted`}
+            meta={`${aiDocs} AI-udlæst`}
           />
           {docs.length === 0 ? (
             <div className="px-3 py-3 text-center text-[12px] text-b-3">

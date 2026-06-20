@@ -228,7 +228,7 @@ export function DocumentsListB({ documents, totalCount, page, pageSize }: Docume
           <>
             {totalCount} i alt
             {' · '}
-            <span className="font-medium text-b-ai-accent">{aiCount} AI-extracted</span>
+            <span className="font-medium text-b-ai-accent">{aiCount} AI-udlæst</span>
             {' · '}
             <span className="font-medium text-b-amber-fg">{revCount} afventer review</span>
             {' · '}
@@ -323,7 +323,7 @@ export function DocumentsListB({ documents, totalCount, page, pageSize }: Docume
         left={
           <>
             {sorted.length} {sorted.length === 1 ? 'dokument' : 'dokumenter'} på denne side ·{' '}
-            {aiCount} AI-extracted · {totalCount} i alt
+            {aiCount} AI-udlæst · {totalCount} i alt
           </>
         }
       />

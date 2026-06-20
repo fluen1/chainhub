@@ -52,7 +52,7 @@ import {
 //   2. PageHeader (titel + status badge + meta + actions)
 //   3. 6-cell strip (type, sensitivitet, version, effektiv, udløb, parter)
 //   4. Alert-bar hvis ≤30d til udløb
-//   5. 2-col: Vilkår (Plus, AI-extracted) + AI Insight (Plus, lilla card)
+//   5. 2-col: Vilkår (Plus, AI-udlæst) + AI Insight (Plus, lilla card)
 //   6. Full-width: Versionshistorik
 //   7. 3-col: Parter + Tilknytninger + Aktivitet
 //   8. BottomBar med kbd hints
@@ -70,7 +70,7 @@ interface FieldConfidence {
 interface KeyTermRow {
   label: string
   value: string
-  confidence: number | null // null = ikke AI-extracted
+  confidence: number | null // null = ikke AI-udlæst
 }
 
 // Map fra extracted_fields-nøgle → dansk vilkår-label vist i UI.
@@ -365,9 +365,7 @@ export default async function ContractDetailPage({ params }: Props) {
                 Vilkår <PlusBadge />
               </span>
             }
-            meta={
-              keyTerms.length > 0 ? `${keyTerms.length} AI-extracted` : 'Ingen extraction endnu'
-            }
+            meta={keyTerms.length > 0 ? `${keyTerms.length} AI-udlæst` : 'Ingen AI-udlæsning endnu'}
             actions={
               <Link
                 href={
@@ -382,7 +380,7 @@ export default async function ContractDetailPage({ params }: Props) {
             }
           />
           {keyTerms.length === 0 ? (
-            <PanelEmpty>Upload et dokument for at få AI-extracted vilkår</PanelEmpty>
+            <PanelEmpty>Upload et dokument for at få AI-udlæst vilkår</PanelEmpty>
           ) : (
             <div className="px-3 py-2.5">
               {keyTerms.map((t, i) => (
@@ -434,7 +432,7 @@ export default async function ContractDetailPage({ params }: Props) {
                 <AIInsightCard
                   label="⚡ Renewal-risk"
                   confidence={`${keyTerms.length > 0 ? Math.round((keyTerms.reduce((s, t) => s + (t.confidence ?? 0), 0) / keyTerms.length) * 100) : 0}% konfidens`}
-                  cite={`Baseret på ${keyTerms.length} AI-extracted vilkår fra ${extraction.document?.file_name ?? 'dokumentet'}.`}
+                  cite={`Baseret på ${keyTerms.length} AI-udlæst vilkår fra ${extraction.document?.file_name ?? 'dokumentet'}.`}
                   actionHref={`/documents?company=${contract.company_id}`}
                   actionLabel="Se sammenligningsgrundlag →"
                 >

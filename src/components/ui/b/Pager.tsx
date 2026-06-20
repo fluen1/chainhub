@@ -34,7 +34,8 @@ export function Pager({
   return (
     <div className="flex items-center justify-between rounded-[4px] border border-b-border bg-b-panel px-3 py-1.5">
       <span className="b-tnum text-[12px] text-b-2">{info}</span>
-      {page != null && maxPage != null && onPage && (
+      {/* Skjul side-navigation når der kun er én side (ingen "1 / 1"-pile-støj). */}
+      {page != null && maxPage != null && maxPage > 1 && onPage && (
         <div className="flex items-center gap-1">
           <button
             type="button"

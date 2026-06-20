@@ -240,7 +240,9 @@ export function CalendarPageB({
             {criticalThisMonth > 0 && (
               <>
                 {' · '}
-                <span className="font-medium text-b-red-fg">{criticalThisMonth} kritiske</span>
+                <span className="font-medium text-b-red-fg">
+                  {criticalThisMonth} {criticalThisMonth === 1 ? 'kritisk' : 'kritiske'}
+                </span>
               </>
             )}
             {meetingsThisMonth > 0 && (
@@ -506,9 +508,9 @@ function RightPanel({ upcoming }: { upcoming: CalendarEvent[] }) {
   return (
     <aside className="flex flex-col gap-3">
       <Panel>
-        <PanelHeader title="Kommende" meta={`${upcoming.length} events`} />
+        <PanelHeader title="Kommende" meta={`${upcoming.length} hændelser`} />
         {upcoming.length === 0 ? (
-          <div className="px-3 py-3 text-center text-[12px] text-b-3">Ingen kommende events</div>
+          <div className="px-3 py-3 text-center text-[12px] text-b-3">Ingen kommende hændelser</div>
         ) : (
           upcoming.map((ev, i) => {
             const evParts = ev.date.split('-').map(Number)
