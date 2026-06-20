@@ -155,7 +155,7 @@ export function CreateCompanyForm() {
                     }
                   }}
                   placeholder="12345678"
-                  hint="8 cifre"
+                  hint="8 cifre — vi henter automatisk navn og adresse"
                   error={cvrError}
                   disabled={loading}
                 />

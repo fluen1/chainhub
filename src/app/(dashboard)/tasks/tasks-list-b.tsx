@@ -193,7 +193,9 @@ export function TasksListB({
         title="Opgaver"
         meta={
           <>
-            <span className="font-medium text-b-red-fg">{critCount} kritiske</span>
+            <span className="font-medium text-b-red-fg">
+              {critCount} {critCount === 1 ? 'kritisk' : 'kritiske'}
+            </span>
             {' · '}
             <span className="font-medium text-b-amber-fg">{overdueCount} frist i dag/morgen</span>
             {' · '}

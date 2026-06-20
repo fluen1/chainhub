@@ -306,7 +306,7 @@ export function TaskDetailB({ data }: { data: TaskDetailViewData }) {
 
           {/* Aktivitet */}
           <Panel>
-            <PanelHeader title="Aktivitet" meta={`${activity.length} events`} />
+            <PanelHeader title="Aktivitet" meta={`${activity.length} hændelser`} />
             {activity.length === 0 ? (
               <div className="px-3 py-3 text-center text-[12px] text-b-3">
                 Ingen aktivitet endnu

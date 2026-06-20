@@ -46,7 +46,7 @@ export function ActivityPanel({ events }: { events: ActivityEvent[] }) {
           Sidste aktivitet
         </span>
         <span className="flex items-center gap-1.5 text-[11px] text-b-2">
-          <span>{events.length} events · seneste 24 timer</span>
+          <span>{events.length} hændelser · seneste 24 timer</span>
           <span className="text-[10px] text-b-3">{open ? '▾' : '▸'}</span>
         </span>
       </button>

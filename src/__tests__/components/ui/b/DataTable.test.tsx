@@ -230,8 +230,8 @@ describe('AIBadge', () => {
     expect(screen.getByText('⚡')).toBeInTheDocument()
   })
 
-  it('has AI-extracted title attribute', () => {
+  it('har dansk "AI-udlæst" title-attribut', () => {
     render(<AIBadge />)
-    expect(screen.getByTitle('AI-extracted')).toBeInTheDocument()
+    expect(screen.getByTitle('AI-udlæst')).toBeInTheDocument()
   })
 })

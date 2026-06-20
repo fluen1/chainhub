@@ -351,7 +351,7 @@ function ContractsListBContent({ contracts, totalContracts, page, pageSize }: Co
         left={
           <>
             {contracts.length} {contracts.length === 1 ? 'kontrakt' : 'kontrakter'} vist · {aiCount}{' '}
-            AI-extracted
+            AI-udlæst
             {hasFilter && ` · ${totalContracts} totalt`}
           </>
         }

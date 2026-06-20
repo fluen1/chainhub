@@ -216,7 +216,7 @@ function CompaniesListBContent({
     { num: fullOwned, label: '100% ejet' },
     { num: critical, label: 'Kræver opmærks.', color: critical > 0 ? 'red' : 'default' },
     { num: totalsExtra.persons, label: 'Personer i alt' },
-    { num: ytdShort, label: 'Omsætning YTD', color: 'green' },
+    { num: ytdShort, label: 'Omsætning i år', color: 'green' },
   ]
 
   function handleSort(col: SortKey) {
@@ -271,7 +271,7 @@ function CompaniesListBContent({
             {' · '}
             <span className="font-medium text-b-red-fg">{critical} kræver opmærksomhed</span>
             {' · '}
-            Omsætning YTD <span className="font-medium text-b-green-fg">{ytdShort}</span>
+            Omsætning i år <span className="font-medium text-b-green-fg">{ytdShort}</span>
           </>
         }
         actions={

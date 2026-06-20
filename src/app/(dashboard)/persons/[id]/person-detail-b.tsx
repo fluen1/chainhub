@@ -309,11 +309,11 @@ export function PersonDetailB({
                 Ansættelses-vilkår <PlusBadge />
               </span>
             }
-            meta={aiVilkaar.length > 0 ? 'AI-extracted' : 'Ingen extraction'}
+            meta={aiVilkaar.length > 0 ? 'AI-udlæst' : 'Ingen AI-udlæsning'}
           />
           {aiVilkaar.length === 0 ? (
             <div className="px-3 py-3 text-center text-[12px] text-b-3">
-              Upload en ansættelseskontrakt for at få AI-extracted vilkår
+              Upload en ansættelseskontrakt for at få AI-udlæst vilkår
             </div>
           ) : (
             <div className="px-3 py-2.5">

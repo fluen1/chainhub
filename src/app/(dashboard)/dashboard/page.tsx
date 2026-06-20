@@ -100,7 +100,7 @@ export default async function DashboardPage() {
   }
   const cellOmsaetning: StripCellData = {
     num: `${formatMio(omsaetning)}m`,
-    label: 'Omsætning YTD',
+    label: 'Omsætning i år',
     color: 'green',
   }
 

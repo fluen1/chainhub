@@ -72,7 +72,8 @@ const TYPE_ORDER: ResultType[] = [
   'notat',
 ]
 
-const QUICK_SEARCHES = ['lejekontrakt', 'patientklage', 'tandlæge', 'bestyrelse', 'ejeraftale']
+// Branche-neutrale eksempler — ChainHub er ikke branche-specifikt.
+const QUICK_SEARCHES = ['lejekontrakt', 'ejeraftale', 'bestyrelse', 'opsigelse', 'forsikring']
 
 // Highlight matchende tekst (case-insensitive) i en streng. Returnerer React-nodes.
 function highlight(text: string, query: string): React.ReactNode {
