@@ -129,7 +129,7 @@ export const CompanyTr = memo(function CompanyTr({
   const hb = healthLabel(c.health)
   return (
     <Tr onClick={onClick} ariaLabel={`${c.navn} – åbn selskab`}>
-      <Td sticky>
+      <Td sticky title={c.navn}>
         <div className="flex items-center gap-2">
           <span className={`h-2 w-2 shrink-0 rounded-full ${healthDot(c.health)}`} />
           <span className="truncate font-medium text-b-1">{c.navn}</span>

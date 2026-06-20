@@ -321,7 +321,7 @@ function PersonTr({
 }) {
   return (
     <Tr onClick={onClick} ariaLabel={`${p.navn} – åbn person`}>
-      <Td sticky>
+      <Td sticky title={p.navn}>
         <div className="flex items-center gap-2">
           <InitialsBox ini={p.ini} />
           <span className="font-medium text-b-1">{p.navn}</span>
