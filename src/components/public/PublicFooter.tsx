@@ -12,6 +12,9 @@ export function PublicFooter() {
           <Link href="/kontakt" className="text-b-2 no-underline hover:text-b-1">
             Kontakt
           </Link>
+          <Link href="/status" className="text-b-2 no-underline hover:text-b-1">
+            Status
+          </Link>
           <Link href="/login" className="text-b-2 no-underline hover:text-b-1">
             Log ind
           </Link>
