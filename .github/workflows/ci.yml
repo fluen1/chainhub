@@ -114,7 +114,10 @@ jobs:
 
       # I container-jobs nås service-containeren via service-navnet (postgres), ikke localhost.
       - name: Reset E2E database
-        run: npm run db:e2e:reset
+        run: |
+          set -x
+          npx prisma db push --skip-generate --force-reset
+          npx prisma db seed
         env:
           E2E_DATABASE_URL: postgresql://chainhub:chainhub@postgres:5432/chainhub_e2e
           DATABASE_URL: postgresql://chainhub:chainhub@postgres:5432/chainhub_e2e
