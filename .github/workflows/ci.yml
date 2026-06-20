@@ -73,15 +73,7 @@ jobs:
   e2e:
     name: E2E (Playwright)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    # PARKERET: kører KUN ved manuel workflow_dispatch, ikke på push/PR.
-    # Infrastrukturen er repareret (container m. forudinstallerede browsere — install-
-    # hanget er væk), men suiten har aldrig kørt grønt: webServeren ser
-    # "table User does not exist" trods db:e2e:reset (schema-reset/webServer-DB-
-    # mismatch der kræver dedikeret debugging). continue-on-error hjalp ikke, fordi
-    # job-timeout = cancelled (ikke failure) → markerede hele runnet cancelled.
-    # Når DB-wiringen er fikset: skift if til at køre på push/PR + genindsæt i deploy.needs.
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    timeout-minutes: 15
     # Officielt Playwright-image med browsere FORUDINSTALLERET (matcher playwright 1.59.1).
     # Eliminerer `playwright install`-steppet, som hang ~29 min på extraction efter
     # download (runner/Playwright-bug) og ramte timeout i 3 kørsler.
@@ -113,29 +105,21 @@ jobs:
         run: npx prisma generate
 
       # I container-jobs nås service-containeren via service-navnet (postgres), ikke localhost.
+      # VIGTIGT: kald prisma DIREKTE — ikke `npm run db:e2e:reset`. Det script bruger
+      # `cross-env-shell "DATABASE_URL=$VAR ... && ..."`, hvis inline-$VAR-ekspansion
+      # no-op'er LYDLØST i CI's `sh` (exit 0, men db push kører aldrig → tom DB →
+      # webServer fejler med "relation public.User does not exist"). Step-env'en leverer
+      # allerede DATABASE_URL/DIRECT_URL, så de direkte kald er både enklere og robuste.
       - name: Reset E2E database
         run: |
-          set -x
           npx prisma db push --skip-generate --force-reset
           npx prisma db seed
         env:
-          E2E_DATABASE_URL: postgresql://chainhub:chainhub@postgres:5432/chainhub_e2e
-          DATABASE_URL: postgresql://chainhub:chainhub@postgres:5432/chainhub_e2e
-          DIRECT_URL: postgresql://chainhub:chainhub@postgres:5432/chainhub_e2e
-
-      # DIAG (midlertidig): bevis om reset rent faktisk skabte tabeller i den DB
-      # webServeren læser fra. Connecter med app'ens egen PrismaClient.
-      - name: DIAG verify schema after reset
-        run: |
-          echo "DIAG node $(node -v)"
-          node -e "const {PrismaClient}=require('@prisma/client');const p=new PrismaClient();(async()=>{try{const t=await p.\$queryRawUnsafe(\"SELECT table_name FROM information_schema.tables WHERE table_schema='public' ORDER BY 1\");console.log('DIAG_TABLES='+t.map(r=>r.table_name).join(','));const c=await p.user.count();console.log('DIAG_USER_COUNT='+c);}catch(e){console.log('DIAG_ERR='+e.message.split(String.fromCharCode(10))[0]);}await p.\$disconnect();})()"
-        env:
-          E2E_DATABASE_URL: postgresql://chainhub:chainhub@postgres:5432/chainhub_e2e
           DATABASE_URL: postgresql://chainhub:chainhub@postgres:5432/chainhub_e2e
           DIRECT_URL: postgresql://chainhub:chainhub@postgres:5432/chainhub_e2e
 
       - name: Run E2E tests
-        run: npx playwright test --max-failures=1
+        run: npx playwright test
         env:
           E2E_DATABASE_URL: postgresql://chainhub:chainhub@postgres:5432/chainhub_e2e
           DATABASE_URL: postgresql://chainhub:chainhub@postgres:5432/chainhub_e2e
