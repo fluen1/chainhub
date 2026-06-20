@@ -12,7 +12,6 @@ import {
   FilterDropdown,
   FilterReset,
   FilterSep,
-  FilterSpacer,
   FilterButton,
   SegmentedToggle,
   Strip,
@@ -278,8 +277,6 @@ export function DocumentsListB({ documents, totalCount, page, pageSize }: Docume
             { value: 'grouped', label: 'Grupperet' },
           ]}
         />
-        <FilterSpacer />
-        <FilterButton>Eksportér ▾</FilterButton>
       </FilterRow>
 
       {hasFilter && (

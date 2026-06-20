@@ -16,6 +16,7 @@ import {
   type BadgeTone,
   BottomBar,
 } from '@/components/ui/b'
+import { planLabel } from '@/lib/labels'
 
 // ────────────────────────────────────────────────────────────────────────────
 // /settings — klient-komponent.
@@ -134,7 +135,7 @@ export function SettingsPageB({
       <BottomBar
         left={
           organization
-            ? `${organization.name} · ${organization.plan} · ${currentUserIdToEmail(users, currentUserId)}`
+            ? `${organization.name} · ${planLabel(organization.plan)} · ${currentUserIdToEmail(users, currentUserId)}`
             : '—'
         }
       />
@@ -228,7 +229,7 @@ function OrgSection({ org }: { org: SettingsOrg }) {
           label="Plan"
           value={
             <>
-              <Badge tone="blue">{org.plan}</Badge>
+              <Badge tone="blue">{planLabel(org.plan)}</Badge>
               {org.planExpiresAt && (
                 <span className="ml-2 text-[11px] text-b-2">Fornyelse {org.planExpiresAt}</span>
               )}
@@ -431,7 +432,7 @@ function FakturaSection({ org }: { org: SettingsOrg | null }) {
       <PageHeader title="Abonnement" meta={org ? `${org.plan}-plan` : 'Ingen plan-data'} />
       <Panel>
         <PanelHeader title="Nuværende plan" />
-        <KvRow label="Plan" value={<Badge tone="blue">{org?.plan ?? '—'}</Badge>} />
+        <KvRow label="Plan" value={<Badge tone="blue">{planLabel(org?.plan)}</Badge>} />
         <KvRow
           label="Fornyelse"
           value={

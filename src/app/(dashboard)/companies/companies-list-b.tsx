@@ -342,7 +342,7 @@ function CompaniesListBContent({
           ]}
         />
         <FilterSpacer />
-        <ExportButton entity="companies" label="Eksportér ▾" />
+        <ExportButton entity="companies" label="Eksportér CSV" />
       </FilterRow>
 
       {hasClientFilter && (

@@ -299,7 +299,7 @@ function ContractsListBContent({ contracts, totalContracts, page, pageSize }: Co
           ]}
         />
         <FilterSpacer />
-        <ExportButton entity="contracts" label="Eksportér ▾" />
+        <ExportButton entity="contracts" label="Eksportér CSV" />
       </FilterRow>
 
       {hasFilter && (
