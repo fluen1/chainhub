@@ -3,7 +3,14 @@ import { z } from 'zod'
 // `next build` sætter NODE_ENV=production men kører på dev/CI-maskiner uden
 // produktions-secrets — runtime-krav håndhæves derfor kun udenfor build-fasen.
 const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build'
-const isProd = process.env.NODE_ENV === 'production' && !isBuildPhase
+
+// pg-boss-workeren (Render) importerer env.ts gennem AI-kæden, men bruger hverken
+// NextAuth, Upstash eller Stripe — kun DB + OpenAI. WORKER_RUNTIME=true løsner de
+// app-only krav, så workeren kun behøver DIRECT_URL + OPENAI_API_KEY. Flag'et
+// sættes KUN på worker-servicen (render.yaml), aldrig på Next.js-appen, så
+// produktions-appens fail-fast-validering er uændret.
+const isWorker = process.env.WORKER_RUNTIME === 'true'
+const isProd = process.env.NODE_ENV === 'production' && !isBuildPhase && !isWorker
 
 // STAGED LAUNCH (18/6): siden skal kunne STARTE i prod uden at ALLE
 // forretnings-features er konfigureret endnu. Dækker KUN billing (Stripe), AI (OpenAI)
@@ -31,9 +38,15 @@ const securityRequiredInProd = (msg: string) =>
     : z.string().optional()
 
 const envSchema = z.object({
-  DATABASE_URL: z.string().min(1, 'DATABASE_URL mangler — sæt den i .env.local'),
+  // Workeren forbinder via DIRECT_URL (queue.ts kræver DIRECT_URL || DATABASE_URL
+  // og kaster en klar fejl hvis begge mangler), så DATABASE_URL er valgfri dér.
+  DATABASE_URL: isWorker
+    ? z.string().optional()
+    : z.string().min(1, 'DATABASE_URL mangler — sæt den i .env.local'),
   DIRECT_URL: z.string().optional(),
-  NEXTAUTH_SECRET: z.string().min(1, 'NEXTAUTH_SECRET mangler — sæt den i .env.local'),
+  NEXTAUTH_SECRET: isWorker
+    ? z.string().optional()
+    : z.string().min(1, 'NEXTAUTH_SECRET mangler — sæt den i .env.local'),
   NEXTAUTH_URL: isProd
     ? z.string().url('NEXTAUTH_URL skal være en gyldig URL i production')
     : z.string().url('NEXTAUTH_URL skal være en gyldig URL').optional(),

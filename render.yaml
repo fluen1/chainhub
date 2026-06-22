@@ -38,6 +38,12 @@ services:
       - key: AI_EXTRACTION_ENABLED
         value: 'true'
 
+      # Markér dette som worker-runtime → env-validering kræver IKKE NextAuth/
+      # Upstash/Stripe-vars (som workeren ikke bruger). Uden denne ville workeren
+      # crashe ved opstart på manglende NEXTAUTH_SECRET m.fl. (se src/lib/env.ts).
+      - key: WORKER_RUNTIME
+        value: 'true'
+
       # Node-miljø
       - key: NODE_ENV
         value: production

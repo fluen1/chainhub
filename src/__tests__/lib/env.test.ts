@@ -51,6 +51,24 @@ describe('env validation', () => {
     vi.unstubAllEnvs()
   })
 
+  it('WORKER_RUNTIME=true: workeren booter med kun DB-url (ingen auth/upstash/stripe)', async () => {
+    // pg-boss-workeren bruger ikke NextAuth/Upstash/Stripe. Den skal kunne boote
+    // i prod med kun DIRECT_URL + OpenAI, ellers crasher den på Render.
+    vi.stubEnv('NODE_ENV', 'production')
+    delete process.env.NEXT_PHASE
+    process.env.WORKER_RUNTIME = 'true'
+    process.env.DIRECT_URL = 'postgresql://direct:5432'
+    delete process.env.DATABASE_URL
+    delete process.env.NEXTAUTH_SECRET
+    delete process.env.NEXTAUTH_URL
+    delete process.env.UPSTASH_REDIS_REST_URL
+    delete process.env.UPSTASH_REDIS_REST_TOKEN
+    delete process.env.STRIPE_SECRET_KEY
+    const mod = await import('@/lib/env')
+    expect(mod.env.DIRECT_URL).toBe('postgresql://direct:5432')
+    vi.unstubAllEnvs()
+  })
+
   it('production-RUNTIME (uden NEXT_PHASE) kræver runtime-secrets — fail-fast', async () => {
     // Hvorfor: i ægte produktion må appen ikke boote uden cron-secret,
     // rate-limit-Redis og Stripe-nøgler — fejl ved boot frem for stille degradering.

@@ -48,14 +48,14 @@ Render er valgt fordi det er enkelt og billigt til netop dette mønster. Andre p
 
 Udfyld felterne sådan:
 
-| Felt                | Værdi                   |
-| ------------------- | ----------------------- |
-| **Name**            | `chainhub-ai-worker`    |
-| **Region**          | Frankfurt (EU Central)  |
-| **Branch**          | `main` (eller `master`) |
-| **Runtime**         | Docker                  |
-| **Dockerfile Path** | `./Dockerfile.worker`   |
-| **Plan**            | Starter (~$7/mdr.)      |
+| Felt                | Værdi                  |
+| ------------------- | ---------------------- |
+| **Name**            | `chainhub-ai-worker`   |
+| **Region**          | Frankfurt (EU Central) |
+| **Branch**          | `master`               |
+| **Runtime**         | Docker                 |
+| **Dockerfile Path** | `./Dockerfile.worker`  |
+| **Plan**            | Starter (~$7/mdr.)     |
 
 Render vil automatisk finde `Dockerfile.worker` i roden af repoet.
 
@@ -63,13 +63,16 @@ Render vil automatisk finde `Dockerfile.worker` i roden af repoet.
 
 ### Trin 3 — Sæt miljøvariabler
 
-Under **"Environment Variables"** tilføjer du disse tre:
+Under **"Environment Variables"** tilføjer du disse fire:
 
 | Variabelnavn            | Værdi                                                                                         | Bemærkning                                                                          |
 | ----------------------- | --------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
 | `DIRECT_URL`            | `postgresql://postgres.[ref]:[password]@aws-0-eu-central-1.pooler.supabase.com:5432/postgres` | Kopier fra Supabase → Settings → Database → Connection string (Direct, ikke pooler) |
-| `OPENAI_API_KEY`        | `sk-proj-...`                                                                                 | Din OpenAI API-nøgle                                                                |
+| `OPENAI_API_KEY`        | `sk-proj-...`                                                                                 | Samme nøgle som i Vercel                                                            |
 | `AI_EXTRACTION_ENABLED` | `true`                                                                                        | Slår AI-extraction til                                                              |
+| `WORKER_RUNTIME`        | `true`                                                                                        | **KRITISK** — uden den crasher workeren ved opstart (se nedenfor)                   |
+
+> **Hvorfor `WORKER_RUNTIME=true`?** Appen og workeren deler samme kode, og koden kræver normalt login-, rate-limit- og betalings-nøgler (NextAuth, Upstash, Stripe). Workeren bruger ingen af dem. `WORKER_RUNTIME=true` fortæller koden "dette er workeren — spring de krav over", så du kun behøver de fire variabler ovenfor i stedet for et helt sæt app-secrets.
 
 > **Vigtigt om DIRECT_URL:** Brug porten **5432** (ikke 6543). 5432 er den direkte forbindelse; 6543 er PgBouncer-pooleren som ikke fungerer med pg-boss' langlivede forbindelser.
 
