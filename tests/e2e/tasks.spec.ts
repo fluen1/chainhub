@@ -1,5 +1,5 @@
-import { test, expect } from './fixtures'
 import { PrismaClient } from '@prisma/client'
+import { test, expect } from './fixtures'
 
 test.describe('Tasks + audit trail', () => {
   test('ændr task status fra detalje-side trigger TaskHistory-entry', async ({
@@ -7,8 +7,10 @@ test.describe('Tasks + audit trail', () => {
   }) => {
     await page.goto('/tasks')
     // Klik på en seed-opgave
+    // Titlen renderes i BÅDE mobil-kort (sm:hidden) og tabel (hidden sm:block);
+    // begge er i DOM. :visible vælger kun den synlige tabel-celle på desktop-viewport.
     await page
-      .getByText(/GDPR-tjekliste for Aarhus/)
+      .locator('span:visible', { hasText: /GDPR-tjekliste for Aarhus/ })
       .first()
       .click()
     await expect(page).toHaveURL(/\/tasks\/[0-9a-f-]+/)

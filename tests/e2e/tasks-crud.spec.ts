@@ -28,7 +28,9 @@ test.describe('Tasks CRUD', () => {
     // robust mod data-akkumulering (uden due_date havner opgaven ellers på side 2+
     // pga. default-sortering due_date ASC NULLS LAST).
     await page.goto(`/tasks?search=${encodeURIComponent(title)}`)
-    await expect(page.getByText(title)).toBeVisible()
+    // Titlen er i både mobil-kort (sm:hidden) og tabel (hidden sm:block) i DOM;
+    // :visible matcher kun den synlige tabel-celle på desktop-viewport.
+    await expect(page.locator('span:visible', { hasText: title }).first()).toBeVisible()
   })
 
   test('opret opgave med prioritet Kritisk', async ({ loggedInPage: page }) => {
@@ -49,6 +51,8 @@ test.describe('Tasks CRUD', () => {
     // robust mod data-akkumulering (uden due_date havner opgaven ellers på side 2+
     // pga. default-sortering due_date ASC NULLS LAST).
     await page.goto(`/tasks?search=${encodeURIComponent(title)}`)
-    await expect(page.getByText(title)).toBeVisible()
+    // Titlen er i både mobil-kort (sm:hidden) og tabel (hidden sm:block) i DOM;
+    // :visible matcher kun den synlige tabel-celle på desktop-viewport.
+    await expect(page.locator('span:visible', { hasText: title }).first()).toBeVisible()
   })
 })
