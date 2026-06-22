@@ -135,4 +135,34 @@ describe('BSidebar', () => {
     fireEvent.click(screen.getByLabelText('Åbn AI-assistent'))
     expect(onChatOpen).toHaveBeenCalled()
   })
+
+  // ─── Rolle-gating (UX-review #10) ───────────────────────────────────────────
+  describe('rolle-gating af modul-links', () => {
+    it('GROUP_FINANCE ser IKKE Kontrakter/Sager — heller ikke deres badge-tal', () => {
+      render(
+        <BSidebar
+          badges={{
+            contracts: { count: 18, urgency: 'neutral' },
+            cases: { count: 4, urgency: 'neutral' },
+          }}
+          userRole="GROUP_FINANCE"
+        />
+      )
+      expect(screen.queryByRole('link', { name: 'Kontrakter' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('link', { name: 'Sager' })).not.toBeInTheDocument()
+      // Badge-tallene må heller ikke lække for moduler rollen ikke kan åbne.
+      expect(screen.queryByLabelText('18 kontrakter')).not.toBeInTheDocument()
+      expect(screen.queryByLabelText('4 sager')).not.toBeInTheDocument()
+      // Finance beholder Selskaber, Dokumenter, Personer, Opgaver.
+      expect(screen.getByRole('link', { name: 'Selskaber' })).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'Dokumenter' })).toBeInTheDocument()
+    })
+
+    it('GROUP_OWNER ser alle modul-links', () => {
+      render(<BSidebar badges={defaultBadges} userRole="GROUP_OWNER" />)
+      expect(screen.getByRole('link', { name: 'Kontrakter' })).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'Sager' })).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'Selskaber' })).toBeInTheDocument()
+    })
+  })
 })

@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { useMemo, useState, useTransition } from 'react'
+import { ContractsCardView } from '@/components/contracts/ContractsCardView'
 import {
   Breadcrumb,
   PageHeader,
@@ -309,13 +310,20 @@ function ContractsListBContent({ contracts, totalContracts, page, pageSize }: Co
       )}
 
       {viewMode === 'flat' && (
-        <FlatTable
-          contracts={sorted}
-          sortCol={sortCol}
-          sortDir={sortDir}
-          onSort={handleSort}
-          onRowClick={goTo}
-        />
+        <>
+          <div className="sm:hidden">
+            <ContractsCardView contracts={sorted} onRowClick={goTo} />
+          </div>
+          <div className="hidden sm:block">
+            <FlatTable
+              contracts={sorted}
+              sortCol={sortCol}
+              sortDir={sortDir}
+              onSort={handleSort}
+              onRowClick={goTo}
+            />
+          </div>
+        </>
       )}
       {viewMode === 'grouped' && <GroupedView contracts={sorted} onRowClick={goTo} />}
       {viewMode === 'kanban' && <KanbanView contracts={contracts} onRowClick={goTo} />}

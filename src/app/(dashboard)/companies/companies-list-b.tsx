@@ -77,9 +77,17 @@ const REGION_LABEL: Record<Region, string> = {
   Ukendt: 'Ukendt region',
 }
 
+// Rolle-gatede kolonner (UX-review #10). Single source: role-modules.ts via
+// getCompaniesPageData. Fx GROUP_FINANCE får contracts:false + cases:false.
+export interface ColumnVisibility {
+  contracts: boolean
+  cases: boolean
+}
+
 interface CompaniesListBProps {
   companies: CompanyRow[]
   canCreate: boolean
+  columns: ColumnVisibility
   totalsExtra: { persons: number }
   totalCount: number
   page: number
@@ -133,6 +141,7 @@ function EmptyCompaniesView({ canCreate }: { canCreate: boolean }) {
 function CompaniesListBContent({
   companies,
   canCreate,
+  columns,
   totalsExtra,
   totalCount: serverTotalCount,
   page: serverPage,
@@ -265,15 +274,6 @@ function CompaniesListBContent({
 
       <PageHeader
         title="Selskaber"
-        meta={
-          <>
-            {serverTotalCount} i porteføljen
-            {' · '}
-            <span className="font-medium text-b-red-fg">{critical} kræver opmærksomhed</span>
-            {' · '}
-            Omsætning i år <span className="font-medium text-b-green-fg">{ytdShort}</span>
-          </>
-        }
         actions={
           canCreate ? (
             <BButton primary href="/companies/new">
@@ -360,13 +360,14 @@ function CompaniesListBContent({
             {viewMode === 'tabel' ? (
               <CompaniesFlatTable
                 companies={paged}
+                columns={columns}
                 sortCol={sortCol}
                 sortDir={sortDir}
                 onSort={handleSort}
                 onRowClick={goTo}
               />
             ) : (
-              <CompaniesRegionsView companies={sorted} onRowClick={goTo} />
+              <CompaniesRegionsView companies={sorted} columns={columns} onRowClick={goTo} />
             )}
             {(sorted.length > 0 || !hasClientFilter) && (
               <div className="mt-2">

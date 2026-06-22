@@ -27,11 +27,12 @@ vi.mock('@/components/layout/NotificationBell', () => ({
 }))
 
 vi.mock('@/components/layout/ChatToggle', () => ({
-  ChatToggle: ({ onClick }: { onClick: () => void }) => (
-    <button onClick={onClick} aria-label="Åbn AI-assistent">
-      AI
-    </button>
-  ),
+  ChatToggle: ({ onClick, hidden }: { onClick: () => void; hidden?: boolean }) =>
+    hidden ? null : (
+      <button onClick={onClick} aria-label="Åbn AI-assistent">
+        AI
+      </button>
+    ),
 }))
 
 // ChatPanel er dynamically imported, mock det
@@ -94,5 +95,15 @@ describe('BShell', () => {
     render(<BShell {...defaultProps} alertCount={5} />)
     // NotificationBell renders with count, look for the label
     expect(screen.getAllByLabelText('5 notifikationer').length).toBeGreaterThan(0)
+  })
+
+  it('viser ikke AI-chat-knap når isAiEnabled=false (default)', () => {
+    render(<BShell {...defaultProps} />)
+    expect(screen.queryByLabelText('Åbn AI-assistent')).not.toBeInTheDocument()
+  })
+
+  it('viser AI-chat-knap i mobil toolbar når isAiEnabled=true', () => {
+    render(<BShell {...defaultProps} isAiEnabled />)
+    expect(screen.getByLabelText('Åbn AI-assistent')).toBeInTheDocument()
   })
 })

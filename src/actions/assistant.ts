@@ -9,6 +9,20 @@ import { prisma } from '@/lib/db'
 import { captureError } from '@/lib/logger'
 import type { ActionResult } from '@/types/actions'
 
+// Plan-gate for action-laget: AI-assistenten kræver Plus-abonnement.
+// Defense-in-depth — orchestrator har samme check, men her giver vi brugeren
+// en handlingsanvisende dansk besked frem for en generisk "Noget gik galt".
+async function planGateError(organizationId: string): Promise<string | null> {
+  const org = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: { plan: true },
+  })
+  if (!org || org.plan !== 'plus') {
+    return 'AI-assistenten kræver Plus-abonnement. Opgradér under Indstillinger → Abonnement.'
+  }
+  return null
+}
+
 export interface SendMessageResult {
   response: string
   toolResults: Array<{ toolName: string; displayText: string }>
@@ -32,6 +46,9 @@ export async function sendMessage(input: {
 
   const enabled = await isAIEnabled(session.user.organizationId, 'assistant')
   if (!enabled) return { error: 'AI-assistenten er ikke aktiveret for din organisation.' }
+
+  const planError = await planGateError(session.user.organizationId)
+  if (planError) return { error: planError }
 
   // Verificér at samtalen tilhører brugerens organisation
   const conversation = await prisma.conversation.findFirst({
@@ -84,6 +101,9 @@ export async function createConversation(): Promise<ActionResult<{ id: string }>
 
   const enabled = await isAIEnabled(session.user.organizationId, 'assistant')
   if (!enabled) return { error: 'AI-assistenten er ikke aktiveret for din organisation.' }
+
+  const planError = await planGateError(session.user.organizationId)
+  if (planError) return { error: planError }
 
   try {
     const conversation = await prisma.conversation.create({

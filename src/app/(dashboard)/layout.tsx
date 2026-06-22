@@ -57,13 +57,22 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const badges = buildSidebarBadges(sidebarData)
   const alertCount = alertStatsResult.data?.total ?? 0
 
+  // AI-chat er kun relevant når org er på Plus-planen — skjul knappen ellers
+  // så brugeren ikke møder en fejl-toast ved klik.
+  const isAiEnabled = org?.plan === 'plus'
+
   return (
     <Providers>
       <PosthogIdentify />
       <SkipToMain />
       <GlobalKeyboardShortcuts />
       <TrialBanner />
-      <BShell badges={badges} alertCount={alertCount}>
+      <BShell
+        badges={badges}
+        alertCount={alertCount}
+        userRole={sidebarData.userRole}
+        isAiEnabled={isAiEnabled}
+      >
         {children}
       </BShell>
     </Providers>

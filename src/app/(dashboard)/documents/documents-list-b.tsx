@@ -3,6 +3,7 @@
 import { useRouter, usePathname } from 'next/navigation'
 import { useMemo, useState } from 'react'
 import { DeleteDocumentButton } from '@/components/documents/DeleteDocumentButton'
+import { DocumentsCardView } from '@/components/documents/DocumentsCardView'
 import {
   Breadcrumb,
   PageHeader,
@@ -297,13 +298,21 @@ export function DocumentsListB({ documents, totalCount, page, pageSize }: Docume
       )}
 
       {viewMode === 'flat' && (
-        <FlatTable
-          docs={paged}
-          sortCol={sortCol}
-          sortDir={sortDir}
-          onSort={handleSort}
-          onRowClick={goTo}
-        />
+        <>
+          <div className="sm:hidden">
+            <DocumentsCardView docs={paged} onRowClick={goTo} />
+          </div>
+          <div className="hidden sm:block">
+            <FlatTable
+              docs={paged}
+              sortCol={sortCol}
+              sortDir={sortDir}
+              onSort={handleSort}
+              onRowClick={goTo}
+              hasAnyAiData={aiCount > 0}
+            />
+          </div>
+        </>
       )}
       {viewMode === 'grouped' && <GroupedView docs={sorted} onRowClick={goTo} />}
 
@@ -339,12 +348,14 @@ function FlatTable({
   sortDir,
   onSort,
   onRowClick,
+  hasAnyAiData,
 }: {
   docs: DocRow[]
   sortCol: SortKey
   sortDir: 'asc' | 'desc'
   onSort: (col: SortKey) => void
   onRowClick: (id: string) => void
+  hasAnyAiData: boolean
 }) {
   if (docs.length === 0) {
     return (
@@ -355,6 +366,15 @@ function FlatTable({
   }
   return (
     <TableWrap>
+      {!hasAnyAiData && (
+        <div className="flex items-center gap-2 border-b border-b-ai-border bg-[linear-gradient(135deg,#f3e8ff_0%,#ede9fe_100%)] px-3 py-2">
+          <PlusBadge />
+          <span className="text-[12px] text-b-ai-fg">
+            AI-analyse aktiveres på Plus — upload et dokument for at se konfidens,
+            opmærksomhedsfelter og automatisk kategorisering.
+          </span>
+        </div>
+      )}
       <table className="w-full table-fixed border-collapse">
         <thead>
           <tr>
@@ -370,15 +390,21 @@ function FlatTable({
             <Th col="tilknytning" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={160}>
               Tilknyttet
             </Th>
-            <Th col="aiStatus" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={94}>
-              AI
-            </Th>
-            <Th col="konf" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={94}>
-              Konf.
-            </Th>
-            <Th col="att" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={96}>
-              Felt
-            </Th>
+            {hasAnyAiData ? (
+              <>
+                <Th col="aiStatus" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={94}>
+                  AI
+                </Th>
+                <Th col="konf" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={94}>
+                  Konf.
+                </Th>
+                <Th col="att" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={96}>
+                  Felt
+                </Th>
+              </>
+            ) : (
+              <Th width={284}>AI-status</Th>
+            )}
             <Th col="datoSort" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={110}>
               Dato
             </Th>
@@ -388,7 +414,12 @@ function FlatTable({
         </thead>
         <tbody>
           {docs.map((d) => (
-            <DocTr key={d.id} d={d} onClick={() => onRowClick(d.id)} />
+            <DocTr
+              key={d.id}
+              d={d}
+              onClick={d.aiStatus === 'Ikke AI' ? undefined : () => onRowClick(d.id)}
+              hasAnyAiData={hasAnyAiData}
+            />
           ))}
         </tbody>
       </table>
@@ -411,12 +442,16 @@ function DocTr({
   d,
   onClick,
   hideSelskab,
+  hasAnyAiData = true,
 }: {
   d: DocRow
-  onClick: () => void
+  /** undefined = ikke-klikbar (fx 'Ikke AI'-rækker når AI-data mangler) */
+  onClick?: () => void
   hideSelskab?: boolean
+  hasAnyAiData?: boolean
 }) {
   const attention = needsAttention(d)
+  const isNotAi = d.aiStatus === 'Ikke AI'
   return (
     <Tr
       onClick={onClick}
@@ -437,29 +472,39 @@ function DocTr({
       <Td width={160} secondary>
         {d.tilknytning}
       </Td>
-      <Td width={94}>
-        <Badge tone={aiStatusTone(d.aiStatus)}>{d.aiStatus}</Badge>
-      </Td>
-      <Td width={94}>
-        {d.konf == null ? (
-          <span className="text-b-border-strong">—</span>
-        ) : (
-          <Badge tone={konfTone(d.konf)}>{`${d.konf}%`}</Badge>
-        )}
-      </Td>
-      <Td width={96}>
-        {d.att === 0 ? (
-          <span className="text-b-border-strong">—</span>
-        ) : (
-          <Badge tone={attTone(d.att)}>{d.att === 1 ? '1 felt' : `${d.att} felter`}</Badge>
-        )}
-      </Td>
+      {hasAnyAiData ? (
+        <>
+          <Td width={94}>
+            <Badge tone={aiStatusTone(d.aiStatus)}>{d.aiStatus}</Badge>
+          </Td>
+          <Td width={94}>
+            {d.konf == null ? (
+              <span className="text-b-border-strong">—</span>
+            ) : (
+              <Badge tone={konfTone(d.konf)}>{`${d.konf}%`}</Badge>
+            )}
+          </Td>
+          <Td width={96}>
+            {d.att === 0 ? (
+              <span className="text-b-border-strong">—</span>
+            ) : (
+              <Badge tone={attTone(d.att)}>{d.att === 1 ? '1 felt' : `${d.att} felter`}</Badge>
+            )}
+          </Td>
+        </>
+      ) : (
+        <Td width={284}>
+          {isNotAi ? (
+            <span className="text-[11px] text-b-3">Ikke AI-behandlet</span>
+          ) : (
+            <Badge tone={aiStatusTone(d.aiStatus)}>{d.aiStatus}</Badge>
+          )}
+        </Td>
+      )}
       <Td width={110} secondary>
         {d.dato}
       </Td>
-      <Td width={20}>
-        <span className="text-b-3">›</span>
-      </Td>
+      <Td width={20}>{onClick && <span className="text-b-3">›</span>}</Td>
       <Td width={36}>
         <DeleteDocumentButton
           documentId={d.id}

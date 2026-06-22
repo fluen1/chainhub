@@ -11,9 +11,13 @@ import { UrgencyPanel } from '@/components/dashboard/b/UrgencyPanel'
 import { PageTopbar, Strip, BottomBar, SyncDot, type StripCellData } from '@/components/ui/b'
 import { auth } from '@/lib/auth'
 import { WEEKDAYS_DA_FULL_SUN, MONTH_NAMES_DA_LOWER } from '@/lib/calendar-constants'
-import { pickHighestPriorityRole } from '@/lib/dashboard-helpers'
+import {
+  pickHighestPriorityRole,
+  gateTimelineSectionsForRole,
+  gateHeatmapForRole,
+} from '@/lib/dashboard-helpers'
 import { formatMio } from '@/lib/labels'
-import { getAccessibleCompanies } from '@/lib/permissions'
+import { getAccessibleCompanies, roleCanAccessModule } from '@/lib/permissions'
 import { getSidebarData } from '@/lib/sidebar-data'
 
 // ─── Async server-wrappers til Suspense-streaming ────────────────────────────
@@ -104,39 +108,25 @@ export default async function DashboardPage() {
     color: 'green',
   }
 
-  // Rolle-filtrerede Strip-cells — forhindrer at f.eks. GROUP_FINANCE
-  // ser "Åbne sager" der leder til redirect pga. manglende modul-adgang.
-  let stripCells: StripCellData[]
-  if (userRole === 'GROUP_OWNER' || userRole === 'GROUP_ADMIN') {
-    // Alle 6 cells
-    stripCells = [
-      cellSelskaber,
-      cellUdloeber,
-      cellSager,
-      cellOpgaver,
-      cellDokumenter,
-      cellOmsaetning,
-    ]
-  } else if (userRole === 'GROUP_FINANCE') {
-    // Finance ser økonomi-relevante cells — ikke sager (ingen adgang)
-    stripCells = [cellSelskaber, cellUdloeber, cellOpgaver, cellOmsaetning]
-  } else if (userRole === 'GROUP_LEGAL') {
-    // Legal ser kontrakter + sager, men ikke omsætning
-    stripCells = [cellSelskaber, cellUdloeber, cellSager, cellOpgaver]
-  } else if (userRole === 'GROUP_READONLY') {
-    // Readonly: read-only overblik uden finansdata
-    stripCells = [cellSelskaber, cellUdloeber, cellSager]
-  } else if (
-    userRole === 'COMPANY_MANAGER' ||
-    userRole === 'COMPANY_LEGAL' ||
-    userRole === 'COMPANY_READONLY'
-  ) {
-    // COMPANY_* ser selskaber + sager + opgaver
-    stripCells = [cellSelskaber, cellSager, cellOpgaver]
-  } else {
-    // Fallback: basiscells
-    stripCells = [cellSelskaber, cellUdloeber]
-  }
+  // Rolle-filtrerede Strip-cells via single source of truth (role-modules.ts).
+  // Hver celle der peger på et modul-link gates på samme matrix som sidebar +
+  // selskabsliste, så fx GROUP_FINANCE aldrig ser "Åbne sager"/"Udløber 30d"
+  // (kontrakter) der ville føre til redirect. cellOmsaetning (finance) skjules
+  // for roller uden finance-adgang (fx GROUP_LEGAL).
+  const allStripCells: Array<{
+    cell: StripCellData
+    module?: import('@/lib/permissions').AppModule
+  }> = [
+    { cell: cellSelskaber, module: 'companies' },
+    { cell: cellUdloeber, module: 'contracts' },
+    { cell: cellSager, module: 'cases' },
+    { cell: cellOpgaver, module: 'tasks' },
+    { cell: cellDokumenter, module: 'documents' },
+    { cell: cellOmsaetning, module: 'finance' },
+  ]
+  const stripCells: StripCellData[] = allStripCells
+    .filter(({ module }) => !module || roleCanAccessModule(userRole, module))
+    .map(({ cell }) => cell)
 
   return (
     <>
@@ -150,8 +140,8 @@ export default async function DashboardPage() {
       <OnboardingPanel />
 
       <div className="grid gap-3.5 md:grid-cols-[2fr_1fr]">
-        <UrgencyPanel sections={data.timelineSections} />
-        <HeatmapPanel heatmap={data.heatmap} />
+        <UrgencyPanel sections={gateTimelineSectionsForRole(data.timelineSections, userRole)} />
+        <HeatmapPanel heatmap={gateHeatmapForRole(data.heatmap, userRole)} />
       </div>
 
       <Suspense fallback={<WidgetSkeleton />}>

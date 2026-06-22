@@ -1,7 +1,7 @@
 'use client'
 
 import { memo, useMemo, useState } from 'react'
-import type { CompanyRow } from '@/app/(dashboard)/companies/companies-list-b'
+import type { ColumnVisibility, CompanyRow } from '@/app/(dashboard)/companies/companies-list-b'
 import { TableWrap, Th, Tr, Td, TableEmpty, Badge, type BadgeTone } from '@/components/ui/b'
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -43,6 +43,7 @@ function healthDot(h: CompanyRow['health']): string {
 
 export interface CompaniesFlatTableProps {
   companies: CompanyRow[]
+  columns: ColumnVisibility
   sortCol: SortKey
   sortDir: 'asc' | 'desc'
   onSort: (col: SortKey) => void
@@ -51,6 +52,7 @@ export interface CompaniesFlatTableProps {
 
 export function CompaniesFlatTable({
   companies,
+  columns,
   sortCol,
   sortDir,
   onSort,
@@ -87,12 +89,16 @@ export function CompaniesFlatTable({
             >
               Kæde %
             </Th>
-            <Th col="kontrakter" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={94}>
-              Kontr.
-            </Th>
-            <Th col="sager" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={62}>
-              Sager
-            </Th>
+            {columns.contracts && (
+              <Th col="kontrakter" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={94}>
+                Kontr.
+              </Th>
+            )}
+            {columns.cases && (
+              <Th col="sager" sortCol={sortCol} sortDir={sortDir} onSort={onSort} width={62}>
+                Sager
+              </Th>
+            )}
             <Th
               col="ebitda"
               sortCol={sortCol}
@@ -111,7 +117,7 @@ export function CompaniesFlatTable({
         </thead>
         <tbody>
           {companies.map((c) => (
-            <CompanyTr key={c.id} c={c} onClick={() => onRowClick(c.id)} />
+            <CompanyTr key={c.id} c={c} columns={columns} onClick={() => onRowClick(c.id)} />
           ))}
         </tbody>
       </table>
@@ -121,9 +127,11 @@ export function CompaniesFlatTable({
 
 export const CompanyTr = memo(function CompanyTr({
   c,
+  columns,
   onClick,
 }: {
   c: CompanyRow
+  columns: ColumnVisibility
   onClick: () => void
 }) {
   const hb = healthLabel(c.health)
@@ -144,22 +152,26 @@ export const CompanyTr = memo(function CompanyTr({
       <Td width={74} alignRight>
         <span className="font-medium">{c.kaedePct}%</span>
       </Td>
-      <Td width={94}>
-        {c.kontrakterUdlob > 0 || c.kontrakterExpired > 0 ? (
-          <Badge tone={c.kontrakterExpired > 0 ? 'red' : 'amber'}>
-            {c.kontrakter} ({c.kontrakterUdlob + c.kontrakterExpired}⚠)
-          </Badge>
-        ) : (
-          <span className="text-b-2">{c.kontrakter}</span>
-        )}
-      </Td>
-      <Td width={62}>
-        {c.sager > 0 ? (
-          <Badge tone={c.sager > 1 ? 'red' : 'amber'}>{c.sager}</Badge>
-        ) : (
-          <span className="text-b-border-strong">—</span>
-        )}
-      </Td>
+      {columns.contracts && (
+        <Td width={94}>
+          {c.kontrakterUdlob > 0 || c.kontrakterExpired > 0 ? (
+            <Badge tone={c.kontrakterExpired > 0 ? 'red' : 'amber'}>
+              {c.kontrakter} ({c.kontrakterUdlob + c.kontrakterExpired}⚠)
+            </Badge>
+          ) : (
+            <span className="text-b-2">{c.kontrakter}</span>
+          )}
+        </Td>
+      )}
+      {columns.cases && (
+        <Td width={62}>
+          {c.sager > 0 ? (
+            <Badge tone={c.sager > 1 ? 'red' : 'amber'}>{c.sager}</Badge>
+          ) : (
+            <span className="text-b-border-strong">—</span>
+          )}
+        </Td>
+      )}
       <Td width={70} alignRight>
         {c.ebitdaShort === '—' ? (
           <span className="text-b-border-strong">—</span>
@@ -179,9 +191,11 @@ export const CompanyTr = memo(function CompanyTr({
 
 export function CompaniesRegionsView({
   companies,
+  columns,
   onRowClick,
 }: {
   companies: CompanyRow[]
+  columns: ColumnVisibility
   onRowClick: (id: string) => void
 }) {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
@@ -247,7 +261,12 @@ export function CompaniesRegionsView({
               <table className="w-full table-fixed border-collapse">
                 <tbody>
                   {rows.map((c) => (
-                    <CompanyTr key={c.id} c={c} onClick={() => onRowClick(c.id)} />
+                    <CompanyTr
+                      key={c.id}
+                      c={c}
+                      columns={columns}
+                      onClick={() => onRowClick(c.id)}
+                    />
                   ))}
                 </tbody>
               </table>

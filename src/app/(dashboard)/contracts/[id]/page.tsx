@@ -473,7 +473,27 @@ export default async function ContractDetailPage({ params }: Props) {
               </div>
             </div>
           ) : (
-            <PanelEmpty>AI-analyse aktiveres når et dokument er uploadet og processeret</PanelEmpty>
+            <div className="p-2">
+              <div className="mb-1.5 flex items-center gap-1.5">
+                <span className="rounded-[3px] bg-b-border px-1.5 py-0.5 text-[9px] font-bold uppercase text-b-2">
+                  Eksempel
+                </span>
+                <span className="text-[11px] text-b-3">
+                  Upload et dokument for at aktivere AI-analyse
+                </span>
+              </div>
+              <AIInsightCard
+                label="⚡ Renewal-risk · Leje over markedsværdi"
+                confidence="87% konfidens"
+                cite="Baseret på 6 AI-udlæste vilkår fra lejekontrakt.pdf."
+                actionHref="/documents/upload"
+                actionLabel="Upload dokument →"
+              >
+                Forventet markedsleje for sammenlignelige kontrakter ligger typisk{' '}
+                <strong>5–12% over</strong> nuværende. Start forhandling senest 60 dage før udløb
+                for at undgå automatisk forlængelse på ugunstige vilkår.
+              </AIInsightCard>
+            </div>
           )}
         </Panel>
       </div>

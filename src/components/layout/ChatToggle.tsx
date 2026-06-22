@@ -4,9 +4,12 @@ import { MessageSquare } from 'lucide-react'
 
 interface Props {
   onClick: () => void
+  /** Skjul knappen helt når AI ikke er tilgængeligt på denne plan */
+  hidden?: boolean
 }
 
-export function ChatToggle({ onClick }: Props) {
+export function ChatToggle({ onClick, hidden }: Props) {
+  if (hidden) return null
   return (
     <button
       type="button"

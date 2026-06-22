@@ -29,4 +29,14 @@ describe('ChatToggle', () => {
     render(<ChatToggle onClick={vi.fn()} />)
     expect(screen.getByRole('button')).toHaveAttribute('type', 'button')
   })
+
+  it('skjules når hidden=true', () => {
+    render(<ChatToggle onClick={vi.fn()} hidden />)
+    expect(screen.queryByRole('button')).not.toBeInTheDocument()
+  })
+
+  it('vises når hidden=false', () => {
+    render(<ChatToggle onClick={vi.fn()} hidden={false} />)
+    expect(screen.getByRole('button')).toBeInTheDocument()
+  })
 })

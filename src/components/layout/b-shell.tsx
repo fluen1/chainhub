@@ -34,10 +34,13 @@ const FOCUSABLE_SELECTOR =
 interface Props {
   badges: Record<string, SidebarBadge | null>
   alertCount?: number
+  userRole?: string
+  /** Når false skjules AI-chat-knappen (plan er ikke Plus eller AI ikke konfigureret) */
+  isAiEnabled?: boolean
   children: React.ReactNode
 }
 
-export function BShell({ badges, alertCount = 0, children }: Props) {
+export function BShell({ badges, alertCount = 0, userRole, isAiEnabled = false, children }: Props) {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [chatOpen, setChatOpen] = useState(false)
   const pathname = usePathname()
@@ -95,7 +98,12 @@ export function BShell({ badges, alertCount = 0, children }: Props) {
     <div className="flex min-h-screen bg-b-canvas text-b-1">
       {/* Desktop sidebar (lg+) */}
       <div className="hidden lg:block print-hide">
-        <BSidebar badges={badges} alertCount={alertCount} onChatOpen={() => setChatOpen(true)} />
+        <BSidebar
+          badges={badges}
+          alertCount={alertCount}
+          userRole={userRole}
+          onChatOpen={isAiEnabled ? () => setChatOpen(true) : undefined}
+        />
       </div>
 
       {/* Mobile drawer */}
@@ -115,7 +123,7 @@ export function BShell({ badges, alertCount = 0, children }: Props) {
             aria-label="Hovedmenu"
             className="lg:hidden fixed inset-y-0 left-0 z-50 shadow-xl"
           >
-            <BSidebar badges={badges} alertCount={alertCount} />
+            <BSidebar badges={badges} alertCount={alertCount} userRole={userRole} />
           </div>
         </>
       )}
@@ -133,7 +141,7 @@ export function BShell({ badges, alertCount = 0, children }: Props) {
           </button>
           <BrandMark withText />
           <div className="ml-auto flex items-center gap-1">
-            <ChatToggle onClick={() => setChatOpen(true)} />
+            <ChatToggle onClick={() => setChatOpen(true)} hidden={!isAiEnabled} />
             <NotificationBell count={alertCount} />
           </div>
         </div>

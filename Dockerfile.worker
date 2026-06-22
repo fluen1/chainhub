@@ -1,0 +1,36 @@
+# ── Stage 1: build ───────────────────────────────────────────────────────────
+FROM node:24-slim AS builder
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY prisma ./prisma
+COPY src ./src
+COPY worker ./worker
+COPY tsconfig.json tsconfig.worker.json ./
+
+# Generer Prisma client (kræves til runtime-imports fra @prisma/client)
+RUN npx prisma generate
+
+# ── Stage 2: runtime ─────────────────────────────────────────────────────────
+FROM node:24-slim AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+# Kopiér hele node_modules fra builder (inkl. tsx, prisma client og alle deps)
+COPY --from=builder /app/node_modules ./node_modules
+
+# Kildekode
+COPY --from=builder /app/src ./src
+COPY --from=builder /app/worker ./worker
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/tsconfig.json ./tsconfig.json
+COPY --from=builder /app/tsconfig.worker.json ./tsconfig.worker.json
+COPY --from=builder /app/package.json ./package.json
+
+# Kør workeren — starter pg-boss og venter på jobs
+CMD ["node_modules/.bin/tsx", "worker/index.ts"]

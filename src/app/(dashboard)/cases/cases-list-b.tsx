@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { useMemo, useState, useEffect, useTransition } from 'react'
+import { CasesCardView } from '@/components/cases/CasesCardView'
 import {
   Breadcrumb,
   PageHeader,
@@ -327,13 +328,20 @@ export function CasesListB({
       )}
 
       {viewMode === 'flat' && (
-        <FlatTable
-          cases={paged}
-          sortCol={sortCol}
-          sortDir={sortDir}
-          onSort={handleSort}
-          onRowClick={goTo}
-        />
+        <>
+          <div className="sm:hidden">
+            <CasesCardView cases={paged} onRowClick={goTo} />
+          </div>
+          <div className="hidden sm:block">
+            <FlatTable
+              cases={paged}
+              sortCol={sortCol}
+              sortDir={sortDir}
+              onSort={handleSort}
+              onRowClick={goTo}
+            />
+          </div>
+        </>
       )}
       {viewMode === 'grouped' && <GroupedView cases={sorted} onRowClick={goTo} />}
       {viewMode === 'kanban' && <KanbanView cases={filtered} onRowClick={goTo} />}

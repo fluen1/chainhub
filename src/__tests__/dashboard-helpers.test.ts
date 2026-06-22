@@ -9,6 +9,8 @@ import {
   pickHighestPriorityRole,
   relativeDays,
   sumMetric,
+  topUrgencyCompanies,
+  TOP_URGENCY_THRESHOLD,
 } from '@/lib/dashboard-helpers'
 
 // ---------------------------------------------------------------
@@ -336,5 +338,86 @@ describe('emptyDashboardData', () => {
       'Forsikring',
       'Ansættelse',
     ])
+  })
+})
+
+// ---------------------------------------------------------------
+// topUrgencyCompanies (UX-review #5 — "Mest presserende"-drill-down)
+// ---------------------------------------------------------------
+describe('topUrgencyCompanies', () => {
+  const critical = {
+    id: 'c1',
+    name: 'Kritisk ApS',
+    healthStatus: 'critical' as const,
+    openCaseCount: 2,
+  }
+  const warning1 = {
+    id: 'c2',
+    name: 'Advarsel 1 ApS',
+    healthStatus: 'warning' as const,
+    openCaseCount: 3,
+  }
+  const warning2 = {
+    id: 'c3',
+    name: 'Advarsel 2 ApS',
+    healthStatus: 'warning' as const,
+    openCaseCount: 1,
+  }
+  const healthy = { id: 'c4', name: 'Grøn ApS', healthStatus: 'healthy' as const, openCaseCount: 0 }
+  const healthyWithCases = {
+    id: 'c5',
+    name: 'Grøn m. sager ApS',
+    healthStatus: 'healthy' as const,
+    openCaseCount: 1,
+  }
+
+  it('sorterer critical øverst, derefter warning, derefter healthy-med-sager', () => {
+    const result = topUrgencyCompanies([warning2, healthy, critical, warning1, healthyWithCases])
+    expect(result[0]?.id).toBe('c1') // critical
+    expect(result[1]?.id).toBe('c2') // warning3 sager
+    expect(result[2]?.id).toBe('c3') // warning1 sag
+  })
+
+  it('filtrerer healthy selskaber med 0 åbne sager fra', () => {
+    const result = topUrgencyCompanies([healthy, critical])
+    expect(result.some((c) => c.id === 'c4')).toBe(false)
+  })
+
+  it('inkluderer healthy selskab med åbne sager (viser relevant info)', () => {
+    const result = topUrgencyCompanies([healthyWithCases, healthy])
+    expect(result.some((c) => c.id === 'c5')).toBe(true)
+    expect(result.some((c) => c.id === 'c4')).toBe(false)
+  })
+
+  it('respekterer limit-parameter', () => {
+    const input = [critical, warning1, warning2, healthyWithCases]
+    expect(topUrgencyCompanies(input, 2)).toHaveLength(2)
+    expect(topUrgencyCompanies(input, 1)).toHaveLength(1)
+  })
+
+  it('returnerer tom liste for tom input', () => {
+    expect(topUrgencyCompanies([])).toEqual([])
+  })
+
+  it('returnerer tom liste når alle er healthy med 0 sager', () => {
+    expect(topUrgencyCompanies([healthy])).toEqual([])
+  })
+
+  it('sorterer indbyrdes warning-selskaber på openCaseCount desc', () => {
+    const result = topUrgencyCompanies([warning2, warning1]) // 1 sag, 3 sager
+    expect(result[0]?.id).toBe('c2') // 3 sager
+    expect(result[1]?.id).toBe('c3') // 1 sag
+  })
+})
+
+// ---------------------------------------------------------------
+// TOP_URGENCY_THRESHOLD — tærskel for drill-down synlighed
+// ---------------------------------------------------------------
+describe('TOP_URGENCY_THRESHOLD', () => {
+  it('er 12 — "Mest presserende" skjules ved ≤12 selskaber', () => {
+    // Tærsklen er en UX-beslutning (UX-review #5): ved 12 eller færre
+    // selskaber er heatmap-cellerne store nok til direkte klik og
+    // drill-down-listen er redundant.
+    expect(TOP_URGENCY_THRESHOLD).toBe(12)
   })
 })

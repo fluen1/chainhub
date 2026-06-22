@@ -17,6 +17,9 @@ const { prismaMock } = vi.hoisted(() => {
       create: vi.fn(),
       update: vi.fn(),
     },
+    organization: {
+      findUnique: vi.fn(),
+    },
   }
   return { prismaMock }
 })
@@ -63,6 +66,9 @@ function mockSession() {
 
 function mockAIEnabled() {
   vi.mocked(isAIEnabled).mockResolvedValue(true)
+  // AI-adgang forudsætter i praksis Plus-plan — default til plus så de
+  // funktionelle tests ikke blokeres af plan-gaten (testes separat nedenfor).
+  prismaMock.organization.findUnique.mockResolvedValue({ plan: 'plus' })
 }
 
 beforeEach(() => {
@@ -116,6 +122,48 @@ describe('feature-flag check', () => {
     vi.mocked(isAIEnabled).mockResolvedValue(false)
     const result = await createConversation()
     expect(result.error).toContain('ikke aktiveret')
+  })
+})
+
+// ─── Plan-gate (kræver Plus) ───────────────────────────────────────────────
+describe('plan-gate', () => {
+  it('sendMessage afvises med handlingsanvisende besked når org ikke er på Plus', async () => {
+    mockSession()
+    vi.mocked(isAIEnabled).mockResolvedValue(true)
+    prismaMock.organization.findUnique.mockResolvedValue({ plan: 'basis' })
+
+    const result = await sendMessage({ conversationId: 'c1', message: 'hej' })
+    expect(result.error).toContain('Plus-abonnement')
+    // Må ikke nå til samtale-opslag eller LLM-kald
+    expect(prismaMock.conversation.findFirst).not.toHaveBeenCalled()
+    expect(processMessage).not.toHaveBeenCalled()
+  })
+
+  it('createConversation afvises når org ikke er på Plus', async () => {
+    mockSession()
+    vi.mocked(isAIEnabled).mockResolvedValue(true)
+    prismaMock.organization.findUnique.mockResolvedValue({ plan: 'trial' })
+
+    const result = await createConversation()
+    expect(result.error).toContain('Plus-abonnement')
+    expect(prismaMock.conversation.create).not.toHaveBeenCalled()
+  })
+
+  it('sendMessage tillades når org er på Plus', async () => {
+    mockSession()
+    mockAIEnabled() // sætter plus-plan
+    prismaMock.conversation.findFirst.mockResolvedValue({ id: 'c1', organization_id: 'org-1' })
+    vi.mocked(processMessage).mockResolvedValue({
+      response: 'ok',
+      toolResults: [],
+      pendingActions: [],
+      tokensUsed: 1,
+      costUsd: 0,
+    })
+
+    const result = await sendMessage({ conversationId: 'c1', message: 'hej' })
+    expect(result.data).toBeTruthy()
+    expect(processMessage).toHaveBeenCalled()
   })
 })
 

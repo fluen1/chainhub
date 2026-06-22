@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { useMemo, useState, useTransition } from 'react'
+import { TasksCardView } from '@/components/tasks/TasksCardView'
 import { TasksFlatTable } from '@/components/tasks/TasksFlatTable'
 import { TasksGroupedView } from '@/components/tasks/TasksGroupedView'
 import { KanbanView } from '@/components/tasks/TasksKanban'
@@ -296,13 +297,20 @@ export function TasksListB({
       )}
 
       {viewMode === 'flat' && (
-        <TasksFlatTable
-          tasks={paged}
-          sortCol={sortCol}
-          sortDir={sortDir}
-          onSort={handleSort}
-          onRowClick={goTo}
-        />
+        <>
+          <div className="sm:hidden">
+            <TasksCardView tasks={paged} onRowClick={goTo} />
+          </div>
+          <div className="hidden sm:block">
+            <TasksFlatTable
+              tasks={paged}
+              sortCol={sortCol}
+              sortDir={sortDir}
+              onSort={handleSort}
+              onRowClick={goTo}
+            />
+          </div>
+        </>
       )}
       {viewMode === 'grouped' && <TasksGroupedView tasks={sorted} onRowClick={goTo} />}
       {viewMode === 'kanban' && <KanbanView tasks={sorted} onRowClick={goTo} />}

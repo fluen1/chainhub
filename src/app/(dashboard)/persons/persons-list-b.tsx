@@ -3,6 +3,7 @@
 import { Mail, Phone, Building2 } from 'lucide-react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { useMemo, useState, useTransition } from 'react'
+import { PersonsCardView } from '@/components/persons/PersonsCardView'
 import {
   Breadcrumb,
   PageHeader,
@@ -212,13 +213,20 @@ export function PersonsListB({
       )}
 
       {viewMode === 'tabel' && (
-        <FlatTable
-          persons={paged}
-          sortCol={sortCol}
-          sortDir={sortDir}
-          onSort={handleSort}
-          onRowClick={goTo}
-        />
+        <>
+          <div className="sm:hidden">
+            <PersonsCardView persons={paged} onRowClick={goTo} />
+          </div>
+          <div className="hidden sm:block">
+            <FlatTable
+              persons={paged}
+              sortCol={sortCol}
+              sortDir={sortDir}
+              onSort={handleSort}
+              onRowClick={goTo}
+            />
+          </div>
+        </>
       )}
       {viewMode === 'grouped' && <GroupedView persons={sorted} onRowClick={goTo} />}
       {viewMode === 'kort' && <CardView persons={sorted} onRowClick={goTo} />}

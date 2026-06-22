@@ -25,8 +25,22 @@ async function main() {
       id: uid(1),
       name: 'OptikGruppen A/S',
       cvr: '12345678',
-      plan: 'business',
+      plan: 'plus',
       chain_structure: true,
+    },
+  })
+
+  // AI-indstillinger: demo-org'en kører Plus med AI slået fuldt til (LIVE),
+  // så assistent + dokument-udlæsning virker i seed/demo. Uden denne row
+  // returnerer isAIEnabled() altid false (feature-flags.ts).
+  await prisma.organizationAISettings.upsert({
+    where: { organization_id: org.id },
+    update: { ai_mode: 'LIVE', kill_switch: false },
+    create: {
+      organization_id: org.id,
+      ai_mode: 'LIVE',
+      kill_switch: false,
+      beta_features: [],
     },
   })
 

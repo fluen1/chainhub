@@ -7,6 +7,7 @@
  */
 
 import { formatMio, getVisitTypeLabel } from '@/lib/labels'
+import { type AppModule, roleCanAccessModule } from '@/lib/permissions/role-modules'
 import type { InlineKpi } from '@/types/ui'
 
 // ---------------------------------------------------------------
@@ -444,6 +445,81 @@ export function buildTimelineSections(data: TimelineRawData): TimelineSectionDat
     { id: 'nextweek', label: 'Næste uge', dotType: 'future', items: nextweekItems },
   ]
 }
+
+// ---------------------------------------------------------------
+// Rolle-gating af dashboard-links (UX-review #10)
+// ---------------------------------------------------------------
+
+/**
+ * Udled hvilket modul et timeline-/urgency-link peger på ud fra dets href.
+ * Bruges til at filtrere links rollen ikke kan åbne (ville give redirect).
+ * Returnerer `null` for links uden modul-binding (fx /companies/* + /documents)
+ * der altid er tilladt så længe brugeren har company-/documents-adgang.
+ */
+export function moduleForHref(href: string): AppModule | null {
+  if (href.startsWith('/contracts')) return 'contracts'
+  if (href.startsWith('/cases')) return 'cases'
+  if (href.startsWith('/tasks')) return 'tasks'
+  // /companies/* og /documents håndteres ikke her: de er tilgængelige for alle
+  // roller (companies/documents-modulet), så de filtreres ikke ud.
+  return null
+}
+
+/**
+ * Fjern timeline-items hvis modul rollen ikke kan åbne, og drop sektioner der
+ * bliver tomme. Fx GROUP_FINANCE mister sags-/kontrakt-links (dead-ends), men
+ * beholder opgave-, besøgs- og dokument-links.
+ */
+export function gateTimelineSectionsForRole(
+  sections: TimelineSectionData[],
+  role: string
+): TimelineSectionData[] {
+  return sections.map((section) => ({
+    ...section,
+    items: section.items.filter((item) => {
+      const mod = moduleForHref(item.href)
+      return mod === null || roleCanAccessModule(role, mod)
+    }),
+  }))
+}
+
+/**
+ * Nulstil sags-tal i heatmap for roller uden cases-adgang, så "Mest presserende"
+ * og status-teksten (fx "2 åbne sager") ikke afslører/linker til sager rollen
+ * ikke kan åbne. Selve trivsels-cellerne (companies-link) bevares.
+ */
+export function gateHeatmapForRole(heatmap: HeatmapCompany[], role: string): HeatmapCompany[] {
+  if (roleCanAccessModule(role, 'cases')) return heatmap
+  return heatmap.map((c) => ({ ...c, openCaseCount: 0 }))
+}
+
+/**
+ * Top-N selskaber med mest presserende trivsels-status — bruges som drill-down
+ * liste i heatmap-panelet.
+ *
+ * Sortering: critical > warning > healthy; indbyrdes sorteret på openCaseCount desc.
+ * Filtrerer healthy selskaber med 0 sager fra (ingen ny information).
+ *
+ * Kaldet med `limit = 3` som default (matcher top-3 i HeatmapPanel).
+ */
+export function topUrgencyCompanies(heatmap: HeatmapCompany[], limit = 3): HeatmapCompany[] {
+  return [...heatmap]
+    .filter((c) => c.healthStatus !== 'healthy' || c.openCaseCount > 0)
+    .sort((a, b) => {
+      const sevA = a.healthStatus === 'critical' ? 2 : a.healthStatus === 'warning' ? 1 : 0
+      const sevB = b.healthStatus === 'critical' ? 2 : b.healthStatus === 'warning' ? 1 : 0
+      if (sevA !== sevB) return sevB - sevA
+      return b.openCaseCount - a.openCaseCount
+    })
+    .slice(0, limit)
+}
+
+/**
+ * Threshold: "Mest presserende"-rækken vises kun som drill-down-hjælp
+ * når porteføljen er stor nok til at heatmap-cellerne er svære at klikke
+ * direkte (UX-review #5: undgå altid-synlig urgency-dublet ved ≤12 sel.).
+ */
+export const TOP_URGENCY_THRESHOLD = 12
 
 // ---------------------------------------------------------------
 // Empty-state

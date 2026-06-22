@@ -6,10 +6,15 @@ import { z } from 'zod'
 import { invalidateCompanyInsightsCache } from '@/lib/ai/invalidate-cache'
 import { recordAuditEvent } from '@/lib/audit'
 import { auth } from '@/lib/auth'
+import { pickHighestPriorityRole } from '@/lib/dashboard-helpers'
 import { prisma } from '@/lib/db'
 import { geocodeAddress } from '@/lib/geocode'
 import { captureError } from '@/lib/logger'
 import { canAccessCompany, canAccessModule, getAccessibleCompanies } from '@/lib/permissions'
+// Importér single source of truth direkte fra kilde-modulet (ikke barrel'en), så
+// test-mocks af '@/lib/permissions' ikke utilsigtet skygger for den rene
+// rolle→modul-matrix der bruges til kolonne-gating (UX-review #10).
+import { roleCanAccessModule } from '@/lib/permissions/role-modules'
 import { checkActionRateLimit } from '@/lib/rate-limit'
 import {
   createCompanySchema,
@@ -299,6 +304,10 @@ export interface CompaniesRawData {
   }>
   personsCount: number
   canCreate: boolean
+  // Rolle-gatede kolonner i selskabslisten (UX-review #10). Skjuler Kontr./Sager-
+  // kolonner for roller uden modul-adgang (fx GROUP_FINANCE), så badge-tal ikke
+  // vises for moduler rollen ikke kan åbne. Single source: role-modules.ts.
+  columns: { contracts: boolean; cases: boolean }
   totalCount: number
   page: number
   pageSize: number
@@ -325,6 +334,13 @@ export async function getCompaniesPageData(
     ['GROUP_OWNER', 'GROUP_ADMIN', 'GROUP_LEGAL'].includes(r.role)
   )
 
+  // Kolonne-gating: skjul Kontr./Sager for roller uden modul-adgang (UX-review #10).
+  const primaryRole = pickHighestPriorityRole(userRolesInitial)
+  const columns = {
+    contracts: roleCanAccessModule(primaryRole, 'contracts'),
+    cases: roleCanAccessModule(primaryRole, 'cases'),
+  }
+
   if (companyIds.length === 0) {
     return {
       companies: [],
@@ -334,6 +350,7 @@ export async function getCompaniesPageData(
       financials: [],
       personsCount: 0,
       canCreate,
+      columns,
       totalCount: 0,
       page,
       pageSize,
@@ -434,6 +451,7 @@ export async function getCompaniesPageData(
     })),
     personsCount,
     canCreate,
+    columns,
     totalCount,
     page,
     pageSize,

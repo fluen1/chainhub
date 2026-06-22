@@ -1,6 +1,11 @@
 import { type SensitivityLevel, type UserRole } from '@prisma/client'
 import { cache } from 'react'
 import { prisma } from '@/lib/db'
+import { type AppModule, roleCanAccessModule } from './role-modules'
+
+// Re-eksportér single source of truth for rolle→modul-adgang, så call-sites
+// kan importere alt fra '@/lib/permissions'.
+export { type AppModule, ALL_MODULES, roleCanAccessModule, modulesForRole } from './role-modules'
 
 // Sensitivity hierarchy — higher index = more sensitive
 const SENSITIVITY_ORDER: SensitivityLevel[] = [
@@ -174,55 +179,19 @@ export async function canAccessModule(
       return userRoles.some((r) => r === 'GROUP_OWNER' || r === 'GROUP_ADMIN')
     case 'billing':
       return userRoles.includes('GROUP_OWNER')
+    // Data-moduler delegerer til single source of truth (role-modules.ts), så
+    // server-tjek og UI-gating (sidebar/lister/dashboard) ikke kan divergere.
+    // Spec: docs/spec/roller-og-tilladelser.md "Modul-adgang pr. rolle (MVP)".
     case 'finance':
-      return userRoles.some(
-        (r) =>
-          r === 'GROUP_OWNER' ||
-          r === 'GROUP_ADMIN' ||
-          r === 'GROUP_FINANCE' ||
-          r === 'GROUP_READONLY' ||
-          r === 'COMPANY_MANAGER'
-      )
     case 'cases':
     case 'contracts':
-      return userRoles.some(
-        (r) =>
-          r === 'GROUP_OWNER' ||
-          r === 'GROUP_ADMIN' ||
-          r === 'GROUP_LEGAL' ||
-          r === 'GROUP_READONLY' ||
-          r === 'COMPANY_MANAGER' ||
-          r === 'COMPANY_LEGAL' ||
-          r === 'COMPANY_READONLY'
-      )
-    // Spec linje 139-156: Dokumenter og Opgaver — alle roller inkl. COMPANY_*
     case 'documents':
     case 'tasks':
     case 'companies':
-      return userRoles.some(
-        (r) =>
-          r === 'GROUP_OWNER' ||
-          r === 'GROUP_ADMIN' ||
-          r === 'GROUP_LEGAL' ||
-          r === 'GROUP_FINANCE' ||
-          r === 'GROUP_READONLY' ||
-          r === 'COMPANY_MANAGER' ||
-          r === 'COMPANY_LEGAL' ||
-          r === 'COMPANY_READONLY'
-      )
-    // Spec linje 139-156: Personer — alle roller inkl. COMPANY_*
     case 'persons':
-      return userRoles.some(
-        (r) =>
-          r === 'GROUP_OWNER' ||
-          r === 'GROUP_ADMIN' ||
-          r === 'GROUP_LEGAL' ||
-          r === 'GROUP_FINANCE' ||
-          r === 'GROUP_READONLY' ||
-          r === 'COMPANY_MANAGER' ||
-          r === 'COMPANY_LEGAL' ||
-          r === 'COMPANY_READONLY'
-      )
+    case 'governance':
+    case 'ownership':
+      return userRoles.some((r) => roleCanAccessModule(r, module as AppModule))
     // Onboarding: vises til alle authentikerede brugere med en hvilken som helst rolle
     case 'onboarding':
       return userRoles.length > 0

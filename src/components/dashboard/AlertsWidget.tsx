@@ -3,7 +3,7 @@
 import { Clock, FileQuestion, AlertTriangle, ShieldAlert } from 'lucide-react'
 import Link from 'next/link'
 import type { AlertItem } from '@/actions/alerts'
-import { Panel, PanelHeader, PanelBody, PanelEmpty, Badge, type BadgeTone } from '@/components/ui/b'
+import { Panel, PanelHeader, PanelBody, Badge, type BadgeTone } from '@/components/ui/b'
 
 // ────────────────────────────────────────────────────────────────────────────
 // Hjælpere
@@ -45,35 +45,34 @@ interface AlertsWidgetProps {
 }
 
 export function AlertsWidget({ alerts }: AlertsWidgetProps) {
+  // Kollaps til én kompakt linje ved ingen aktive advarsler — undgå tomt panel
+  // der fylder en tredjedel af dashboard-siden (UX-review #11).
+  if (alerts.length === 0) {
+    return (
+      <div className="rounded-lg border border-b-border bg-white px-3 py-2 text-[12px] text-b-3">
+        Ingen aktive advarsler
+      </div>
+    )
+  }
+
   return (
     <Panel>
-      <PanelHeader
-        title="Advarsler"
-        meta={alerts.length > 0 ? `${alerts.length} aktive` : undefined}
-      />
+      <PanelHeader title="Advarsler" meta={`${alerts.length} aktive`} />
       <PanelBody noPadding>
-        {alerts.length === 0 ? (
-          <PanelEmpty>Ingen aktive advarsler</PanelEmpty>
-        ) : (
-          <ul
-            aria-live="polite"
-            aria-atomic="false"
-            aria-label={`${alerts.length} aktive advarsler`}
-          >
-            {alerts.map((alert) => (
-              <li key={alert.id}>
-                <Link
-                  href={entityHref(alert.entityType, alert.entityId)}
-                  className="flex items-start gap-2.5 border-b border-b-border px-3 py-2.5 text-[12px] transition-colors last:border-b-0 hover:bg-b-row-hover"
-                >
-                  <CategoryIcon category={alert.category} />
-                  <span className="flex-1 text-b-1">{alert.message}</span>
-                  <Badge tone={severityTone(alert.severity)}>{severityLabel(alert.severity)}</Badge>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
+        <ul aria-live="polite" aria-atomic="false" aria-label={`${alerts.length} aktive advarsler`}>
+          {alerts.map((alert) => (
+            <li key={alert.id}>
+              <Link
+                href={entityHref(alert.entityType, alert.entityId)}
+                className="flex items-start gap-2.5 border-b border-b-border px-3 py-2.5 text-[12px] transition-colors last:border-b-0 hover:bg-b-row-hover"
+              >
+                <CategoryIcon category={alert.category} />
+                <span className="flex-1 text-b-1">{alert.message}</span>
+                <Badge tone={severityTone(alert.severity)}>{severityLabel(alert.severity)}</Badge>
+              </Link>
+            </li>
+          ))}
+        </ul>
       </PanelBody>
     </Panel>
   )

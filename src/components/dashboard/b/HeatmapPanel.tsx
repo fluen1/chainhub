@@ -3,7 +3,11 @@
 import Link from 'next/link'
 import { useCallback, useState } from 'react'
 import { Panel, PanelHeader, PanelGroupLabel } from '@/components/ui/b'
-import type { HeatmapCompany } from '@/lib/dashboard-helpers'
+import {
+  TOP_URGENCY_THRESHOLD,
+  topUrgencyCompanies,
+  type HeatmapCompany,
+} from '@/lib/dashboard-helpers'
 import { HEATMAP_STATUS_LABELS, antalEnhed } from '@/lib/labels'
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -68,15 +72,7 @@ export function HeatmapPanel({ heatmap }: { heatmap: HeatmapCompany[] }) {
   const warning = heatmap.filter((c) => c.healthStatus === 'warning').length
   const ok = heatmap.length - critical - warning
 
-  const topUrgency = [...heatmap]
-    .filter((c) => c.healthStatus !== 'healthy' || c.openCaseCount > 0)
-    .sort((a, b) => {
-      const sevA = a.healthStatus === 'critical' ? 2 : a.healthStatus === 'warning' ? 1 : 0
-      const sevB = b.healthStatus === 'critical' ? 2 : b.healthStatus === 'warning' ? 1 : 0
-      if (sevA !== sevB) return sevB - sevA
-      return b.openCaseCount - a.openCaseCount
-    })
-    .slice(0, 3)
+  const topUrgency = topUrgencyCompanies(heatmap)
 
   return (
     <>
@@ -134,7 +130,10 @@ export function HeatmapPanel({ heatmap }: { heatmap: HeatmapCompany[] }) {
           )}
         </div>
 
-        {topUrgency.length > 0 && (
+        {/* "Mest presserende" vises kun ved >TOP_URGENCY_THRESHOLD selskaber som
+            drill-down-hjælp — ved færre er heatmap-cellerne direkte klikbare
+            (UX-review #5: undgå altid-synlig urgency-dublet). */}
+        {heatmap.length > TOP_URGENCY_THRESHOLD && topUrgency.length > 0 && (
           <>
             <PanelGroupLabel>Mest presserende</PanelGroupLabel>
             {topUrgency.map((c) => (

@@ -46,6 +46,7 @@ export default async function CompaniesPage({
       <CompaniesListB
         companies={[]}
         canCreate={rawData?.canCreate ?? false}
+        columns={rawData?.columns ?? { contracts: true, cases: true }}
         totalsExtra={{ persons: 0 }}
         totalCount={rawData?.totalCount ?? 0}
         page={page}
@@ -62,6 +63,7 @@ export default async function CompaniesPage({
     financials,
     personsCount,
     canCreate,
+    columns,
     totalCount,
   } = rawData
 
@@ -135,6 +137,7 @@ export default async function CompaniesPage({
     <CompaniesListB
       companies={rows}
       canCreate={canCreate}
+      columns={columns}
       totalsExtra={{ persons: personsCount }}
       totalCount={totalCount}
       page={page}

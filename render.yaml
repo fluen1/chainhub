@@ -1,0 +1,43 @@
+# ── ChainHub — Render.com service-definition ─────────────────────────────────
+# Deployes som "Background Worker" (ikke en web-server).
+# Alternativt: Railway (railway.app) og Fly.io understøtter samme mønster.
+#
+# Hurtigt overblik:
+#   - type: worker  →  Render starter containeren og genstarter den ved nedbrud
+#   - Ingen indgående HTTP-trafik — workeren lytter kun på pg-boss-jobkøen
+#   - Sæt alle env-vars under "Environment" i Render-dashboardet (se nedenfor)
+
+services:
+  - name: chainhub-ai-worker
+    type: worker
+    runtime: docker
+    dockerfilePath: ./Dockerfile.worker
+    region: frankfurt # Tæt på Supabase EU
+    plan: starter # ~$7/mdr. — tilstrækkeligt til always-on worker
+
+    # ── Miljøvariabler ───────────────────────────────────────────────────────
+    # sync: false = Render viser feltet som hemmeligt input i dashboardet;
+    #               værdien gemmes aldrig i render.yaml (vigtigt for secrets).
+    envVars:
+      # Påkrævet: direkte Postgres-forbindelse (IKKE pooler)
+      # Brug DIRECT_URL (port 5432) — pg-boss laver langlevende forbindelser
+      # der ikke fungerer med PgBouncer (port 6543).
+      - key: DIRECT_URL
+        sync: false
+
+      # Valgfrit fallback hvis DIRECT_URL ikke er sat
+      # (pg-boss bruger DIRECT_URL først, se src/lib/ai/queue.ts)
+      - key: DATABASE_URL
+        sync: false
+
+      # OpenAI-nøgle til AI-extraction
+      - key: OPENAI_API_KEY
+        sync: false
+
+      # Kill-switch: sæt til "true" for at aktivere AI-extraction
+      - key: AI_EXTRACTION_ENABLED
+        value: 'true'
+
+      # Node-miljø
+      - key: NODE_ENV
+        value: production

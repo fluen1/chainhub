@@ -1,23 +1,13 @@
 'use client'
 
-import { useMemo } from 'react'
 import type { CompanyRow } from '@/app/(dashboard)/companies/companies-list-b'
 import { Badge, type BadgeTone, Panel, PanelHeader } from '@/components/ui/b'
 
 // ────────────────────────────────────────────────────────────────────────────
-// Right rail — Health heatmap, kritiske selskaber, fordeling
+// Right rail — Health-heatmap + kritiske selskaber.
+// Fordeling-widget er fjernet herfra (hører hjemme i Regioner-viewet,
+// UX-review #5: undgå redundans).
 // ────────────────────────────────────────────────────────────────────────────
-
-type Region = 'Kbh' | 'Sjælland' | 'Syd' | 'Midt' | 'Nord' | 'Ukendt'
-
-const REGION_LABEL: Record<Region, string> = {
-  Kbh: 'København',
-  Sjælland: 'Sjælland',
-  Syd: 'Syd- og Sønderjylland',
-  Midt: 'Midtjylland',
-  Nord: 'Nordjylland',
-  Ukendt: 'Ukendt region',
-}
 
 function healthLabel(h: CompanyRow['health']): { label: string; tone: BadgeTone } {
   if (h === 'critical') return { label: 'Kritisk', tone: 'red' }
@@ -31,15 +21,6 @@ function healthCellBg(h: CompanyRow['health']): string {
   return 'bg-[#239a3b]'
 }
 
-function RailRow({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="flex items-center justify-between px-3 py-1 text-[11px]">
-      <span className="text-b-2">{label}</span>
-      <span className="b-tnum font-medium text-b-1">{value}</span>
-    </div>
-  )
-}
-
 export function CompaniesRightRail({
   companies,
   onRowClick,
@@ -48,12 +29,6 @@ export function CompaniesRightRail({
   onRowClick: (id: string) => void
 }) {
   const needsAttention = companies.filter((c) => c.health === 'critical' || c.health === 'warning')
-
-  const byRegion = useMemo(() => {
-    const m = new Map<Region, number>()
-    for (const c of companies) m.set(c.region as Region, (m.get(c.region as Region) ?? 0) + 1)
-    return m
-  }, [companies])
 
   return (
     <aside className="flex flex-col gap-3">
@@ -105,20 +80,8 @@ export function CompaniesRightRail({
         </Panel>
       )}
 
-      <Panel>
-        <PanelHeader title="Fordeling" />
-        <div className="py-1">
-          <RailRow label="100% ejet" value={companies.filter((c) => c.kaedePct === 100).length} />
-          <RailRow label="Co-ejet" value={companies.filter((c) => c.kaedePct < 100).length} />
-          <div className="my-1 border-t border-b-divider" />
-          {(['Kbh', 'Sjælland', 'Midt', 'Syd', 'Nord'] as Region[])
-            // Skjul regioner uden selskaber — tomme 0-rækker er bare støj.
-            .filter((r) => (byRegion.get(r) ?? 0) > 0)
-            .map((r) => (
-              <RailRow key={r} label={REGION_LABEL[r]} value={byRegion.get(r) ?? 0} />
-            ))}
-        </div>
-      </Panel>
+      {/* Fordeling-widget fjernet fra højre-rail — hører hjemme i Regioner-viewet.
+          UX-review #5/#34: undgå redundans ved altid-synlig duplikat-data. */}
     </aside>
   )
 }

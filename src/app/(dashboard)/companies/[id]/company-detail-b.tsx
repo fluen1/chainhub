@@ -406,7 +406,7 @@ export function CompanyDetailB({
                     AI Insight <PlusBadge />
                   </span>
                 }
-                meta={data.aiInsight ? 'AI-beregnet' : 'Ingen analyse'}
+                meta={data.aiInsight ? 'AI-beregnet' : 'Eksempel'}
               />
               {data.aiInsight ? (
                 <div className="p-2">
@@ -415,9 +415,27 @@ export function CompanyDetailB({
                   </AIInsightCard>
                 </div>
               ) : (
-                <PanelEmpty>
-                  Ingen AI-analyse for dette selskab endnu. AI-indsigt er en del af Plus-planen.
-                </PanelEmpty>
+                <div className="p-2">
+                  <div className="mb-1.5 flex items-center gap-1.5">
+                    <span className="rounded-[3px] bg-b-border px-1.5 py-0.5 text-[9px] font-bold uppercase text-b-2">
+                      Eksempel
+                    </span>
+                    <span className="text-[11px] text-b-3">
+                      Sådan ser AI-indsigt ud på Plus-planen
+                    </span>
+                  </div>
+                  <AIInsightCard
+                    label="⚡ Kontraktsudløb: 2 kontrakter inden 90 dage"
+                    confidence="91% konfidens"
+                    cite="Baseret på udlæsning af lejekontrakter og ejeraftaler."
+                    actionHref="/settings"
+                    actionLabel="Aktivér AI-indsigt →"
+                  >
+                    Nordklinik ApS har 2 kontrakter der udløber inden for 90 dage. Historisk stiger
+                    markedslejen 8–14% ved genforhandling i dette segment. Anbefaling: start
+                    forhandling senest 60 dage før udløb.
+                  </AIInsightCard>
+                </div>
               )}
             </Panel>
           )}
