@@ -27,6 +27,13 @@ interface OpenAIResponsesOutput {
 
 const log = createLogger('openai-direct-client')
 
+// Reasoning-modeller (gpt-5-serien) tillader kun default temperature (1) i
+// Responses API. Alt andet afvises med en 400-fejl. Returnér false for dem,
+// så vi udelader temperature fra payloaden frem for at få kaldet til at fejle.
+export function supportsCustomTemperature(model: string): boolean {
+  return !model.startsWith('gpt-5')
+}
+
 export class OpenAIDirectClient implements ClaudeClient {
   readonly providerName = 'openai' as const
   private client: OpenAI
@@ -82,7 +89,13 @@ export class OpenAIDirectClient implements ClaudeClient {
       payload.instructions = request.system
     }
 
-    if (typeof request.temperature === 'number') {
+    // gpt-5-modellerne er reasoning-modeller, og OpenAI's Responses API afviser
+    // custom temperature for dem ("Unsupported value: 'temperature' does not
+    // support X with this model. Only the default (1) value is supported.").
+    // Alle modeller vi bruger (gpt-5-mini/gpt-5/gpt-5-nano) er reasoning-modeller,
+    // så vi sender ALDRIG temperature — kalderens temperature-ønske ignoreres
+    // bevidst. Tilføj kun temperature igen hvis en ikke-reasoning-model tilføjes.
+    if (typeof request.temperature === 'number' && supportsCustomTemperature(request.model)) {
       payload.temperature = request.temperature
     }
 
