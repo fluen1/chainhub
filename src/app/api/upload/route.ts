@@ -1,16 +1,11 @@
 import { randomUUID } from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
-import type { ExtractDocumentPayload } from '@/lib/ai/jobs/extract-document'
-import { createLogger } from '@/lib/ai/logger'
-import { createQueue, JOB_NAMES } from '@/lib/ai/queue'
 import { checkUploadRateLimit } from '@/lib/ai/rate-limit'
 import { recordAuditEvent } from '@/lib/audit'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { canAccessCompany } from '@/lib/permissions'
 import { getStorageProvider } from '@/lib/storage'
-
-const log = createLogger('api:upload')
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
 const ALLOWED_TYPES = [
@@ -147,51 +142,9 @@ export async function POST(request: NextRequest) {
     },
   })
 
-  // Enqueue AI extraction for alle uploads (entity-matching + field extraction)
-  // Fail-silent: upload må ikke fejle hvis pg-boss er nede.
-  try {
-    const { isAIEnabled } = await import('@/lib/ai/feature-flags')
-    const aiEnabled = await isAIEnabled(orgId, 'extraction')
-
-    if (aiEnabled) {
-      const boss = await createQueue()
-      // pg-boss v10+ kræver at queue eksisterer før send.
-      // createQueue på manager er idempotent (CREATE IF NOT EXISTS-semantik via SQL plan).
-      try {
-        await boss.createQueue(JOB_NAMES.EXTRACT_DOCUMENT)
-      } catch (createErr) {
-        // Ignorér hvis queue allerede eksisterer — det er det forventede efter første kald
-        log.debug(
-          {
-            queue: JOB_NAMES.EXTRACT_DOCUMENT,
-            err: createErr instanceof Error ? createErr.message : String(createErr),
-          },
-          'createQueue returned error (likely already exists) — continuing'
-        )
-      }
-
-      const payload: ExtractDocumentPayload = {
-        document_id: documentId,
-        organization_id: orgId,
-        file_buffer_base64: buffer.toString('base64'),
-        filename: file.name,
-      }
-      await boss.send(JOB_NAMES.EXTRACT_DOCUMENT, payload, {
-        retryLimit: 2,
-        retryDelay: 60, // seconds
-      })
-      log.info({ document_id: documentId }, 'Extraction job queued')
-    }
-  } catch (err) {
-    // Non-blocking — upload succeeds even if enqueue fails
-    log.warn(
-      {
-        document_id: documentId,
-        err: err instanceof Error ? err.message : String(err),
-      },
-      'Failed to enqueue extraction job'
-    )
-  }
+  // AI-extraction trigges IKKE her længere. En Vercel-cron (/api/cron/extract-pending)
+  // poller dokumenter uden færdig extraction og kører pipelinen — så upload-ruten
+  // skriver kun Document-rækken og afslutter hurtigt.
 
   // Audit: log upload-hændelse
   await recordAuditEvent({

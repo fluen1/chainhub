@@ -86,25 +86,26 @@ function constantTimeEqual(a: string, b: string): boolean {
 }
 
 function validateCronToken(req: NextRequest): NextResponse | null {
-  const cronSecret = process.env.DIGEST_CRON_SECRET
-  if (!cronSecret) {
-    return new NextResponse(JSON.stringify({ error: 'Unauthorized' }), {
+  // Accepter BÅDE CRON_SECRET (Vercels auto-injicerede cron-token) og
+  // DIGEST_CRON_SECRET (bagudkompatibel — manuel curl + ældre opsætning).
+  // Uden CRON_SECRET her ville middleware afvise Vercels egne cron-kald FØR
+  // handleren — selvom handleren selv accepterer det.
+  const secrets = [process.env.CRON_SECRET, process.env.DIGEST_CRON_SECRET].filter(
+    Boolean
+  ) as string[]
+
+  const unauthorized = () =>
+    new NextResponse(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
       headers: { 'content-type': 'application/json' },
     })
-  }
+
+  if (secrets.length === 0) return unauthorized()
 
   const provided = req.headers.get('authorization') ?? ''
-  const expected = `Bearer ${cronSecret}`
+  const authorized = secrets.some((secret) => constantTimeEqual(provided, `Bearer ${secret}`))
 
-  if (!constantTimeEqual(provided, expected)) {
-    return new NextResponse(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 401,
-      headers: { 'content-type': 'application/json' },
-    })
-  }
-
-  return null
+  return authorized ? null : unauthorized()
 }
 
 export const proxy = authMiddleware(async (req) => {

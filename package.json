@@ -21,8 +21,6 @@
     "db:migrate": "prisma migrate deploy",
     "db:bootstrap": "tsx scripts/bootstrap-prod.ts",
     "db:e2e:reset": "cross-env-shell \"DATABASE_URL=$E2E_DATABASE_URL DIRECT_URL=$E2E_DATABASE_URL npx prisma db push --skip-generate --force-reset && DATABASE_URL=$E2E_DATABASE_URL DIRECT_URL=$E2E_DATABASE_URL npx prisma db seed\"",
-    "worker": "tsx worker/index.ts",
-    "worker:dev": "tsx watch worker/index.ts",
     "prepare": "husky"
   },
   "prisma": {

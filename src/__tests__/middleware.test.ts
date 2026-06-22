@@ -146,10 +146,33 @@ describe('middleware — cron routes require Bearer token', () => {
 
   afterEach(() => {
     delete process.env.DIGEST_CRON_SECRET
+    delete process.env.CRON_SECRET
   })
 
   it('allows /api/cron with valid Bearer token', async () => {
     const result = await runMiddleware('/api/cron/daily-digest', false, {
+      authorization: `Bearer ${CRON_SECRET}`,
+    })
+    expect(mockNext).toHaveBeenCalled()
+    expect((result as { type: string }).type).toBe('next')
+  })
+
+  it('allows /api/cron with CRON_SECRET (Vercels auto-injicerede token)', async () => {
+    // Vercel injicerer CRON_SECRET på sine egne cron-kald — middleware SKAL
+    // acceptere det, ellers afvises cron'en FØR handleren.
+    delete process.env.DIGEST_CRON_SECRET
+    process.env.CRON_SECRET = 'vercel-injected'
+    const result = await runMiddleware('/api/cron/extract-pending', false, {
+      authorization: 'Bearer vercel-injected',
+    })
+    expect(mockNext).toHaveBeenCalled()
+    expect((result as { type: string }).type).toBe('next')
+  })
+
+  it('allows /api/cron when only DIGEST_CRON_SECRET matches (begge sat)', async () => {
+    process.env.CRON_SECRET = 'vercel-secret'
+    process.env.DIGEST_CRON_SECRET = CRON_SECRET
+    const result = await runMiddleware('/api/cron/extract-pending', false, {
       authorization: `Bearer ${CRON_SECRET}`,
     })
     expect(mockNext).toHaveBeenCalled()

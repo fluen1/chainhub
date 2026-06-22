@@ -33,8 +33,8 @@ export async function createQueue(): Promise<PgBoss> {
 
   await bossInstance.start()
 
-  // Planlæg daglig porteføljescanning kl. 06:00 UTC
-  await bossInstance.schedule(JOB_NAMES.PORTFOLIO_SCAN, '0 6 * * *', {}, { tz: 'UTC' })
+  // Porteføljescanning planlægges nu via Vercel-cron (/api/cron/portfolio-scan),
+  // ikke pg-boss. Se vercel.json.
 
   log.info('pg-boss started')
   return bossInstance
