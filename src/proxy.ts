@@ -23,10 +23,27 @@ function buildCspHeader(): { nonce: string; csp: string } {
   return { nonce, csp }
 }
 
-function applyCspHeaders(response: NextResponse): NextResponse {
+// Sætter CSP med per-request nonce. KRITISK: nonce skal videresendes på de
+// REQUEST-headers der sendes til Next.js' renderer — det er sådan Next.js finder
+// nonce'en og injicerer den i <script>-tags. Uden request-forwarding ser
+// rendereren aldrig nonce'en, scripts får ingen nonce, og 'strict-dynamic'
+// blokerer ALLE scripts (tom side). Mønster fra Next.js' officielle CSP-guide.
+function applyCspHeaders(req: NextRequest, extraHeaders?: Record<string, string>): NextResponse {
   const { nonce, csp } = buildCspHeader()
+
+  const requestHeaders = new Headers(req.headers)
+  requestHeaders.set('x-nonce', nonce)
+  requestHeaders.set('Content-Security-Policy', csp)
+
+  const response = NextResponse.next({ request: { headers: requestHeaders } })
   response.headers.set('Content-Security-Policy', csp)
   response.headers.set('x-nonce', nonce)
+
+  if (extraHeaders) {
+    for (const [key, value] of Object.entries(extraHeaders)) {
+      response.headers.set(key, value)
+    }
+  }
   return response
 }
 
@@ -117,12 +134,12 @@ export const proxy = authMiddleware(async (req) => {
   if (pathname.startsWith('/api/cron')) {
     const tokenError = validateCronToken(req as NextRequest)
     if (tokenError) return tokenError
-    return applyCspHeaders(NextResponse.next())
+    return applyCspHeaders(req as NextRequest)
   }
 
   // Offentlige ruter — lad igennem med CSP
   if (isPublicRoute(pathname)) {
-    return applyCspHeaders(NextResponse.next())
+    return applyCspHeaders(req as NextRequest)
   }
 
   // Dashboard-ruter kræver aktiv session
@@ -132,9 +149,7 @@ export const proxy = authMiddleware(async (req) => {
     return NextResponse.redirect(loginUrl)
   }
 
-  const res = NextResponse.next()
-  res.headers.set('x-pathname', pathname)
-  return applyCspHeaders(res)
+  return applyCspHeaders(req as NextRequest, { 'x-pathname': pathname })
 })
 
 export const config = {

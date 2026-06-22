@@ -15,7 +15,11 @@ function makeHeadersMock() {
     get: (k: string) => store[k] ?? null,
   }
 }
-const mockNext = vi.fn(() => ({ type: 'next', headers: makeHeadersMock() }))
+let lastNextArg: { request?: { headers: Headers } } | undefined
+const mockNext = vi.fn((arg?: { request?: { headers: Headers } }) => {
+  lastNextArg = arg
+  return { type: 'next', headers: makeHeadersMock() }
+})
 const mockRedirect = vi.fn((url: URL) => ({
   type: 'redirect',
   url: url.toString(),
@@ -61,9 +65,7 @@ function makeRequest(pathname: string, withAuth = false, headers: Record<string,
     nextUrl: { pathname, search: '' },
     url,
     auth: withAuth ? { user: { id: 'u1' } } : null,
-    headers: {
-      get: (name: string) => headers[name.toLowerCase()] ?? null,
-    },
+    headers: new Headers(headers),
   }
 }
 
@@ -275,5 +277,48 @@ describe('middleware — public marketing-sider passerer uden auth', () => {
     await runMiddleware('/dashboard', false)
     expect(mockRedirect).toHaveBeenCalled()
     expect(mockNext).not.toHaveBeenCalled()
+  })
+})
+
+describe('middleware — CSP-nonce videresendes på request-headers', () => {
+  // Next.js injicerer kun nonce i <script>-tags hvis Content-Security-Policy
+  // er sat på de REQUEST-headers der videresendes til rendereren (ikke kun
+  // response). Uden dette blokerer 'strict-dynamic' alle scripts → tom side.
+  beforeEach(() => {
+    mockNext.mockClear()
+    mockRedirect.mockClear()
+    lastNextArg = undefined
+  })
+
+  it('videresender CSP + nonce på request-headers for offentlig rute (/login)', async () => {
+    const res = (await runMiddleware('/login', false)) as {
+      headers: { get: (k: string) => string | null }
+    }
+    // Request-headers videresendt til rendereren
+    const fwd = lastNextArg?.request?.headers
+    expect(fwd).toBeDefined()
+    const reqCsp = fwd?.get('content-security-policy') ?? ''
+    expect(reqCsp).toContain("'nonce-")
+    expect(reqCsp).toContain("'strict-dynamic'")
+    expect(fwd?.get('x-nonce')).toBeTruthy()
+    // Samme CSP også på response
+    expect(res.headers.get('Content-Security-Policy')).toContain("'nonce-")
+  })
+
+  it('videresender CSP + nonce på request-headers for beskyttet rute (auth)', async () => {
+    await runMiddleware('/dashboard', true)
+    const fwd = lastNextArg?.request?.headers
+    expect(fwd?.get('content-security-policy')).toContain("'nonce-")
+    expect(fwd?.get('x-nonce')).toBeTruthy()
+  })
+
+  it('request- og response-nonce er identiske (ellers mismatch → blokeret)', async () => {
+    const res = (await runMiddleware('/login', false)) as {
+      headers: { get: (k: string) => string | null }
+    }
+    const reqNonce = lastNextArg?.request?.headers.get('x-nonce')
+    const resNonce = res.headers.get('x-nonce')
+    expect(reqNonce).toBeTruthy()
+    expect(reqNonce).toBe(resNonce)
   })
 })
